@@ -1,11 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// TODO: Write the input as in javascript while debugging for comparison
 contract FuzzyLogicEngine {
   struct Variable {
     string name;
     string[] setsName;
     uint256[][] sets;
+  }
+
+  // Holds the output of construct variable
+  struct Construct {
+    uint256[] a;
+    uint256 firstPoint;
+    uint256 lastPoint;
+    int256 mUp;
+    int256 mDown;
   }
 
   // Define the variables used for input
@@ -49,4 +59,20 @@ contract FuzzyLogicEngine {
     Variable({name: 'Desirability', setsName: desirabilityNames, sets: desirabilitySets});
 
   uint256[][] inferences = [[0, 2, 0], [0, 1, 2], [2, 1, 0]];
+
+  // TODO: Revisit these functions and determine how to structure everything appropriately while maintaining solidity types
+  // TODO: This original javascript function just hardcodes the trapezoid pattern, but we could extend it to have `n` points
+  // This function fixes i, so could just do this function for one set and call it multiple times
+  // obv[i] is our Construct struct for each array of uint256s
+  // Input: One uint256 array, corresponding to e.g. targetSetA
+  // Output: obv[i] (our Construct struct)
+  function constructVariableSingular(
+    uint256[] memory input
+  ) public pure returns (Construct memory c) {
+    c.a = input;
+    c.firstPoint = input[0] == input[1] ? 1 : 0;
+    c.lastPoint = input[2] == input[3] ? 1 : 0;
+    c.mUp = int256(input[1] - input[0]); // Note: The original function is 1 / (input[1] - input[0]), which can be negative or infinity
+    c.mDown = int256(input[3] - input[2]); // Note: I'll just store the denominator for now
+  }
 }
