@@ -90,4 +90,20 @@ contract FuzzyLogicEngine {
       f = 1 - set.mDown * int256(x - set.a[2]);
     }
   }
+
+  function takeMaxOfArraySet(uint256[][] memory set) public pure returns (uint256[] memory max) {
+    max = new uint256[](set[0].length);
+    for (uint256 i = 0; i < set[0].length; i++) {
+      max[i] = takeMaxOfArray(set[i]);
+    }
+  }
+
+  function takeMaxOfArray(uint256[] memory arr) public pure returns (uint256 max) {
+    max = arr[0];
+    for (uint256 i = 1; i < arr.length; i++) {
+      if (arr[i] > max) {
+        max = arr[i];
+      }
+    }
+  }
 }
