@@ -29,6 +29,7 @@ contract FuzzyLogicEngine {
 
   uint256[] ammoSetA = [0, 0, 10, 10];
   uint256[] ammoSetB = [0, 10, 30, 30];
+
   uint256[] ammoSetC = [10, 30, 40, 40];
   uint256[][] ammoSets = [ammoSetA, ammoSetB, ammoSetC];
 
@@ -72,7 +73,21 @@ contract FuzzyLogicEngine {
     c.a = input;
     c.firstPoint = input[0] == input[1] ? 1 : 0;
     c.lastPoint = input[2] == input[3] ? 1 : 0;
-    c.mUp = int256(input[1] - input[0]); // Note: The original function is 1 / (input[1] - input[0]), which can be negative or infinity
-    c.mDown = int256(input[3] - input[2]); // Note: I'll just store the denominator for now
+    c.mUp = int256(1e18 / (input[1] - input[0])); // Note: The original function is 1 / (input[1] - input[0]), which can be negative or infinity
+    c.mDown = int256(1e18 / (input[3] - input[2])); // TODO: Consider changing to something higher like 10e18 or 100e18 - that will be our "1"
+  }
+
+  // TODO: Ensure math matches - precision, negatives, etc.
+  function fuzzification_function(uint256 x, Construct memory set) public pure returns (int256 f) {
+    f = 0;
+    if (x <= set.a[0]) {
+      f = int256(set.firstPoint);
+    } else if (x < set.a[1]) {
+      f = set.mUp * int256(x - set.a[0]);
+    } else if (x <= set.a[2]) {
+      f = 1;
+    } else if (x < set.a[3]) {
+      f = 1 - set.mDown * int256(x - set.a[2]);
+    }
   }
 }
