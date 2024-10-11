@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// TODO: Try and simplify types where possible e.g. deciding on uint265 vs int256
 // TODO: Write the input as in javascript while debugging for comparison
 contract FuzzyLogicEngine {
   struct Variable {
@@ -17,6 +18,8 @@ contract FuzzyLogicEngine {
     int256 mUp;
     int256 mDown;
   }
+
+  // NOTE: Keeping these arrays as uint256 because it makes the input declarations easier
 
   // Define the variables used for input
   uint256[] crisp_input = [150, 10, 10];
@@ -89,6 +92,73 @@ contract FuzzyLogicEngine {
     } else if (x < set.a[3]) {
       f = 1 - set.mDown * int256(x - set.a[2]);
     }
+  }
+
+  // TODO: Ensure the added multiples for math don't interrupt the math itself
+  // TODO: Implement
+  // Concern is that it takes multiple inputs, so need to handle carefully
+  // I think my types are correct
+  // TODO: See if I can recreate these input types so I can use these functions in the same way as the js code
+  function defuzzification(
+    uint256[] memory outputSet,
+    Construct[] memory variable
+  ) public returns (int256) {
+    int256 num = 0;
+    int256 den = 0;
+    Construct memory v;
+    uint256[] memory point;
+    int256 h = 0;
+    int256 b = 0;
+    int256 a = 0;
+    int256 a1 = 0;
+    int256 a2 = 0;
+    int256 area = 0;
+    int256 y_baricentro = 0;
+    int256 x_baricentro = 0;
+    int256 amezzi = 0;
+    int256 bmezzi = 0;
+    int256 mmezzi = 0;
+
+    for (uint256 i = outputSet.length - 1; i >= 0; i--) {
+      v = variable[i];
+      point = v.a;
+      h = int256(outputSet[i]);
+      b = int256(point[3] - point[0]);
+      a1 = int256(point[0]);
+      if (point[0] != point[1]) {
+        a1 += int256(h * 1e18) / v.mUp;
+      }
+      a2 = int256(point[3]);
+      if (point[2] != point[3]) {
+        a2 -= int256(h * 1e18) / v.mDown;
+      }
+      area = 0;
+      if (int256(point[0]) != a1) {
+        area += ((a1 - int256(point[0])) * int256(outputSet[i])) / 2;
+      }
+      if (a1 != a2) {
+        area += (a2 - a1) * int256(outputSet[i]);
+      }
+      if (a2 != int256(point[3])) {
+        area += ((int256(point[3]) - a2) * int256(outputSet[i])) / 2;
+      }
+      a = a2 - a1;
+      y_baricentro = ((h / 3) * (b + 2 * a)) / (a + b);
+      amezzi = a1 + (a2 - a1) / 2;
+      bmezzi = int256(point[0] + (point[3] - point[0]) / 2);
+      mmezzi = 0;
+      if (amezzi - bmezzi != 0) {
+        mmezzi = (h * 1e18) / (amezzi - bmezzi);
+      }
+      x_baricentro = bmezzi;
+      if (mmezzi != 0) {
+        x_baricentro += (y_baricentro * 1e18) / mmezzi;
+      }
+      num += area * x_baricentro;
+      den += area;
+    }
+
+    return den == 0 ? int256(0) : int256((num * 1e18) / den);
   }
 
   function takeMaxOfArraySet(uint256[][] memory set) public pure returns (uint256[] memory max) {
