@@ -91,6 +91,18 @@ contract FuzzyLogicEngine {
     return ammoSetC;
   }
 
+  function getDefenseSetA() public view returns (uint256[] memory) {
+    return defenseSetA;
+  }
+
+  function getDefenseSetB() public view returns (uint256[] memory) {
+    return defenseSetB;
+  }
+
+  function getDefenseSetC() public view returns (uint256[] memory) {
+    return defenseSetC;
+  }
+
   // TODO: Revisit these functions and determine how to structure everything appropriately while maintaining solidity types
   // TODO: This original javascript function just hardcodes the trapezoid pattern, but we could extend it to have `n` points
   // This function fixes i, so could just do this function for one set and call it multiple times

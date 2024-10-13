@@ -94,17 +94,20 @@ contract FuzzyLogicEngineTest is Test {
 
   // NOTE: Using getters because declaring variables as above was resulting in stack too deep
   function testFuzzyLogicEngine() public {
-    // TODO: For each of sets within variables_input, For each array of 4 elements, create our Construct struct
+    // For each of sets within variables_input, For each array of 4 elements, create our Construct struct
     FuzzyLogicEngine.Construct memory a = fle.constructVariableSingular(fle.getTargetSetA());
     FuzzyLogicEngine.Construct memory b = fle.constructVariableSingular(fle.getTargetSetB());
     FuzzyLogicEngine.Construct memory c = fle.constructVariableSingular(fle.getTargetSetC());
-
-    FuzzyLogicEngine.Construct[3] memory targetSet = [a, b, c];
 
     FuzzyLogicEngine.Construct memory d = fle.constructVariableSingular(fle.getAmmoSetA());
     FuzzyLogicEngine.Construct memory e = fle.constructVariableSingular(fle.getAmmoSetB());
     FuzzyLogicEngine.Construct memory f = fle.constructVariableSingular(fle.getAmmoSetC());
 
-    FuzzyLogicEngine.Construct[3][2] memory sets = [[a, b, c], [d, e, f]];
+    FuzzyLogicEngine.Construct memory g = fle.constructVariableSingular(fle.getDefenseSetA());
+    FuzzyLogicEngine.Construct memory h = fle.constructVariableSingular(fle.getDefenseSetB());
+    FuzzyLogicEngine.Construct memory i = fle.constructVariableSingular(fle.getDefenseSetC());
+
+    // 3x3 Array of constructs corresponds to "variables" object in javascript implementation
+    FuzzyLogicEngine.Construct[3][3] memory variables = [[a, b, c], [d, e, f], [g, h, i]];
   }
 }
