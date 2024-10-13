@@ -99,6 +99,8 @@ contract FuzzyLogicEngine {
   // Concern is that it takes multiple inputs, so need to handle carefully
   // I think my types are correct
   // TODO: See if I can recreate these input types so I can use these functions in the same way as the js code
+  // TODO: I'm concerned that multiple multiplications before divisions (e.g. if multiple if conidtions are met)
+  // Might lead to incorrect results, so double check the math there
   function defuzzification(
     uint256[] memory outputSet,
     Construct[] memory variable
@@ -124,22 +126,23 @@ contract FuzzyLogicEngine {
       }
       area = 0;
       if (int256(variable[i].a[0]) != a1) {
-        area += ((a1 - int256(variable[i].a[0])) * int256(outputSet[i])) / 2;
+        area += (((a1 - int256(variable[i].a[0])) * int256(outputSet[i])) * 1e18) / 2; // Revisit extra multiplication
       }
       if (a1 != a2) {
         area += (a2 - a1) * int256(outputSet[i]);
       }
       if (a2 != int256(variable[i].a[3])) {
-        area += ((int256(variable[i].a[3]) - a2) * int256(outputSet[i])) / 2;
+        area += (((int256(variable[i].a[3]) - a2) * int256(outputSet[i])) * 1e18) / 2; // Revisit extra multiplication
       }
       y_baricentro =
-        ((int256(outputSet[i]) / 3) *
-          (int256(variable[i].a[3] - variable[i].a[0]) + 2 * (a2 - a1))) /
+        ((((int256(outputSet[i]) * 1e18) / 3) *
+          (int256(variable[i].a[3] - variable[i].a[0]) + 2 * (a2 - a1))) * 1e18) / // Revisit extra multiplication
         ((a2 - a1) + int256(variable[i].a[3] - variable[i].a[0]));
-      bmezzi = int256(variable[i].a[0] + (variable[i].a[3] - variable[i].a[0]) / 2);
+      bmezzi = int256(variable[i].a[0] + ((variable[i].a[3] - variable[i].a[0]) * 1e18) / 2); // Revisit extra multiplication
       mmezzi = 0;
-      if ((a1 + (a2 - a1) / 2) - bmezzi != 0) {
-        mmezzi = (int256(outputSet[i]) * 1e18) / ((a1 + (a2 - a1) / 2) - bmezzi);
+      if ((((a1 + (a2 - a1)) * 1e18) / 2) - bmezzi != 0) {
+        // Revisit extra multiplication
+        mmezzi = (int256(outputSet[i]) * 1e18) / ((((a1 + (a2 - a1)) * 1e18) / 2) - bmezzi);
       }
       x_baricentro = bmezzi;
       if (mmezzi != 0) {
