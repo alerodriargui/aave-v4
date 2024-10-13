@@ -25,7 +25,7 @@ contract FuzzyLogicEngine {
   // NOTE: Keeping these arrays as uint256 because it makes the input declarations easier
 
   // Define the variables used for input
-  uint256[] crisp_input = [150, 10, 10];
+  uint256[] crispInput = [150, 10, 10];
 
   // Intermediate step to build sets
   uint256[] targetSetA = [0, 0, 25, 150];
@@ -103,7 +103,7 @@ contract FuzzyLogicEngine {
     return defenseSetC;
   }
 
-  // TODO: Revisit these functions and determine how to structure everything appropriately while maintaining solidity types
+  // TODO: Natspec
   // TODO: This original javascript function just hardcodes the trapezoid pattern, but we could extend it to have `n` points
   // This function fixes i, so could just do this function for one set and call it multiple times
   // obv[i] is our Construct struct for each array of uint256s
@@ -125,6 +125,31 @@ contract FuzzyLogicEngine {
     } else {
       c.mDown = int256(1e18 / (input[3] - input[2])); // TODO: Consider changing to something higher like 10e18 or 100e18 - that will be our "1"
     }
+  }
+
+  // Takes crisp input and variables
+  function fuzzification(
+    uint256[] memory crispInput,
+    FuzzyLogicEngine.Construct[][] memory variables
+  ) public pure returns (int256[][] memory) {
+    int256[][] memory value;
+    for (uint256 i = variables.length - 1; i >= 0; i -= 1) {
+      value[i] = fuzzification_variable(crispInput[i], variables[i]);
+    }
+
+    return value;
+  }
+
+  function fuzzification_variable(
+    uint256 x,
+    FuzzyLogicEngine.Construct[] memory sets
+  ) public pure returns (int256[] memory) {
+    int256[] memory valori;
+    for (uint256 i = sets.length - 1; i >= 0; i -= 1) {
+      valori[i] = fuzzification_function(x, sets[i]);
+    }
+
+    return valori;
   }
 
   // TODO: Appropriately handle infinity
