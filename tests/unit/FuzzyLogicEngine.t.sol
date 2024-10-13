@@ -92,8 +92,11 @@ contract FuzzyLogicEngineTest is Test {
   }
   */
 
+  // NOTE: Using getters because declaring variables as above was resulting in stack too deep
   function testFuzzyLogicEngine() public {
     // TODO: For each of sets within variables_input, For each array of 4 elements, create our Construct struct
     FuzzyLogicEngine.Construct memory a = fle.constructVariableSingular(fle.getTargetSetA());
+    FuzzyLogicEngine.Construct memory b = fle.constructVariableSingular(fle.getTargetSetB());
+    FuzzyLogicEngine.Construct memory c = fle.constructVariableSingular(fle.getTargetSetC());
   }
 }
