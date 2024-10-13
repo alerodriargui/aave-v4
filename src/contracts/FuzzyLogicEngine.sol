@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// TODO: Appropriately handle infinity
 // TODO: Try and simplify types where possible e.g. deciding on uint265 vs int256
 // TODO: Write the input as in javascript while debugging for comparison
 contract FuzzyLogicEngine {
@@ -18,6 +19,8 @@ contract FuzzyLogicEngine {
     int256 mUp;
     int256 mDown;
   }
+
+  int256 public constant INF = type(int256).max;
 
   // NOTE: Keeping these arrays as uint256 because it makes the input declarations easier
 
@@ -64,6 +67,10 @@ contract FuzzyLogicEngine {
 
   uint256[][] inferences = [[0, 2, 0], [0, 1, 2], [2, 1, 0]];
 
+  function getTargetSetA() public view returns (uint256[] memory) {
+    return targetSetA;
+  }
+
   // TODO: Revisit these functions and determine how to structure everything appropriately while maintaining solidity types
   // TODO: This original javascript function just hardcodes the trapezoid pattern, but we could extend it to have `n` points
   // This function fixes i, so could just do this function for one set and call it multiple times
@@ -76,10 +83,19 @@ contract FuzzyLogicEngine {
     c.a = input;
     c.firstPoint = input[0] == input[1] ? 1 : 0;
     c.lastPoint = input[2] == input[3] ? 1 : 0;
-    c.mUp = int256(1e18 / (input[1] - input[0])); // Note: The original function is 1 / (input[1] - input[0]), which can be negative or infinity
-    c.mDown = int256(1e18 / (input[3] - input[2])); // TODO: Consider changing to something higher like 10e18 or 100e18 - that will be our "1"
+    if (input[1] - input[0] == 0) {
+      c.mUp = INF;
+    } else {
+      c.mUp = int256(1e18 / (input[1] - input[0])); // Note: Inputs defined in ascending order to not make this negative
+    }
+    if (input[3] - input[2] == 0) {
+      c.mDown = INF;
+    } else {
+      c.mDown = int256(1e18 / (input[3] - input[2])); // TODO: Consider changing to something higher like 10e18 or 100e18 - that will be our "1"
+    }
   }
 
+  // TODO: Appropriately handle infinity
   // TODO: Ensure math matches - precision, negatives, etc.
   function fuzzification_function(uint256 x, Construct memory set) public pure returns (int256 f) {
     f = 0;
@@ -94,6 +110,7 @@ contract FuzzyLogicEngine {
     }
   }
 
+  // TODO: Appropriately handle infinity
   // TODO: Ensure the added multiples for math don't interrupt the math itself
   // TODO: Implement
   // Concern is that it takes multiple inputs, so need to handle carefully
@@ -118,11 +135,11 @@ contract FuzzyLogicEngine {
     for (uint256 i = outputSet.length - 1; i >= 0; i--) {
       a1 = int256(variable[i].a[0]);
       if (variable[i].a[0] != variable[i].a[1]) {
-        a1 += int256(int256(outputSet[i]) * 1e18) / variable[i].mUp;
+        a1 += int256(int256(outputSet[i]) * 1e18) / variable[i].mUp; // Anything divided by inf is 0
       }
       a2 = int256(variable[i].a[3]);
       if (variable[i].a[2] != variable[i].a[3]) {
-        a2 -= int256(int256(outputSet[i]) * 1e18) / variable[i].mDown;
+        a2 -= int256(int256(outputSet[i]) * 1e18) / variable[i].mDown; // Anything divided by inf is 0
       }
       area = 0;
       if (int256(variable[i].a[0]) != a1) {

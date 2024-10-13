@@ -91,4 +91,9 @@ contract FuzzyLogicEngineTest is Test {
     ];
   }
   */
+
+  function testFuzzyLogicEngine() public {
+    // TODO: For each of sets within variables_input, For each array of 4 elements, create our Construct struct
+    FuzzyLogicEngine.Construct memory a = fle.constructVariableSingular(fle.getTargetSetA());
+  }
 }
