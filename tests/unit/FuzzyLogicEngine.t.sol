@@ -98,5 +98,13 @@ contract FuzzyLogicEngineTest is Test {
     FuzzyLogicEngine.Construct memory a = fle.constructVariableSingular(fle.getTargetSetA());
     FuzzyLogicEngine.Construct memory b = fle.constructVariableSingular(fle.getTargetSetB());
     FuzzyLogicEngine.Construct memory c = fle.constructVariableSingular(fle.getTargetSetC());
+
+    FuzzyLogicEngine.Construct[3] memory targetSet = [a, b, c];
+
+    FuzzyLogicEngine.Construct memory d = fle.constructVariableSingular(fle.getAmmoSetA());
+    FuzzyLogicEngine.Construct memory e = fle.constructVariableSingular(fle.getAmmoSetB());
+    FuzzyLogicEngine.Construct memory f = fle.constructVariableSingular(fle.getAmmoSetC());
+
+    FuzzyLogicEngine.Construct[3][2] memory sets = [[a, b, c], [d, e, f]];
   }
 }

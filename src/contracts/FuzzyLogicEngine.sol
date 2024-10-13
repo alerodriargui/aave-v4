@@ -33,14 +33,13 @@ contract FuzzyLogicEngine {
   uint256[] targetSetC = [150, 300, 400, 400];
   uint256[][] targetSets = [targetSetA, targetSetB, targetSetC];
 
-  uint256[] ammoSetA = [0, 0, 10, 10];
-  uint256[] ammoSetB = [0, 10, 30, 30];
-
+  uint256[] ammoSetA = [0, 0, 0, 10];
+  uint256[] ammoSetB = [0, 10, 10, 30];
   uint256[] ammoSetC = [10, 30, 40, 40];
   uint256[][] ammoSets = [ammoSetA, ammoSetB, ammoSetC];
 
-  uint256[] defenseSetA = [0, 0, 10, 10];
-  uint256[] defenseSetB = [0, 10, 30, 30];
+  uint256[] defenseSetA = [0, 0, 0, 10];
+  uint256[] defenseSetB = [0, 10, 10, 30];
   uint256[] defenseSetC = [10, 30, 40, 40];
   uint256[][] defenseSets = [defenseSetA, defenseSetB, defenseSetC];
 
@@ -67,6 +66,7 @@ contract FuzzyLogicEngine {
 
   uint256[][] inferences = [[0, 2, 0], [0, 1, 2], [2, 1, 0]];
 
+  // TODO: Determine better way to fetch these inputs / interact with system w/out getting stack too deep
   function getTargetSetA() public view returns (uint256[] memory) {
     return targetSetA;
   }
@@ -77,6 +77,18 @@ contract FuzzyLogicEngine {
 
   function getTargetSetC() public view returns (uint256[] memory) {
     return targetSetC;
+  }
+
+  function getAmmoSetA() public view returns (uint256[] memory) {
+    return ammoSetA;
+  }
+
+  function getAmmoSetB() public view returns (uint256[] memory) {
+    return ammoSetB;
+  }
+
+  function getAmmoSetC() public view returns (uint256[] memory) {
+    return ammoSetC;
   }
 
   // TODO: Revisit these functions and determine how to structure everything appropriately while maintaining solidity types
