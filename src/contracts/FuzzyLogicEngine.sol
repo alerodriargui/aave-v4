@@ -102,53 +102,44 @@ contract FuzzyLogicEngine {
   function defuzzification(
     uint256[] memory outputSet,
     Construct[] memory variable
-  ) public returns (int256) {
+  ) public pure returns (int256) {
     int256 num = 0;
     int256 den = 0;
-    Construct memory v;
-    uint256[] memory point;
-    int256 h = 0;
-    int256 b = 0;
-    int256 a = 0;
     int256 a1 = 0;
     int256 a2 = 0;
     int256 area = 0;
     int256 y_baricentro = 0;
     int256 x_baricentro = 0;
-    int256 amezzi = 0;
     int256 bmezzi = 0;
     int256 mmezzi = 0;
 
     for (uint256 i = outputSet.length - 1; i >= 0; i--) {
-      v = variable[i];
-      point = v.a;
-      h = int256(outputSet[i]);
-      b = int256(point[3] - point[0]);
-      a1 = int256(point[0]);
-      if (point[0] != point[1]) {
-        a1 += int256(h * 1e18) / v.mUp;
+      a1 = int256(variable[i].a[0]);
+      if (variable[i].a[0] != variable[i].a[1]) {
+        a1 += int256(int256(outputSet[i]) * 1e18) / variable[i].mUp;
       }
-      a2 = int256(point[3]);
-      if (point[2] != point[3]) {
-        a2 -= int256(h * 1e18) / v.mDown;
+      a2 = int256(variable[i].a[3]);
+      if (variable[i].a[2] != variable[i].a[3]) {
+        a2 -= int256(int256(outputSet[i]) * 1e18) / variable[i].mDown;
       }
       area = 0;
-      if (int256(point[0]) != a1) {
-        area += ((a1 - int256(point[0])) * int256(outputSet[i])) / 2;
+      if (int256(variable[i].a[0]) != a1) {
+        area += ((a1 - int256(variable[i].a[0])) * int256(outputSet[i])) / 2;
       }
       if (a1 != a2) {
         area += (a2 - a1) * int256(outputSet[i]);
       }
-      if (a2 != int256(point[3])) {
-        area += ((int256(point[3]) - a2) * int256(outputSet[i])) / 2;
+      if (a2 != int256(variable[i].a[3])) {
+        area += ((int256(variable[i].a[3]) - a2) * int256(outputSet[i])) / 2;
       }
-      a = a2 - a1;
-      y_baricentro = ((h / 3) * (b + 2 * a)) / (a + b);
-      amezzi = a1 + (a2 - a1) / 2;
-      bmezzi = int256(point[0] + (point[3] - point[0]) / 2);
+      y_baricentro =
+        ((int256(outputSet[i]) / 3) *
+          (int256(variable[i].a[3] - variable[i].a[0]) + 2 * (a2 - a1))) /
+        ((a2 - a1) + int256(variable[i].a[3] - variable[i].a[0]));
+      bmezzi = int256(variable[i].a[0] + (variable[i].a[3] - variable[i].a[0]) / 2);
       mmezzi = 0;
-      if (amezzi - bmezzi != 0) {
-        mmezzi = (h * 1e18) / (amezzi - bmezzi);
+      if ((a1 + (a2 - a1) / 2) - bmezzi != 0) {
+        mmezzi = (int256(outputSet[i]) * 1e18) / ((a1 + (a2 - a1) / 2) - bmezzi);
       }
       x_baricentro = bmezzi;
       if (mmezzi != 0) {
