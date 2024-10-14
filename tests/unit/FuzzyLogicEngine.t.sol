@@ -109,5 +109,7 @@ contract FuzzyLogicEngineTest is Test {
 
     // 3x3 Array of constructs corresponds to "variables" object in javascript implementation
     FuzzyLogicEngine.Construct[3][3] memory variables = [[a, b, c], [d, e, f], [g, h, i]];
+
+    int256[3][3] memory fuzzyInput = fle.fuzzification(fle.getCrispInput(), variables);
   }
 }

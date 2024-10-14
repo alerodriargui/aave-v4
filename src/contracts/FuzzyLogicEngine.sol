@@ -21,11 +21,12 @@ contract FuzzyLogicEngine {
   }
 
   int256 public constant INF = type(int256).max;
+  int256 public constant NEG_INF = INF - 1;
 
   // NOTE: Keeping these arrays as uint256 because it makes the input declarations easier
 
   // Define the variables used for input
-  uint256[] crispInput = [150, 10, 10];
+  uint256[3] crispInput = [150, 10, 10];
 
   // Intermediate step to build sets
   uint256[] targetSetA = [0, 0, 25, 150];
@@ -67,6 +68,10 @@ contract FuzzyLogicEngine {
   uint256[][] inferences = [[0, 2, 0], [0, 1, 2], [2, 1, 0]];
 
   // TODO: Determine better way to fetch these inputs / interact with system w/out getting stack too deep
+  function getCrispInput() public view returns (uint256[3] memory) {
+    return crispInput;
+  }
+
   function getTargetSetA() public view returns (uint256[] memory) {
     return targetSetA;
   }
@@ -127,13 +132,12 @@ contract FuzzyLogicEngine {
     }
   }
 
-  // Takes crisp input and variables
   function fuzzification(
-    uint256[] memory crispInput,
-    FuzzyLogicEngine.Construct[][] memory variables
-  ) public pure returns (int256[][] memory) {
-    int256[][] memory value;
-    for (uint256 i = variables.length - 1; i >= 0; i -= 1) {
+    uint256[3] memory crispInput,
+    FuzzyLogicEngine.Construct[3][3] memory variables
+  ) public pure returns (int256[3][3] memory) {
+    int256[3][3] memory value;
+    for (uint256 i = 0; i < variables.length; i++) {
       value[i] = fuzzification_variable(crispInput[i], variables[i]);
     }
 
@@ -142,28 +146,36 @@ contract FuzzyLogicEngine {
 
   function fuzzification_variable(
     uint256 x,
-    FuzzyLogicEngine.Construct[] memory sets
-  ) public pure returns (int256[] memory) {
-    int256[] memory valori;
-    for (uint256 i = sets.length - 1; i >= 0; i -= 1) {
+    FuzzyLogicEngine.Construct[3] memory sets
+  ) public pure returns (int256[3] memory) {
+    int256[3] memory valori;
+    for (uint256 i = 0; i < sets.length; i++) {
       valori[i] = fuzzification_function(x, sets[i]);
     }
 
     return valori;
   }
 
-  // TODO: Appropriately handle infinity
-  // TODO: Ensure math matches - precision, negatives, etc.
   function fuzzification_function(uint256 x, Construct memory set) public pure returns (int256 f) {
     f = 0;
     if (x <= set.a[0]) {
       f = int256(set.firstPoint);
     } else if (x < set.a[1]) {
-      f = set.mUp * int256(x - set.a[0]);
+      if (set.mUp == INF) {
+        f = INF;
+      } else {
+        f = set.mUp * int256(x - set.a[0]);
+      }
     } else if (x <= set.a[2]) {
       f = 1;
     } else if (x < set.a[3]) {
-      f = 1 - set.mDown * int256(x - set.a[2]);
+      if (set.mDown == INF) {
+        f = NEG_INF;
+      } else {
+        f = 1e18 - (set.mDown * int256(x - set.a[2]));
+      }
+    } else if (x >= set.a[3]) {
+      f = int256(set.lastPoint);
     }
   }
 
