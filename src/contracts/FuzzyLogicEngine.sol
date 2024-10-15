@@ -71,6 +71,8 @@ contract FuzzyLogicEngine {
   uint256[] testArrayB = [18];
   uint256[] testArrayC = [1, 2];
 
+  uint256[][] a;
+
   // TODO: Determine better way to fetch these inputs / interact with system w/out getting stack too deep
   function getCrispInput() public view returns (uint256[3] memory) {
     return crispInput;
@@ -203,40 +205,39 @@ contract FuzzyLogicEngine {
     }
   }
 
-  // IDEA: Can try just doing one array at a time, and see if that can work
-  // TODO: Apparently this returns a double array, sizes of 4, 2, 3 - unsure I can do this in solidity types
+  // TODO: Natspec
   // TODO: Input is fuzzy input (result of fuzzification), inferences (our array), and variable output, which is our
-  // Variable struct, but I think we only need the 'sets' from that struct (double array)
+  // Variable struct, but we only need the 'sets' from that struct (double array)
   function outputCombination(
     int256[3][3] memory fuzzyInput,
     uint256[][] memory inferences,
     uint256[][] memory variableOutputSets
-  ) public returns (uint256[][3] memory) {
-    uint256[][3] memory a;
+  ) public returns (uint256[][] memory) {
+    a = [[0], [0], [0]];
 
-    //a[0] = [0];
-    //a[0].push(1);
+    bool firstAddToRow1 = true;
+    bool firstAddToRow2 = true;
+    bool firstAddToRow3 = true;
 
-    //a.push([1, 2, 3]);
-    //a.push([1, 2]);
-
-    // I know that the left array size of a is always going to be variableOutputSets.length
-    // I can make another array that goes through the calculations and determines how big the other arrays should be
-
-    /*
-    for (uint256 k = 0; k < variableOutputSets.length; k++) {
-      a.push(uint256(0));
-    }
-    */
-    /*
-    for (uint256 i = 0; i < inferences.length; i++) {
-      for (uint256 j = 0; j < inferences[i].length; j++) {
-        if (inferences[i][j] >= 0) {
-          a[inferences[i][j]].push(uint256(fuzzyInput[i][j]));
+    for (uint256 i = inferences.length; i >= 1; i--) {
+      for (uint256 j = inferences.length; j >= 1; j--) {
+        if (inferences[i - 1][j - 1] >= 0) {
+          if (inferences[i - 1][j - 1] == 0 && firstAddToRow1) {
+            a[inferences[i - 1][j - 1]] = [uint256(fuzzyInput[i - 1][j - 1])];
+            firstAddToRow1 = false;
+          } else if (inferences[i - 1][j - 1] == 1 && firstAddToRow2) {
+            a[inferences[i - 1][j - 1]] = [uint256(fuzzyInput[i - 1][j - 1])];
+            firstAddToRow2 = false;
+          } else if (inferences[i - 1][j - 1] == 2 && firstAddToRow3) {
+            a[inferences[i - 1][j - 1]] = [uint256(fuzzyInput[i - 1][j - 1])];
+            firstAddToRow3 = false;
+          } else {
+            a[inferences[i - 1][j - 1]].push(uint256(fuzzyInput[i - 1][j - 1]));
+          }
         }
       }
     }
-    */
+
     return a;
   }
 

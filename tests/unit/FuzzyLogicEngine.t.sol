@@ -111,21 +111,11 @@ contract FuzzyLogicEngineTest is Test {
     FuzzyLogicEngine.Construct[3][3] memory variables = [[a, b, c], [d, e, f], [g, h, i]];
 
     int256[3][3] memory fuzzyInput = fle.fuzzification(fle.getCrispInput(), variables);
-    uint256[][3] memory outputCombination = fle.outputCombination(
+
+    uint256[][] memory outputCombination = fle.outputCombination(
       fuzzyInput,
       fle.getInferences(),
       fle.getDesirabilitySets()
     );
-
-    uint256[][3] memory test;
-    test[0] = fle.getOneOutput();
-    test[1] = fle.getTwoOutput();
-    test[2] = fle.getThreeOutput();
-    console2.log(test[2][1]);
-    console2.log(test[2][0]);
-    console2.log(test[0][0]);
-    console2.log(test[0][1]);
-    console2.log(test[0][2]);
-    console2.log(test[1][0]);
   }
 }
