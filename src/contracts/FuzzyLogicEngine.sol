@@ -304,8 +304,8 @@ contract FuzzyLogicEngine {
   }
 
   function takeMaxOfArraySet(uint256[][] memory set) public pure returns (uint256[] memory max) {
-    max = new uint256[](set[0].length);
-    for (uint256 i = 0; i < set[0].length; i++) {
+    max = new uint256[](set.length);
+    for (uint256 i = 0; i < set.length; i++) {
       max[i] = takeMaxOfArray(set[i]);
     }
   }

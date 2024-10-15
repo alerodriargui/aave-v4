@@ -117,5 +117,7 @@ contract FuzzyLogicEngineTest is Test {
       fle.getInferences(),
       fle.getDesirabilitySets()
     );
+
+    uint256[] memory fuzzyOutput = fle.takeMaxOfArraySet(outputCombination);
   }
 }
