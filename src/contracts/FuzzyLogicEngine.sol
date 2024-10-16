@@ -264,13 +264,13 @@ contract FuzzyLogicEngine {
       a1 = int256(variable[i].a[0]);
       if (variable[i].a[0] != variable[i].a[1]) {
         if (variable[i].mUp != INF) {
-          a1 += int256(int256(outputSet[i])) / variable[i].mUp; // If INF, do nothing, since anything divided by INF is 0
+          a1 += int256(int256(outputSet[i])) * (1e18 / variable[i].mUp);
         }
       }
       a2 = int256(variable[i].a[3]);
       if (variable[i].a[2] != variable[i].a[3]) {
         if (variable[i].mDown != INF) {
-          a2 -= int256(int256(outputSet[i])) / variable[i].mDown;
+          a2 -= int256(int256(outputSet[i])) * (1e18 / variable[i].mDown);
         }
       }
       area = 0;

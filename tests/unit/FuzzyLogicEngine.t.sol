@@ -118,23 +118,25 @@ contract FuzzyLogicEngineTest is Test {
       fle.getDesirabilitySets()
     );
 
+    uint256 multfactor = 1e18;
+
     uint256[] memory fuzzyOutput = fle.takeMaxOfArraySet(outputCombination);
     for (uint256 i = 0; i < fuzzyOutput.length; i++) {
-      fuzzyOutput[i] *= 1e18;
+      fuzzyOutput[i] *= multfactor;
     }
 
     // Create array of variables for desirability (output) sets
     FuzzyLogicEngine.Construct memory j = fle.constructVariableSingular(fle.getDesirabilitySetA());
     for (uint256 i = 0; i < j.a.length; i++) {
-      j.a[i] *= 1e18;
+      j.a[i] *= multfactor;
     }
     FuzzyLogicEngine.Construct memory k = fle.constructVariableSingular(fle.getDesirabilitySetB());
     for (uint256 i = 0; i < k.a.length; i++) {
-      k.a[i] *= 1e18;
+      k.a[i] *= multfactor;
     }
     FuzzyLogicEngine.Construct memory l = fle.constructVariableSingular(fle.getDesirabilitySetC());
     for (uint256 i = 0; i < l.a.length; i++) {
-      l.a[i] *= 1e18;
+      l.a[i] *= multfactor;
     }
     FuzzyLogicEngine.Construct[3] memory variableOutput = [j, k, l];
 
