@@ -119,5 +119,14 @@ contract FuzzyLogicEngineTest is Test {
     );
 
     uint256[] memory fuzzyOutput = fle.takeMaxOfArraySet(outputCombination);
+
+    // Create array of variables for desirability (output) sets
+    FuzzyLogicEngine.Construct memory j = fle.constructVariableSingular(fle.getDesirabilitySetA());
+    FuzzyLogicEngine.Construct memory k = fle.constructVariableSingular(fle.getDesirabilitySetB());
+    FuzzyLogicEngine.Construct memory l = fle.constructVariableSingular(fle.getDesirabilitySetC());
+    FuzzyLogicEngine.Construct[3] memory variableOutput = [j, k, l];
+
+    // Compute final result
+    //int256 crispOutput = fle.defuzzification(fuzzyOutput, variableOutput);
   }
 }

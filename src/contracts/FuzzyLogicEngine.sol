@@ -67,10 +67,6 @@ contract FuzzyLogicEngine {
 
   uint256[][] inferences = [[0, 2, 0], [0, 1, 2], [2, 1, 0]];
 
-  uint256[] testArrayA = [4, 5, 6];
-  uint256[] testArrayB = [18];
-  uint256[] testArrayC = [1, 2];
-
   uint256[][] a;
 
   // TODO: Determine better way to fetch these inputs / interact with system w/out getting stack too deep
@@ -122,16 +118,16 @@ contract FuzzyLogicEngine {
     return desirabilitySets;
   }
 
-  function getOneOutput() public view returns (uint256[] memory) {
-    return testArrayA;
+  function getDesirabilitySetA() public view returns (uint256[] memory) {
+    return desirabilitySetA;
   }
 
-  function getTwoOutput() public view returns (uint256[] memory) {
-    return testArrayB;
+  function getDesirabilitySetB() public view returns (uint256[] memory) {
+    return desirabilitySetB;
   }
 
-  function getThreeOutput() public view returns (uint256[] memory) {
-    return testArrayC;
+  function getDesirabilitySetC() public view returns (uint256[] memory) {
+    return desirabilitySetC;
   }
 
   // TODO: Natspec
@@ -251,7 +247,7 @@ contract FuzzyLogicEngine {
   // Might lead to incorrect results, so double check the math there
   function defuzzification(
     uint256[] memory outputSet,
-    Construct[] memory variable
+    Construct[3] memory variable
   ) public pure returns (int256) {
     int256 num = 0;
     int256 den = 0;
