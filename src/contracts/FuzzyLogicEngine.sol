@@ -291,14 +291,19 @@ contract FuzzyLogicEngine {
         (
           (((int256(outputSet[i])) / 3) *
             (int256(variable[i].a[3] - variable[i].a[0]) + 2 * (a2 - a1)))
-        ) / // Revisit extra multiplication
+        ) /
         ((a2 - a1) + int256(variable[i].a[3] - variable[i].a[0]));
-      bmezzi = int256(variable[i].a[0] + ((variable[i].a[3] - variable[i].a[0])) / 2); // Revisit extra multiplication
+      // (DONE) y_baricentro computation values checked for correctness - just 2 digits off
+
+      bmezzi = int256(variable[i].a[0] + ((variable[i].a[3] - variable[i].a[0])) / 2);
+      // (DONE) bmezzi computation values checked for correctness
+
       mmezzi = 0;
-      if ((((a1 + (a2 - a1))) / 2) - bmezzi != 0) {
-        // Revisit extra multiplication
-        mmezzi = (int256(outputSet[i])) / ((((a1 + (a2 - a1))) / 2) - bmezzi);
+      if ((a1 + ((a2 - a1) / 2)) - bmezzi != 0) {
+        mmezzi = int256(outputSet[i] * 1e18) / ((a1 + ((a2 - a1) / 2)) - bmezzi);
       }
+      // (DONE) mmezzi computation values checked for correctness
+
       x_baricentro = bmezzi;
       if (mmezzi != 0) {
         x_baricentro += (y_baricentro) / mmezzi;
