@@ -293,7 +293,7 @@ contract FuzzyLogicEngine {
             (int256(variable[i].a[3] - variable[i].a[0]) + 2 * (a2 - a1)))
         ) /
         ((a2 - a1) + int256(variable[i].a[3] - variable[i].a[0]));
-      // (DONE) y_baricentro computation values checked for correctness - just 2 digits off
+      // (DONE) y_baricentro computation values checked for correctness - just 2 digits off - can revisit
 
       bmezzi = int256(variable[i].a[0] + ((variable[i].a[3] - variable[i].a[0])) / 2);
       // (DONE) bmezzi computation values checked for correctness
@@ -306,8 +306,10 @@ contract FuzzyLogicEngine {
 
       x_baricentro = bmezzi;
       if (mmezzi != 0) {
-        x_baricentro += (y_baricentro) / mmezzi;
+        x_baricentro += (y_baricentro) * (1e18 / mmezzi);
       }
+      // (DONE) x_baricentro computation values checked for correctness - off by like .2 - due to y_baricentro
+
       num += area * x_baricentro;
       den += area;
     }
