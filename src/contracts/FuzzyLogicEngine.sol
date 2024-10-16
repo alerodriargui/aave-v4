@@ -273,16 +273,20 @@ contract FuzzyLogicEngine {
           a2 -= int256(int256(outputSet[i])) * (1e18 / variable[i].mDown);
         }
       }
+      // (DONE) a1, a2 computation values checked for correctness
+
       area = 0;
       if (int256(variable[i].a[0]) != a1) {
-        area += (((a1 - int256(variable[i].a[0])) * int256(outputSet[i]))) / 2; // Revisit extra multiplication
+        area += (((a1 - int256(variable[i].a[0])) * int256(outputSet[i]))) / (2 * 1e18);
       }
       if (a1 != a2) {
-        area += (a2 - a1) * int256(outputSet[i]);
+        area += ((a2 - a1) * int256(outputSet[i])) / 1e18;
       }
       if (a2 != int256(variable[i].a[3])) {
-        area += (((int256(variable[i].a[3]) - a2) * int256(outputSet[i]))) / 2; // Revisit extra multiplication
+        area += (((int256(variable[i].a[3]) - a2) * int256(outputSet[i]))) / (2 * 1e18);
       }
+      // (DONE) area computation values checked for correctness
+
       y_baricentro =
         (
           (((int256(outputSet[i])) / 3) *
