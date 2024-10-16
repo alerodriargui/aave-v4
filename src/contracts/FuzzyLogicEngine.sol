@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// TODO: Look at the relationship between the ui inputs and our calculations
+// TODO: Revisit: Multiplying infinity by 0 is NaN in javascript, so I guess that case is made sure not to happen?
 // TODO: Appropriately handle infinity
 // TODO: Try and simplify types where possible e.g. deciding on uint265 vs int256
 // TODO: Write the input as in javascript while debugging for comparison
@@ -237,7 +239,6 @@ contract FuzzyLogicEngine {
     return a;
   }
 
-  // TODO: Appropriately handle infinity
   // TODO: Ensure the added multiples for math don't interrupt the math itself
   // TODO: Implement
   // Concern is that it takes multiple inputs, so need to handle carefully
@@ -259,44 +260,50 @@ contract FuzzyLogicEngine {
     int256 bmezzi = 0;
     int256 mmezzi = 0;
 
-    for (uint256 i = outputSet.length - 1; i >= 0; i--) {
+    for (uint256 i = 0; i < outputSet.length; i++) {
       a1 = int256(variable[i].a[0]);
       if (variable[i].a[0] != variable[i].a[1]) {
-        a1 += int256(int256(outputSet[i]) * 1e18) / variable[i].mUp; // Anything divided by inf is 0
+        if (variable[i].mUp != INF) {
+          a1 += int256(int256(outputSet[i])) / variable[i].mUp; // If INF, do nothing, since anything divided by INF is 0
+        }
       }
       a2 = int256(variable[i].a[3]);
       if (variable[i].a[2] != variable[i].a[3]) {
-        a2 -= int256(int256(outputSet[i]) * 1e18) / variable[i].mDown; // Anything divided by inf is 0
+        if (variable[i].mDown != INF) {
+          a2 -= int256(int256(outputSet[i])) / variable[i].mDown;
+        }
       }
       area = 0;
       if (int256(variable[i].a[0]) != a1) {
-        area += (((a1 - int256(variable[i].a[0])) * int256(outputSet[i])) * 1e18) / 2; // Revisit extra multiplication
+        area += (((a1 - int256(variable[i].a[0])) * int256(outputSet[i]))) / 2; // Revisit extra multiplication
       }
       if (a1 != a2) {
         area += (a2 - a1) * int256(outputSet[i]);
       }
       if (a2 != int256(variable[i].a[3])) {
-        area += (((int256(variable[i].a[3]) - a2) * int256(outputSet[i])) * 1e18) / 2; // Revisit extra multiplication
+        area += (((int256(variable[i].a[3]) - a2) * int256(outputSet[i]))) / 2; // Revisit extra multiplication
       }
       y_baricentro =
-        ((((int256(outputSet[i]) * 1e18) / 3) *
-          (int256(variable[i].a[3] - variable[i].a[0]) + 2 * (a2 - a1))) * 1e18) / // Revisit extra multiplication
+        (
+          (((int256(outputSet[i])) / 3) *
+            (int256(variable[i].a[3] - variable[i].a[0]) + 2 * (a2 - a1)))
+        ) / // Revisit extra multiplication
         ((a2 - a1) + int256(variable[i].a[3] - variable[i].a[0]));
-      bmezzi = int256(variable[i].a[0] + ((variable[i].a[3] - variable[i].a[0]) * 1e18) / 2); // Revisit extra multiplication
+      bmezzi = int256(variable[i].a[0] + ((variable[i].a[3] - variable[i].a[0])) / 2); // Revisit extra multiplication
       mmezzi = 0;
-      if ((((a1 + (a2 - a1)) * 1e18) / 2) - bmezzi != 0) {
+      if ((((a1 + (a2 - a1))) / 2) - bmezzi != 0) {
         // Revisit extra multiplication
-        mmezzi = (int256(outputSet[i]) * 1e18) / ((((a1 + (a2 - a1)) * 1e18) / 2) - bmezzi);
+        mmezzi = (int256(outputSet[i])) / ((((a1 + (a2 - a1))) / 2) - bmezzi);
       }
       x_baricentro = bmezzi;
       if (mmezzi != 0) {
-        x_baricentro += (y_baricentro * 1e18) / mmezzi;
+        x_baricentro += (y_baricentro) / mmezzi;
       }
       num += area * x_baricentro;
       den += area;
     }
 
-    return den == 0 ? int256(0) : int256((num * 1e18) / den);
+    return den == 0 ? int256(0) : int256((num) / den);
   }
 
   function takeMaxOfArraySet(uint256[][] memory set) public pure returns (uint256[] memory max) {
