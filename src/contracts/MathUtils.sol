@@ -106,8 +106,6 @@ library MathUtils {
    * @return newWeightedSum The weighted sum after operation
    * @return newSumWeights The sum of weights after operation, cannot be less than 0
    * @return weightedAvg The weighted average after the operation
-   * @dev Reverts when zero weightedValue (newValue * newValueWeight) is being added to
-   * zero currentWeightedSum
    */
   function addToWeightedAverage(
     uint256 currentWeightedSum,
@@ -118,6 +116,9 @@ library MathUtils {
     // newWeightedSum, newSumWeights, weightedAvg
     if (currentSumWeights == 0) {
       return (newValue * newValueWeight, newValueWeight, newValue);
+    }
+    if (newValueWeight == 0) {
+      return (currentWeightedSum, currentSumWeights, currentWeightedSum / currentSumWeights);
     }
 
     uint256 newSumWeights = currentSumWeights + newValueWeight;
@@ -146,6 +147,9 @@ library MathUtils {
     uint256 newValueWeight
   ) internal view returns (uint256, uint256, uint256) {
     // newWeightedSum, newSumWeights, weightedAvg
+    if (newValueWeight == 0) {
+      return (currentWeightedSum, currentSumWeights, currentWeightedSum / currentSumWeights);
+    }
     if (currentSumWeights == newValueWeight) return (0, 0, 0);
     if (currentSumWeights < newValueWeight) revert();
     if (currentWeightedSum < newValue * newValueWeight) revert();
