@@ -114,12 +114,12 @@ library MathUtils {
   ) internal pure returns (uint256, uint256) {
     // newWeightedAvgRad, newSumWeights
 
+    if (newValueWeight == 0) {
+      return (currentWeightedAvgRad, currentSumWeights);
+    }
     // this is the first time we add, rayify new average
     if (currentSumWeights == 0) {
       return (newValue.toRad(), newValueWeight);
-    }
-    if (newValueWeight == 0) {
-      return (currentWeightedAvgRad, currentSumWeights);
     }
 
     uint256 newSumWeights = currentSumWeights + newValueWeight;
