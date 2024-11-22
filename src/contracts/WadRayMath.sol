@@ -123,4 +123,35 @@ library WadRayMath {
       }
     }
   }
+
+  /**
+   * @dev Converts number to Ray
+   * @param a The number to convert
+   * @return b in Ray (b = a * 1e27)
+   */
+  function toRay(uint256 a) internal pure returns (uint256 b) {
+    // to avoid overflow, b/RAY == a
+    assembly {
+      b := mul(a, RAY)
+
+      if iszero(eq(div(b, RAY), a)) {
+        revert(0, 0)
+      }
+    }
+  }
+
+  /**
+   * @dev Truncates number from Ray, losing denominator precision
+   * @param a The number in Ray
+   * @return b (= a / 1e27, rounded up)
+   */
+  function fromRay(uint256 a) internal pure returns (uint256 b) {
+    assembly {
+      b := div(a, RAY)
+      let remainder := mod(a, RAY)
+      if iszero(lt(remainder, div(RAY, 2))) {
+        b := add(b, 1)
+      }
+    }
+  }
 }

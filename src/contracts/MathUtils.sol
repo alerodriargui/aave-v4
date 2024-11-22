@@ -99,64 +99,69 @@ library MathUtils {
 
   /**
    * @notice Calculates the new weighted average given a current weighted average, the sum of the weights subtracted with a new value, weight
-   * @param currentWeightedSum The base weighted sum
+   * @param currentWeightedAvgRay The base weighted average (in Ray)
    * @param currentSumWeights The base sum of weights
    * @param newValue The new value to add or subtract
    * @param newValueWeight The weight of the new value
-   * @return newWeightedSum The weighted sum after operation
+   * @return newWeightedAvgRay The weighted average after the operation (in Ray)
    * @return newSumWeights The sum of weights after operation, cannot be less than 0
-   * @return weightedAvg The weighted average after the operation
    */
   function addToWeightedAverage(
-    uint256 currentWeightedSum,
+    uint256 currentWeightedAvgRay,
     uint256 currentSumWeights,
     uint256 newValue,
     uint256 newValueWeight
-  ) internal view returns (uint256, uint256, uint256) {
-    // newWeightedSum, newSumWeights, weightedAvg
+  ) internal pure returns (uint256, uint256) {
+    // newWeightedAvgRay, newSumWeights
+
+    // this is the first time we add, rayify new average
     if (currentSumWeights == 0) {
-      return (newValue * newValueWeight, newValueWeight, newValue);
+      return (newValue.toRay(), newValueWeight);
     }
     if (newValueWeight == 0) {
-      return (currentWeightedSum, currentSumWeights, currentWeightedSum / currentSumWeights);
+      return (currentWeightedAvgRay, currentSumWeights);
     }
 
     uint256 newSumWeights = currentSumWeights + newValueWeight;
-    uint256 newWeightedSum = currentWeightedSum + newValue * newValueWeight;
+    uint256 newWeightedAvgRay = (currentWeightedAvgRay *
+      currentSumWeights +
+      (newValue * newValueWeight).toRay()) / newSumWeights; // newSumWeights cannot be zero when execution reaches here
 
-    // newSumWeights can never zero because currentSumWeights is non zero when execution reaches here
-    return (newWeightedSum, newSumWeights, newWeightedSum / newSumWeights);
+    return (newWeightedAvgRay, newSumWeights);
   }
 
   /**
    * @notice Calculates the new weighted average given a current weighted average, the sum of the weights added with a new value, weight
-   * @param currentWeightedSum The base weighted sum
+   * @param currentWeightedAvgRay The base weighted average (in Ray)
    * @param currentSumWeights The base sum of weights
    * @param newValue The new value to add or subtract
    * @param newValueWeight The weight of the new value
-   * @return newWeightedSum The weighted sum after operation
+   * @return newWeightedAvgRay The weighted average after the operation (in Ray)
    * @return newSumWeights The sum of weights after operation, cannot be less than 0
-   * @return weightedAvg The weighted average after the operation
    * @dev Reverts when newValueWeight is greater than currentSumWeights
-   * @dev Reverts when the newWeightedValue (weight * value) is greater than currentWeightedSum
+   * @dev Reverts when the newWeightedValue (weight * value) is greater than currentWeightedSum (currentSumWeights * currentWeightedAvg)
    */
   function subtractFromWeightedAverage(
-    uint256 currentWeightedSum,
+    uint256 currentWeightedAvgRay,
     uint256 currentSumWeights,
     uint256 newValue,
     uint256 newValueWeight
-  ) internal view returns (uint256, uint256, uint256) {
-    // newWeightedSum, newSumWeights, weightedAvg
+  ) internal pure returns (uint256, uint256) {
+    // newWeightedAvgRay, newSumWeights
     if (newValueWeight == 0) {
-      return (currentWeightedSum, currentSumWeights, currentWeightedSum / currentSumWeights);
+      return (currentWeightedAvgRay, currentSumWeights);
     }
-    if (currentSumWeights == newValueWeight) return (0, 0, 0);
+    if (currentSumWeights == newValueWeight) return (0, 0); // no change
     if (currentSumWeights < newValueWeight) revert();
-    if (currentWeightedSum < newValue * newValueWeight) revert();
+
+    uint256 newWeightedValueRay = (newValue * newValueWeight).toRay();
+    uint256 currentWeightedSumRay = currentWeightedAvgRay * currentSumWeights;
+
+    if (currentWeightedSumRay < newWeightedValueRay) revert();
 
     uint256 newSumWeights = currentSumWeights - newValueWeight;
-    uint256 newWeightedSum = currentWeightedSum - newValue * newValueWeight;
+    uint256 newWeightedAvgRay = (currentWeightedSumRay - newWeightedValueRay) / newSumWeights;
 
-    return (newWeightedSum, newSumWeights, newWeightedSum / newSumWeights);
+    return (newWeightedAvgRay, newSumWeights);
   }
 }

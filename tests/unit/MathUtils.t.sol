@@ -4,13 +4,14 @@ pragma solidity ^0.8.0;
 import '../BaseTest.t.sol';
 
 contract MathUtilsTest is BaseTest {
+  using WadRayMath for uint256;
+
   /// forge-config: default.fuzz.runs = 10000
   function testFuzzNewWeightedAverageAdd(uint256[] memory numbers) public {
     vm.assume(numbers.length > 0);
 
-    uint256 currentWeightedSum;
     uint256 currentSumWeights;
-    uint256 currentWeightedAvg;
+    uint256 currentWeightedAvgRay;
 
     uint256 calcWeightedAvg;
     uint256 calcSumWeights;
@@ -25,8 +26,8 @@ contract MathUtilsTest is BaseTest {
       calcWeightedAvg += number * weight;
       calcSumWeights += weight;
 
-      (currentWeightedSum, currentSumWeights, currentWeightedAvg) = MathUtils.addToWeightedAverage(
-        currentWeightedSum,
+      (currentWeightedAvgRay, currentSumWeights) = MathUtils.addToWeightedAverage(
+        currentWeightedAvgRay,
         currentSumWeights,
         number,
         weight
@@ -36,7 +37,7 @@ contract MathUtilsTest is BaseTest {
       calcWeightedAvg /= calcSumWeights;
     }
 
-    assertEq(currentWeightedAvg, calcWeightedAvg);
+    assertApproxEqAbs(currentWeightedAvgRay.fromRay(), calcWeightedAvg, 1);
     assertEq(currentSumWeights, calcSumWeights);
   }
 
@@ -45,9 +46,8 @@ contract MathUtilsTest is BaseTest {
     vm.assume(numbers.length > 1);
     toRemoveIdx = bound(toRemoveIdx, 0, numbers.length - 1);
 
-    uint256 currentWeightedSum;
     uint256 currentSumWeights;
-    uint256 currentWeightedAvg;
+    uint256 currentWeightedAvgRay;
 
     uint256 calcWeightedAvg;
     uint256 calcSumWeights;
@@ -64,8 +64,8 @@ contract MathUtilsTest is BaseTest {
         calcSumWeights += weight;
       }
 
-      (currentWeightedSum, currentSumWeights, ) = MathUtils.addToWeightedAverage(
-        currentWeightedSum,
+      (currentWeightedAvgRay, currentSumWeights) = MathUtils.addToWeightedAverage(
+        currentWeightedAvgRay,
         currentSumWeights,
         number,
         weight
@@ -79,23 +79,23 @@ contract MathUtilsTest is BaseTest {
     uint256 newValue = numbers[toRemoveIdx] % type(uint128).max;
     uint256 newValueWeight = numbers[toRemoveIdx] % 100_00;
 
-    if (currentWeightedSum < newValue * newValueWeight) {
+    if (currentWeightedAvgRay * currentSumWeights < (newValue * newValueWeight).toRay()) {
       vm.expectRevert();
       MathUtils.subtractFromWeightedAverage(
-        currentWeightedSum,
+        currentWeightedAvgRay,
         currentSumWeights,
         newValue,
         newValueWeight
       );
     } else {
-      (, currentSumWeights, currentWeightedAvg) = MathUtils.subtractFromWeightedAverage(
-        currentWeightedSum,
+      (currentWeightedAvgRay, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
+        currentWeightedAvgRay,
         currentSumWeights,
         newValue,
         newValueWeight
       );
 
-      assertEq(currentWeightedAvg, calcWeightedAvg);
+      assertApproxEqAbs(currentWeightedAvgRay.fromRay(), calcWeightedAvg, 1);
       assertEq(currentSumWeights, calcSumWeights);
     }
   }
