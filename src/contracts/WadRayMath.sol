@@ -11,6 +11,9 @@ pragma solidity ^0.8.0;
  */
 library WadRayMath {
   // HALF_WAD and HALF_RAY expressed with extended notation as constant with operations are not supported in Yul assembly
+  uint256 internal constant RAD = 1e8;
+  uint256 internal constant HALF_RAD = 0.5e8;
+
   uint256 internal constant WAD = 1e18;
   uint256 internal constant HALF_WAD = 0.5e18;
 
@@ -18,8 +21,7 @@ library WadRayMath {
   uint256 internal constant HALF_RAY = 0.5e27;
 
   uint256 internal constant WAD_RAY_RATIO = 1e9;
-
-  uint256 internal constant RAD = 1e8;
+  uint256 internal constant RAD_RAY_RATIO = 1e19;
 
   /**
    * @dev Multiplies two wad, rounding half up to the nearest wad
@@ -121,6 +123,39 @@ library WadRayMath {
       b := mul(a, WAD_RAY_RATIO)
 
       if iszero(eq(div(b, WAD_RAY_RATIO), a)) {
+        revert(0, 0)
+      }
+    }
+  }
+
+  /**
+   * @dev Casts ray down to rad
+   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
+   * @param a Ray
+   * @return b = a converted to rad, rounded half up to the nearest rad
+   */
+  function rayToRad(uint256 a) internal pure returns (uint256 b) {
+    assembly {
+      b := div(a, RAD_RAY_RATIO)
+      let remainder := mod(a, RAD_RAY_RATIO)
+      if iszero(lt(remainder, div(RAD_RAY_RATIO, 2))) {
+        b := add(b, 1)
+      }
+    }
+  }
+
+  /**
+   * @dev Converts rad up to ray
+   * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
+   * @param a Rad
+   * @return b = a converted in ray
+   */
+  function radToRay(uint256 a) internal pure returns (uint256 b) {
+    // to avoid overflow, b/RAD_RAY_RATIO == a
+    assembly {
+      b := mul(a, RAD_RAY_RATIO)
+
+      if iszero(eq(div(b, RAD_RAY_RATIO), a)) {
         revert(0, 0)
       }
     }
