@@ -11,7 +11,7 @@ contract MathUtilsTest is BaseTest {
     vm.assume(numbers.length > 0);
 
     uint256 currentSumWeights;
-    uint256 currentWeightedAvgRay;
+    uint256 currentWeightedAvgRad;
 
     uint256 calcWeightedAvg;
     uint256 calcSumWeights;
@@ -26,8 +26,8 @@ contract MathUtilsTest is BaseTest {
       calcWeightedAvg += number * weight;
       calcSumWeights += weight;
 
-      (currentWeightedAvgRay, currentSumWeights) = MathUtils.addToWeightedAverage(
-        currentWeightedAvgRay,
+      (currentWeightedAvgRad, currentSumWeights) = MathUtils.addToWeightedAverage(
+        currentWeightedAvgRad,
         currentSumWeights,
         number,
         weight
@@ -37,7 +37,7 @@ contract MathUtilsTest is BaseTest {
       calcWeightedAvg /= calcSumWeights;
     }
 
-    assertApproxEqAbs(currentWeightedAvgRay.fromRay(), calcWeightedAvg, 1);
+    assertApproxEqAbs(currentWeightedAvgRad.fromRad(), calcWeightedAvg, 1);
     assertEq(currentSumWeights, calcSumWeights);
   }
 
@@ -47,7 +47,7 @@ contract MathUtilsTest is BaseTest {
     toRemoveIdx = bound(toRemoveIdx, 0, numbers.length - 1);
 
     uint256 currentSumWeights;
-    uint256 currentWeightedAvgRay;
+    uint256 currentWeightedAvgRad;
 
     uint256 calcWeightedAvg;
     uint256 calcSumWeights;
@@ -64,8 +64,8 @@ contract MathUtilsTest is BaseTest {
         calcSumWeights += weight;
       }
 
-      (currentWeightedAvgRay, currentSumWeights) = MathUtils.addToWeightedAverage(
-        currentWeightedAvgRay,
+      (currentWeightedAvgRad, currentSumWeights) = MathUtils.addToWeightedAverage(
+        currentWeightedAvgRad,
         currentSumWeights,
         number,
         weight
@@ -79,23 +79,23 @@ contract MathUtilsTest is BaseTest {
     uint256 newValue = numbers[toRemoveIdx] % type(uint128).max;
     uint256 newValueWeight = numbers[toRemoveIdx] % 100_00;
 
-    if (currentWeightedAvgRay * currentSumWeights < (newValue * newValueWeight).toRay()) {
+    if (currentWeightedAvgRad * currentSumWeights < (newValue * newValueWeight).toRad()) {
       vm.expectRevert();
       MathUtils.subtractFromWeightedAverage(
-        currentWeightedAvgRay,
+        currentWeightedAvgRad,
         currentSumWeights,
         newValue,
         newValueWeight
       );
     } else {
-      (currentWeightedAvgRay, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
-        currentWeightedAvgRay,
+      (currentWeightedAvgRad, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
+        currentWeightedAvgRad,
         currentSumWeights,
         newValue,
         newValueWeight
       );
 
-      assertApproxEqAbs(currentWeightedAvgRay.fromRay(), calcWeightedAvg, 1);
+      assertApproxEqAbs(currentWeightedAvgRad.fromRad(), calcWeightedAvg, 1);
       assertEq(currentSumWeights, calcSumWeights);
     }
   }
