@@ -19,6 +19,8 @@ library WadRayMath {
 
   uint256 internal constant WAD_RAY_RATIO = 1e9;
 
+  uint256 internal constant RAD = 1e8;
+
   /**
    * @dev Multiplies two wad, rounding half up to the nearest wad
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328
@@ -125,31 +127,31 @@ library WadRayMath {
   }
 
   /**
-   * @dev Converts number to Ray
+   * @dev Converts number to Rad (8-decimal fixed point units)
    * @param a The number to convert
-   * @return b in Ray (b = a * 1e27)
+   * @return b in Ray (b = a * 1e8)
    */
-  function toRay(uint256 a) internal pure returns (uint256 b) {
-    // to avoid overflow, b/RAY == a
+  function toRad(uint256 a) internal pure returns (uint256 b) {
+    // to avoid overflow, b/RAD == a
     assembly {
-      b := mul(a, RAY)
+      b := mul(a, RAD)
 
-      if iszero(eq(div(b, RAY), a)) {
+      if iszero(eq(div(b, RAD), a)) {
         revert(0, 0)
       }
     }
   }
 
   /**
-   * @dev Truncates number from Ray, losing denominator precision
-   * @param a The number in Ray
-   * @return b (= a / 1e27, rounded up)
+   * @dev Truncates number from Rad, loosing denominator precision
+   * @param a The number in Rad
+   * @return b (= a / 1e8, rounded up if remainder is >= 0.5 RAD)
    */
-  function fromRay(uint256 a) internal pure returns (uint256 b) {
+  function fromRad(uint256 a) internal pure returns (uint256 b) {
     assembly {
-      b := div(a, RAY)
-      let remainder := mod(a, RAY)
-      if iszero(lt(remainder, div(RAY, 2))) {
+      b := div(a, RAD)
+      let remainder := mod(a, RAD)
+      if iszero(lt(remainder, div(RAD, 2))) {
         b := add(b, 1)
       }
     }
