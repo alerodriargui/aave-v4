@@ -117,7 +117,7 @@ library MathUtils {
     if (newValueWeight == 0) {
       return (currentWeightedAvgRad, currentSumWeights);
     }
-    // this is the first time we add, rayify new average
+    // this is the first time we add, radify new average
     if (currentSumWeights == 0) {
       return (newValue.toRad(), newValueWeight);
     }
@@ -148,19 +148,18 @@ library MathUtils {
     uint256 newValueWeight
   ) internal pure returns (uint256, uint256) {
     // newWeightedAvgRad, newSumWeights
-    if (newValueWeight == 0) {
-      return (currentWeightedAvgRad, currentSumWeights);
-    }
+    if (newValueWeight == 0) return (currentWeightedAvgRad, currentSumWeights);
+
     if (currentSumWeights == newValueWeight) return (0, 0); // no change
     if (currentSumWeights < newValueWeight) revert();
 
-    uint256 newWeightedValueRay = (newValue * newValueWeight).toRad();
-    uint256 currentWeightedSumRay = currentWeightedAvgRad * currentSumWeights;
+    uint256 newWeightedValueRad = (newValue * newValueWeight).toRad();
+    uint256 currentWeightedSumRad = currentWeightedAvgRad * currentSumWeights;
 
-    if (currentWeightedSumRay < newWeightedValueRay) revert();
+    if (currentWeightedSumRad < newWeightedValueRad) revert();
 
     uint256 newSumWeights = currentSumWeights - newValueWeight;
-    uint256 newWeightedAvgRad = (currentWeightedSumRay - newWeightedValueRay) / newSumWeights;
+    uint256 newWeightedAvgRad = (currentWeightedSumRad - newWeightedValueRad) / newSumWeights;
 
     return (newWeightedAvgRad, newSumWeights);
   }

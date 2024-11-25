@@ -11,6 +11,7 @@ pragma solidity ^0.8.0;
  */
 library WadRayMath {
   // HALF_WAD and HALF_RAY expressed with extended notation as constant with operations are not supported in Yul assembly
+  // todo: fix naming for 8 decimal fixed math, RAD is 45
   uint256 internal constant RAD = 1e8;
   uint256 internal constant HALF_RAD = 0.5e8;
 
