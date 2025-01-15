@@ -1,0 +1,37 @@
+{
+  "title": "Pool: Deposit",
+  "description": "Test cases for the deposit function.",
+  "story": [
+    {
+      "description": "User 0 Deposits 14760.147 DAI in an empty reserve",
+      "actions": [
+        {
+          "name": "mint",
+          "args": [
+            "DAI",
+            "14760.147"
+          ],
+          "userId": 0,
+          "expected": "success"
+        },
+        {
+          "name": "approve",
+          "args": [
+            "DAI"
+          ],
+          "userId": 0,
+          "expected": "success"
+        },
+        {
+          "name": "deposit",
+          "args": [
+            "DAI",
+            "14760.147"
+          ],
+          "userId": 0,
+          "expected": "success"
+        }
+      ]
+    }
+  ]
+}
