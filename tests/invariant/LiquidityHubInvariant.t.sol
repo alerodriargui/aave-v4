@@ -3,10 +3,9 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
 import 'forge-std/StdInvariant.sol';
-import 'forge-std/StdCheats.sol';
 import './LiquidityHubHandler.t.sol';
 
-import 'src/contracts/LiquidityHub.sol';
+import {LiquidityHub} from 'src/contracts/LiquidityHub.sol';
 
 contract LiquidityHubInvariant is StdInvariant, Test {
   LiquidityHubHandler hubHandler;
@@ -28,14 +27,12 @@ contract LiquidityHubInvariant is StdInvariant, Test {
   function skip_invariant_reserveTotalAssets() public {
     // TODO: manage asset listed multiple times
     // TODO: manage interest
-    LiquidityHub.Asset memory reserveData;
-    address asset;
-    for (uint256 i = 0; i < hub.assetCount(); i++) {
-      reserveData = hub.getAsset(i);
-      asset = hub.assetsList(i);
+    for (uint256 i; i < hub.assetCount(); ++i) {
+      Asset memory reserveData = hub.getAsset(i);
+      IERC20 asset = hub.assetsList(i);
       assertEq(
-        reserveData.totalAssets,
-        IERC20(asset).balanceOf(address(hub)) - hubHandler.getAssetDonated(asset),
+        hub.getTotalAssets(reserveData.id),
+        asset.balanceOf(address(hub)) - hubHandler.getAssetDonated(address(asset)),
         'wrong total assets'
       );
     }
@@ -44,13 +41,11 @@ contract LiquidityHubInvariant is StdInvariant, Test {
   /// @dev Exchange rate must be monotonically increasing
   function skip_invariant_exchangeRateMonotonicallyIncreasing() public {
     // TODO this can be improved with borrows OR changes in borrowRate
-    LiquidityHub.Asset memory reserveData;
-    uint256 calcExchangeRate;
     for (uint256 id = 0; id < hub.assetCount(); id++) {
-      reserveData = hub.getAsset(id);
-      calcExchangeRate = reserveData.totalShares == 0
+      Asset memory reserveData = hub.getAsset(id);
+      uint256 calcExchangeRate = reserveData.suppliedShares == 0
         ? 0
-        : reserveData.totalAssets / reserveData.totalShares;
+        : hub.getTotalAssets(reserveData.id) / reserveData.suppliedShares;
 
       assertTrue(hubHandler.getLastExchangeRate(id) <= calcExchangeRate, 'supply index decrease');
     }

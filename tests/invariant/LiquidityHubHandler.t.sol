@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'forge-std/Test.sol';
+import {Test} from 'forge-std/Test.sol';
 
-import 'src/contracts/LiquidityHub.sol';
-import 'src/contracts/Spoke.sol';
-import 'src/dependencies/openzeppelin/IERC20.sol';
+import {LiquidityHub, Asset} from 'src/contracts/LiquidityHub.sol';
+import {Spoke} from 'src/contracts/Spoke.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import '../mocks/MockPriceOracle.sol';
 import '../mocks/MockERC20.sol';
 import '../Utils.t.sol';
@@ -75,9 +75,9 @@ contract LiquidityHubHandler is Test {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    address asset = hub.assetsList(assetId);
-    deal(asset, user, amount);
-    Utils.supply(vm, hub, assetId, user, amount, onBehalfOf);
+    IERC20 asset = hub.assetsList(assetId);
+    deal(address(asset), user, amount);
+    Utils.supply(vm, hub, assetId, user, amount, user, onBehalfOf);
 
     _updateState(assetId);
     s.reserveSupplied[assetId] += amount;
@@ -101,19 +101,20 @@ contract LiquidityHubHandler is Test {
     assetId = bound(assetId, 0, hub.assetCount() - 1);
     amount = bound(amount, 1, type(uint128).max);
 
-    address asset = hub.assetsList(assetId);
+    IERC20 asset = hub.assetsList(assetId);
 
-    deal(asset, user, amount);
+    deal(address(asset), user, amount);
     vm.prank(user);
-    IERC20(asset).transfer(address(hub), amount);
+    asset.transfer(address(hub), amount);
 
-    s.assetDonated[asset] += amount;
+    s.assetDonated[address(asset)] += amount;
   }
 
   function _updateState(uint256 assetId) internal {
-    LiquidityHub.Asset memory reserveData = hub.getAsset(assetId);
-    s.lastExchangeRate[assetId] = reserveData.totalShares == 0
+    Asset memory reserveData = hub.getAsset(assetId);
+    // todo: remove last exchange rate, bad idea to store like this, looses precision
+    s.lastExchangeRate[assetId] = reserveData.suppliedShares == 0
       ? 0
-      : reserveData.totalAssets / reserveData.totalShares;
+      : hub.getTotalAssets(assetId) / reserveData.suppliedShares;
   }
 }

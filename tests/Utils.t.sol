@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'forge-std/Test.sol';
-import 'src/contracts/LiquidityHub.sol';
-import 'src/contracts/Spoke.sol';
-import 'src/dependencies/openzeppelin/IERC20.sol';
+import {Vm} from 'forge-std/Vm.sol';
+import {LiquidityHub, DataTypes} from 'src/contracts/LiquidityHub.sol';
+import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
 
 library Utils {
   // hub
@@ -30,12 +29,13 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
+    address user,
     address onBehalfOf
   ) internal {
-    address asset = hub.assetsList(assetId);
+    vm.prank(user);
+    hub.assetsList(assetId).approve(address(hub), amount);
     vm.startPrank(spoke);
-    IERC20(asset).transfer(address(hub), amount);
-    hub.supply(assetId, amount, 0);
+    hub.supply({assetId: assetId, amount: amount, riskPremium: 0, supplier: user});
     vm.stopPrank();
   }
 
@@ -45,7 +45,7 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
-    address onBehalfOf
+    address onBehalfOf // todo: implement
   ) internal {
     vm.startPrank(spoke);
     hub.draw(assetId, spoke, amount, 0);
@@ -89,9 +89,8 @@ library Utils {
     uint256 amount,
     address onBehalfOf
   ) internal {
-    address asset = hub.assetsList(assetId);
     vm.startPrank(user);
-    IERC20(asset).approve(address(spoke), amount);
+    hub.assetsList(assetId).approve(address(hub), amount);
     spoke.supply(assetId, amount);
     vm.stopPrank();
   }

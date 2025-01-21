@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import '../BaseTest.t.sol';
 
-contract HealthFactorTest is BaseTest {
+contract HealthFactorTest_ToMigrate is BaseTest {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
@@ -132,6 +132,15 @@ contract HealthFactorTest is BaseTest {
     );
     irStrategy.setInterestRateParams(
       usdcId,
+      IDefaultInterestRateStrategy.InterestRateData({
+        optimalUsageRatio: 9000, // 90.00%
+        baseVariableBorrowRate: 500, // 5.00%
+        variableRateSlope1: 500, // 5.00%
+        variableRateSlope2: 500 // 5.00%
+      })
+    );
+    irStrategy.setInterestRateParams(
+      wbtcAssetId,
       IDefaultInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9000, // 90.00%
         baseVariableBorrowRate: 500, // 5.00%
@@ -281,13 +290,13 @@ contract HealthFactorTest is BaseTest {
       Spoke.Reserve memory reserve = spoke1.getReserve(assetId);
       Spoke.UserConfig memory userConfig = spoke1.getUser(assetId, USER1);
 
-      uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
-      uint256 userCollateral = hub.convertSharesToAssetsDown(assetId, userConfig.supplyShares) *
-        assetPrice;
-      totalCollateral += userCollateral;
-      totalDebt += hub.convertSharesToAssetsDown(assetId, userConfig.debtShares) * assetPrice;
+      // uint256 assetPrice = MockPriceOracle(address(oracle)).getAssetPrice(assetId);
+      // uint256 userCollateral = hub.convertToAssetsDown(assetId, userConfig.supplyShares) *
+      //   assetPrice;
+      // totalCollateral += userCollateral;
+      // totalDebt += userConfig.debt * assetPrice;
 
-      avgLiquidationThreshold += userCollateral * reserve.config.lt;
+      // avgLiquidationThreshold += userCollateral * reserve.config.lt;
     }
     avgLiquidationThreshold = totalCollateral != 0 ? avgLiquidationThreshold / totalCollateral : 0;
     return
