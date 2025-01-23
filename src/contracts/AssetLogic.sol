@@ -27,9 +27,12 @@ library AssetLogic {
     return asset.suppliedShares;
   }
 
-  // @dev So solc doesn't inline
-  function getTotalAssets(Asset storage asset) external view returns (uint256) {
-    return asset.totalAssets();
+  function totalAccruedAssets(Asset storage asset) internal view returns (uint256) {
+    (uint256 cumulatedBaseInterest, ) = asset.previewNextBorrowIndex();
+    (uint256 accruedBaseDebt, uint256 accruedOutstandingPremium) = asset.previewAccruedDebt(
+      cumulatedBaseInterest
+    );
+    return asset.totalAssets() + accruedBaseDebt + accruedOutstandingPremium;
   }
 
   function convertToSharesUp(Asset storage asset, uint256 assets) internal view returns (uint256) {
@@ -128,13 +131,5 @@ library AssetLogic {
     uint256 accruedOutstandingPremium = accruedBaseDebt.percentMul(asset.riskPremiumRad.radToBps());
 
     return (accruedBaseDebt, accruedOutstandingPremium);
-  }
-
-  function previewTotalAssets(Asset storage asset) internal view returns (uint256) {
-    (uint256 cumulatedBaseInterest, ) = asset.previewNextBorrowIndex();
-    (uint256 accruedBaseDebt, uint256 accruedOutstandingPremium) = asset.previewAccruedDebt(
-      cumulatedBaseInterest
-    );
-    return asset.getTotalAssets() + accruedBaseDebt + accruedOutstandingPremium;
   }
 }

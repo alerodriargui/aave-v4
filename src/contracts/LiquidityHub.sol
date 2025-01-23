@@ -69,9 +69,13 @@ contract LiquidityHub is ILiquidityHub {
     return _spokes[assetId][spoke].config;
   }
 
+  // todo for tests, rm
   function getTotalAssets(uint256 assetId) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return asset.getTotalAssets();
+    return _assets[assetId].totalAssets();
+  }
+
+  function getTotalAccruedAssets(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].totalAccruedAssets();
   }
 
   // /////
@@ -294,22 +298,22 @@ contract LiquidityHub is ILiquidityHub {
 
   function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return assets.toSharesUp(asset.previewTotalAssets(), asset.getTotalShares());
+    return assets.toSharesUp(asset.totalAccruedAssets(), asset.totalShares());
   }
 
   function convertToSharesDown(uint256 assetId, uint256 assets) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return assets.toSharesDown(asset.previewTotalAssets(), asset.getTotalShares());
+    return assets.toSharesDown(asset.totalAccruedAssets(), asset.totalShares());
   }
 
   function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return shares.toAssetsUp(asset.previewTotalAssets(), asset.getTotalShares());
+    return shares.toAssetsUp(asset.totalAccruedAssets(), asset.totalShares());
   }
 
   function convertToAssetsDown(uint256 assetId, uint256 shares) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return shares.toAssetsUp(asset.previewTotalAssets(), asset.getTotalShares());
+    return shares.toAssetsUp(asset.totalAccruedAssets(), asset.totalShares());
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
@@ -417,8 +421,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      : // force underflow: only possible when spoke takes repays amount more than net drawn
+      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
