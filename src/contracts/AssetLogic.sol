@@ -102,22 +102,31 @@ library AssetLogic {
     uint256 cumulatedBaseInterest,
     uint256 nextBaseBorrowIndex
   ) external {
-    if (cumulatedBaseInterest == 0) return; // no interest accrued since last update
+    (uint256 accruedBaseDebt, uint256 accruedOutstandingPremium) = asset.previewAccruedDebt(
+      cumulatedBaseInterest
+    );
+    if (accruedBaseDebt > 0) asset.baseDebt += accruedBaseDebt;
+    if (accruedOutstandingPremium > 0) asset.outstandingPremium += accruedOutstandingPremium;
+    asset.baseBorrowIndex = nextBaseBorrowIndex;
+    asset.lastUpdateTimestamp = block.timestamp;
+  }
 
+  function previewAccruedDebt(
+    Asset storage asset,
+    uint256 cumulatedBaseInterest
+  ) internal view returns (uint256, uint256) {
+    // no interest accrued since last update
+    if (cumulatedBaseInterest == 0) return (0, 0);
     uint256 existingBaseDebt = asset.baseDebt;
     // no interest to accrue since no liquidity has been drawn
-    if (existingBaseDebt == 0) return;
+    if (existingBaseDebt == 0) return (0, 0);
 
     // can use `cumulatedBaseInterest` instead of `indexRatio` since LH base debt is
     // accrued on each index update
-    uint256 cumulatedBaseDebt = asset.baseDebt.rayMul(cumulatedBaseInterest);
-
+    uint256 accruedBaseDebt = asset.baseDebt.rayMul(cumulatedBaseInterest - WadRayMath.RAY);
     // accrue premium interest on the accrued base interest
-    asset.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(
-      asset.riskPremiumRad.radToBps()
-    );
-    asset.baseDebt = cumulatedBaseDebt;
-    asset.baseBorrowIndex = nextBaseBorrowIndex;
-    asset.lastUpdateTimestamp = block.timestamp;
+    uint256 accruedOutstandingPremium = accruedBaseDebt.percentMul(asset.riskPremiumRad.radToBps());
+
+    return (accruedBaseDebt, accruedOutstandingPremium);
   }
 }

@@ -287,25 +287,29 @@ contract LiquidityHub is ILiquidityHub {
   // public
   //
 
-  function previewNextBorrowIndex(uint256 assetId) public view returns (uint256) {
+  function previewNextBorrowIndex(uint256 assetId) external view returns (uint256) {
     (, uint256 nextBaseBorrowIndex) = _assets[assetId].previewNextBorrowIndex();
     return nextBaseBorrowIndex;
   }
 
   function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].convertToSharesUp(assets);
+    Asset storage asset = _assets[assetId];
+    return assets.toSharesUp(_previewTotalAssets(asset), asset.suppliedShares);
   }
 
   function convertToSharesDown(uint256 assetId, uint256 assets) external view returns (uint256) {
-    return _assets[assetId].convertToSharesDown(assets);
+    Asset storage asset = _assets[assetId];
+    return assets.toSharesDown(_previewTotalAssets(asset), asset.suppliedShares);
   }
 
   function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].convertToAssetsUp(shares);
+    Asset storage asset = _assets[assetId];
+    return shares.toAssetsUp(_previewTotalAssets(asset), asset.suppliedShares);
   }
 
   function convertToAssetsDown(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].convertToAssetsDown(shares);
+    Asset storage asset = _assets[assetId];
+    return shares.toAssetsUp(_previewTotalAssets(asset), asset.suppliedShares);
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
@@ -466,5 +470,14 @@ contract LiquidityHub is ILiquidityHub {
     }
 
     return baseDebtRestored;
+  }
+
+  // todo: optimize
+  function _previewTotalAssets(Asset storage asset) internal view returns (uint256) {
+    (uint256 cumulatedBaseInterest, ) = asset.previewNextBorrowIndex();
+    (uint256 accruedBaseDebt, uint256 accruedOutstandingPremium) = asset.previewAccruedDebt(
+      cumulatedBaseInterest
+    );
+    return asset.getTotalAssets() + accruedBaseDebt + accruedOutstandingPremium;
   }
 }
