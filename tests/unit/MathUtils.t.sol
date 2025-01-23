@@ -13,6 +13,10 @@ todo
 
  ceiling values (value, weight): 1e4, 1e45 and 1e18, 1e30 
  from https://www.notion.so/aave/Updated-Incremental-Weighted-Average-Usage-1469d63a22de80d3aebdedae4de6deb2?pvs=4
+
+test_fuzz_WeightedAverageRemoveSingle
+in: values: [1000000000000000000000000000 [1e27], 1727], toRemoveIndex: 0
+1e27 eats up 1727
  */
 
 contract MathUtilsTest is BaseTest {
@@ -62,7 +66,7 @@ contract MathUtilsTest is BaseTest {
     uint256 valueCeiling,
     uint256 weightCeiling
   ) internal {
-    (uint256 currentWeightedAvgRad, uint256 currentSumWeights) = _runWeightedAverageAdd(
+    (uint256 currentWeightedAvg, uint256 currentSumWeights) = _runWeightedAverageAdd(
       values,
       valueCeiling,
       weightCeiling
@@ -78,7 +82,7 @@ contract MathUtilsTest is BaseTest {
 
       vm.expectRevert();
       MathUtils.subtractFromWeightedAverage(
-        currentWeightedAvgRad,
+        currentWeightedAvg,
         currentSumWeights,
         maxValue + 1,
         maxWeight + 1
@@ -87,8 +91,8 @@ contract MathUtilsTest is BaseTest {
       uint256 number = values[i] % valueCeiling;
       uint256 weight = values[i] % weightCeiling;
 
-      (currentWeightedAvgRad, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
-        currentWeightedAvgRad,
+      (currentWeightedAvg, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
+        currentWeightedAvg,
         currentSumWeights,
         number,
         weight
@@ -104,7 +108,7 @@ contract MathUtilsTest is BaseTest {
     vm.assume(values.length > 0);
 
     uint256 currentSumWeights;
-    uint256 currentWeightedAvgRad;
+    uint256 currentWeightedAvg;
 
     uint256 calcWeightedAvg;
     uint256 calcSumWeights;
@@ -119,8 +123,8 @@ contract MathUtilsTest is BaseTest {
       calcWeightedAvg += number * weight;
       calcSumWeights += weight;
 
-      (currentWeightedAvgRad, currentSumWeights) = MathUtils.addToWeightedAverage(
-        currentWeightedAvgRad,
+      (currentWeightedAvg, currentSumWeights) = MathUtils.addToWeightedAverage(
+        currentWeightedAvg,
         currentSumWeights,
         number,
         weight
@@ -130,10 +134,10 @@ contract MathUtilsTest is BaseTest {
       calcWeightedAvg /= calcSumWeights;
     }
 
-    assertApproxEqAbs(currentWeightedAvgRad.fromRad(), calcWeightedAvg.fromRad(), 1);
+    assertApproxEqAbs(currentWeightedAvg.fromRad(), calcWeightedAvg.fromRad(), 1);
     assertEq(currentSumWeights, calcSumWeights);
 
-    return (currentWeightedAvgRad, currentSumWeights);
+    return (currentWeightedAvg, currentSumWeights);
   }
 
   function _runWeightedAverageRemove(
@@ -154,7 +158,7 @@ contract MathUtilsTest is BaseTest {
     }
 
     uint256 currentSumWeights;
-    uint256 currentWeightedAvgRad;
+    uint256 currentWeightedAvg;
 
     uint256 calcWeightedAvg;
     uint256 calcSumWeights;
@@ -169,8 +173,8 @@ contract MathUtilsTest is BaseTest {
         calcSumWeights += weight;
       }
 
-      (currentWeightedAvgRad, currentSumWeights) = MathUtils.addToWeightedAverage(
-        currentWeightedAvgRad,
+      (currentWeightedAvg, currentSumWeights) = MathUtils.addToWeightedAverage(
+        currentWeightedAvg,
         currentSumWeights,
         number,
         weight
@@ -186,17 +190,17 @@ contract MathUtilsTest is BaseTest {
       uint256 newValueWeight = values[toRemoveSet.keys[i]] % weightCeiling;
 
       // overflow not possible
-      if (currentWeightedAvgRad * currentSumWeights < (newValue * newValueWeight).toRad()) {
+      if (currentWeightedAvg * currentSumWeights < (newValue * newValueWeight).toRad()) {
         vm.expectRevert();
         MathUtils.subtractFromWeightedAverage(
-          currentWeightedAvgRad,
+          currentWeightedAvg,
           currentSumWeights,
           newValue,
           newValueWeight
         );
       } else {
-        (currentWeightedAvgRad, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
-          currentWeightedAvgRad,
+        (currentWeightedAvg, currentSumWeights) = MathUtils.subtractFromWeightedAverage(
+          currentWeightedAvg,
           currentSumWeights,
           newValue,
           newValueWeight
@@ -204,7 +208,7 @@ contract MathUtilsTest is BaseTest {
       }
     }
 
-    assertApproxEqAbs(currentWeightedAvgRad.fromRad(), calcWeightedAvg.fromRad(), 2);
+    assertApproxEqAbs(currentWeightedAvg.fromRad(), calcWeightedAvg.fromRad(), 2);
     assertEq(currentSumWeights, calcSumWeights);
   }
 
