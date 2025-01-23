@@ -294,22 +294,22 @@ contract LiquidityHub is ILiquidityHub {
 
   function convertToSharesUp(uint256 assetId, uint256 assets) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return assets.toSharesUp(_previewTotalAssets(asset), asset.suppliedShares);
+    return assets.toSharesUp(asset.previewTotalAssets(), asset.getTotalShares());
   }
 
   function convertToSharesDown(uint256 assetId, uint256 assets) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return assets.toSharesDown(_previewTotalAssets(asset), asset.suppliedShares);
+    return assets.toSharesDown(asset.previewTotalAssets(), asset.getTotalShares());
   }
 
   function convertToAssetsUp(uint256 assetId, uint256 shares) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return shares.toAssetsUp(_previewTotalAssets(asset), asset.suppliedShares);
+    return shares.toAssetsUp(asset.previewTotalAssets(), asset.getTotalShares());
   }
 
   function convertToAssetsDown(uint256 assetId, uint256 shares) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return shares.toAssetsUp(_previewTotalAssets(asset), asset.suppliedShares);
+    return shares.toAssetsUp(asset.previewTotalAssets(), asset.getTotalShares());
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
@@ -470,14 +470,5 @@ contract LiquidityHub is ILiquidityHub {
     }
 
     return baseDebtRestored;
-  }
-
-  // todo: optimize
-  function _previewTotalAssets(Asset storage asset) internal view returns (uint256) {
-    (uint256 cumulatedBaseInterest, ) = asset.previewNextBorrowIndex();
-    (uint256 accruedBaseDebt, uint256 accruedOutstandingPremium) = asset.previewAccruedDebt(
-      cumulatedBaseInterest
-    );
-    return asset.getTotalAssets() + accruedBaseDebt + accruedOutstandingPremium;
   }
 }

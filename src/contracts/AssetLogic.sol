@@ -32,30 +32,30 @@ library AssetLogic {
     return asset.totalAssets();
   }
 
-  function convertToSharesUp(Asset storage asset, uint256 assets) external view returns (uint256) {
+  function convertToSharesUp(Asset storage asset, uint256 assets) internal view returns (uint256) {
     return assets.toSharesUp(asset.totalAssets(), asset.totalShares());
   }
 
   function convertToSharesDown(
     Asset storage asset,
     uint256 assets
-  ) external view returns (uint256) {
+  ) internal view returns (uint256) {
     return assets.toSharesDown(asset.totalAssets(), asset.totalShares());
   }
 
-  function convertToAssetsUp(Asset storage asset, uint256 shares) external view returns (uint256) {
+  function convertToAssetsUp(Asset storage asset, uint256 shares) internal view returns (uint256) {
     return shares.toAssetsUp(asset.totalAssets(), asset.totalShares());
   }
 
   function convertToAssetsDown(
     Asset storage asset,
     uint256 shares
-  ) external view returns (uint256) {
+  ) internal view returns (uint256) {
     return shares.toAssetsDown(asset.totalAssets(), asset.totalShares());
   }
 
   // todo carry out mul in rad for precision
-  function getInterestRate(Asset storage asset) external view returns (uint256) {
+  function getInterestRate(Asset storage asset) internal view returns (uint256) {
     return
       asset.baseBorrowRate.percentMul(
         PercentageMath.PERCENTAGE_FACTOR + asset.riskPremiumRad.radToBps()
@@ -66,7 +66,7 @@ library AssetLogic {
     Asset storage asset,
     uint256 liquidityAdded,
     uint256 liquidityTaken
-  ) external {
+  ) internal {
     uint256 baseBorrowRate = IReserveInterestRateStrategy(asset.config.irStrategy)
       .calculateInterestRates(
         DataTypes.CalculateInterestRatesParams({
@@ -85,7 +85,7 @@ library AssetLogic {
   // @dev Utilizes existing `asset.baseBorrowRate` & `asset.baseBorrowIndex`
   // @return cumulatedBaseInterest (in ray)
   // @return nextBaseBorrowIndex (in ray)
-  function previewNextBorrowIndex(Asset storage asset) external view returns (uint256, uint256) {
+  function previewNextBorrowIndex(Asset storage asset) internal view returns (uint256, uint256) {
     uint256 elapsed = block.timestamp - asset.lastUpdateTimestamp;
     if (elapsed == 0) return (0, asset.baseBorrowIndex);
 
@@ -101,7 +101,7 @@ library AssetLogic {
     Asset storage asset,
     uint256 cumulatedBaseInterest,
     uint256 nextBaseBorrowIndex
-  ) external {
+  ) internal {
     (uint256 accruedBaseDebt, uint256 accruedOutstandingPremium) = asset.previewAccruedDebt(
       cumulatedBaseInterest
     );
@@ -128,5 +128,13 @@ library AssetLogic {
     uint256 accruedOutstandingPremium = accruedBaseDebt.percentMul(asset.riskPremiumRad.radToBps());
 
     return (accruedBaseDebt, accruedOutstandingPremium);
+  }
+
+  function previewTotalAssets(Asset storage asset) internal view returns (uint256) {
+    (uint256 cumulatedBaseInterest, ) = asset.previewNextBorrowIndex();
+    (uint256 accruedBaseDebt, uint256 accruedOutstandingPremium) = asset.previewAccruedDebt(
+      cumulatedBaseInterest
+    );
+    return asset.getTotalAssets() + accruedBaseDebt + accruedOutstandingPremium;
   }
 }
