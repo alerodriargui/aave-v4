@@ -32,10 +32,12 @@ library Utils {
     address user,
     address onBehalfOf
   ) internal {
-    vm.prank(user);
+    vm.startPrank(user);
     hub.assetsList(assetId).approve(address(hub), amount);
+    vm.stopPrank();
+
     vm.startPrank(spoke);
-    hub.supply({assetId: assetId, amount: amount, riskPremium: 0, supplier: user});
+    hub.supply({assetId: assetId, amount: amount, riskPremiumRad: 0, supplier: user});
     vm.stopPrank();
   }
 
@@ -44,11 +46,12 @@ library Utils {
     LiquidityHub hub,
     uint256 assetId,
     address spoke,
+    address to,
     uint256 amount,
     address onBehalfOf // todo: implement
   ) internal {
     vm.startPrank(spoke);
-    hub.draw(assetId, spoke, amount, 0);
+    hub.draw({assetId: assetId, to: to, amount: amount, riskPremiumRad: 0});
     vm.stopPrank();
   }
 
