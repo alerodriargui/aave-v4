@@ -165,7 +165,7 @@ library WadRayMath {
   /**
    * @dev Converts number to Rad (8-decimal fixed point units)
    * @param a The number to convert
-   * @return b in Ray (b = a * 1e8)
+   * @return b in Rad (b = a * 1e8)
    */
   function toRad(uint256 a) internal pure returns (uint256 b) {
     // to avoid overflow, b/RAD == a
@@ -188,6 +188,37 @@ library WadRayMath {
       b := div(a, RAD)
       let remainder := mod(a, RAD)
       if iszero(lt(remainder, div(RAD, 2))) {
+        b := add(b, 1)
+      }
+    }
+  }
+
+  /**
+   * @dev Converts number to Wad (18-decimal fixed point units)
+   * @param a The number to convert
+   * @return b in Wad (b = a * 1e18)
+   */
+  function toWad(uint256 a) internal pure returns (uint256 b) {
+    // to avoid overflow, b/RAD == a
+    assembly {
+      b := mul(a, WAD)
+
+      if iszero(eq(div(b, WAD), a)) {
+        revert(0, 0)
+      }
+    }
+  }
+
+  /**
+   * @dev Truncates number from Wad, loosing denominator precision
+   * @param a The number in Wad
+   * @return b (= a / 1e18, rounded up if remainder is >= 0.5 WAD)
+   */
+  function fromWad(uint256 a) internal pure returns (uint256 b) {
+    assembly {
+      b := div(a, WAD)
+      let remainder := mod(a, WAD)
+      if iszero(lt(remainder, div(WAD, 2))) {
         b := add(b, 1)
       }
     }
