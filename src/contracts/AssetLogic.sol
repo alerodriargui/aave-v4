@@ -57,12 +57,8 @@ library AssetLogic {
     return shares.toAssetsDown(asset.totalAssets(), asset.totalShares());
   }
 
-  // todo carry out mul in rad for precision
-  function getInterestRate(Asset storage asset) internal view returns (uint256) {
-    return
-      asset.baseBorrowRate.percentMul(
-        PercentageMath.PERCENTAGE_FACTOR + asset.riskPremiumRad.radToBps()
-      );
+  function getInterestRate(Asset storage asset) external view returns (uint256) {
+    return asset.baseBorrowRate.radMul(WadRayMath.RAD + asset.riskPremiumRad);
   }
 
   function updateBorrowRate(

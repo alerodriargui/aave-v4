@@ -157,7 +157,7 @@ contract LiquidityHub is ILiquidityHub {
   function supply(
     uint256 assetId,
     uint256 amount,
-    uint256 riskPremium,
+    uint256 riskPremiumRad,
     address supplier
   ) external returns (uint256, uint256) {
     // TODO: authorization - only spokes
@@ -172,16 +172,15 @@ contract LiquidityHub is ILiquidityHub {
     _updateRiskPremiumAndBaseDebt({
       asset: asset,
       spoke: spoke,
-      newSpokeRiskPremium: riskPremium,
+      newSpokeRiskPremium: riskPremiumRad,
       baseDebtChange: 0
     });
 
-    asset.availableLiquidity += amount;
-
     // todo: Mitigate inflation attack (burn some amount if first supply)
     uint256 sharesAmount = asset.convertToSharesDown(amount);
-    require(sharesAmount > 0, 'INVALID_AMOUNT');
+    require(sharesAmount > 0, 'INVALID_SHARES_AMOUNT');
 
+    asset.availableLiquidity += amount;
     asset.suppliedShares += sharesAmount;
     spoke.suppliedShares += sharesAmount; // todo: mint 4626 shares to abstract this accounting
 
@@ -211,11 +210,10 @@ contract LiquidityHub is ILiquidityHub {
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
     _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, 0); // no base debt change
 
-    asset.availableLiquidity -= amount;
-
     uint256 sharesAmount = asset.convertToSharesDown(amount);
-
     asset.suppliedShares -= sharesAmount;
+    asset.availableLiquidity -= amount;
+    spoke.suppliedShares -= sharesAmount;
 
     assetsList[assetId].safeTransfer(to, amount);
 
@@ -341,6 +339,7 @@ contract LiquidityHub is ILiquidityHub {
     SpokeData storage spoke,
     uint256 amount
   ) internal view {
+    require(amount > 0, 'INVALID_AMOUNT');
     require(assetsList[asset.id] != IERC20(address(0)), 'ASSET_NOT_LISTED');
     // TODO: Different states e.g. frozen, paused
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
