@@ -12,12 +12,13 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 
+// todo move to DataTypes
 struct SpokeData {
   uint256 suppliedShares; // share
   uint256 baseDebt; // asset
   uint256 outstandingPremium; // asset
   uint256 baseBorrowIndex; // in ray
-  uint256 riskPremiumRad; // weighted average risk premium in rad (bps value with extra `rad` precision)
+  uint256 riskPremiumWeightedSum; // weighted averaged sum risk premium in rad (bps value with extra `rad` precision)
   uint256 lastUpdateTimestamp;
   DataTypes.SpokeConfig config;
 }
@@ -30,9 +31,23 @@ struct Asset {
   uint256 outstandingPremium; // asset
   uint256 baseBorrowIndex; // in ray
   uint256 baseBorrowRate; // in ray
-  uint256 riskPremiumRad; // in rad
+  uint256 riskPremiumWeightedSum;
   uint256 lastUpdateTimestamp;
   DataTypes.AssetConfig config;
+}
+
+struct AssetCache {
+  uint256 existingBaseDebt;
+  uint256 cumulatedBaseDebt;
+  uint256 cumulatedRiskPremiumWeightedSum;
+  uint256 existingRiskPremiumWeightedSum;
+}
+
+struct SpokeDataCache {
+  uint256 existingBaseDebt;
+  uint256 cumulatedBaseDebt;
+  uint256 existingRiskPremiumWeightedSum;
+  uint256 cumulatedRiskPremiumWeightedSum;
 }
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
@@ -43,6 +58,7 @@ contract LiquidityHub is ILiquidityHub {
   using PercentageMath for uint256;
   using AssetLogic for Asset;
   using SpokeDataLogic for SpokeData;
+  using SpokeDataLogic for SpokeDataCache;
 
   mapping(uint256 assetId => Asset assetData) internal _assets;
   mapping(uint256 assetId => mapping(address spokeAddress => SpokeData spokeData)) internal _spokes;
@@ -90,7 +106,7 @@ contract LiquidityHub is ILiquidityHub {
       baseBorrowIndex: WadRayMath.RAY,
       baseBorrowRate: 0,
       lastUpdateTimestamp: block.timestamp,
-      riskPremiumRad: 0,
+      riskPremiumWeightedSum: 0,
       config: DataTypes.AssetConfig({
         decimals: config.decimals,
         active: config.active,
@@ -153,23 +169,28 @@ contract LiquidityHub is ILiquidityHub {
   function supply(
     uint256 assetId,
     uint256 amount,
-    uint256 riskPremiumRad,
+    uint256 riskPremiumWeightedSum,
     address supplier
   ) external returns (uint256, uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
+    AssetCache memory assetCache = asset.cache();
     SpokeData storage spoke = _spokes[assetId][msg.sender];
+    SpokeDataCache memory spokeCache = spoke.cache();
 
-    uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke);
+    _accrueInterest(asset, spoke, assetCache, spokeCache); // uint256 nextBaseBorrowIndex = _accrueInterest(asset, spoke);
     _validateSupply(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     _updateRiskPremiumAndBaseDebt({
       asset: asset,
       spoke: spoke,
-      newSpokeRiskPremium: riskPremiumRad,
-      baseDebtChange: 0
+      assetCache: assetCache,
+      spokeCache: spokeCache,
+      newSpokeRiskPremiumWeightedSum: riskPremiumWeightedSum,
+      debtAdded: 0,
+      debtTaken: 0
     });
 
     // todo: Mitigate inflation attack (burn some amount if first supply)
@@ -185,7 +206,7 @@ contract LiquidityHub is ILiquidityHub {
 
     emit Supply(assetId, msg.sender, amount);
 
-    return (nextBaseBorrowIndex, sharesAmount);
+    return (uint(0), sharesAmount);
   }
 
   // TODO: Be able to pass max(uint) as amount to withdraw all or accept number of shares
@@ -193,18 +214,18 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     address to,
     uint256 amount,
-    uint256 riskPremiumRad
+    uint256 riskPremiumWeightedSum
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
-    _validateWithdraw(asset, spoke, amount);
+    // _accrueInterest(asset, spoke); // accrue interest before validating action
+    // _validateWithdraw(asset, spoke, amount);
 
-    asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, 0); // no base debt change
+    // asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
+    // _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumWeightedSum, 0); // no base debt change
 
     uint256 sharesAmount = asset.convertToSharesDown(amount);
     asset.suppliedShares -= sharesAmount;
@@ -221,18 +242,28 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     address to,
     uint256 amount,
-    uint256 riskPremiumRad
+    uint256 riskPremiumWeightedSum
   ) external returns (uint256) {
     // TODO: authorization - only spokes
 
     Asset storage asset = _assets[assetId];
+    AssetCache memory assetCache = asset.cache();
     SpokeData storage spoke = _spokes[assetId][msg.sender];
+    SpokeDataCache memory spokeCache = spoke.cache();
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
+    _accrueInterest(asset, spoke, assetCache, spokeCache); // accrue interest before validating action
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, int256(amount)); // base debt added
+    _updateRiskPremiumAndBaseDebt({
+      asset: asset,
+      spoke: spoke,
+      assetCache: assetCache,
+      spokeCache: spokeCache,
+      newSpokeRiskPremiumWeightedSum: riskPremiumWeightedSum,
+      debtAdded: amount,
+      debtTaken: 0
+    }); // base debt added
 
     asset.availableLiquidity -= amount;
 
@@ -249,14 +280,14 @@ contract LiquidityHub is ILiquidityHub {
    * @dev Interest is always paid off first from premium, then from base
    * @param assetId The asset id
    * @param amount The amount to repay
-   * @param riskPremiumRad The aggregated risk premium of the calling spoke
+   * @param riskPremiumWeightedSum The aggregated risk premium of the calling spoke
    * @param repayer The address who is trying to settle the credit line
    * @return The amount of shares restored
    */
   function restore(
     uint256 assetId,
     uint256 amount,
-    uint256 riskPremiumRad,
+    uint256 riskPremiumWeightedSum,
     address repayer
   ) external returns (uint256) {
     // TODO: authorization - only spokes
@@ -264,12 +295,12 @@ contract LiquidityHub is ILiquidityHub {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    _accrueInterest(asset, spoke); // accrue interest before validating action
-    _validateRestore(asset, amount, spoke.baseDebt);
-    asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
+    // _accrueInterest(asset, spoke); // accrue interest before validating action
+    // _validateRestore(asset, amount, spoke.baseDebt);
+    // asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
 
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
-    _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumRad, -int256(baseDebtRestored));
+    // _updateRiskPremiumAndBaseDebt(asset, spoke, riskPremiumWeightedSum, -int256(baseDebtRestored));
 
     asset.availableLiquidity += amount;
 
@@ -283,6 +314,14 @@ contract LiquidityHub is ILiquidityHub {
   //
   // public
   //
+
+  function getAssetRiskPremium(uint256 assetId) public view returns (uint256) {
+    return _assets[assetId].riskPremiumRay();
+  }
+
+  function getSpokeRiskPremium(uint256 assetId, address spoke) public view returns (uint256) {
+    return _spokes[assetId][spoke].riskPremiumRay();
+  }
 
   function previewNextBorrowIndex(uint256 assetId) public view returns (uint256) {
     (, uint256 nextBaseBorrowIndex) = _assets[assetId].previewNextBorrowIndex();
@@ -378,54 +417,113 @@ contract LiquidityHub is ILiquidityHub {
     require(amountRestored <= amountDrawn, 'INVALID_RESTORE_AMOUNT');
   }
 
-  // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremiumRad`
+  // todo rm, temp
+  function _accrueInterestAndUpdateRiskPremium(
+    Asset storage asset,
+    SpokeData storage spoke,
+    uint256 newSpokeRiskPremiumWeightedSum,
+    uint256 debtAdded,
+    uint256 debtTaken
+  ) internal {
+    (uint256 cumulatedBaseInterest, uint256 nextBaseBorrowIndex) = asset.previewNextBorrowIndex();
+    uint256 existingAssetDebt = asset.baseDebt;
+
+    uint256 cumulatedAssetDebt = existingAssetDebt.rayMul(cumulatedBaseInterest);
+    asset.outstandingPremium += (cumulatedAssetDebt - existingAssetDebt).rayMul(
+      asset.riskPremiumRay()
+    );
+
+    uint256 existingSpokeDebt = spoke.baseDebt;
+
+    uint256 cumulatedSpokeBaseDebt = existingSpokeDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+      spoke.baseBorrowIndex
+    );
+
+    uint256 existingSpokeRiskPremium = spoke.riskPremiumRay();
+    spoke.outstandingPremium += existingSpokeRiskPremium.rayMul(
+      cumulatedAssetDebt - existingAssetDebt
+    );
+
+    (uint256 assetRiskPremiumWithoutCurrent, ) = MathUtils.subtractFromWeightedAverage(
+      asset.riskPremiumWeightedSum,
+      existingAssetDebt,
+      existingSpokeRiskPremium, // use current spoke risk premium
+      existingSpokeDebt
+    );
+
+    uint256 newSpokeDebt = cumulatedSpokeBaseDebt + debtAdded - debtTaken;
+    uint256 newSpokeRiskPremium = newSpokeDebt == 0
+      ? 0
+      : newSpokeRiskPremiumWeightedSum.toRay() / newSpokeDebt;
+
+    (uint256 newAssetRiskPremiumWeightedSum, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
+      assetRiskPremiumWithoutCurrent,
+      cumulatedAssetDebt - cumulatedSpokeBaseDebt,
+      newSpokeRiskPremium, // use new spoke risk premium
+      newSpokeDebt
+    );
+
+    asset.riskPremiumWeightedSum = newAssetRiskPremiumWeightedSum;
+    asset.baseDebt = newAssetDebt;
+    asset.baseBorrowIndex = nextBaseBorrowIndex;
+    asset.lastUpdateTimestamp = block.timestamp;
+
+    spoke.riskPremiumWeightedSum = newSpokeRiskPremiumWeightedSum;
+    spoke.baseDebt = cumulatedSpokeBaseDebt;
+    spoke.baseBorrowIndex = nextBaseBorrowIndex;
+    spoke.lastUpdateTimestamp = block.timestamp;
+  }
+
+  // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremiumWeightedSum`
   function _accrueInterest(
     Asset storage asset,
-    SpokeData storage spoke
+    SpokeData storage spoke,
+    AssetCache memory assetCache,
+    SpokeDataCache memory spokeCache
   ) internal returns (uint256) {
     (uint256 cumulatedBaseInterest, uint256 nextBaseBorrowIndex) = asset.previewNextBorrowIndex();
-    asset.accrueInterest(cumulatedBaseInterest, nextBaseBorrowIndex);
-    spoke.accrueInterest(nextBaseBorrowIndex);
+    asset.accrueInterest(assetCache, cumulatedBaseInterest, nextBaseBorrowIndex);
+    spoke.accrueInterest(spokeCache, nextBaseBorrowIndex);
     return nextBaseBorrowIndex;
   }
 
-  // @dev Expects both `asset.baseDebt` & `spoke.baseDebt` have been accrued
   // @dev Does not update `outstandingPremium`
   function _updateRiskPremiumAndBaseDebt(
     Asset storage asset,
     SpokeData storage spoke,
-    uint256 newSpokeRiskPremium,
-    int256 baseDebtChange
+    AssetCache memory assetCache,
+    SpokeDataCache memory spokeCache,
+    uint256 newSpokeRiskPremiumWeightedSum,
+    uint256 debtAdded,
+    uint256 debtTaken
   ) internal {
-    uint256 existingAssetDebt = asset.baseDebt;
-    uint256 existingSpokeDebt = spoke.baseDebt;
-
     // weighted average risk premium of all spokes without current `spoke`
-    (uint256 assetRiskPremiumWithoutCurrent, uint256 assetDebtWithoutCurrent) = MathUtils
+    (uint256 assetRiskPremiumWeightedSumWithoutCurrent, uint256 assetDebtWithoutCurrent) = MathUtils
       .subtractFromWeightedAverage(
-        asset.riskPremiumRad,
-        existingAssetDebt,
-        spoke.riskPremiumRad, // use current spoke risk premium
-        existingSpokeDebt
+        assetCache.cumulatedRiskPremiumWeightedSum,
+        assetCache.cumulatedBaseDebt,
+        spokeCache.existingRiskPremiumRay(), // use current spoke risk premium
+        spokeCache.cumulatedBaseDebt
       );
 
-    uint256 newSpokeDebt = baseDebtChange > 0
-      ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      // force underflow: only possible when spoke takes repays amount more than net drawn
-      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+    // use accrued base debt
+    uint256 newSpokeDebt = spokeCache.cumulatedBaseDebt + debtAdded - debtTaken;
+    uint256 newSpokeRiskPremiumRay = newSpokeDebt == 0
+      ? 0
+      : newSpokeRiskPremiumWeightedSum.toRay() / newSpokeDebt;
 
-    (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
-      assetRiskPremiumWithoutCurrent,
+    (uint256 newAssetRiskPremiumWeightedSum, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
+      assetRiskPremiumWeightedSumWithoutCurrent,
       assetDebtWithoutCurrent,
-      newSpokeRiskPremium, // use new spoke risk premium
+      newSpokeRiskPremiumRay, // use new spoke risk premium
       newSpokeDebt
     );
 
     asset.baseDebt = newAssetDebt;
     spoke.baseDebt = newSpokeDebt;
 
-    asset.riskPremiumRad = newAssetRiskPremium;
-    spoke.riskPremiumRad = newSpokeRiskPremium;
+    asset.riskPremiumWeightedSum = newAssetRiskPremiumWeightedSum.fromRay();
+    spoke.riskPremiumWeightedSum = newSpokeRiskPremiumWeightedSum.fromRay();
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
@@ -435,7 +533,7 @@ contract LiquidityHub is ILiquidityHub {
       baseDebt: 0,
       outstandingPremium: 0,
       baseBorrowIndex: WadRayMath.RAY,
-      riskPremiumRad: 0,
+      riskPremiumWeightedSum: 0,
       lastUpdateTimestamp: block.timestamp,
       config: DataTypes.SpokeConfig({drawCap: config.drawCap, supplyCap: config.supplyCap})
     });

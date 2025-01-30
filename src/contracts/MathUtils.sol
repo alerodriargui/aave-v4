@@ -98,69 +98,57 @@ library MathUtils {
   }
 
   /**
-   * @notice Calculates the new weighted average given a current weighted average, the sum of the weights subtracted with a new value, weight
-   * @dev Add precision to weighted average & new value before calling this method
-   * @param currentWeightedAvg The base weighted average
-   * @param currentSumWeights The base sum of weights
+   * @notice Calculates the new weighted average sum given a current weighted sum, the sum of the
+   * weights subtracted with a new value, weight
+   * @dev To get the weighted average, divide the returned weighted sum by the returned sum of weights
+   * @param currentWeightedSum The base weighted sum (numerator of the weighted average)
+   * @param currentSumWeights The base sum of weights (denominator of the weighted average)
    * @param newValue The new value to add or subtract
    * @param newValueWeight The weight of the new value
-   * @return newWeightedAvg The weighted average after the operation
+   * @return newWeightedSum The weighted average sum after the operation
    * @return newSumWeights The sum of weights after operation, cannot be less than 0
    */
   function addToWeightedAverage(
-    uint256 currentWeightedAvg,
+    uint256 currentWeightedSum,
     uint256 currentSumWeights,
     uint256 newValue,
     uint256 newValueWeight
   ) internal pure returns (uint256, uint256) {
-    // newWeightedAvg, newSumWeights
+    // newWeightedSum, newSumWeights
 
-    if (newValueWeight == 0) {
-      return (currentWeightedAvg, currentSumWeights);
-    }
-    if (currentSumWeights == 0) {
-      return (newValue, newValueWeight);
-    }
+    if (newValueWeight == 0) return (currentWeightedSum, currentSumWeights);
+    if (currentSumWeights == 0) return (newValue * newValueWeight, newValueWeight);
 
-    uint256 newSumWeights = currentSumWeights + newValueWeight;
-    uint256 newWeightedAvg = ((currentWeightedAvg * currentSumWeights) +
-      (newValue * newValueWeight)) / newSumWeights; // newSumWeights cannot be zero when execution reaches here
-
-    return (newWeightedAvg, newSumWeights);
+    return (currentWeightedSum + (newValue * newValueWeight), currentSumWeights + newValueWeight);
   }
 
   /**
-   * @notice Calculates the new weighted average given a current weighted average, the sum of the weights added with a new value, weight
-   * @dev Add precision to weighted average & new value before calling this method
-   * @param currentWeightedAvg The base weighted average
-   * @param currentSumWeights The base sum of weights
+   * @notice Calculates the new weighted average sum given a current weighted average sum, the sum of
+   * the weights added with a new value, weight
+   * @dev To get the weighted average, divide the returned weighted sum by the returned sum of weights
+   * @param currentWeightedSum The base weighted average sum  (numerator of the weighted average)
+   * @param currentSumWeights The base sum of weights (denominator of the weighted average)
    * @param newValue The new value to add or subtract
    * @param newValueWeight The weight of the new value
-   * @return newWeightedAvg The weighted average after the operation
+   * @return newWeightedSum The weighted sum after the operation
    * @return newSumWeights The sum of weights after operation, cannot be less than 0
    * @dev Reverts when newValueWeight is greater than currentSumWeights
-   * @dev Reverts when the newWeightedValue (weight * value) is greater than currentWeightedSum (currentSumWeights * currentWeightedAvg)
+   * @dev Reverts when the newWeightedValue (weight * value) is greater than currentWeightedSum
    */
   function subtractFromWeightedAverage(
-    uint256 currentWeightedAvg,
+    uint256 currentWeightedSum,
     uint256 currentSumWeights,
     uint256 newValue,
     uint256 newValueWeight
   ) internal pure returns (uint256, uint256) {
-    // newWeightedAvg, newSumWeights
-    if (newValueWeight == 0) return (currentWeightedAvg, currentSumWeights);
+    // newWeightedSum, newSumWeights
 
-    if (currentSumWeights == newValueWeight) return (0, 0); // no change
     if (currentSumWeights < newValueWeight) revert();
-
+    if (currentSumWeights == newValueWeight) return (0, 0); // no change
+    if (newValueWeight == 0) return (currentWeightedSum, currentSumWeights);
     uint256 newWeightedValue = newValue * newValueWeight;
-    uint256 currentWeightedSum = currentWeightedAvg * currentSumWeights;
-
     if (currentWeightedSum < newWeightedValue) revert();
 
-    uint256 newSumWeights = currentSumWeights - newValueWeight;
-    uint256 newWeightedAvg = (currentWeightedSum - newWeightedValue) / newSumWeights;
-
-    return (newWeightedAvg, newSumWeights);
+    return (currentWeightedSum - newWeightedValue, currentSumWeights - newValueWeight);
   }
 }

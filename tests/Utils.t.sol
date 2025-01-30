@@ -22,107 +22,98 @@ library Utils {
       Spoke(spokes[i]).addReserve(assetId, reserveConfigs[i], asset);
     }
   }
-
-  function supply(
-    Vm vm,
-    LiquidityHub hub,
-    uint256 assetId,
-    address spoke,
-    uint256 amount,
-    address user,
-    address onBehalfOf
-  ) internal {
-    vm.startPrank(user);
-    hub.assetsList(assetId).approve(address(hub), amount);
-    vm.stopPrank();
-
-    vm.startPrank(spoke);
-    hub.supply({assetId: assetId, amount: amount, riskPremiumRad: 0, supplier: user});
-    vm.stopPrank();
-  }
-
-  function draw(
-    Vm vm,
-    LiquidityHub hub,
-    uint256 assetId,
-    address spoke,
-    address to,
-    uint256 amount,
-    address onBehalfOf // todo: implement
-  ) internal {
-    vm.startPrank(spoke);
-    hub.draw({assetId: assetId, to: to, amount: amount, riskPremiumRad: 0});
-    vm.stopPrank();
-  }
-
-  function withdraw(
-    Vm vm,
-    LiquidityHub hub,
-    uint256 assetId,
-    address spoke,
-    uint256 amount,
-    address to
-  ) internal {
-    vm.startPrank(spoke);
-    // TODO: risk premium
-    hub.withdraw(assetId, to, amount, 0);
-    vm.stopPrank();
-  }
-
-  function borrow(
-    Vm vm,
-    Spoke spoke,
-    uint256 assetId,
-    address user,
-    uint256 amount,
-    address onBehalfOf
-  ) internal {
-    vm.startPrank(user);
-    spoke.borrow(assetId, user, amount);
-    vm.stopPrank();
-  }
-
-  // spoke
-  function spokeSupply(
-    Vm vm,
-    LiquidityHub hub,
-    Spoke spoke,
-    uint256 assetId,
-    address user,
-    uint256 amount,
-    address onBehalfOf
-  ) internal {
-    vm.startPrank(user);
-    hub.assetsList(assetId).approve(address(hub), amount);
-    spoke.supply(assetId, amount);
-    vm.stopPrank();
-  }
-  function setUsingAsCollateral(
-    Vm vm,
-    Spoke spoke,
-    address user,
-    uint256 assetId,
-    bool usingAsCollateral
-  ) internal {
-    vm.prank(user);
-    ISpoke(spoke).setUsingAsCollateral(assetId, usingAsCollateral);
-  }
-
-  function updateLiquidationThreshold(Spoke spoke, uint256 assetId, uint256 newLt) internal {
-    Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
-    reserveData.config.lt = newLt;
-    Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
-  }
-
-  function updateCollateral(Spoke spoke, uint256 assetId, bool newCollateral) internal {
-    Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
-    reserveData.config.collateral = newCollateral;
-    Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
-  }
-
-  function updateBorrowable(Spoke spoke, uint256 assetId, bool newBorrowable) internal {
-    Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
-    reserveData.config.borrowable = newBorrowable;
-    Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
-  }
+  // function supply(
+  //   Vm vm,
+  //   LiquidityHub hub,
+  //   uint256 assetId,
+  //   address spoke,
+  //   uint256 amount,
+  //   address user,
+  //   address onBehalfOf
+  // ) internal {
+  //   vm.startPrank(user);
+  //   hub.assetsList(assetId).approve(address(hub), amount);
+  //   vm.stopPrank();
+  //   vm.startPrank(spoke);
+  //   hub.supply({assetId: assetId, amount: amount, riskPremiumRad: 0, supplier: user});
+  //   vm.stopPrank();
+  // }
+  // function draw(
+  //   Vm vm,
+  //   LiquidityHub hub,
+  //   uint256 assetId,
+  //   address spoke,
+  //   address to,
+  //   uint256 amount,
+  //   address onBehalfOf // todo: implement
+  // ) internal {
+  //   vm.startPrank(spoke);
+  //   hub.draw({assetId: assetId, to: to, amount: amount, riskPremiumRad: 0});
+  //   vm.stopPrank();
+  // }
+  // function withdraw(
+  //   Vm vm,
+  //   LiquidityHub hub,
+  //   uint256 assetId,
+  //   address spoke,
+  //   uint256 amount,
+  //   address to
+  // ) internal {
+  //   vm.startPrank(spoke);
+  //   // TODO: risk premium
+  //   hub.withdraw(assetId, to, amount, 0);
+  //   vm.stopPrank();
+  // }
+  // function borrow(
+  //   Vm vm,
+  //   Spoke spoke,
+  //   uint256 assetId,
+  //   address user,
+  //   uint256 amount,
+  //   address onBehalfOf
+  // ) internal {
+  //   vm.startPrank(user);
+  //   spoke.borrow(assetId, user, amount);
+  //   vm.stopPrank();
+  // }
+  // // spoke
+  // function spokeSupply(
+  //   Vm vm,
+  //   LiquidityHub hub,
+  //   Spoke spoke,
+  //   uint256 assetId,
+  //   address user,
+  //   uint256 amount,
+  //   address onBehalfOf
+  // ) internal {
+  //   vm.startPrank(user);
+  //   hub.assetsList(assetId).approve(address(hub), amount);
+  //   spoke.supply(assetId, amount);
+  //   vm.stopPrank();
+  // }
+  // function setUsingAsCollateral(
+  //   Vm vm,
+  //   Spoke spoke,
+  //   address user,
+  //   uint256 assetId,
+  //   bool usingAsCollateral
+  // ) internal {
+  //   vm.prank(user);
+  //   ISpoke(spoke).setUsingAsCollateral(assetId, usingAsCollateral);
+  // }
+  // function updateLiquidationThreshold(Spoke spoke, uint256 assetId, uint256 newLt) internal {
+  //   Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
+  //   reserveData.config.lt = newLt;
+  //   Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
+  // }
+  // function updateCollateral(Spoke spoke, uint256 assetId, bool newCollateral) internal {
+  //   Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
+  //   reserveData.config.collateral = newCollateral;
+  //   Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
+  // }
+  // function updateBorrowable(Spoke spoke, uint256 assetId, bool newBorrowable) internal {
+  //   Spoke.Reserve memory reserveData = spoke.getReserve(assetId);
+  //   reserveData.config.borrowable = newBorrowable;
+  //   Spoke(spoke).updateReserveConfig(assetId, reserveData.config);
+  // }
 }
