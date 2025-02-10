@@ -7,6 +7,10 @@ pragma solidity ^0.8.0;
  * @notice Defines the error messages emitted by the different contracts of the Aave protocol
  */
 library Errors {
+  error MaxKeyExceeded();
+  error MaxValueExceeded();
+  error IndexOutOfBounds();
+
   string public constant ZERO_ADDRESS_NOT_VALID = '77'; // 'Zero address not valid'
 
   string public constant INVALID_MAX_RATE = '92'; // The expect maximum borrow rate is invalid
