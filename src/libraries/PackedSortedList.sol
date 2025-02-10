@@ -4,28 +4,27 @@ pragma solidity ^0.8.0;
 import {Errors} from 'src/libraries/helpers/Errors.sol';
 
 /// @dev sorted by value in ascending order (key ignored).
-/// @dev key, value ceiling checks are omitted for gas efficiency in `insert` & `remove`.
-/// @dev `update` assumed `key`s remains static, & hence only updates value.
+/// @dev `update` assumes `key`s remain static, & hence only updates value.
 library PackedSortedList {
   /// @dev we use a static array to save on dynamic array slot computation cost.
   // ? (can it be made dynamic since cost is only on `update` & `insert`)
   struct List {
     uint256[150] slots;
-    uint256 count; /// @dev maintain count for re-usability.
+    uint256 count; /// @dev don't maintain count for re-usability.
   }
 
-  uint256 internal constant _KEY_BITS = 7; // max 127 reserves
-  uint256 internal constant _VALUE_BITS = 10; // max 1023 (100_0 liquidity premium)
-  uint256 internal constant _PAIR_BITS = _KEY_BITS + _VALUE_BITS; // 17 bits per (key, value) pair
+  uint256 internal constant _KEY_BITS = 7;
+  uint256 internal constant _VALUE_BITS = 10;
+  uint256 internal constant _PAIR_BITS = _KEY_BITS + _VALUE_BITS;
   /// @dev 15 pairs per slot, 1 bit remaining in slot. can be re-used for b+ tree update optimization
   uint256 internal constant _PAIRS_PER_SLOT = 256 / _PAIR_BITS;
 
   /// @dev bit masks (aka ceiling values)
-  uint256 internal constant _KEY_MASK = (1 << _KEY_BITS) - 1; // 7 ones (0x7F)
-  uint256 internal constant _VALUE_MASK = (1 << _VALUE_BITS) - 1; // 10 ones (0x3FF)
-  uint256 internal constant _PAIR_MASK = (1 << _PAIR_BITS) - 1; // 17 ones (0x1FFFF)
+  uint256 internal constant _KEY_MASK = (1 << _KEY_BITS) - 1;
+  uint256 internal constant _VALUE_MASK = (1 << _VALUE_BITS) - 1;
+  uint256 internal constant _PAIR_MASK = (1 << _PAIR_BITS) - 1;
 
-  /// @notice get packed `pair` at `index` in `list`.
+  /// @notice get packed (`key`, `value`) pair at `index` in `list`.
   function get(List storage list, uint256 index) internal view returns (uint256, uint256) {
     unchecked {
       (uint256 key, uint256 value) = _unpack(_get(list, index));
@@ -47,7 +46,7 @@ library PackedSortedList {
   }
 
   function remove(List storage list, uint256 index) internal {
-    require(index < list.count, Errors.IndexOutOfBounds()); // ?  do outside
+    require(index < list.count, Errors.IndexOutOfBounds()); // ? do outside
     uint256 newCount = --list.count;
     // alternate approach #A isn't suitable since with left shifting, next slot first is needed
     // alternate approach #B: null/sentinel this slot and ignore null slots in `get` (added loop in each `get` - each null slot's value can store offset till next valid value)

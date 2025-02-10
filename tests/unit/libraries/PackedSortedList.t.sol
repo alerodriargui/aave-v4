@@ -17,18 +17,19 @@ interface IWrapper {
   function loop() external;
   function setSnapshotLabel(string memory) external;
 }
+
 contract Wrapper is IWrapper {
   using PackedSortedList for PackedSortedList.List;
   PackedSortedList.List internal list;
   string internal snapshotLabel;
 
   // @dev We do not use `snapGasLastCall` since we want this library to remain internal.
-  Vm internal vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
+  Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   function get(uint256 index) external returns (uint256, uint256) {
-    // vm.startSnapshotGas(_getLabel('get'));
+    vm.startSnapshotGas(_getLabel('get'));
     (uint256 key, uint256 value) = list.get(index);
-    // vm.stopSnapshotGas();
+    vm.stopSnapshotGas();
     return (key, value);
   }
 
@@ -122,7 +123,6 @@ contract PackedSortedListTest is Test {
 
   /// forge-config: default.fuzz.runs = 256
   function test_fuzz_insert(uint256[] memory pairs) public {
-    vm.skip(true);
     for (uint i; i < pairs.length; ++i) {
       (uint256 key, uint256 value) = PackedSortedList.unpack(uint32(pairs[i]));
       key = bound(key, 0, MAX_KEY);
