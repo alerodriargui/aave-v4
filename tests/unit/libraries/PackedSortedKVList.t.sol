@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Test, Vm, console2 as console} from 'forge-std/Test.sol';
 
 import {Errors} from 'src/libraries/helpers/Errors.sol';
-import {PackedSortedList} from 'src/libraries/PackedSortedList.sol';
+import {PackedSortedKVList} from 'src/libraries/PackedSortedKVList.sol';
 
 interface IWrapper {
   function insert(uint256 key, uint256 value) external;
@@ -19,8 +19,8 @@ interface IWrapper {
 }
 
 contract Wrapper is IWrapper {
-  using PackedSortedList for PackedSortedList.List;
-  PackedSortedList.List internal list;
+  using PackedSortedKVList for PackedSortedKVList.List;
+  PackedSortedKVList.List internal list;
   string internal snapshotLabel;
 
   // @dev We do not use `snapGasLastCall` since we want this library to remain internal.
@@ -97,9 +97,9 @@ contract Wrapper is IWrapper {
 
 /// @dev run with `--isolate` to cool sload, or wait for `vm.cool` https://github.com/foundry-rs/foundry/pull/5852
 /// replace `vm.randomUint()` with a seeded pseudo-random generator or seeded fuzz for deterministic snapshots.
-contract PackedSortedListTest is Test {
-  uint256 internal constant MAX_KEY = PackedSortedList._KEY_MASK;
-  uint256 internal constant MAX_VALUE = PackedSortedList._VALUE_MASK;
+contract PackedSortedKVListTest is Test {
+  uint256 internal constant MAX_KEY = PackedSortedKVList._KEY_MASK;
+  uint256 internal constant MAX_VALUE = PackedSortedKVList._VALUE_MASK;
 
   IWrapper internal w;
   uint256 internal seenCacheId;
@@ -124,7 +124,7 @@ contract PackedSortedListTest is Test {
   /// forge-config: default.fuzz.runs = 256
   function test_fuzz_insert(uint256[] memory pairs) public {
     for (uint i; i < pairs.length; ++i) {
-      (uint256 key, uint256 value) = PackedSortedList.unpack(uint32(pairs[i]));
+      (uint256 key, uint256 value) = PackedSortedKVList.unpack(uint32(pairs[i]));
       key = bound(key, 0, MAX_KEY);
       value = bound(value, 0, MAX_VALUE);
       w.insert(key, value);

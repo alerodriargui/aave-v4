@@ -5,7 +5,7 @@ import {Errors} from 'src/libraries/helpers/Errors.sol';
 
 /// @dev sorted by value in ascending order (key ignored).
 /// @dev `update` assumes `key`s remain static, & hence only updates value.
-library PackedSortedList {
+library PackedSortedKVList {
   /// @dev we use a static array to save on dynamic array slot computation cost.
   // ? (can it be made dynamic since cost is only on `update` & `insert`)
   struct List {
