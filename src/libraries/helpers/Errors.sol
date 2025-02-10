@@ -9,6 +9,7 @@ pragma solidity ^0.8.0;
 library Errors {
   error MaxKeyExceeded();
   error MaxValueExceeded();
+  error ItemOverflow();
   error IndexOutOfBounds();
 
   string public constant ZERO_ADDRESS_NOT_VALID = '77'; // 'Zero address not valid'
