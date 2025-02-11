@@ -1,0 +1,20 @@
+{
+  "100_keys: get": "658",
+  "100_keys: insert": "63348",
+  "100_keys: loop": "76906",
+  "100_keys: searchForIndex": "33605",
+  "100_keys: update": "161003",
+  "1023_keys: get": "658",
+  "1023_keys: insert": "298736",
+  "1023_keys: loop": "786693",
+  "10_keys: get": "658",
+  "10_keys: insert": "46016",
+  "10_keys: loop": "7696",
+  "10_keys: searchForIndex": "5453",
+  "10_keys: update": "46072",
+  "50_keys: get": "658",
+  "50_keys: insert": "68347",
+  "50_keys: loop": "38456",
+  "50_keys: searchForIndex": "37515",
+  "50_keys: update": "99542"
+}

@@ -1,0 +1,17 @@
+{
+  "100_keys: get": "1545",
+  "100_keys: insert": "108498",
+  "100_keys: loop": "166285",
+  "100_keys: searchForIndex": "98826",
+  "100_keys: update": "1055433",
+  "10_keys: get": "1545",
+  "10_keys: insert": "82666",
+  "10_keys: loop": "16621",
+  "10_keys: searchForIndex": "13371",
+  "10_keys: update": "396143",
+  "50_keys: get": "1545",
+  "50_keys: insert": "85982",
+  "50_keys: loop": "83123",
+  "50_keys: searchForIndex": "56931",
+  "50_keys: update": "728872"
+}
