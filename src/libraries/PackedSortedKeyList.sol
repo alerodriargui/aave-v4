@@ -27,6 +27,7 @@ library PackedSortedKeyList {
 
   /// @dev SlotIndex cache
   uint256 internal constant _CACHE_BITS = _SLOT_BITS % _KEY_BITS;
+  uint256 internal constant _CACHE_OFFSET = _SLOT_BITS - _CACHE_BITS;
   uint256 internal constant _CACHE_MASK = (1 << _CACHE_BITS) - 1;
 
   function insert(KeyList storage list, ValueMap storage map, uint256 value) internal {
@@ -93,11 +94,56 @@ library PackedSortedKeyList {
     }
   }
 
+  // event log(string, uint256);
+  // event log(string, uint256, uint256);
+  // event log(string, uint256, uint256, uint256);
+
+  // @dev index bound checks are omitted for gas efficiency.
   function getFromCache(
     KeyList storage list,
-    uint256 index,
-    uint256 cache
-  ) internal view returns (uint256) {}
+    uint256 cache,
+    uint256 index
+  ) internal view returns (uint256, uint256) {
+    unchecked {
+      (uint256 slotIndex, uint256 offset) = _getSlotIndexAndOffset(index);
+
+      // emit log('index, slotIndex, offset', index, slotIndex, offset);
+
+      /// @dev cache empty or cache miss, fetch slot (cache >> _CACHE_OFFSET encodes cachedSlotIndex)
+      if (cache == 0 || ((cache >> _CACHE_OFFSET) != slotIndex)) {
+        // emit log('miss!: cachedSlotIndex, cache', (cache >> _CACHE_OFFSET), cache);
+        cache = list.getSlotsAt(slotIndex);
+        // emit log('upd!: cachedSlotIndex', (cache >> _CACHE_OFFSET));
+      } else {
+        // emit log('hit!: cachedSlotIndex', (cache >> _CACHE_OFFSET));
+      }
+
+      return (cache, (cache >> offset) & _KEY_MASK);
+    }
+  }
+
+  function isIndexInCache(uint256 cache, uint256 index) internal pure returns (bool) {
+    unchecked {
+      return (cache >> _CACHE_OFFSET) == index / _KEYS_PER_SLOT;
+    }
+  }
+
+  function extractFromCache(uint256 cache, uint256 index) internal pure returns (uint256) {
+    unchecked {
+      return (cache >> ((index % _KEYS_PER_SLOT) * _KEY_BITS)) & _KEY_MASK;
+    }
+  }
+
+  function getWithCache(
+    KeyList storage list,
+    uint256 index
+  ) internal view returns (uint256, uint256) {
+    unchecked {
+      (uint256 slotIndex, uint256 offset) = _getSlotIndexAndOffset(index);
+      uint256 cache = list.getSlotsAt(slotIndex);
+      return (cache, (cache >> offset) & _KEY_MASK);
+    }
+  }
 
   function set(KeyList storage list, uint256 index, uint256 key) internal {
     require(key < _KEY_MASK, Errors.ItemOverflow());
@@ -105,8 +151,24 @@ library PackedSortedKeyList {
     // expand slot incase of dynamic array
     require(slotIndex < list.getSlotsLength(), Errors.IndexOutOfBounds());
 
-    uint256 mask = ~(_KEY_MASK << offset);
-    list.writeToSlotsAt(slotIndex, (list.getSlotsAt(slotIndex) & mask) | (key << offset));
+    uint256 slot = list.getSlotsAt(slotIndex);
+    if (slot == 0) {
+      // if this is the first entry, encode slotIndex at cache
+      // slot = (slot & ~(_CACHE_MASK << _CACHE_OFFSET)) | (slotIndex << _CACHE_OFFSET);
+      slot = _maskValue(slot, _CACHE_MASK, slotIndex, _CACHE_OFFSET);
+    }
+
+    // list.writeToSlotsAt(slotIndex, (slot & ~(_KEY_MASK << offset)) | (key << offset));
+    list.writeToSlotsAt(slotIndex, _maskValue(slot, _KEY_MASK, key, offset));
+  }
+
+  function _maskValue(
+    uint256 page,
+    uint256 mask,
+    uint256 value,
+    uint256 offset
+  ) internal pure returns (uint256) {
+    return (page & ~(mask << offset)) | (value << offset);
   }
 
   function _getSlotIndexAndOffset(uint256 index) private pure returns (uint256, uint256) {

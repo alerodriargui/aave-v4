@@ -16,6 +16,8 @@ interface IWrapper {
   function keyAndValueCount() external view returns (uint256 keyCount, uint256 valueCount);
   // for gas profiling
   function loop() external;
+  function loopWithCache() external;
+  function loopWithCache2() external;
   function setSnapshotLabel(string memory) external;
 }
 
@@ -70,10 +72,39 @@ contract Wrapper is IWrapper {
   /// @dev for gas profiling, it's how this will be used in spoke
   function loop() external {
     uint256 idx;
+    uint256 reserveId;
     uint256 len = list.length();
     vm.startSnapshotGas(_getLabel('loop'));
     while (idx < len) {
-      list.unsafeGetKey(idx);
+      reserveId = list.unsafeGetKey(idx);
+      idx++;
+    }
+    vm.stopSnapshotGas();
+  }
+
+  function loopWithCache() external {
+    uint256 idx;
+    uint256 reserveId;
+    uint256 len = list.length();
+    vm.startSnapshotGas(_getLabel('loopWithCache'));
+    uint256 cache;
+    while (idx < len) {
+      (cache, reserveId) = list.getFromCache(cache, idx); // returns (cache, key)
+      idx++;
+    }
+    vm.stopSnapshotGas();
+  }
+
+  function loopWithCache2() external {
+    uint256 idx;
+    uint256 len = list.length();
+    vm.startSnapshotGas(_getLabel('loopWithCache2'));
+    // first lookup with empty cache
+    (uint256 cache, uint256 reserveId) = list.getWithCache(idx++);
+    while (idx < len) {
+      if (PackedSortedKeyList.isIndexInCache(cache, idx)) {
+        reserveId = PackedSortedKeyList.extractFromCache(cache, idx);
+      } else (cache, reserveId) = list.getWithCache(idx);
       idx++;
     }
     vm.stopSnapshotGas();
@@ -176,6 +207,9 @@ contract PackedSortedKeyListTest is Test {
     w.setSnapshotLabel(_keyLabel(count));
     _insertUpTo(count);
     w.loop();
+    w.loopWithCache();
+    w.loopWithCache2();
+    // if (count == 50) assertTrue(false);
     _assertSortedByValueAndNoKeyDuplication();
     if (count == 10) _log();
   }
