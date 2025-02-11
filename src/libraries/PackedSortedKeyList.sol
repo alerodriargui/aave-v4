@@ -94,10 +94,6 @@ library PackedSortedKeyList {
     }
   }
 
-  // event log(string, uint256);
-  // event log(string, uint256, uint256);
-  // event log(string, uint256, uint256, uint256);
-
   // @dev index bound checks are omitted for gas efficiency.
   function getFromCache(
     KeyList storage list,
@@ -106,18 +102,9 @@ library PackedSortedKeyList {
   ) internal view returns (uint256, uint256) {
     unchecked {
       (uint256 slotIndex, uint256 offset) = _getSlotIndexAndOffset(index);
-
-      // emit log('index, slotIndex, offset', index, slotIndex, offset);
-
-      /// @dev cache empty or cache miss, fetch slot (cache >> _CACHE_OFFSET encodes cachedSlotIndex)
       if (cache == 0 || ((cache >> _CACHE_OFFSET) != slotIndex)) {
-        // emit log('miss!: cachedSlotIndex, cache', (cache >> _CACHE_OFFSET), cache);
         cache = list.getSlotsAt(slotIndex);
-        // emit log('upd!: cachedSlotIndex', (cache >> _CACHE_OFFSET));
-      } else {
-        // emit log('hit!: cachedSlotIndex', (cache >> _CACHE_OFFSET));
       }
-
       return (cache, (cache >> offset) & _KEY_MASK);
     }
   }
