@@ -23,6 +23,7 @@ interface IWrapper {
 
 contract Wrapper is IWrapper {
   using PackedSortedKeyList for PackedSortedKeyList.KeyList;
+  using PackedSortedKeyList for uint256;
   using PackedSortedKeyList for PackedSortedKeyList.ValueMap;
 
   PackedSortedKeyList.KeyList internal list;
@@ -89,7 +90,7 @@ contract Wrapper is IWrapper {
     vm.startSnapshotGas(_getLabel('loopWithCache'));
     uint256 cache;
     while (idx < len) {
-      (cache, reserveId) = list.getFromCache(cache, idx); // returns (cache, key)
+      (cache, reserveId) = list.getFromCache(cache, idx);
       idx++;
     }
     vm.stopSnapshotGas();
@@ -102,8 +103,8 @@ contract Wrapper is IWrapper {
     // first lookup with empty cache
     (uint256 cache, uint256 reserveId) = list.getWithCache(idx++);
     while (idx < len) {
-      if (PackedSortedKeyList.isIndexInCache(cache, idx)) {
-        reserveId = PackedSortedKeyList.extractFromCache(cache, idx);
+      if (cache.hasIndex(idx)) {
+        reserveId = cache.extractKey(idx);
       } else (cache, reserveId) = list.getWithCache(idx);
       idx++;
     }

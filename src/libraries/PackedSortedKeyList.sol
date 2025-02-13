@@ -109,15 +109,15 @@ library PackedSortedKeyList {
     }
   }
 
-  function isIndexInCache(uint256 cache, uint256 index) internal pure returns (bool) {
+  function hasIndex(uint256 cache, uint256 index) internal pure returns (bool) {
     unchecked {
-      return (cache >> _CACHE_OFFSET) == index / _KEYS_PER_SLOT;
+      return (cache >> _CACHE_OFFSET) == index / _KEYS_PER_SLOT; // cachedSlotIndex == slotIndex
     }
   }
 
-  function extractFromCache(uint256 cache, uint256 index) internal pure returns (uint256) {
+  function extractKey(uint256 cache, uint256 index) internal pure returns (uint256) {
     unchecked {
-      return (cache >> ((index % _KEYS_PER_SLOT) * _KEY_BITS)) & _KEY_MASK;
+      return (cache >> ((index % _KEYS_PER_SLOT) * _KEY_BITS)) & _KEY_MASK; // cache >> offset & keyMask
     }
   }
 
