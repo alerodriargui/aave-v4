@@ -43,7 +43,7 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
     );
     spoke4 = new Spoke(address(hub), address(oracle));
 
-    isPrintLogs = true;
+    isPrintLogs = false;
     assetId = wethAssetId;
   }
 
