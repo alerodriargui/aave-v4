@@ -63,7 +63,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       spokes.spoke1.t0_i = hub.getSpoke(wethAssetId, address(spoke1));
 
       // asset
-      assertEq(assets.wethData.t0_i.baseBorrowIndex, INIT_INDEX, 't0_i Asset index');
+      assertEq(assets.wethData.t0_i.baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't0_i Asset index');
       assertEq(assets.wethData.t0_i.baseDebt, 0, 't0_i Asset base debt');
       assertEq(
         assets.wethData.t0_i.lastUpdateTimestamp,
@@ -72,19 +72,15 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       );
 
       // spoke1
-      assertEq(spokes.spoke1.t0_i.baseBorrowIndex, INIT_INDEX, 't0_i Spoke1 index');
+      assertEq(spokes.spoke1.t0_i.baseBorrowIndex, hub.DEFAULT_SPOKE_INDEX(), 't0_i Spoke1 index');
       assertEq(spokes.spoke1.t0_i.baseDebt, 0, 't0_i Spoke1 base debt');
-      assertEq(
-        spokes.spoke1.t0_i.lastUpdateTimestamp,
-        timeAt(Stages.t0),
-        't0_i Spoke1 lastUpdateTimestamp'
-      );
+      assertEq(spokes.spoke1.t0_i.lastUpdateTimestamp, 0, 't0_i Spoke1 lastUpdateTimestamp');
     } else if (stage == Stages.t1) {
       assets.wethData.t1_i = hub.getAsset(wethAssetId);
       spokes.spoke1.t1_i = hub.getSpoke(wethAssetId, address(spoke1));
 
       // asset
-      assertEq(assets.wethData.t1_i.baseBorrowIndex, INIT_INDEX, 't1_i Asset index');
+      assertEq(assets.wethData.t1_i.baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't1_i Asset index');
       assertEq(assets.wethData.t1_i.baseDebt, spoke1Amounts.draw.t0_i, 't1_i Asset base debt');
       assertEq(
         assets.wethData.t1_i.lastUpdateTimestamp,
@@ -128,7 +124,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       );
 
       // spoke1
-      assertEq(spokes.spoke1.t2_i.baseBorrowIndex, INIT_INDEX, 't2_i Spoke1 index');
+      assertEq(spokes.spoke1.t2_i.baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't2_i Spoke1 index');
       assertEq(spokes.spoke1.t2_i.baseDebt, spoke1Amounts.draw.t0_i, 't2_i Spoke1 base debt');
       assertEq(
         spokes.spoke1.t2_i.lastUpdateTimestamp,
@@ -209,7 +205,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       spokes.spoke1.t0_f = hub.getSpoke(wethAssetId, address(spoke1));
 
       // asset
-      assertEq(assets.wethData.t0_f.baseBorrowIndex, INIT_INDEX, 't0_f Asset index');
+      assertEq(assets.wethData.t0_f.baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't0_f Asset index');
       assertEq(assets.wethData.t0_f.baseDebt, spoke1Amounts.draw.t0_i, 't0_f Asset base debt');
       assertEq(
         assets.wethData.t0_f.lastUpdateTimestamp,
@@ -218,7 +214,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       );
 
       // spoke1
-      assertEq(spokes.spoke1.t0_f.baseBorrowIndex, INIT_INDEX, 't0_f Spoke1 index');
+      assertEq(spokes.spoke1.t0_f.baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't0_f Spoke1 index');
       assertEq(spokes.spoke1.t0_f.baseDebt, spoke1Amounts.draw.t0_i, 't0_f Spoke1 base debt');
       assertEq(
         spokes.spoke1.t0_f.lastUpdateTimestamp,

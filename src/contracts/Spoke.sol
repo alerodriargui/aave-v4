@@ -17,6 +17,7 @@ contract Spoke is ISpoke {
   using PercentageMath for uint256;
   using SafeERC20 for IERC20;
 
+  uint256 public constant DEFAULT_SPOKE_INDEX = 0;
   ILiquidityHub public liquidityHub;
 
   struct Reserve {
@@ -275,6 +276,7 @@ contract Spoke is ISpoke {
     reservesList.push(reserveCount);
     reserve.assetId = assetId;
     reserve.asset = asset;
+    reserve.baseBorrowIndex = DEFAULT_SPOKE_INDEX;
     reserve.config = ReserveConfig({
       lt: params.lt,
       lb: params.lb,
