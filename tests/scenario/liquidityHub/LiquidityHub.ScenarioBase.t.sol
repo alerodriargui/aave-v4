@@ -85,7 +85,12 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     SpokeDatas spoke4;
   }
 
+  // for either generic or specific asset data
   struct AssetDataLocal {
+    AssetDatas assetData0;
+    AssetDatas assetData1;
+    AssetDatas assetData2;
+    AssetDatas assetData3;
     AssetDatas wethData;
     AssetDatas daiData;
     AssetDatas usdcData;
@@ -103,14 +108,24 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     Timestamps restore;
   }
 
-  // Timestamps internal timestamps;
+  struct SpokeActionAssetIds {
+    Timestamps supplyAssetId;
+    Timestamps withdrawAssetId;
+    Timestamps drawAssetId;
+    Timestamps restoreAssetId;
+  }
+
   uint256[] internal timestamps;
   AssetDataLocal internal assets;
   SpokeDataLocal internal spokes;
   SpokeAmounts internal spoke1Amounts;
+  SpokeActionAssetIds internal spoke1Actions;
   SpokeAmounts internal spoke2Amounts;
+  SpokeActionAssetIds internal spoke2Actions;
   SpokeAmounts internal spoke3Amounts;
+  SpokeActionAssetIds internal spoke3Actions;
   SpokeAmounts internal spoke4Amounts;
+  SpokeActionAssetIds internal spoke4Actions;
   CalculatedStates internal states;
 
   enum Stages {

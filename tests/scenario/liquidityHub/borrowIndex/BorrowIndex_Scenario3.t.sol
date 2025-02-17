@@ -24,6 +24,9 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
   // Assumptions:
   // - constant 10% IR
   // - 1 year between each action
+  // - single asset (weth)
+
+  uint256 internal assetId;
 
   function setUp() public override {
     super.setUp();
@@ -40,7 +43,8 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
     );
     spoke4 = new Spoke(address(hub), address(oracle));
 
-    isPrintLogs = false;
+    isPrintLogs = true;
+    assetId = wethAssetId;
   }
 
   function test_borrowIndexScenario3() public {
@@ -428,7 +432,7 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
       console.log('----- t0_i -----');
 
       // asset
-      console.log('Asset borrow index %e', assets.wethData.t0_i.baseBorrowIndex);
+      console.log('Asset borrow index %27e', assets.wethData.t0_i.baseBorrowIndex);
       console.log('Asset base debt %e', assets.wethData.t0_i.baseDebt);
       console.log('Asset last update timestamp', assets.wethData.t0_i.lastUpdateTimestamp);
 
@@ -437,12 +441,12 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
       console.log('----- t1_i -----');
 
       // asset
-      console.log('Asset borrow index %e', assets.wethData.t1_i.baseBorrowIndex);
+      console.log('Asset borrow index %27e', assets.wethData.t1_i.baseBorrowIndex);
       console.log('Asset base debt %e', assets.wethData.t1_i.baseDebt);
       console.log('Asset last update timestamp', assets.wethData.t1_i.lastUpdateTimestamp);
 
       // spoke1
-      console.log('Spoke1 borrow index %e', spokes.spoke1.t1_i.baseBorrowIndex);
+      console.log('Spoke1 borrow index %27e', spokes.spoke1.t1_i.baseBorrowIndex);
       console.log('Spoke1 base debt %e', spokes.spoke1.t1_i.baseDebt);
       console.log('Spoke1 last update timestamp', spokes.spoke1.t1_i.lastUpdateTimestamp);
 
@@ -451,12 +455,12 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
       console.log('----- t2_i -----');
 
       // asset
-      console.log('Asset borrow index %e', assets.wethData.t2_i.baseBorrowIndex);
+      console.log('Asset borrow index %27e', assets.wethData.t2_i.baseBorrowIndex);
       console.log('Asset base debt %e', assets.wethData.t2_i.baseDebt);
       console.log('Asset last update timestamp', assets.wethData.t2_i.lastUpdateTimestamp);
 
       // spoke1
-      console.log('Spoke1 borrow index %e', spokes.spoke1.t2_i.baseBorrowIndex);
+      console.log('Spoke1 borrow index %27e', spokes.spoke1.t2_i.baseBorrowIndex);
       console.log('Spoke1 base debt %e', spokes.spoke1.t2_i.baseDebt);
       console.log('Spoke1 last update timestamp', spokes.spoke1.t2_i.lastUpdateTimestamp);
 
@@ -465,17 +469,17 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
       console.log('----- t3_i -----');
 
       // asset
-      console.log('Asset borrow index %e', assets.wethData.t3_i.baseBorrowIndex);
+      console.log('Asset borrow index %27e', assets.wethData.t3_i.baseBorrowIndex);
       console.log('Asset base debt %e', assets.wethData.t3_i.baseDebt);
       console.log('Asset last update timestamp', assets.wethData.t3_i.lastUpdateTimestamp);
 
       // spoke1
-      console.log('Spoke1 borrow index %e', spokes.spoke1.t3_i.baseBorrowIndex);
+      console.log('Spoke1 borrow index %27e', spokes.spoke1.t3_i.baseBorrowIndex);
       console.log('Spoke1 base debt %e', spokes.spoke1.t3_i.baseDebt);
       console.log('Spoke1 last update timestamp', spokes.spoke1.t3_i.lastUpdateTimestamp);
 
       // spoke4
-      console.log('Spoke4 borrow index %e', spokes.spoke4.t3_i.baseBorrowIndex);
+      console.log('Spoke4 borrow index %27e', spokes.spoke4.t3_i.baseBorrowIndex);
       console.log('Spoke4 base debt %e', spokes.spoke4.t3_i.baseDebt);
       console.log('Spoke4 last update timestamp', spokes.spoke4.t3_i.lastUpdateTimestamp);
     }
@@ -486,12 +490,12 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
       console.log('----- t0_f -----');
 
       // asset
-      console.log('Asset borrow index %e', assets.wethData.t0_f.baseBorrowIndex);
+      console.log('Asset borrow index %27e', assets.wethData.t0_f.baseBorrowIndex);
       console.log('Asset base debt %e', assets.wethData.t0_f.baseDebt);
       console.log('Asset last update timestamp', assets.wethData.t0_f.lastUpdateTimestamp);
 
       // spoke1
-      console.log('Spoke1 borrow index %e', spokes.spoke1.t0_f.baseBorrowIndex);
+      console.log('Spoke1 borrow index %27e', spokes.spoke1.t0_f.baseBorrowIndex);
       console.log('Spoke1 base debt %e', spokes.spoke1.t0_f.baseDebt);
       console.log('Spoke1 last update timestamp', spokes.spoke1.t0_f.lastUpdateTimestamp);
 
@@ -500,12 +504,12 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
       console.log('----- t1_f -----');
 
       // asset
-      console.log('Asset borrow index %e', assets.wethData.t1_f.baseBorrowIndex);
+      console.log('Asset borrow index %27e', assets.wethData.t1_f.baseBorrowIndex);
       console.log('Asset base debt %e', assets.wethData.t1_f.baseDebt);
       console.log('Asset last update timestamp', assets.wethData.t1_f.lastUpdateTimestamp);
 
       // spoke1
-      console.log('Spoke1 borrow index %e', spokes.spoke1.t1_f.baseBorrowIndex);
+      console.log('Spoke1 borrow index %27e', spokes.spoke1.t1_f.baseBorrowIndex);
       console.log('Spoke1 base debt %e', spokes.spoke1.t1_f.baseDebt);
       console.log('Spoke1 last update timestamp', spokes.spoke1.t1_f.lastUpdateTimestamp);
 
@@ -514,34 +518,34 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
       console.log('----- t2_f -----');
 
       // asset
-      console.log('Asset borrow index %e', assets.wethData.t2_f.baseBorrowIndex);
+      console.log('Asset borrow index %27e', assets.wethData.t2_f.baseBorrowIndex);
       console.log('Asset base debt %e', assets.wethData.t2_f.baseDebt);
       console.log('Asset last update timestamp', assets.wethData.t2_f.lastUpdateTimestamp);
 
       // spoke1
-      console.log('Spoke1 borrow index %e', spokes.spoke1.t2_f.baseBorrowIndex);
+      console.log('Spoke1 borrow index %27e', spokes.spoke1.t2_f.baseBorrowIndex);
       console.log('Spoke1 base debt %e', spokes.spoke1.t2_f.baseDebt);
       console.log('Spoke1 last update timestamp', spokes.spoke1.t2_f.lastUpdateTimestamp);
 
       // spoke4
-      console.log('Spoke4 borrow index %e', spokes.spoke4.t2_f.baseBorrowIndex);
+      console.log('Spoke4 borrow index %27e', spokes.spoke4.t2_f.baseBorrowIndex);
       console.log('Spoke4 base debt %e', spokes.spoke4.t2_f.baseDebt);
       console.log('Spoke4 last update timestamp', spokes.spoke4.t2_f.lastUpdateTimestamp);
     } else if (stage == Stages.t3) {
       console.log('----- t3_f -----');
 
       // asset
-      console.log('Asset borrow index %e', assets.wethData.t3_f.baseBorrowIndex);
+      console.log('Asset borrow index %27e', assets.wethData.t3_f.baseBorrowIndex);
       console.log('Asset base debt %e', assets.wethData.t3_f.baseDebt);
       console.log('Asset last update timestamp', assets.wethData.t3_f.lastUpdateTimestamp);
 
       // spoke1
-      console.log('Spoke1 borrow index %e', spokes.spoke1.t3_f.baseBorrowIndex);
+      console.log('Spoke1 borrow index %27e', spokes.spoke1.t3_f.baseBorrowIndex);
       console.log('Spoke1 base debt %e', spokes.spoke1.t3_f.baseDebt);
       console.log('Spoke1 last update timestamp', spokes.spoke1.t3_f.lastUpdateTimestamp);
 
       // spoke4
-      console.log('Spoke4 borrow index %e', spokes.spoke4.t3_f.baseBorrowIndex);
+      console.log('Spoke4 borrow index %27e', spokes.spoke4.t3_f.baseBorrowIndex);
       console.log('Spoke4 base debt %e', spokes.spoke4.t3_f.baseDebt);
       console.log('Spoke4 last update timestamp', spokes.spoke4.t3_f.lastUpdateTimestamp);
     }
