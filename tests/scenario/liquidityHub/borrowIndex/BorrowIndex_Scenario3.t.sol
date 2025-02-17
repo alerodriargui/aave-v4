@@ -164,11 +164,16 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
       // spoke4
       // spoke index is out of sync with asset index
       // because spoke index is set to asset's next borrow index
-      // assertEq(
-      //   spokes.spoke4.t3_i.baseBorrowIndex,
-      //   assets.wethData.t3_i.baseBorrowIndex,
-      //   't3_i Spoke4 index'
-      // );
+      assertNotEq(
+        spokes.spoke4.t3_i.baseBorrowIndex,
+        assets.wethData.t3_i.baseBorrowIndex,
+        't3_i Spoke4 index out of sync with asset index'
+      );
+      assertEq(
+        spokes.spoke4.t3_i.baseBorrowIndex,
+        spokes.spoke4.t2_f.baseBorrowIndex,
+        't3_i Spoke4 index'
+      );
       assertEq(spokes.spoke4.t3_i.baseDebt, 0, 't3_i Spoke4 base debt');
       assertEq(
         spokes.spoke4.t3_i.lastUpdateTimestamp,
@@ -306,7 +311,28 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
       assertEq(
         spokes.spoke1.t2_f.lastUpdateTimestamp,
         spokes.spoke1.t1_f.lastUpdateTimestamp,
-        't2_f Spoke1 base debt'
+        't2_f Spoke1 lastUpdateTimestamp'
+      );
+
+      // spoke4
+      // spoke index is out of sync with asset index
+      // because spoke index is set to asset's next borrow index
+      // asset index has not been updated in this addSpoke action
+      assertNotEq(
+        spokes.spoke4.t2_f.baseBorrowIndex,
+        assets.wethData.t2_f.baseBorrowIndex,
+        't2_f Spoke4 index out of sync with asset index'
+      );
+      assertEq(
+        spokes.spoke4.t2_f.baseBorrowIndex,
+        hub.previewNextBorrowIndex(wethAssetId),
+        't2_f Spoke4 index'
+      );
+      assertEq(spokes.spoke4.t2_f.baseDebt, 0, 't2_f Spoke4 base debt');
+      assertEq(
+        spokes.spoke4.t2_f.lastUpdateTimestamp,
+        timeAt(Stages.t2),
+        't2_f Spoke4 lastUpdateTimestamp'
       );
     } else if (stage == Stages.t3) {
       assets.wethData.t3_f = hub.getAsset(wethAssetId);
