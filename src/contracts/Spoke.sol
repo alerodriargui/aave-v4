@@ -267,14 +267,15 @@ contract Spoke is ISpoke {
     ReserveConfig memory params,
     address asset
   ) external returns (uint256) {
-    Reserve storage reserve = _reserves[reserveCount];
+    uint256 reserveCountTmp = reserveCount;
+    Reserve storage reserve = _reserves[reserveCountTmp];
     // TODO: validate reserveId does not exist already, valid asset
     // require(asset != address(0), 'INVALID_ASSET');
     // require(_reserves[reserveId].asset == address(0), 'RESERVE_ID_ALREADY_EXISTS');
 
     // TODO: AccessControl
-    reservesList.push(reserveCount);
-    reserve = Reserve({
+    reservesList.push(reserveCountTmp);
+    _reserves[reserveCountTmp] = Reserve({
       assetId: assetId,
       asset: asset,
       baseDebt: 0,
