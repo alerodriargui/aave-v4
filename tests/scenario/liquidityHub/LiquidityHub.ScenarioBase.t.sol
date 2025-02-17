@@ -5,6 +5,8 @@ import 'tests/BaseTest.t.sol';
 import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
 abstract contract LiquidityHubScenarioBaseTest is BaseTest {
+  using WadRayMath for uint256;
+
   bool internal isPrintLogs = false;
 
   // t0_i: prior to action
@@ -182,5 +184,13 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
 
   function timeAt(Stages stage) internal view returns (uint256) {
     return timestamps[uint256(stage)];
+  }
+
+  function mockBaseBorrowRate(uint256 baseBorrowRate) internal {
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(baseBorrowRate.bpsToRay())
+    );
   }
 }
