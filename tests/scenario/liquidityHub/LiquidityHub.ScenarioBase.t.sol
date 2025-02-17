@@ -155,11 +155,12 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
       }
       exec(stage);
       finalAssertions(stage);
-      skipTime(stage);
-      postcondition(stage);
       if (isPrintLogs) {
         printFinalLog(stage);
       }
+      skipTime(stage);
+      postcondition(stage);
+
       stage = Stages(uint256(stage) + 1);
     }
   }
