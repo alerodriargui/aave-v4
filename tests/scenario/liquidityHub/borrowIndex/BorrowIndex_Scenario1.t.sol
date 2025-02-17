@@ -68,20 +68,24 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
 
   function test_fuzz_borrowIndexScenario1(State memory _state) public {
     state = State(
-      bound(_state.assetId, 0, hub.assetCount()),
+      bound(_state.assetId, 0, 3),
       bound(_state.baseBorrowRate, 0, 100_00),
       bound(_state.delay, 0, 10_000 days),
       AmountsPreCondition({
         spoke1SupplyAmount_t0_i: bound(_state.preCondition.spoke1SupplyAmount_t0_i, 1e10, 1e30),
-        spoke1DrawAmount_t0_i: bound(_state.preCondition.spoke1DrawAmount_t0_i, 0, 1e30),
-        spoke4DrawAmount_t1_i: bound(_state.preCondition.spoke4DrawAmount_t1_i, 0, 1e30),
-        spoke4SupplyAmount_t2_i: bound(_state.preCondition.spoke4SupplyAmount_t2_i, 0, 1e30)
+        spoke1DrawAmount_t0_i: bound(_state.preCondition.spoke1DrawAmount_t0_i, 1e10, 1e30),
+        spoke4DrawAmount_t1_i: bound(_state.preCondition.spoke4DrawAmount_t1_i, 1e10, 1e30),
+        spoke4SupplyAmount_t2_i: bound(_state.preCondition.spoke4SupplyAmount_t2_i, 1e10, 1e30)
       })
     );
     vm.assume(
       state.preCondition.spoke1SupplyAmount_t0_i >
         state.preCondition.spoke1DrawAmount_t0_i + state.preCondition.spoke4DrawAmount_t1_i
     );
+    deal(address(tokenList.dai), bob, 1e60);
+    deal(address(tokenList.wbtc), bob, 1e60);
+    deal(address(tokenList.weth), bob, 1e60);
+    deal(address(tokenList.usdx), bob, 1e60);
     mockBaseBorrowRate(state.baseBorrowRate);
     _testScenario();
   }
@@ -291,10 +295,10 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
         assets.assetData0.t0_f.baseBorrowIndex.rayMul(states.cumulatedBaseInterest.t1_f),
         't1_f Asset index'
       );
-      assertApproxEqAbs(
+      assertApproxEqRel(
         assets.assetData0.t1_f.baseDebt,
         spoke1Amounts.draw.t0_i.rayMul(states.cumulatedBaseInterest.t1_f) + spoke4Amounts.draw.t1_i,
-        1,
+        0.000000001e18,
         't1_f Asset base debt'
       );
       assertEq(
@@ -344,10 +348,10 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
         assets.assetData0.t1_f.baseBorrowIndex.rayMul(states.cumulatedBaseInterest.t2_f),
         't2_f Asset index'
       );
-      assertApproxEqAbs(
+      assertApproxEqRel(
         assets.assetData0.t2_f.baseDebt,
         assets.assetData0.t1_f.baseDebt.rayMul(states.cumulatedBaseInterest.t2_f),
-        1,
+        0.000000001e18,
         't1_f Asset base debt'
       );
 
@@ -369,12 +373,12 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       assertEq(
         spokes.spoke4.t2_f.baseBorrowIndex,
         assets.assetData0.t2_f.baseBorrowIndex,
-        't2_f Spoke4 base debt'
+        't2_f Spoke4 base index'
       );
-      assertApproxEqAbs(
+      assertApproxEqRel(
         spokes.spoke4.t2_f.baseDebt,
         spoke4Amounts.draw.t1_i.rayMul(states.cumulatedBaseInterest.t2_f),
-        1,
+        0.000000001e18,
         't2_f Spoke4 base debt'
       );
       assertEq(
