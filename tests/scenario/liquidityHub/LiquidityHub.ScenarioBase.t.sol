@@ -6,6 +6,7 @@ import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
 abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   bool internal isPrintLogs = false;
+  uint256 internal constant INIT_INDEX = WadRayMath.RAY;
 
   // t0_i: prior to action
   // t0_f: after action

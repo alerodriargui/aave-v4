@@ -14,8 +14,6 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
   DataTypes.SpokeConfig internal spokeConfig;
   Spoke internal spoke4;
 
-  uint256 internal constant INIT_INDEX = WadRayMath.RAY;
-
   // Scenario:
   // t0: asset added, spoke1 added, spoke1 draws
   // t1: spoke4 is added; spoke4 draws
