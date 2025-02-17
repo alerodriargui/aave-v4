@@ -144,7 +144,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   }
   function printFinalLog(Stages stage) internal virtual {}
 
-  function testScenario() public virtual {
+  function _testScenario() internal virtual {
     Stages stage = Stages.t0;
 
     for (uint256 t = 0; t < 10; t++) {

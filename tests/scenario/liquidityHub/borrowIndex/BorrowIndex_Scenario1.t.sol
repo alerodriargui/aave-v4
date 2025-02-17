@@ -41,6 +41,10 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
     spoke4 = new Spoke(address(hub), address(oracle));
   }
 
+  function test_borrowIndexScenario1() public {
+    _testScenario();
+  }
+
   function precondition(Stages stage) internal override {
     super.precondition(stage);
 

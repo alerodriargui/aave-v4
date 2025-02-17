@@ -45,6 +45,10 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
     isPrintLogs = false;
   }
 
+  function test_borrowIndexScenario3() public {
+    _testScenario();
+  }
+
   function precondition(Stages stage) internal override {
     super.precondition(stage);
 
