@@ -26,6 +26,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   struct SpokeDatas {
     SpokeData[NUM_TIMESTAMPS] t_i;
     SpokeData[NUM_TIMESTAMPS] t_f;
+    address addr;
   }
 
   struct AssetDatas {
@@ -62,11 +63,14 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   function setUp() public virtual override {
     super.setUp();
 
+    spokes[0].addr = address(spoke1);
+    spokes[1].addr = address(spoke2);
+    spokes[2].addr = address(spoke3);
+
     // init stages
     for (uint8 t = 0; t < NUM_TIMESTAMPS; t++) {
       stages[t] = Stage.wrap(t);
     }
-
     timestamps.push(vm.getBlockTimestamp());
   }
   function precondition(Stage stage) internal virtual {}

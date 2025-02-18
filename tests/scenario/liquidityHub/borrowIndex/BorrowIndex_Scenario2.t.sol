@@ -41,6 +41,7 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
       abi.encode(uint256(10_00).bpsToRay())
     );
     spoke4 = new Spoke(address(hub), address(oracle));
+    spokes[3].addr = address(spoke4);
 
     isPrintLogs = false;
     assetId = wethAssetId;
@@ -68,7 +69,7 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
 
     if (stage == stages[0]) {
       assets[0].t_i[0] = hub.getAsset(assetId);
-      spokes[0].t_i[0] = hub.getSpoke(assetId, address(spoke1));
+      spokes[0].t_i[0] = hub.getSpoke(assetId, spokes[0].addr);
 
       // asset
       assertEq(assets[0].t_i[0].baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't0_i Asset index');
@@ -80,7 +81,7 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
       );
     } else if (stage == stages[1]) {
       assets[0].t_i[1] = hub.getAsset(assetId);
-      spokes[0].t_i[1] = hub.getSpoke(assetId, address(spoke1));
+      spokes[0].t_i[1] = hub.getSpoke(assetId, spokes[0].addr);
 
       // asset
       assertEq(assets[0].t_i[1].baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't1_i Asset index');
@@ -97,8 +98,8 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
       assertEq(spokes[0].t_i[1].lastUpdateTimestamp, 0, 't1_i Spoke1 lastUpdateTimestamp');
     } else if (stage == stages[2]) {
       assets[0].t_i[2] = hub.getAsset(assetId);
-      spokes[0].t_i[2] = hub.getSpoke(assetId, address(spoke1));
-      spokes[3].t_i[2] = hub.getSpoke(assetId, address(spoke4));
+      spokes[0].t_i[2] = hub.getSpoke(assetId, spokes[0].addr);
+      spokes[3].t_i[2] = hub.getSpoke(assetId, spokes[3].addr);
 
       // asset
       assertEq(assets[0].t_i[2].baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't2_i Asset index');
@@ -123,8 +124,8 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
       );
     } else if (stage == stages[3]) {
       assets[0].t_i[3] = hub.getAsset(assetId);
-      spokes[0].t_i[3] = hub.getSpoke(assetId, address(spoke1));
-      spokes[3].t_i[3] = hub.getSpoke(assetId, address(spoke4));
+      spokes[0].t_i[3] = hub.getSpoke(assetId, spokes[0].addr);
+      spokes[3].t_i[3] = hub.getSpoke(assetId, spokes[3].addr);
 
       // asset
       assertEq(
@@ -170,41 +171,41 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
       Utils.supply({
         hub: hub,
         assetId: assetId,
-        spoke: address(spoke1),
+        spoke: spokes[0].addr,
         amount: spokeAmounts[0].supply.t_i[1],
         riskPremiumRad: 0,
         user: bob,
-        to: address(spoke1)
+        to: spokes[0].addr
       });
       Utils.draw({
         hub: hub,
         assetId: assetId,
-        spoke: address(spoke1),
+        spoke: spokes[0].addr,
         amount: spokeAmounts[0].draw.t_i[1],
         riskPremiumRad: 0,
         to: bob,
-        onBehalfOf: address(spoke1)
+        onBehalfOf: spokes[0].addr
       });
     } else if (stage == stages[2]) {
-      hub.addSpoke(assetId, spokeConfig, address(spoke4));
+      hub.addSpoke(assetId, spokeConfig, spokes[3].addr);
       Utils.draw({
         hub: hub,
         assetId: assetId,
-        spoke: address(spoke4),
+        spoke: spokes[3].addr,
         amount: spokeAmounts[3].draw.t_i[2],
         riskPremiumRad: 0,
         to: bob,
-        onBehalfOf: address(spoke4)
+        onBehalfOf: spokes[3].addr
       });
     } else if (stage == stages[3]) {
       Utils.supply({
         hub: hub,
         assetId: assetId,
-        spoke: address(spoke4),
+        spoke: spokes[3].addr,
         amount: spokeAmounts[3].supply.t_i[3],
         riskPremiumRad: 0,
         user: bob,
-        to: address(spoke4)
+        to: spokes[3].addr
       });
     }
   }
@@ -217,7 +218,7 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
   function finalAssertions(Stage stage) internal override {
     if (stage == stages[0]) {
       assets[0].t_f[0] = hub.getAsset(assetId);
-      spokes[0].t_f[0] = hub.getSpoke(assetId, address(spoke1));
+      spokes[0].t_f[0] = hub.getSpoke(assetId, spokes[0].addr);
 
       // asset
       assertEq(assets[0].t_f[0].baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't0_f Asset index');
@@ -234,7 +235,7 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
       assertEq(spokes[0].t_f[0].lastUpdateTimestamp, 0, 't0_f Spoke1 lastUpdateTimestamp');
     } else if (stage == stages[1]) {
       assets[0].t_f[1] = hub.getAsset(assetId);
-      spokes[0].t_f[1] = hub.getSpoke(assetId, address(spoke1));
+      spokes[0].t_f[1] = hub.getSpoke(assetId, spokes[0].addr);
 
       // asset
       assertEq(assets[0].t_f[1].baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't1_f Asset index');
@@ -255,8 +256,8 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
       );
     } else if (stage == stages[2]) {
       assets[0].t_f[2] = hub.getAsset(assetId);
-      spokes[0].t_f[2] = hub.getSpoke(assetId, address(spoke1));
-      spokes[3].t_f[2] = hub.getSpoke(assetId, address(spoke4));
+      spokes[0].t_f[2] = hub.getSpoke(assetId, spokes[0].addr);
+      spokes[3].t_f[2] = hub.getSpoke(assetId, spokes[3].addr);
       states.cumulatedBaseInterest.t_f[2] = MathUtils.calculateLinearInterest(
         assets[0].t_f[1].baseBorrowRate,
         timeAt(stages[1])
@@ -308,8 +309,8 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
       );
     } else if (stage == stages[3]) {
       assets[0].t_f[3] = hub.getAsset(assetId);
-      spokes[0].t_f[3] = hub.getSpoke(assetId, address(spoke1));
-      spokes[3].t_f[3] = hub.getSpoke(assetId, address(spoke4));
+      spokes[0].t_f[3] = hub.getSpoke(assetId, spokes[0].addr);
+      spokes[3].t_f[3] = hub.getSpoke(assetId, spokes[3].addr);
       states.cumulatedBaseInterest.t_f[3] = MathUtils.calculateLinearInterest(
         assets[0].t_f[2].baseBorrowRate,
         timeAt(stages[2])
@@ -364,8 +365,8 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
       );
     } else if (stage == stages[4]) {
       assets[0].t_f[4] = hub.getAsset(assetId);
-      spokes[0].t_f[4] = hub.getSpoke(assetId, address(spoke1));
-      spokes[3].t_f[4] = hub.getSpoke(assetId, address(spoke4));
+      spokes[0].t_f[4] = hub.getSpoke(assetId, spokes[0].addr);
+      spokes[3].t_f[4] = hub.getSpoke(assetId, spokes[3].addr);
       states.cumulatedBaseInterest.t_f[4] = MathUtils.calculateLinearInterest(
         assets[0].t_f[3].baseBorrowRate,
         timeAt(stages[3])
