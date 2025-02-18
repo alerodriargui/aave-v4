@@ -55,6 +55,27 @@ library Utils {
     hub.draw({assetId: assetId, amount: amount, riskPremiumRad: riskPremiumRad, to: to});
   }
 
+  function restore(
+    LiquidityHub hub,
+    uint256 assetId,
+    address spoke,
+    uint256 amount,
+    uint256 riskPremiumRad,
+    address repayer
+  ) internal {
+    vm.startPrank(repayer);
+    hub.assetsList(assetId).approve(address(hub), amount);
+    vm.stopPrank();
+
+    vm.prank(spoke);
+    hub.restore({
+      assetId: assetId,
+      amount: amount,
+      riskPremiumRad: riskPremiumRad,
+      repayer: repayer
+    });
+  }
+
   function withdraw(
     LiquidityHub hub,
     uint256 assetId,
