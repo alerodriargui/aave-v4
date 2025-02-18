@@ -193,7 +193,9 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
   function exec(Stage stage) internal override {
     super.exec(stage);
 
-    if (stage == stages[1]) {
+    if (stage == stages[0]) {
+      // intentionally left blank
+    } else if (stage == stages[1]) {
       Utils.supply({
         hub: hub,
         assetId: assetId,
@@ -235,7 +237,7 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
         to: spokes[3].addr
       });
     } else if (stage == stages[5]) {
-      Utils.supply({
+      Utils.restore({
         hub: hub,
         assetId: assetId,
         spoke: spokes[0].addr,
@@ -441,6 +443,16 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
         timeAt(stages[4]),
         't4_f Spoke4 lastUpdateTimestamp'
       );
+    } else if (stage == stages[5]) {
+      assets[0].t_f[5] = hub.getAsset(assetId);
+      spokes[0].t_f[5] = hub.getSpoke(assetId, spokes[0].addr);
+      spokes[3].t_f[5] = hub.getSpoke(assetId, spokes[3].addr);
+      states.cumulatedBaseInterest.t_f[4] = MathUtils.calculateLinearInterest(
+        assets[0].t_f[4].baseBorrowRate,
+        timeAt(stages[4])
+      );
+
+      console.log('t5_f baseDebt', spokes[0].t_f[5].baseDebt);
     }
   }
 
