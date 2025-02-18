@@ -4,6 +4,12 @@ pragma solidity ^0.8.0;
 import 'tests/BaseTest.t.sol';
 import {Asset, SpokeData} from 'src/contracts/LiquidityHub.sol';
 
+type Stage is uint8;
+function eq(Stage a, Stage b) pure returns (bool) {
+  return Stage.unwrap(a) == Stage.unwrap(b);
+}
+using {eq as ==} for Stage global;
+
 abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   uint256 internal constant NUM_TIMESTAMPS = 10;
   uint256 internal constant NUM_SPOKES = 4;
@@ -50,43 +56,37 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   SpokeDatas[NUM_SPOKES] internal spokes;
   SpokeActionAssetIds[NUM_SPOKES] internal spokeActions;
   SpokeAmounts[NUM_SPOKES] internal spokeAmounts;
+  Stage[NUM_TIMESTAMPS] internal stages;
   CalculatedStates internal states;
-
-  enum Stages {
-    t0,
-    t1,
-    t2,
-    t3,
-    t4,
-    t5,
-    t6,
-    t7,
-    t8,
-    t9,
-    t10
-  }
 
   function setUp() public virtual override {
     super.setUp();
 
-    timestamps.push(vm.getBlockTimestamp());
-  }
-  function precondition(Stages stage) internal virtual {}
-  function initialAssertions(Stages stage) internal virtual {}
+    // init stages
+    for (uint8 t = 0; t < NUM_TIMESTAMPS; t++) {
+      stages[t] = Stage.wrap(t);
+    }
 
-  function printInitialLog(Stages stage) internal virtual {}
-  function exec(Stages stage) internal virtual {}
-  function finalAssertions(Stages stage) internal virtual {}
-  function skipTime(Stages stage) internal virtual {}
-  function postcondition(Stages stage) internal virtual {
     timestamps.push(vm.getBlockTimestamp());
   }
-  function printFinalLog(Stages stage) internal virtual {}
+  function precondition(Stage stage) internal virtual {}
+  function initialAssertions(Stage stage) internal virtual {}
+
+  function printInitialLog(Stage stage) internal virtual {}
+  function exec(Stage stage) internal virtual {}
+  function finalAssertions(Stage stage) internal virtual {}
+  function skipTime(Stage stage) internal virtual {}
+  function postcondition(Stage stage) internal virtual {
+    timestamps.push(vm.getBlockTimestamp());
+  }
+  function printFinalLog(Stage stage) internal virtual {}
 
   function _testScenario() internal virtual {
-    Stages stage = Stages.t0;
+    Stage stage;
 
-    for (uint256 t = 0; t < 10; t++) {
+    for (uint256 t = 0; t < NUM_TIMESTAMPS; t++) {
+      stage = stages[t];
+
       precondition(stage);
       initialAssertions(stage);
       if (isPrintLogs) {
@@ -99,12 +99,10 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
       }
       skipTime(stage);
       postcondition(stage);
-
-      stage = Stages(uint256(stage) + 1);
     }
   }
 
-  function timeAt(Stages stage) internal view returns (uint40) {
-    return uint40(timestamps[uint256(stage)]);
+  function timeAt(Stage stage) internal view returns (uint40) {
+    return uint40(timestamps[uint256(Stage.unwrap(stage))]);
   }
 }
