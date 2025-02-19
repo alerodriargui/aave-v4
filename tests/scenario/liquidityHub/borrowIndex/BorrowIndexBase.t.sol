@@ -31,26 +31,31 @@ contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
     spokes[3].addr = address(spoke4);
   }
 
-  function precondition(Stage stage) internal virtual override {
-    super.precondition(stage);
+  function preTestSetup() internal virtual override {
+    super.preTestSetup();
     for (uint256 i = 0; i < NUM_SPOKES; i++) {
       spokes[i].actions = state.actions[i];
     }
   }
+
+  function precondition(Stage stage) internal virtual override {
+    super.precondition(stage);
+  }
   function initialAssertions(Stage stage) internal virtual override {
     super.initialAssertions(stage);
-
-    assets[assetId].t_i[t] = hub.getAsset(assetId);
-    spokes[0].t_i[t] = hub.getSpoke(assetId, spokes[0].addr);
-    spokes[3].t_i[t] = hub.getSpoke(assetId, spokes[3].addr);
+    assets[state.assetId].t_i[t] = hub.getAsset(state.assetId);
+    for (uint256 i = 0; i < NUM_SPOKES; i++) {
+      spokes[i].t_i[t] = hub.getSpoke(state.assetId, spokes[i].addr);
+    }
   }
 
   function finalAssertions(Stage stage) internal virtual override {
     super.finalAssertions(stage);
 
-    assets[assetId].t_f[t] = hub.getAsset(assetId);
-    spokes[0].t_f[t] = hub.getSpoke(assetId, spokes[0].addr);
-    spokes[3].t_f[t] = hub.getSpoke(assetId, spokes[3].addr);
+    assets[state.assetId].t_f[t] = hub.getAsset(state.assetId);
+    for (uint256 i = 0; i < NUM_SPOKES; i++) {
+      spokes[i].t_f[t] = hub.getSpoke(state.assetId, spokes[i].addr);
+    }
   }
 
   function printInitialLog(Stage stage) internal virtual override {

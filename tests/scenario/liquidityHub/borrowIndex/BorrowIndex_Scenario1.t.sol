@@ -21,13 +21,12 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
     super.setUp();
 
     isPrintLogs = false;
-    assetId = wethAssetId;
   }
 
   function test_borrowIndexScenario1() public {
-    assetId = wethAssetId;
+    uint256 assetId = daiAssetId;
 
-    state.assetId = wethAssetId;
+    state.assetId = assetId;
     state.baseBorrowRate = 10_00;
     state.skipTime = 365 days;
     state.actions[0].supply[0].amount = 10e18;
@@ -35,12 +34,37 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
     state.actions[3].draw[1].amount = 1e18;
     state.actions[3].supply[2].amount = 1e8;
 
-    mockBaseBorrowRate(state.baseBorrowRate);
     _testScenario();
   }
 
+  // function test_fuzz_borrowIndexScenario1(State memory _state) public {
+  //   state = State(
+  //     bound(_state.state.assetId, 0, 3),
+  //     bound(_state.baseBorrowRate, 0, 100_00),
+  //     bound(_state.delay, 0, 10_000 days),
+  //     AmountsPreCondition({
+  //       spoke1SupplyAmount_t0_i: bound(_state.preCondition.spoke1SupplyAmount_t0_i, 1e10, 1e30),
+  //       spoke1DrawAmount_t0_i: bound(_state.preCondition.spoke1DrawAmount_t0_i, 1e10, 1e30),
+  //       spoke4DrawAmount_t1_i: bound(_state.preCondition.spoke4DrawAmount_t1_i, 1e10, 1e30),
+  //       spoke4SupplyAmount_t2_i: bound(_state.preCondition.spoke4SupplyAmount_t2_i, 1e10, 1e30)
+  //     })
+  //   );
+  //   vm.assume(
+  //     state.preCondition.spoke1SupplyAmount_t0_i >
+  //       state.preCondition.spoke1DrawAmount_t0_i + state.preCondition.spoke4DrawAmount_t1_i
+  //   );
+  //   deal(address(tokenList.dai), bob, 1e60);
+  //   deal(address(tokenList.wbtc), bob, 1e60);
+  //   deal(address(tokenList.weth), bob, 1e60);
+  //   deal(address(tokenList.usdx), bob, 1e60);
+  //   mockBaseBorrowRate(state.baseBorrowRate);
+  //   _testScenario();
+  // }
+
   function precondition(Stage stage) internal override {
     super.precondition(stage);
+
+    mockBaseBorrowRate(state.baseBorrowRate);
   }
   function initialAssertions(Stage stage) internal override {
     super.initialAssertions(stage);
@@ -48,13 +72,13 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
     if (stage == stages[0]) {
       // asset
       assertEq(
-        assets[assetId].t_i[t].baseBorrowIndex,
+        assets[state.assetId].t_i[t].baseBorrowIndex,
         hub.DEFAULT_ASSET_INDEX(),
         't0_i Asset index'
       );
-      assertEq(assets[assetId].t_i[t].baseDebt, 0, 't0_i Asset base debt');
+      assertEq(assets[state.assetId].t_i[t].baseDebt, 0, 't0_i Asset base debt');
       assertEq(
-        assets[assetId].t_i[t].lastUpdateTimestamp,
+        assets[state.assetId].t_i[t].lastUpdateTimestamp,
         timeAt(stages[t]),
         't0_i Asset lastUpdateTimestamp'
       );
@@ -64,22 +88,19 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       assertEq(spokes[0].t_i[t].baseDebt, 0, 't0_i Spoke1 base debt');
       assertEq(spokes[0].t_i[t].lastUpdateTimestamp, 0, 't0_i Spoke1 lastUpdateTimestamp');
     } else if (stage == stages[1]) {
-      assets[assetId].t_i[t] = hub.getAsset(assetId);
-      spokes[0].t_i[t] = hub.getSpoke(assetId, spokes[0].addr);
-
       // asset
       assertEq(
-        assets[assetId].t_i[t].baseBorrowIndex,
+        assets[state.assetId].t_i[t].baseBorrowIndex,
         hub.DEFAULT_ASSET_INDEX(),
         't1_i Asset index'
       );
       assertEq(
-        assets[assetId].t_i[t].baseDebt,
+        assets[state.assetId].t_i[t].baseDebt,
         spokes[0].actions.draw[t - 1].amount,
         't1_i Asset base debt'
       );
       assertEq(
-        assets[assetId].t_i[t].lastUpdateTimestamp,
+        assets[state.assetId].t_i[t].lastUpdateTimestamp,
         timeAt(stages[t - 1]),
         't1 Asset lastUpdateTimestamp'
       );
@@ -87,7 +108,7 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       // spoke1
       assertEq(
         spokes[0].t_i[t].baseBorrowIndex,
-        assets[assetId].t_i[t - 1].baseBorrowIndex,
+        assets[state.assetId].t_i[t - 1].baseBorrowIndex,
         't1_i Spoke1 index'
       );
       assertEq(
@@ -104,17 +125,17 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
     } else if (stage == stages[2]) {
       // asset
       assertEq(
-        assets[assetId].t_i[t].baseBorrowIndex,
-        assets[assetId].t_f[t - 1].baseBorrowIndex,
+        assets[state.assetId].t_i[t].baseBorrowIndex,
+        assets[state.assetId].t_f[t - 1].baseBorrowIndex,
         't2_i Asset index'
       );
       assertEq(
-        assets[assetId].t_i[t].baseDebt,
-        assets[assetId].t_f[t - 1].baseDebt,
+        assets[state.assetId].t_i[t].baseDebt,
+        assets[state.assetId].t_f[t - 1].baseDebt,
         't2_i Asset base debt'
       );
       assertEq(
-        assets[assetId].t_i[t].lastUpdateTimestamp,
+        assets[state.assetId].t_i[t].lastUpdateTimestamp,
         timeAt(stages[t - 1]),
         't2_i Asset lastUpdateTimestamp'
       );
@@ -135,7 +156,7 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       // spoke4
       assertEq(
         spokes[3].t_i[t].baseBorrowIndex,
-        assets[assetId].t_i[t].baseBorrowIndex,
+        assets[state.assetId].t_i[t].baseBorrowIndex,
         't2_i Spoke4 index'
       );
       assertEq(
@@ -157,7 +178,7 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
     if (stage == stages[0]) {
       Utils.supply({
         hub: hub,
-        assetId: assetId,
+        assetId: state.assetId,
         spoke: spokes[0].addr,
         amount: spokes[0].actions.supply[t].amount,
         riskPremium: 0,
@@ -166,7 +187,7 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       });
       Utils.draw({
         hub: hub,
-        assetId: assetId,
+        assetId: state.assetId,
         spoke: spokes[0].addr,
         amount: spokes[0].actions.draw[t].amount,
         riskPremium: 0,
@@ -174,10 +195,10 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
         onBehalfOf: spokes[0].addr
       });
     } else if (stage == stages[1]) {
-      hub.addSpoke(assetId, spokeConfig, spokes[3].addr);
+      hub.addSpoke(state.assetId, spokeConfig, spokes[3].addr);
       Utils.draw({
         hub: hub,
-        assetId: assetId,
+        assetId: state.assetId,
         spoke: spokes[3].addr,
         amount: spokes[3].actions.draw[t].amount,
         riskPremium: 0,
@@ -187,7 +208,7 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
     } else if (stage == stages[2]) {
       Utils.supply({
         hub: hub,
-        assetId: assetId,
+        assetId: state.assetId,
         spoke: spokes[3].addr,
         amount: spokes[3].actions.supply[t].amount,
         riskPremium: 0,
@@ -209,17 +230,17 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
     if (stage == stages[0]) {
       // asset
       assertEq(
-        assets[assetId].t_f[t].baseBorrowIndex,
+        assets[state.assetId].t_f[t].baseBorrowIndex,
         hub.DEFAULT_ASSET_INDEX(),
         't0_f Asset index'
       );
       assertEq(
-        assets[assetId].t_f[t].baseDebt,
+        assets[state.assetId].t_f[t].baseDebt,
         spokes[0].actions.draw[t].amount,
         't0_f Asset base debt'
       );
       assertEq(
-        assets[assetId].t_f[t].lastUpdateTimestamp,
+        assets[state.assetId].t_f[t].lastUpdateTimestamp,
         timeAt(stages[t]),
         't0_f Asset lastUpdateTimestamp'
       );
@@ -239,24 +260,26 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       // no spoke4 yet
     } else if (stage == stages[1]) {
       states.cumulatedBaseInterest.t_f[t] = MathUtils.calculateLinearInterest(
-        assets[assetId].t_f[t - 1].baseBorrowRate,
+        assets[state.assetId].t_f[t - 1].baseBorrowRate,
         timeAt(stages[t - 1])
       );
 
       // asset
       assertEq(
-        assets[assetId].t_f[t].baseBorrowIndex,
-        assets[assetId].t_f[t - 1].baseBorrowIndex.rayMul(states.cumulatedBaseInterest.t_f[t]),
+        assets[state.assetId].t_f[t].baseBorrowIndex,
+        assets[state.assetId].t_f[t - 1].baseBorrowIndex.rayMul(
+          states.cumulatedBaseInterest.t_f[t]
+        ),
         't1_f Asset index'
       );
       assertEq(
-        assets[assetId].t_f[t].baseDebt,
+        assets[state.assetId].t_f[t].baseDebt,
         spokes[0].actions.draw[t - 1].amount.rayMul(states.cumulatedBaseInterest.t_f[t]) +
           spokes[3].actions.draw[t].amount,
         't1_f Asset base debt'
       );
       assertEq(
-        assets[assetId].t_f[t].lastUpdateTimestamp,
+        assets[state.assetId].t_f[t].lastUpdateTimestamp,
         timeAt(stages[t]),
         't1_f Asset lastUpdateTimestamp'
       );
@@ -278,7 +301,7 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       // spoke4
       assertEq(
         spokes[3].t_f[t].baseBorrowIndex,
-        assets[assetId].t_f[t].baseBorrowIndex,
+        assets[state.assetId].t_f[t].baseBorrowIndex,
         't1_f Spoke4 index'
       );
       assertEq(
@@ -293,19 +316,19 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       );
     } else if (stage == stages[2]) {
       states.cumulatedBaseInterest.t_f[t] = MathUtils.calculateLinearInterest(
-        assets[assetId].t_f[1].baseBorrowRate,
+        assets[state.assetId].t_f[1].baseBorrowRate,
         timeAt(stages[1])
       );
 
       // asset
       assertEq(
-        assets[assetId].t_f[t].baseBorrowIndex,
-        assets[assetId].t_f[1].baseBorrowIndex.rayMul(states.cumulatedBaseInterest.t_f[t]),
+        assets[state.assetId].t_f[t].baseBorrowIndex,
+        assets[state.assetId].t_f[1].baseBorrowIndex.rayMul(states.cumulatedBaseInterest.t_f[t]),
         't2_f Asset index'
       );
       assertEq(
-        assets[assetId].t_f[t].baseDebt,
-        assets[assetId].t_f[1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
+        assets[state.assetId].t_f[t].baseDebt,
+        assets[state.assetId].t_f[1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
         't1_f Asset base debt'
       );
 
@@ -326,7 +349,7 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
       // spoke4
       assertEq(
         spokes[3].t_f[t].baseBorrowIndex,
-        assets[assetId].t_f[t].baseBorrowIndex,
+        assets[state.assetId].t_f[t].baseBorrowIndex,
         't2_f Spoke4 index'
       );
       assertEq(

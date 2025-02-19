@@ -92,6 +92,11 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     }
     timestamps.push(vm.getBlockTimestamp());
   }
+
+  // invoked once before the test scenario
+  function preTestSetup() internal virtual {}
+
+  // invoked on each time step
   function precondition(Stage stage) internal virtual {}
   function initialAssertions(Stage stage) internal virtual {}
 
@@ -111,9 +116,9 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   function _testScenario() internal virtual {
     Stage stage;
 
+    preTestSetup();
     for (t = 0; t < NUM_TIMESTAMPS; t++) {
       stage = stages[t];
-
       precondition(stage);
       initialAssertions(stage);
       if (isPrintLogs) {
