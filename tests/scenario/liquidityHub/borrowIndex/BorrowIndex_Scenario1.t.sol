@@ -20,28 +20,27 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
   function setUp() public override {
     super.setUp();
 
-    // Mock constant 10% IR
-    mockBaseBorrowRate(10_00);
-
     isPrintLogs = false;
     assetId = wethAssetId;
   }
 
   function test_borrowIndexScenario1() public {
+    assetId = wethAssetId;
+
+    state.assetId = wethAssetId;
+    state.baseBorrowRate = 10_00;
+    state.skipTime = 365 days;
+    state.actions[0].supply[0].amount = 10e18;
+    state.actions[0].draw[0].amount = 5e18;
+    state.actions[3].draw[1].amount = 1e18;
+    state.actions[3].supply[2].amount = 1e8;
+
+    mockBaseBorrowRate(state.baseBorrowRate);
     _testScenario();
   }
 
   function precondition(Stage stage) internal override {
     super.precondition(stage);
-
-    if (stage == stages[0]) {
-      spokes[0].actions.supply[t].amount = 10e18;
-      spokes[0].actions.draw[t].amount = 5e18;
-    } else if (stage == stages[1]) {
-      spokes[3].actions.draw[t].amount = 1e18;
-    } else if (stage == stages[2]) {
-      spokes[3].actions.supply[t].amount = 1e8;
-    }
   }
   function initialAssertions(Stage stage) internal override {
     super.initialAssertions(stage);

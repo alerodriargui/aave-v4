@@ -27,28 +27,29 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
   function setUp() public override {
     super.setUp();
 
-    // Mock constant 10% IR
-    mockBaseBorrowRate(10_00);
-
     isPrintLogs = false;
-    assetId = wethAssetId;
   }
 
   function test_borrowIndexScenario3() public {
+    assetId = wethAssetId;
+
+    state.assetId = wethAssetId;
+    state.baseBorrowRate = 10_00;
+    state.skipTime = 365 days;
+    state.actions[0].supply[1].amount = 10e18;
+    state.actions[0].draw[1].amount = 5e18;
+    state.actions[3].draw[3].amount = 1e18;
+    state.actions[3].supply[4].amount = 1e8;
+    state.actions[0].supply[8].amount = 2e18;
+
+    mockBaseBorrowRate(state.baseBorrowRate);
     _testScenario();
   }
 
   function precondition(Stage stage) internal override {
     super.precondition(stage);
 
-    if (stage == stages[1]) {
-      spokes[0].actions.supply[t].amount = 10e18;
-      spokes[0].actions.draw[t].amount = 5e18;
-    } else if (stage == stages[3]) {
-      spokes[3].actions.draw[t].amount = 1e18;
-    } else if (stage == stages[4]) {
-      spokes[3].actions.supply[t].amount = 1e8;
-    } else if (stage == stages[5]) {
+    if (stage == stages[5]) {
       // TODO: use max amount when implemented
       // spokes[0].actions.restore.t_i[5] = type(uint256).max;
       states.cumulatedBaseInterest.t_i[t] = MathUtils.calculateLinearInterest(
@@ -70,8 +71,6 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
         states.cumulatedBaseInterest.t_i[t]
       );
       spokes[3].actions.restore[t].amount = states.cumulatedSpokeBaseDebt[3].t_i[t];
-    } else if (stage == stages[8]) {
-      spokes[0].actions.supply[t].amount = 2e18;
     }
   }
 

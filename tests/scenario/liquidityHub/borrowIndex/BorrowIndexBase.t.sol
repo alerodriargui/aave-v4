@@ -8,6 +8,14 @@ contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
+  struct TestState {
+    uint256 assetId;
+    uint256 baseBorrowRate;
+    uint256 skipTime;
+    SpokeActions[NUM_SPOKES] actions;
+  }
+
+  TestState internal state;
   DataTypes.SpokeConfig internal spokeConfig;
   Spoke internal spoke4;
 
@@ -25,6 +33,9 @@ contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
 
   function precondition(Stage stage) internal virtual override {
     super.precondition(stage);
+    for (uint256 i = 0; i < NUM_SPOKES; i++) {
+      spokes[i].actions = state.actions[i];
+    }
   }
   function initialAssertions(Stage stage) internal virtual override {
     super.initialAssertions(stage);
