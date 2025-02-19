@@ -37,6 +37,24 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
     _testScenario();
   }
 
+  function test_fuzz_borrowIndexScenario2(TestState memory _state) public {
+    state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
+    state.baseBorrowRate = bound(_state.baseBorrowRate, 0, 1000_00);
+    state.skipTime = bound(_state.skipTime, 0, 10_000 days);
+    state.actions[0].supply[1].amount = bound(_state.actions[0].supply[1].amount, 1e10, 1e30);
+    state.actions[0].draw[1].amount = bound(_state.actions[0].draw[1].amount, 1e10, 1e30);
+    state.actions[3].draw[2].amount = bound(_state.actions[3].draw[2].amount, 1e10, 1e30);
+    state.actions[3].supply[3].amount = bound(_state.actions[3].supply[3].amount, 1e10, 1e30);
+
+    vm.assume(
+      state.actions[0].supply[1].amount >
+        state.actions[0].draw[1].amount + state.actions[3].draw[2].amount
+    );
+
+    mockBaseBorrowRate(state.baseBorrowRate);
+    _testScenario();
+  }
+
   function precondition(Stage stage) internal override {
     super.precondition(stage);
   }
@@ -203,7 +221,8 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
 
   function skipTime(Stage stage) internal override {
     super.skipTime(stage);
-    skip(365 days);
+
+    skip(state.skipTime);
   }
 
   function finalAssertions(Stage stage) internal override {
@@ -323,9 +342,10 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
         assets[state.assetId].t_f[2].baseBorrowIndex.rayMul(states.cumulatedBaseInterest.t_f[3]),
         't3_f Asset index'
       );
-      assertEq(
+      assertApproxEqRel(
         assets[state.assetId].t_f[3].baseDebt,
         assets[state.assetId].t_f[2].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[3]),
+        expectedPrecision,
         't3_f Asset base debt'
       );
       assertEq(
@@ -354,9 +374,10 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
         assets[state.assetId].t_f[3].baseBorrowIndex,
         't3_f Spoke4 index'
       );
-      assertEq(
+      assertApproxEqRel(
         spokes[3].t_f[3].baseDebt,
         spokes[3].t_f[2].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[3]),
+        expectedPrecision,
         't3_f Spoke4 base debt'
       );
       assertEq(

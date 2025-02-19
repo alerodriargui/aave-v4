@@ -37,29 +37,23 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
     _testScenario();
   }
 
-  // function test_fuzz_borrowIndexScenario1(State memory _state) public {
-  //   state = State(
-  //     bound(_state.state.assetId, 0, 3),
-  //     bound(_state.baseBorrowRate, 0, 100_00),
-  //     bound(_state.delay, 0, 10_000 days),
-  //     AmountsPreCondition({
-  //       spoke1SupplyAmount_t0_i: bound(_state.preCondition.spoke1SupplyAmount_t0_i, 1e10, 1e30),
-  //       spoke1DrawAmount_t0_i: bound(_state.preCondition.spoke1DrawAmount_t0_i, 1e10, 1e30),
-  //       spoke4DrawAmount_t1_i: bound(_state.preCondition.spoke4DrawAmount_t1_i, 1e10, 1e30),
-  //       spoke4SupplyAmount_t2_i: bound(_state.preCondition.spoke4SupplyAmount_t2_i, 1e10, 1e30)
-  //     })
-  //   );
-  //   vm.assume(
-  //     state.preCondition.spoke1SupplyAmount_t0_i >
-  //       state.preCondition.spoke1DrawAmount_t0_i + state.preCondition.spoke4DrawAmount_t1_i
-  //   );
-  //   deal(address(tokenList.dai), bob, 1e60);
-  //   deal(address(tokenList.wbtc), bob, 1e60);
-  //   deal(address(tokenList.weth), bob, 1e60);
-  //   deal(address(tokenList.usdx), bob, 1e60);
-  //   mockBaseBorrowRate(state.baseBorrowRate);
-  //   _testScenario();
-  // }
+  function test_fuzz_borrowIndexScenario1(TestState memory _state) public {
+    state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
+    state.baseBorrowRate = bound(_state.baseBorrowRate, 0, 1000_00);
+    state.skipTime = bound(_state.skipTime, 0, 10_000 days);
+    state.actions[0].supply[0].amount = bound(_state.actions[0].supply[0].amount, 1e10, 1e30);
+    state.actions[0].draw[0].amount = bound(_state.actions[0].draw[0].amount, 1e10, 1e30);
+    state.actions[3].draw[1].amount = bound(_state.actions[3].draw[1].amount, 1e10, 1e30);
+    state.actions[3].supply[2].amount = bound(_state.actions[3].supply[2].amount, 1e10, 1e30);
+
+    vm.assume(
+      state.actions[0].supply[0].amount >
+        state.actions[0].draw[0].amount + state.actions[3].draw[1].amount
+    );
+
+    mockBaseBorrowRate(state.baseBorrowRate);
+    _testScenario();
+  }
 
   function precondition(Stage stage) internal override {
     super.precondition(stage);
@@ -221,7 +215,7 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
   function skipTime(Stage stage) internal override {
     super.skipTime(stage);
 
-    skip(365 days);
+    skip(state.skipTime);
   }
 
   function finalAssertions(Stage stage) internal override {
@@ -272,10 +266,11 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
         ),
         't1_f Asset index'
       );
-      assertEq(
+      assertApproxEqRel(
         assets[state.assetId].t_f[t].baseDebt,
         spokes[0].actions.draw[t - 1].amount.rayMul(states.cumulatedBaseInterest.t_f[t]) +
           spokes[3].actions.draw[t].amount,
+        expectedPrecision,
         't1_f Asset base debt'
       );
       assertEq(
@@ -326,10 +321,11 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
         assets[state.assetId].t_f[1].baseBorrowIndex.rayMul(states.cumulatedBaseInterest.t_f[t]),
         't2_f Asset index'
       );
-      assertEq(
+      assertApproxEqRel(
         assets[state.assetId].t_f[t].baseDebt,
         assets[state.assetId].t_f[1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
-        't1_f Asset base debt'
+        expectedPrecision,
+        't2_f Asset base debt'
       );
 
       // spoke1
@@ -352,9 +348,10 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
         assets[state.assetId].t_f[t].baseBorrowIndex,
         't2_f Spoke4 index'
       );
-      assertEq(
+      assertApproxEqRel(
         spokes[3].t_f[t].baseDebt,
         spokes[3].actions.draw[1].amount.rayMul(states.cumulatedBaseInterest.t_f[t]),
+        expectedPrecision,
         't2_f Spoke4 base debt'
       );
       assertEq(

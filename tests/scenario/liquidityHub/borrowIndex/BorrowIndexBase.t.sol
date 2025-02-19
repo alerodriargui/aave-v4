@@ -18,13 +18,17 @@ contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
   TestState internal state;
   DataTypes.SpokeConfig internal spokeConfig;
   Spoke internal spoke4;
-
-  uint256 internal assetId;
+  uint256 internal expectedPrecision = 0.00_00000001e18; // 1e18 is 100%; 0.0000001%
 
   function setUp() public virtual override {
     super.setUp();
     initEnvironment();
     spokeMintAndApprove();
+
+    deal(address(tokenList.dai), bob, 1e60);
+    deal(address(tokenList.wbtc), bob, 1e60);
+    deal(address(tokenList.weth), bob, 1e60);
+    deal(address(tokenList.usdx), bob, 1e60);
 
     spokeConfig = DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max});
     spoke4 = new Spoke(address(hub), address(oracle));
@@ -62,9 +66,9 @@ contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
     super.printInitialLog(stage);
 
     // Asset
-    console.log('Asset borrow index %27e', assets[assetId].t_i[t].baseBorrowIndex);
-    console.log('Asset base debt %e', assets[assetId].t_i[t].baseDebt);
-    console.log('Asset last update timestamp', assets[assetId].t_i[t].lastUpdateTimestamp);
+    console.log('Asset borrow index %27e', assets[state.assetId].t_i[t].baseBorrowIndex);
+    console.log('Asset base debt %e', assets[state.assetId].t_i[t].baseDebt);
+    console.log('Asset last update timestamp', assets[state.assetId].t_i[t].lastUpdateTimestamp);
 
     // Spoke1
     console.log('Spoke1 borrow index %27e', spokes[0].t_i[t].baseBorrowIndex);
@@ -81,9 +85,9 @@ contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
     super.printFinalLog(stage);
 
     // Asset
-    console.log('Asset borrow index %27e', assets[assetId].t_f[t].baseBorrowIndex);
-    console.log('Asset base debt %e', assets[assetId].t_f[t].baseDebt);
-    console.log('Asset last update timestamp', assets[assetId].t_f[t].lastUpdateTimestamp);
+    console.log('Asset borrow index %27e', assets[state.assetId].t_f[t].baseBorrowIndex);
+    console.log('Asset base debt %e', assets[state.assetId].t_f[t].baseDebt);
+    console.log('Asset last update timestamp', assets[state.assetId].t_f[t].lastUpdateTimestamp);
 
     // Spoke1
     console.log('Spoke1 borrow index %27e', spokes[0].t_f[t].baseBorrowIndex);

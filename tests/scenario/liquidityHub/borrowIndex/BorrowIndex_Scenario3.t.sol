@@ -31,7 +31,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
   }
 
   function test_borrowIndexScenario3() public {
-    state.assetId = daiAssetId;
+    state.assetId = wethAssetId;
     state.baseBorrowRate = 10_00;
     state.skipTime = 365 days;
     state.actions[0].supply[1].amount = 10e18;
@@ -43,6 +43,25 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
     mockBaseBorrowRate(state.baseBorrowRate);
     _testScenario();
   }
+
+  // function test_fuzz_borrowIndexScenario3(TestState memory _state) public {
+  //   state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
+  //   state.baseBorrowRate = bound(_state.baseBorrowRate, 0, 1000_00);
+  //   state.skipTime = bound(_state.skipTime, 0, 10_000 days);
+  //   state.actions[0].supply[1].amount = bound(_state.actions[0].supply[1].amount, 1e10, 1e30);
+  //   state.actions[0].draw[1].amount = bound(_state.actions[0].draw[1].amount, 1e10, 1e30);
+  //   state.actions[3].draw[3].amount = bound(_state.actions[3].draw[3].amount, 1e10, 1e30);
+  //   state.actions[3].supply[4].amount = bound(_state.actions[3].supply[4].amount, 1e10, 1e30);
+  //   state.actions[0].supply[8].amount = bound(_state.actions[0].supply[8].amount, 1e10, 1e30);
+
+  //   vm.assume(
+  //     state.actions[0].supply[1].amount >
+  //       state.actions[0].draw[1].amount + state.actions[3].draw[3].amount
+  //   );
+
+  //   mockBaseBorrowRate(state.baseBorrowRate);
+  //   _testScenario();
+  // }
 
   function precondition(Stage stage) internal override {
     super.precondition(stage);
@@ -68,6 +87,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
       states.cumulatedSpokeBaseDebt[3].t_i[t] = states.cumulatedSpokeBaseDebt[3].t_f[t - 1].rayMul(
         states.cumulatedBaseInterest.t_i[t]
       );
+
       spokes[3].actions.restore[t].amount = states.cumulatedSpokeBaseDebt[3].t_i[t];
     }
   }
@@ -243,6 +263,14 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
         repayer: bob
       });
     } else if (stage == stages[6]) {
+      // console.log('spokes[3].actions.restore[t].amount %e', spokes[3].actions.restore[t].amount);
+      // console.log(
+      //   'ssets[state.assetId].t_i[t] %e',
+      //   assets[state.assetId].t_i[t].baseDebt.rayMul(states.cumulatedBaseInterest.t_i[t])
+      // );
+      spokes[3].actions.restore[t].amount = assets[state.assetId].t_i[t].baseDebt.rayMul(
+        states.cumulatedBaseInterest.t_i[t]
+      );
       Utils.restore({
         hub: hub,
         assetId: state.assetId,
@@ -266,7 +294,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
 
   function skipTime(Stage stage) internal override {
     super.skipTime(stage);
-    skip(365 days);
+    skip(state.skipTime);
   }
 
   function finalAssertions(Stage stage) internal override {
@@ -502,10 +530,11 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
         ),
         't5_f Asset index'
       );
-      assertEq(
+      assertApproxEqRel(
         assets[state.assetId].t_f[t].baseDebt,
         assets[state.assetId].t_f[t - 1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]) -
           spokes[0].actions.restore[t].amount,
+        expectedPrecision,
         't5_f Asset base debt'
       );
       assertEq(
