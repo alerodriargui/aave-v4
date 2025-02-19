@@ -262,7 +262,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       assertEq(
         spokes[0].t_f[1].lastUpdateTimestamp,
         spokes[0].t_f[0].lastUpdateTimestamp,
-        't1_f Spoke1 base debt'
+        't1_f Spoke1 lastUpdateTimestamp'
       );
 
       // spoke4

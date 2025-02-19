@@ -79,14 +79,18 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   function precondition(Stage stage) internal virtual {}
   function initialAssertions(Stage stage) internal virtual {}
 
-  function printInitialLog(Stage stage) internal virtual {}
+  function printInitialLog(Stage stage) internal virtual {
+    console.log(string.concat('----- t', vm.toString(t), '_i -----'));
+  }
   function exec(Stage stage) internal virtual {}
   function finalAssertions(Stage stage) internal virtual {}
   function skipTime(Stage stage) internal virtual {}
   function postcondition(Stage stage) internal virtual {
     timestamps.push(vm.getBlockTimestamp());
   }
-  function printFinalLog(Stage stage) internal virtual {}
+  function printFinalLog(Stage stage) internal virtual {
+    console.log(string.concat('----- t', vm.toString(t), '_f -----'));
+  }
 
   function _testScenario() internal virtual {
     Stage stage;
