@@ -28,8 +28,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     SpokeData[NUM_TIMESTAMPS] t_i;
     SpokeData[NUM_TIMESTAMPS] t_f;
     address addr;
-    SpokeActionAssetIds actions;
-    SpokeAmounts amounts;
+    SpokeActions actions;
   }
 
   struct AssetDatas {
@@ -43,18 +42,31 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     Timestamps[NUM_SPOKES] cumulatedSpokeBaseDebt;
   }
 
-  struct SpokeAmounts {
-    Timestamps supply;
-    Timestamps withdraw;
-    Timestamps draw;
-    Timestamps restore;
+  struct SpokeActions {
+    SupplyAction[NUM_TIMESTAMPS] supply;
+    WithdrawAction[NUM_TIMESTAMPS] withdraw;
+    DrawAction[NUM_TIMESTAMPS] draw;
+    RestoreAction[NUM_TIMESTAMPS] restore;
   }
 
-  struct SpokeActionAssetIds {
-    Timestamps supplyAssetId;
-    Timestamps withdrawAssetId;
-    Timestamps drawAssetId;
-    Timestamps restoreAssetId;
+  struct SupplyAction {
+    uint256 amount;
+    uint256 assetId;
+  }
+
+  struct WithdrawAction {
+    uint256 amount;
+    uint256 assetId;
+  }
+
+  struct DrawAction {
+    uint256 amount;
+    uint256 assetId;
+  }
+
+  struct RestoreAction {
+    uint256 amount;
+    uint256 assetId;
   }
 
   uint256[] internal timestamps;

@@ -54,12 +54,12 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
     super.precondition(stage);
 
     if (stage == stages[0]) {
-      spokes[0].amounts.supply.t_i[t] = 10e18;
-      spokes[0].amounts.draw.t_i[t] = 5e18;
+      spokes[0].actions.supply[t].amount = 10e18;
+      spokes[0].actions.draw[t].amount = 5e18;
     } else if (stage == stages[1]) {
-      spokes[3].amounts.draw.t_i[t] = 1e18;
+      spokes[3].actions.draw[t].amount = 1e18;
     } else if (stage == stages[2]) {
-      spokes[3].amounts.supply.t_i[t] = 1e8;
+      spokes[3].actions.supply[t].amount = 1e8;
     }
   }
   function initialAssertions(Stage stage) internal override {
@@ -99,7 +99,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       );
       assertEq(
         assets[assetId].t_i[t].baseDebt,
-        spokes[0].amounts.draw.t_i[t - 1],
+        spokes[0].actions.draw[t - 1].amount,
         't1_i Asset base debt'
       );
       assertEq(
@@ -116,7 +116,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       );
       assertEq(
         spokes[0].t_i[t].baseDebt,
-        spokes[0].amounts.draw.t_i[t - 1],
+        spokes[0].actions.draw[t - 1].amount,
         't1_i Spoke1 base debt'
       );
       assertEq(
@@ -145,7 +145,11 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
 
       // spoke1
       assertEq(spokes[0].t_i[t].baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't2_i Spoke1 index');
-      assertEq(spokes[0].t_i[t].baseDebt, spokes[0].amounts.draw.t_i[0], 't2_i Spoke1 base debt');
+      assertEq(
+        spokes[0].t_i[t].baseDebt,
+        spokes[0].actions.draw[0].amount,
+        't2_i Spoke1 base debt'
+      );
       assertEq(
         spokes[0].t_i[t].lastUpdateTimestamp,
         timeAt(stages[0]),
@@ -160,7 +164,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       );
       assertEq(
         spokes[3].t_i[t].baseDebt,
-        spokes[3].amounts.draw.t_i[t - 1],
+        spokes[3].actions.draw[t - 1].amount,
         't2_i Spoke4 base debt'
       );
       assertEq(
@@ -179,7 +183,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
         hub: hub,
         assetId: assetId,
         spoke: spokes[0].addr,
-        amount: spokes[0].amounts.supply.t_i[t],
+        amount: spokes[0].actions.supply[t].amount,
         riskPremium: 0,
         user: bob,
         to: spokes[0].addr
@@ -188,7 +192,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
         hub: hub,
         assetId: assetId,
         spoke: spokes[0].addr,
-        amount: spokes[0].amounts.draw.t_i[t],
+        amount: spokes[0].actions.draw[t].amount,
         riskPremium: 0,
         to: bob,
         onBehalfOf: spokes[0].addr
@@ -199,7 +203,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
         hub: hub,
         assetId: assetId,
         spoke: spokes[3].addr,
-        amount: spokes[3].amounts.draw.t_i[t],
+        amount: spokes[3].actions.draw[t].amount,
         riskPremium: 0,
         to: bob,
         onBehalfOf: spokes[3].addr
@@ -209,7 +213,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
         hub: hub,
         assetId: assetId,
         spoke: spokes[3].addr,
-        amount: spokes[3].amounts.supply.t_i[t],
+        amount: spokes[3].actions.supply[t].amount,
         riskPremium: 0,
         user: bob,
         to: spokes[3].addr
@@ -239,7 +243,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       );
       assertEq(
         assets[assetId].t_f[t].baseDebt,
-        spokes[0].amounts.draw.t_i[t],
+        spokes[0].actions.draw[t].amount,
         't0_f Asset base debt'
       );
       assertEq(
@@ -250,7 +254,11 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
 
       // spoke1
       assertEq(spokes[0].t_f[t].baseBorrowIndex, hub.DEFAULT_ASSET_INDEX(), 't0_f Spoke1 index');
-      assertEq(spokes[0].t_f[t].baseDebt, spokes[0].amounts.draw.t_i[t], 't0_f Spoke1 base debt');
+      assertEq(
+        spokes[0].t_f[t].baseDebt,
+        spokes[0].actions.draw[t].amount,
+        't0_f Spoke1 base debt'
+      );
       assertEq(
         spokes[0].t_f[t].lastUpdateTimestamp,
         timeAt(stages[t]),
@@ -271,8 +279,8 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       );
       assertEq(
         assets[assetId].t_f[t].baseDebt,
-        spokes[0].amounts.draw.t_i[t - 1].rayMul(states.cumulatedBaseInterest.t_f[t]) +
-          spokes[3].amounts.draw.t_i[t],
+        spokes[0].actions.draw[t - 1].amount.rayMul(states.cumulatedBaseInterest.t_f[t]) +
+          spokes[3].actions.draw[t].amount,
         't1_f Asset base debt'
       );
       assertEq(
@@ -301,7 +309,11 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
         assets[assetId].t_f[t].baseBorrowIndex,
         't1_f Spoke4 index'
       );
-      assertEq(spokes[3].t_f[t].baseDebt, spokes[3].amounts.draw.t_i[t], 't1_f Spoke4 base debt');
+      assertEq(
+        spokes[3].t_f[t].baseDebt,
+        spokes[3].actions.draw[t].amount,
+        't1_f Spoke4 base debt'
+      );
       assertEq(
         spokes[3].t_f[t].lastUpdateTimestamp,
         timeAt(stages[t]),
@@ -347,7 +359,7 @@ contract BorrowIndex_Scenario1Test is LiquidityHubScenarioBaseTest {
       );
       assertEq(
         spokes[3].t_f[t].baseDebt,
-        spokes[3].amounts.draw.t_i[1].rayMul(states.cumulatedBaseInterest.t_f[t]),
+        spokes[3].actions.draw[1].amount.rayMul(states.cumulatedBaseInterest.t_f[t]),
         't2_f Spoke4 base debt'
       );
       assertEq(
