@@ -15,6 +15,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   uint256 internal constant NUM_SPOKES = 4;
   uint256 internal constant NUM_ASSETS = 4;
   bool internal isPrintLogs = false;
+  uint256 internal t;
 
   // _i: initial, prior to action at a given time
   // _f: final, after action at a given time
@@ -70,8 +71,8 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     spokes[2].addr = address(spoke3);
 
     // init stages
-    for (uint8 t = 0; t < NUM_TIMESTAMPS; t++) {
-      stages[t] = Stage.wrap(t);
+    for (uint8 i = 0; i < NUM_TIMESTAMPS; i++) {
+      stages[i] = Stage.wrap(i);
     }
     timestamps.push(vm.getBlockTimestamp());
   }
@@ -90,7 +91,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   function _testScenario() internal virtual {
     Stage stage;
 
-    for (uint256 t = 0; t < NUM_TIMESTAMPS; t++) {
+    for (t = 0; t < NUM_TIMESTAMPS; t++) {
       stage = stages[t];
 
       precondition(stage);
