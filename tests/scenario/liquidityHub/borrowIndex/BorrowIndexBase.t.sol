@@ -76,9 +76,9 @@ contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
     console.log('Spoke1 last update timestamp', spokes[0].t_i[t].lastUpdateTimestamp);
 
     // Spoke4
-    console.log('Spoke4 borrow index %27e', spokes[3].t_f[t].baseBorrowIndex);
-    console.log('Spoke4 base debt %e', spokes[3].t_f[t].baseDebt);
-    console.log('Spoke4 last update timestamp', spokes[3].t_f[t].lastUpdateTimestamp);
+    console.log('Spoke4 borrow index %27e', spokes[3].t_i[t].baseBorrowIndex);
+    console.log('Spoke4 base debt %e', spokes[3].t_i[t].baseDebt);
+    console.log('Spoke4 last update timestamp', spokes[3].t_i[t].lastUpdateTimestamp);
   }
 
   function printFinalLog(Stage stage) internal virtual override {
