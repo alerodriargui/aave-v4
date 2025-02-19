@@ -36,6 +36,8 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
 
   struct CalculatedStates {
     Timestamps cumulatedBaseInterest;
+    Timestamps cumulatedBaseDebt;
+    Timestamps[NUM_SPOKES] cumulatedSpokeBaseDebt;
   }
 
   struct SpokeAmounts {
