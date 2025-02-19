@@ -22,13 +22,9 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
     super.setUp();
 
     // Mock constant 10% IR
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(uint256(10_00).bpsToRay())
-    );
+    mockBaseBorrowRate(10_00);
 
-    isPrintLogs = true;
+    isPrintLogs = false;
     assetId = wethAssetId;
   }
 

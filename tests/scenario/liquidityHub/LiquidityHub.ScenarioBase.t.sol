@@ -11,6 +11,10 @@ function eq(Stage a, Stage b) pure returns (bool) {
 using {eq as ==} for Stage global;
 
 abstract contract LiquidityHubScenarioBaseTest is BaseTest {
+  using SharesMath for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
+
   uint256 internal constant NUM_TIMESTAMPS = 10;
   uint256 internal constant NUM_SPOKES = 4;
   uint256 internal constant NUM_ASSETS = 4;
@@ -127,5 +131,14 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
 
   function timeAt(Stage stage) internal view returns (uint40) {
     return uint40(timestamps[uint256(Stage.unwrap(stage))]);
+  }
+
+  /// @param baseBorrowRate base borrow rate in bps
+  function mockBaseBorrowRate(uint256 baseBorrowRate) internal {
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(baseBorrowRate.bpsToRay())
+    );
   }
 }

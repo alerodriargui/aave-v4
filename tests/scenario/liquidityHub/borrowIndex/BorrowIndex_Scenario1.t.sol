@@ -20,14 +20,10 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
   function setUp() public override {
     super.setUp();
 
-    // mock constant 10% IR
-    vm.mockCall(
-      address(irStrategy),
-      IReserveInterestRateStrategy.calculateInterestRates.selector,
-      abi.encode(uint256(10_00).bpsToRay())
-    );
+    // Mock constant 10% IR
+    mockBaseBorrowRate(10_00);
 
-    isPrintLogs = true;
+    isPrintLogs = false;
     assetId = wethAssetId;
   }
 
