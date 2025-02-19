@@ -28,6 +28,8 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     SpokeData[NUM_TIMESTAMPS] t_i;
     SpokeData[NUM_TIMESTAMPS] t_f;
     address addr;
+    SpokeActionAssetIds actions;
+    SpokeAmounts amounts;
   }
 
   struct AssetDatas {
@@ -58,8 +60,6 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   uint256[] internal timestamps;
   AssetDatas[NUM_ASSETS] internal assets;
   SpokeDatas[NUM_SPOKES] internal spokes;
-  SpokeActionAssetIds[NUM_SPOKES] internal spokeActions;
-  SpokeAmounts[NUM_SPOKES] internal spokeAmounts;
   Stage[NUM_TIMESTAMPS] internal stages;
   CalculatedStates internal states;
 
