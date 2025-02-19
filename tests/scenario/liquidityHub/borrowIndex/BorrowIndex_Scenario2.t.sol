@@ -173,7 +173,7 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
         assetId: assetId,
         spoke: spokes[0].addr,
         amount: spokeAmounts[0].supply.t_i[1],
-        riskPremiumRad: 0,
+        riskPremium: 0,
         user: bob,
         to: spokes[0].addr
       });
@@ -182,7 +182,7 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
         assetId: assetId,
         spoke: spokes[0].addr,
         amount: spokeAmounts[0].draw.t_i[1],
-        riskPremiumRad: 0,
+        riskPremium: 0,
         to: bob,
         onBehalfOf: spokes[0].addr
       });
@@ -193,7 +193,7 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
         assetId: assetId,
         spoke: spokes[3].addr,
         amount: spokeAmounts[3].draw.t_i[2],
-        riskPremiumRad: 0,
+        riskPremium: 0,
         to: bob,
         onBehalfOf: spokes[3].addr
       });
@@ -203,7 +203,7 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
         assetId: assetId,
         spoke: spokes[3].addr,
         amount: spokeAmounts[3].supply.t_i[3],
-        riskPremiumRad: 0,
+        riskPremium: 0,
         user: bob,
         to: spokes[3].addr
       });
