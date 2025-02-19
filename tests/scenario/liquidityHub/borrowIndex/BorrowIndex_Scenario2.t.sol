@@ -1,18 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import 'tests/scenario/liquidityHub/LiquidityHub.ScenarioBase.t.sol';
-import {SpokeData} from 'src/contracts/LiquidityHub.sol';
-import {Asset} from 'src/contracts/LiquidityHub.sol';
-import {Utils} from 'tests/Utils.t.sol';
-
-contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
+import 'tests/scenario/liquidityHub/borrowIndex/BorrowIndexBase.t.sol';
+contract BorrowIndex_Scenario2Test is BorrowIndexBase {
   using SharesMath for uint256;
   using WadRayMath for uint256;
   using PercentageMath for uint256;
-
-  DataTypes.SpokeConfig internal spokeConfig;
-  Spoke internal spoke4;
 
   // Scenario:
   // t0: asset added, spoke1 added
@@ -25,14 +18,8 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
   // - 1 year between each action
   // - single asset (weth)
 
-  uint256 internal assetId;
-
   function setUp() public override {
     super.setUp();
-    initEnvironment();
-    spokeMintAndApprove();
-
-    spokeConfig = DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max});
 
     // Mock constant 10% IR
     vm.mockCall(
@@ -40,10 +27,8 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
       IReserveInterestRateStrategy.calculateInterestRates.selector,
       abi.encode(uint256(10_00).bpsToRay())
     );
-    spoke4 = new Spoke(address(hub), address(oracle));
-    spokes[3].addr = address(spoke4);
 
-    isPrintLogs = false;
+    isPrintLogs = true;
     assetId = wethAssetId;
   }
 
@@ -246,10 +231,6 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
   function finalAssertions(Stage stage) internal override {
     super.finalAssertions(stage);
 
-    assets[assetId].t_f[t] = hub.getAsset(assetId);
-    spokes[0].t_f[t] = hub.getSpoke(assetId, spokes[0].addr);
-    spokes[3].t_f[t] = hub.getSpoke(assetId, spokes[3].addr);
-
     if (stage == stages[0]) {
       // asset
       assertEq(
@@ -411,36 +392,5 @@ contract BorrowIndex_Scenario2Test is LiquidityHubScenarioBaseTest {
         timeAt(stages[3])
       );
     }
-  }
-
-  function printInitialLog(Stage stage) internal override {
-    super.printInitialLog(stage);
-    console.log('Asset borrow index %27e', assets[assetId].t_i[t].baseBorrowIndex);
-    console.log('Asset base debt %e', assets[assetId].t_i[t].baseDebt);
-    console.log('Asset last update timestamp', assets[assetId].t_i[t].lastUpdateTimestamp);
-
-    console.log('Spoke1 borrow index %27e', spokes[0].t_i[t].baseBorrowIndex);
-    console.log('Spoke1 base debt %e', spokes[0].t_i[t].baseDebt);
-    console.log('Spoke1 last update timestamp', spokes[0].t_i[t].lastUpdateTimestamp);
-
-    console.log('Spoke4 borrow index %27e', spokes[3].t_f[t].baseBorrowIndex);
-    console.log('Spoke4 base debt %e', spokes[3].t_f[t].baseDebt);
-    console.log('Spoke4 last update timestamp', spokes[3].t_f[t].lastUpdateTimestamp);
-  }
-
-  function printFinalLog(Stage stage) internal override {
-    super.printFinalLog(stage);
-
-    console.log('Asset borrow index %27e', assets[assetId].t_f[t].baseBorrowIndex);
-    console.log('Asset base debt %e', assets[assetId].t_f[t].baseDebt);
-    console.log('Asset last update timestamp', assets[assetId].t_f[t].lastUpdateTimestamp);
-
-    console.log('Spoke1 borrow index %27e', spokes[0].t_f[t].baseBorrowIndex);
-    console.log('Spoke1 base debt %e', spokes[0].t_f[t].baseDebt);
-    console.log('Spoke1 last update timestamp', spokes[0].t_f[t].lastUpdateTimestamp);
-
-    console.log('Spoke4 borrow index %27e', spokes[3].t_f[t].baseBorrowIndex);
-    console.log('Spoke4 base debt %e', spokes[3].t_f[t].baseDebt);
-    console.log('Spoke4 last update timestamp', spokes[3].t_f[t].lastUpdateTimestamp);
   }
 }
