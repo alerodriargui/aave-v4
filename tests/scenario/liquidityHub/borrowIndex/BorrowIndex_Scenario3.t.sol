@@ -276,7 +276,7 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
         assetId: assetId,
         spoke: spokes[0].addr,
         amount: spokeAmounts[0].restore.t_i[t],
-        riskPremiumRad: 0,
+        riskPremium: 0,
         repayer: bob
       });
     } else if (stage == stages[6]) {
@@ -285,7 +285,7 @@ contract BorrowIndex_Scenario3Test is LiquidityHubScenarioBaseTest {
         assetId: assetId,
         spoke: spokes[3].addr,
         amount: spokeAmounts[3].restore.t_i[t],
-        riskPremiumRad: 0,
+        riskPremium: 0,
         repayer: bob
       });
     }

@@ -60,7 +60,7 @@ library Utils {
     uint256 assetId,
     address spoke,
     uint256 amount,
-    uint256 riskPremiumRad,
+    uint32 riskPremium,
     address repayer
   ) internal {
     vm.startPrank(repayer);
@@ -68,12 +68,7 @@ library Utils {
     vm.stopPrank();
 
     vm.prank(spoke);
-    hub.restore({
-      assetId: assetId,
-      amount: amount,
-      riskPremiumRad: riskPremiumRad,
-      repayer: repayer
-    });
+    hub.restore({assetId: assetId, amount: amount, riskPremium: riskPremium, repayer: repayer});
   }
 
   function withdraw(
