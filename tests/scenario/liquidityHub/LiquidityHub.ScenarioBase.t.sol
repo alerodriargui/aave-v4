@@ -15,7 +15,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   uint256 internal constant NUM_SPOKES = 4;
   uint256 internal constant NUM_ASSETS = 4;
   bool internal isPrintLogs = false;
-  uint256 internal t;
+  uint256 internal t; // internal stage index
 
   // _i: initial, prior to action at a given time
   // _f: final, after action at a given time
