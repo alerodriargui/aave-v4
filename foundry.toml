@@ -6,6 +6,7 @@ out = 'out'
 libs = ['lib']
 remappings = []
 fs_permissions = [{ access = "write", path = "./reports" }]
+gas_limit = "18446744073709551615"                          # u64::MAX
 
 [profile.ci]
 [fuzz]

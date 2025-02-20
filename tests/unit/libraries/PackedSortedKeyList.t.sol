@@ -77,6 +77,7 @@ contract Wrapper is IWrapper {
     uint256 len = list.length();
     vm.startSnapshotGas(_getLabel('loop'));
     while (idx < len) {
+      // 0 - 25, slot 0, 26 - 50, slot 1
       reserveId = list.unsafeGetKey(idx);
       idx++;
     }
@@ -95,6 +96,37 @@ contract Wrapper is IWrapper {
     }
     vm.stopSnapshotGas();
   }
+
+  // 1(50) 2(10) 3(0) 4(100) 5(100)
+  // 1 2 3 4 5
+
+  // 2 1
+
+  // 3 2 1 4 5 -> reserveId
+  // 1 2 3 4 5 -> index
+
+  // 1000 -> 10 bits (2 ** 10 1024)
+
+  // 0-10, 11 - 29, 30 - 39
+  // 1 2 3 4 5
+
+  // 25 per slot, 6 bits
+  // every 25 asset we need one sload
+
+  //   while(i < len) {
+  //     // 1 0  0 1  0 0
+  //     //  ^    ^    ^
+  //     isBorrowingOrSupplying(i) 3 5
+
+  //   }
+  // emilio said very few assets at a time, see if sorting
+  // on the fly works & is cheaper (whats the threshold when its not)
+
+  // if we maintain supplied assets for each user
+  // 7 bits per reserveId (for max 128 assets)
+  // 8 bits per position (1 whether borrowing)
+  // 32 position per slot
+  // 4 slots needed
 
   function loopWithCache2() external {
     uint256 idx;
@@ -152,11 +184,13 @@ contract PackedSortedKeyListTest is Test {
     w.setSnapshotLabel(_keyLabel(10));
   }
 
-  function test_insert() public {
-    _runInsert(10);
-    _runInsert(50);
-    _runInsert(100);
-    _runInsert(MAX_KEY);
+  function test_insert_1() public {
+    // _runInsert(1);
+    // _runInsert(3);
+    _runInsert(5);
+    // _runInsert(50);
+    // _runInsert(100);
+    // _runInsert(MAX_KEY);
   }
 
   /// forge-config: default.fuzz.runs = 256
