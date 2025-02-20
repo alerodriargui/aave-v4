@@ -23,7 +23,7 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
 
   struct TestState {
     uint256 assetId;
-    uint256 baseBorrowRate;
+    uint256[NUM_TIMESTAMPS] baseBorrowRate;
     uint256[NUM_TIMESTAMPS] skipTime;
     SpokeActions[NUM_SPOKES] actions;
   }
@@ -158,9 +158,25 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
     );
   }
 
-  function fillSkipTime(uint256[NUM_TIMESTAMPS] storage skipTime, uint256 time) internal {
+  function fillSkipTimeAndBaseBorrowRate(
+    TestState storage state,
+    uint256 time,
+    uint256 borrowRate
+  ) internal {
     for (uint256 i = 0; i < NUM_TIMESTAMPS; i++) {
-      skipTime[i] = time;
+      state.skipTime[i] = time;
+      state.baseBorrowRate[i] = borrowRate;
+    }
+  }
+
+  function boundFuzzStates(
+    TestState storage state,
+    TestState memory _state
+  ) internal returns (uint256) {
+    state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
+    for (uint256 i = 0; i < NUM_TIMESTAMPS; i++) {
+      state.baseBorrowRate[i] = bound(_state.baseBorrowRate[0], 0, 1000_00);
+      state.skipTime[i] = bound(_state.skipTime[0], 0, 10_000 days);
     }
   }
 }
