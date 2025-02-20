@@ -5,6 +5,8 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 
+import 'forge-std/console2.sol';
+
 library SpokeDataLogic {
   using SpokeDataLogic for SpokeData;
   using PercentageMath for uint256;
@@ -22,6 +24,13 @@ library SpokeDataLogic {
       uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
         spoke.baseBorrowIndex
       ); // precision loss, same as in v3
+
+      console2.log(
+        'SL accrueInterest - existingBaseDebt: %e cumulatedBaseDebt: %e spoke.baseBorrowIndex: %e',
+        existingBaseDebt,
+        cumulatedBaseDebt,
+        spoke.baseBorrowIndex
+      );
 
       // accrue premium interest on the accrued base interest
       spoke.outstandingPremium += (cumulatedBaseDebt - existingBaseDebt).percentMul(

@@ -12,6 +12,8 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 
+import 'forge-std/console2.sol';
+
 struct SpokeData {
   uint256 suppliedShares; // share
   uint256 baseDebt; // asset
@@ -264,9 +266,9 @@ contract LiquidityHub is ILiquidityHub {
 
     _accrueInterest(asset, spoke); // accrue interest before validating action
     _validateRestore(asset, amount, spoke.baseDebt + spoke.outstandingPremium);
-
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
+    // console2.log('LH:  %e %e %e', amount, asset.baseDebt, spoke.baseDebt);
     _updateRiskPremiumAndBaseDebt(
       asset,
       spoke,
@@ -384,7 +386,7 @@ contract LiquidityHub is ILiquidityHub {
   // @dev Utilizes existing asset & spoke: `baseBorrowIndex`, `riskPremium`
   function _accrueInterest(Asset storage asset, SpokeData storage spoke) internal {
     uint256 nextBaseBorrowIndex = asset.previewNextBorrowIndex();
-
+    console2.log('LH: nextBaseBorrowIndex %e', nextBaseBorrowIndex);
     asset.accrueInterest(nextBaseBorrowIndex);
     spoke.accrueInterest(nextBaseBorrowIndex);
   }
@@ -411,8 +413,8 @@ contract LiquidityHub is ILiquidityHub {
 
     uint256 newSpokeDebt = baseDebtChange > 0
       ? existingSpokeDebt + uint256(baseDebtChange) // debt added
-      : // force underflow: only possible when spoke takes repays amount more than net drawn
-      existingSpokeDebt - uint256(-baseDebtChange); // debt restored
+      // force underflow: only possible when spoke takes repays amount more than net drawn
+      : existingSpokeDebt - uint256(-baseDebtChange); // debt restored
 
     (uint256 newAssetRiskPremium, uint256 newAssetDebt) = MathUtils.addToWeightedAverage(
       assetRiskPremiumWithoutCurrent,
@@ -449,7 +451,6 @@ contract LiquidityHub is ILiquidityHub {
     uint256 amount
   ) internal returns (uint256) {
     uint256 spokeOutstandingPremium = spoke.outstandingPremium;
-
     uint256 baseDebtRestored;
 
     if (amount > spokeOutstandingPremium) {

@@ -9,6 +9,8 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 
+import 'forge-std/console2.sol';
+
 library AssetLogic {
   using AssetLogic for Asset;
   using PercentageMath for uint256;
@@ -104,6 +106,13 @@ library AssetLogic {
   function accrueInterest(Asset storage asset, uint256 nextBaseBorrowIndex) internal {
     (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = asset.previewInterest(
       nextBaseBorrowIndex
+    );
+
+    console2.log(
+      'AL accrueInterest - baseDebt: %e cumulatedBaseDebt: %e asset.baseBorrowIndex: %e',
+      asset.baseDebt,
+      cumulatedBaseDebt,
+      asset.baseBorrowIndex
     );
 
     asset.baseDebt = cumulatedBaseDebt;

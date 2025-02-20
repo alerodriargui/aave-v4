@@ -151,12 +151,14 @@ library MathUtils {
     if (newValueWeight == 0) return (currentWeightedAvg, currentSumWeights);
 
     if (currentSumWeights == newValueWeight) return (0, 0); // no change
-    if (currentSumWeights < newValueWeight) revert();
+    // if (currentSumWeights < newValueWeight) revert();
+    require(currentSumWeights >= newValueWeight, 'INVALID_SUM_WEIGHTS');
 
     uint256 newWeightedValue = newValue * newValueWeight;
     uint256 currentWeightedSum = currentWeightedAvg * currentSumWeights;
 
-    if (currentWeightedSum < newWeightedValue) revert();
+    // if (currentWeightedSum < newWeightedValue) revert();
+    require(currentWeightedSum >= newWeightedValue, 'INVALID_SUM_WEIGHTS');
 
     uint256 newSumWeights = currentSumWeights - newValueWeight;
     uint256 newWeightedAvg = (currentWeightedSum - newWeightedValue) / newSumWeights;
