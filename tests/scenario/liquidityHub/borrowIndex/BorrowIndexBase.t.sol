@@ -8,16 +8,6 @@ contract BorrowIndexBase is LiquidityHubScenarioBaseTest {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
 
-  struct TestState {
-    uint256 assetId;
-    uint256 baseBorrowRate;
-    uint256 skipTime;
-    SpokeActions[NUM_SPOKES] actions;
-  }
-
-  TestState internal state;
-  DataTypes.SpokeConfig internal spokeConfig;
-  Spoke internal spoke4;
   uint256 internal expectedPrecision = 0.00_00000001e18; // 1e18 is 100%; 0.0000001%
 
   function setUp() public virtual override {

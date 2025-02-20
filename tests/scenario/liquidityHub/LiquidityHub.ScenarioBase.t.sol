@@ -21,6 +21,17 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
   bool internal isPrintLogs = false;
   uint256 internal t; // internal stage index
 
+  struct TestState {
+    uint256 assetId;
+    uint256 baseBorrowRate;
+    uint256[NUM_TIMESTAMPS] skipTime;
+    SpokeActions[NUM_SPOKES] actions;
+  }
+
+  TestState internal state;
+  DataTypes.SpokeConfig internal spokeConfig;
+  Spoke internal spoke4;
+
   // _i: initial, prior to action at a given time
   // _f: final, after action at a given time
   struct Timestamps {
@@ -145,5 +156,11 @@ abstract contract LiquidityHubScenarioBaseTest is BaseTest {
       IReserveInterestRateStrategy.calculateInterestRates.selector,
       abi.encode(baseBorrowRate.bpsToRay())
     );
+  }
+
+  function fillSkipTime(uint256[NUM_TIMESTAMPS] storage skipTime, uint256 time) internal {
+    for (uint256 i = 0; i < NUM_TIMESTAMPS; i++) {
+      skipTime[i] = time;
+    }
   }
 }

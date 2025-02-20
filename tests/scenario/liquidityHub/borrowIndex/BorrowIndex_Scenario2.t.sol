@@ -27,7 +27,7 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
   function test_borrowIndexScenario2() public {
     state.assetId = wethAssetId;
     state.baseBorrowRate = 10_00;
-    state.skipTime = 365 days;
+    fillSkipTime(state.skipTime, 365 days);
     state.actions[0].supply[1].amount = 10e18;
     state.actions[0].draw[1].amount = 5e18;
     state.actions[3].draw[2].amount = 1e18;
@@ -40,7 +40,10 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
   function test_fuzz_borrowIndexScenario2(TestState memory _state) public {
     state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
     state.baseBorrowRate = bound(_state.baseBorrowRate, 0, 1000_00);
-    state.skipTime = bound(_state.skipTime, 0, 10_000 days);
+    state.skipTime[0] = bound(_state.skipTime[0], 0, 10_000 days);
+    state.skipTime[1] = bound(_state.skipTime[1], 0, 10_000 days);
+    state.skipTime[2] = bound(_state.skipTime[2], 0, 10_000 days);
+    state.skipTime[3] = bound(_state.skipTime[3], 0, 10_000 days);
     state.actions[0].supply[1].amount = bound(_state.actions[0].supply[1].amount, 1e10, 1e30);
     state.actions[0].draw[1].amount = bound(_state.actions[0].draw[1].amount, 1e10, 1e30);
     state.actions[3].draw[2].amount = bound(_state.actions[3].draw[2].amount, 1e10, 1e30);
@@ -221,8 +224,7 @@ contract BorrowIndex_Scenario2Test is BorrowIndexBase {
 
   function skipTime(Stage stage) internal override {
     super.skipTime(stage);
-
-    skip(state.skipTime);
+    skip(state.skipTime[t]);
   }
 
   function finalAssertions(Stage stage) internal override {

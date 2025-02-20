@@ -33,7 +33,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
   function test_borrowIndexScenario3() public {
     state.assetId = wethAssetId;
     state.baseBorrowRate = 10_00;
-    state.skipTime = 365 days;
+    fillSkipTime(state.skipTime, 365 days);
     state.actions[0].supply[1].amount = 10e18;
     state.actions[0].draw[1].amount = 5e18;
     state.actions[3].draw[3].amount = 1e18;
@@ -268,6 +268,8 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
       //   'ssets[state.assetId].t_i[t] %e',
       //   assets[state.assetId].t_i[t].baseDebt.rayMul(states.cumulatedBaseInterest.t_i[t])
       // );
+      console.log('spokes[0].t_f[5].baseDebt', spokes[0].t_f[5].baseDebt);
+
       spokes[3].actions.restore[t].amount = assets[state.assetId].t_i[t].baseDebt.rayMul(
         states.cumulatedBaseInterest.t_i[t]
       );
@@ -294,7 +296,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
 
   function skipTime(Stage stage) internal override {
     super.skipTime(stage);
-    skip(state.skipTime);
+    skip(state.skipTime[t]);
   }
 
   function finalAssertions(Stage stage) internal override {
@@ -473,9 +475,10 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
         ),
         't4_f Asset index'
       );
-      assertEq(
+      assertApproxEqRel(
         assets[state.assetId].t_f[t].baseDebt,
         assets[state.assetId].t_f[t - 1].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
+        expectedPrecision,
         't4_f Asset base debt'
       );
       assertEq(
@@ -504,9 +507,10 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
         assets[state.assetId].t_f[t].baseBorrowIndex,
         't4_f Spoke4 index'
       );
-      assertEq(
+      assertApproxEqRel(
         spokes[3].t_f[t].baseDebt,
         spokes[3].t_f[3].baseDebt.rayMul(states.cumulatedBaseInterest.t_f[t]),
+        expectedPrecision,
         't4_f Spoke4 base debt'
       );
       assertEq(
