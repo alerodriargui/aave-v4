@@ -26,45 +26,35 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
 
   function setUp() public override {
     super.setUp();
-
     isPrintLogs = false;
   }
 
   function test_borrowIndexScenario3() public {
     state.assetId = wethAssetId;
-    state.baseBorrowRate = 10_00;
-    fillSkipTime(state.skipTime, 1 days);
+    fillSkipTimeAndBaseBorrowRate(state, 365 days, 10_00);
     state.actions[0].supply[1].amount = 10e18;
     state.actions[0].draw[1].amount = 5e18;
     state.actions[3].draw[3].amount = 1e18;
     state.actions[3].supply[4].amount = 1e8;
     state.actions[0].supply[8].amount = 2e18;
 
-    mockBaseBorrowRate(state.baseBorrowRate);
     _testScenario();
   }
 
-  // function test_fuzz_borrowIndexScenario3(TestState memory _state) public {
-  //   state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
-  //   state.baseBorrowRate = bound(_state.baseBorrowRate, 0, 1000_00);
-  //   state.skipTime = bound(_state.skipTime, 0, 10_000 days);
-  //   state.actions[0].supply[1].amount = bound(_state.actions[0].supply[1].amount, 1e10, 1e30);
-  //   state.actions[0].draw[1].amount = bound(_state.actions[0].draw[1].amount, 1e10, 1e30);
-  //   state.actions[3].draw[3].amount = bound(_state.actions[3].draw[3].amount, 1e10, 1e30);
-  //   state.actions[3].supply[4].amount = bound(_state.actions[3].supply[4].amount, 1e10, 1e30);
-  //   state.actions[0].supply[8].amount = bound(_state.actions[0].supply[8].amount, 1e10, 1e30);
-
-  //   vm.assume(
-  //     state.actions[0].supply[1].amount >
-  //       state.actions[0].draw[1].amount + state.actions[3].draw[3].amount
-  //   );
-
-  //   mockBaseBorrowRate(state.baseBorrowRate);
-  //   _testScenario();
-  // }
+  /// forge-config: default.fuzz.runs = 100
+  /// forge-config: default.fuzz.show-logs = true
+  function skip_test_fuzz_borrowIndexScenario3(TestState memory _state) public {
+    boundFuzzStates(state, _state);
+    vm.assume(
+      state.actions[0].supply[1].amount >
+        state.actions[0].draw[1].amount + state.actions[3].draw[3].amount
+    );
+    _testScenario();
+  }
 
   function precondition(Stage stage) internal override {
     super.precondition(stage);
+    mockBaseBorrowRate(state.baseBorrowRate[t]);
 
     if (stage == stages[5]) {
       // TODO: use max amount when implemented

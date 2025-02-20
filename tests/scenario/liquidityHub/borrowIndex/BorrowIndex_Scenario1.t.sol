@@ -24,11 +24,10 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
   }
 
   function test_borrowIndexScenario1() public {
-    uint256 assetId = daiAssetId;
+    uint256 assetId = wethAssetId;
 
     state.assetId = assetId;
-    state.baseBorrowRate = 10_00;
-    fillSkipTime(state.skipTime, 365 days);
+    fillSkipTimeAndBaseBorrowRate(state, 365 days, 10_00);
     state.actions[0].supply[0].amount = 10e18;
     state.actions[0].draw[0].amount = 5e18;
     state.actions[3].draw[1].amount = 1e18;
@@ -37,12 +36,10 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
     _testScenario();
   }
 
+  /// forge-config: default.fuzz.runs = 100
+  /// forge-config: default.fuzz.show-logs = true
   function test_fuzz_borrowIndexScenario1(TestState memory _state) public {
-    state.assetId = bound(_state.assetId, 0, NUM_ASSETS - 1);
-    state.baseBorrowRate = bound(_state.baseBorrowRate, 0, 1000_00);
-    state.skipTime[0] = bound(_state.skipTime[0], 0, 10_000 days);
-    state.skipTime[1] = bound(_state.skipTime[1], 0, 10_000 days);
-    state.skipTime[2] = bound(_state.skipTime[2], 0, 10_000 days);
+    boundFuzzStates(state, _state);
     state.actions[0].supply[0].amount = bound(_state.actions[0].supply[0].amount, 1e10, 1e30);
     state.actions[0].draw[0].amount = bound(_state.actions[0].draw[0].amount, 1e10, 1e30);
     state.actions[3].draw[1].amount = bound(_state.actions[3].draw[1].amount, 1e10, 1e30);
@@ -53,14 +50,13 @@ contract BorrowIndex_Scenario1Test is BorrowIndexBase {
         state.actions[0].draw[0].amount + state.actions[3].draw[1].amount
     );
 
-    mockBaseBorrowRate(state.baseBorrowRate);
     _testScenario();
   }
 
   function precondition(Stage stage) internal override {
     super.precondition(stage);
 
-    mockBaseBorrowRate(state.baseBorrowRate);
+    mockBaseBorrowRate(state.baseBorrowRate[t]);
   }
   function initialAssertions(Stage stage) internal override {
     super.initialAssertions(stage);
