@@ -12,7 +12,7 @@ pragma solidity ^0.8.0;
 library WadRayMath {
   // HALF_WAD and HALF_RAY expressed with extended notation as constant with operations are not supported in Yul assembly
   // todo: fix naming for 8 decimal fixed math, RAD is 45
-  uint256 internal constant RAD = 1e8;
+  uint256 internal constant RAD = 1e18;
   uint256 internal constant HALF_RAD = 0.5e8;
 
   uint256 internal constant WAD = 1e18;
@@ -219,6 +219,37 @@ library WadRayMath {
       b := div(a, WAD)
       let remainder := mod(a, WAD)
       if iszero(lt(remainder, div(WAD, 2))) {
+        b := add(b, 1)
+      }
+    }
+  }
+
+  /**
+   * @dev Converts number to Ray (27-decimal fixed point units)
+   * @param a The number to convert
+   * @return b in Ray (b = a * 1e27)
+   */
+  function toRay(uint256 a) internal pure returns (uint256 b) {
+    // to avoid overflow, b/RAY == a
+    assembly {
+      b := mul(a, RAY)
+
+      if iszero(eq(div(b, RAY), a)) {
+        revert(0, 0)
+      }
+    }
+  }
+
+  /**
+   * @dev Truncates number from Ray, loosing denominator precision
+   * @param a The number in Ray
+   * @return b (= a / 1e27, rounded up if remainder is >= 0.5 RAY)
+   */
+  function fromRay(uint256 a) internal pure returns (uint256 b) {
+    assembly {
+      b := div(a, RAY)
+      let remainder := mod(a, RAY)
+      if iszero(lt(remainder, div(RAY, 2))) {
         b := add(b, 1)
       }
     }

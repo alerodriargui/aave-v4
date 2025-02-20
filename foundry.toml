@@ -4,9 +4,8 @@ test = 'tests'
 script = 'scripts'
 out = 'out'
 libs = ['lib']
-remappings = []
 fs_permissions = [{ access = "write", path = "./reports" }]
-
+gas_reports = ["MathUtils", "LiquidityHub"]
 [profile.ci]
 [fuzz]
 runs = 10000

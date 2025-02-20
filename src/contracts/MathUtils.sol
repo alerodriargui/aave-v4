@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.0;
 
-import {WadRayMath} from './WadRayMath.sol';
-
+import {WadRayMath} from 'src/contracts/WadRayMath.sol';
+import {FullMath} from 'src/contracts/FullMath.sol';
 /**
  * @title MathUtils library
  * @author Aave
@@ -10,6 +10,7 @@ import {WadRayMath} from './WadRayMath.sol';
  */
 library MathUtils {
   using WadRayMath for uint256;
+  using FullMath for uint256;
 
   /// @dev Ignoring leap years
   uint256 internal constant SECONDS_PER_YEAR = 365 days;
@@ -123,8 +124,11 @@ library MathUtils {
     }
 
     uint256 newSumWeights = currentSumWeights + newValueWeight;
-    uint256 newWeightedAvg = ((currentWeightedAvg * currentSumWeights) +
-      (newValue * newValueWeight)) / newSumWeights; // newSumWeights cannot be zero when execution reaches here
+    // uint256 newWeightedAvg = ((currentWeightedAvg * currentSumWeights) +
+    //   (newValue * newValueWeight)) / newSumWeights; // newSumWeights cannot be zero when execution reaches here
+
+    uint256 newWeightedAvg = currentWeightedAvg.mulDiv(currentSumWeights, newSumWeights) +
+      newValue.mulDiv(newValueWeight, newSumWeights);
 
     return (newWeightedAvg, newSumWeights);
   }
@@ -151,15 +155,18 @@ library MathUtils {
     if (newValueWeight == 0) return (currentWeightedAvg, currentSumWeights);
 
     if (currentSumWeights == newValueWeight) return (0, 0); // no change
-    if (currentSumWeights < newValueWeight) revert();
+    if (currentSumWeights < newValueWeight) revert('currentSumWeights < newValueWeight');
 
     uint256 newWeightedValue = newValue * newValueWeight;
     uint256 currentWeightedSum = currentWeightedAvg * currentSumWeights;
 
-    if (currentWeightedSum < newWeightedValue) revert();
+    if (currentWeightedSum < newWeightedValue) revert('currentWeightedSum < newWeightedValue');
 
     uint256 newSumWeights = currentSumWeights - newValueWeight;
-    uint256 newWeightedAvg = (currentWeightedSum - newWeightedValue) / newSumWeights;
+    // uint256 newWeightedAvg = (currentWeightedSum - newWeightedValue) / newSumWeights;
+
+    uint256 newWeightedAvg = currentWeightedAvg.mulDiv(currentSumWeights, newSumWeights) -
+      newValue.mulDiv(newValueWeight, newSumWeights);
 
     return (newWeightedAvg, newSumWeights);
   }

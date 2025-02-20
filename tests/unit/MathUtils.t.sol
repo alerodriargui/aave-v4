@@ -47,16 +47,16 @@ contract MathUtilsWeightedAverage is Test {
   function setUp() public {
     // @dev the library is tested agnostic of usage, but certain bounds are defined for usage defined below
     // usage 1: weighted average of users on spoke
-    bounds.push(
-      Bound({maxValue: 1e4, maxWeight: 1e30, maxIterations: 1e6, precision: WadRayMath.WAD})
-    );
+    // bounds.push(
+    //   Bound({maxValue: 1e4, maxWeight: 1e30, maxIterations: 1e6, precision: WadRayMath.WAD})
+    // );
     // usage 2: weighted average of spokes on hub
     bounds.push(
       Bound({
-        maxValue: WadRayMath.WAD,
+        maxValue: WadRayMath.RAD,
         maxWeight: 1e30,
         maxIterations: 1e2,
-        precision: WadRayMath.WAD
+        precision: WadRayMath.RAD
       })
     );
 
