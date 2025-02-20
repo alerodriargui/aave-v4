@@ -132,9 +132,15 @@ library AssetLogic {
       return (existingBaseDebt, existingOutstandingPremium);
     }
 
-    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
-      asset.baseBorrowIndex
-    ); // precision loss avoidable
+    // precision loss
+    // uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
+    //   asset.baseBorrowIndex
+    // );
+
+    // true asset debt
+    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(
+      MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(asset.lastUpdateTimestamp))
+    );
 
     return (
       cumulatedBaseDebt,

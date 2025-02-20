@@ -248,7 +248,7 @@ contract BorrowIndex_Scenario3Test is BorrowIndexBase {
         hub: hub,
         assetId: state.assetId,
         spoke: spokes[3].addr,
-        amount: spokes[3].actions.restore[t].amount,
+        amount: spokes[3].actions.restore[t].amount, // full amount is not repaid here
         riskPremium: 0,
         repayer: bob
       });

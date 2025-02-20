@@ -158,7 +158,7 @@ library MathUtils {
     uint256 currentWeightedSum = currentWeightedAvg * currentSumWeights;
 
     // if (currentWeightedSum < newWeightedValue) revert();
-    require(currentWeightedSum >= newWeightedValue, 'INVALID_SUM_WEIGHTS');
+    require(currentWeightedSum >= newWeightedValue, 'INVALID_WEIGHTED_SUM');
 
     uint256 newSumWeights = currentSumWeights - newValueWeight;
     uint256 newWeightedAvg = (currentWeightedSum - newWeightedValue) / newSumWeights;

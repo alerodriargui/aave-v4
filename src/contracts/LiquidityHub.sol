@@ -268,12 +268,23 @@ contract LiquidityHub is ILiquidityHub {
     _validateRestore(asset, amount, spoke.baseDebt + spoke.outstandingPremium);
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
     uint256 baseDebtRestored = _deductFromOutstandingPremium(asset, spoke, amount);
-    // console2.log('LH:  %e %e %e', amount, asset.baseDebt, spoke.baseDebt);
+    console2.log(
+      'LH                : amount %18e, asset.baseDebt %18e, spoke.baseDebt %18e',
+      amount,
+      asset.baseDebt,
+      spoke.baseDebt
+    );
     _updateRiskPremiumAndBaseDebt(
       asset,
       spoke,
       _boundBps(riskPremium).rayify(),
       -int256(baseDebtRestored)
+    );
+
+    console2.log(
+      'LH (after restore): asset.baseDebt %18e, spoke.baseDebt %18e',
+      asset.baseDebt,
+      spoke.baseDebt
     );
 
     asset.availableLiquidity += amount;
