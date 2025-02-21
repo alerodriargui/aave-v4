@@ -29,10 +29,10 @@ library AssetLogic {
 
   function totalAccruedAssets(Asset storage asset) internal view returns (uint256) {
     (uint256 cumulatedBaseInterest, ) = asset.previewNextBorrowIndex();
-    (uint256 accruedBaseDebt, uint256 accruedOutstandingPremium) = asset.previewAccruedDebt(
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = asset.previewAccruedDebt(
       cumulatedBaseInterest
     );
-    return asset.totalAssets() + accruedBaseDebt + accruedOutstandingPremium;
+    return asset.availableLiquidity + cumulatedBaseDebt + cumulatedOutstandingPremium;
   }
 
   function convertToSharesUp(Asset storage asset, uint256 assets) internal view returns (uint256) {
@@ -101,15 +101,17 @@ library AssetLogic {
     uint256 cumulatedBaseInterest,
     uint256 nextBaseBorrowIndex
   ) internal {
-    (uint256 accruedBaseDebt, uint256 accruedOutstandingPremium) = asset.previewAccruedDebt(
+    (uint256 cumulatedBaseDebt, uint256 cumulatedOutstandingPremium) = asset.previewAccruedDebt(
       cumulatedBaseInterest
     );
-    if (accruedBaseDebt > 0) asset.baseDebt += accruedBaseDebt;
-    if (accruedOutstandingPremium > 0) asset.outstandingPremium += accruedOutstandingPremium;
+    asset.baseDebt = cumulatedBaseDebt;
+    asset.outstandingPremium = cumulatedOutstandingPremium;
     asset.baseBorrowIndex = nextBaseBorrowIndex;
     asset.lastUpdateTimestamp = block.timestamp;
   }
 
+  // @return cumulatedBaseDebt (in asset units) Base debt after accruing interest
+  // @return cumulatedOutstandingPremium (in asset units) Outstanding premium after accruing premium on interest
   function previewAccruedDebt(
     Asset storage asset,
     uint256 cumulatedBaseInterest
@@ -122,10 +124,12 @@ library AssetLogic {
 
     // can use `cumulatedBaseInterest` instead of `indexRatio` since LH base debt is
     // accrued on each index update
-    uint256 accruedBaseDebt = asset.baseDebt.rayMul(cumulatedBaseInterest - WadRayMath.RAY);
+    uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(cumulatedBaseInterest);
     // accrue premium interest on the accrued base interest
-    uint256 accruedOutstandingPremium = accruedBaseDebt.percentMul(asset.riskPremiumRad.radToBps());
+    uint256 accruedOutstandingPremium = (cumulatedBaseDebt - existingBaseDebt).radMul(
+      asset.riskPremiumRad
+    );
 
-    return (accruedBaseDebt, accruedOutstandingPremium);
+    return (cumulatedBaseDebt, asset.outstandingPremium + accruedOutstandingPremium);
   }
 }
