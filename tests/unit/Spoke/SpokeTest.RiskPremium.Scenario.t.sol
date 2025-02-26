@@ -112,7 +112,8 @@ contract SpokeRiskPremiumScenarioTest is BaseTest {
     // last stored remains the same
     assertEq(spoke1.getLastUsedUserRiskPremium(alice), wethLiquidityPremium);
 
-    // we supply more weth such that, should trigger stored value update for risk premium, and accrue dai debt
+    // we supply more usdx which should trigger stored value update for risk premium, *and accrue* dai debt
+    // (this will be checked implicitly through having correct outstanding premium accrual after delay)
     vm.prank(alice);
     spoke1.supply(_usdxReserveId(spoke1), 500e6);
 
@@ -121,9 +122,6 @@ contract SpokeRiskPremiumScenarioTest is BaseTest {
     // spoke's risk premium should still match since we only have alice's debt in system
     assertEq(spoke1.getReserveRiskPremium(_daiReserveId(spoke1)), newLiquidityPremium);
     assertEq(hub.getSpokeRiskPremium(daiAssetId, address(spoke1)), newLiquidityPremium);
-
-    // stored dai debt should also be updated (this will be checked implicitly by correct outstanding premium
-    // accrual after delay)
 
     vars.lastUpdateTimestamp = uint40(vm.getBlockTimestamp());
     skip(vars.delay);
