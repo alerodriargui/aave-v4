@@ -143,7 +143,7 @@ contract Spoke is ISpoke {
 
   // todo by default returns only stored value, consider renaming to `getLast{Used,Stored}ReserveRiskPremium`
   // to be inline with user's stored rp getter. we don't have an up to date rp concept here since that requires
-  // looping over all supplied users
+  // looping over all contributing users (ie one's drawing this reserve)
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256) {
     return _reserves[reserveId].riskPremium.derayify();
   }
