@@ -460,14 +460,12 @@ contract Spoke is ISpoke {
     address userAddress,
     int256 baseDebtChange
   ) internal returns (uint32) {
-    // Calculate risk premium of user
-    (uint256 newUserRiskPremium, , ) = _calculateUserAccountData(userAddress); // todo pass this around in cached object (rm dup run in _notify)
     // Refresh weighted average risk premium across all users of spoke
     uint256 newAggregatedRiskPremium = _updateSpokeRiskPremiumAndBaseDebt(
       reserve,
       user,
       userData,
-      newUserRiskPremium,
+      userAddress,
       baseDebtChange
     );
     return uint32(newAggregatedRiskPremium.derayify());
@@ -478,7 +476,7 @@ contract Spoke is ISpoke {
     Reserve storage reserve,
     UserConfig storage user,
     UserData storage userData,
-    uint256 newUserRiskPremium,
+    address userAddress,
     int256 baseDebtChange
   ) internal returns (uint256) {
     uint256 existingReserveDebt = reserve.baseDebt;
@@ -497,16 +495,23 @@ contract Spoke is ISpoke {
       ? existingUserDebt + uint256(baseDebtChange) // debt added
       : existingUserDebt - uint256(-baseDebtChange); // debt restored
     // force underflow^: only possible when user takes repays amount more than net drawn
+    uint256 newReserveDebt = baseDebtChange > 0
+      ? existingReserveDebt + uint256(baseDebtChange) // debt added
+      : existingReserveDebt - uint256(-baseDebtChange); // debt restored
 
-    (uint256 newReserveRiskPremium, uint256 newReserveDebt) = MathUtils.addToWeightedAverage(
+    reserve.baseDebt = newReserveDebt;
+    user.baseDebt = newUserDebt;
+
+    // todo pass this around in cached object (rm dup run in _notify)
+    // todo consider decoupling risk premium calc
+    (uint256 newUserRiskPremium, , ) = _calculateUserAccountData(userAddress);
+
+    (uint256 newReserveRiskPremium, ) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
       reserveDebtWithoutCurrent,
       newUserRiskPremium,
       newUserDebt
     );
-
-    reserve.baseDebt = newReserveDebt;
-    user.baseDebt = newUserDebt;
 
     reserve.riskPremium = newReserveRiskPremium;
     userData.riskPremium = newUserRiskPremium;
