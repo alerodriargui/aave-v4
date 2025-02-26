@@ -803,13 +803,13 @@ contract Spoke is ISpoke {
     uint256 existingUserRiskPremium,
     uint256 newUserRiskPremium
   ) internal returns (uint256) {
-    uint256 reserveDebt = reserve.baseDebt;
     uint256 userDebt = user.baseDebt;
 
+    // todo: opt - implement `updateValueInWeightedAverage` in MathUtils to coalesce these two calls
     (uint256 reserveRiskPremiumWithoutCurrent, uint256 reserveDebtWithoutCurrent) = MathUtils
       .subtractFromWeightedAverage(
         reserve.riskPremium,
-        reserveDebt,
+        reserve.baseDebt,
         existingUserRiskPremium,
         userDebt
       );
