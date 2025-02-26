@@ -6,7 +6,6 @@ import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
@@ -14,7 +13,6 @@ import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
   using PercentageMath for uint256;
-  using SafeERC20 for IERC20;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
   uint256 public constant DEFAULT_SPOKE_INDEX = 0;
@@ -181,8 +179,7 @@ contract Spoke is ISpoke {
     _accrueInterest(reserve, user, userData);
     _validateSupply(reserve, amount);
 
-    // Update user's risk premium and wAvgRP across all users of spoke
-    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    (uint256 newReserveRiskPremium, uint256 newUserRiskPremium) = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userData: userData,
@@ -192,10 +189,10 @@ contract Spoke is ISpoke {
     uint256 suppliedShares = liquidityHub.supply(
       reserve.assetId,
       amount,
-      newAggregatedRiskPremium,
+      uint32(newReserveRiskPremium.derayify()),
       msg.sender // supplier
     );
-    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender);
+    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
     user.suppliedShares += suppliedShares;
     reserve.suppliedShares += suppliedShares;
@@ -213,7 +210,7 @@ contract Spoke is ISpoke {
     _validateWithdraw(reserve, user, amount);
 
     // Update user's risk premium and wAvgRP across all users of spoke
-    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    (uint256 newReserveRiskPremium, uint256 newUserRiskPremium) = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userData: userData,
@@ -223,10 +220,10 @@ contract Spoke is ISpoke {
     uint256 withdrawnShares = liquidityHub.withdraw(
       reserve.assetId,
       amount,
-      newAggregatedRiskPremium,
+      uint32(newReserveRiskPremium.derayify()),
       to
     );
-    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender);
+    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
     user.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
@@ -245,15 +242,15 @@ contract Spoke is ISpoke {
     _validateBorrow(reserve, amount);
 
     // TODO HF check
-    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    (uint256 newReserveRiskPremium, uint256 newUserRiskPremium) = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userData: userData,
       userAddress: msg.sender,
       baseDebtChange: int256(amount)
     });
-    liquidityHub.draw(reserve.assetId, amount, newAggregatedRiskPremium, to);
-    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender);
+    liquidityHub.draw(reserve.assetId, amount, uint32(newReserveRiskPremium.derayify()), to);
+    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
     emit Borrowed(reserveId, amount, to);
   }
@@ -271,7 +268,7 @@ contract Spoke is ISpoke {
     // Repaid debt happens first from premium, then base
     uint256 baseDebtRestored = _deductFromOutstandingPremium(reserve, user, amount);
 
-    uint32 newAggregatedRiskPremium = _updateRiskPremiumAndBaseDebt({
+    (uint256 newReserveRiskPremium, uint256 newUserRiskPremium) = _updateRiskPremiumAndBaseDebt({
       reserve: reserve,
       user: user,
       userData: userData,
@@ -282,12 +279,10 @@ contract Spoke is ISpoke {
     liquidityHub.restore(
       reserve.assetId,
       amount,
-      newAggregatedRiskPremium,
+      uint32(newReserveRiskPremium.derayify()),
       msg.sender // repayer
     );
-    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender);
-
-    emit Repaid(reserveId, amount, msg.sender);
+    _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
@@ -453,35 +448,18 @@ contract Spoke is ISpoke {
   }
 
   /**
-  @param baseDebtChange The change in base debt of the reserve.
-  @return The new aggregated risk premium.
-  */
+   * @dev It's assumed interest has been accrued before for the given `reserve` and `user`Position.
+   * @dev Does not update user risk premium, rather returns the updated value to be used in `_notify`
+   * @return New spoke/reserve risk premium (rayified)
+   * @return New user risk premium (rayified)
+   */
   function _updateRiskPremiumAndBaseDebt(
     Reserve storage reserve,
     UserConfig storage user,
     UserData storage userData,
     address userAddress,
     int256 baseDebtChange
-  ) internal returns (uint32) {
-    // Refresh weighted average risk premium across all users of spoke
-    uint256 newAggregatedRiskPremium = _updateSpokeRiskPremiumAndBaseDebt(
-      reserve,
-      user,
-      userData,
-      userAddress,
-      baseDebtChange
-    );
-    return uint32(newAggregatedRiskPremium.derayify());
-  }
-
-  /// @dev It's assumed interest has been accrued before this function call.
-  function _updateSpokeRiskPremiumAndBaseDebt(
-    Reserve storage reserve,
-    UserConfig storage user,
-    UserData storage userData,
-    address userAddress,
-    int256 baseDebtChange
-  ) internal returns (uint256) {
+  ) internal returns (uint256, uint256) {
     uint256 existingReserveDebt = reserve.baseDebt;
     uint256 existingUserDebt = user.baseDebt;
 
@@ -518,9 +496,8 @@ contract Spoke is ISpoke {
     );
 
     reserve.riskPremium = newReserveRiskPremium;
-    userData.riskPremium = newUserRiskPremium;
 
-    return newReserveRiskPremium;
+    return (newReserveRiskPremium, newUserRiskPremium);
   }
 
   function _validateSetUsingAsCollateral(
@@ -643,7 +620,6 @@ contract Spoke is ISpoke {
     // @dev from this point onwards, `totalCollateralInBaseCurrency` represents running collateral
     // value used in risk premium, `totalDebtInBaseCurrency` represents running outstanding debt
     vars.totalCollateralInBaseCurrency = 0;
-
     while (vars.i < vars.collateralReserveCount && vars.totalDebtInBaseCurrency > 0) {
       if (vars.totalDebtInBaseCurrency == 0) break;
       (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(vars.i);
@@ -778,30 +754,76 @@ contract Spoke is ISpoke {
    * to `assetIdToAvoid` as those are expected to be updated outside of this method.
    * We only update risk premium for drawn assets and not supplied bc user RP does not contribute to
    * the other two RPs (Asset, Spoke/Reserve) as by definition they're based on drawn assets only.
+   * @dev Also commits user's new risk premium to storage.
    */
-  function _notifyRiskPremiumUpdate(uint256 assetIdToAvoid, address userAddress) internal {
+  function _notifyRiskPremiumUpdate(
+    uint256 assetIdToAvoid,
+    address userAddress,
+    uint256 newUserRiskPremium
+  ) internal {
     uint256 reserveCount_ = reserveCount;
     uint256 i;
     UserData storage userData = _userData[userAddress];
+    // _updateRiskPremiumAndBaseDebt does not update user risk premium, opt: pass this value in cached obj
+    uint256 existingUserRiskPremium = userData.riskPremium;
     while (i < reserveCount_) {
       UserConfig storage user = _users[userAddress][i];
       Reserve storage reserve = _reserves[i];
       uint256 assetId = reserve.assetId;
       // todo keep borrowed assets in transient storage/pass through?
       if (_isBorrowing(user) && assetId != assetIdToAvoid) {
+        // this was accrued on the fly when calculating `newUserRiskPremium`, opt: decouple and commit before
         _accrueInterest(reserve, user, userData);
-        uint32 newRiskPremium = _updateRiskPremiumAndBaseDebt(
-          reserve,
-          user,
-          userData,
-          userAddress,
-          0
-        );
-        liquidityHub.accrueInterest(assetId, newRiskPremium);
+        uint256 newReserveRiskPremium = _refreshReserveRiskPremium({
+          reserve: reserve,
+          user: user,
+          existingUserRiskPremium: existingUserRiskPremium,
+          newUserRiskPremium: newUserRiskPremium
+        });
+        liquidityHub.accrueInterest(assetId, uint32(newReserveRiskPremium.derayify()));
       }
       unchecked {
         ++i;
       }
     }
+    userData.riskPremium = newUserRiskPremium;
+  }
+
+  /**
+   * @dev Refresh reserve's risk premium with the new user risk premium. Similar to _updateRiskPremiumAndBaseDebt
+   * with baseDebtChange == 0, and precalculated new user risk premium.
+   * @dev It is assumed debt has already been accrued on this `reserve` & `user`Position, and newUserRiskPremium
+   * is calculated with all accrued reserves.
+   * @dev This is currently only used on `_notifyRiskPremiumUpdate`; since no debt is added/removed on this reserve,
+   * it doesn't change the new user risk premium. Optimize later to use this method in `supply/withdraw` as well.
+   * @return New reserve risk premium (rayified)
+   */
+  function _refreshReserveRiskPremium(
+    Reserve storage reserve,
+    UserConfig storage user, // user position on this reserve
+    uint256 existingUserRiskPremium,
+    uint256 newUserRiskPremium
+  ) internal returns (uint256) {
+    uint256 reserveDebt = reserve.baseDebt;
+    uint256 userDebt = user.baseDebt;
+
+    (uint256 reserveRiskPremiumWithoutCurrent, uint256 reserveDebtWithoutCurrent) = MathUtils
+      .subtractFromWeightedAverage(
+        reserve.riskPremium,
+        reserveDebt,
+        existingUserRiskPremium,
+        userDebt
+      );
+    (uint256 newReserveRiskPremium, ) = MathUtils.addToWeightedAverage(
+      reserveRiskPremiumWithoutCurrent,
+      reserveDebtWithoutCurrent,
+      newUserRiskPremium,
+      userDebt
+    );
+
+    // @dev no need to update `reserve.baseDebt` & `user.baseDebt` as there is no debt change
+    reserve.riskPremium = newReserveRiskPremium;
+
+    return newReserveRiskPremium;
   }
 }
