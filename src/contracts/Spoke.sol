@@ -798,7 +798,8 @@ contract Spoke is ISpoke {
    * @dev It is assumed debt has already been accrued on this `reserve` & `user`Position, and newUserRiskPremium
    * is calculated with all accrued reserves.
    * @dev This is currently only used on `_notifyRiskPremiumUpdate`; since no debt is added/removed on this reserve,
-   * it doesn't change the new user risk premium. Optimize later to use this method in `supply/withdraw` as well.
+   * hence it doesn't change the new user risk premium.
+   * TODO: Optimize later to use this method in `supply` & `withdraw` as well.
    * @return New reserve risk premium (rayified)
    */
   function _refreshReserveRiskPremium(
