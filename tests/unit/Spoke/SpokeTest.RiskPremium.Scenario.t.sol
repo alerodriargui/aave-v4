@@ -150,6 +150,17 @@ contract SpokeRiskPremiumScenarioTest is BaseTest {
     (baseDaiDebt, outstandingDaiPremium) = spoke1.getUserDebt(_daiReserveId(spoke1), alice);
     assertEq(baseDaiDebt, 0);
     assertEq(outstandingDaiPremium, 0);
+    (baseDaiDebt, outstandingDaiPremium) = spoke1.getReserveDebt(_daiReserveId(spoke1));
+    assertEq(baseDaiDebt, 0);
+    assertEq(outstandingDaiPremium, 0);
+    (baseDaiDebt, outstandingDaiPremium) = hub.getSpokeDebt(daiAssetId, address(spoke1));
+    assertEq(baseDaiDebt, 0);
+    assertEq(outstandingDaiPremium, 0);
+
+    assertEq(spoke1.getUserRiskPremium(alice), 0);
+    assertEq(spoke1.getLastUsedUserRiskPremium(alice), 0);
+    assertEq(spoke1.getReserveRiskPremium(_daiReserveId(spoke1)), 0);
+    assertEq(hub.getSpokeRiskPremium(daiAssetId, address(spoke1)), 0);
   }
 
   function _usdxReserveId(Spoke spoke) internal view returns (uint256) {
