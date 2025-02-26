@@ -5,7 +5,6 @@ import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
