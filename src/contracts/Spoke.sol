@@ -459,39 +459,41 @@ contract Spoke is ISpoke {
     address userAddress,
     int256 baseDebtChange
   ) internal returns (uint256, uint256) {
-    uint256 existingReserveDebt = reserve.baseDebt;
-    uint256 existingUserDebt = user.baseDebt;
+    uint256 reserveDebt = reserve.baseDebt;
+    uint256 userDebt = user.baseDebt;
 
     // Weighted average risk premium of all users without current user
     (uint256 reserveRiskPremiumWithoutCurrent, uint256 reserveDebtWithoutCurrent) = MathUtils
       .subtractFromWeightedAverage(
         reserve.riskPremium,
-        existingReserveDebt,
+        reserveDebt, // existing
         userData.riskPremium,
-        existingUserDebt
+        userDebt // existing
       );
 
-    uint256 newUserDebt = baseDebtChange > 0
-      ? existingUserDebt + uint256(baseDebtChange) // debt added
-      : existingUserDebt - uint256(-baseDebtChange); // debt restored
-    // force underflow^: only possible when user takes repays amount more than net drawn
-    uint256 newReserveDebt = baseDebtChange > 0
-      ? existingReserveDebt + uint256(baseDebtChange) // debt added
-      : existingReserveDebt - uint256(-baseDebtChange); // debt restored
+    // debt added
+    if (baseDebtChange > 0) {
+      reserveDebt += uint256(baseDebtChange);
+      userDebt += uint256(baseDebtChange);
+    }
+    // debt restored, force underflow: only possible when user takes repays amount more than net drawn
+    else if (baseDebtChange < 0) {
+      reserveDebt -= uint256(-baseDebtChange);
+      userDebt -= uint256(-baseDebtChange);
+    }
 
-    reserve.baseDebt = newReserveDebt;
-    user.baseDebt = newUserDebt;
+    reserve.baseDebt = reserveDebt;
+    user.baseDebt = userDebt;
 
-    // todo pass this around in cached object (we can rm dup run in _notify when baseDebtChange == 0)
-    // todo consider decoupling risk premium calc
-    // @dev we need user.baseDebt updated before calculating new user risk premium
+    // todo consider decoupling risk premium calc, pass in cached obj
+    // @dev we need `user.baseDebt` (userPosition.baseDebt) updated before calculating new user risk premium
     (uint256 newUserRiskPremium, , ) = _calculateUserAccountData(userAddress);
 
     (uint256 newReserveRiskPremium, ) = MathUtils.addToWeightedAverage(
       reserveRiskPremiumWithoutCurrent,
       reserveDebtWithoutCurrent,
       newUserRiskPremium,
-      newUserDebt
+      userDebt // new
     );
 
     reserve.riskPremium = newReserveRiskPremium;
