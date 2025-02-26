@@ -282,6 +282,8 @@ contract Spoke is ISpoke {
       msg.sender // repayer
     );
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
+
+    emit Repaid(reserveId, amount, msg.sender);
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
