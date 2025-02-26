@@ -141,6 +141,9 @@ contract Spoke is ISpoke {
     return _users[user][reserveId].suppliedShares;
   }
 
+  // todo by default returns only stored value, consider renaming to `getLast{Used,Stored}ReserveRiskPremium`
+  // to be inline with user's stored rp getter. we don't have an up to date rp concept here since that requires
+  // looping over all supplied users
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256) {
     return _reserves[reserveId].riskPremium.derayify();
   }
@@ -502,8 +505,9 @@ contract Spoke is ISpoke {
     reserve.baseDebt = newReserveDebt;
     user.baseDebt = newUserDebt;
 
-    // todo pass this around in cached object (rm dup run in _notify)
+    // todo pass this around in cached object (we can rm dup run in _notify when baseDebtChange == 0)
     // todo consider decoupling risk premium calc
+    // @dev we need user.baseDebt updated before calculating new user risk premium
     (uint256 newUserRiskPremium, , ) = _calculateUserAccountData(userAddress);
 
     (uint256 newReserveRiskPremium, ) = MathUtils.addToWeightedAverage(
@@ -515,6 +519,8 @@ contract Spoke is ISpoke {
 
     reserve.riskPremium = newReserveRiskPremium;
     userData.riskPremium = newUserRiskPremium;
+
+    return newReserveRiskPremium;
   }
 
   function _validateSetUsingAsCollateral(
