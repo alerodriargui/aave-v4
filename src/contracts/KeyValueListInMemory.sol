@@ -22,9 +22,17 @@ library KeyValueListInMemory {
     uint256[] _inner;
   }
 
-  function init(uint256 size) internal pure returns (List memory) {
-    // opt: cheaper to allocate memory w/o zeroing out: https://github.com/Vectorized/solady/blob/main/src/utils/DynamicArrayLib.sol#L34-L42
-    return List(new uint256[](size));
+  function init(uint256 size) internal pure returns (List memory list) {
+    // @dev allocate memory without zeroing out slots
+    assembly {
+      // revert is size > 2 ** 32, load array at fmp
+      let inner := or(sub(0, shr(32, size)), mload(0x40))
+      mstore(inner, size)
+      // increment fmp location
+      list := add(add(inner, 0x20), shl(5, size))
+      mstore(list, inner)
+      mstore(0x40, add(list, 0x20))
+    }
   }
 
   function length(List memory self) internal pure returns (uint256) {
@@ -48,23 +56,31 @@ library KeyValueListInMemory {
   }
 
   // @dev key, value < ceiling checks are expected to be done before packing
-  function pack(uint256 key, uint256 value) internal pure returns (uint256) {
-    return (key << _KEY_SHIFT) | value;
+  function pack(uint256 key, uint256 value) internal pure returns (uint256 packed) {
+    assembly ('memory-safe') {
+      packed := or(shl(sub(256, _MAX_KEY_BITS), key), value)
+    }
   }
 
-  function unpackKey(uint256 data) internal pure returns (uint256) {
-    return data >> _KEY_SHIFT;
+  function unpackKey(uint256 data) internal pure returns (uint256 key) {
+    assembly ('memory-safe') {
+      key := shr(sub(256, _MAX_KEY_BITS), data)
+    }
   }
 
-  function unpackValue(uint256 data) internal pure returns (uint256) {
-    return data & ((1 << _KEY_SHIFT) - 1);
+  function unpackValue(uint256 data) internal pure returns (uint256 value) {
+    assembly ('memory-safe') {
+      value := and(data, sub(shl(_MAX_VALUE_BITS, 1), 1))
+    }
   }
 
   function unpack(uint256 data) internal pure returns (uint256, uint256) {
     return (unpackKey(data), unpackValue(data));
   }
 
-  function ltComparator(uint256 a, uint256 b) internal pure returns (bool) {
-    return a < b;
+  function ltComparator(uint256 a, uint256 b) internal pure returns (bool res) {
+    assembly ('memory-safe') {
+      res := lt(a, b)
+    }
   }
 }
