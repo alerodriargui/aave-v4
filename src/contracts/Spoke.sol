@@ -439,7 +439,8 @@ contract Spoke is ISpoke {
     uint256 premiumDebt,
     uint256 amount
   ) internal view returns (uint256, uint256) {
-    if (amount == type(uint256).max) {
+    // if (amount == type(uint256).max) {
+    if (amount >= baseDebt + premiumDebt) {
       return (baseDebt, premiumDebt);
     }
     if (amount <= premiumDebt) {

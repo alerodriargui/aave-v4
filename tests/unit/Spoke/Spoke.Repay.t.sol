@@ -278,17 +278,19 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertEq(
+    assertApproxEqAbs(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       bobDaiBefore.baseDebt + bobDaiBefore.premiumDebt - daiRepayAmount,
+      1,
       'bob dai debt final balance'
     );
     assertEq(bobWethDataAfter.suppliedShares, bobWethDataBefore.suppliedShares);
     assertEq(bobWethBefore.totalDebt, spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob));
 
-    assertEq(
+    assertApproxEqAbs(
       tokenList.dai.balanceOf(bob),
       bobDaiBalanceBefore - daiRepayAmount,
+      1,
       'bob dai final balance'
     );
     assertEq(tokenList.weth.balanceOf(bob), bobWethBalanceBefore);
@@ -702,22 +704,32 @@ contract SpokeRepayTest is SpokeBase {
     uint256 bobDaiBalanceAfter = tokenList.dai.balanceOf(bob);
 
     // Verify that Bob's debt is reduced after partial repayment
-    assertEq(
+    assertApproxEqAbs(
       bobDaiAfter.totalDebt,
       fullDebt - partialRepayAmount,
+      1,
       'Bob dai debt should be reduced'
     );
     // Verify that his DAI balance was reduced by the partial debt amount
-    assertEq(
+    assertApproxEqAbs(
       bobDaiBalanceAfter,
       bobDaiBalanceBefore - partialRepayAmount,
+      1,
       'Bob dai balance decreased by partial debt repaid'
     );
     // Verify reserve debt was decreased by partial repayment
-    assertEq(spoke1.getReserveTotalDebt(_daiReserveId(spoke1)), fullDebt - partialRepayAmount);
+    assertApproxEqAbs(
+      spoke1.getReserveTotalDebt(_daiReserveId(spoke1)),
+      fullDebt - partialRepayAmount,
+      1
+    );
 
     // verify LH asset debt is decreased by partial repayment
-    assertEq(hub.getAssetTotalDebt(_daiReserveId(spoke1)), fullDebt - partialRepayAmount);
+    assertApproxEqAbs(
+      hub.getAssetTotalDebt(_daiReserveId(spoke1)),
+      fullDebt - partialRepayAmount,
+      1
+    );
 
     (baseRestored, ) = _calculateRestoreAmount(
       bobDaiAfter.baseDebt,
@@ -750,9 +762,10 @@ contract SpokeRepayTest is SpokeBase {
     assertEq(bobDaiAfter.totalDebt, 0, 'Bob dai debt should be cleared');
 
     // Verify that his DAI balance was reduced by the full debt amount
-    assertEq(
+    assertApproxEqAbs(
       bobDaiBalanceAfter,
       bobDaiBalanceBefore - fullDebt,
+      1,
       'Bob dai balance decreased by full debt repaid'
     );
 
@@ -2273,14 +2286,16 @@ contract SpokeRepayTest is SpokeBase {
     );
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertEq(
+    assertApproxEqAbs(
       bobDaiAfter.totalDebt,
       bobDaiBefore.totalDebt - action1.repayAmount,
+      1,
       'bob dai debt final balance'
     );
-    assertEq(
+    assertApproxEqAbs(
       tokenList.dai.balanceOf(bob),
       bobDaiBalanceBefore - action1.repayAmount,
+      1,
       'bob dai final balance'
     );
     assertEq(
@@ -2312,9 +2327,10 @@ contract SpokeRepayTest is SpokeBase {
     // Bob borrows more dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, action2.borrowAmount, bob);
 
-    assertEq(
+    assertApproxEqAbs(
       spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob),
       bobDaiBefore.totalDebt + action2.borrowAmount,
+      2,
       'bob dai debt after second borrow'
     );
 
@@ -2375,14 +2391,16 @@ contract SpokeRepayTest is SpokeBase {
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
-    assertEq(
+    assertApproxEqAbs(
       bobDaiAfter.totalDebt,
       bobDaiBefore.totalDebt - action2.repayAmount,
+      2,
       'bob dai debt final balance'
     );
-    assertEq(
+    assertApproxEqAbs(
       tokenList.dai.balanceOf(bob),
       bobDaiBalanceBefore - action2.repayAmount,
+      2,
       'bob dai final balance'
     );
     assertEq(
@@ -3344,7 +3362,7 @@ contract SpokeRepayTest is SpokeBase {
     UserAction memory aliceInfo,
     uint256 skipTime
   ) public {
-    vm.skip(true, 'Pending fix for underflow issue');
+    // vm.skip(true, 'Pending fix for underflow issue');
     // Bound borrow and repay amounts
     bobInfo = _boundUserAction(bobInfo);
     aliceInfo = _boundUserAction(aliceInfo);

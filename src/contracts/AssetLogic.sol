@@ -5,6 +5,7 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {SharesMath} from 'src/contracts/SharesMath.sol';
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 
@@ -13,6 +14,7 @@ library AssetLogic {
   using PercentageMath for uint256;
   using SharesMath for uint256;
   using WadRayMath for uint256;
+  using Math for uint256;
 
   // todo: option for cached object
 
@@ -31,26 +33,26 @@ library AssetLogic {
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsUp(asset.totalDrawnAssets(), asset.totalDrawnShares());
+    return shares.mulDiv(asset.previewIndex(), WadRayMath.RAY, Math.Rounding.Ceil);
   }
   function toDrawnAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsDown(asset.totalDrawnAssets(), asset.totalDrawnShares());
+    return shares.mulDiv(asset.previewIndex(), WadRayMath.RAY, Math.Rounding.Floor);
   }
 
   function toDrawnSharesUp(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesUp(asset.totalDrawnAssets(), asset.totalDrawnShares());
+    return assets.mulDiv(WadRayMath.RAY, asset.previewIndex(), Math.Rounding.Ceil);
   }
   function toDrawnSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesDown(asset.totalDrawnAssets(), asset.totalDrawnShares());
+    return assets.mulDiv(WadRayMath.RAY, asset.previewIndex(), Math.Rounding.Floor);
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -102,7 +104,7 @@ library AssetLogic {
     return asset.baseBorrowRate;
   }
 
-  // expects accrued `baseDrawnAssets`
+  // expects accrued `baseDebt`
   function updateBorrowRate(
     DataTypes.Asset storage asset,
     uint256 liquidityAdded,
@@ -112,7 +114,7 @@ library AssetLogic {
       DataTypes.CalculateInterestRatesParams({
         liquidityAdded: liquidityAdded,
         liquidityTaken: liquidityTaken,
-        totalDebt: asset.baseDrawnAssets,
+        totalDebt: asset.baseDebt(),
         reserveFactor: 0, // TODO
         assetId: asset.id,
         virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
@@ -123,19 +125,23 @@ library AssetLogic {
 
   // @dev Utilizes existing `asset.baseBorrowRate`
   function accrue(DataTypes.Asset storage asset) internal {
-    asset.baseDrawnAssets = asset.baseDebt();
+    asset.baseDebtIndex = asset.previewIndex();
     asset.lastUpdateTimestamp = block.timestamp;
   }
 
-  function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 baseDrawnAssets = asset.baseDrawnAssets;
+  function previewIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
+    uint256 baseDebtIndex = asset.baseDebtIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (baseDrawnAssets == 0 || lastUpdateTimestamp == block.timestamp) {
-      return baseDrawnAssets;
+    if (lastUpdateTimestamp == block.timestamp) {
+      return baseDebtIndex;
     }
     return
-      baseDrawnAssets.rayMul(
+      baseDebtIndex.rayMul(
         MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
       );
+  }
+
+  function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.baseDrawnShares.rayMul(asset.previewIndex());
   }
 }

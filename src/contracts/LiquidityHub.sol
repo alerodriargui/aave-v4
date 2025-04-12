@@ -43,7 +43,7 @@ contract LiquidityHub is ILiquidityHub {
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      baseDrawnAssets: 0,
+      baseDebtIndex: WadRayMath.RAY,
       lastUpdateTimestamp: block.timestamp,
       baseBorrowRate: 0, // todo check
       id: assetId, // todo rm
@@ -177,7 +177,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.availableLiquidity -= amount;
     asset.baseDrawnShares += drawnShares;
-    asset.baseDrawnAssets += amount;
+    // asset.baseDrawnAssets += amount;
 
     spoke.baseDrawnShares += drawnShares;
 
@@ -210,7 +210,7 @@ contract LiquidityHub is ILiquidityHub {
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
 
     asset.availableLiquidity += totalRestoredAmount;
-    asset.baseDrawnAssets -= baseAmount;
+    // asset.baseDrawnAssets -= baseAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
