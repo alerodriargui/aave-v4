@@ -2499,7 +2499,6 @@ contract SpokeRepayTest is SpokeBase {
     UserAssetInfo memory carolInfo,
     uint40 skipTime
   ) public {
-    vm.skip(true, 'Pending fix for underflow issue');
     bobInfo = _bound(bobInfo);
     aliceInfo = _bound(aliceInfo);
     carolInfo = _bound(carolInfo);
@@ -2870,7 +2869,6 @@ contract SpokeRepayTest is SpokeBase {
     UserAssetInfo memory aliceInfo,
     uint40 skipTime
   ) public {
-    vm.skip(true, 'Pending fix for underflow issue');
     bobInfo = _bound(bobInfo);
     aliceInfo = _bound(aliceInfo);
     skipTime = uint40(bound(skipTime, 1, MAX_SKIP_TIME));
@@ -3240,7 +3238,6 @@ contract SpokeRepayTest is SpokeBase {
     UserAction memory carolInfo,
     uint256 skipTime
   ) public {
-    vm.skip(true, 'Pending fix for underflow issue');
     // Bound borrow and repay amounts
     bobInfo = _boundUserAction(bobInfo);
     aliceInfo = _boundUserAction(aliceInfo);
@@ -3362,7 +3359,6 @@ contract SpokeRepayTest is SpokeBase {
     UserAction memory aliceInfo,
     uint256 skipTime
   ) public {
-    // vm.skip(true, 'Pending fix for underflow issue');
     // Bound borrow and repay amounts
     bobInfo = _boundUserAction(bobInfo);
     aliceInfo = _boundUserAction(aliceInfo);
