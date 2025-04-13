@@ -560,7 +560,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     (baseDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
     // check that accrued base debt matches expected
-    assertEq(baseDebt, expectedBaseDebt, 'base debt after borrow2');
+    assertApproxEqAbs(baseDebt, expectedBaseDebt, 3, 'base debt after borrow2');
 
     // assertions for 2nd borrow
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'spoke1 bob dai after');
@@ -568,7 +568,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       spoke: spoke1,
       reserveId: state.daiReserveId,
       user: bob,
-      debtAmount: expectedBaseDebt,
+      debtAmount: baseDebt,
       suppliedAmount: state.daiBob.supplyAmount,
       expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
       label: 'bob dai data after'

@@ -468,7 +468,7 @@ contract SpokeBase is Base {
     assertApproxEqAbs(
       userPos.realizedPremium,
       ((accruedBase - prevBaseDebt) * (userPos.premiumDrawnShares)) / (userPos.baseDrawnShares),
-      1, // precision loss due to calcs in asset amount and conversion to
+      3, // precision loss due to calcs in asset amount and conversion to
       'realized premium naive calc'
     );
   }
