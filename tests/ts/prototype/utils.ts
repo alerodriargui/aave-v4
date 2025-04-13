@@ -1,4 +1,4 @@
-import {User, Spoke, LiquidityHub} from './core.ts';
+import {User, Spoke, LiquidityHub, System} from './core.ts';
 
 export const DEBUG = true;
 
@@ -20,21 +20,24 @@ export const MAX_INDEX = parseRay(1.99); // 99% interest
 
 export const PRECISION = 3000n; // max abs delta allowed
 
-export function logBaseAndPremiumDebt(who: User | Spoke | LiquidityHub) {
+export function logDebt(who: User | Spoke | LiquidityHub) {
   const hub = who instanceof LiquidityHub ? who : who.hub;
   console.log(
     'debt: base %d + premium %d (ghost %d, offset %d, unrealised %d) = %d',
     f(who.getDebt().baseDebt),
     f(who.getDebt().premiumDebt),
-    f(hub.toDrawnAssets(who.ghostDrawnShares)), // getters round down by 4626 convention, repay amount should round up
+    f(hub.toDrawnAssets(who.ghostDrawnShares)),
     f(who.offset),
-    f(who.unrealisedPremium),
+    f(who.realisedPremium),
     f(who.getTotalDebt())
   );
 }
 
 export function assertNonZero(a: bigint) {
   if (a === 0n) throw new Error('got zero');
+}
+export function assertGeZero(a: bigint) {
+  if (a < 0n) throw new Error('got negative');
 }
 
 export function random(min: bigint, max: bigint) {
@@ -56,7 +59,7 @@ export function randomChance(chance: number) {
 
 export function randomAmount() {
   if (randomChance(0.15)) return random(1n, 10n);
-  const whole = random(0n, 10n ** random(0n, 10n));
+  const whole = random(0n, 10n ** 10n);
   const index = random(0n, 18n);
   const paddedFractional = random(1n, 10n ** index)
     .toString()
@@ -117,12 +120,16 @@ export function percentMul(a: bigint, b: bigint, rounding = Rounding.FLOOR) {
 export function rayMul(a: bigint, b: bigint, rounding = Rounding.FLOOR) {
   return mulDiv(a, b, RAY, rounding);
 }
+export function rayDiv(a: bigint, b: bigint, rounding = Rounding.FLOOR) {
+  return mulDiv(a, RAY, b, rounding);
+}
 
 export function formatUnits(wei: bigint, index = 18): string {
+  const abs = wei < 0n ? -wei : wei;
   const UNITS = 10n ** BigInt(index);
-  const whole = wei / UNITS;
-  const fractional = (wei % UNITS).toString().padStart(index, '0');
-  return `${whole}.${fractional}`.replace(/\.?0+$/, '');
+  const whole = abs / UNITS;
+  const fractional = (abs % UNITS).toString().padStart(index, '0');
+  return `${wei < 0n ? '-' : ''}${whole}.${fractional}`.replace(/\.?0+$/, '');
 }
 
 export function parseUnits(units: string | bigint | number, index = 18): bigint {
@@ -159,6 +166,69 @@ export function mulDiv(a: bigint, b: bigint, c: bigint, rounding: Rounding) {
   }
 }
 
+// scenario engine
+let scenarioId = 1;
+let skipped = 0;
+type Runner = (ctx: System) => void;
+interface Scenario {
+  name: string;
+  ctx: System;
+  runInvariants: boolean;
+  fn: Runner;
+}
+
+export const scenarios: Array<Scenario> = [];
+export function it(
+  name = `Scenario ${scenarioId}`,
+  runInvariants = true,
+  numSpokes = 1,
+  numUsers = 3
+) {
+  const ctx = new System(numSpokes, numUsers);
+  const runner = (fn: Runner) => {
+    scenarios.push({name, fn, ctx, runInvariants});
+    scenarioId++;
+  };
+  runner.skip = (_: Runner) => {
+    skipped++;
+  };
+  return runner;
+}
+export function runScenarios() {
+  const filter = parseFilter();
+  let passed = 0,
+    failed = 0;
+  scenarios
+    .filter((s) => filter.test(s.name))
+    .forEach(({name, fn, ctx, runInvariants}) => {
+      console.log(`\t\t running scenario ${name} \t\t\n`);
+      try {
+        fn(ctx);
+        if (runInvariants) ctx.runInvariants();
+        passed++;
+      } catch (e) {
+        failed++;
+        console.error(`\t\t scenario ${name} failed \t\t`);
+        console.error(e);
+      }
+      console.log();
+    });
+  console.log(`scenario run finished: ${passed} passed, ${failed} failed, ${skipped} skipped`);
+}
+
+function parseFilter() {
+  let filter = '';
+  // @ts-ignore
+  const args = process.argv.slice(2);
+  for (let i = 0; i < args.length; ++i) {
+    switch (args[i]) {
+      case '--mt':
+        filter = args[i + 1] || '';
+    }
+  }
+  return new RegExp(filter, 'gi');
+}
+
 export function info(...args: any[]) {
-  if (DEBUG) console.info(...args);
+  if (DEBUG) console.info(...args.filter((a) => !!a));
 }
