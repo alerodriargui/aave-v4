@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
+import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
 library AssetLogic {
   using AssetLogic for DataTypes.Asset;
   using PercentageMath for uint256;
   using SharesMath for uint256;
-  using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   using Math for uint256;
 
   // todo: option for cached object
@@ -31,32 +32,32 @@ library AssetLogic {
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.mulDiv(asset.previewIndex(), WadRayMath.RAY, Math.Rounding.Ceil);
+    return shares.rayMulUp(asset.previewIndex());
   }
   function toDrawnAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.mulDiv(asset.previewIndex(), WadRayMath.RAY, Math.Rounding.Floor);
+    return shares.rayMulDown(asset.previewIndex());
   }
 
   function toDrawnSharesUp(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.mulDiv(WadRayMath.RAY, asset.previewIndex(), Math.Rounding.Ceil);
+    return assets.rayDivUp(asset.previewIndex());
   }
   function toDrawnSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.mulDiv(WadRayMath.RAY, asset.previewIndex(), Math.Rounding.Floor);
+    return assets.rayDivDown(asset.previewIndex());
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return
-      asset.realizedPremium +
-      (asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset);
+    // sanity: utilize solc underflow check
+    uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset;
+    return asset.realizedPremium + accruedPremium;
   }
 
   function totalDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -134,12 +135,12 @@ library AssetLogic {
       return baseDebtIndex;
     }
     return
-      baseDebtIndex.rayMul(
+      baseDebtIndex.rayMulUp(
         MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
       );
   }
 
   function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDrawnShares.rayMul(asset.previewIndex());
+    return asset.baseDrawnShares.rayMulUp(asset.previewIndex());
   }
 }
