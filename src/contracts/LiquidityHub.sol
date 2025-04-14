@@ -302,6 +302,13 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
+  function convertToPremiumDrawnAssets(
+    uint256 assetId,
+    uint256 shares
+  ) external view returns (uint256) {
+    return _assets[assetId].toDrawnAssetsDown(shares);
+  }
+
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
     return _assets[assetId].baseInterestRate();
   }
@@ -443,9 +450,10 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset,
     DataTypes.SpokeData storage spoke
   ) internal view returns (uint256, uint256) {
-    uint256 premiumDebt = spoke.realizedPremium +
-      (asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset);
-    return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), premiumDebt);
+    // sanity: utilize solc underflow check
+    uint256 accruedPremium = asset.toDrawnAssetsDown(spoke.premiumDrawnShares) -
+      spoke.premiumOffset;
+    return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
   }
 
   // handles underflow
