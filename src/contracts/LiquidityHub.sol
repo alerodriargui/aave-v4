@@ -177,7 +177,6 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.availableLiquidity -= amount;
     asset.baseDrawnShares += drawnShares;
-    // asset.baseDrawnAssets += amount;
 
     spoke.baseDrawnShares += drawnShares;
 
@@ -210,8 +209,8 @@ contract LiquidityHub is ILiquidityHub {
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
 
     asset.availableLiquidity += totalRestoredAmount;
-    // asset.baseDrawnAssets -= baseAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
+
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
     assetsList[assetId].safeTransferFrom(from, address(this), totalRestoredAmount);
