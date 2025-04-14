@@ -7,6 +7,7 @@ import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.s
 contract SpokeBase is Base {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
   struct TestData {
@@ -361,10 +362,9 @@ contract SpokeBase is Base {
     uint256 assetId,
     DataTypes.UserPosition memory userPos
   ) internal view returns (DebtData memory userDebt) {
-    userDebt.premiumDebt =
-      userPos.realizedPremium +
-      (hub.convertToPremiumDrawnAssets(assetId, userPos.premiumDrawnShares) -
-        userPos.premiumOffset);
+    uint256 accruedPremium = hub.convertToPremiumDrawnAssets(assetId, userPos.premiumDrawnShares) -
+      userPos.premiumOffset;
+    userDebt.premiumDebt = userPos.realizedPremium + accruedPremium;
     userDebt.baseDebt = hub.convertToDrawnAssets(assetId, userPos.baseDrawnShares);
     userDebt.totalDebt = userDebt.baseDebt + userDebt.premiumDebt;
   }
@@ -464,7 +464,7 @@ contract SpokeBase is Base {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 accruedBase = MathUtils
       .calculateLinearInterest(hub.getAsset(assetId).baseBorrowRate, lastTimestamp)
-      .rayMul(prevBaseDebt);
+      .rayMulUp(prevBaseDebt);
 
     // equivalent to multiplying by risk premium (RP = premium drawn shares / base drawn shares)
     assertApproxEqAbs(
@@ -500,14 +500,14 @@ contract SpokeBase is Base {
       assertEq(
         baseDebt,
         hub.convertToDrawnAssets(assetId, userData.baseDrawnShares),
-        string(abi.encodePacked('user ', i, ' base debt ', label))
+        string.concat('user ', vm.toString(i), ' base debt ', label)
       );
       assertEq(
         premiumDebt,
         userData.realizedPremium +
           hub.convertToPremiumDrawnAssets(assetId, userData.premiumDrawnShares) -
           userData.premiumOffset,
-        string(abi.encodePacked('user ', i, ' premium debt ', label))
+        string.concat('user ', vm.toString(i), ' premium debt ', label)
       );
     }
 
