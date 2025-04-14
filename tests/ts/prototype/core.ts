@@ -19,6 +19,7 @@ import {
   randomAmount,
   formatUnits,
   assertGeZero,
+  min,
 } from './utils';
 
 let spokeIdCounter = 0n;
@@ -60,7 +61,7 @@ export class LiquidityHub {
     return this.convertToDrawnAssets(this.baseDrawnShares);
   }
   premiumDebt() {
-    const accruedPremium = this.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
+    const accruedPremium = this.convertToPremiumDrawnAssets(this.ghostDrawnShares) - this.offset;
     assertGeZero(accruedPremium);
     return accruedPremium + this.realisedPremium;
   }
@@ -111,6 +112,7 @@ export class LiquidityHub {
 
     this.getSpoke(spoke).suppliedShares -= suppliedShares;
 
+    Utils.checkBounds(this);
     return suppliedShares;
   }
 
@@ -218,10 +220,11 @@ export class LiquidityHub {
 
   getDebt() {
     this.accrue();
+    const accruedPremium = this.convertToPremiumDrawnAssets(this.ghostDrawnShares) - this.offset;
+    assertGeZero(accruedPremium);
     return {
       baseDebt: this.convertToDrawnAssets(this.baseDrawnShares),
-      premiumDebt:
-        this.convertToDrawnAssets(this.ghostDrawnShares) - this.offset + this.realisedPremium,
+      premiumDebt: accruedPremium + this.realisedPremium,
     };
   }
 
@@ -237,6 +240,17 @@ export class LiquidityHub {
   }
   convertToDrawnShares(assets: bigint) {
     return this.toDrawnShares(assets);
+  }
+
+  convertToPremiumDrawnAssets(premiumDrawnShares: bigint) {
+    return this.toDrawnAssets(premiumDrawnShares);
+  }
+
+  supplyExchangeRatio() {
+    return {
+      totalSuppliedAssets: this.totalSupplyAssets(),
+      totalSuppliedShares: this.totalSupplyShares(),
+    };
   }
 
   addSpoke(who: Spoke) {
@@ -278,7 +292,7 @@ export class Spoke {
     const user = this.getUser(who);
 
     this.hub.accrue();
-    if (amount === MAX_UINT) amount = user.getSuppliedBalance();
+    amount = min(amount, user.getSuppliedBalance());
     const suppliedShares = this.hub.withdraw(amount, this);
 
     this.suppliedShares -= suppliedShares;
@@ -296,7 +310,8 @@ export class Spoke {
 
     let userGhostDrawnShares = user.ghostDrawnShares;
     let userOffset = user.offset;
-    const accruedPremium = this.hub.convertToDrawnAssets(userGhostDrawnShares) - userOffset;
+    const accruedPremium = this.hub.convertToPremiumDrawnAssets(userGhostDrawnShares) - userOffset;
+    assertGeZero(accruedPremium);
 
     user.ghostDrawnShares = 0n;
     user.offset = 0n;
@@ -313,7 +328,7 @@ export class Spoke {
       user.baseDrawnShares,
       user.riskPremium
     );
-    userOffset = user.offset = this.hub.convertToDrawnAssets(user.ghostDrawnShares);
+    userOffset = user.offset = this.hub.convertToPremiumDrawnAssets(user.ghostDrawnShares);
 
     this.refresh(userGhostDrawnShares, userOffset, 0n, user);
 
@@ -354,7 +369,7 @@ export class Spoke {
       user.baseDrawnShares,
       user.riskPremium
     );
-    userOffset = user.offset = this.hub.toDrawnAssets(user.ghostDrawnShares);
+    userOffset = user.offset = this.hub.convertToPremiumDrawnAssets(user.ghostDrawnShares);
 
     this.refresh(userGhostDrawnShares, userOffset, 0n, user);
 
@@ -411,9 +426,10 @@ export class Spoke {
     const oldUserOffset = user.offset;
 
     user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.convertToDrawnAssets(user.ghostDrawnShares);
+    user.offset = this.hub.convertToPremiumDrawnAssets(user.ghostDrawnShares);
 
-    const accruedPremium = this.hub.convertToDrawnAssets(oldUserGhostDrawnShares) - oldUserOffset;
+    const accruedPremium =
+      this.hub.convertToPremiumDrawnAssets(oldUserGhostDrawnShares) - oldUserOffset;
     user.realisedPremium += accruedPremium;
 
     this.refresh(
@@ -448,20 +464,24 @@ export class Spoke {
 
   getDebt() {
     this.hub.accrue();
+    const accruedPremium =
+      this.hub.convertToPremiumDrawnAssets(this.ghostDrawnShares) - this.offset;
+    assertGeZero(accruedPremium);
     return {
       baseDebt: this.hub.convertToDrawnAssets(this.baseDrawnShares),
-      premiumDebt:
-        this.hub.convertToDrawnAssets(this.ghostDrawnShares) - this.offset + this.realisedPremium,
+      premiumDebt: accruedPremium + this.realisedPremium,
     };
   }
 
   getUserDebt(who: User) {
     this.hub.accrue();
     const user = this.getUser(who);
+    const accruedPremium =
+      this.hub.convertToPremiumDrawnAssets(user.ghostDrawnShares) - user.offset;
+    assertGeZero(accruedPremium);
     return {
       baseDebt: this.hub.convertToDrawnAssets(user.baseDrawnShares),
-      premiumDebt:
-        this.hub.convertToDrawnAssets(user.ghostDrawnShares) - user.offset + user.realisedPremium,
+      premiumDebt: accruedPremium + user.realisedPremium,
     };
   }
 
@@ -491,7 +511,7 @@ export class Spoke {
   }
 
   log(hub = false, users = false) {
-    const ghostDebt = this.hub.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
+    const ghostDebt = this.hub.convertToPremiumDrawnAssets(this.ghostDrawnShares) - this.offset;
     console.log(`--- Spoke ${this.id} ---`);
     console.log('spoke.baseDrawnShares       ', f(this.baseDrawnShares));
     console.log('spoke.ghostDrawnShares      ', f(this.ghostDrawnShares));
@@ -619,7 +639,7 @@ export class System {
   public spokes: Spoke[];
   public users: User[];
 
-  public supplyExchangeRatio: bigint = 0n;
+  public supplyExchangeRatio: ReturnType<typeof LiquidityHub.prototype.supplyExchangeRatio>;
 
   constructor(numSpokes = 1, numUsers = 3) {
     this.hub = new LiquidityHub();
@@ -641,19 +661,33 @@ export class System {
     this.users.forEach((user) => {
       user.beforeHook = (action: string, amount?: bigint) => {
         user.logAction(action, amount);
-        this.supplyExchangeRatio = this.hub.convertToSuppliedAssets(10n ** 50n); // bigint wont overflow
+        console.log(
+          'debt ex ratio before',
+          formatUnits(this.hub.convertToDrawnAssets(10n ** 50n), 50) // bigint won't overflow
+        );
+
+        this.supplyExchangeRatio = this.hub.supplyExchangeRatio();
       };
       user.afterHook = () => {
-        // this.runInvariants();
         // should always increase on an accrue
         this.invariant_supplyExchangeRateIsNonDecreasing();
+        this.runInvariants();
       };
     });
   }
 
   nonZeroSuppliedShares(amount: bigint) {
-    while (this.hub.toSupplyShares(amount) === 0n) amount = randomAmount();
+    while (this.hub.convertToSuppliedShares(amount) === 0n) amount = randomAmount();
     return amount;
+  }
+
+  repayAll() {
+    this.users.forEach((user) => user.getTotalDebt() && user.repay(MAX_UINT));
+    this.runInvariants();
+  }
+  withdrawAll() {
+    this.users.forEach((user) => user.getSuppliedBalance() && user.withdraw(MAX_UINT));
+    this.runInvariants();
   }
 
   runInvariants() {
@@ -668,17 +702,34 @@ export class System {
 
   invariant_valuesWithinBounds() {
     let fail = false;
+    const all = [this.hub, ...this.spokes, ...this.users];
     ['baseDrawnShares', 'ghostDrawnShares', 'offset', 'realisedPremium', 'suppliedShares'].forEach(
       (key) => {
-        [this.hub, ...this.spokes, ...this.users].forEach((who) => {
+        all.forEach((who) => {
           if (who[key] < 0n || who[key] > MAX_UINT) {
-            who.log();
+            who.log(who instanceof User, who instanceof User);
             console.error(`${who.whoami()}.${key} < 0 || > MAX_UINT`, f(who[key]));
             fail = true;
           }
         });
       }
     );
+    // ghost drawn assets >= offset, always
+    all.forEach((who) => {
+      const ghostDrawnAssets = this.hub.convertToDrawnAssets(who.ghostDrawnShares);
+      if (ghostDrawnAssets < who.offset) {
+        who.log();
+        console.error(
+          `assets(${who.whoami()}.ghostDrawnShares) < offset, ghostDrawnShares, diff`,
+          f(ghostDrawnAssets),
+          f(who.offset),
+          f(who.ghostDrawnShares),
+          who.offset - ghostDrawnAssets
+        );
+        fail = true;
+      }
+    });
+
     this.handleFailure(fail, 'invariant_valuesWithinBounds');
   }
 
@@ -838,17 +889,20 @@ export class System {
 
   invariant_supplyExchangeRateIsNonDecreasing() {
     let fail = false;
-    const supplyExchangeRatio = this.hub.convertToSuppliedAssets(10n ** 50n);
-    if (supplyExchangeRatio < this.supplyExchangeRatio) {
+    const supplyExchangeRatio = this.hub.supplyExchangeRatio();
+    if (
+      supplyExchangeRatio.totalSuppliedAssets * this.supplyExchangeRatio.totalSuppliedShares <
+      this.supplyExchangeRatio.totalSuppliedAssets * supplyExchangeRatio.totalSuppliedShares
+    ) {
       console.error(
         'supplyExchangeRatio < this.supplyExchangeRatio, diff',
-        formatUnits(supplyExchangeRatio, 50),
-        formatUnits(this.supplyExchangeRatio, 50),
-        formatUnits(this.supplyExchangeRatio - supplyExchangeRatio, 50)
+        Utils.ratio(supplyExchangeRatio),
+        Utils.ratio(this.supplyExchangeRatio),
+        Utils.diff(this.supplyExchangeRatio, supplyExchangeRatio)
       );
       fail = true;
     }
-    this.supplyExchangeRatio = 0n;
+    this.supplyExchangeRatio = {totalSuppliedAssets: 0n, totalSuppliedShares: 0n}; // reset
     this.handleFailure(fail, 'invariant_supplyExchangeRateIsNonDecreasing');
   }
 
@@ -892,6 +946,27 @@ class Utils {
       who.log(true);
       throw new Error('underflow/overflow');
     }
+  }
+
+  static ratio(supplyExchangeRatio: ReturnType<typeof LiquidityHub.prototype.supplyExchangeRatio>) {
+    const precision = 50;
+    return formatUnits(
+      (supplyExchangeRatio.totalSuppliedAssets * 10n ** BigInt(precision)) /
+        supplyExchangeRatio.totalSuppliedShares,
+      precision
+    );
+  }
+
+  static diff(
+    a: ReturnType<typeof LiquidityHub.prototype.supplyExchangeRatio>,
+    b: ReturnType<typeof LiquidityHub.prototype.supplyExchangeRatio>
+  ) {
+    const precision = 50;
+    return formatUnits(
+      (a.totalSuppliedAssets * 10n ** BigInt(precision)) / a.totalSuppliedShares -
+        (b.totalSuppliedAssets * 10n ** BigInt(precision)) / b.totalSuppliedShares,
+      precision
+    );
   }
 }
 

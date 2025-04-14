@@ -67,6 +67,10 @@ export function randomAmount() {
   return BigInt(whole) * 10n ** index + BigInt(paddedFractional.slice(0, Number(index)));
 }
 
+export function min(a: bigint, b: bigint) {
+  return a < b ? a : b;
+}
+
 export function max(a: bigint, b: bigint, c: bigint) {
   return a > b ? (a > c ? a : c) : b > c ? b : c;
 }

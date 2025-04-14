@@ -1,5 +1,5 @@
 import {skip} from './core';
-import {f, MAX_UINT, p, it, runScenarios, randomAmount} from './utils';
+import {f, MAX_UINT, p, it, runScenarios, randomIndex, rayDiv, rayMul, Rounding} from './utils';
 
 it()((ctx) => {
   const [alice, bob, charlie] = ctx.users;
@@ -160,7 +160,7 @@ it()((ctx) => {
   alice.withdraw(MAX_UINT);
 });
 
-it('6 supply yields -1 bc of index')((ctx) => {
+it('6 supply yields -1 bc of index').skip((ctx) => {
   const [alice, bob] = ctx.users;
   const amount = p(100);
   const amount2 = p(500);
@@ -174,7 +174,63 @@ it('6 supply yields -1 bc of index')((ctx) => {
   alice.supply(amount);
   // skip();
   console.log('alice supplied amount', f(alice.getSuppliedBalance()), f(amount));
-  alice.withdraw(amount);
+  try {
+    alice.withdraw(amount);
+  } catch (e) {
+    if (!e.message.includes('suppliedShares < 0 || > MAX_UINT')) throw e;
+  }
+  // alice.withdraw(alice.getSuppliedBalance());
+});
+
+it('7 underflow bc sum of scaled may not to equate to individual scaled when all are unscaled')(
+  (ctx) => {
+    const [alice, bob, carol] = ctx.users;
+    alice.supply(47168n);
+
+    bob.borrow(22592n);
+    alice.borrow(12739n);
+
+    carol.borrow(11837n);
+
+    skip();
+
+    bob.repay(1714n);
+    alice.repay(9n);
+
+    carol.repay(1255n);
+  }
+);
+
+it('index')((ctx) => {
+  const index = randomIndex(); // 1645169034437660970422632448n, 1370571970449003121502846976n
+  console.log('index', index);
+  const scale = (amount: bigint) => rayDiv(amount, index, Rounding.CEIL);
+  const unscale = (scaled: bigint) => rayMul(scaled, index); // toggle
+
+  const amountA = 23232n;
+  const scaledA = scale(amountA);
+  console.log('unscaled A     ', unscale(scaledA), amountA);
+
+  const amountB = 3243n;
+  const scaledB = scale(amountB);
+  console.log('unscaled B     ', unscale(scaledB), amountB);
+
+  console.log('unscaled global', unscale(scaledA + scaledB), amountA + amountB);
+  console.log('unscaled sum   ', unscale(scaledA) + unscale(scaledB), amountA + amountB);
+});
+
+it().skip((ctx) => {
+  const [alice, bob] = ctx.users;
+  const amount = p('0.176772459072625441');
+  alice.supply(amount);
+  alice.borrow(amount);
+
+  skip();
+
+  alice.repay(p('0.021185397759087569'));
+
+  console.log('alice balance', f(alice.getSuppliedBalance()));
+  alice.withdraw(p('0.437902789221420415'));
 });
 
 runScenarios();

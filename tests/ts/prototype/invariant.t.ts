@@ -9,8 +9,8 @@ const DEPTH = 1000;
 const actions = ['supply', 'withdraw', 'borrow', 'repay', 'updateRiskPremium'];
 
 function run() {
-  const userCollateral = new Map<User, bigint>(); // without accounting for supply yield
-  const userDebt = new Map<User, bigint>(); // without accounting for debt interest
+  const usersSupplied = new Map<User, bigint>(); // without accounting for supply yield
+  const usersDrawn = new Map<User, bigint>(); // without accounting for debt interest
   let totalAvailable = 0n; // without accounting for supply yield
 
   const system = new System(NUM_SPOKES, NUM_USERS);
@@ -18,16 +18,12 @@ function run() {
   for (let j = 0; j < DEPTH; j++) {
     if (randomChance(0.65)) skip();
     if (randomChance(0.25)) {
-      system.users.forEach((user) => user.getTotalDebt() ?? user.repay(MAX_UINT));
-      userDebt.clear();
-      system.runInvariants();
+      system.repayAll();
+      usersDrawn.clear();
     }
     if (randomChance(0.25)) {
-      system.users.forEach(
-        (user) => user.suppliedShares ?? user.withdraw(user.getSuppliedBalance())
-      );
-      userCollateral.clear();
-      system.runInvariants();
+      system.withdrawAll();
+      usersSupplied.clear();
     }
 
     const action = actions[Math.floor(Math.random() * actions.length)];
@@ -37,27 +33,29 @@ function run() {
     switch (action) {
       case 'supply': {
         user.supply((amount = system.nonZeroSuppliedShares(amount)));
-        userCollateral.set(user, (userCollateral.get(user) || 0n) + amount);
+        usersSupplied.set(user, (usersSupplied.get(user) || 0n) + amount);
         totalAvailable += amount;
         break;
       }
       case 'withdraw': {
-        const supplied = userCollateral.get(user) || 0n;
-        if (supplied < amount) {
+        const supplied = usersSupplied.get(user) || 0n;
+        if (amount > supplied) {
           const balanceBefore = user.getSuppliedBalance();
           user.supply((amount = system.nonZeroSuppliedShares(amount)));
           const balanceAfter = user.getSuppliedBalance() - amount;
           // can have amount - 1 (or dust) supplied balance right after if debt in system due to index
-          // if (sum(userDebt) > 0n) skip();
+          // if (sum(usersDrawn) > 0n) skip();
           // else amount -= 1n;
           amount = user.getSuppliedBalance();
+          if (sum(usersDrawn) > 0 && randomChance(0.5)) skip();
           if (absDiff(balanceBefore, balanceAfter) > 1n) {
-            console.log('diff > 1', f(balanceBefore), f(balanceAfter), sum(userDebt) > 0n);
+            console.log('diff > 1', f(balanceBefore), f(balanceAfter), 'sys debt', sum(usersDrawn));
           }
         } else {
-          userCollateral.set(user, supplied - amount);
+          usersSupplied.set(user, supplied - amount);
           totalAvailable -= amount;
         }
+        console.log('user balance', f(user.getSuppliedBalance()), 'trying to withdraw', f(amount));
         user.withdraw(amount);
         break;
       }
@@ -69,14 +67,14 @@ function run() {
             if (randomChance(0.5)) skip();
           } else amount = random(1n, totalAvailable);
         }
-        const drawn = userDebt.get(user) || 0n;
+        const drawn = usersDrawn.get(user) || 0n;
         user.borrow(amount);
-        userDebt.set(user, drawn + amount);
+        usersDrawn.set(user, drawn + amount);
         totalAvailable -= amount;
         break;
       }
       case 'repay': {
-        let drawn = userDebt.get(user) || 0n;
+        let drawn = usersDrawn.get(user) || 0n;
         if (drawn < amount) {
           user.supply((amount = system.nonZeroSuppliedShares(amount)));
           user.borrow(amount);
@@ -85,7 +83,7 @@ function run() {
           if (randomChance(0.5)) skip();
         }
         user.repay(amount);
-        userDebt.set(user, drawn - amount);
+        usersDrawn.set(user, drawn - amount);
         totalAvailable += amount;
         break;
       }
@@ -100,10 +98,8 @@ function run() {
 
   system.hub.log();
 
-  system.users.forEach((user) => user.repay(MAX_UINT));
-  system.runInvariants();
-  system.users.forEach((user) => user.withdraw(user.getSuppliedBalance()));
-  system.runInvariants();
+  system.repayAll();
+  system.withdrawAll();
 
   system.hub.log();
 
