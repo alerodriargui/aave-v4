@@ -1,5 +1,16 @@
 import {skip} from './core';
-import {f, MAX_UINT, p, it, runScenarios, randomIndex, rayDiv, rayMul, Rounding} from './utils';
+import {
+  f,
+  MAX_UINT,
+  p,
+  it,
+  runScenarios,
+  randomIndex,
+  rayDiv,
+  rayMul,
+  Rounding,
+  absDiff,
+} from './utils';
 
 it()((ctx) => {
   const [alice, bob, charlie] = ctx.users;
@@ -231,6 +242,22 @@ it().skip((ctx) => {
 
   console.log('alice balance', f(alice.getSuppliedBalance()));
   alice.withdraw(p('0.437902789221420415'));
+});
+
+it('repay deduction')((ctx) => {
+  const [alice] = ctx.users;
+  const amount = p('0.000000001620580722');
+  alice.supply(amount);
+  alice.borrow(amount);
+
+  skip();
+
+  const aliceDebtBefore = alice.getTotalDebt();
+  alice.repay(amount / 2n);
+  const aliceDebtAfter = alice.getTotalDebt();
+  console.log('alice debt before', f(aliceDebtBefore));
+  console.log('alice debt after', f(aliceDebtAfter));
+  console.log('diff', f(absDiff(aliceDebtBefore, aliceDebtAfter)), 'repaid', f(amount / 2n));
 });
 
 runScenarios();
