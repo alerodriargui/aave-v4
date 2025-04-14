@@ -363,7 +363,8 @@ contract SpokeBase is Base {
   ) internal view returns (DebtData memory userDebt) {
     userDebt.premiumDebt =
       userPos.realizedPremium +
-      (hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset);
+      (hub.convertToPremiumDrawnAssets(assetId, userPos.premiumDrawnShares) -
+        userPos.premiumOffset);
     userDebt.baseDebt = hub.convertToDrawnAssets(assetId, userPos.baseDrawnShares);
     userDebt.totalDebt = userDebt.baseDebt + userDebt.premiumDebt;
   }
@@ -434,7 +435,7 @@ contract SpokeBase is Base {
     userPos.premiumDrawnShares = hub.convertToDrawnShares(assetId, debtAmount).percentMul(
       riskPremium
     );
-    userPos.premiumOffset = hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares);
+    userPos.premiumOffset = hub.convertToPremiumDrawnAssets(assetId, userPos.premiumDrawnShares);
     userPos.realizedPremium = expectedRealizedPremium;
     userPos.suppliedShares = hub.convertToSuppliedShares(assetId, suppliedAmount);
   }
@@ -448,7 +449,8 @@ contract SpokeBase is Base {
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     DataTypes.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
-    return hub.convertToDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset;
+    return
+      hub.convertToPremiumDrawnAssets(assetId, userPos.premiumDrawnShares) - userPos.premiumOffset;
   }
 
   /// assert that realized premium matches naively calculated value
@@ -503,7 +505,7 @@ contract SpokeBase is Base {
       assertEq(
         premiumDebt,
         userData.realizedPremium +
-          hub.convertToDrawnAssets(assetId, userData.premiumDrawnShares) -
+          hub.convertToPremiumDrawnAssets(assetId, userData.premiumDrawnShares) -
           userData.premiumOffset,
         string(abi.encodePacked('user ', i, ' premium debt ', label))
       );
