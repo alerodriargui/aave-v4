@@ -159,7 +159,7 @@ contract Spoke is ISpoke {
       -int256(userPremiumOffset),
       int256(accruedPremium)
     ); // unnecessary but we settle premium debt here
-    uint256 withdrawnShares = HUB.remove(reserve.assetId, amount, to);
+    uint256 withdrawnShares = HUB.remove(assetId, amount, to);
 
     userPosition.suppliedShares -= withdrawnShares;
     reserve.suppliedShares -= withdrawnShares;
@@ -171,7 +171,7 @@ contract Spoke is ISpoke {
       .baseDrawnShares
       .percentMul(newUserRiskPremium);
     userPremiumOffset = userPosition.premiumOffset = HUB.convertToPremiumDrawnAssets(
-      reserve.assetId,
+      assetId,
       userPosition.premiumDrawnShares
     );
 
@@ -217,7 +217,7 @@ contract Spoke is ISpoke {
       .baseDrawnShares
       .percentMul(newUserRiskPremium);
     userPremiumOffset = userPosition.premiumOffset = HUB.convertToPremiumDrawnAssets(
-      reserve.assetId,
+      assetId,
       userPosition.premiumDrawnShares
     );
 
