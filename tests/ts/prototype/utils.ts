@@ -1,7 +1,7 @@
 import {User, Spoke, LiquidityHub, System} from './core.ts';
 
 export const DEBUG = true;
-const SEED = 4333;
+const SEED = 35345345 ^ 643654;
 Math.random = sfc32(0x9e3779b9, 0x243f6a88, 0xb7e15162, SEED); // phi, pi, e (https://en.wikipedia.org/wiki/Nothing-up-my-sleeve_number)
 
 export enum Rounding {
