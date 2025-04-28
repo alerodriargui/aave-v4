@@ -18,8 +18,8 @@ import {
   maxAbsDiff,
   randomAmount,
   formatUnits,
-  assertGeZero,
   min,
+  formatRay,
 } from './utils';
 
 let spokeIdCounter = 0n;
@@ -35,10 +35,9 @@ export class LiquidityHub {
   public spokes: Spoke[] = [];
   public lastUpdateTimestamp = 0n;
 
-  public baseDrawnShares = 0n; // aka totalDrawnShares
-  public ghostDrawnShares = 0n;
-  public offset = 0n;
-  public realisedPremium = 0n;
+  public baseDrawnShares = 0n;
+  public premiumDrawnShares = 0n;
+  public outstandingPremium = 0n;
 
   public baseDebtIndex = RAY;
 
@@ -46,7 +45,6 @@ export class LiquidityHub {
 
   public suppliedShares = 0n;
 
-  // total drawn assets does not incl totalOutstandingPremium to accrue base rate separately
   toDrawnAssets(shares: bigint, rounding = Rounding.FLOOR) {
     this.accrue();
     return rayMul(shares, this.baseDebtIndex, rounding);
@@ -61,9 +59,8 @@ export class LiquidityHub {
     return this.convertToDrawnAssets(this.baseDrawnShares);
   }
   premiumDebt() {
-    const accruedPremium = this.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
-    assertGeZero(accruedPremium);
-    return accruedPremium + this.realisedPremium;
+    this.accrue(); // realizes accrued premium
+    return this.outstandingPremium;
   }
 
   totalSupplyAssets() {
@@ -88,8 +85,23 @@ export class LiquidityHub {
 
   accrue() {
     if (this.lastUpdateTimestamp === currentTime) return;
+
+    const currentIndex = this.baseDebtIndex;
+    const nextIndex = rayMul(currentIndex, randomIndex());
+
+    this.outstandingPremium += rayMul(
+      this.premiumDrawnShares,
+      nextIndex - currentIndex,
+      Rounding.CEIL
+    );
+    this.baseDebtIndex = nextIndex;
     this.lastUpdateTimestamp = currentTime;
-    this.baseDebtIndex = rayMul(this.baseDebtIndex, randomIndex());
+  }
+
+  // view method
+  assetNormalizedDebt() {
+    this.accrue();
+    return this.baseDebtIndex;
   }
 
   supply(amount: bigint, spoke: Spoke) {
@@ -104,71 +116,62 @@ export class LiquidityHub {
     return suppliedShares;
   }
 
-  withdraw(amount: bigint, spoke: Spoke) {
+  withdraw(amount: bigint, who: Spoke) {
+    const spoke = this.getSpoke(who);
+    spoke.accrue();
+
     const suppliedShares = this.toSupplyShares(amount, Rounding.CEIL);
 
     this.suppliedShares -= suppliedShares;
     this.availableLiquidity -= amount;
-
-    this.getSpoke(spoke).suppliedShares -= suppliedShares;
-
     Utils.checkBounds(this);
+
+    spoke.suppliedShares -= suppliedShares;
+    Utils.checkBounds(spoke);
+
     return suppliedShares;
   }
 
-  // @dev spoke data is *expected* to be updated on the `refresh` callback
-  draw(amount: bigint, spoke: Spoke) {
+  draw(amount: bigint, who: Spoke) {
+    const spoke = this.getSpoke(who);
+    spoke.accrue();
+
     const drawnShares = this.toDrawnShares(amount, Rounding.CEIL);
 
     this.availableLiquidity -= amount;
     this.baseDrawnShares += drawnShares;
 
-    this.getSpoke(spoke).baseDrawnShares += drawnShares;
+    spoke.baseDrawnShares += drawnShares;
 
     return drawnShares;
   }
 
-  // @dev global & spoke premiumDebt (ghost, offset, unrealised) is *expected* to be updated on the `refresh` callback
-  restore(baseAmount: bigint, premiumAmount: bigint, spoke: Spoke) {
+  restore(baseAmount: bigint, premiumAmount: bigint, who: Spoke) {
+    const spoke = this.getSpoke(who);
+    spoke.accrue();
+
     const drawnShares = this.toDrawnShares(baseAmount);
 
     this.availableLiquidity += baseAmount + premiumAmount;
     this.baseDrawnShares -= drawnShares;
+    this.outstandingPremium -= premiumAmount;
+    Utils.checkBounds(this);
 
-    this.getSpoke(spoke).baseDrawnShares -= drawnShares;
+    spoke.baseDrawnShares -= drawnShares;
+    spoke.realisedPremium -= premiumAmount;
+    Utils.checkBounds(spoke);
 
     return drawnShares;
   }
 
-  refresh(
-    userGhostDrawnSharesDelta: bigint,
-    userOffsetDelta: bigint,
-    userRealisedPremiumDelta: bigint,
-    who: Spoke
-  ) {
-    // add invariant: offset <= premiumDebt
-    // consider enforcing rp limit (per spoke) here using ghost/base (min and max cap)
-    // when we agree for -ve offset, then consider another configurable check for min limit offset
-
-    // check that total debt can only:
-    // - reduce until `premiumDebt` if called after a restore (tstore premiumDebt?)
-    // - remains unchanged on all other calls
-    // `refresh` is game-able only for premium stuff
-
-    let totalDebtBefore = this.getTotalDebt();
-    this.ghostDrawnShares += userGhostDrawnSharesDelta;
-    this.offset += userOffsetDelta;
-    this.realisedPremium += userRealisedPremiumDelta;
+  refresh(userPremiumDrawnSharesDelta: bigint, who: Spoke) {
+    this.premiumDrawnShares += userPremiumDrawnSharesDelta;
     Utils.checkBounds(this);
-    Utils.checkTotalDebt(totalDebtBefore, this);
 
     const spoke = this.getSpoke(who);
-    totalDebtBefore = spoke.getTotalDebt();
-    spoke.ghostDrawnShares += userGhostDrawnSharesDelta;
-    spoke.offset += userOffsetDelta;
-    spoke.realisedPremium += userRealisedPremiumDelta;
+    spoke.accrue();
+    spoke.premiumDrawnShares += userPremiumDrawnSharesDelta;
     Utils.checkBounds(spoke);
-    Utils.checkTotalDebt(totalDebtBefore, spoke);
   }
 
   getSpoke(spoke: Spoke) {
@@ -185,13 +188,10 @@ export class LiquidityHub {
   }
 
   log(spokes = false, users = false) {
-    const ghostDebt = this.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
     console.log('--- Hub ---');
     console.log('hub.baseDrawnShares         ', f(this.baseDrawnShares));
-    console.log('hub.ghostDrawnShares        ', f(this.ghostDrawnShares));
-    console.log('hub.offset                  ', f(this.offset));
-    console.log('hub.ghostDebt               ', f(ghostDebt));
-    console.log('hub.realisedPremium         ', f(this.realisedPremium));
+    console.log('hub.premiumDrawnShares      ', f(this.premiumDrawnShares));
+    console.log('hub.outstandingPremium      ', f(this.outstandingPremium));
 
     console.log('hub.suppliedShares          ', f(this.suppliedShares));
     console.log('hub.totalSupplyAssets       ', f(this.totalSupplyAssets()));
@@ -199,6 +199,8 @@ export class LiquidityHub {
     console.log('hub.baseDebt                ', f(this.baseDebt()));
     console.log('hub.premiumDebt             ', f(this.premiumDebt()));
     console.log('hub.lastUpdateTimestamp     ', this.lastUpdateTimestamp);
+    console.log('block.timestamp             ', currentTime);
+    console.log('hub.baseDebtIndex           ', formatRay(this.baseDebtIndex));
 
     console.log('hub.getTotalDebt            ', f(this.getTotalDebt()));
     console.log('hub.getDebt: baseDebt       ', f(this.getDebt().baseDebt));
@@ -213,12 +215,10 @@ export class LiquidityHub {
   }
 
   getDebt() {
-    this.accrue();
-    const accruedPremium = this.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
-    assertGeZero(accruedPremium);
+    this.accrue(); // all premium is realized
     return {
       baseDebt: this.convertToDrawnAssets(this.baseDrawnShares),
-      premiumDebt: accruedPremium + this.realisedPremium,
+      premiumDebt: this.outstandingPremium,
     };
   }
 
@@ -236,8 +236,11 @@ export class LiquidityHub {
     return this.toDrawnShares(assets);
   }
 
-  previewOffset(premiumDrawnShares: bigint) {
-    return this.toDrawnAssets(premiumDrawnShares);
+  previewAccruedPremium(shares: bigint, trailingIndex: bigint) {
+    this.accrue();
+    const nextIndex = this.assetNormalizedDebt();
+    const currentIndex = trailingIndex;
+    return rayMul(shares, nextIndex - currentIndex, Rounding.CEIL);
   }
 
   supplyExchangeRatio() {
@@ -260,8 +263,8 @@ export class Spoke {
   public users: User[] = [];
 
   public baseDrawnShares = 0n;
-  public ghostDrawnShares = 0n;
-  public offset = 0n;
+  public premiumDrawnShares = 0n;
+  public trailingIndex = RAY;
   public realisedPremium = 0n;
 
   public suppliedShares = 0n;
@@ -284,172 +287,97 @@ export class Spoke {
 
   withdraw(amount: bigint, who: User) {
     const user = this.getUser(who);
+    this.accrueAll(user);
 
-    this.hub.accrue();
     amount = min(amount, user.getSuppliedBalance());
     const suppliedShares = this.hub.withdraw(amount, this);
 
     this.suppliedShares -= suppliedShares;
     user.suppliedShares -= suppliedShares;
 
-    this.updateUserRiskPremium(user);
+    this.updateUserRiskPremium(who);
 
     return suppliedShares;
   }
 
   borrow(amount: bigint, who: User) {
     const user = this.getUser(who);
+    this.accrueAll(user);
 
-    this.hub.accrue();
-
-    let userGhostDrawnShares = user.ghostDrawnShares;
-    let userOffset = user.offset;
-    const accruedPremium = this.hub.convertToDrawnAssets(userGhostDrawnShares) - userOffset;
-    assertGeZero(accruedPremium);
-
-    user.ghostDrawnShares = 0n;
-    user.offset = 0n;
-    user.realisedPremium += accruedPremium;
-
-    this.refresh(-userGhostDrawnShares, -userOffset, accruedPremium, user);
-    const drawnShares = this.hub.draw(amount, this); // asset to share should round up
+    const drawnShares = this.hub.draw(amount, this);
 
     this.baseDrawnShares += drawnShares;
     user.baseDrawnShares += drawnShares;
 
-    user.riskPremium = randomRiskPremium();
-    userGhostDrawnShares = user.ghostDrawnShares = percentMul(
-      user.baseDrawnShares,
-      user.riskPremium
-    );
-    userOffset = user.offset = this.hub.previewOffset(user.ghostDrawnShares);
-
-    this.refresh(userGhostDrawnShares, userOffset, 0n, user);
+    this.updateUserRiskPremium(who);
 
     return drawnShares;
   }
 
   repay(amount: bigint, who: User) {
     const user = this.getUser(who);
+    this.accrueAll(user);
 
-    this.hub.accrue();
-    const {baseDebt, premiumDebt} = this.getUserDebt(user);
-    const {baseDebtRestored, premiumDebtRestored} = this.deductFromPremium(
-      baseDebt,
-      premiumDebt,
-      amount,
-      user
-    );
-
-    let userGhostDrawnShares = user.ghostDrawnShares;
-    let userOffset = user.offset;
-    const userRealisedPremium = user.realisedPremium;
-    user.ghostDrawnShares = 0n;
-    user.offset = 0n;
-    user.realisedPremium = premiumDebt - premiumDebtRestored;
-    this.refresh(
-      -userGhostDrawnShares,
-      -userOffset,
-      user.realisedPremium - userRealisedPremium,
-      user
-    ); // settle premium debt
-    const drawnShares = this.hub.restore(baseDebtRestored, premiumDebtRestored, this); // settle base debt
+    const {baseDebtRestored, premiumDebtRestored} = this.deductFromPremium(user, amount);
+    const drawnShares = this.hub.restore(baseDebtRestored, premiumDebtRestored, this);
 
     this.baseDrawnShares -= drawnShares;
+    this.realisedPremium -= premiumDebtRestored;
+    Utils.checkBounds(this);
+
     user.baseDrawnShares -= drawnShares;
+    user.realisedPremium -= premiumDebtRestored;
+    Utils.checkBounds(user);
 
-    user.riskPremium = randomRiskPremium();
-    userGhostDrawnShares = user.ghostDrawnShares = percentMul(
-      user.baseDrawnShares,
-      user.riskPremium
-    );
-    userOffset = user.offset = this.hub.previewOffset(user.ghostDrawnShares);
-
-    this.refresh(userGhostDrawnShares, userOffset, 0n, user);
+    this.updateUserRiskPremium(user);
 
     return [drawnShares, premiumDebtRestored];
   }
 
-  deductFromPremium(baseDebt: bigint, premiumDebt: bigint, amount: bigint, user: User) {
-    if (amount === MAX_UINT) {
+  deductFromPremium(user: User, amount: bigint) {
+    const {baseDebt, premiumDebt} = this.getUserDebt(user);
+
+    if (amount >= baseDebt + premiumDebt) {
       return {baseDebtRestored: baseDebt, premiumDebtRestored: premiumDebt};
     }
+    const [baseDebtRestored, premiumDebtRestored] =
+      amount < premiumDebt ? [0n, amount] : [amount - premiumDebt, premiumDebt];
 
-    let baseDebtRestored = 0n,
-      premiumDebtRestored = 0n;
-
-    if (amount < premiumDebt) {
-      baseDebtRestored = 0n;
-      premiumDebtRestored = amount;
-    } else {
-      baseDebtRestored = amount - premiumDebt;
-      premiumDebtRestored = premiumDebt;
-    }
-
-    // sanity
-    if (baseDebtRestored > baseDebt) {
-      user.log(true, true);
-      info(
-        'baseDebtRestored, baseDebt, diff',
-        f(baseDebtRestored),
-        f(baseDebt),
-        absDiff(baseDebtRestored, baseDebt)
-      );
-      throw new Error('baseDebtRestored exceeds baseDebt');
-    }
-
-    if (premiumDebtRestored > premiumDebt) {
-      user.log(true, true);
-      info(
-        'premiumDebtRestored, premiumDebt, diff',
-        f(premiumDebtRestored),
-        f(premiumDebt),
-        absDiff(premiumDebtRestored, premiumDebt)
-      );
-      throw new Error('premiumDebtRestored exceeds premiumDebt');
-    }
-
+    Utils.checkBound(baseDebt, premiumDebt, baseDebtRestored, premiumDebtRestored, user);
     return {baseDebtRestored, premiumDebtRestored};
   }
 
   updateUserRiskPremium(who: User) {
     const user = this.getUser(who);
+    this.accrueAll(user);
+
     user.riskPremium = randomRiskPremium();
-
-    const oldUserGhostDrawnShares = user.ghostDrawnShares;
-    const oldUserOffset = user.offset;
-
-    user.ghostDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
-    user.offset = this.hub.previewOffset(user.ghostDrawnShares);
-
-    const accruedPremium =
-      this.hub.convertToDrawnAssets(oldUserGhostDrawnShares) - oldUserOffset;
-    user.realisedPremium += accruedPremium;
-
-    this.refresh(
-      user.ghostDrawnShares - oldUserGhostDrawnShares,
-      user.offset - oldUserOffset,
-      accruedPremium,
-      user
-    );
+    const userPremiumDrawnShares = user.premiumDrawnShares;
+    user.premiumDrawnShares = percentMul(user.baseDrawnShares, user.riskPremium);
+    this.refresh(user.premiumDrawnShares - userPremiumDrawnShares, user);
   }
 
-  refresh(
-    userGhostDrawnSharesDelta: bigint,
-    userOffsetDelta: bigint,
-    userRealisedPremiumDelta: bigint,
-    user: User
-  ) {
+  refresh(userPremiumDrawnSharesDelta: bigint, user: User) {
     Utils.checkBounds(user);
-
-    const totalDebtBefore = this.getTotalDebt();
-    this.ghostDrawnShares += userGhostDrawnSharesDelta;
-    this.offset += userOffsetDelta;
-    this.realisedPremium += userRealisedPremiumDelta;
+    this.premiumDrawnShares += userPremiumDrawnSharesDelta;
     Utils.checkBounds(this);
-    Utils.checkTotalDebt(totalDebtBefore, this);
+    this.hub.refresh(userPremiumDrawnSharesDelta, this);
+  }
 
-    this.hub.refresh(userGhostDrawnSharesDelta, userOffsetDelta, userRealisedPremiumDelta, this);
+  accrueAll(user: User) {
+    this.hub.accrue();
+    this.accrue();
+    this.accrue(user);
+  }
+
+  accrue(who: Spoke | User = this) {
+    const nextIndex = this.hub.assetNormalizedDebt();
+    if (who.trailingIndex === nextIndex) return;
+    who.realisedPremium += this.hub.previewAccruedPremium(
+      who.premiumDrawnShares,
+      who.trailingIndex
+    );
+    who.trailingIndex = nextIndex;
   }
 
   getTotalDebt() {
@@ -458,24 +386,26 @@ export class Spoke {
 
   getDebt() {
     this.hub.accrue();
-    const accruedPremium =
-      this.hub.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
-    assertGeZero(accruedPremium);
     return {
       baseDebt: this.hub.convertToDrawnAssets(this.baseDrawnShares),
-      premiumDebt: accruedPremium + this.realisedPremium,
+      premiumDebt:
+        this.realisedPremium +
+        this.hub.previewAccruedPremium(this.premiumDrawnShares, this.trailingIndex),
     };
   }
 
   getUserDebt(who: User) {
     this.hub.accrue();
     const user = this.getUser(who);
-    const accruedPremium =
-      this.hub.convertToDrawnAssets(user.ghostDrawnShares) - user.offset;
-    assertGeZero(accruedPremium);
+    const accruedPremium = rayMul(
+      user.premiumDrawnShares,
+      this.hub.assetNormalizedDebt() - user.trailingIndex
+    );
     return {
       baseDebt: this.hub.convertToDrawnAssets(user.baseDrawnShares),
-      premiumDebt: accruedPremium + user.realisedPremium,
+      premiumDebt:
+        user.realisedPremium +
+        this.hub.previewAccruedPremium(user.premiumDrawnShares, user.trailingIndex),
     };
   }
 
@@ -505,13 +435,17 @@ export class Spoke {
   }
 
   log(hub = false, users = false) {
-    const ghostDebt = this.hub.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
+    const accruedPremium = this.hub.previewAccruedPremium(
+      this.premiumDrawnShares,
+      this.trailingIndex
+    );
     console.log(`--- Spoke ${this.id} ---`);
     console.log('spoke.baseDrawnShares       ', f(this.baseDrawnShares));
-    console.log('spoke.ghostDrawnShares      ', f(this.ghostDrawnShares));
-    console.log('spoke.offset                ', f(this.offset));
-    console.log('spoke.ghostDebt             ', f(ghostDebt));
+    console.log('spoke.premiumDrawnShares    ', f(this.premiumDrawnShares));
     console.log('spoke.realisedPremium       ', f(this.realisedPremium));
+    console.log('accruedPremium              ', f(accruedPremium));
+    console.log('spoke.trailingIndex         ', formatRay(this.trailingIndex));
+    console.log('hub.baseDebtIndex           ', formatRay(this.hub.assetNormalizedDebt()));
     console.log('spoke.suppliedShares        ', f(this.suppliedShares));
     console.log('spoke.getTotalDebt          ', f(this.getTotalDebt()));
     console.log('spoke.getDebt: baseDebt     ', f(this.getDebt().baseDebt));
@@ -531,15 +465,15 @@ export class User {
   public hub: LiquidityHub;
 
   public baseDrawnShares = 0n;
-  public ghostDrawnShares = 0n;
-  public offset = 0n;
+  public premiumDrawnShares = 0n;
+  public trailingIndex = RAY;
   public realisedPremium = 0n;
 
   public suppliedShares = 0n;
 
   constructor(
     public readonly id = ++userIdCounter,
-    public riskPremium = randomRiskPremium(), // don't need to store, can be derived from `ghost/base`
+    public riskPremium = randomRiskPremium(), // don't need to store, can be derived from `premiumDrawnShares/baseDrawnShares`
     spoke: Spoke | null = null
   ) {
     if (spoke) this.assignSpoke(spoke);
@@ -597,13 +531,17 @@ export class User {
   }
 
   log(spoke = false, hub = false) {
-    const ghostDebt = this.hub.convertToDrawnAssets(this.ghostDrawnShares) - this.offset;
+    const accruedPremium = this.hub.previewAccruedPremium(
+      this.premiumDrawnShares,
+      this.trailingIndex
+    );
     console.log(`--- User ${this.id} ---`);
     console.log('user.baseDrawnShares        ', f(this.baseDrawnShares));
-    console.log('user.ghostDrawnShares       ', f(this.ghostDrawnShares));
-    console.log('user.offset                 ', f(this.offset));
-    console.log('user.ghostDebt              ', f(ghostDebt));
+    console.log('user.premiumDrawnShares     ', f(this.premiumDrawnShares));
     console.log('user.realisedPremium        ', f(this.realisedPremium));
+    console.log('accruedPremium              ', f(accruedPremium));
+    console.log('user.trailingIndex          ', formatRay(this.trailingIndex));
+    console.log('hub.baseDebtIndex           ', formatRay(this.hub.assetNormalizedDebt()));
     console.log('user.suppliedShares         ', f(this.suppliedShares));
     console.log('user.riskPremium            ', formatBps(this.riskPremium));
     console.log('user.getTotalDebt           ', f(this.spoke.getUserTotalDebt(this)));
@@ -655,11 +593,6 @@ export class System {
     this.users.forEach((user) => {
       user.beforeHook = (action: string, amount?: bigint) => {
         user.logAction(action, amount);
-        console.log(
-          'debt ex ratio before',
-          formatUnits(this.hub.convertToDrawnAssets(10n ** 50n), 50) // bigint won't overflow
-        );
-
         this.supplyExchangeRatio = this.hub.supplyExchangeRatio();
       };
       user.afterHook = () => {
@@ -691,37 +624,24 @@ export class System {
     this.invariant_sumOfPremiumDebt();
     this.invariant_sumOfSuppliedShares();
     this.invariant_hubSpokeAccounting();
-    // todo invariant: both exchange ratio are always increasing with the offset fix
   }
 
   invariant_valuesWithinBounds() {
     let fail = false;
     const all = [this.hub, ...this.spokes, ...this.users];
-    ['baseDrawnShares', 'ghostDrawnShares', 'offset', 'realisedPremium', 'suppliedShares'].forEach(
-      (key) => {
-        all.forEach((who) => {
-          if (who[key] < 0n || who[key] > MAX_UINT) {
-            who.log(who instanceof User, who instanceof User);
-            console.error(`${who.whoami()}.${key} < 0 || > MAX_UINT`, f(who[key]));
-            fail = true;
-          }
-        });
-      }
-    );
-    // ghost drawn assets >= offset, always
     all.forEach((who) => {
-      const ghostDrawnAssets = this.hub.convertToDrawnAssets(who.ghostDrawnShares);
-      if (ghostDrawnAssets < who.offset) {
-        who.log();
-        console.error(
-          `assets(${who.whoami()}.ghostDrawnShares) < offset, ghostDrawnShares, diff`,
-          f(ghostDrawnAssets),
-          f(who.offset),
-          f(who.ghostDrawnShares),
-          who.offset - ghostDrawnAssets
-        );
-        fail = true;
-      }
+      [
+        'baseDrawnShares',
+        'premiumDrawnShares',
+        'suppliedShares',
+        ...(who instanceof LiquidityHub ? ['outstandingPremium'] : ['realisedPremium']),
+      ].forEach((key) => {
+        if (who[key] < 0n || who[key] > MAX_UINT) {
+          who.log(who instanceof User, who instanceof User);
+          console.error(`${who.whoami()}.${key} < 0 || > MAX_UINT`, f(who[key]));
+          fail = true;
+        }
+      });
     });
 
     this.handleFailure(fail, 'invariant_valuesWithinBounds');
@@ -800,7 +720,7 @@ export class System {
     }
 
     // validate internal premium vars
-    ['ghostDrawnShares', 'offset', 'realisedPremium'].forEach((key) => {
+    ['premiumDrawnShares'].forEach((key) => {
       const hubKey = this.hub[key];
       const spokeKey = this.spokes.reduce((sum, spoke) => sum + spoke[key], 0n);
       const userKey = this.users.reduce((sum, user) => sum + user[key], 0n);
@@ -860,13 +780,7 @@ export class System {
 
     this.spokes.forEach((spoke) => {
       const spokeOnHub = this.hub.getSpoke(spoke);
-      [
-        'baseDrawnShares',
-        'ghostDrawnShares',
-        'offset',
-        'realisedPremium',
-        'suppliedShares',
-      ].forEach((key) => {
+      ['baseDrawnShares', 'premiumDrawnShares', 'suppliedShares'].forEach((key) => {
         if (spoke[key] !== spokeOnHub[key]) {
           console.error(
             `spoke(${spoke.id}).${key} ${f(spoke[key])} !== this.hub.spokes[${this.hub.idx(
@@ -929,16 +843,51 @@ class Utils {
   static checkBounds(who: LiquidityHub | Spoke | User) {
     const fail = [
       who.baseDrawnShares,
-      who.ghostDrawnShares,
-      who.offset,
-      who.realisedPremium,
+      who.premiumDrawnShares,
+      who.suppliedShares,
       ...(who instanceof LiquidityHub
-        ? [who.suppliedShares, who.totalSupplyAssets(), who.premiumDebt(), who.availableLiquidity]
-        : []),
+        ? [
+            who.totalSupplyAssets(),
+            who.premiumDebt(),
+            who.availableLiquidity,
+            who.outstandingPremium,
+          ]
+        : [who.realisedPremium]),
     ].reduce((flag, v) => flag || v < 0n || v > MAX_UINT, false);
     if (fail) {
       who.log(true);
       throw new Error('underflow/overflow');
+    }
+  }
+
+  static checkBound(
+    baseDebt: bigint,
+    premiumDebt: bigint,
+    baseDebtRestored: bigint,
+    premiumDebtRestored: bigint,
+    user: User
+  ) {
+    // sanity
+    if (baseDebtRestored > baseDebt) {
+      user.log(true, true);
+      info(
+        'baseDebtRestored, baseDebt, diff',
+        f(baseDebtRestored),
+        f(baseDebt),
+        absDiff(baseDebtRestored, baseDebt)
+      );
+      throw new Error('baseDebtRestored exceeds baseDebt');
+    }
+
+    if (premiumDebtRestored > premiumDebt) {
+      user.log(true, true);
+      info(
+        'premiumDebtRestored, premiumDebt, diff',
+        f(premiumDebtRestored),
+        f(premiumDebt),
+        absDiff(premiumDebtRestored, premiumDebt)
+      );
+      throw new Error('premiumDebtRestored exceeds premiumDebt');
     }
   }
 

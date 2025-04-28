@@ -10,9 +10,10 @@ import {
   rayMul,
   Rounding,
   absDiff,
+  formatUnits,
 } from './utils';
 
-it()((ctx) => {
+it('basic')((ctx) => {
   const [alice, bob, charlie] = ctx.users;
   const amount1 = p('10000');
   const amount2 = p('200');
@@ -20,8 +21,14 @@ it()((ctx) => {
 
   alice.supply(amount1);
   alice.borrow(amount1);
+  alice.log(true, true);
+
   skip();
+
+  alice.log(true, true);
+
   alice.repay(amount2);
+
   bob.borrow(amount2);
   skip();
   alice.repay(amount3);
@@ -216,7 +223,7 @@ it('index')((ctx) => {
   const index = randomIndex(); // 1645169034437660970422632448n, 1370571970449003121502846976n
   console.log('index', index);
   const scale = (amount: bigint) => rayDiv(amount, index, Rounding.CEIL);
-  const unscale = (scaled: bigint) => rayMul(scaled, index, Rounding.CEIL); // toggle
+  const unscale = (scaled: bigint) => rayMul(scaled, index); // toggle
 
   const amountA = 23232n;
   const scaledA = scale(amountA);
@@ -256,6 +263,21 @@ it('repay deduction')((ctx) => {
   alice.repay(amount / 2n);
   const delta = aliceDebtBefore - alice.getTotalDebt();
   console.log('restored actual', f(delta), 'expected', f(amount / 2n), 'diff', delta - amount / 2n);
+});
+
+it('supply ex ratio scenario')((ctx) => {
+  // force index to be 1.5
+  const [alice, bob, carol] = ctx.users;
+
+  alice.supply(20n);
+  bob.borrow(20n);
+
+  skip();
+  alice.supply(30n);
+  carol.borrow(15n);
+  alice.borrow(15n);
+  carol.repay(MAX_UINT);
+  // ctx.hub.log(true, true);
 });
 
 runScenarios();
