@@ -24,7 +24,12 @@ jobs:
           FOUNDRY_PROFILE: pr
 
       - name: Run tests
-        run: forge test --isolate -vvv
+        run: forge test -vvv --nmp 'tests/gas/**'
         env:
+          FOUNDRY_PROFILE: pr
+
+      - name: Run snapshot check
+        run: forge test --isolate --mp 'tests/gas/**'
+        env: 
           FOUNDRY_PROFILE: pr
           FORGE_SNAPSHOT_CHECK: true
