@@ -12,11 +12,11 @@ optimizer_runs = 200
 bytecode_hash = "none"
 
 [profile.default.fuzz]
-runs = 5000
+runs = 1000
 seed = "0x640"
 
 [profile.pr.fuzz]
-runs = 10000
+runs = 5000
 
 [profile.ci.fuzz]
 runs = 100000
