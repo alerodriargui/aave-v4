@@ -27,9 +27,7 @@ interface ILiquidityHub {
   event RefreshPremiumDebt(
     uint256 indexed assetId,
     address indexed spoke,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
+    int256 premiumDrawnSharesDelta
   );
 
   error MismatchedConfigs();
@@ -122,35 +120,10 @@ interface ILiquidityHub {
    * @dev Total debt should not change, reverts with `InvalidDebtChange` when violated.
    * @param assetId The asset id.
    * @param premiumDrawnSharesDelta The change in premium drawn shares.
-   * @param premiumOffsetDelta The change in premium offset.
-   * @param realizedPremiumDelta The change in realized premium.
    */
-  function refreshPremiumDebt(
-    uint256 assetId,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
-  ) external;
+  function refreshPremiumDebt(uint256 assetId, int256 premiumDrawnSharesDelta) external;
 
-  /**
-   * @notice Settles premium debt restored.
-   * @dev To be called in conjunction with repay to pay premium debt, restore must account for
-   * the premium restored in the available liquidity.
-   * @dev Only callable by spokes.
-   * @dev Base debt should not change, reverts with `InvalidDebtChange` when violated, and
-   * premium debt can only decrease by at most the amount of premium restored on restore.
-   * @param assetId The asset id.
-   * @param premiumDrawnSharesDelta The change in premium drawn shares.
-   * @param premiumOffsetDelta The change in premium offset.
-   * @param realizedPremiumDelta The change in realized premium.
-   */
-  function settlePremiumDebt(
-    uint256 assetId,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
-  ) external;
-
+  function assetNormalizedDebt(uint256 assetId) external view returns (uint256);
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);

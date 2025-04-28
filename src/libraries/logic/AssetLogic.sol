@@ -23,6 +23,7 @@ library AssetLogic {
   ) internal view returns (uint256) {
     return shares.rayMulUp(asset.previewIndex());
   }
+
   function toDrawnAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
@@ -36,6 +37,7 @@ library AssetLogic {
   ) internal view returns (uint256) {
     return assets.rayDivUp(asset.previewIndex());
   }
+
   function toDrawnSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
@@ -48,13 +50,11 @@ library AssetLogic {
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset;
-    return asset.realizedPremium + accruedPremium;
+    return asset.outstandingPremium + asset.previewAccruedPremium(asset.previewIndex());
   }
 
   function debt(DataTypes.Asset storage asset) internal view returns (uint256, uint256) {
-    return (asset.baseDebt(), asset.premiumDebt());
+    return (asset.baseDebt(), asset.premiumDebt()); // todo opt: cache previewIndex for both
   }
 
   function totalDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -75,6 +75,7 @@ library AssetLogic {
   ) internal view returns (uint256) {
     return shares.toAssetsUp(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
   }
+
   function toSuppliedAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
@@ -88,6 +89,7 @@ library AssetLogic {
   ) internal view returns (uint256) {
     return assets.toSharesUp(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
   }
+
   function toSuppliedSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
@@ -119,20 +121,48 @@ library AssetLogic {
   }
 
   // @dev Utilizes existing `asset.baseBorrowRate`
-  function accrue(DataTypes.Asset storage asset) internal {
-    asset.baseDebtIndex = asset.previewIndex();
+  function accrue(DataTypes.Asset storage asset) internal returns (uint256) {
+    uint256 nextIndex = asset.previewIndex();
+    asset.outstandingPremium += asset.previewAccruedPremium(nextIndex); // requires currentIndex
+    asset.baseDebtIndex = nextIndex;
     asset.lastUpdateTimestamp = block.timestamp;
+    return nextIndex;
   }
 
   function previewIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 baseDebtIndex = asset.baseDebtIndex;
+    uint256 currentIndex = asset.baseDebtIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
     if (lastUpdateTimestamp == block.timestamp) {
-      return baseDebtIndex;
+      return currentIndex;
     }
     return
-      baseDebtIndex.rayMulUp(
+      currentIndex.rayMulUp(
         MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
       );
+  }
+
+  function previewAccruedPremium(
+    DataTypes.Asset storage asset,
+    uint256 currentIndex
+  ) internal view returns (uint256) {
+    unchecked {
+      return asset.premiumDrawnShares.rayMulUp(asset.previewIndex() - currentIndex);
+    }
+  }
+
+  function previewIndexAndAccruedPremium(
+    DataTypes.Asset storage asset
+  ) internal view returns (uint256, uint256) {
+    uint256 currentIndex = asset.baseDebtIndex;
+    uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
+    if (lastUpdateTimestamp == block.timestamp) {
+      return (currentIndex, 0);
+    }
+    unchecked {
+      uint256 nextIndex = currentIndex.rayMulUp(
+        MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
+      );
+      return (nextIndex, asset.premiumDrawnShares.rayMulUp(nextIndex - currentIndex));
+    }
   }
 }

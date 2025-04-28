@@ -6,17 +6,15 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
 contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
-  using WadRayMath for uint256;
   using SharesMath for uint256;
-  using PercentageMath for uint256;
   using AssetLogic for DataTypes.Asset;
+  using WadRayMathExtended for uint256;
 
   uint256 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
 
@@ -41,9 +39,8 @@ contract LiquidityHub is ILiquidityHub {
       availableLiquidity: 0,
       baseDrawnShares: 0, // offset in exchange ratio
       premiumDrawnShares: 0,
-      premiumOffset: 0,
-      realizedPremium: 0,
-      baseDebtIndex: WadRayMath.RAY,
+      outstandingPremium: 0,
+      baseDebtIndex: WadRayMathExtended.RAY,
       lastUpdateTimestamp: block.timestamp,
       baseBorrowRate: 0, // todo check
       id: assetId, // todo rm
@@ -210,6 +207,7 @@ contract LiquidityHub is ILiquidityHub {
 
     asset.availableLiquidity += totalRestoredAmount;
     asset.baseDrawnShares -= baseDrawnSharesRestored;
+    asset.outstandingPremium -= premiumAmount; // todo zeroFloorSub
 
     spoke.baseDrawnShares -= baseDrawnSharesRestored;
 
@@ -221,61 +219,22 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function refreshPremiumDebt(
-    uint256 assetId,
-    int256 premiumDrawnShareDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
-  ) external {
+  function refreshPremiumDebt(uint256 assetId, int256 premiumDrawnShareDelta) external {
     // todo only spoke
     (uint256 baseDebt, uint256 premiumDebt) = _assets[assetId].debt();
-    _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
+    _refresh(assetId, msg.sender, premiumDrawnShareDelta);
     (uint256 baseDebtAfter, uint256 premiumDebtAfter) = _assets[assetId].debt();
     // can increase due to precision loss on premium debt (base unchanged)
     // todo mathematically find premium diff ceiling and replace the `2`
     require(baseDebtAfter == baseDebt && premiumDebtAfter - premiumDebt <= 2, InvalidDebtChange());
   }
 
-  /// @inheritdoc ILiquidityHub
-  function settlePremiumDebt(
-    uint256 assetId,
-    int256 premiumDrawnShareDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
-  ) external {
-    // todo: merge with repay and validate total debt only goes down by `premiumDebtRestored`
-    // which ensures reduced assets are added to available liquidity
-    // todo: only spoke
-    uint256 baseDebt = _assets[assetId].baseDebt();
-    _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
-    require(_assets[assetId].baseDebt() == baseDebt, InvalidDebtChange());
-  }
-
-  function _refresh(
-    uint256 assetId,
-    address spokeAddress,
-    int256 premiumDrawnShareDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
-  ) internal {
+  function _refresh(uint256 assetId, address spokeAddress, int256 premiumDrawnShareDelta) internal {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
-
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
-    asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
-    asset.realizedPremium = _add(asset.realizedPremium, realizedPremiumDelta);
-
     spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
-    spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
-    spoke.realizedPremium = _add(spoke.realizedPremium, realizedPremiumDelta);
-
-    emit RefreshPremiumDebt(
-      assetId,
-      spokeAddress,
-      premiumDrawnShareDelta,
-      premiumOffsetDelta,
-      realizedPremiumDelta
-    );
+    emit RefreshPremiumDebt(assetId, spokeAddress, premiumDrawnShareDelta);
   }
 
   //
@@ -325,6 +284,10 @@ contract LiquidityHub is ILiquidityHub {
 
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256) {
     return _assets[assetId].toDrawnAssetsDown(shares);
+  }
+
+  function assetNormalizedDebt(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].previewIndex();
   }
 
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
@@ -379,6 +342,13 @@ contract LiquidityHub is ILiquidityHub {
   //
   // Internal
   //
+
+  function _accrue(DataTypes.Asset storage asset, DataTypes.SpokeData storage spoke) internal {
+    uint256 nextIndex = asset.accrue();
+    if (nextIndex == spoke.trailingIndex) return; // avoid storing spoke.lastUpdateTimestamp at the cost of unnecessary 0 writes here when no debt
+    spoke.realizedPremium += spoke.premiumDrawnShares.rayMulUp(nextIndex - spoke.trailingIndex);
+    spoke.trailingIndex = nextIndex;
+  }
 
   function _validateSupply(
     DataTypes.Asset storage asset,
@@ -446,8 +416,8 @@ contract LiquidityHub is ILiquidityHub {
       suppliedShares: 0,
       baseDrawnShares: 0,
       premiumDrawnShares: 0,
-      premiumOffset: 0,
       realizedPremium: 0,
+      trailingIndex: _assets[assetId].previewIndex(),
       lastUpdateTimestamp: 0,
       config: config
     });
@@ -469,7 +439,9 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke
   ) internal view returns (uint256, uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumDrawnShares) - spoke.premiumOffset;
+    uint256 accruedPremium = asset.premiumDrawnShares.rayMulUp(
+      asset.previewIndex() - spoke.trailingIndex
+    );
     return (asset.toDrawnAssetsUp(spoke.baseDrawnShares), spoke.realizedPremium + accruedPremium);
   }
 

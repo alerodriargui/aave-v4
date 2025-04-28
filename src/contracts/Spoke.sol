@@ -70,7 +70,7 @@ contract Spoke is ISpoke {
       suppliedShares: 0,
       baseDrawnShares: 0,
       premiumDrawnShares: 0,
-      premiumOffset: 0,
+      trailingIndex: HUB.assetNormalizedDebt(assetId),
       realizedPremium: 0,
       config: DataTypes.ReserveConfig({
         decimals: config.decimals,
@@ -139,27 +139,14 @@ contract Spoke is ISpoke {
     DataTypes.UserPosition storage userPosition = _userPositions[msg.sender][reserveId];
     uint256 assetId = reserve.assetId;
 
+    // todo ACCRUE
+
     // If uint256.max is passed, withdraw all user's supplied assets
     if (amount == type(uint256).max) {
       amount = HUB.convertToSuppliedAssets(assetId, userPosition.suppliedShares);
     }
     _validateWithdraw(reserve, userPosition, amount);
 
-    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
-    uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = HUB.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
-      userPremiumOffset; // assets(premiumShares) - offset should never be < 0
-    userPosition.premiumDrawnShares = 0;
-    userPosition.premiumOffset = 0;
-    userPosition.realizedPremium += accruedPremium;
-
-    _refreshPremiumDebt(
-      reserve,
-      assetId,
-      -int256(userPremiumDrawnShares),
-      -int256(userPremiumOffset),
-      int256(accruedPremium)
-    ); // unnecessary but we realize premium debt here
     uint256 withdrawnShares = HUB.remove(assetId, amount, to);
 
     userPosition.suppliedShares -= withdrawnShares;
@@ -168,21 +155,7 @@ contract Spoke is ISpoke {
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _validateUserPosition(msg.sender); // validates HF
 
-    userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
-      .baseDrawnShares
-      .percentMul(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
-      assetId,
-      userPosition.premiumDrawnShares
-    );
-
-    _refreshPremiumDebt(
-      reserve,
-      assetId,
-      int256(userPremiumDrawnShares),
-      int256(userPremiumOffset),
-      0
-    );
+    _refreshUserRiskPremium(userPosition, assetId, newUserRiskPremium);
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Withdraw(reserveId, msg.sender, withdrawnShares, to);
@@ -198,21 +171,6 @@ contract Spoke is ISpoke {
 
     _validateBorrow(reserve, msg.sender);
 
-    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
-    uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 accruedPremium = HUB.convertToDrawnAssets(assetId, userPremiumDrawnShares) -
-      userPremiumOffset; // assets(premiumShares) - offset should never be < 0
-    userPosition.premiumDrawnShares = 0;
-    userPosition.premiumOffset = 0;
-    userPosition.realizedPremium += accruedPremium;
-
-    _refreshPremiumDebt(
-      reserve,
-      assetId,
-      -int256(userPremiumDrawnShares),
-      -int256(userPremiumOffset),
-      int256(accruedPremium)
-    ); // unnecessary but we realize premium debt here
     uint256 baseDrawnShares = HUB.draw(assetId, amount, to);
 
     reserve.baseDrawnShares += baseDrawnShares;
@@ -221,21 +179,7 @@ contract Spoke is ISpoke {
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _validateUserPosition(msg.sender); // validates HF
 
-    userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
-      .baseDrawnShares
-      .percentMul(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
-      assetId,
-      userPosition.premiumDrawnShares
-    );
-
-    _refreshPremiumDebt(
-      reserve,
-      assetId,
-      int256(userPremiumDrawnShares),
-      int256(userPremiumOffset),
-      0
-    );
+    _refreshUserRiskPremium(userPosition, assetId, newUserRiskPremium);
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Borrow(reserveId, msg.sender, baseDrawnShares, to);
@@ -248,29 +192,13 @@ contract Spoke is ISpoke {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     uint256 assetId = reserve.assetId;
 
-    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, reserve.assetId);
-    (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
-      baseDebt,
-      premiumDebt,
-      amount
-    );
     _validateRepay(reserve);
 
-    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
-    uint256 userPremiumOffset = userPosition.premiumOffset;
-    uint256 userRealizedPremium = userPosition.realizedPremium;
-
-    userPosition.premiumDrawnShares = 0;
-    userPosition.premiumOffset = 0;
-    userPosition.realizedPremium = premiumDebt - premiumDebtRestored;
-
-    _settlePremiumDebt(
-      reserve,
+    (uint256 baseDebtRestored, uint256 premiumDebtRestored) = _calculateRestoreAmount(
+      userPosition,
       assetId,
-      -int256(userPremiumDrawnShares),
-      -int256(userPremiumOffset),
-      _signedDiff(userPosition.realizedPremium, userRealizedPremium)
-    ); // we settle premium debt here
+      amount
+    );
     uint256 restoredShares = HUB.restore(
       assetId,
       baseDebtRestored,
@@ -280,24 +208,13 @@ contract Spoke is ISpoke {
 
     reserve.baseDrawnShares -= restoredShares;
     userPosition.baseDrawnShares -= restoredShares;
+    // premium debt restored is exact since it is maintained in asset terms
+    reserve.realizedPremium -= premiumDebtRestored;
+    userPosition.realizedPremium -= premiumDebtRestored;
 
     (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(msg.sender);
 
-    userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
-      .baseDrawnShares
-      .percentMul(newUserRiskPremium);
-    userPremiumOffset = userPosition.premiumOffset = HUB.previewOffset(
-      assetId,
-      userPosition.premiumDrawnShares
-    );
-
-    _refreshPremiumDebt(
-      reserve,
-      assetId,
-      int256(userPremiumDrawnShares),
-      int256(userPremiumOffset),
-      0
-    );
+    _refreshUserRiskPremium(userPosition, assetId, newUserRiskPremium);
     _notifyRiskPremiumUpdate(assetId, msg.sender, newUserRiskPremium);
 
     emit Repay(reserveId, msg.sender, restoredShares);
@@ -379,6 +296,7 @@ contract Spoke is ISpoke {
     (, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
     return healthFactor;
   }
+
   function getReservePrice(uint256 reserveId) public view returns (uint256) {
     return oracle.getAssetPrice(_reserves[reserveId].assetId);
   }
@@ -483,10 +401,12 @@ contract Spoke is ISpoke {
 
   // @dev allows donation on base debt
   function _calculateRestoreAmount(
-    uint256 baseDebt,
-    uint256 premiumDebt,
+    DataTypes.UserPosition storage userPosition,
+    uint256 assetId,
     uint256 amount
   ) internal pure returns (uint256, uint256) {
+    (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(userPosition, assetId);
+
     if (amount >= baseDebt + premiumDebt) {
       return (baseDebt, premiumDebt);
     }
@@ -496,53 +416,18 @@ contract Spoke is ISpoke {
     return (amount - premiumDebt, premiumDebt);
   }
 
-  function _refreshPremiumDebt(
-    DataTypes.Reserve storage reserve,
+  function _refreshUserRiskPremium(
+    DataTypes.UserPosition storage userPosition,
     uint256 assetId,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
+    uint256 riskPremium
   ) internal {
-    _refresh(reserve, premiumDrawnSharesDelta, premiumOffsetDelta, realizedPremiumDelta);
+    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares;
     HUB.refreshPremiumDebt(
       assetId,
-      premiumDrawnSharesDelta,
-      premiumOffsetDelta,
-      realizedPremiumDelta
-    );
-  }
-
-  function _settlePremiumDebt(
-    DataTypes.Reserve storage reserve,
-    uint256 assetId,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
-  ) internal {
-    _refresh(reserve, premiumDrawnSharesDelta, premiumOffsetDelta, realizedPremiumDelta);
-    HUB.settlePremiumDebt(
-      assetId,
-      premiumDrawnSharesDelta,
-      premiumOffsetDelta,
-      realizedPremiumDelta
-    );
-  }
-
-  function _refresh(
-    DataTypes.Reserve storage reserve,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
-  ) internal {
-    reserve.premiumDrawnShares = _add(reserve.premiumDrawnShares, premiumDrawnSharesDelta);
-    reserve.premiumOffset = _add(reserve.premiumOffset, premiumOffsetDelta);
-    reserve.realizedPremium = _add(reserve.realizedPremium, realizedPremiumDelta);
-
-    emit RefreshPremiumDebt(
-      reserve.reserveId,
-      premiumDrawnSharesDelta,
-      premiumOffsetDelta,
-      realizedPremiumDelta
+      _signedDiff(
+        (userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(riskPremium)),
+        userPremiumDrawnShares
+      )
     );
   }
 
@@ -771,24 +656,8 @@ contract Spoke is ISpoke {
       uint256 assetId = reserve.assetId;
       // todo keep borrowed assets in transient storage/pass through?
       if (_isBorrowing(userPosition) && assetId != assetIdToAvoid) {
-        uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
-        uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-        uint256 accruedUserPremium = HUB.convertToDrawnAssets(assetId, oldUserPremiumDrawnShares) -
-          oldUserPremiumOffset;
-
-        userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMul(
-          newUserRiskPremium
-        );
-        userPosition.premiumOffset = HUB.previewOffset(assetId, userPosition.premiumDrawnShares);
-        userPosition.realizedPremium += accruedUserPremium;
-
-        _refreshPremiumDebt(
-          reserve,
-          assetId,
-          _signedDiff(userPosition.premiumDrawnShares, oldUserPremiumDrawnShares),
-          _signedDiff(userPosition.premiumOffset, oldUserPremiumOffset),
-          int256(accruedUserPremium)
-        );
+        // TODO accrue
+        _refreshUserRiskPremium(userPosition, assetId, newUserRiskPremium);
       }
       unchecked {
         ++reserveId;

@@ -10,8 +10,8 @@ library DataTypes {
     uint256 suppliedShares;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
-    uint256 premiumOffset; // todo make signed
     uint256 realizedPremium;
+    uint256 trailingIndex;
     uint256 lastUpdateTimestamp; // todo: unneeded?
     DataTypes.SpokeConfig config;
   }
@@ -21,8 +21,7 @@ library DataTypes {
     uint256 availableLiquidity;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
-    uint256 premiumOffset; // todo make signed
-    uint256 realizedPremium;
+    uint256 outstandingPremium;
     uint256 baseDebtIndex;
     uint256 baseBorrowRate;
     uint256 lastUpdateTimestamp;
@@ -61,8 +60,8 @@ library DataTypes {
     uint256 suppliedShares;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
-    uint256 premiumOffset;
     uint256 realizedPremium;
+    uint256 trailingIndex;
     ReserveConfig config;
   }
 
@@ -84,8 +83,8 @@ library DataTypes {
     uint256 suppliedShares;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
-    uint256 premiumOffset;
     uint256 realizedPremium;
+    uint256 trailingIndex;
   }
 
   struct CalculateUserAccountDataVars {
