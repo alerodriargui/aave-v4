@@ -6,6 +6,7 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 import {LiquidityHub, ILiquidityHub} from 'src/contracts/LiquidityHub.sol';
 import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
+import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
@@ -54,11 +55,11 @@ abstract contract Base is Test {
 
   MockPriceOracle internal oracle;
   ILiquidityHub internal hub;
+  ITreasurySpoke internal treasurySpoke;
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
   DefaultReserveInterestRateStrategy internal irStrategy;
-  DefaultReserveInterestRateStrategy internal creditLineIRStrategy;
 
   address internal mockAddressesProvider = makeAddr('mockAddressesProvider');
   // TODO: remove after migrating to other mock users
@@ -72,6 +73,7 @@ abstract contract Base is Test {
 
   address internal HUB_ADMIN = makeAddr('HUB_ADMIN');
   address internal SPOKE_ADMIN = makeAddr('SPOKE_ADMIN');
+  address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
 
   TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -122,12 +124,12 @@ abstract contract Base is Test {
 
   function deployFixtures() internal {
     oracle = new MockPriceOracle();
-    creditLineIRStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     irStrategy = new DefaultReserveInterestRateStrategy(mockAddressesProvider);
     hub = new LiquidityHub();
     spoke1 = ISpoke(new Spoke(address(hub), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
     spoke2 = ISpoke(new Spoke(address(hub), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
     spoke3 = ISpoke(new Spoke(address(hub), address(oracle), HEALTH_FACTOR_LIQUIDATION_THRESHOLD));
+    treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub)));
     dai = new MockERC20();
     eth = new MockERC20();
     usdc = new MockERC20();
@@ -140,8 +142,15 @@ abstract contract Base is Test {
   }
 
   function initEnvironment() internal {
+    configureTreasury();
     deployMintAndApproveTokenList();
     configureTokenList();
+  }
+
+  function configureTreasury() internal {
+    // alternative is using standard `LiquidityHub.addSpoke` function
+    vm.prank(HUB_ADMIN);
+    hub.updateTreasury(address(treasurySpoke));
   }
 
   function deployMintAndApproveTokenList() internal {
@@ -216,10 +225,11 @@ abstract contract Base is Test {
     // add WETH
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 18,
         active: true,
         paused: false,
         frozen: false,
+        decimals: 18,
+        reserveFactor: 10_00,
         irStrategy: irStrategy
       }),
       address(tokenList.weth)
@@ -229,10 +239,11 @@ abstract contract Base is Test {
     // add USDX
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 6,
         active: true,
         paused: false,
         frozen: false,
+        decimals: 6,
+        reserveFactor: 5_00,
         irStrategy: irStrategy
       }),
       address(tokenList.usdx)
@@ -242,10 +253,11 @@ abstract contract Base is Test {
     // add DAI
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 18,
         active: true,
         paused: false,
         frozen: false,
+        decimals: 18,
+        reserveFactor: 5_00,
         irStrategy: irStrategy
       }),
       address(tokenList.dai)
@@ -255,10 +267,11 @@ abstract contract Base is Test {
     // add WBTC
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 8,
         active: true,
         paused: false,
         frozen: false,
+        decimals: 8,
+        reserveFactor: 10_00,
         irStrategy: irStrategy
       }),
       address(tokenList.wbtc)
@@ -448,10 +461,11 @@ abstract contract Base is Test {
     // Spoke 2 to have an extra dai reserve
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 18,
         active: true,
         frozen: false,
         paused: false,
+        decimals: 18,
+        reserveFactor: 5_00,
         irStrategy: irStrategy
       }),
       address(tokenList.dai)

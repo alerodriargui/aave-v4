@@ -19,6 +19,7 @@ interface ILiquidityHub {
     uint256 drawCap,
     uint256 supplyCap
   );
+  event TreasuryUpdated(address oldTreasury, address newTreasury);
 
   event Add(uint256 indexed assetId, address indexed spoke, uint256 suppliedShares);
   event Remove(uint256 indexed assetId, address indexed spoke, uint256 suppliedShares);
@@ -51,6 +52,7 @@ interface ILiquidityHub {
   error AssetFrozen();
   error InvalidIrStrategy();
   error InvalidAssetDecimals();
+  error InvalidReserveFactor();
   error InvalidAssetAddress();
   error InvalidDebtChange();
 
@@ -67,6 +69,7 @@ interface ILiquidityHub {
     address spoke,
     DataTypes.SpokeConfig memory config
   ) external;
+  function updateTreasury(address newTreasury) external;
 
   /**
    * @notice Add/Supply asset on behalf of user.
