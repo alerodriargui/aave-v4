@@ -21,6 +21,11 @@ runs = 5000
 [profile.ci.fuzz]
 runs = 100000
 
+[profile.gas]
+isolate = true
+gas_snapshot_check = true
+test = 'tests/gas'
+
 [rpc_endpoints]
 mainnet = "${RPC_MAINNET}"
 optimism = "${RPC_OPTIMISM}"
