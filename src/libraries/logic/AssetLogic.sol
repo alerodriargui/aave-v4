@@ -23,35 +23,30 @@ library AssetLogic {
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    (uint256 drawnIndex, ) = asset.previewIndex();
-    return shares.rayMulUp(drawnIndex);
+    return shares.rayMulUp(previewDrawnIndex());
   }
   function toDrawnAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    (uint256 drawnIndex, ) = asset.previewIndex();
-    return shares.rayMulDown(drawnIndex);
+    return shares.rayMulDown(previewDrawnIndex());
   }
 
   function toDrawnSharesUp(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    (uint256 drawnIndex, ) = asset.previewIndex();
-    return assets.rayDivUp(drawnIndex);
+    return assets.rayDivUp(previewDrawnIndex());
   }
   function toDrawnSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    (uint256 drawnIndex, ) = asset.previewIndex();
-    return assets.rayDivDown(drawnIndex);
+    return assets.rayDivDown(previewDrawnIndex());
   }
 
   function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    (uint256 drawnIndex, ) = asset.previewIndex();
-    return asset.baseDrawnShares.rayMulUp(drawnIndex);
+    return asset.baseDrawnShares.rayMulUp(previewDrawnIndex());
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -151,5 +146,17 @@ library AssetLogic {
       feesIndex = newIndex.percentMulDown(PercentageMath.PERCENTAGE_FACTOR);
     }
     return (newIndex, feesIndex);
+  }
+
+  function previewDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
+    uint256 previousIndex = asset.baseDebtIndex;
+    uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
+    if (lastUpdateTimestamp == block.timestamp || asset.baseDrawnShares == 0) {
+      return previousIndex;
+    }
+    return
+      previousIndex.rayMulUp(
+        MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
+      );
   }
 }
