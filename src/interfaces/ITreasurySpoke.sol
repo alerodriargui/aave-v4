@@ -10,5 +10,5 @@ interface ITreasurySpoke {
 
   function getSuppliedAmount(uint256 assetId) external view returns (uint256);
 
-  function gerSuppliedShares(uint256 assetId) external view returns (uint256);
+  function getSuppliedShares(uint256 assetId) external view returns (uint256);
 }

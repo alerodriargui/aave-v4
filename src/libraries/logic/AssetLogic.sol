@@ -143,7 +143,7 @@ library AssetLogic {
     uint256 feesIndex = newIndex;
     uint256 reserveFactor = asset.config.reserveFactor;
     if (reserveFactor > 0) {
-      feesIndex = newIndex.percentMulDown(PercentageMath.PERCENTAGE_FACTOR);
+      feesIndex = newIndex.percentMulDown(PercentageMath.PERCENTAGE_FACTOR - reserveFactor);
     }
     return (newIndex, feesIndex);
   }

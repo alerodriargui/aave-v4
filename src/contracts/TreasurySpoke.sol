@@ -31,7 +31,7 @@ contract TreasurySpoke is Ownable, ITreasurySpoke {
     return HUB.getSpokeSuppliedAmount(assetId, address(this));
   }
 
-  function gerSuppliedShares(uint256 assetId) external view returns (uint256) {
+  function getSuppliedShares(uint256 assetId) external view returns (uint256) {
     return HUB.getSpokeSuppliedShares(assetId, address(this));
   }
 }
