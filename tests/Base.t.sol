@@ -27,6 +27,7 @@ import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 abstract contract Base is Test {
   using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
 
@@ -822,5 +823,33 @@ abstract contract Base is Test {
 
   function _min(uint256 a, uint256 b) internal pure returns (uint256) {
     return a < b ? a : b;
+  }
+
+  /// @dev Calculate expected debt index based on input params
+  function calculateExpectedDebtIndex(
+    uint256 initialDebtIndex,
+    uint256 borrowRate,
+    uint40 startTime
+  ) internal returns (uint256) {
+    return initialDebtIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
+  }
+
+  /// @dev Calculate expected debt index and base debt based on input params
+  function calculateExpectedDebt(
+    uint256 initialDrawnShares,
+    uint256 initialDebtIndex,
+    uint256 borrowRate,
+    uint40 startTime
+  ) internal returns (uint256 newDebtIndex, uint256 newBaseDebt) {
+    newDebtIndex = initialDebtIndex.rayMulUp(
+      MathUtils.calculateLinearInterest(borrowRate, startTime)
+    );
+    newBaseDebt = initialDrawnShares.rayMulUp(newDebtIndex);
+  }
+
+  /// @dev Helper function to get asset base debt
+  function getAssetBaseDebt(uint256 assetId) internal view returns (uint256) {
+    (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
+    return baseDebt;
   }
 }
