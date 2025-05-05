@@ -27,6 +27,8 @@ contract LiquidityHub is ILiquidityHub {
   IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public assetCount;
 
+  address public treasury;
+
   // /////
   // Governance
   // /////
@@ -44,14 +46,16 @@ contract LiquidityHub is ILiquidityHub {
       premiumOffset: 0,
       realizedPremium: 0,
       baseDebtIndex: WadRayMath.RAY,
-      lastUpdateTimestamp: block.timestamp,
       baseBorrowRate: 0, // todo check
+      lastUpdateTimestamp: block.timestamp,
+      feesIndex: 0,
       id: assetId, // todo rm
       config: DataTypes.AssetConfig({
-        decimals: config.decimals, // todo fetch decimals from token
         active: config.active,
         frozen: config.frozen,
         paused: config.paused,
+        decimals: config.decimals, // todo fetch decimals from token
+        reserveFactor: config.reserveFactor,
         irStrategy: config.irStrategy
       })
     });
@@ -64,10 +68,11 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     // TODO: AccessControl
     asset.config = DataTypes.AssetConfig({
-      decimals: config.decimals,
       active: config.active,
       frozen: config.frozen,
       paused: config.paused,
+      decimals: config.decimals,
+      reserveFactor: config.reserveFactor,
       irStrategy: config.irStrategy
     });
 
@@ -105,6 +110,17 @@ contract LiquidityHub is ILiquidityHub {
 
     emit SpokeConfigUpdated(assetId, spoke, config.drawCap, config.supplyCap);
   }
+
+  function updateTreasury(address newTreasury) public {
+    // TODO: AccessControl
+    address oldTreasury = treasury;
+    treasury = newTreasury;
+    emit TreasuryUpdated(oldTreasury, newTreasury);
+  }
+
+  // /////
+  // Spoke Actions
+  // /////
 
   /// @inheritdoc ILiquidityHub
   function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
@@ -462,6 +478,7 @@ contract LiquidityHub is ILiquidityHub {
     require(asset != address(0), InvalidAssetAddress());
     require(address(config.irStrategy) != address(0), InvalidIrStrategy());
     require(config.decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
+    require(config.reserveFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidReserveFactor());
   }
 
   function _getSpokeDebt(

@@ -357,10 +357,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     emit ILiquidityHub.AssetAdded(hub.assetCount(), address(tokenList.dai));
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: 18,
         active: true,
         frozen: false,
         paused: false,
+        decimals: 18,
+        reserveFactor: 5_00,
         irStrategy: irStrategy
       }),
       address(tokenList.dai)
@@ -368,15 +369,17 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     uint256 assetId = hub.assetCount() - 1;
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
-    assertEq(config.decimals, 18, 'asset decimals');
     assertEq(config.active, true, 'asset active');
     assertEq(config.frozen, false, 'asset frozen');
     assertEq(config.paused, false, 'asset paused');
+    assertEq(config.decimals, 18, 'asset decimals');
+    assertEq(config.reserveFactor, 5_00, 'reserve factor');
     assertEq(address(config.irStrategy), address(irStrategy), 'asset irStrategy');
   }
 
   function test_addAsset_fuzz(DataTypes.AssetConfig memory newConfig, address asset) public {
     newConfig.decimals = bound(newConfig.decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
+    newConfig.reserveFactor = bound(newConfig.reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
     vm.assume(address(newConfig.irStrategy) != address(0) && asset != address(0));
 
     vm.prank(HUB_ADMIN);
@@ -384,10 +387,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     uint256 assetId = hub.assetCount() - 1;
     DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
-    assertEq(config.decimals, newConfig.decimals, 'asset decimals');
     assertEq(config.active, newConfig.active, 'asset active');
     assertEq(config.frozen, newConfig.frozen, 'asset frozen');
     assertEq(config.paused, newConfig.paused, 'asset paused');
+    assertEq(config.decimals, newConfig.decimals, 'asset decimals');
+    assertEq(config.reserveFactor, newConfig.reserveFactor, 'reserve factor');
     assertEq(address(config.irStrategy), address(newConfig.irStrategy), 'asset irStrategy');
   }
 
@@ -397,10 +401,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: invalidDecimals,
         active: true,
         frozen: false,
         paused: false,
+        decimals: invalidDecimals,
+        reserveFactor: 5_00,
         irStrategy: irStrategy
       }),
       address(tokenList.dai)
@@ -411,18 +416,65 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     bool active,
     bool frozen,
     bool paused,
+    uint256 reserveFactor,
     IReserveInterestRateStrategy irStrategy
   ) public {
-    uint256 invalidDecimals = hub.MAX_ALLOWED_ASSET_DECIMALS() + 1;
+    reserveFactor = bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
     vm.assume(address(irStrategy) != address(0));
+    uint256 invalidDecimals = hub.MAX_ALLOWED_ASSET_DECIMALS() + 1;
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: invalidDecimals,
         active: active,
         frozen: frozen,
         paused: paused,
+        decimals: invalidDecimals,
+        reserveFactor: reserveFactor,
+        irStrategy: irStrategy
+      }),
+      address(tokenList.dai)
+    );
+  }
+
+  function test_addAsset_revertsWith_InvalidReserveFactor() public {
+    uint256 invalidReserveFactor = PercentageMath.PERCENTAGE_FACTOR + 1;
+    vm.expectRevert(ILiquidityHub.InvalidReserveFactor.selector);
+    vm.prank(HUB_ADMIN);
+    hub.addAsset(
+      DataTypes.AssetConfig({
+        active: true,
+        frozen: false,
+        paused: false,
+        decimals: 18,
+        reserveFactor: invalidReserveFactor,
+        irStrategy: irStrategy
+      }),
+      address(tokenList.dai)
+    );
+  }
+
+  function test_addAsset_fuzz_revertsWith_InvalidReserveFactor(
+    bool active,
+    bool frozen,
+    bool paused,
+    uint256 decimals,
+    uint256 reserveFactor,
+    IReserveInterestRateStrategy irStrategy
+  ) public {
+    decimals = bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
+    vm.assume(reserveFactor > PercentageMath.PERCENTAGE_FACTOR);
+    vm.assume(address(irStrategy) != address(0));
+
+    vm.expectRevert(ILiquidityHub.InvalidReserveFactor.selector);
+    vm.prank(HUB_ADMIN);
+    hub.addAsset(
+      DataTypes.AssetConfig({
+        active: active,
+        frozen: frozen,
+        paused: paused,
+        decimals: decimals,
+        reserveFactor: reserveFactor,
         irStrategy: irStrategy
       }),
       address(tokenList.dai)
@@ -436,10 +488,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: decimals,
         active: true,
         frozen: false,
         paused: false,
+        decimals: decimals,
+        reserveFactor: 5_00,
         irStrategy: irStrategy
       }),
       address(0)
@@ -451,18 +504,21 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     bool frozen,
     bool paused,
     uint256 decimals,
+    uint256 reserveFactor,
     IReserveInterestRateStrategy irStrategy
   ) public {
     decimals = bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
+    reserveFactor = bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
 
     vm.expectRevert(ILiquidityHub.InvalidAssetAddress.selector);
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: decimals,
         active: active,
         frozen: frozen,
         paused: paused,
+        decimals: decimals,
+        reserveFactor: reserveFactor,
         irStrategy: irStrategy
       }),
       address(0)
@@ -471,15 +527,17 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_addAsset_revertsWith_InvalidIrStrategy() public {
     uint256 decimals = hub.MAX_ALLOWED_ASSET_DECIMALS();
+    uint256 reserveFactor = PercentageMath.PERCENTAGE_FACTOR;
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: decimals,
         active: true,
         frozen: false,
         paused: false,
+        decimals: decimals,
+        reserveFactor: reserveFactor,
         irStrategy: IReserveInterestRateStrategy(address(0))
       }),
       address(tokenList.dai)
@@ -491,19 +549,22 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     bool frozen,
     bool paused,
     address token,
-    uint256 decimals
+    uint256 decimals,
+    uint256 reserveFactor
   ) public {
     decimals = bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
+    reserveFactor = bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
     vm.assume(token != address(0));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     vm.prank(HUB_ADMIN);
     hub.addAsset(
       DataTypes.AssetConfig({
-        decimals: decimals,
         active: active,
         frozen: frozen,
         paused: paused,
+        decimals: decimals,
+        reserveFactor: reserveFactor,
         irStrategy: IReserveInterestRateStrategy(address(0))
       }),
       token

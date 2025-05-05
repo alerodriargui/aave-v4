@@ -6,10 +6,12 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 
 library AssetLogic {
   using AssetLogic for DataTypes.Asset;
   using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
   using SharesMath for uint256;
   using WadRayMathExtended for uint256;
 
@@ -21,30 +23,35 @@ library AssetLogic {
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.rayMulUp(asset.previewIndex());
+    (uint256 drawnIndex, ) = asset.previewIndex();
+    return shares.rayMulUp(drawnIndex);
   }
   function toDrawnAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.rayMulDown(asset.previewIndex());
+    (uint256 drawnIndex, ) = asset.previewIndex();
+    return shares.rayMulDown(drawnIndex);
   }
 
   function toDrawnSharesUp(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.rayDivUp(asset.previewIndex());
+    (uint256 drawnIndex, ) = asset.previewIndex();
+    return assets.rayDivUp(drawnIndex);
   }
   function toDrawnSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.rayDivDown(asset.previewIndex());
+    (uint256 drawnIndex, ) = asset.previewIndex();
+    return assets.rayDivDown(drawnIndex);
   }
 
   function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDrawnShares.rayMulUp(asset.previewIndex());
+    (uint256 drawnIndex, ) = asset.previewIndex();
+    return asset.baseDrawnShares.rayMulUp(drawnIndex);
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -75,6 +82,7 @@ library AssetLogic {
   ) internal view returns (uint256) {
     return shares.toAssetsUp(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
   }
+
   function toSuppliedAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
@@ -120,19 +128,28 @@ library AssetLogic {
 
   // @dev Utilizes existing `asset.baseBorrowRate`
   function accrue(DataTypes.Asset storage asset) internal {
-    asset.baseDebtIndex = asset.previewIndex();
+    (uint256 drawnIndex, uint256 feesIndex) = asset.previewIndex();
+    asset.baseDebtIndex = drawnIndex;
+    asset.feesIndex += feesIndex;
     asset.lastUpdateTimestamp = block.timestamp;
   }
 
-  function previewIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 baseDebtIndex = asset.baseDebtIndex;
+  /// @return the new drawn index
+  /// @return the treasury fees index
+  function previewIndex(DataTypes.Asset storage asset) internal view returns (uint256, uint256) {
+    uint256 previousIndex = asset.baseDebtIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
     if (lastUpdateTimestamp == block.timestamp || asset.baseDrawnShares == 0) {
-      return baseDebtIndex;
+      return (previousIndex, 0);
     }
-    return
-      baseDebtIndex.rayMulUp(
-        MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
-      );
+    uint256 newIndex = previousIndex.rayMulUp(
+      MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
+    );
+    uint256 feesIndex = newIndex;
+    uint256 reserveFactor = asset.config.reserveFactor;
+    if (reserveFactor > 0) {
+      feesIndex = newIndex.percentMulDown(PercentageMath.PERCENTAGE_FACTOR);
+    }
+    return (newIndex, feesIndex);
   }
 }
