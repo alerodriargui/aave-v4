@@ -26,7 +26,6 @@ library DataTypes {
     uint256 baseDebtIndex;
     uint256 baseBorrowRate;
     uint256 lastUpdateTimestamp;
-    uint256 feesIndex;
     uint256 id; // todo remove
     DataTypes.AssetConfig config;
   }

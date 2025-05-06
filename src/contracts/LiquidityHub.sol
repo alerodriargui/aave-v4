@@ -48,7 +48,6 @@ contract LiquidityHub is ILiquidityHub {
       baseDebtIndex: WadRayMath.RAY,
       baseBorrowRate: 0, // todo check
       lastUpdateTimestamp: block.timestamp,
-      feesIndex: 0,
       id: assetId, // todo rm
       config: DataTypes.AssetConfig({
         active: config.active,
@@ -129,7 +128,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue();
+    asset.accrue(_spokes[assetId][treasury]);
     _validateSupply(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -158,7 +157,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue();
+    asset.accrue(_spokes[assetId][treasury]);
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -184,7 +183,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue();
+    asset.accrue(_spokes[assetId][treasury]);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -216,7 +215,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue();
+    asset.accrue(_spokes[assetId][treasury]);
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
     asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
