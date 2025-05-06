@@ -27,7 +27,6 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 abstract contract Base is Test {
-  using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
@@ -844,7 +843,7 @@ abstract contract Base is Test {
     uint256 initialDebtIndex,
     uint256 borrowRate,
     uint40 startTime
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     return initialDebtIndex.rayMulUp(MathUtils.calculateLinearInterest(borrowRate, startTime));
   }
 
@@ -854,10 +853,8 @@ abstract contract Base is Test {
     uint256 initialDebtIndex,
     uint256 borrowRate,
     uint40 startTime
-  ) internal returns (uint256 newDebtIndex, uint256 newBaseDebt) {
-    newDebtIndex = initialDebtIndex.rayMulUp(
-      MathUtils.calculateLinearInterest(borrowRate, startTime)
-    );
+  ) internal view returns (uint256 newDebtIndex, uint256 newBaseDebt) {
+    newDebtIndex = calculateExpectedDebtIndex(initialDebtIndex, borrowRate, startTime);
     newBaseDebt = initialDrawnShares.rayMulUp(newDebtIndex);
   }
 

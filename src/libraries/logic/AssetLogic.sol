@@ -23,30 +23,30 @@ library AssetLogic {
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.rayMulUp(previewDrawnIndex());
+    return shares.rayMulUp(asset.previewDrawnIndex());
   }
   function toDrawnAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.rayMulDown(previewDrawnIndex());
+    return shares.rayMulDown(asset.previewDrawnIndex());
   }
 
   function toDrawnSharesUp(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.rayDivUp(previewDrawnIndex());
+    return assets.rayDivUp(asset.previewDrawnIndex());
   }
   function toDrawnSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.rayDivDown(previewDrawnIndex());
+    return assets.rayDivDown(asset.previewDrawnIndex());
   }
 
   function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDrawnShares.rayMulUp(previewDrawnIndex());
+    return asset.baseDrawnShares.rayMulUp(asset.previewDrawnIndex());
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
