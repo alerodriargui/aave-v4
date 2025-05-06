@@ -68,8 +68,9 @@ library AssetLogic {
   }
 
   function totalSuppliedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 feesShares = asset.previewFeesShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
-    return asset.suppliedShares + feesShares;
+    return
+      asset.suppliedShares +
+      asset.previewFeesShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
   }
 
   function toSuppliedAssetsUp(
@@ -125,41 +126,15 @@ library AssetLogic {
 
   // @dev Utilizes existing `asset.baseBorrowRate`
   function accrue(DataTypes.Asset storage asset, DataTypes.SpokeData storage treasury) internal {
-    (uint256 drawnIndex, uint256 feesShares) = asset.previewIndex();
+    uint256 drawnIndex = asset.previewDrawnIndex();
+    uint256 feesShares = asset.previewFeesShares(drawnIndex - asset.baseDebtIndex);
+
     asset.baseDebtIndex = drawnIndex;
+    // mint treasury fees
     treasury.suppliedShares += feesShares;
     asset.suppliedShares += feesShares;
 
     asset.lastUpdateTimestamp = block.timestamp;
-  }
-
-  /// @return the new drawn index
-  /// @return the new treasury fees in shares since last update
-  function previewIndex(DataTypes.Asset storage asset) internal view returns (uint256, uint256) {
-    uint256 previousIndex = asset.baseDebtIndex;
-    uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (lastUpdateTimestamp == block.timestamp || asset.baseDrawnShares == 0) {
-      return (previousIndex, 0);
-    }
-    uint256 newIndex = previousIndex.rayMulUp(
-      MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
-    );
-    return (newIndex, previewFeesShares(asset, newIndex - previousIndex));
-  }
-
-  /// @return the new treasury fees in shares since last update
-  function previewFeesShares(
-    DataTypes.Asset storage asset,
-    uint256 indexDelta
-  ) internal view returns (uint256) {
-    uint256 reserveFactor = asset.config.reserveFactor;
-    if (reserveFactor == 0) {
-      return 0;
-    }
-    uint256 feesAmount = indexDelta.percentMulDown(reserveFactor);
-    // fees are discounted from totalSuppliedAssets because it's already factored in
-    // using suppliedShares storage var to avoid circular dependency
-    return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
   }
 
   function previewDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -172,5 +147,17 @@ library AssetLogic {
       previousIndex.rayMulUp(
         MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
       );
+  }
+
+  function previewFeesShares(
+    DataTypes.Asset storage asset,
+    uint256 indexDelta
+  ) internal view returns (uint256) {
+    uint256 reserveFactor = asset.config.reserveFactor;
+    if (indexDelta == 0 || reserveFactor == 0) {
+      return 0;
+    }
+    uint256 feesAmount = indexDelta.rayMulDown(asset.baseDrawnShares).percentMulDown(reserveFactor);
+    return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
   }
 }
