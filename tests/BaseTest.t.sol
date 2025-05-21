@@ -517,4 +517,12 @@ abstract contract BaseTest is Test, Events {
   function randomizer(uint256 min, uint256 max, uint256) internal returns (uint256) {
     return vm.randomUint(min, max);
   }
+
+  function mockInterestRate(uint256 bps) internal {
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(bps.bpsToRay())
+    );
+  }
 }

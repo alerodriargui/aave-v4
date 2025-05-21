@@ -12,6 +12,8 @@ import {SharesMath} from 'src/contracts/SharesMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 struct SpokeData {
   uint256 suppliedShares; // share
   uint256 baseDebt; // asset
@@ -434,6 +436,12 @@ contract LiquidityHub is ILiquidityHub {
     // TODO: Other cases of status (frozen, paused)
     require(asset.config.active, 'ASSET_NOT_ACTIVE');
     // Ensure spoke is not restoring more than accrued drawn or equal 0
+    console.log(
+      'amountRestored %18e, spoke.baseDebt %18e, spoke.outstandingPremium %18e',
+      amountRestored,
+      spoke.baseDebt,
+      spoke.outstandingPremium
+    );
     require(
       amountRestored > 0 && amountRestored <= spoke.baseDebt + spoke.outstandingPremium,
       'INVALID_RESTORE_AMOUNT'

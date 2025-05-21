@@ -5,9 +5,12 @@ import {WadRayMath} from 'src/contracts/WadRayMath.sol';
 import {PercentageMath} from 'src/contracts/PercentageMath.sol';
 import {MathUtils} from 'src/contracts/MathUtils.sol';
 import {KeyValueListInMemory} from 'src/contracts/KeyValueListInMemory.sol';
+import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IPriceOracle} from 'src/interfaces/IPriceOracle.sol';
+
+import {console2 as console} from 'forge-std/console2.sol';
 
 contract Spoke is ISpoke {
   using WadRayMath for uint256;
@@ -171,6 +174,7 @@ contract Spoke is ISpoke {
   // /////
 
   function supply(uint256 reserveId, uint256 amount) external {
+    console.log('\n------------- SUPPLY START -----------');
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[msg.sender][reserveId];
     UserData storage userData = _userData[msg.sender];
@@ -197,9 +201,12 @@ contract Spoke is ISpoke {
     reserve.suppliedShares += suppliedShares;
 
     emit Supplied(reserveId, amount, msg.sender);
+    console.log('------------- SUPPLY END -----------\n');
   }
 
   function withdraw(uint256 reserveId, uint256 amount, address to) external {
+    console.log('\n------------- WITHDRAW START -----------');
+
     // TODO: Be able to pass max(uint) as amount to withdraw all supplied shares
     Reserve storage reserve = _reserves[reserveId];
     UserConfig storage user = _users[msg.sender][reserveId];
@@ -228,9 +235,13 @@ contract Spoke is ISpoke {
     reserve.suppliedShares -= withdrawnShares;
 
     emit Withdrawn(reserveId, amount, msg.sender);
+
+    console.log('------------- WITHDRAW END -----------\n');
   }
 
   function borrow(uint256 reserveId, uint256 amount, address to) external {
+    console.log('\n------------- BORROW START -----------');
+
     // TODO: referral code
     // TODO: onBehalfOf with credit delegation
     Reserve storage reserve = _reserves[reserveId];
@@ -252,9 +263,12 @@ contract Spoke is ISpoke {
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
     emit Borrowed(reserveId, amount, to);
+    console.log('------------- BORROW END -----------\n');
   }
 
   function repay(uint256 reserveId, uint256 amount) external {
+    console.log('\n------------- REPAY START -------------');
+
     // TODO: Be able to pass max(uint) as amount to restore all debt
     // TODO: onBehalfOf
     UserConfig storage user = _users[msg.sender][reserveId];
@@ -284,6 +298,7 @@ contract Spoke is ISpoke {
     _notifyRiskPremiumUpdate(reserve.assetId, msg.sender, newUserRiskPremium);
 
     emit Repaid(reserveId, amount, msg.sender);
+    console.log('------------- REPAY END -------------\n');
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
@@ -388,6 +403,10 @@ contract Spoke is ISpoke {
   // public
   function getReserve(uint256 reserveId) public view returns (Reserve memory) {
     return _reserves[reserveId];
+  }
+
+  function getUserData(address user) external view returns (UserData memory) {
+    return _userData[user];
   }
 
   function getUser(uint256 reserveId, address user) public view returns (UserConfig memory) {
@@ -496,6 +515,20 @@ contract Spoke is ISpoke {
       reserveDebtWithoutCurrent,
       newUserRiskPremium,
       userDebt // new
+    );
+
+    // console.log('baseDebtChange %e', baseDebtChange);
+    // console.log(
+    //   'new user rp %27e, new reserve rp %27e, currentTime %d',
+    //   newUserRiskPremium,
+    //   newReserveRiskPremium,
+    //   block.timestamp
+    // );
+    console.log('asset', IERC20Metadata(reserve.asset).symbol());
+    console.log(
+      '!!!!!!! committing reserve rp update to storage, before %27e, after %27e !!!!!!!!!',
+      reserve.riskPremium,
+      newReserveRiskPremium
     );
 
     reserve.riskPremium = newReserveRiskPremium;
@@ -623,15 +656,28 @@ contract Spoke is ISpoke {
     // @dev from this point onwards, `totalCollateralInBaseCurrency` represents running collateral
     // value used in risk premium, `totalDebtInBaseCurrency` represents running outstanding debt
     vars.totalCollateralInBaseCurrency = 0;
+    console.log('totalDebtInBaseCurrency %8e', vars.totalDebtInBaseCurrency);
     while (vars.i < vars.collateralReserveCount && vars.totalDebtInBaseCurrency > 0) {
       if (vars.totalDebtInBaseCurrency == 0) break;
       (vars.liquidityPremium, vars.userCollateralInBaseCurrency) = list.get(vars.i);
       if (vars.userCollateralInBaseCurrency > vars.totalDebtInBaseCurrency) {
         vars.userCollateralInBaseCurrency = vars.totalDebtInBaseCurrency;
       }
+      console.log(
+        'i, liquidityPremium %4e, userCollateralInBaseCurrency %8e',
+        vars.i,
+        vars.liquidityPremium,
+        vars.userCollateralInBaseCurrency
+      );
       vars.userRiskPremium += vars.userCollateralInBaseCurrency * vars.liquidityPremium;
       vars.totalCollateralInBaseCurrency += vars.userCollateralInBaseCurrency;
       vars.totalDebtInBaseCurrency -= vars.userCollateralInBaseCurrency;
+      console.log(
+        'remainingDebtInBaseCurrency %8e, userRiskPremium %8e',
+        vars.totalDebtInBaseCurrency,
+        vars.userRiskPremium
+      );
+
       ++vars.i;
     }
 
@@ -649,10 +695,17 @@ contract Spoke is ISpoke {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal view returns (uint256) {
+    console.log('previewUserDebt for', IERC20Metadata(_reserves[assetId].asset).symbol());
     (uint256 cumulativeBaseDebt, uint256 cumulativeOutstandingPremium) = _previewUserInterest(
       user,
       userData,
       liquidityHub.previewNextBorrowIndex(assetId)
+    );
+    console.log(
+      'user debt: base %e, outstanding premium %e, lastUsedRp %27e',
+      cumulativeBaseDebt,
+      cumulativeOutstandingPremium,
+      userData.riskPremium
     );
     return ((cumulativeBaseDebt + cumulativeOutstandingPremium) * assetPrice) / assetUnit;
   }
@@ -673,6 +726,10 @@ contract Spoke is ISpoke {
   ) internal {
     uint256 nextBaseBorrowIndex = liquidityHub.previewNextBorrowIndex(reserve.assetId);
 
+    console.log(
+      'preview (and accrue) user interest for asset',
+      IERC20Metadata(reserve.asset).symbol()
+    );
     // todo: lib migration
     _accrueSpokeInterest(reserve, nextBaseBorrowIndex);
     _accrueUserInterest(user, userData, nextBaseBorrowIndex);
@@ -720,12 +777,32 @@ contract Spoke is ISpoke {
     uint256 existingBaseDebt = user.baseDebt;
     uint256 existingOutstandingPremium = user.outstandingPremium;
 
+    console.log(
+      '>>>>>>user debt nextIndex %27e, user debt lastUpdateTime %d, current time %d<<<<<<<',
+      nextBaseBorrowIndex,
+      user.lastUpdateTimestamp,
+      block.timestamp
+    );
     if (existingBaseDebt == 0 || user.lastUpdateTimestamp == block.timestamp) {
+      console.log(
+        'user debt: base %e, outstanding premium %e, current rp: %27e',
+        existingBaseDebt,
+        existingOutstandingPremium,
+        userData.riskPremium
+      );
       return (existingBaseDebt, existingOutstandingPremium);
     }
 
     uint256 cumulatedBaseDebt = existingBaseDebt.rayMul(nextBaseBorrowIndex).rayDiv(
       user.baseBorrowIndex
+    );
+
+    console.log(
+      'calculated, accruedBaseDebt %e, outstanding premium %e, current rp: %27e',
+      cumulatedBaseDebt - existingBaseDebt,
+      existingOutstandingPremium +
+        (cumulatedBaseDebt - existingBaseDebt).percentMul(userData.riskPremium.derayify()),
+      userData.riskPremium
     );
 
     return (
@@ -789,6 +866,11 @@ contract Spoke is ISpoke {
         ++i;
       }
     }
+    console.log(
+      '!!!!!!! committing user rp update to storage, before %27e, after %27e !!!!!!!!!',
+      userData.riskPremium,
+      newUserRiskPremium
+    );
     userData.riskPremium = newUserRiskPremium;
   }
 
@@ -825,6 +907,12 @@ contract Spoke is ISpoke {
       userDebt
     );
 
+    console.log('asset', IERC20Metadata(reserve.asset).symbol());
+    console.log(
+      '!!!!!!! committing reserve rp update to storage, before %27e, after %27e !!!!!!!!!',
+      reserve.riskPremium,
+      newReserveRiskPremium
+    );
     // @dev no need to update `reserve.baseDebt` & `user.baseDebt` as there is no debt change
     reserve.riskPremium = newReserveRiskPremium;
 
