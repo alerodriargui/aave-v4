@@ -401,16 +401,6 @@ contract SpokeBase is Base {
     return maxDebt > 1 ? maxDebt - 1 : maxDebt;
   }
 
-  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getValueInBaseCurrency(
-    uint256 assetId,
-    uint256 amount
-  ) internal view returns (uint256) {
-    return
-      (amount * oracle.getAssetPrice(assetId).wadify()) /
-      (10 ** hub.getAssetConfig(assetId).decimals);
-  }
-
   // assert that user's position and debt accounting matches expected
   function _assertUserPositionAndDebt(
     ISpoke spoke,
@@ -615,6 +605,37 @@ contract SpokeBase is Base {
       usersDebt.totalDebt,
       string.concat('reserve vs sum users total debt ', label)
     );
+  }
+
+  function _checkReserveInfo(
+    DataTypes.Reserve memory expected,
+    DataTypes.Reserve memory actual
+  ) internal pure {
+    assertEq(expected.reserveId, actual.reserveId, 'Reserve Ids mismatch');
+    assertEq(expected.assetId, actual.assetId, 'Asset Ids mismatch');
+    assertEq(expected.asset, actual.asset, 'Asset addresses mismatch');
+    assertEq(expected.config.active, actual.config.active, 'Active config mismatch');
+    assertEq(expected.config.frozen, actual.config.frozen, 'Frozen config mismatch');
+    assertEq(expected.config.paused, actual.config.paused, 'Paused config mismatch');
+    assertEq(expected.config.borrowable, actual.config.borrowable, 'Borrowable config mismatch');
+    assertEq(expected.config.collateral, actual.config.collateral, 'Collateral config mismatch');
+    assertEq(expected.config.decimals, actual.config.decimals, 'Decimals config mismatch');
+    assertEq(
+      expected.config.collateralFactor,
+      actual.config.collateralFactor,
+      'Collateral factor config mismatch'
+    );
+    assertEq(
+      expected.config.liquidationBonus,
+      actual.config.liquidationBonus,
+      'Liquidation bonus config mismatch'
+    );
+    assertEq(
+      expected.config.liquidityPremium,
+      actual.config.liquidityPremium,
+      'Liquidity premium config mismatch'
+    );
+    assertEq(abi.encode(expected), abi.encode(actual), 'Encoded reserve mismatch'); // sanity check
   }
 
   function _assertUserRpUnchanged(uint256 reserveId, ISpoke spoke, address user) internal view {

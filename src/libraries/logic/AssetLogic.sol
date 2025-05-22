@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -25,6 +27,7 @@ library AssetLogic {
   ) internal view returns (uint256) {
     return shares.rayMulUp(asset.previewDrawnIndex());
   }
+
   function toDrawnAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
@@ -38,6 +41,7 @@ library AssetLogic {
   ) internal view returns (uint256) {
     return assets.rayDivUp(asset.previewDrawnIndex());
   }
+
   function toDrawnSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
@@ -135,6 +139,7 @@ library AssetLogic {
     asset.suppliedShares += feesShares;
 
     asset.lastUpdateTimestamp = block.timestamp;
+    emit ILiquidityHub.DrawnIndexUpdate(asset.id, drawnIndex, block.timestamp);
   }
 
   function previewDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
