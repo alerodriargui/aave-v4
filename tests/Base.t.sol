@@ -742,7 +742,29 @@ abstract contract Base is Test {
 
   /// @dev Helper function to calculate asset amount corresponding to single supplied share
   function minimumAssetsPerSuppliedShare(uint256 assetId) internal view returns (uint256) {
-    return hub.convertToSuppliedAssets(assetId, 1);
+    return hub.convertToSuppliedAssetsUp(assetId, 1);
+  }
+
+  /// @dev Helper function to calculate expected supplied assets based on amount to supply and current exchange rate
+  function calculateEffectiveSuppliedAssets(
+    uint256 assetsAmount,
+    uint256 totalSuppliedAssets,
+    uint256 totalSuppliedShares
+  ) internal view returns (uint256) {
+    uint256 sharesAmount = assetsAmount.toSharesDown(totalSuppliedAssets, totalSuppliedShares);
+    console.log('before');
+    console.log(totalSuppliedAssets, totalSuppliedShares);
+    console.log('sharesAmount * newTotalSuppliedAssets / newTotalSuppliedShares');
+    console.log(
+      sharesAmount,
+      totalSuppliedAssets + assetsAmount,
+      totalSuppliedShares + sharesAmount
+    );
+    return
+      sharesAmount.toAssetsDown(
+        totalSuppliedAssets + assetsAmount,
+        totalSuppliedShares + sharesAmount
+      );
   }
 
   function getSupplyExRate(uint256 assetId) internal view returns (uint256) {

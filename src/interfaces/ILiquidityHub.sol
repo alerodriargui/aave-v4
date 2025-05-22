@@ -21,11 +21,7 @@ interface ILiquidityHub {
   );
   event TreasuryUpdated(address oldTreasury, address newTreasury);
 
-  event DrawnIndexUpdate(
-    uint256 indexed assetId, 
-    uint256 drawnIndex,
-    uint256 lastUpdateTimestamp
-  );
+  event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
   event Add(
     uint256 indexed assetId,
     address indexed spoke,
@@ -55,7 +51,8 @@ interface ILiquidityHub {
     address indexed spoke,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
+    uint256 realizedPremiumAdded,
+    uint256 realizedPremiumTaken
   );
 
   error MismatchedConfigs();
@@ -151,36 +148,19 @@ interface ILiquidityHub {
    * @notice Refreshes premium debt accounting.
    * @dev To be called when moving accrued premium to realized premium.
    * @dev Only callable by spokes.
-   * @dev Total debt should not change, reverts with `InvalidDebtChange` when violated.
+   * @dev Premium debt can only decrease by at most the amount of realized premium taken.
    * @param assetId The asset id.
    * @param premiumDrawnSharesDelta The change in premium drawn shares.
    * @param premiumOffsetDelta The change in premium offset.
-   * @param realizedPremiumDelta The change in realized premium.
+   * @param realizedPremiumAdded The increase of realized premium.
+   * @param realizedPremiumTaken The decrease of realized premium.
    */
   function refreshPremiumDebt(
     uint256 assetId,
     int256 premiumDrawnSharesDelta,
     int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
-  ) external;
-
-  /**
-   * @notice Settles premium debt restored.
-   * @dev To be called in conjunction with repay to pay premium debt, restore must account for
-   * the premium restored in the available liquidity.
-   * @dev Only callable by spokes.
-   * @dev Base debt should not change, reverts with `InvalidDebtChange` when violated, and
-   * premium debt can only decrease by at most the amount of premium restored on restore.
-   * @param assetId The asset id.
-   * @param premiumDrawnSharesDelta The change in premium drawn shares.
-   * @param premiumOffsetDelta The change in premium offset.
-   * @param realizedPremiumDelta The change in realized premium.
-   */
-  function settlePremiumDebt(
-    uint256 assetId,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
+    uint256 realizedPremiumAdded,
+    uint256 realizedPremiumTaken
   ) external;
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
@@ -188,9 +168,15 @@ interface ILiquidityHub {
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
-
+  function convertToSuppliedAssetsUp(
+    uint256 assetId,
+    uint256 shares
+  ) external view returns (uint256);
   function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
-
+  function convertToSuppliedSharesUp(
+    uint256 assetId,
+    uint256 assets
+  ) external view returns (uint256);
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);

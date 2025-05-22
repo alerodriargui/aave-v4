@@ -324,7 +324,7 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    state.withdrawAmount = hub.getAvailableLiquidity(daiAssetId);
+    state.withdrawAmount = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
 
     assertGt(
       spoke1.getUserSuppliedAmount(state.reserveId, bob),
@@ -333,7 +333,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     stage = 1;
-    state.withdrawnShares = hub.convertToSuppliedShares(daiAssetId, state.withdrawAmount);
+    state.withdrawnShares = hub.convertToSuppliedSharesUp(daiAssetId, state.withdrawAmount);
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
@@ -344,6 +344,10 @@ contract SpokeWithdrawTest is SpokeBase {
     // bc debt is fully repaid, bob can withdraw all supplied
     vm.prank(bob);
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
+    // treasury spoke withdraw fees
+    uint256 treasuryFees = hub.getSpokeSuppliedAmount(daiAssetId, address(treasurySpoke));
+    vm.prank(TREASURY_ADMIN);
+    treasurySpoke.withdraw(state.reserveId, treasuryFees, address(treasurySpoke));
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -540,7 +544,7 @@ contract SpokeWithdrawTest is SpokeBase {
     state.reserveId = spokeInfo[spoke1].dai.reserveId;
 
     // number of test stages
-    TestData[3] memory daiData;
+    TestData[3] memory reserveData;
     TestUserData[3] memory aliceData;
     TestUserData[3] memory bobData;
     TokenData[3] memory tokenData;
@@ -563,12 +567,12 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.repay(state.reserveId, repayAmount);
 
     uint256 stage = 0;
-    daiData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
-    state.withdrawAmount = hub.getAvailableLiquidity(daiAssetId); // withdraw all liquidity
+    state.withdrawAmount = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1)); // withdraw all liquidity
 
     assertGt(
       spoke1.getUserSuppliedAmount(state.reserveId, bob),
@@ -577,8 +581,8 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     stage = 1;
-    state.withdrawnShares = hub.convertToSuppliedShares(daiAssetId, state.withdrawAmount);
-    daiData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    state.withdrawnShares = hub.convertToSuppliedSharesUp(daiAssetId, state.withdrawAmount);
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
@@ -587,9 +591,13 @@ contract SpokeWithdrawTest is SpokeBase {
     // debt is fully repaid, so bob can withdraw all supplied
     vm.prank(bob);
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
+    // treasury spoke withdraw fees
+    uint256 treasuryFees = hub.getSpokeSuppliedAmount(daiAssetId, address(treasurySpoke));
+    vm.prank(TREASURY_ADMIN);
+    treasurySpoke.withdraw(state.reserveId, treasuryFees, address(treasurySpoke));
 
     stage = 2;
-    daiData[stage] = loadReserveInfo(spoke1, state.reserveId);
+    reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
@@ -599,8 +607,8 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(reserveBaseDebt, 0, 'reserveData base debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
     assertEq(
-      daiData[stage].data.suppliedShares,
-      daiData[1].data.suppliedShares - state.withdrawnShares,
+      reserveData[stage].data.suppliedShares,
+      reserveData[1].data.suppliedShares - state.withdrawnShares,
       'reserveData supplied shares'
     );
 

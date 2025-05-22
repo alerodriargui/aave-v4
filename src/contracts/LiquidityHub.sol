@@ -6,16 +6,16 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
 contract LiquidityHub is ILiquidityHub {
   using SafeERC20 for IERC20;
-  using WadRayMath for uint256;
+  using WadRayMathExtended for uint256;
   using SharesMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMathExtended for uint256;
   using AssetLogic for DataTypes.Asset;
 
   uint256 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
@@ -45,7 +45,7 @@ contract LiquidityHub is ILiquidityHub {
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      baseDebtIndex: WadRayMath.RAY,
+      baseDebtIndex: WadRayMathExtended.RAY,
       baseBorrowRate: 0, // todo check
       lastUpdateTimestamp: block.timestamp,
       id: assetId, // todo rm
@@ -240,30 +240,24 @@ contract LiquidityHub is ILiquidityHub {
     uint256 assetId,
     int256 premiumDrawnShareDelta,
     int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
+    uint256 realizedPremiumAdded,
+    uint256 realizedPremiumTaken
   ) external {
     // todo only spoke
-    (uint256 baseDebt, uint256 premiumDebt) = _assets[assetId].debt();
-    _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
-    (uint256 baseDebtAfter, uint256 premiumDebtAfter) = _assets[assetId].debt();
+    uint256 premiumDebtBefore = _assets[assetId].premiumDebt();
+    _refresh(
+      assetId,
+      msg.sender,
+      premiumDrawnShareDelta,
+      premiumOffsetDelta,
+      realizedPremiumAdded,
+      realizedPremiumTaken
+    );
+    uint256 premiumDebtAfter = _assets[assetId].premiumDebt();
     // can increase due to precision loss on premium debt (base unchanged)
     // todo mathematically find premium diff ceiling and replace the `2`
-    require(baseDebtAfter == baseDebt && premiumDebtAfter - premiumDebt <= 2, InvalidDebtChange());
-  }
-
-  /// @inheritdoc ILiquidityHub
-  function settlePremiumDebt(
-    uint256 assetId,
-    int256 premiumDrawnShareDelta,
-    int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
-  ) external {
-    // todo: merge with repay and validate total debt only goes down by `premiumDebtRestored`
-    // which ensures reduced assets are added to available liquidity
-    // todo: only spoke
-    uint256 baseDebt = _assets[assetId].baseDebt();
-    _refresh(assetId, msg.sender, premiumDrawnShareDelta, premiumOffsetDelta, realizedPremiumDelta);
-    require(_assets[assetId].baseDebt() == baseDebt, InvalidDebtChange());
+    // if no premium debt is restored, premium debt remains unchanged
+    require(premiumDebtAfter + realizedPremiumTaken - premiumDebtBefore <= 2, InvalidDebtChange());
   }
 
   function _refresh(
@@ -271,25 +265,40 @@ contract LiquidityHub is ILiquidityHub {
     address spokeAddress,
     int256 premiumDrawnShareDelta,
     int256 premiumOffsetDelta,
-    int256 realizedPremiumDelta
+    uint256 realizedPremiumAdded,
+    uint256 realizedPremiumTaken
   ) internal {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
 
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
-    asset.realizedPremium = _add(asset.realizedPremium, realizedPremiumDelta);
+    asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
     spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
-    spoke.realizedPremium = _add(spoke.realizedPremium, realizedPremiumDelta);
+    spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
+
+    // Take a cut from the newly accrued premium debt
+    uint256 reserveFactor = asset.config.reserveFactor;
+    if (realizedPremiumAdded > 0 && reserveFactor > 0) {
+      uint256 feesAmount = realizedPremiumAdded.percentMulDown(reserveFactor);
+      uint256 feeShares = feesAmount.toSharesDown(
+        asset.totalSuppliedAssets() - feesAmount,
+        asset.suppliedShares
+      );
+      // mint treasury fees
+      _spokes[assetId][treasury].suppliedShares += feeShares;
+      asset.suppliedShares += feeShares;
+    }
 
     emit RefreshPremiumDebt(
       assetId,
       spokeAddress,
       premiumDrawnShareDelta,
       premiumOffsetDelta,
-      realizedPremiumDelta
+      realizedPremiumAdded,
+      realizedPremiumTaken
     );
   }
 
@@ -323,11 +332,25 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].toSuppliedAssetsDown(shares);
   }
 
+  function convertToSuppliedAssetsUp(
+    uint256 assetId,
+    uint256 shares
+  ) external view returns (uint256) {
+    return _assets[assetId].toSuppliedAssetsUp(shares);
+  }
+
   function convertToSuppliedShares(
     uint256 assetId,
     uint256 assets
   ) external view returns (uint256) {
     return _assets[assetId].toSuppliedSharesDown(assets);
+  }
+
+  function convertToSuppliedSharesUp(
+    uint256 assetId,
+    uint256 assets
+  ) external view returns (uint256) {
+    return _assets[assetId].toSuppliedSharesUp(assets);
   }
 
   function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256) {
@@ -477,7 +500,10 @@ contract LiquidityHub is ILiquidityHub {
     require(asset != address(0), InvalidAssetAddress());
     require(address(config.irStrategy) != address(0), InvalidIrStrategy());
     require(config.decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
-    require(config.reserveFactor <= PercentageMath.PERCENTAGE_FACTOR, InvalidReserveFactor());
+    require(
+      config.reserveFactor <= PercentageMathExtended.PERCENTAGE_FACTOR,
+      InvalidReserveFactor()
+    );
   }
 
   function _getSpokeDebt(
