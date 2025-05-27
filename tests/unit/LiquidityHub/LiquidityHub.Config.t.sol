@@ -379,10 +379,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_addAsset() public {
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
-      decimals: 18,
       active: true,
       frozen: false,
       paused: false,
+      decimals: 18,
+      reserveFactor: 5_00,
       irStrategy: irStrategy
     });
 
@@ -395,10 +396,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
     uint256 assetId = hub.assetCount() - 1;
     DataTypes.AssetConfig memory actualConfig = hub.getAssetConfig(assetId);
-    assertEq(config.decimals, actualConfig.decimals, 'asset decimals');
     assertEq(config.active, actualConfig.active, 'asset active');
     assertEq(config.frozen, actualConfig.frozen, 'asset frozen');
     assertEq(config.paused, actualConfig.paused, 'asset paused');
+    assertEq(config.decimals, actualConfig.decimals, 'asset decimals');
+    assertEq(config.reserveFactor, actualConfig.reserveFactor, 'reserve factor');
     assertEq(address(config.irStrategy), address(actualConfig.irStrategy), 'asset irStrategy');
   }
 
