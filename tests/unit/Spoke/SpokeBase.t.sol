@@ -348,10 +348,8 @@ contract SpokeBase is Base {
   }
 
   function getTokenBalances(IERC20 token, address spoke) internal view returns (TokenData memory) {
-    TokenData memory tokenData;
-    tokenData.spokeBalance = token.balanceOf(spoke);
-    tokenData.hubBalance = token.balanceOf(address(hub));
-    return tokenData;
+    return
+      TokenData({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(address(hub))});
   }
 
   function _calcMinimumCollAmount(

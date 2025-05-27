@@ -913,4 +913,17 @@ abstract contract Base is Test {
     (uint256 baseDebt, ) = hub.getAssetDebt(assetId);
     return baseDebt;
   }
+
+  /// @dev Helper function to withdraw treasury fees from the treasury spoke
+  function treasuryWithdraw(uint256 assetId, uint256 amount) internal {
+    uint256 treasuryFees = hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke));
+    if (amount > treasuryFees) {
+      amount = treasuryFees;
+    }
+    if (amount == 0) {
+      return; // nothing to withdraw
+    }
+    vm.prank(TREASURY_ADMIN);
+    treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
+  }
 }
