@@ -970,7 +970,7 @@ contract Spoke is ISpoke, Multicall {
       vars.userRealizedPremium = userDebtPosition.realizedPremium;
 
       {
-        uint256 accruedPremium = vars.premiumDebt - userDebtPosition.realizedPremium;
+        uint256 accruedPremium = vars.premiumDebt - vars.userRealizedPremium;
 
         userDebtPosition.premiumDrawnShares = 0;
         userDebtPosition.premiumOffset = 0;
