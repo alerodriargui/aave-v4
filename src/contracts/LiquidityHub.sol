@@ -280,19 +280,6 @@ contract LiquidityHub is ILiquidityHub {
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
     spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
 
-    // Take a cut from the newly accrued premium debt
-    uint256 reserveFactor = asset.config.reserveFactor;
-    if (realizedPremiumAdded > 0 && reserveFactor > 0) {
-      uint256 feesAmount = realizedPremiumAdded.percentMulDown(reserveFactor);
-      uint256 feeShares = feesAmount.toSharesDown(
-        asset.totalSuppliedAssets() - feesAmount,
-        asset.suppliedShares
-      );
-      // mint treasury fees
-      _spokes[assetId][treasury].suppliedShares += feeShares;
-      asset.suppliedShares += feeShares;
-    }
-
     emit RefreshPremiumDebt(
       assetId,
       spokeAddress,

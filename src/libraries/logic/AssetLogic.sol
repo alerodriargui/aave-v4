@@ -162,7 +162,9 @@ library AssetLogic {
     if (indexDelta == 0 || reserveFactor == 0) {
       return 0;
     }
-    uint256 feesAmount = indexDelta.rayMulDown(asset.baseDrawnShares).percentMulDown(reserveFactor);
+    uint256 feesAmount = indexDelta
+      .rayMulDown(asset.baseDrawnShares + asset.premiumDrawnShares)
+      .percentMulDown(reserveFactor);
     return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
   }
 }

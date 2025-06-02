@@ -903,7 +903,11 @@ abstract contract Base is Test {
   }
 
   function getSupplyExRate(uint256 assetId) internal view returns (uint256) {
-    return hub.convertToSuppliedAssets(assetId, 1e30);
+    return hub.convertToSuppliedAssets(assetId, MAX_SUPPLY_AMOUNT);
+  }
+
+  function getDebtExRate(uint256 assetId) internal view returns (uint256) {
+    return hub.convertToDrawnAssets(assetId, MAX_SUPPLY_AMOUNT);
   }
 
   /// TODO: Once inflation protection implemented, can remove boolean param since rate should always monotonically increase
@@ -917,6 +921,14 @@ abstract contract Base is Test {
     if (!allWithdrawn) {
       assertGe(newRate, oldRate, string.concat('supply rate monotonically increasing ', label));
     }
+  }
+
+  function _checkDebtRateConstant(
+    uint256 oldRate,
+    uint256 newRate,
+    string memory label
+  ) internal pure {
+    assertEq(newRate, oldRate, string.concat('debt rate should be constant ', label));
   }
 
   /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
