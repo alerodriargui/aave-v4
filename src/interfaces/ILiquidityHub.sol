@@ -96,6 +96,12 @@ interface ILiquidityHub {
     address spoke,
     DataTypes.SpokeConfig memory config
   ) external;
+
+  /**
+   * @notice Update the address of the treasury spoke
+   * @dev Treasury fees are accrued across all assets prior to the update
+   * @param newTreasury The address of the new treasury spoke
+   */
   function updateTreasury(address newTreasury) external;
 
   /**
@@ -193,6 +199,8 @@ interface ILiquidityHub {
   function getAssetTotalDebt(uint256 assetId) external view returns (uint256);
 
   function getTotalSuppliedAssets(uint256 assetId) external view returns (uint256);
+
+  function getTotalSuppliedShares(uint256 assetId) external view returns (uint256);
 
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
 

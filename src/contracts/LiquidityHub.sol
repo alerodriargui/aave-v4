@@ -67,6 +67,7 @@ contract LiquidityHub is ILiquidityHub {
     _validateAssetConfig(config, address(assetsList[assetId]));
     DataTypes.Asset storage asset = _assets[assetId];
     // TODO: AccessControl
+    // todo: if reserveFactor or irStrategy update, accrue interest
     asset.config = DataTypes.AssetConfig({
       active: config.active,
       frozen: config.frozen,
@@ -111,8 +112,14 @@ contract LiquidityHub is ILiquidityHub {
     emit SpokeConfigUpdated(assetId, spoke, config.drawCap, config.supplyCap);
   }
 
+  /// @inheritdoc ILiquidityHub
   function updateTreasury(address newTreasury) public {
     // TODO: AccessControl
+    uint256 assetCount = assetCount;
+    for (uint256 i; i < assetCount; i++) {
+      _assets[i].accrue(_spokes[i][treasury]);
+    }
+
     address oldTreasury = treasury;
     treasury = newTreasury;
     emit TreasuryUpdated(oldTreasury, newTreasury);
@@ -390,11 +397,24 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].totalSuppliedAssets();
   }
 
+  function getTotalSuppliedShares(uint256 assetId) external view override returns (uint256) {
+    return _assets[assetId].totalSuppliedShares();
+  }
+
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
+    if (spoke == treasury) {
+      return
+        _assets[assetId].toSuppliedAssetsDown(
+          _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares()
+        );
+    }
     return _assets[assetId].toSuppliedAssetsDown(_spokes[assetId][spoke].suppliedShares);
   }
 
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
+    if (spoke == treasury) {
+      return _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares();
+    }
     return _spokes[assetId][spoke].suppliedShares;
   }
 

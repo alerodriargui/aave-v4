@@ -580,14 +580,21 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
   function test_supply_with_increased_index_with_premium() public {
     uint256 daiAmount = 100e18;
-    _createPremiumDebt(spoke2, daiAmount);
+    _addLiquidity(daiAssetId, daiAmount);
+    _createDebt(daiAssetId, daiAmount, true);
     assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
 
     uint256 supplyAmount = 10e18;
     uint256 expectedSupplyShares = hub.convertToSuppliedShares(daiAssetId, supplyAmount);
 
-    uint256 suppliedAssetsBefore = hub.getAssetSuppliedAmount(daiAssetId);
-    uint256 suppliedSharesBefore = hub.getAssetSuppliedShares(daiAssetId);
+    uint256 suppliedAssetsBefore = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2));
+    uint256 suppliedSharesBefore = hub.getSpokeSuppliedShares(daiAssetId, address(spoke2));
+    // effective supply amount (taking into account potential donation)
+    uint256 spokeSuppliedAmount = calculateEffectiveSuppliedAssets(
+      supplyAmount,
+      hub.getTotalSuppliedAssets(daiAssetId),
+      hub.getTotalSuppliedShares(daiAssetId)
+    );
 
     Utils.add({
       hub: hub,
@@ -600,7 +607,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
 
     assertEq(
       hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2)),
-      suppliedAssetsBefore + supplyAmount,
+      suppliedAssetsBefore + spokeSuppliedAmount,
       'spoke suppliedAssets after'
     );
     assertEq(
@@ -611,7 +618,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // Hub and Spoke accounting do not match because of treasury fees
     assertGe(
       hub.getAssetSuppliedAmount(daiAssetId),
-      suppliedAssetsBefore + supplyAmount,
+      suppliedAssetsBefore + spokeSuppliedAmount,
       'hub suppliedAssets after'
     );
     assertGe(
@@ -635,16 +642,17 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       skipTime: 365 days
     });
 
-    uint256 suppliedAssetsBefore = hub.getAssetSuppliedAmount(daiAssetId);
-    uint256 suppliedSharesBefore = hub.getAssetSuppliedShares(daiAssetId);
-
+    uint256 suppliedAssetsBefore1 = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke1));
+    uint256 suppliedSharesBefore1 = hub.getSpokeSuppliedShares(daiAssetId, address(spoke1));
+    uint256 suppliedAssetsBefore2 = hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2));
+    uint256 suppliedSharesBefore2 = hub.getSpokeSuppliedShares(daiAssetId, address(spoke2));
     uint256 supplyShares = 1; // minimum for 1 share
     uint256 supplyAmount = minimumAssetsPerSuppliedShare(daiAssetId);
     // effective supply amount (taking into account potential donation)
     uint256 spokeSuppliedAmount = calculateEffectiveSuppliedAssets(
       supplyAmount,
-      suppliedAssetsBefore,
-      suppliedSharesBefore
+      hub.getTotalSuppliedAssets(daiAssetId),
+      hub.getTotalSuppliedShares(daiAssetId)
     );
 
     Utils.add({
@@ -665,12 +673,12 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
     // hub
     assertGe(
       hub.getAssetSuppliedAmount(daiAssetId),
-      suppliedAssetsBefore + supplyAmount,
+      suppliedAssetsBefore1 + suppliedAssetsBefore2 + spokeSuppliedAmount,
       'hub suppliedAssets after'
     );
     assertGe(
       hub.getAssetSuppliedShares(daiAssetId),
-      suppliedSharesBefore + supplyShares,
+      suppliedSharesBefore1 + supplyShares,
       'hub suppliedShares after'
     );
     assertEq(
@@ -695,14 +703,14 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       'spoke1 suppliedShares after'
     );
     // spoke2
-    assertEq(
+    assertGe(
       hub.getSpokeSuppliedAmount(daiAssetId, address(spoke2)),
-      hub.convertToSuppliedAssets(daiAssetId, suppliedSharesBefore),
+      suppliedAssetsBefore2,
       'spoke2 suppliedAmount after'
     );
     assertEq(
       hub.getSpokeSuppliedShares(daiAssetId, address(spoke2)),
-      suppliedSharesBefore,
+      suppliedSharesBefore2,
       'spoke2 suppliedShares after'
     );
     // token balance

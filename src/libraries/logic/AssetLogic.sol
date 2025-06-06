@@ -74,7 +74,7 @@ library AssetLogic {
   function totalSuppliedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
     return
       asset.suppliedShares +
-      asset.previewFeesShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
+      asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
   }
 
   function toSuppliedAssetsUp(
@@ -131,7 +131,7 @@ library AssetLogic {
   // @dev Utilizes existing `asset.baseBorrowRate`
   function accrue(DataTypes.Asset storage asset, DataTypes.SpokeData storage treasury) internal {
     uint256 drawnIndex = asset.previewDrawnIndex();
-    uint256 feesShares = asset.previewFeesShares(drawnIndex - asset.baseDebtIndex);
+    uint256 feesShares = asset.previewFeeShares(drawnIndex - asset.baseDebtIndex);
 
     asset.baseDebtIndex = drawnIndex;
     // mint treasury fees
@@ -154,7 +154,7 @@ library AssetLogic {
       );
   }
 
-  function previewFeesShares(
+  function previewFeeShares(
     DataTypes.Asset storage asset,
     uint256 indexDelta
   ) internal view returns (uint256) {
@@ -166,5 +166,9 @@ library AssetLogic {
       .rayMulDown(asset.baseDrawnShares + asset.premiumDrawnShares)
       .percentMulDown(reserveFactor);
     return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
+  }
+
+  function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
   }
 }

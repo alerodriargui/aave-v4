@@ -8,6 +8,7 @@ contract SpokeBase is Base {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
+  using PercentageMathExtended for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
   struct Debts {
@@ -139,7 +140,7 @@ contract SpokeBase is Base {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 initialLiq = hub.getAvailableLiquidity(assetId);
 
-    address tempUser = makeAddr('tempUser');
+    address tempUser = vm.randomAddress();
     IERC20 asset = IERC20(spoke.getReserve(reserveId).asset);
     deal(address(asset), tempUser, amount);
 
@@ -682,6 +683,18 @@ contract SpokeBase is Base {
     assertEq(keccak256(abi.encode(a)), keccak256(abi.encode(b)), 'debt data'); // sanity
   }
 
+  function assertDebtEq(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 expectedBaseDebt,
+    uint256 expectedPremiumDebt,
+    string memory label
+  ) internal {
+    (uint256 baseDebt, uint256 premiumDebt) = spoke.getReserveDebt(reserveId);
+    assertEq(baseDebt, expectedBaseDebt, string.concat('base debt mismatch ', label));
+    assertEq(premiumDebt, expectedPremiumDebt, string.concat('premium debt mismatch ', label));
+  }
+
   function _calculateExpectedUserRP(address user, ISpoke spoke) internal view returns (uint256) {
     uint256 assetId;
     uint256 totalDebt;
@@ -742,5 +755,37 @@ contract SpokeBase is Base {
     }
 
     return userRP / utilizedSupply;
+  }
+
+  function _createDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount,
+    bool withPremium
+  ) internal returns (uint256) {
+    uint256 cachedLiquidityPremium;
+    if (withPremium) {
+      cachedLiquidityPremium = _getLiquidityPremium(spoke, reserveId);
+      updateLiquidityPremium(spoke, reserveId, 50_00);
+    }
+
+    address tempUser = vm.randomAddress();
+    Utils.borrow({
+      spoke: spoke,
+      reserveId: reserveId,
+      user: tempUser,
+      amount: amount,
+      onBehalfOf: tempUser
+    });
+    skip(365 days);
+
+    (uint256 baseDebt, uint256 premiumDebt) = hub.getAssetDebt(daiAssetId);
+    assertGt(baseDebt, 0); // non-zero premium debt
+
+    if (withPremium) {
+      assertGt(premiumDebt, 0);
+      // restore cached liquidity premium
+      updateLiquidityPremium(spoke, reserveId, cachedLiquidityPremium);
+    }
   }
 }
