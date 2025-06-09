@@ -644,6 +644,15 @@ contract SpokeBase is Base {
     assertEq(riskPremiumCurrent, riskPremiumStored, 'user risk premium mismatch');
   }
 
+  function _getUserRpStored(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint256) {
+    DataTypes.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
+    return pos.premiumDrawnShares.percentDiv(pos.baseDrawnShares);
+  }
+
   function _boundUserAction(UserAction memory action) internal pure returns (UserAction memory) {
     action.borrowAmount = bound(action.borrowAmount, 1, MAX_SUPPLY_AMOUNT / 8);
     action.repayAmount = bound(action.repayAmount, 1, type(uint256).max);

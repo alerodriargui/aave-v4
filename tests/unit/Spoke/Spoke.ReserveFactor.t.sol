@@ -170,19 +170,20 @@ contract SpokeReserveFactorTest is SpokeBase {
     );
   }
 
-  function test_reserveFactor_accrual() public {
+  function test_reserveFactor_accrual_exact() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
-    // 10% premium
-    updateLiquidityPremium(spoke1, reserveId, 10_00);
-    // 5% reserve factor
-    updateReserveFactor(hub, assetId, 5_00);
+    uint256 expectedRp = 10_00;
+    updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    uint256 reserveFactor = 5_00;
+    updateReserveFactor(hub, assetId, reserveFactor);
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
     uint256 rate = 50_00; // 50.00% base borrow rate
-    uint256 expectedBaseDebt = borrowAmount + 500e18; // 50% of 1000 (base debt accrual)
+    uint256 expectedBaseDebtAccrual = 500e18; // 50% of 1000 (base debt accrual)
+    uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
     uint256 expectedPremiumDebt = 50e18; // 10% of 500 (premium on base debt)
     uint256 expectedTreasuryFees = 27.5e18; // 5% of 550 (reserve factor on base debt)
 
@@ -207,21 +208,21 @@ contract SpokeReserveFactorTest is SpokeBase {
     assertEq(
       hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
       hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
-      'treasury fees'
+      'treasury fees after base and premium debt accrual'
     );
 
     // 0% premium
-    updateLiquidityPremium(spoke1, reserveId, 0);
+    expectedRp = 0;
+    updateLiquidityPremium(spoke1, reserveId, expectedRp);
     spoke1.updateUserRiskPremium(alice);
 
-    // Bob supplies 1 share to trigger interest accrual
-    Utils.supply(spoke1, reserveId, alice, minimumAssetsPerSuppliedShare(assetId), alice);
+    // withdraw any treasury fees to reset counter
+    treasuryWithdraw(assetId, type(uint256).max);
 
-    spoke1.getUserDebt(reserveId, alice);
-
-    expectedBaseDebt += 750e18; // 50% of 1500 (base debt accrual)
+    expectedBaseDebtAccrual = 750e18; // 50% of 1500 (base debt accrual)
+    expectedBaseDebt += expectedBaseDebtAccrual;
     expectedPremiumDebt += 0;
-    expectedTreasuryFees += 37.5e18; // 5% of 750 (reserve factor on base debt)
+    expectedTreasuryFees = 37.5e18; // 5% of 750 (reserve factor on base debt)
 
     skip(365 days);
 
@@ -232,21 +233,27 @@ contract SpokeReserveFactorTest is SpokeBase {
       expectedPremiumDebt,
       'after base debt accrual'
     );
+    console.log(hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)));
     assertEq(
       hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
       hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
-      'treasury fees'
+      'treasury fees after base debt accrual'
     );
 
     // 0.00% reserve factor
-    updateReserveFactor(hub, assetId, 0);
+    reserveFactor = 0;
+    updateReserveFactor(hub, assetId, reserveFactor);
 
-    // Bob supplies 1 share to trigger interest accrual
-    Utils.supply(spoke1, reserveId, alice, minimumAssetsPerSuppliedShare(assetId), alice);
+    // Bob supplies 1 share to trigger interest accrual with new reserve factor
+    Utils.supply(spoke1, reserveId, bob, minimumAssetsPerSuppliedShare(assetId), bob);
 
-    expectedBaseDebt += 1125e18; // 50% of 2250 (base debt accrual)
+    // withdraw any treasury fees to reset counter
+    treasuryWithdraw(assetId, type(uint256).max);
+
+    expectedBaseDebtAccrual = 1125e18; // 50% of 2250 (base debt accrual)
+    expectedBaseDebt += expectedBaseDebtAccrual;
     expectedPremiumDebt += 0;
-    expectedTreasuryFees += 0;
+    expectedTreasuryFees = 0;
 
     skip(365 days);
 
@@ -260,7 +267,188 @@ contract SpokeReserveFactorTest is SpokeBase {
     assertEq(
       hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
       hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      'treasury fees after base debt accrual'
+    );
+  }
+
+  function test_reserveFactor_accrual() public {
+    uint256 reserveId = _daiReserveId(spoke1);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+
+    uint256 expectedRp = 10_00;
+    updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    uint256 reserveFactor = 5_00;
+    updateReserveFactor(hub, assetId, reserveFactor);
+
+    uint256 borrowAmount = 1000e18;
+    uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
+    uint256 rate = 50_00; // 50.00% base borrow rate
+    uint256 expectedBaseDebtAccrual = borrowAmount.percentMul(rate);
+    uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
+    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMul(expectedRp);
+    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMul(
+      reserveFactor
+    );
+
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate.bpsToRay())
+    );
+
+    Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
+    Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+
+    assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
+
+    skip(365 days);
+
+    assertDebtEq(
+      spoke1,
+      reserveId,
+      expectedBaseDebt,
+      expectedPremiumDebt,
+      'after base and premium debt accrual'
+    );
+    assertEq(
+      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
+      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      'treasury fees after base and premium debt accrual'
+    );
+
+    // 0% premium
+    expectedRp = 0;
+    updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    spoke1.updateUserRiskPremium(alice);
+    assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
+
+    // withdraw any treasury fees to reset counter
+    treasuryWithdraw(assetId, type(uint256).max);
+
+    expectedBaseDebtAccrual = expectedBaseDebt.percentMul(rate);
+    expectedBaseDebt += expectedBaseDebtAccrual;
+    expectedPremiumDebt += 0;
+    expectedTreasuryFees = expectedBaseDebtAccrual.percentMul(reserveFactor);
+
+    skip(365 days);
+
+    assertDebtEq(
+      spoke1,
+      reserveId,
+      expectedBaseDebt,
+      expectedPremiumDebt,
+      'after base debt accrual'
+    );
+    console.log(hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)));
+    assertEq(
+      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
+      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      'treasury fees after base debt accrual'
+    );
+
+    // 0.00% reserve factor
+    reserveFactor = 0;
+    updateReserveFactor(hub, assetId, reserveFactor);
+
+    // Bob supplies 1 share to trigger interest accrual with new reserve factor
+    Utils.supply(spoke1, reserveId, bob, minimumAssetsPerSuppliedShare(assetId), bob);
+
+    // withdraw any treasury fees to reset counter
+    treasuryWithdraw(assetId, type(uint256).max);
+
+    expectedBaseDebtAccrual = expectedBaseDebt.percentMul(rate);
+    expectedBaseDebt += expectedBaseDebtAccrual;
+    expectedPremiumDebt += 0;
+    expectedTreasuryFees = 0;
+
+    skip(365 days);
+
+    assertDebtEq(
+      spoke1,
+      reserveId,
+      expectedBaseDebt,
+      expectedPremiumDebt,
+      'after base debt accrual'
+    );
+    assertEq(
+      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
+      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      'treasury fees after base debt accrual'
+    );
+  }
+
+  // todo: check treasury fees shares only grow
+  // todo: check setAsCollateral does impact treasury fees shares
+
+  // disabling an asset as collateral raises the user’s risk premium, but fees use the old value until the action is executed.
+  function test_reserveFactor_accrual_setUsingAsCollateral() public {
+    uint256 reserveId = _daiReserveId(spoke1);
+    uint256 reserveId2 = _wethReserveId(spoke1);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+
+    uint256 expectedRp = 10_00;
+    updateLiquidityPremium(spoke1, reserveId, expectedRp);
+    // 50.00% premium for second collateral asset
+    updateLiquidityPremium(spoke1, reserveId2, 50_00);
+    uint256 reserveFactor = 5_00;
+    updateReserveFactor(hub, assetId, reserveFactor);
+    updateReserveFactor(hub, spoke1.getReserve(reserveId2).assetId, reserveFactor);
+
+    uint256 borrowAmount = 1000e18;
+    // supply way more than needed to cover borrow amount
+    uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount) * 2;
+    uint256 supplyAmount2 = _calcMinimumCollAmount(spoke1, reserveId2, reserveId, borrowAmount) * 2;
+    uint256 rate = 50_00; // 50.00% base borrow rate
+    uint256 expectedBaseDebtAccrual = borrowAmount.percentMul(rate);
+    uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
+    uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMul(expectedRp);
+    uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMul(
+      reserveFactor
+    );
+
+    vm.mockCall(
+      address(irStrategy),
+      IReserveInterestRateStrategy.calculateInterestRates.selector,
+      abi.encode(rate.bpsToRay())
+    );
+
+    Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
+    Utils.supplyCollateral(spoke1, reserveId2, alice, supplyAmount2, alice);
+    Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+
+    assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
+
+    skip(365 days);
+
+    assertDebtEq(
+      spoke1,
+      reserveId,
+      expectedBaseDebt,
+      expectedPremiumDebt,
+      'after base and premium debt accrual'
+    );
+    assertEq(
+      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
+      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
       'treasury fees'
+    );
+
+    // disable second asset as collateral, which increases risk premium
+    setUsingAsCollateral(spoke1, alice, reserveId, false);
+    assertEq(_getUserRpStored(spoke1, reserveId, alice), 50_00);
+
+    // no change in treasury fees
+    assertDebtEq(
+      spoke1,
+      reserveId,
+      expectedBaseDebt,
+      expectedPremiumDebt,
+      'after base and premium debt accrual'
+    );
+    assertEq(
+      hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
+      hub.convertToSuppliedShares(assetId, expectedTreasuryFees),
+      'treasury fees after base and premium debt accrual'
     );
   }
 }

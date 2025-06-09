@@ -100,7 +100,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     assertEq(spoke1.getUserRiskPremium(bob), daiInfo.lp, 'user risk premium');
   }
 
-  // TODO: Test the undercollateralized case where borrowed > supplied
+  // TODO: Test the under-collateralized case where borrowed > supplied
 
   /// When supplying and borrowing one reserve each, user risk premium matches the liquidity premium of the collateral.
   /// An additional supply of a riskier collateral does not impact the user risk premium.

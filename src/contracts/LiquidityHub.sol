@@ -279,6 +279,9 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
 
+    // accrue interest and treasury fees
+    asset.accrue(_spokes[assetId][treasury]);
+
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
     asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;

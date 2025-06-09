@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
-
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -165,6 +164,7 @@ library AssetLogic {
     uint256 feesAmount = indexDelta
       .rayMulDown(asset.baseDrawnShares + asset.premiumDrawnShares)
       .percentMulDown(reserveFactor);
+
     return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
   }
 
