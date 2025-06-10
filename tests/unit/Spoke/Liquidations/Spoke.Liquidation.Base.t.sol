@@ -39,8 +39,10 @@ contract SpokeLiquidationBase is SpokeBase {
     uint256 collateralAssetId;
     uint256 debtAssetId;
     uint256 liquidationProtocolFee;
+    DataTypes.DynamicReserveConfig collDynConfig;
     DataTypes.Reserve collateralReserve;
     DataTypes.Reserve debtReserve;
+    DataTypes.DynamicReserveConfig[] collDynConfigs;
     DataTypes.Reserve[] collateralReserves;
     DataTypes.Reserve[] debtReserves;
     uint256 collateralReserveId;
@@ -102,6 +104,7 @@ contract SpokeLiquidationBase is SpokeBase {
     LiquidationTestLocalParams memory state;
     state.collateralReserve = spoke1.getReserve(collateralReserveId);
     state.debtReserve = spoke1.getReserve(debtReserveId);
+    state.collDynConfig = spoke1.getDynamicReserveConfig(collateralReserveId);
 
     liqConfig = _bound(liqConfig);
     liqBonus = bound(liqBonus, MIN_LIQUIDATION_BONUS, MAX_LIQUIDATION_BONUS);
@@ -377,7 +380,7 @@ contract SpokeLiquidationBase is SpokeBase {
     DataTypes.LiquidationCallLocalVars memory params;
 
     params.liquidationBonus = state.liquidationBonus;
-    params.collateralFactor = state.collateralReserve.config.collateralFactor;
+    params.collateralFactor = state.collDynConfig.collateralFactor;
     params.closeFactor = _getCloseFactor(spoke);
 
     params.debtAssetUnit = 10 ** state.debtReserve.config.decimals;

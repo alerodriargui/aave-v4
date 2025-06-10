@@ -13,6 +13,11 @@ interface ISpoke is IMulticall {
   event ReserveAdded(uint256 indexed reserveId, uint256 indexed assetId);
   event ReserveConfigUpdated(uint256 indexed reserveId, DataTypes.ReserveConfig config);
   event LiquidityPremiumUpdated(uint256 indexed reserveId, uint256 liquidityPremium);
+  event DynamicReserveConfigUpdated(
+    uint256 indexed reserveId,
+    uint16 configKey,
+    DataTypes.DynamicReserveConfig config
+  );
 
   event Supply(uint256 indexed reserveId, address indexed user, uint256 suppliedShares);
   event Withdraw(
@@ -93,10 +98,16 @@ interface ISpoke is IMulticall {
 
   function addReserve(
     uint256 assetId,
-    DataTypes.ReserveConfig memory params
+    DataTypes.ReserveConfig memory config,
+    DataTypes.DynamicReserveConfig memory dynConfig
   ) external returns (uint256);
 
   function updateReserveConfig(uint256 reserveId, DataTypes.ReserveConfig calldata params) external;
+
+  function updateDynamicReserveConfig(
+    uint256 reserveId,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external;
 
   function updateLiquidationConfig(DataTypes.LiquidationConfig calldata config) external;
 
@@ -159,6 +170,20 @@ interface ISpoke is IMulticall {
   function getReserve(uint256 reserveId) external view returns (DataTypes.Reserve memory);
 
   function getReserveDebt(uint256 reserveId) external view returns (uint256, uint256);
+
+  function getReserveConfig(
+    uint256 reserveId
+  ) external view returns (DataTypes.ReserveConfig memory);
+
+  function getDynamicReserveConfig(
+    uint256 reserveId
+  ) external view returns (DataTypes.DynamicReserveConfig memory);
+
+  function getDynamicReserveConfig(
+    uint256 reserveId,
+    uint16 configKey
+  ) external view returns (DataTypes.DynamicReserveConfig memory);
+
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256);
 
   function getReserveSuppliedAmount(uint256 reserveId) external view returns (uint256);
@@ -200,12 +225,15 @@ interface ISpoke is IMulticall {
   function reserveCount() external view returns (uint256);
 
   function reservesList(uint256) external view returns (uint256);
+
   function getVariableLiquidationBonus(
     uint256 reserveId,
     uint256 healthFactor
   ) external view returns (uint256);
 
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
+
   function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint256);
+
   function MAX_LIQUIDITY_PREMIUM() external view returns (uint256);
 }

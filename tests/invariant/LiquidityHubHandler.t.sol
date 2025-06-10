@@ -59,13 +59,13 @@ contract LiquidityHubHandler is Test {
         active: true,
         frozen: false,
         paused: false,
-        collateralFactor: 0,
         liquidationBonus: 100_00,
         liquidityPremium: 0,
         liquidationProtocolFee: 0,
         borrowable: false,
         collateral: false
-      })
+      }),
+      DataTypes.DynamicReserveConfig({collateralFactor: 0})
     );
   }
 
