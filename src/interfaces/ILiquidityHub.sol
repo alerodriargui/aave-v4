@@ -19,7 +19,7 @@ interface ILiquidityHub {
     uint256 drawCap,
     uint256 supplyCap
   );
-  event TreasuryUpdated(address oldTreasury, address newTreasury);
+  event TreasuryUpdated(uint256 indexed assetId, address oldTreasury, address newTreasury);
 
   event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
   event Add(
@@ -98,11 +98,13 @@ interface ILiquidityHub {
   ) external;
 
   /**
-   * @notice Update the address of the treasury spoke
-   * @dev Treasury fees are accrued across all assets prior to the update
+   * @notice Update the address of the treasury spoke for an specified asset
+   * @dev Treasury fees are accrued for the specified asset prior to the update
+   * @dev It restricts activity of the old treasury spoke by setting caps to zero
+   * @param assetId The identifier of the asset.
    * @param newTreasury The address of the new treasury spoke
    */
-  function updateTreasury(address newTreasury) external;
+  function updateTreasury(uint256 assetId, address newTreasury) external;
 
   /**
    * @notice Add/Supply asset on behalf of user.

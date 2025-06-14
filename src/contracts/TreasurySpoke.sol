@@ -1,37 +1,53 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {ITreasurySpoke} from 'src/interfaces/ITreasurySpoke.sol';
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 
+/**
+ * @title TreasurySpoke
+ * @notice Spoke contract used as a treasury where accumulated fees are treated as supplied assets.
+ * @dev Dedicated to a single user, controlled exclusively by the owner.
+ * @dev Utilizes all assets from the Hub without restrictions, making reserve and asset identifiers aligned.
+ * @dev Allows withdraw to claim fees and supply to invest back into the Hub via this dedicated spoke.
+ */
 contract TreasurySpoke is Ownable, ITreasurySpoke {
   ILiquidityHub public immutable HUB;
 
-  constructor(address owner, address hubAddress) Ownable(owner) {
-    require(hubAddress != address(0), InvalidHubAddress());
+  /**
+   * @dev Constructor
+   * @param owner_ The address of the owner
+   * @param hub_ The address of the LiquidityHub
+   */
+  constructor(address owner_, address hub_) Ownable(owner_) {
+    require(hub_ != address(0), InvalidHubAddress());
 
-    HUB = ILiquidityHub(hubAddress);
+    HUB = ILiquidityHub(hub_);
   }
 
-  function supply(uint256 assetId, uint256 amount) external onlyOwner {
-    HUB.add(assetId, amount, msg.sender);
+  /// @inheritdoc ITreasurySpoke
+  function supply(uint256 reserveId, uint256 amount) external onlyOwner {
+    HUB.add(reserveId, amount, msg.sender);
   }
 
-  function withdraw(uint256 assetId, uint256 amount, address to) external onlyOwner {
+  /// @inheritdoc ITreasurySpoke
+  function withdraw(uint256 reserveId, uint256 amount, address to) external onlyOwner {
     // If uint256.max is passed, withdraw all supplied assets
     if (amount == type(uint256).max) {
-      amount = HUB.getSpokeSuppliedAmount(assetId, address(this));
+      amount = HUB.getSpokeSuppliedAmount(reserveId, address(this));
     }
 
-    HUB.remove(assetId, amount, to);
+    HUB.remove(reserveId, amount, to);
   }
 
-  function getSuppliedAmount(uint256 assetId) external view returns (uint256) {
-    return HUB.getSpokeSuppliedAmount(assetId, address(this));
+  /// @inheritdoc ITreasurySpoke
+  function getSuppliedAmount(uint256 reserveId) external view returns (uint256) {
+    return HUB.getSpokeSuppliedAmount(reserveId, address(this));
   }
 
-  function getSuppliedShares(uint256 assetId) external view returns (uint256) {
-    return HUB.getSpokeSuppliedShares(assetId, address(this));
+  /// @inheritdoc ITreasurySpoke
+  function getSuppliedShares(uint256 reserveId) external view returns (uint256) {
+    return HUB.getSpokeSuppliedShares(reserveId, address(this));
   }
 }

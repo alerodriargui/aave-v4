@@ -406,7 +406,11 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_addAsset_fuzz(DataTypes.AssetConfig memory newConfig, address asset) public {
     newConfig.decimals = bound(newConfig.decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
-    newConfig.reserveFactor = bound(newConfig.reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
+    newConfig.reserveFactor = bound(
+      newConfig.reserveFactor,
+      0,
+      PercentageMathExtended.PERCENTAGE_FACTOR
+    );
     vm.assume(address(newConfig.irStrategy) != address(0) && asset != address(0));
 
     vm.prank(HUB_ADMIN);
@@ -446,7 +450,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 reserveFactor,
     IReserveInterestRateStrategy irStrategy
   ) public {
-    reserveFactor = bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
+    reserveFactor = bound(reserveFactor, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     vm.assume(address(irStrategy) != address(0));
     uint256 invalidDecimals = hub.MAX_ALLOWED_ASSET_DECIMALS() + 1;
     vm.expectRevert(ILiquidityHub.InvalidAssetDecimals.selector);
@@ -465,7 +469,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
   }
 
   function test_addAsset_revertsWith_InvalidReserveFactor() public {
-    uint256 invalidReserveFactor = PercentageMath.PERCENTAGE_FACTOR + 1;
+    uint256 invalidReserveFactor = PercentageMathExtended.PERCENTAGE_FACTOR + 1;
     vm.expectRevert(ILiquidityHub.InvalidReserveFactor.selector);
     vm.prank(HUB_ADMIN);
     hub.addAsset(
@@ -490,7 +494,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     IReserveInterestRateStrategy irStrategy
   ) public {
     decimals = bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
-    vm.assume(reserveFactor > PercentageMath.PERCENTAGE_FACTOR);
+    vm.assume(reserveFactor > PercentageMathExtended.PERCENTAGE_FACTOR);
     vm.assume(address(irStrategy) != address(0));
 
     vm.expectRevert(ILiquidityHub.InvalidReserveFactor.selector);
@@ -535,7 +539,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     IReserveInterestRateStrategy irStrategy
   ) public {
     decimals = bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
-    reserveFactor = bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
+    reserveFactor = bound(reserveFactor, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
 
     vm.expectRevert(ILiquidityHub.InvalidAssetAddress.selector);
     vm.prank(HUB_ADMIN);
@@ -554,7 +558,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_addAsset_revertsWith_InvalidIrStrategy() public {
     uint256 decimals = hub.MAX_ALLOWED_ASSET_DECIMALS();
-    uint256 reserveFactor = PercentageMath.PERCENTAGE_FACTOR;
+    uint256 reserveFactor = PercentageMathExtended.PERCENTAGE_FACTOR;
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
     vm.prank(HUB_ADMIN);
@@ -580,7 +584,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     uint256 reserveFactor
   ) public {
     decimals = bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
-    reserveFactor = bound(reserveFactor, 0, PercentageMath.PERCENTAGE_FACTOR);
+    reserveFactor = bound(reserveFactor, 0, PercentageMathExtended.PERCENTAGE_FACTOR);
     vm.assume(token != address(0));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);

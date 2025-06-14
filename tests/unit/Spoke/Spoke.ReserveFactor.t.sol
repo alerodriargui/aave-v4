@@ -94,7 +94,7 @@ contract SpokeReserveFactorTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, alice, minimumAssetsPerSuppliedShare(assetId), alice);
 
     // treasury
-    uint256 expectedFeesShares = hub.convertToSuppliedShares(
+    uint256 expectedFeeShares = hub.convertToSuppliedShares(
       assetId,
       calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.baseDrawnShares,
@@ -106,7 +106,7 @@ contract SpokeReserveFactorTest is SpokeBase {
 
     assertApproxEqAbs(
       hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      expectedFeesShares,
+      expectedFeeShares,
       1,
       'treasury shares'
     );
@@ -130,7 +130,7 @@ contract SpokeReserveFactorTest is SpokeBase {
     Utils.supply(spoke1, reserveId, alice, minimumAssetsPerSuppliedShare(assetId), alice);
 
     // treasury
-    expectedFeesShares = hub.convertToSuppliedShares(
+    expectedFeeShares = hub.convertToSuppliedShares(
       assetId,
       calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.baseDrawnShares,
@@ -142,7 +142,7 @@ contract SpokeReserveFactorTest is SpokeBase {
 
     assertApproxEqAbs(
       hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      expectedFeesShares,
+      expectedFeeShares,
       1,
       'treasury shares'
     );
@@ -160,11 +160,11 @@ contract SpokeReserveFactorTest is SpokeBase {
     Utils.supply(spoke1, reserveId, alice, minimumAssetsPerSuppliedShare(assetId), alice);
 
     // treasury
-    expectedFeesShares = 0;
+    expectedFeeShares = 0;
 
     assertApproxEqAbs(
       hub.getSpokeSuppliedShares(assetId, address(treasurySpoke)),
-      expectedFeesShares,
+      expectedFeeShares,
       1,
       'treasury shares'
     );

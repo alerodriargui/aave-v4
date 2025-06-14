@@ -127,20 +127,31 @@ library AssetLogic {
     );
   }
 
-  // @dev Utilizes existing `asset.baseBorrowRate`
+  /**
+   * @dev Accrues interest and treasury fees for the specified asset.
+   * @param asset The data struct of the asset with accruing interest
+   * @param treasury The data struct of the treasury spoke associated with the asset
+   */
   function accrue(DataTypes.Asset storage asset, DataTypes.SpokeData storage treasury) internal {
     uint256 drawnIndex = asset.previewDrawnIndex();
-    uint256 feesShares = asset.previewFeeShares(drawnIndex - asset.baseDebtIndex);
+    uint256 feeShares = asset.previewFeeShares(drawnIndex - asset.baseDebtIndex);
 
+    // Accrue interest and treasury fees
     asset.baseDebtIndex = drawnIndex;
-    // mint treasury fees
-    treasury.suppliedShares += feesShares;
-    asset.suppliedShares += feesShares;
+    if (feeShares > 0) {
+      treasury.suppliedShares += feeShares;
+      asset.suppliedShares += feeShares;
+    }
 
     asset.lastUpdateTimestamp = block.timestamp;
     emit ILiquidityHub.DrawnIndexUpdate(asset.id, drawnIndex, block.timestamp);
   }
 
+  /**
+   * @dev Calculates the drawn index based on the borrow rate and the previous index.
+   * @param asset The data struct of the asset whose index is increasing.
+   * @return The resulting drawn index.
+   */
   function previewDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
     uint256 previousIndex = asset.baseDebtIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
@@ -153,6 +164,12 @@ library AssetLogic {
       );
   }
 
+  /**
+   * @dev Calculates the amount of fee shares derived from the index growth due to interest accrual.
+   * @param asset The data struct of the asset whose index is increasing.
+   * @param indexDelta The increase in the asset index resulting from interest accrual.
+   * @return The amount of shares corresponding to the fees
+   */
   function previewFeeShares(
     DataTypes.Asset storage asset,
     uint256 indexDelta
@@ -168,6 +185,12 @@ library AssetLogic {
     return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
   }
 
+  /**
+   * @dev Calculates the amount of fee shares generated from the asset's accrued interest.
+   * @dev It calculates the updated drawn index on the fly using the current index and the borrow rate.
+   * @param asset The data struct of the asset with accruing interest
+   * @return The amount of shares corresponding to the fees
+   */
   function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
     return asset.previewFeeShares(asset.previewDrawnIndex() - asset.baseDebtIndex);
   }

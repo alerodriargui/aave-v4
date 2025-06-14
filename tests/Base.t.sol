@@ -172,15 +172,8 @@ abstract contract Base is Test {
   }
 
   function initEnvironment() internal {
-    configureTreasury();
     deployMintAndApproveTokenList();
     configureTokenList();
-  }
-
-  function configureTreasury() internal {
-    // alternative is using standard `LiquidityHub.addSpoke` function
-    vm.prank(HUB_ADMIN);
-    hub.updateTreasury(address(treasurySpoke));
   }
 
   function deployMintAndApproveTokenList() internal {
@@ -269,6 +262,7 @@ abstract contract Base is Test {
       address(tokenList.weth)
     );
     oracle.setAssetPrice(wethAssetId, 2000e8);
+    hub.updateTreasury(wethAssetId, address(treasurySpoke));
 
     // add USDX
     hub.addAsset(
@@ -283,6 +277,7 @@ abstract contract Base is Test {
       address(tokenList.usdx)
     );
     oracle.setAssetPrice(usdxAssetId, 1e8);
+    hub.updateTreasury(usdxAssetId, address(treasurySpoke));
 
     // add DAI
     hub.addAsset(
@@ -297,6 +292,7 @@ abstract contract Base is Test {
       address(tokenList.dai)
     );
     oracle.setAssetPrice(daiAssetId, 1e8);
+    hub.updateTreasury(daiAssetId, address(treasurySpoke));
 
     // add WBTC
     hub.addAsset(
@@ -311,6 +307,7 @@ abstract contract Base is Test {
       address(tokenList.wbtc)
     );
     oracle.setAssetPrice(wbtcAssetId, 50_000e8);
+    hub.updateTreasury(wbtcAssetId, address(treasurySpoke));
 
     // add USDY
     hub.addAsset(
@@ -325,6 +322,7 @@ abstract contract Base is Test {
       address(tokenList.usdy)
     );
     oracle.setAssetPrice(usdyAssetId, 1e8);
+    hub.updateTreasury(usdyAssetId, address(treasurySpoke));
 
     // Spoke 1 reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
@@ -547,6 +545,8 @@ abstract contract Base is Test {
       address(tokenList.dai)
     );
     oracle.setAssetPrice(dai2AssetId, 1e8);
+    hub.updateTreasury(dai2AssetId, address(treasurySpoke));
+
     daiConfig = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),
       active: true,

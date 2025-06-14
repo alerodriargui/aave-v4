@@ -27,7 +27,7 @@ contract LiquidityHub is ILiquidityHub {
   IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public assetCount;
 
-  address public treasury;
+  mapping(uint256 => address) internal treasurySpokes;
 
   // /////
   // Governance
@@ -54,7 +54,7 @@ contract LiquidityHub is ILiquidityHub {
         frozen: config.frozen,
         paused: config.paused,
         decimals: config.decimals, // todo fetch decimals from token
-        reserveFactor: config.reserveFactor,
+        reserveFactor: config.reserveFactor, // todo: if non-zero, updateTreasury
         irStrategy: config.irStrategy
       })
     });
@@ -88,7 +88,7 @@ contract LiquidityHub is ILiquidityHub {
   function addSpokes(
     uint256[] calldata assetIds,
     DataTypes.SpokeConfig[] memory configs,
-    address spoke
+    address spoke // todo: change order so it's aligned with update
   ) external {
     // TODO: AccessControl
 
@@ -104,6 +104,14 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeConfig memory config
   ) external {
     // TODO: AccessControl
+    _updateSpokeConfig(assetId, spoke, config);
+  }
+
+  function _updateSpokeConfig(
+    uint256 assetId,
+    address spoke,
+    DataTypes.SpokeConfig memory config
+  ) internal {
     _spokes[assetId][spoke].config = DataTypes.SpokeConfig({
       drawCap: config.drawCap,
       supplyCap: config.supplyCap
@@ -113,16 +121,26 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function updateTreasury(address newTreasury) public {
+  function updateTreasury(uint256 assetId, address newTreasury) public {
     // TODO: AccessControl
-    uint256 assetCount = assetCount;
-    for (uint256 i; i < assetCount; i++) {
-      _assets[i].accrue(_spokes[i][treasury]);
+
+    address oldTreasury = treasurySpokes[assetId];
+
+    if (oldTreasury != address(0)) {
+      // Accrue fees for current treasury spoke
+      _assets[assetId].accrue(_spokes[assetId][oldTreasury]);
+      // Restrict activity
+      _updateSpokeConfig(assetId, oldTreasury, DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0}));
     }
 
-    address oldTreasury = treasury;
-    treasury = newTreasury;
-    emit TreasuryUpdated(oldTreasury, newTreasury);
+    _addSpoke(
+      assetId,
+      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+      newTreasury
+    );
+
+    treasurySpokes[assetId] = newTreasury;
+    emit TreasuryUpdated(assetId, oldTreasury, newTreasury);
   }
 
   // /////
@@ -136,7 +154,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][treasury]);
+    asset.accrue(_spokes[assetId][treasurySpokes[assetId]]);
     _validateSupply(asset, spoke, amount, from);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -165,7 +183,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][treasury]);
+    asset.accrue(_spokes[assetId][treasurySpokes[assetId]]);
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -191,7 +209,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][treasury]);
+    asset.accrue(_spokes[assetId][treasurySpokes[assetId]]);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -223,7 +241,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][treasury]);
+    asset.accrue(_spokes[assetId][treasurySpokes[assetId]]);
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
     asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
@@ -280,7 +298,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
 
     // accrue interest and treasury fees
-    asset.accrue(_spokes[assetId][treasury]);
+    asset.accrue(_spokes[assetId][treasurySpokes[assetId]]);
 
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
@@ -405,7 +423,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
-    if (spoke == treasury) {
+    if (spoke == treasurySpokes[assetId]) {
       return
         _assets[assetId].toSuppliedAssetsDown(
           _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares()
@@ -415,7 +433,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
-    if (spoke == treasury) {
+    if (spoke == treasurySpokes[assetId]) {
       return _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares();
     }
     return _spokes[assetId][spoke].suppliedShares;
