@@ -75,7 +75,7 @@ contract SpokeReserveFactorTest is SpokeBase {
     DataTypes.UserPosition memory bobPosition = spoke1.getUserPosition(reserveId, bob);
     {
       uint256 baseDebt = _calculateExpectedBaseDebt(borrowAmount, baseBorrowRate, startTime);
-      uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMul(userRp);
+      uint256 expectedPremiumDrawnShares = bobPosition.baseDrawnShares.percentMulUp(userRp);
       uint256 expectedPremiumDebt = hub.convertToDrawnAssets(assetId, expectedPremiumDrawnShares) -
         bobPosition.premiumOffset +
         bobPosition.realizedPremium;
