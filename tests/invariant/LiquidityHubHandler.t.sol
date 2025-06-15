@@ -48,7 +48,7 @@ contract LiquidityHubHandler is Test {
         frozen: false,
         paused: false,
         decimals: 18,
-        reserveFactor: 5_00,
+        liquidityFee: 5_00,
         irStrategy: irStrategy
       }),
       address(dai)

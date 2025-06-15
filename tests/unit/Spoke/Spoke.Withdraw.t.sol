@@ -221,7 +221,7 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
 
     // treasury spoke withdraw fees
-    treasuryWithdraw(daiAssetId, type(uint256).max);
+    withdrawLiquidityFees(daiAssetId, type(uint256).max);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -284,7 +284,7 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw(_daiReserveId(spoke1), type(uint256).max, bob);
 
     // treasury spoke withdraw fees
-    treasuryWithdraw(daiAssetId, type(uint256).max);
+    withdrawLiquidityFees(daiAssetId, type(uint256).max);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(supplyExRate, getSupplyExRate(daiAssetId), true, 'after withdraw');
@@ -350,7 +350,7 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.prank(bob);
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
     // treasury spoke withdraw fees
-    treasuryWithdraw(daiAssetId, type(uint256).max);
+    withdrawLiquidityFees(daiAssetId, type(uint256).max);
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -500,7 +500,7 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
 
     // treasury spoke withdraw fees
-    treasuryWithdraw(assetId, type(uint256).max);
+    withdrawLiquidityFees(assetId, type(uint256).max);
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -598,7 +598,7 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.prank(bob);
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
     // treasury spoke withdraw fees
-    treasuryWithdraw(daiAssetId, type(uint256).max);
+    withdrawLiquidityFees(daiAssetId, type(uint256).max);
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -744,7 +744,7 @@ contract SpokeWithdrawTest is SpokeBase {
     spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, to: bob});
 
     // treasury spoke withdraw fees
-    treasuryWithdraw(assetId, type(uint256).max);
+    withdrawLiquidityFees(assetId, type(uint256).max);
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);

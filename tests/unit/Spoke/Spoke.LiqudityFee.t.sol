@@ -3,14 +3,14 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeReserveFactorTest is SpokeBase {
+contract SpokeLiquidityFeeTest is SpokeBase {
   using SharesMath for uint256;
   using WadRayMathExtended for uint256;
   using PercentageMath for uint256;
   using PercentageMathExtended for uint256;
   using WadRayMath for uint256;
 
-  function test_reserveFactor_NoActionTaken() public view {
+  function test_liquidityFee_NoActionTaken() public view {
     assertEq(hub.getSpokeSuppliedShares(daiAssetId, address(treasurySpoke)), 0);
     _assertSingleUserProtocolDebt(
       spoke1,
@@ -23,7 +23,7 @@ contract SpokeReserveFactorTest is SpokeBase {
   }
 
   /// Supply an asset only, and check no interest accrued.
-  function test_reserveFactor_NoInterest_OnlySupply(uint40 skipTime) public {
+  function test_liquidityFee_NoInterest_OnlySupply(uint40 skipTime) public {
     skipTime = uint40(bound(skipTime, 0, MAX_SKIP_TIME));
     uint256 amount = 1000e18;
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -47,7 +47,7 @@ contract SpokeReserveFactorTest is SpokeBase {
     assertEq(hub.getSpokeSuppliedAmount(daiAssetId, address(treasurySpoke)), 0);
   }
 
-  function test_reserveFactor_fuzz_BorrowAmountAndSkipTime(
+  function test_liquidityFee_fuzz_BorrowAmountAndSkipTime(
     uint256 borrowAmount,
     uint40 skipTime
   ) public {
@@ -67,7 +67,7 @@ contract SpokeReserveFactorTest is SpokeBase {
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 
     // withdraw any treasury fees
-    treasuryWithdraw(assetId, type(uint256).max);
+    withdrawLiquidityFees(assetId, type(uint256).max);
 
     // Time passes
     skip(skipTime);
@@ -99,7 +99,7 @@ contract SpokeReserveFactorTest is SpokeBase {
       calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.baseDrawnShares,
         initialPremiumShares: bobPosition.premiumDrawnShares,
-        reserveFactor: _getReserveFactor(assetId),
+        liquidityFee: _getLiquidityFee(assetId),
         indexDelta: hub.getAsset(assetId).baseDebtIndex - initialBaseIndex
       })
     );
@@ -119,9 +119,9 @@ contract SpokeReserveFactorTest is SpokeBase {
     initialBaseIndex = hub.getAsset(assetId).baseDebtIndex;
 
     // withdraw any treasury fees
-    treasuryWithdraw(assetId, type(uint256).max);
+    withdrawLiquidityFees(assetId, type(uint256).max);
 
-    // todo: updateLiquidityPremium, updateReserveFactor or updateInterestRateStrategy needs reserve update?
+    // todo: updateLiquidityPremium, updateLiquidityFee or updateInterestRateStrategy needs reserve update?
 
     // Time passes
     skip(skipTime);
@@ -135,7 +135,7 @@ contract SpokeReserveFactorTest is SpokeBase {
       calculateExpectedFeesAmount({
         initialDrawnShares: bobPosition.baseDrawnShares,
         initialPremiumShares: 0,
-        reserveFactor: _getReserveFactor(assetId),
+        liquidityFee: _getLiquidityFee(assetId),
         indexDelta: hub.getAsset(assetId).baseDebtIndex - initialBaseIndex
       })
     );
@@ -147,11 +147,11 @@ contract SpokeReserveFactorTest is SpokeBase {
       'treasury shares'
     );
 
-    // now no reserve factor, so no fees
-    updateReserveFactor(hub, assetId, 0);
+    // now no liquidity fee, so no fees
+    updateLiquidityFee(hub, assetId, 0);
 
     // withdraw any treasury fees
-    treasuryWithdraw(assetId, type(uint256).max);
+    withdrawLiquidityFees(assetId, type(uint256).max);
 
     // Time passes
     skip(skipTime);
@@ -170,14 +170,14 @@ contract SpokeReserveFactorTest is SpokeBase {
     );
   }
 
-  function test_reserveFactor_accrual_exact() public {
+  function test_liquidityFee_accrual_exact() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     uint256 expectedRp = 10_00;
     updateLiquidityPremium(spoke1, reserveId, expectedRp);
-    uint256 reserveFactor = 5_00;
-    updateReserveFactor(hub, assetId, reserveFactor);
+    uint256 liquidityFee = 5_00;
+    updateLiquidityFee(hub, assetId, liquidityFee);
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
@@ -185,7 +185,7 @@ contract SpokeReserveFactorTest is SpokeBase {
     uint256 expectedBaseDebtAccrual = 500e18; // 50% of 1000 (base debt accrual)
     uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
     uint256 expectedPremiumDebt = 50e18; // 10% of 500 (premium on base debt)
-    uint256 expectedTreasuryFees = 27.5e18; // 5% of 550 (reserve factor on base debt)
+    uint256 expectedTreasuryFees = 27.5e18; // 5% of 550 (liquidity fee on base debt)
 
     vm.mockCall(
       address(irStrategy),
@@ -217,12 +217,12 @@ contract SpokeReserveFactorTest is SpokeBase {
     spoke1.updateUserRiskPremium(alice);
 
     // withdraw any treasury fees to reset counter
-    treasuryWithdraw(assetId, type(uint256).max);
+    withdrawLiquidityFees(assetId, type(uint256).max);
 
     expectedBaseDebtAccrual = 750e18; // 50% of 1500 (base debt accrual)
     expectedBaseDebt += expectedBaseDebtAccrual;
     expectedPremiumDebt += 0;
-    expectedTreasuryFees = 37.5e18; // 5% of 750 (reserve factor on base debt)
+    expectedTreasuryFees = 37.5e18; // 5% of 750 (liquidity fee on base debt)
 
     skip(365 days);
 
@@ -240,15 +240,15 @@ contract SpokeReserveFactorTest is SpokeBase {
       'treasury fees after base debt accrual'
     );
 
-    // 0.00% reserve factor
-    reserveFactor = 0;
-    updateReserveFactor(hub, assetId, reserveFactor);
+    // 0.00% liquidity fee
+    liquidityFee = 0;
+    updateLiquidityFee(hub, assetId, liquidityFee);
 
-    // Bob supplies 1 share to trigger interest accrual with new reserve factor
+    // Bob supplies 1 share to trigger interest accrual with new liquidity fee
     Utils.supply(spoke1, reserveId, bob, minimumAssetsPerSuppliedShare(assetId), bob);
 
     // withdraw any treasury fees to reset counter
-    treasuryWithdraw(assetId, type(uint256).max);
+    withdrawLiquidityFees(assetId, type(uint256).max);
 
     expectedBaseDebtAccrual = 1125e18; // 50% of 2250 (base debt accrual)
     expectedBaseDebt += expectedBaseDebtAccrual;
@@ -271,14 +271,14 @@ contract SpokeReserveFactorTest is SpokeBase {
     );
   }
 
-  function test_reserveFactor_accrual() public {
+  function test_liquidityFee_accrual() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
     uint256 expectedRp = 10_00;
     updateLiquidityPremium(spoke1, reserveId, expectedRp);
-    uint256 reserveFactor = 5_00;
-    updateReserveFactor(hub, assetId, reserveFactor);
+    uint256 liquidityFee = 5_00;
+    updateLiquidityFee(hub, assetId, liquidityFee);
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
@@ -287,7 +287,7 @@ contract SpokeReserveFactorTest is SpokeBase {
     uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
     uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMul(expectedRp);
     uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMul(
-      reserveFactor
+      liquidityFee
     );
 
     vm.mockCall(
@@ -323,12 +323,12 @@ contract SpokeReserveFactorTest is SpokeBase {
     assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
 
     // withdraw any treasury fees to reset counter
-    treasuryWithdraw(assetId, type(uint256).max);
+    withdrawLiquidityFees(assetId, type(uint256).max);
 
     expectedBaseDebtAccrual = expectedBaseDebt.percentMul(rate);
     expectedBaseDebt += expectedBaseDebtAccrual;
     expectedPremiumDebt += 0;
-    expectedTreasuryFees = expectedBaseDebtAccrual.percentMul(reserveFactor);
+    expectedTreasuryFees = expectedBaseDebtAccrual.percentMul(liquidityFee);
 
     skip(365 days);
 
@@ -346,15 +346,15 @@ contract SpokeReserveFactorTest is SpokeBase {
       'treasury fees after base debt accrual'
     );
 
-    // 0.00% reserve factor
-    reserveFactor = 0;
-    updateReserveFactor(hub, assetId, reserveFactor);
+    // 0.00% liquidity fee
+    liquidityFee = 0;
+    updateLiquidityFee(hub, assetId, liquidityFee);
 
-    // Bob supplies 1 share to trigger interest accrual with new reserve factor
+    // Bob supplies 1 share to trigger interest accrual with new liquidity fee
     Utils.supply(spoke1, reserveId, bob, minimumAssetsPerSuppliedShare(assetId), bob);
 
     // withdraw any treasury fees to reset counter
-    treasuryWithdraw(assetId, type(uint256).max);
+    withdrawLiquidityFees(assetId, type(uint256).max);
 
     expectedBaseDebtAccrual = expectedBaseDebt.percentMul(rate);
     expectedBaseDebt += expectedBaseDebtAccrual;
@@ -381,7 +381,7 @@ contract SpokeReserveFactorTest is SpokeBase {
   // todo: check setAsCollateral does impact treasury fees shares
 
   // disabling an asset as collateral raises the user’s risk premium, but fees use the old value until the action is executed.
-  function test_reserveFactor_accrual_setUsingAsCollateral() public {
+  function test_liquidityFee_accrual_setUsingAsCollateral() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 reserveId2 = _wethReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
@@ -390,9 +390,9 @@ contract SpokeReserveFactorTest is SpokeBase {
     updateLiquidityPremium(spoke1, reserveId, expectedRp);
     // 50.00% premium for second collateral asset
     updateLiquidityPremium(spoke1, reserveId2, 50_00);
-    uint256 reserveFactor = 5_00;
-    updateReserveFactor(hub, assetId, reserveFactor);
-    updateReserveFactor(hub, spoke1.getReserve(reserveId2).assetId, reserveFactor);
+    uint256 liquidityFee = 5_00;
+    updateLiquidityFee(hub, assetId, liquidityFee);
+    updateLiquidityFee(hub, spoke1.getReserve(reserveId2).assetId, liquidityFee);
 
     uint256 borrowAmount = 1000e18;
     // supply way more than needed to cover borrow amount
@@ -403,7 +403,7 @@ contract SpokeReserveFactorTest is SpokeBase {
     uint256 expectedBaseDebt = borrowAmount + expectedBaseDebtAccrual;
     uint256 expectedPremiumDebt = expectedBaseDebtAccrual.percentMul(expectedRp);
     uint256 expectedTreasuryFees = (expectedBaseDebtAccrual + expectedPremiumDebt).percentMul(
-      reserveFactor
+      liquidityFee
     );
 
     vm.mockCall(

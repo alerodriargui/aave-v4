@@ -565,7 +565,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       suppliedSharesBefore + expectedSupplyShares,
       'spoke suppliedShares after'
     );
-    // Hub and Spoke accounting do not match because of treasury fees
+    // Hub and Spoke accounting do not match because of liquidity fees
     assertGe(
       hub.getAssetSuppliedAmount(daiAssetId),
       suppliedAssetsBefore + supplyAmount,
@@ -615,7 +615,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
       suppliedSharesBefore + expectedSupplyShares,
       'spoke suppliedShares after'
     );
-    // Hub and Spoke accounting do not match because of treasury fees
+    // Hub and Spoke accounting do not match because of liquidity fees
     assertGe(
       hub.getAssetSuppliedAmount(daiAssetId),
       suppliedAssetsBefore + spokeSuppliedAmount,

@@ -45,7 +45,7 @@ contract TreasurySpokeTest is SpokeBase {
   function test_withdraw_fuzz_amount_interestOnly(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    updateReserveFactor(hub, daiAssetId, 0);
+    updateLiquidityFee(hub, daiAssetId, 0);
 
     Utils.supply(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, amount, address(treasurySpoke));
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), amount);

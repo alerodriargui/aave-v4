@@ -119,7 +119,7 @@ library AssetLogic {
         liquidityAdded: liquidityAdded,
         liquidityTaken: liquidityTaken,
         totalDebt: asset.baseDebt(),
-        reserveFactor: 0, // TODO
+        liquidityFee: 0, // TODO
         assetId: asset.id,
         virtualUnderlyingBalance: asset.availableLiquidity, // without current liquidity change
         usingVirtualBalance: true
@@ -128,20 +128,20 @@ library AssetLogic {
   }
 
   /**
-   * @dev Accrues interest and treasury fees for the specified asset.
+   * @dev Accrues interest and fees for the specified asset.
    * @param asset The data struct of the asset with accruing interest
-   * @param treasury The data struct of the treasury spoke associated with the asset
+   * @param feeReceiver The data struct of the fee receiver spoke associated with the asset
    */
-  function accrue(DataTypes.Asset storage asset, DataTypes.SpokeData storage treasury) internal {
+  function accrue(DataTypes.Asset storage asset, DataTypes.SpokeData storage feeReceiver) internal {
     uint256 drawnIndex = asset.previewDrawnIndex();
     uint256 feeShares = asset.previewFeeShares(drawnIndex - asset.baseDebtIndex);
 
-    // Accrue interest and treasury fees
+    // Accrue interest and fees
     asset.baseDebtIndex = drawnIndex;
     if (feeShares > 0) {
-      treasury.suppliedShares += feeShares;
+      feeReceiver.suppliedShares += feeShares;
       asset.suppliedShares += feeShares;
-      // todo: emit new treasury fees
+      // todo: emit event to signal fees accrual
     }
 
     asset.lastUpdateTimestamp = block.timestamp;
@@ -175,13 +175,13 @@ library AssetLogic {
     DataTypes.Asset storage asset,
     uint256 indexDelta
   ) internal view returns (uint256) {
-    uint256 reserveFactor = asset.config.reserveFactor;
-    if (indexDelta == 0 || reserveFactor == 0) {
+    uint256 liquidityFee = asset.config.liquidityFee;
+    if (indexDelta == 0 || liquidityFee == 0) {
       return 0;
     }
     uint256 feesAmount = indexDelta
       .rayMulDown(asset.baseDrawnShares + asset.premiumDrawnShares)
-      .percentMulDown(reserveFactor);
+      .percentMulDown(liquidityFee);
 
     return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
   }

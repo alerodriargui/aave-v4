@@ -55,7 +55,7 @@ contract LiquidityHub is ILiquidityHub {
         frozen: config.frozen,
         paused: config.paused,
         decimals: config.decimals, // todo fetch decimals from token
-        reserveFactor: 0,
+        liquidityFee: 0,
         irStrategy: config.irStrategy
       })
     });
@@ -68,13 +68,13 @@ contract LiquidityHub is ILiquidityHub {
     _validateAssetConfig(config, address(assetsList[assetId]));
     DataTypes.Asset storage asset = _assets[assetId];
     // TODO: AccessControl
-    // todo: if reserveFactor or irStrategy update, accrue interest
+    // todo: if liquidityFee or irStrategy update, accrue interest
     asset.config = DataTypes.AssetConfig({
       active: config.active,
       frozen: config.frozen,
       paused: config.paused,
       decimals: config.decimals,
-      reserveFactor: config.reserveFactor,
+      liquidityFee: config.liquidityFee,
       irStrategy: config.irStrategy
     });
 
@@ -134,9 +134,9 @@ contract LiquidityHub is ILiquidityHub {
     _assets[assetId].accrue(_spokes[assetId][oldFeeReceiver]);
 
     // Update liquidity fee
-    uint256 oldLiquidityFee = _assets[assetId].config.reserveFactor;
+    uint256 oldLiquidityFee = _assets[assetId].config.liquidityFee;
     if (liquidityFee != oldLiquidityFee) {
-      _assets[assetId].config.reserveFactor = liquidityFee;
+      _assets[assetId].config.liquidityFee = liquidityFee;
       emit LiquidityFeeUpdated(assetId, oldLiquidityFee, liquidityFee);
     }
 

@@ -236,9 +236,9 @@ interface ILiquidityHub {
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
 
   /**
-   * @notice Returns the treasury spoke address associated with the given asset.
+   * @notice Returns the fee receiver associated with the given asset.
    * @param assetId The identifier of the asset.
-   * @return The address of the corresponding treasury spoke.
+   * @return The address of the corresponding fee receiver.
    */
   function getFeeReceiver(uint256 assetId) external view returns (address);
 

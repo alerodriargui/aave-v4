@@ -257,7 +257,7 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         decimals: tokenList.weth.decimals(),
-        reserveFactor: 0,
+        liquidityFee: 0,
         irStrategy: irStrategy
       }),
       address(tokenList.weth)
@@ -272,7 +272,7 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         decimals: tokenList.usdx.decimals(),
-        reserveFactor: 0,
+        liquidityFee: 0,
         irStrategy: irStrategy
       }),
       address(tokenList.usdx)
@@ -287,7 +287,7 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         decimals: tokenList.dai.decimals(),
-        reserveFactor: 5_00,
+        liquidityFee: 5_00,
         irStrategy: irStrategy
       }),
       address(tokenList.dai)
@@ -302,7 +302,7 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         decimals: tokenList.wbtc.decimals(),
-        reserveFactor: 0,
+        liquidityFee: 0,
         irStrategy: irStrategy
       }),
       address(tokenList.wbtc)
@@ -317,7 +317,7 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         decimals: tokenList.usdy.decimals(),
-        reserveFactor: 0,
+        liquidityFee: 0,
         irStrategy: irStrategy
       }),
       address(tokenList.usdy)
@@ -540,7 +540,7 @@ abstract contract Base is Test {
         frozen: false,
         paused: false,
         decimals: tokenList.dai.decimals(),
-        reserveFactor: 0,
+        liquidityFee: 0,
         irStrategy: irStrategy
       }),
       address(tokenList.dai)
@@ -755,16 +755,14 @@ abstract contract Base is Test {
     spoke.updateReserveConfig(reserveId, reserveConfig);
   }
 
-  function updateReserveFactor(
+  function updateLiquidityFee(
     ILiquidityHub liquidityHub,
     uint256 assetId,
-    uint256 newReserveFactor
+    uint256 liquidityFee
   ) internal {
-    DataTypes.AssetConfig memory assetConfig = liquidityHub.getAsset(assetId).config;
-    assetConfig.reserveFactor = newReserveFactor;
-
+    address feeReceiver = liquidityHub.getFeeReceiver(assetId);
     vm.prank(HUB_ADMIN);
-    liquidityHub.updateAssetConfig(assetId, assetConfig);
+    hub.updateAssetFees(assetId, feeReceiver, liquidityFee);
   }
 
   function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal {
@@ -1193,11 +1191,11 @@ abstract contract Base is Test {
     return baseDebt;
   }
 
-  /// @dev Helper function to withdraw treasury fees from the treasury spoke
-  function treasuryWithdraw(uint256 assetId, uint256 amount) internal {
-    uint256 treasuryFees = hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke));
-    if (amount > treasuryFees) {
-      amount = treasuryFees;
+  /// @dev Helper function to withdraw fees from the treasury spoke
+  function withdrawLiquidityFees(uint256 assetId, uint256 amount) internal {
+    uint256 fees = hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke));
+    if (amount > fees) {
+      amount = fees;
     }
     if (amount == 0) {
       return; // nothing to withdraw
@@ -1216,8 +1214,8 @@ abstract contract Base is Test {
     );
   }
 
-  function _getReserveFactor(uint256 assetId) internal view returns (uint256) {
-    return hub.getAssetConfig(assetId).reserveFactor;
+  function _getLiquidityFee(uint256 assetId) internal view returns (uint256) {
+    return hub.getAssetConfig(assetId).liquidityFee;
   }
 
   function _getLiquidityPremium(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
@@ -1367,20 +1365,18 @@ abstract contract Base is Test {
   function _calculateExpectedFees(
     uint256 baseDebtIncrease,
     uint256 premiumDebtIncrease,
-    uint256 reserveFactor
+    uint256 liquidityFee
   ) internal pure returns (uint256) {
-    return (baseDebtIncrease + premiumDebtIncrease).percentMulDown(reserveFactor);
+    return (baseDebtIncrease + premiumDebtIncrease).percentMulDown(liquidityFee);
   }
 
   function calculateExpectedFeesAmount(
     uint256 initialDrawnShares,
     uint256 initialPremiumShares,
-    uint256 reserveFactor,
+    uint256 liquidityFee,
     uint256 indexDelta
   ) internal view returns (uint256 feesAmount) {
     return
-      indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(
-        reserveFactor
-      );
+      indexDelta.rayMulDown(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
   }
 }
