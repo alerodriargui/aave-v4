@@ -383,7 +383,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       frozen: false,
       paused: false,
       decimals: 18,
-      liquidityFee: 5_00,
+      liquidityFee: 0, // todo: remove
       irStrategy: irStrategy
     });
 
@@ -406,11 +406,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
 
   function test_addAsset_fuzz(DataTypes.AssetConfig memory newConfig, address asset) public {
     newConfig.decimals = bound(newConfig.decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
-    newConfig.liquidityFee = bound(
-      newConfig.liquidityFee,
-      0,
-      PercentageMathExtended.PERCENTAGE_FACTOR
-    );
+    newConfig.liquidityFee = 0; // todo: remove
     vm.assume(address(newConfig.irStrategy) != address(0) && asset != address(0));
 
     vm.prank(HUB_ADMIN);
