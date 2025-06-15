@@ -257,13 +257,13 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         decimals: tokenList.weth.decimals(),
-        reserveFactor: 10_00,
+        reserveFactor: 0,
         irStrategy: irStrategy
       }),
       address(tokenList.weth)
     );
     oracle.setAssetPrice(wethAssetId, 2000e8);
-    hub.updateTreasury(wethAssetId, address(treasurySpoke));
+    hub.updateAssetFees(wethAssetId, address(treasurySpoke), 10_00);
 
     // add USDX
     hub.addAsset(
@@ -272,13 +272,13 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         decimals: tokenList.usdx.decimals(),
-        reserveFactor: 5_00,
+        reserveFactor: 0,
         irStrategy: irStrategy
       }),
       address(tokenList.usdx)
     );
     oracle.setAssetPrice(usdxAssetId, 1e8);
-    hub.updateTreasury(usdxAssetId, address(treasurySpoke));
+    hub.updateAssetFees(usdxAssetId, address(treasurySpoke), 5_00);
 
     // add DAI
     hub.addAsset(
@@ -293,7 +293,7 @@ abstract contract Base is Test {
       address(tokenList.dai)
     );
     oracle.setAssetPrice(daiAssetId, 1e8);
-    hub.updateTreasury(daiAssetId, address(treasurySpoke));
+    hub.updateAssetFees(daiAssetId, address(treasurySpoke), 5_00);
 
     // add WBTC
     hub.addAsset(
@@ -302,13 +302,13 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         decimals: tokenList.wbtc.decimals(),
-        reserveFactor: 10_00,
+        reserveFactor: 0,
         irStrategy: irStrategy
       }),
       address(tokenList.wbtc)
     );
     oracle.setAssetPrice(wbtcAssetId, 50_000e8);
-    hub.updateTreasury(wbtcAssetId, address(treasurySpoke));
+    hub.updateAssetFees(wbtcAssetId, address(treasurySpoke), 10_00);
 
     // add USDY
     hub.addAsset(
@@ -317,13 +317,13 @@ abstract contract Base is Test {
         paused: false,
         frozen: false,
         decimals: tokenList.usdy.decimals(),
-        reserveFactor: 10_00,
+        reserveFactor: 0,
         irStrategy: irStrategy
       }),
       address(tokenList.usdy)
     );
     oracle.setAssetPrice(usdyAssetId, 1e8);
-    hub.updateTreasury(usdyAssetId, address(treasurySpoke));
+    hub.updateAssetFees(usdyAssetId, address(treasurySpoke), 10_00);
 
     // Spoke 1 reserve configs
     DataTypes.ReserveConfig memory wethConfig = DataTypes.ReserveConfig({
@@ -540,13 +540,13 @@ abstract contract Base is Test {
         frozen: false,
         paused: false,
         decimals: tokenList.dai.decimals(),
-        reserveFactor: 5_00,
+        reserveFactor: 0,
         irStrategy: irStrategy
       }),
       address(tokenList.dai)
     );
     oracle.setAssetPrice(dai2AssetId, 1e8);
-    hub.updateTreasury(dai2AssetId, address(treasurySpoke));
+    hub.updateAssetFees(dai2AssetId, address(treasurySpoke), 5_00);
 
     daiConfig = DataTypes.ReserveConfig({
       decimals: tokenList.dai.decimals(),

@@ -27,8 +27,8 @@ contract LiquidityHub is ILiquidityHub {
   IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public assetCount;
 
-  // Mapping of treasury spokes by asset identifier
-  mapping(uint256 => address) internal treasurySpokes;
+  // Mapping of fee recipients by asset identifier
+  mapping(uint256 => address) internal feeReceivers;
 
   // /////
   // Governance
@@ -55,7 +55,7 @@ contract LiquidityHub is ILiquidityHub {
         frozen: config.frozen,
         paused: config.paused,
         decimals: config.decimals, // todo fetch decimals from token
-        reserveFactor: config.reserveFactor, // todo: if non-zero, updateTreasury
+        reserveFactor: 0,
         irStrategy: config.irStrategy
       })
     });
@@ -122,44 +122,55 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function updateTreasury(uint256 assetId, address newTreasury) public {
+  function updateAssetFees(uint256 assetId, address feeReceiver, uint256 liquidityFee) public {
     // TODO: AccessControl
-    // todo: merge reserve factor
 
-    // cannot be set to zero if the reserve factor is non-zero
-    require(
-      newTreasury != address(0) || _assets[assetId].config.reserveFactor == 0,
-      InvalidTreasurySpoke()
-    );
+    // receiver can be zero if and only if the fee is zero.
+    require(liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
+    require(feeReceiver != address(0) || liquidityFee == 0, InvalidFeeReceiver());
 
-    address oldTreasury = treasurySpokes[assetId];
-    if (oldTreasury != address(0)) {
-      // accrue fees for current treasury spoke
-      _assets[assetId].accrue(_spokes[assetId][oldTreasury]);
-      // restrict activity
-      _updateSpokeConfig(assetId, oldTreasury, DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0}));
+    // accrue always, so fees until now are generated based on old config (percent and receiver)
+    address oldFeeReceiver = feeReceivers[assetId];
+    _assets[assetId].accrue(_spokes[assetId][oldFeeReceiver]);
+
+    // Update liquidity fee
+    uint256 oldLiquidityFee = _assets[assetId].config.reserveFactor;
+    if (liquidityFee != oldLiquidityFee) {
+      _assets[assetId].config.reserveFactor = liquidityFee;
+      emit LiquidityFeeUpdated(assetId, oldLiquidityFee, liquidityFee);
     }
 
-    // only add if it does not exist
-    if (newTreasury != address(0)) {
-      if (_spokes[assetId][newTreasury].lastUpdateTimestamp == 0) {
-        // todo: review usage of lastUpdateTimestamp for existence
-        _addSpoke(
-          assetId,
-          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-          newTreasury
-        );
-      } else {
+    // Update fee receiver
+    if (feeReceiver != oldFeeReceiver) {
+      // restrict activity of old receiver, if any
+      if (oldFeeReceiver != address(0)) {
         _updateSpokeConfig(
           assetId,
-          newTreasury, // todo: can exist already as spoke
-          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+          oldFeeReceiver,
+          DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0})
         );
       }
-    }
 
-    treasurySpokes[assetId] = newTreasury;
-    emit TreasuryUpdated(assetId, oldTreasury, newTreasury);
+      // only add if it does not exist
+      if (feeReceiver != address(0)) {
+        if (_spokes[assetId][feeReceiver].lastUpdateTimestamp == 0) {
+          // todo: review usage of lastUpdateTimestamp for existence
+          _addSpoke(
+            assetId,
+            DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+            feeReceiver
+          );
+        } else {
+          _updateSpokeConfig(
+            assetId,
+            feeReceiver,
+            DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+          );
+        }
+      }
+      feeReceivers[assetId] = feeReceiver;
+      emit FeeReceiverUpdated(assetId, oldFeeReceiver, feeReceiver);
+    }
   }
 
   // /////
@@ -173,7 +184,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][treasurySpokes[assetId]]);
+    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
     _validateSupply(asset, spoke, amount, from);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -202,7 +213,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][treasurySpokes[assetId]]);
+    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -228,7 +239,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][treasurySpokes[assetId]]);
+    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -260,7 +271,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][treasurySpokes[assetId]]);
+    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
     asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
@@ -316,8 +327,8 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
 
-    // accrue interest and treasury fees
-    asset.accrue(_spokes[assetId][treasurySpokes[assetId]]);
+    // accrue interest and liquidity fees
+    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
 
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
@@ -446,7 +457,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
-    if (spoke == treasurySpokes[assetId]) {
+    if (spoke == feeReceivers[assetId]) {
       return
         _assets[assetId].toSuppliedAssetsDown(
           _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares()
@@ -456,7 +467,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
-    if (spoke == treasurySpokes[assetId]) {
+    if (spoke == feeReceivers[assetId]) {
       return _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares();
     }
     return _spokes[assetId][spoke].suppliedShares;
@@ -471,8 +482,8 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   /// @inheritdoc ILiquidityHub
-  function getTreasurySpoke(uint256 assetId) external view returns (address) {
-    return treasurySpokes[assetId];
+  function getFeeReceiver(uint256 assetId) external view returns (address) {
+    return feeReceivers[assetId];
   }
 
   //
@@ -563,10 +574,6 @@ contract LiquidityHub is ILiquidityHub {
     require(asset != address(0), InvalidAssetAddress());
     require(address(config.irStrategy) != address(0), InvalidIrStrategy());
     require(config.decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
-    require(
-      config.reserveFactor <= PercentageMathExtended.PERCENTAGE_FACTOR,
-      InvalidReserveFactor()
-    );
   }
 
   function _getSpokeDebt(

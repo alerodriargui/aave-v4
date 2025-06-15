@@ -468,50 +468,6 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     );
   }
 
-  function test_addAsset_revertsWith_InvalidReserveFactor() public {
-    uint256 invalidReserveFactor = PercentageMathExtended.PERCENTAGE_FACTOR + 1;
-    vm.expectRevert(ILiquidityHub.InvalidReserveFactor.selector);
-    vm.prank(HUB_ADMIN);
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        active: true,
-        frozen: false,
-        paused: false,
-        decimals: 18,
-        reserveFactor: invalidReserveFactor,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
-    );
-  }
-
-  function test_addAsset_fuzz_revertsWith_InvalidReserveFactor(
-    bool active,
-    bool frozen,
-    bool paused,
-    uint256 decimals,
-    uint256 reserveFactor,
-    IReserveInterestRateStrategy irStrategy
-  ) public {
-    decimals = bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS());
-    vm.assume(reserveFactor > PercentageMathExtended.PERCENTAGE_FACTOR);
-    vm.assume(address(irStrategy) != address(0));
-
-    vm.expectRevert(ILiquidityHub.InvalidReserveFactor.selector);
-    vm.prank(HUB_ADMIN);
-    hub.addAsset(
-      DataTypes.AssetConfig({
-        active: active,
-        frozen: frozen,
-        paused: paused,
-        decimals: decimals,
-        reserveFactor: reserveFactor,
-        irStrategy: irStrategy
-      }),
-      address(tokenList.dai)
-    );
-  }
-
   function test_addAsset_revertsWith_InvalidAssetAddress() public {
     uint256 decimals = hub.MAX_ALLOWED_ASSET_DECIMALS();
 

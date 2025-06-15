@@ -19,7 +19,12 @@ interface ILiquidityHub {
     uint256 drawCap,
     uint256 supplyCap
   );
-  event TreasuryUpdated(uint256 indexed assetId, address oldTreasury, address newTreasury);
+  event LiquidityFeeUpdated(
+    uint256 indexed assetId,
+    uint256 oldLiquidityFee,
+    uint256 newLiquidityFee
+  );
+  event FeeReceiverUpdated(uint256 indexed assetId, address oldFeeReceiver, address newFeeReceiver);
 
   event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
   event Add(
@@ -75,10 +80,10 @@ interface ILiquidityHub {
   error AssetFrozen();
   error InvalidIrStrategy();
   error InvalidAssetDecimals();
-  error InvalidReserveFactor();
+  error InvalidLiquidityFee();
   error InvalidAssetAddress();
   error InvalidDebtChange();
-  error InvalidTreasurySpoke();
+  error InvalidFeeReceiver();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
 
@@ -99,14 +104,15 @@ interface ILiquidityHub {
   ) external;
 
   /**
-   * @notice Update the address of the treasury spoke for an specified asset
-   * @dev Treasury fees are accrued for the specified asset prior to the update
-   * @dev It restricts activity of the old treasury spoke by setting caps to zero
-   * @dev The new treasury cannot be set to zero if the reserve factor is non-zero.
+   * @notice Updates the fee configuration for a specified asset.
+   * @dev Accrues asset fees to the current receiver before applying any updates.
+   * @dev Disables the old fee receiver as spoke by setting its caps to zero.
+   * @dev The new fee receiver cannot be zero if the liquidity fee is non-zero.
    * @param assetId The identifier of the asset.
-   * @param newTreasury The address of the new treasury spoke
+   * @param feeReceiver The address of the fee receiver
+   * @param liquidityFee The fee percentage applied to the asset based on liquidity growth.
    */
-  function updateTreasury(uint256 assetId, address newTreasury) external;
+  function updateAssetFees(uint256 assetId, address feeReceiver, uint256 liquidityFee) external;
 
   /**
    * @notice Add/Supply asset on behalf of user.
@@ -234,7 +240,7 @@ interface ILiquidityHub {
    * @param assetId The identifier of the asset.
    * @return The address of the corresponding treasury spoke.
    */
-  function getTreasurySpoke(uint256 assetId) external view returns (address);
+  function getFeeReceiver(uint256 assetId) external view returns (address);
 
   function assetCount() external view returns (uint256);
 
