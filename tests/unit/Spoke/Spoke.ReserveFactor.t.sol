@@ -198,7 +198,7 @@ contract SpokeReserveFactorTest is SpokeBase {
 
     skip(365 days);
 
-    assertDebtEq(
+    _assertSpokeDebt(
       spoke1,
       reserveId,
       expectedBaseDebt,
@@ -226,7 +226,7 @@ contract SpokeReserveFactorTest is SpokeBase {
 
     skip(365 days);
 
-    assertDebtEq(
+    _assertSpokeDebt(
       spoke1,
       reserveId,
       expectedBaseDebt,
@@ -257,7 +257,7 @@ contract SpokeReserveFactorTest is SpokeBase {
 
     skip(365 days);
 
-    assertDebtEq(
+    _assertSpokeDebt(
       spoke1,
       reserveId,
       expectedBaseDebt,
@@ -303,7 +303,7 @@ contract SpokeReserveFactorTest is SpokeBase {
 
     skip(365 days);
 
-    assertDebtEq(
+    _assertSpokeDebt(
       spoke1,
       reserveId,
       expectedBaseDebt,
@@ -332,7 +332,7 @@ contract SpokeReserveFactorTest is SpokeBase {
 
     skip(365 days);
 
-    assertDebtEq(
+    _assertSpokeDebt(
       spoke1,
       reserveId,
       expectedBaseDebt,
@@ -363,7 +363,7 @@ contract SpokeReserveFactorTest is SpokeBase {
 
     skip(365 days);
 
-    assertDebtEq(
+    _assertSpokeDebt(
       spoke1,
       reserveId,
       expectedBaseDebt,
@@ -420,7 +420,7 @@ contract SpokeReserveFactorTest is SpokeBase {
 
     skip(365 days);
 
-    assertDebtEq(
+    _assertSpokeDebt(
       spoke1,
       reserveId,
       expectedBaseDebt,
@@ -438,7 +438,7 @@ contract SpokeReserveFactorTest is SpokeBase {
     assertEq(_getUserRpStored(spoke1, reserveId, alice), 50_00);
 
     // no change in treasury fees
-    assertDebtEq(
+    _assertSpokeDebt(
       spoke1,
       reserveId,
       expectedBaseDebt,

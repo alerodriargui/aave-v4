@@ -13,6 +13,7 @@ import {ITreasurySpoke} from 'src/interfaces/ITreasurySpoke.sol';
  * @dev Allows withdraw to claim fees and supply to invest back into the Hub via this dedicated spoke.
  */
 contract TreasurySpoke is Ownable, ITreasurySpoke {
+  /// @inheritdoc ITreasurySpoke
   ILiquidityHub public immutable HUB;
 
   /**
@@ -50,4 +51,7 @@ contract TreasurySpoke is Ownable, ITreasurySpoke {
   function getSuppliedShares(uint256 reserveId) external view returns (uint256) {
     return HUB.getSpokeSuppliedShares(reserveId, address(this));
   }
+
+  // todo: add functions to transfer ERC20 out, assuming this can hold assets
+  // todo: add functions to rescue
 }

@@ -27,6 +27,7 @@ contract LiquidityHub is ILiquidityHub {
   IERC20[] public assetsList; // TODO: Check if Enumerable or Set makes more sense
   uint256 public assetCount;
 
+  // Mapping of treasury spokes by asset identifier
   mapping(uint256 => address) internal treasurySpokes;
 
   // /////
@@ -123,21 +124,39 @@ contract LiquidityHub is ILiquidityHub {
   /// @inheritdoc ILiquidityHub
   function updateTreasury(uint256 assetId, address newTreasury) public {
     // TODO: AccessControl
+    // todo: merge reserve factor
+
+    // cannot be set to zero if the reserve factor is non-zero
+    require(
+      newTreasury != address(0) || _assets[assetId].config.reserveFactor == 0,
+      InvalidTreasurySpoke()
+    );
 
     address oldTreasury = treasurySpokes[assetId];
-
     if (oldTreasury != address(0)) {
-      // Accrue fees for current treasury spoke
+      // accrue fees for current treasury spoke
       _assets[assetId].accrue(_spokes[assetId][oldTreasury]);
-      // Restrict activity
+      // restrict activity
       _updateSpokeConfig(assetId, oldTreasury, DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0}));
     }
 
-    _addSpoke(
-      assetId,
-      DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-      newTreasury
-    );
+    // only add if it does not exist
+    if (newTreasury != address(0)) {
+      if (_spokes[assetId][newTreasury].lastUpdateTimestamp == 0) {
+        // todo: review usage of lastUpdateTimestamp for existence
+        _addSpoke(
+          assetId,
+          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
+          newTreasury
+        );
+      } else {
+        _updateSpokeConfig(
+          assetId,
+          newTreasury, // todo: can exist already as spoke
+          DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+        );
+      }
+    }
 
     treasurySpokes[assetId] = newTreasury;
     emit TreasuryUpdated(assetId, oldTreasury, newTreasury);
@@ -381,6 +400,10 @@ contract LiquidityHub is ILiquidityHub {
     return _assets[assetId].toDrawnAssetsDown(shares);
   }
 
+  function previewDrawnIndex(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].previewDrawnIndex();
+  }
+
   function getBaseInterestRate(uint256 assetId) public view returns (uint256) {
     return _assets[assetId].baseInterestRate();
   }
@@ -445,6 +468,11 @@ contract LiquidityHub is ILiquidityHub {
 
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
     return _assets[assetId].config;
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function getTreasurySpoke(uint256 assetId) external view returns (address) {
+    return treasurySpokes[assetId];
   }
 
   //
@@ -514,18 +542,18 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
-    require(spoke != address(0), InvalidSpoke());
+    require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
     _spokes[assetId][spoke] = DataTypes.SpokeData({
       suppliedShares: 0,
       baseDrawnShares: 0,
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      lastUpdateTimestamp: 0,
+      lastUpdateTimestamp: block.timestamp,
       config: config
     });
 
-    emit SpokeAdded(assetId, spoke);
+    emit SpokeAdded(assetId, spoke); // todo: emit config
   }
 
   function _validateAssetConfig(

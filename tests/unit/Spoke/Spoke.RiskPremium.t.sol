@@ -149,7 +149,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     uint256 borrowAmount = 10000e18;
 
     // Deploy liquidity to borrow
-    _deployLiquidity(spoke2, _dai2ReserveId(spoke2), borrowAmount);
+    _openSupplyPosition(spoke2, _dai2ReserveId(spoke2), borrowAmount);
 
     // Bob supplies collaterals
     Utils.supplyCollateral(spoke2, _wbtcReserveId(spoke2), bob, wbtcSupplyAmount, bob);
@@ -286,7 +286,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
     daiInfo.borrowAmount = 10000e18;
 
     // Supply the remaining liquidity desired to borrow
-    _deployLiquidity(spoke2, daiInfo.reserveId, daiInfo.borrowAmount - daiInfo.supplyAmount);
+    _openSupplyPosition(spoke2, daiInfo.reserveId, daiInfo.borrowAmount - daiInfo.supplyAmount);
 
     // Bob supply dai into spoke2
     Utils.supplyCollateral(spoke2, daiInfo.reserveId, bob, daiInfo.supplyAmount, bob);
@@ -1040,7 +1040,7 @@ contract SpokeRiskPremiumTest is SpokeBase {
 
     // Alice supply remaining weth into spoke3
     if (MAX_SUPPLY_AMOUNT - wethInfo.supplyAmount > 0) {
-      _deployLiquidity(spoke3, wethInfo.reserveId, MAX_SUPPLY_AMOUNT - wethInfo.supplyAmount);
+      _openSupplyPosition(spoke3, wethInfo.reserveId, MAX_SUPPLY_AMOUNT - wethInfo.supplyAmount);
     }
 
     // Bob draw wbtc

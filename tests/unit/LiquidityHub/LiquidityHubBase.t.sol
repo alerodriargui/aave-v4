@@ -155,11 +155,12 @@ contract LiquidityHubBase is Base {
     // return debtData;
   }
 
+  /// @dev Adds liquidity to the Hub via a random spoke
   function _addLiquidity(uint256 assetId, uint256 amount) public {
-    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
-
     address tempSpoke = vm.randomAddress();
     address tempUser = vm.randomAddress();
+
+    uint256 initialLiq = hub.getAvailableLiquidity(assetId);
 
     IERC20 asset = hub.assetsList(assetId);
     deal(address(asset), tempUser, amount);
@@ -185,7 +186,8 @@ contract LiquidityHubBase is Base {
     assertEq(hub.getAvailableLiquidity(assetId), initialLiq + amount);
   }
 
-  function _createDebt(
+  /// @dev Draws liquidity from the Hub via a random spoke
+  function _drawLiquidity(
     uint256 assetId,
     uint256 amount,
     bool withPremium

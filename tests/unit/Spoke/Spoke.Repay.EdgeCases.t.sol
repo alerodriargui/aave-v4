@@ -109,7 +109,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), carol, 1e18, carol);
 
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), 20);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 20);
     // carol borrows to inflate ex rate
     vm.prank(carol);
     spoke1.borrow(_daiReserveId(spoke1), 20, carol);
@@ -121,7 +121,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 exchangeRateBefore = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertEq(exchangeRateBefore, 1.5e30);
 
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), 30);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30);
 
     // 30% rp
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 30_00);
@@ -166,7 +166,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), carol, 1e18, carol);
 
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), 20);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 20);
     vm.prank(carol);
     spoke1.borrow(_daiReserveId(spoke1), 20, carol);
 
@@ -176,7 +176,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 exchangeRateBefore = hub.convertToSuppliedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
     assertEq(exchangeRateBefore, 1.5e30);
 
-    _deployLiquidity(spoke1, _daiReserveId(spoke1), 30);
+    _openSupplyPosition(spoke1, _daiReserveId(spoke1), 30);
 
     // 30% rp
     updateLiquidityPremium(spoke1, _wethReserveId(spoke1), 30_00);

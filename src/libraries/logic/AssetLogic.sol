@@ -141,6 +141,7 @@ library AssetLogic {
     if (feeShares > 0) {
       treasury.suppliedShares += feeShares;
       asset.suppliedShares += feeShares;
+      // todo: emit new treasury fees
     }
 
     asset.lastUpdateTimestamp = block.timestamp;

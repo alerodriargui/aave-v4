@@ -78,6 +78,7 @@ interface ILiquidityHub {
   error InvalidReserveFactor();
   error InvalidAssetAddress();
   error InvalidDebtChange();
+  error InvalidTreasurySpoke();
 
   function addAsset(DataTypes.AssetConfig memory params, address asset) external;
 
@@ -101,6 +102,7 @@ interface ILiquidityHub {
    * @notice Update the address of the treasury spoke for an specified asset
    * @dev Treasury fees are accrued for the specified asset prior to the update
    * @dev It restricts activity of the old treasury spoke by setting caps to zero
+   * @dev The new treasury cannot be set to zero if the reserve factor is non-zero.
    * @param assetId The identifier of the asset.
    * @param newTreasury The address of the new treasury spoke
    */
@@ -109,7 +111,7 @@ interface ILiquidityHub {
   /**
    * @notice Add/Supply asset on behalf of user.
    * @dev Only callable by spokes.
-   * @param assetId The asset id.
+   * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to add/supply.
    * @param from The address which we pull assets from (user).
    * @return The amount of shares added or supplied.
@@ -119,7 +121,7 @@ interface ILiquidityHub {
   /**
    * @notice Remove/Withdraw supplied asset on behalf of user.
    * @dev Only callable by spokes.
-   * @param assetId The asset id.
+   * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to remove/withdraw.
    * @param to The address to transfer the assets to.
    * @return The amount of shares removed or withdrawn.
@@ -129,7 +131,7 @@ interface ILiquidityHub {
   /**
    * @notice Draw/Borrow debt on behalf of user.
    * @dev Only callable by spokes.
-   * @param assetId The asset id.
+   * @param assetId The identifier of the asset.
    * @param amount The amount of debt to draw.
    * @param to The address to transfer the underlying assets to.
    * @return The amount of base shares drawn.
@@ -140,7 +142,7 @@ interface ILiquidityHub {
    * @notice Restores/Repays debt on behalf of user.
    * @dev Only callable by spokes.
    * @dev Interest is always paid off first from premium, then from base.
-   * @param assetId The asset id.
+   * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to repay.
    * @param premiumAmount The premium debt to repay.
    * @param from The address to pull assets from.
@@ -158,7 +160,7 @@ interface ILiquidityHub {
    * @dev To be called when moving accrued premium to realized premium.
    * @dev Only callable by spokes.
    * @dev Premium debt can only decrease by at most the amount of realized premium taken.
-   * @param assetId The asset id.
+   * @param assetId The identifier of the asset.
    * @param premiumDrawnSharesDelta The change in premium drawn shares.
    * @param premiumOffsetDelta The change in premium offset.
    * @param realizedPremiumAdded The increase of realized premium.
@@ -187,6 +189,7 @@ interface ILiquidityHub {
     uint256 assets
   ) external view returns (uint256);
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
+  function previewDrawnIndex(uint256 assetId) external view returns (uint256);
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);
 
@@ -225,6 +228,13 @@ interface ILiquidityHub {
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256);
 
   function getSpokeTotalDebt(uint256 assetId, address spoke) external view returns (uint256);
+
+  /**
+   * @notice Returns the treasury spoke address associated with the given asset.
+   * @param assetId The identifier of the asset.
+   * @return The address of the corresponding treasury spoke.
+   */
+  function getTreasurySpoke(uint256 assetId) external view returns (address);
 
   function assetCount() external view returns (uint256);
 

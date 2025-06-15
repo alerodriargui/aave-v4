@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 /**
  * @title ITreasurySpoke
  */
@@ -42,4 +43,10 @@ interface ITreasurySpoke {
    * @return The amount of assets supplied, expressed in shares.
    */
   function getSuppliedShares(uint256 reserveId) external view returns (uint256);
+
+  /**
+   * @notice Returns the address of the associated Liquidity Hub.
+   * @return The address of the Liquidity Hub.
+   */
+  function HUB() external view returns (ILiquidityHub);
 }

@@ -27,6 +27,7 @@ import {MockPriceOracle, IPriceOracle} from './mocks/MockPriceOracle.sol';
 // dependencies
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 abstract contract Base is Test {
@@ -197,7 +198,7 @@ abstract contract Base is Test {
     MAX_SUPPLY_AMOUNT_WBTC = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.wbtc.decimals();
     MAX_SUPPLY_AMOUNT_USDY = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdy.decimals();
 
-    address[5] memory users = [alice, bob, carol, derl, LIQUIDATOR];
+    address[6] memory users = [alice, bob, carol, derl, LIQUIDATOR, TREASURY_ADMIN];
 
     for (uint256 x; x < users.length; ++x) {
       tokenList.usdx.mint(users[x], mintAmount_USDX);

@@ -581,7 +581,7 @@ contract LiquidityHubSupplyTest is LiquidityHubBase {
   function test_supply_with_increased_index_with_premium() public {
     uint256 daiAmount = 100e18;
     _addLiquidity(daiAssetId, daiAmount);
-    _createDebt(daiAssetId, daiAmount, true);
+    _drawLiquidity(daiAssetId, daiAmount, true);
     assertLt(hub.convertToSuppliedShares(daiAssetId, daiAmount), daiAmount); // index increased, exch rate > 1
 
     uint256 supplyAmount = 10e18;
