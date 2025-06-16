@@ -19,12 +19,7 @@ interface ILiquidityHub {
     uint256 drawCap,
     uint256 supplyCap
   );
-  event LiquidityFeeUpdated(
-    uint256 indexed assetId,
-    uint256 oldLiquidityFee,
-    uint256 newLiquidityFee
-  );
-  event FeeReceiverUpdated(uint256 indexed assetId, address oldFeeReceiver, address newFeeReceiver);
+  event FeeReceiverUpdated(uint256 indexed assetId, address newFeeReceiver);
 
   event DrawnIndexUpdate(uint256 indexed assetId, uint256 drawnIndex, uint256 lastUpdateTimestamp);
   event Add(
@@ -104,15 +99,14 @@ interface ILiquidityHub {
   ) external;
 
   /**
-   * @notice Updates the fee configuration for a specified asset.
+   * @notice Updates the fee receiver for a specified asset.
    * @dev Accrues asset fees to the current receiver before applying any updates.
    * @dev Disables the old fee receiver as spoke by setting its caps to zero.
    * @dev The new fee receiver cannot be zero if the liquidity fee is non-zero.
    * @param assetId The identifier of the asset.
    * @param feeReceiver The address of the fee receiver
-   * @param liquidityFee The fee percentage applied to the asset based on liquidity growth.
    */
-  function updateAssetFees(uint256 assetId, address feeReceiver, uint256 liquidityFee) external;
+  function updateFeeReceiver(uint256 assetId, address feeReceiver) external;
 
   /**
    * @notice Add/Supply asset on behalf of user.
@@ -185,16 +179,21 @@ interface ILiquidityHub {
   function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
 
   function convertToSuppliedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function convertToSuppliedAssetsUp(
     uint256 assetId,
     uint256 shares
   ) external view returns (uint256);
+
   function convertToSuppliedShares(uint256 assetId, uint256 assets) external view returns (uint256);
+
   function convertToSuppliedSharesUp(
     uint256 assetId,
     uint256 assets
   ) external view returns (uint256);
+
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256);
+
   function previewDrawnIndex(uint256 assetId) external view returns (uint256);
 
   function getAsset(uint256 assetId) external view returns (DataTypes.Asset memory);

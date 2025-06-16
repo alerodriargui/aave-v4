@@ -28,7 +28,7 @@ contract LiquidityHub is ILiquidityHub {
   uint256 public assetCount;
 
   // Mapping of fee recipients by asset identifier
-  mapping(uint256 => address) internal feeReceivers;
+  mapping(uint256 => address) internal _feeReceivers;
 
   // /////
   // Governance
@@ -65,10 +65,13 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function updateAssetConfig(uint256 assetId, DataTypes.AssetConfig calldata config) external {
+    // TODO: AccessControl
     _validateAssetConfig(config, address(assetsList[assetId]));
     DataTypes.Asset storage asset = _assets[assetId];
-    // TODO: AccessControl
-    // todo: if liquidityFee or irStrategy update, accrue interest
+
+    // invariant: liquidity fee will be zero if oldFeeReceiver is zero
+    asset.accrue(_spokes[assetId][_feeReceivers[assetId]]);
+
     asset.config = DataTypes.AssetConfig({
       active: config.active,
       frozen: config.frozen,
@@ -121,56 +124,36 @@ contract LiquidityHub is ILiquidityHub {
     emit SpokeConfigUpdated(assetId, spoke, config.drawCap, config.supplyCap);
   }
 
-  /// @inheritdoc ILiquidityHub
-  function updateAssetFees(uint256 assetId, address feeReceiver, uint256 liquidityFee) public {
+  function updateFeeReceiver(uint256 assetId, address feeReceiver) public {
     // TODO: AccessControl
 
     // receiver can be zero if and only if the fee is zero.
-    require(liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
-    require(feeReceiver != address(0) || liquidityFee == 0, InvalidFeeReceiver());
+    uint256 oldLiquidityFee = _assets[assetId].config.liquidityFee;
+    require(feeReceiver == address(0) || oldLiquidityFee == 0, InvalidFeeReceiver());
 
-    // accrue always, so fees until now are generated based on old config (percent and receiver)
-    address oldFeeReceiver = feeReceivers[assetId];
+    address oldFeeReceiver = _feeReceivers[assetId];
+    // accrue always, so fees until now are generated based on old config (fee and receiver)
     _assets[assetId].accrue(_spokes[assetId][oldFeeReceiver]);
 
-    // Update liquidity fee
-    uint256 oldLiquidityFee = _assets[assetId].config.liquidityFee;
-    if (liquidityFee != oldLiquidityFee) {
-      _assets[assetId].config.liquidityFee = liquidityFee;
-      emit LiquidityFeeUpdated(assetId, oldLiquidityFee, liquidityFee);
+    // restrict activity of old receiver, if any
+    if (oldFeeReceiver != address(0)) {
+      _updateSpokeConfig(
+        assetId,
+        oldFeeReceiver,
+        DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0})
+      );
     }
 
-    // Update fee receiver
-    if (feeReceiver != oldFeeReceiver) {
-      // restrict activity of old receiver, if any
-      if (oldFeeReceiver != address(0)) {
-        _updateSpokeConfig(
-          assetId,
-          oldFeeReceiver,
-          DataTypes.SpokeConfig({supplyCap: 0, drawCap: 0})
-        );
-      }
-
-      // only add if it does not exist
-      if (feeReceiver != address(0)) {
-        if (_spokes[assetId][feeReceiver].lastUpdateTimestamp == 0) {
-          // todo: review usage of lastUpdateTimestamp for existence
-          _addSpoke(
-            assetId,
-            DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max}),
-            feeReceiver
-          );
-        } else {
-          _updateSpokeConfig(
-            assetId,
-            feeReceiver,
-            DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
-          );
-        }
-      }
-      feeReceivers[assetId] = feeReceiver;
-      emit FeeReceiverUpdated(assetId, oldFeeReceiver, feeReceiver);
+    if (feeReceiver != address(0)) {
+      _updateSpokeConfig(
+        assetId,
+        feeReceiver,
+        DataTypes.SpokeConfig({supplyCap: type(uint256).max, drawCap: type(uint256).max})
+      );
     }
+
+    _feeReceivers[assetId] = feeReceiver;
+    emit FeeReceiverUpdated(assetId, feeReceiver);
   }
 
   // /////
@@ -184,7 +167,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
+    asset.accrue(_spokes[assetId][_feeReceivers[assetId]]);
     _validateSupply(asset, spoke, amount, from);
 
     asset.updateBorrowRate({liquidityAdded: amount, liquidityTaken: 0});
@@ -213,7 +196,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
+    asset.accrue(_spokes[assetId][_feeReceivers[assetId]]);
     _validateWithdraw(asset, spoke, amount);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -239,7 +222,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
+    asset.accrue(_spokes[assetId][_feeReceivers[assetId]]);
     _validateDraw(asset, amount, spoke.config.drawCap);
 
     asset.updateBorrowRate({liquidityAdded: 0, liquidityTaken: amount});
@@ -271,7 +254,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
-    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
+    asset.accrue(_spokes[assetId][_feeReceivers[assetId]]);
 
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
     asset.updateBorrowRate({liquidityAdded: baseAmount, liquidityTaken: 0}); // both can be zero
@@ -328,7 +311,7 @@ contract LiquidityHub is ILiquidityHub {
     DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
 
     // accrue interest and liquidity fees
-    asset.accrue(_spokes[assetId][feeReceivers[assetId]]);
+    asset.accrue(_spokes[assetId][_feeReceivers[assetId]]);
 
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
@@ -457,7 +440,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getSpokeSuppliedAmount(uint256 assetId, address spoke) external view returns (uint256) {
-    if (spoke == feeReceivers[assetId]) {
+    if (spoke == _feeReceivers[assetId]) {
       return
         _assets[assetId].toSuppliedAssetsDown(
           _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares()
@@ -467,7 +450,7 @@ contract LiquidityHub is ILiquidityHub {
   }
 
   function getSpokeSuppliedShares(uint256 assetId, address spoke) external view returns (uint256) {
-    if (spoke == feeReceivers[assetId]) {
+    if (spoke == _feeReceivers[assetId]) {
       return _spokes[assetId][spoke].suppliedShares + _assets[assetId].unrealizedFeeShares();
     }
     return _spokes[assetId][spoke].suppliedShares;
@@ -483,7 +466,7 @@ contract LiquidityHub is ILiquidityHub {
 
   /// @inheritdoc ILiquidityHub
   function getFeeReceiver(uint256 assetId) external view returns (address) {
-    return feeReceivers[assetId];
+    return _feeReceivers[assetId];
   }
 
   //
@@ -554,17 +537,8 @@ contract LiquidityHub is ILiquidityHub {
 
   function _addSpoke(uint256 assetId, DataTypes.SpokeConfig memory config, address spoke) internal {
     require(spoke != address(0), InvalidSpoke()); // todo: how to remove spoke
-    _spokes[assetId][spoke] = DataTypes.SpokeData({
-      suppliedShares: 0,
-      baseDrawnShares: 0,
-      premiumDrawnShares: 0,
-      premiumOffset: 0,
-      realizedPremium: 0,
-      lastUpdateTimestamp: block.timestamp,
-      config: config
-    });
-
-    emit SpokeAdded(assetId, spoke); // todo: emit config
+    _updateSpokeConfig(assetId, spoke, config);
+    emit SpokeAdded(assetId, spoke);
   }
 
   function _validateAssetConfig(
@@ -574,6 +548,7 @@ contract LiquidityHub is ILiquidityHub {
     require(asset != address(0), InvalidAssetAddress());
     require(address(config.irStrategy) != address(0), InvalidIrStrategy());
     require(config.decimals <= MAX_ALLOWED_ASSET_DECIMALS, InvalidAssetDecimals());
+    require(config.liquidityFee <= PercentageMathExtended.PERCENTAGE_FACTOR, InvalidLiquidityFee());
   }
 
   function _getSpokeDebt(

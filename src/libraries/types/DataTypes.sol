@@ -12,7 +12,6 @@ library DataTypes {
     uint256 premiumDrawnShares;
     uint256 premiumOffset; // todo make signed
     uint256 realizedPremium;
-    uint256 lastUpdateTimestamp; // todo: unneeded?
     DataTypes.SpokeConfig config;
   }
 
