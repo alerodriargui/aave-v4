@@ -57,7 +57,7 @@ contract VaultSpokeTests is SpokeBase {
     _openSupplyPosition(spoke2, _usdxReserveId(spoke2), usdxBorrowAmount);
     _openSupplyPosition(spoke2, _wethReserveId(spoke2), wethBorrowAmount);
 
-    // note: no callback to adapter on enabling as collateral
+    // note: no callback to adapter on enabling as collateral, potential for sync mismatch which is fine since no yield
     Utils.supplyCollateral(spoke1, vUsdxReserveId, alice, 3000e6, alice);
 
     address rec = makeAddr('rec');
@@ -66,10 +66,11 @@ contract VaultSpokeTests is SpokeBase {
     vm.prank(alice);
     spoke1.borrow(vUsdxReserveId, usdxBorrowAmount, rec);
 
+    // borrow existing reserve
     vm.expectEmit(address(tokenList.weth));
     emit IERC20.Transfer(address(hub), rec, wethBorrowAmount);
     vm.prank(alice);
-    spoke1.borrow(vWethReserveId, wethBorrowAmount, rec);
+    spoke1.borrow(_wethReserveId(spoke1), wethBorrowAmount, rec);
   }
 
   function test_repay_through_spoke() public {
@@ -87,7 +88,14 @@ contract VaultSpokeTests is SpokeBase {
     _mockReservePriceByPercent(spoke1, vUsdxReserveId, 1);
 
     vm.prank(alice);
-    spoke1.liquidationCall(vUsdxReserveId, vWethReserveId, alice, 0.1e18);
+    spoke1.liquidationCall(vUsdxReserveId, _wethReserveId(spoke1), alice, 0.1e18);
+  }
+
+  function test_looping() public {
+    _openSupplyPosition(spoke2, _usdxReserveId(spoke2), 2800e6);
+
+    Utils.supplyCollateral(spoke1, vUsdxReserveId, alice, 3000e6, alice);
+    Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 2800e6, alice);
   }
 
   function _registerAdapterOnHub(uint256 assetId, uint256 drawCap) internal {
