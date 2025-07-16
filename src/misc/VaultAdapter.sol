@@ -9,8 +9,9 @@ import {ISpoke} from 'src/interfaces/ISpoke.sol';
 
 /**
  * @dev Adapter contract to hold funds.
- * Acts as a liquidityHub to an existing Spoke and a Spoke to an existing liquidity hub.
- * Merges vault/safe into adapter.
+ * - Acts as a liquidityHub to an existing Spoke and a Spoke to an existing liquidity hub.
+ * - Merges vault/safe into adapter. Supply actions can be forwarded to Safe to hold liquidity.
+ * - Draw actions are forwarded to connected (one) hub.
  * todo extract core hub & spoke methods to inherit
  */
 contract VaultAdapter {
