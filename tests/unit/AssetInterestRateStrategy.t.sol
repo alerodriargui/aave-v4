@@ -4,9 +4,7 @@ pragma solidity ^0.8.10;
 import 'tests/Base.t.sol';
 
 contract AssetInterestRateStrategyTest is Base {
-  using WadRayMathExtended for uint16;
-  using WadRayMathExtended for uint32;
-  using WadRayMathExtended for uint256;
+  using WadRayMath for *;
 
   uint256 mockAssetId = uint256(keccak256('mockAssetId'));
 
@@ -170,9 +168,7 @@ contract AssetInterestRateStrategyTest is Base {
     });
   }
 
-  function test_calculateInterestRate_fuzz_ZeroDebt(
-    uint256 availableLiquidity
-  ) public {
+  function test_calculateInterestRate_fuzz_ZeroDebt(uint256 availableLiquidity) public {
     availableLiquidity = bound(availableLiquidity, 0, type(uint128).max);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
@@ -244,7 +240,7 @@ contract AssetInterestRateStrategyTest is Base {
         .variableRateSlope2
         .bpsToRay()
         .rayMulUp(utilizationRatioRay - rateData.optimalUsageRatio.bpsToRay())
-        .rayDivUp(WadRayMathExtended.RAY - rateData.optimalUsageRatio.bpsToRay());
+        .rayDivUp(WadRayMath.RAY - rateData.optimalUsageRatio.bpsToRay());
 
     if (baseDebt >= 1e27) {
       assertEq(variableBorrowRate, expectedVariableRate);
@@ -259,22 +255,15 @@ contract AssetInterestRateStrategyTest is Base {
 
   function _generateCalculateInterestRateParams(
     uint256 targetUtilizationRatioRay
-  )
-    internal
-    returns (
-      uint256 availableLiquidity,
-      uint256 baseDebt,
-      uint256 premiumDebt
-    )
-  {
+  ) internal returns (uint256 availableLiquidity, uint256 baseDebt, uint256 premiumDebt) {
     baseDebt = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
 
     // utilizationRatio = baseDebt / (baseDebt + availableLiquidity)
     // utilizationRatio * baseDebt + utilizationRatio * availableLiquidity = baseDebt
     // availableLiquidity = baseDebt * (1 - utilizationRatio) / utilizationRatio
-    availableLiquidity = baseDebt
-      .rayMulUp(WadRayMathExtended.RAY - targetUtilizationRatioRay)
-      .rayDivUp(targetUtilizationRatioRay);
+    availableLiquidity = baseDebt.rayMulUp(WadRayMath.RAY - targetUtilizationRatioRay).rayDivUp(
+      targetUtilizationRatioRay
+    );
 
     // unused in the current IR strategy
     premiumDebt = vm.randomUint();

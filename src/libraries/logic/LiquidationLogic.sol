@@ -3,15 +3,13 @@ pragma solidity ^0.8.0;
 
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {ISpoke} from 'src/interfaces/ISpoke.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
-import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 library LiquidationLogic {
-  using PercentageMathExtended for uint256;
-  using WadRayMathExtended for uint256;
+  using PercentageMath for uint256;
+  using WadRayMath for uint256;
   using MathUtils for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
@@ -28,8 +26,8 @@ library LiquidationLogic {
     ) {
       return liquidationBonus;
     }
-    uint256 minLiquidationBonus = (liquidationBonus - PercentageMathExtended.PERCENTAGE_FACTOR)
-      .percentMulDown(config.liquidationBonusFactor) + PercentageMathExtended.PERCENTAGE_FACTOR;
+    uint256 minLiquidationBonus = (liquidationBonus - PercentageMath.PERCENTAGE_FACTOR)
+      .percentMulDown(config.liquidationBonusFactor) + PercentageMath.PERCENTAGE_FACTOR;
     // if HF >= healthFactorLiquidationThreshold, liquidation bonus is min
     if (healthFactor >= healthFactorLiquidationThreshold) {
       return minLiquidationBonus;

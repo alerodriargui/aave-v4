@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallEdgeCasesTest is SpokeLiquidationBase {
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   /// test for liquidation call with max collateral amount equal to full collateral amount
   /// rare occurrence in single coll case, but can happen with multiple colls where 1 is fully liquidated

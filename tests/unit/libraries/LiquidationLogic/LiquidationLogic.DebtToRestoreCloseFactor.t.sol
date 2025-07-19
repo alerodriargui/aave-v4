@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicDebtToRestoreCloseFactorTest is LiquidationLogicBaseTest {
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
 
   /// fuzz test showing that the function does not revert when bounded properly
   function test_calculateDebtToRestoreCloseFactor_fuzz_non_negative(

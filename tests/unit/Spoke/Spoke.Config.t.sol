@@ -5,7 +5,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeConfigTest is SpokeBase {
   using SafeCast for uint256;
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
 
   function test_spoke_deploy() public {
     address predictedSpokeAddress = vm.computeCreateAddress(
@@ -114,15 +114,11 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateDynamicReserveConfig_fuzz(
     DataTypes.DynamicReserveConfig memory newConfig
   ) public {
-    newConfig.liquidationFee = bound(
-      newConfig.liquidationFee,
-      0,
-      PercentageMathExtended.PERCENTAGE_FACTOR
-    );
+    newConfig.liquidationFee = bound(newConfig.liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     newConfig.collateralFactor = uint16(bound(newConfig.collateralFactor, 0, 80_00));
     newConfig.liquidationBonus = bound(
       newConfig.liquidationBonus,
-      PercentageMathExtended.PERCENTAGE_FACTOR,
+      PercentageMath.PERCENTAGE_FACTOR,
       125_00
     );
 

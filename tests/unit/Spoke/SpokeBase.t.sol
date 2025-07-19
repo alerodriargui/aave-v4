@@ -6,9 +6,9 @@ import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.s
 
 contract SpokeBase is Base {
   using PercentageMath for uint256;
-  using PercentageMathExtended for uint256;
-  using WadRayMathExtended for uint256;
-  using PercentageMathExtended for uint256;
+  using PercentageMath for uint256;
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
   struct Debts {
@@ -423,6 +423,8 @@ contract SpokeBase is Base {
     uint256 debtReserveId,
     uint256 debtAmount
   ) internal view returns (uint256) {
+    if (debtAmount == 0) return 1;
+
     IPriceOracle oracle = spoke.oracle();
     DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
     DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
@@ -433,12 +435,13 @@ contract SpokeBase is Base {
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).decimals;
     uint256 debtPrice = oracle.getReservePrice(debtReserveId);
 
-    uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadify() / debtAssetUnits;
-    uint256 normalizedCollPrice = collPrice.wadify() / collAssetUnits;
+    uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadDivDown(debtAssetUnits);
+    uint256 normalizedCollPrice = collPrice.wadDivDown(collAssetUnits);
 
     return
-      (normalizedDebtAmount.wadify() /
-        normalizedCollPrice.wadify().percentMul(colDynConf.collateralFactor)) + 1;
+      normalizedDebtAmount.wadDivUp(
+        normalizedCollPrice.wadify().percentMulDown(colDynConf.collateralFactor)
+      );
   }
 
   function _calcMaxDebtAmount(
@@ -457,11 +460,11 @@ contract SpokeBase is Base {
     uint256 debtAssetUnits = 10 ** hub.getAsset(debtData.assetId).decimals;
     uint256 debtPrice = oracle.getReservePrice(debtReserveId);
 
-    uint256 normalizedDebtAmount = (debtPrice).wadify() / debtAssetUnits;
-    uint256 normalizedCollPrice = (collAmount * collPrice).wadify() / collAssetUnits;
+    uint256 normalizedDebtAmount = (debtPrice).wadDivDown(debtAssetUnits);
+    uint256 normalizedCollPrice = (collAmount * collPrice).wadDivDown(collAssetUnits);
 
     uint256 maxDebt = (
-      (normalizedCollPrice.wadify().percentMul(colDynConf.collateralFactor) /
+      (normalizedCollPrice.wadify().percentMulDown(colDynConf.collateralFactor) /
         normalizedDebtAmount.wadify())
     );
 

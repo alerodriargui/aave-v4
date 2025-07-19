@@ -5,8 +5,8 @@ import 'tests/unit/Spoke/Liquidations/Spoke.Liquidation.Base.t.sol';
 
 contract LiquidationCallScenarioTest is SpokeLiquidationBase {
   using PercentageMath for uint256;
-  using PercentageMathExtended for uint256;
-  using WadRayMathExtended for uint256;
+  using PercentageMath for uint256;
+  using WadRayMath for uint256;
 
   struct Amount {
     uint256 wbtc;
@@ -492,7 +492,7 @@ contract LiquidationCallScenarioTest is SpokeLiquidationBase {
       state.wbtcReserveId,
       state.collAmount.wbtc,
       state.wethReserveId
-    ).percentDiv(state.liqBonus);
+    ).percentDivDown(state.liqBonus);
 
     aliceDai.balanceBefore = tokenList.dai.balanceOf(alice);
     liquidatorDai.balanceBefore = tokenList.dai.balanceOf(LIQUIDATOR);
