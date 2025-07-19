@@ -29,6 +29,21 @@ let currentTime = 1n;
 
 const VIRTUAL_SHARES = 10n ** 6n;
 
+// user
+// offset -> trailingIndex
+// pShares = borrowedAmount / trailingIndex
+// offset = pShares * trailingIndex
+// premium debt = assets(pShares) - offset
+//              = pShares * index - offset
+//              = pShares * index - pShares * trailingIndex
+//              = sum of user.pShares * (num of users * index - sum user.trailingIndex)
+//              != user0pShares * (index - user0.trailingIndex) + user1pShares * (index - user1.trailingIndex)
+
+// spoke
+// offset => sum user.offset
+// spoke.trailingIndex = sum user.trailingIndex
+// spoke.realisedPremium
+
 // type/token transfers to differentiate supplied/debt shares
 // notify is unneeded since prototype assumes one asset on hub
 export class LiquidityHub {
@@ -341,7 +356,7 @@ export class Spoke {
       return {baseDebtRestored: baseDebt, premiumDebtRestored: premiumDebt};
     }
     const [baseDebtRestored, premiumDebtRestored] =
-      amount < premiumDebt ? [0n, amount] : [amount - premiumDebt, premiumDebt];
+      amount <= premiumDebt ? [0n, amount] : [amount - premiumDebt, premiumDebt];
 
     Utils.checkBound(baseDebt, premiumDebt, baseDebtRestored, premiumDebtRestored, user);
     return {baseDebtRestored, premiumDebtRestored};
