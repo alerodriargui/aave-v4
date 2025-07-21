@@ -310,14 +310,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertTrue(oldReceiverFees > 0);
 
     // spoke1 adds some assets
-    Utils.add({
-      hub: hub,
-      assetId: assetId,
-      spoke: address(spoke2),
-      amount: amount,
-      user: bob,
-      to: address(spoke2)
-    });
+    Utils.add({hub: hub, assetId: assetId, caller: address(spoke2), amount: amount, user: bob});
     uint256 newReceiverFees = hub.getSpokeSuppliedShares(assetId, newFeeReceiver);
 
     updateAssetFeeReceiver(hub, assetId, newFeeReceiver);
@@ -400,7 +393,10 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     assertNotEq(hub.getSpokeSuppliedShares(assetId, config.feeReceiver), futureFees);
   }
 
-  function _assumeValidAssetConfig(uint256 assetId, DataTypes.AssetConfig memory newConfig) public {
+  function _assumeValidAssetConfig(
+    uint256 assetId,
+    DataTypes.AssetConfig memory newConfig
+  ) internal pure {
     newConfig.liquidityFee = bound(newConfig.liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     vm.assume(address(newConfig.feeReceiver) != address(0) || newConfig.liquidityFee == 0);
     assumeNotPrecompile(newConfig.feeReceiver);
