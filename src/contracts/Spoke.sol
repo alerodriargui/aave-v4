@@ -863,7 +863,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetUnit
   ) internal view returns (uint256) {
     (uint256 baseDebt, uint256 premiumDebt) = _getUserDebt(hub, assetId, userPosition);
-    return ((baseDebt + premiumDebt) * assetPrice).wadify() / assetUnit;
+    return ((baseDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
   }
 
   function _getUserBalanceInBaseCurrency(
@@ -874,8 +874,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetUnit
   ) internal view returns (uint256) {
     return
-      (hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares) * assetPrice).wadify() /
-      assetUnit;
+      (hub.convertToSuppliedAssets(assetId, userPosition.suppliedShares) * assetPrice).wadDivDown(
+        assetUnit
+      );
   }
 
   function _getUserDebt(
