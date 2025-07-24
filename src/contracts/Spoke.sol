@@ -28,7 +28,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   uint256 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = WadRayMath.WAD;
-  uint256 public constant MAX_COLLARERAL_RISK = 1000_00; // 1000.00%
+  uint256 public constant MAX_COLLATERAL_RISK = 1000_00; // 1000.00%
 
   IAaveOracle public oracle;
   uint256[] public reservesList; // todo: rm, not needed

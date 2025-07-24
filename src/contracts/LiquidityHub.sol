@@ -58,7 +58,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       premiumDebt: 0
     });
 
-    uint256 baseDebtIndex = WadRayMathExtended.RAY;
+    uint256 baseDebtIndex = WadRayMath.RAY;
     uint256 lastUpdateTimestamp = block.timestamp;
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       active: true,

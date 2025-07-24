@@ -5,7 +5,7 @@ import 'tests/unit/LiquidityHub/LiquidityHubBase.t.sol';
 
 contract LiquidityHubConfigTest is LiquidityHubBase {
   using SharesMath for uint256;
-  using WadRayMathExtended for uint32;
+  using WadRayMath for uint32;
 
   bytes public encodedIrData;
 
@@ -207,7 +207,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     vm.expectEmit(address(hub));
     emit ILiquidityHub.AssetUpdated(
       expectedAssetId,
-      WadRayMathExtended.RAY,
+      WadRayMath.RAY,
       baseVariableBorrowRate.bpsToRay(),
       vm.getBlockTimestamp()
     );
