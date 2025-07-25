@@ -47,15 +47,13 @@ interface ILiquidityHub is IAccessManaged {
     uint256 indexed assetId,
     address indexed spoke,
     uint256 baseRestoredShares,
+    DataTypes.PremiumDelta premiumDelta,
     uint256 totalRestoredAmount
   );
   event RefreshPremiumDebt(
     uint256 indexed assetId,
     address indexed spoke,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    DataTypes.PremiumDelta premiumDelta
   );
   event AccrueFees(uint256 indexed assetId, uint256 shares);
 
@@ -79,7 +77,7 @@ interface ILiquidityHub is IAccessManaged {
   error InvalidAssetDecimals();
   error InvalidLiquidityFee();
   error InvalidUnderlying();
-  error InvalidDebtChange();
+  error PremiumDebtChanged();
   error InvalidFeeReceiver();
   error SpokeNotActive();
   error InvalidFeeShares();
@@ -127,7 +125,7 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Add/Supply asset on behalf of user.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to add/supply.
    * @param from The address which we pull assets from (user).
@@ -137,7 +135,7 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Remove/Withdraw supplied asset on behalf of user.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of asset liquidity to remove/withdraw.
    * @param to The address to transfer the assets to.
@@ -147,7 +145,7 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Draw/Borrow debt on behalf of user.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param amount The amount of debt to draw.
    * @param to The address to transfer the underlying assets to.
@@ -157,43 +155,36 @@ interface ILiquidityHub is IAccessManaged {
 
   /**
    * @notice Restores/Repays debt on behalf of user.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @dev Interest is always paid off first from premium, then from base.
    * @param assetId The identifier of the asset.
    * @param baseAmount The base debt to repay.
-   * @param premiumAmount The premium debt to repay.
+   * @param premiumDelta The premium debt delta to apply which signal premium debt repayment.
    * @param from The address to pull assets from.
    * @return The amount of base debt shares restored.
    */
   function restore(
     uint256 assetId,
     uint256 baseAmount,
-    uint256 premiumAmount,
+    DataTypes.PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256);
 
   /**
    * @notice Refreshes premium debt accounting.
-   * @dev To be called when moving accrued premium to realized premium.
-   * @dev Only callable by spokes.
-   * @dev Premium debt can only decrease by at most the amount of realized premium taken.
+   * @dev Only callable by active spokes, reverts with `SpokeNotActive` otherwise.
+   * @dev Overall premium debt should not decrease, reverts with `PremiumDebtChanged` otherwise.
    * @param assetId The identifier of the asset.
-   * @param premiumDrawnSharesDelta The change in premium drawn shares.
-   * @param premiumOffsetDelta The change in premium offset.
-   * @param realizedPremiumAdded The increase of realized premium.
-   * @param realizedPremiumTaken The decrease of realized premium.
+   * @param premiumDelta The change in premium debt.
    */
   function refreshPremiumDebt(
     uint256 assetId,
-    int256 premiumDrawnSharesDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    DataTypes.PremiumDelta calldata premiumDelta
   ) external;
 
   /**
    * @notice Pay existing liquidity to feeReceiver.
-   * @dev Only callable by spokes.
+   * @dev Only callable by active spokes.
    * @param assetId The identifier of the asset.
    * @param shares The amount of shares to pay to feeReceiver.
    */

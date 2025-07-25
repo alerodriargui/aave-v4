@@ -219,16 +219,17 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   function restore(
     uint256 assetId,
     uint256 baseAmount,
-    uint256 premiumAmount,
+    DataTypes.PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256) {
-    // global & spoke premiumDebt (ghost, offset, realized) is *expected* to be updated on the `refreshPremiumDebt` callback
-
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
+    uint256 premiumDebtBefore = asset.premiumDebt();
+    _applyPremiumDelta(asset, spoke, premiumDelta);
+    uint256 premiumAmount = premiumDebtBefore - asset.premiumDebt(); // asserts premium should not have increased
     _validateRestore(asset, spoke, baseAmount, premiumAmount, from);
 
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
@@ -237,12 +238,11 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
     asset.availableLiquidity += totalRestoredAmount;
 
-    /// @dev premium debt must be restored in `refreshPremiumDebt` before calling this function
     asset.updateBorrowRate(assetId);
 
     IERC20(asset.underlying).safeTransferFrom(from, address(this), totalRestoredAmount);
 
-    emit Restore(assetId, msg.sender, baseDrawnSharesRestored, totalRestoredAmount);
+    emit Restore(assetId, msg.sender, baseDrawnSharesRestored, premiumDelta, totalRestoredAmount);
 
     return baseDrawnSharesRestored;
   }
@@ -250,29 +250,22 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   /// @inheritdoc ILiquidityHub
   function refreshPremiumDebt(
     uint256 assetId,
-    int256 premiumDrawnShareDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+    DataTypes.PremiumDelta calldata premiumDelta
   ) external {
-    require(_spokes[assetId][msg.sender].config.active, SpokeNotActive());
-
     DataTypes.Asset storage asset = _assets[assetId];
+    DataTypes.SpokeData storage spoke = _spokes[assetId][msg.sender];
+    require(spoke.config.active, SpokeNotActive());
+
+    // accrue interest and liquidity fees
+    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
 
     uint256 premiumDebtBefore = asset.premiumDebt();
-    _refresh(
-      assetId,
-      msg.sender,
-      premiumDrawnShareDelta,
-      premiumOffsetDelta,
-      realizedPremiumAdded,
-      realizedPremiumTaken
-    );
-    uint256 premiumDebtAfter = asset.premiumDebt();
+    _applyPremiumDelta(asset, spoke, premiumDelta);
     // can increase due to precision loss on premium debt (base unchanged)
     // todo mathematically find premium diff ceiling and replace the `2`
-    // if no premium debt is restored, premium debt remains unchanged
-    require(premiumDebtAfter + realizedPremiumTaken - premiumDebtBefore <= 2, InvalidDebtChange());
+    require(asset.premiumDebt() - premiumDebtBefore <= 2, PremiumDebtChanged());
+
+    emit RefreshPremiumDebt(assetId, msg.sender, premiumDelta);
   }
 
   /// @inheritdoc ILiquidityHub
@@ -298,36 +291,18 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     emit Add(assetId, feeReceiver, feeShares, feeAmount);
   }
 
-  function _refresh(
-    uint256 assetId,
-    address spokeAddress,
-    int256 premiumDrawnShareDelta,
-    int256 premiumOffsetDelta,
-    uint256 realizedPremiumAdded,
-    uint256 realizedPremiumTaken
+  function _applyPremiumDelta(
+    DataTypes.Asset storage asset,
+    DataTypes.SpokeData storage spoke,
+    DataTypes.PremiumDelta calldata premium
   ) internal {
-    DataTypes.Asset storage asset = _assets[assetId];
-    DataTypes.SpokeData storage spoke = _spokes[assetId][spokeAddress];
+    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premium.drawnSharesDelta);
+    asset.premiumOffset = _add(asset.premiumOffset, premium.offsetDelta);
+    asset.realizedPremium = _add(asset.realizedPremium, premium.realizedDelta);
 
-    // accrue interest and liquidity fees
-    asset.accrue(assetId, _spokes[assetId][asset.config.feeReceiver]);
-
-    asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
-    asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
-    asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
-
-    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
-    spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
-    spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
-
-    emit RefreshPremiumDebt(
-      assetId,
-      spokeAddress,
-      premiumDrawnShareDelta,
-      premiumOffsetDelta,
-      realizedPremiumAdded,
-      realizedPremiumTaken
-    );
+    spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premium.drawnSharesDelta);
+    spoke.premiumOffset = _add(spoke.premiumOffset, premium.offsetDelta);
+    spoke.realizedPremium = _add(spoke.realizedPremium, premium.realizedDelta);
   }
 
   /// @inheritdoc ILiquidityHub
