@@ -36,6 +36,7 @@ import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusWrapper} from 'tests/mocks/PositionStatusWrapper.sol';
 
 // dependencies
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
@@ -1294,11 +1295,11 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
-    IPriceOracle oracle = spoke.oracle();
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
-      (amount * oracle.getReservePrice(reserveId).wadify()) /
-      (10 ** hub.getAsset(assetId).decimals);
+      (amount * spoke.oracle().getReservePrice(reserveId)).wadDivDown(
+        10 ** hub.getAsset(assetId).decimals
+      );
   }
 
   /// @notice Convert 1 asset amount to equivalent amount in another asset.
@@ -1598,12 +1599,25 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 amount
   ) internal view returns (uint256) {
-    IPriceOracle oracle = spoke.oracle();
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
       _convertAmountToBaseCurrency(
         amount,
-        oracle.getReservePrice(reserveId),
+        spoke.oracle().getReservePrice(reserveId),
+        10 ** hub.getAsset(assetId).decimals
+      );
+  }
+
+  function _convertDebtAmountToBaseCurrency(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount
+  ) internal view returns (uint256) {
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+    return
+      _convertDebtAmountToBaseCurrency(
+        amount,
+        spoke.oracle().getReservePrice(reserveId),
         10 ** hub.getAsset(assetId).decimals
       );
   }
@@ -1613,7 +1627,15 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return (amount * assetPrice).wadify() / assetUnit;
+    return (amount * assetPrice).wadDivDown(assetUnit);
+  }
+
+  function _convertDebtAmountToBaseCurrency(
+    uint256 amount,
+    uint256 assetPrice,
+    uint256 assetUnit
+  ) internal pure returns (uint256) {
+    return (amount * assetPrice).wadDivUp(assetUnit);
   }
 
   function _convertBaseCurrencyToAmount(
@@ -1622,11 +1644,10 @@ abstract contract Base is Test {
     uint256 baseCurrencyAmount
   ) internal view returns (uint256) {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    IPriceOracle oracle = spoke.oracle();
     return
       _convertBaseCurrencyToAmount(
         baseCurrencyAmount,
-        oracle.getReservePrice(reserveId),
+        spoke.oracle().getReservePrice(reserveId),
         10 ** hub.getAsset(assetId).decimals
       );
   }

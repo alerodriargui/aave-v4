@@ -179,13 +179,24 @@ library WadRayMath {
   }
 
   /**
-   * @notice Truncates number from Wad precision
+   * @notice Truncates number from Wad precision, rounding down
    * @param a The number in Wad precision
-   * @return b (= a / 1e18)
+   * @return b (= floor(a / 1e18))
    */
   function dewadifyDown(uint256 a) internal pure returns (uint256 b) {
     assembly {
       b := div(a, WAD)
+    }
+  }
+
+  /**
+   * @notice Truncates number from Wad precision, rounding up
+   * @param a The number in Wad precision
+   * @return b (= ceil(a / 1e18))
+   */
+  function dewadifyUp(uint256 a) internal pure returns (uint256 b) {
+    assembly {
+      b := add(div(a, WAD), gt(mod(a, WAD), 0))
     }
   }
 

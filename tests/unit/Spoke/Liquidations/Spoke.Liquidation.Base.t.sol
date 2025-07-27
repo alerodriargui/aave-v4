@@ -273,7 +273,11 @@ contract SpokeLiquidationBase is SpokeBase {
 
     // at low amounts of coll/debt, HF can diverge from close factor due to rounding/precision
     if (
-      _convertAmountToBaseCurrency(spoke, state.debtReserve.reserveId, state.debt.balanceAfter) >
+      _convertDebtAmountToBaseCurrency(
+        spoke,
+        state.debtReserve.reserveId,
+        state.debt.balanceAfter
+      ) >
       MIN_AMOUNT_IN_BASE_CURRENCY &&
       _convertAmountToBaseCurrency(
         spoke,
@@ -598,12 +602,12 @@ contract SpokeLiquidationBase is SpokeBase {
       state.collateralReserve.reserveId,
       state.liquidatorCollateral.balanceChange
     );
-    state.liquidatorDebt.baseChange = _convertAmountToBaseCurrency(
+    state.liquidatorDebt.baseChange = _convertDebtAmountToBaseCurrency(
       spoke1,
-      state.collateralReserve.reserveId,
+      state.debtReserve.reserveId,
       state.liquidatorDebt.balanceChange
     );
-    state.debt.baseChange = _convertAmountToBaseCurrency(
+    state.debt.baseChange = _convertDebtAmountToBaseCurrency(
       spoke1,
       state.debtReserve.reserveId,
       state.debt.balanceChange

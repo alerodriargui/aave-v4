@@ -236,7 +236,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
     uint256 closeFactor = params.closeFactor;
 
     // separately derive health factor to compare vs close factor
-    uint256 debtBaseCurrencyRestored = _convertAmountToBaseCurrency(
+    uint256 debtBaseCurrencyRestored = _convertDebtAmountToBaseCurrency(
       closeFactorDebt,
       params.debtAssetPrice,
       params.debtAssetUnit
@@ -313,7 +313,7 @@ contract LiquidationLogicDebtToRestoreCloseFactorScenarioTest is LiquidationLogi
       DataTypes.Reserve memory reserve = spoke.getReserve(debts[i].reserveId);
       uint256 debtAssetUnit = 10 ** reserve.decimals;
       uint256 debtAssetPrice = oracle.getReservePrice(reserve.reserveId);
-      uint256 amountInBase = _convertAmountToBaseCurrency(
+      uint256 amountInBase = _convertDebtAmountToBaseCurrency(
         debts[i].amount,
         debtAssetPrice,
         debtAssetUnit

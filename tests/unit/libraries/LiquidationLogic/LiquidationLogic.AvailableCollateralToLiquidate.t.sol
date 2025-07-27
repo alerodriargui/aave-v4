@@ -281,7 +281,8 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     TestAvailableCollateralParams memory params
   ) internal pure returns (uint256) {
     return
-      ((params.actualDebtToLiquidate * params.debtAssetPrice).wadify() / params.debtAssetUnit)
+      ((params.actualDebtToLiquidate * params.debtAssetPrice))
+        .wadDivUp(params.debtAssetUnit)
         .percentMulDown(params.liquidationBonus);
   }
 
@@ -303,12 +304,12 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     TestAvailableCollateralParams memory params
   ) internal pure returns (uint256) {
     uint256 userCollateralBalanceInBaseCurrency = (params.userCollateralBalance *
-      params.collateralAssetPrice).wadify() / params.collateralAssetUnit;
+      params.collateralAssetPrice).wadDivDown(params.collateralAssetUnit);
 
     return
       ((params.debtAssetUnit * userCollateralBalanceInBaseCurrency) / params.debtAssetPrice)
         .percentDivDown(params.liquidationBonus)
-        .dewadifyDown();
+        .dewadifyUp();
   }
 
   // internal helper to trigger revert checks
