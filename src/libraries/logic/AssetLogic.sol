@@ -9,6 +9,7 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+import {console2 as console} from 'forge-std/console2.sol';
 
 library AssetLogic {
   using AssetLogic for DataTypes.Asset;
@@ -55,8 +56,15 @@ library AssetLogic {
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset;
-    return asset.realizedPremium + accruedPremium;
+    uint256 premiumAssets = asset.toDrawnAssetsUp(asset.premiumDrawnShares);
+    uint256 accruedPremium = premiumAssets.zeroFloorSub(asset.premiumOffset);
+    uint256 ret = asset.realizedPremium + accruedPremium;
+    console.log();
+    console.log('premiumAssets %e (premiumShares %e)', premiumAssets, asset.premiumDrawnShares);
+    console.log('realized %e, premiumOffset %e', asset.realizedPremium, asset.premiumOffset);
+    console.log('accrued %e', accruedPremium);
+    console.log('premiumDebt %e', ret);
+    return ret;
   }
 
   function debt(DataTypes.Asset storage asset) internal view returns (uint256, uint256) {

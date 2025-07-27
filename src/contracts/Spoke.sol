@@ -257,44 +257,33 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     _validateRepay(reserve);
 
-    DataTypes.ExecuteRepayLocalVars memory vars;
-    vars.hub = reserve.hub;
-    vars.assetId = reserve.assetId;
-    (vars.baseDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
-      vars.hub,
-      vars.assetId,
-      userPosition
-    );
-    (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
-      vars.baseDebt,
-      vars.premiumDebt,
-      amount
-    );
+    ILiquidityHub hub = reserve.hub;
+    uint256 assetId = reserve.assetId;
+    (
+      uint256 baseDebtRestored,
+      uint256 premiumDebtRestored,
+      uint256 accruedPremium
+    ) = _previewRestore(hub, assetId, userPosition, amount);
 
     DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
       drawnSharesDelta: -int256(userPosition.premiumDrawnShares),
       offsetDelta: -int256(userPosition.premiumOffset),
-      realizedDelta: int256(vars.accruedPremium) - int256(vars.premiumDebtRestored)
+      realizedDelta: int256(accruedPremium) - int256(premiumDebtRestored)
     });
-    vars.restoredShares = vars.hub.restore(
-      vars.assetId,
-      vars.baseDebtRestored,
-      premiumDelta,
-      msg.sender
-    );
+    uint256 restoredShares = hub.restore(assetId, baseDebtRestored, premiumDelta, msg.sender);
 
-    reserve.baseDrawnShares -= vars.restoredShares;
-    userPosition.baseDrawnShares -= vars.restoredShares;
+    reserve.baseDrawnShares -= restoredShares;
+    userPosition.baseDrawnShares -= restoredShares;
     _settlePremiumDebt(reserve, userPosition, premiumDelta);
 
     if (userPosition.baseDrawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
     }
 
-    (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, vars.newUserRiskPremium);
+    (uint256 newUserRiskPremium, , , , ) = _calculateUserAccountData(onBehalfOf);
+    _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
 
-    emit Repay(reserveId, msg.sender, onBehalfOf, vars.restoredShares);
+    emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares);
   }
 
   function liquidationCall(
@@ -693,6 +682,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     require(!usingAsCollateral || !reserve.config.frozen, ReserveFrozen());
   }
 
+  function _previewRestore(
+    ILiquidityHub hub,
+    uint256 assetId,
+    DataTypes.UserPosition storage userPosition,
+    uint256 amount
+  ) internal view returns (uint256, uint256, uint256) {
+    (uint256 base, uint256 premium, uint256 accrued) = _getUserDebt(hub, assetId, userPosition);
+    (base, premium) = _calculateRestoreAmount(base, premium, amount);
+    return (base, premium, accrued);
+  }
+
   // @dev allows donation on base debt
   function _calculateRestoreAmount(
     uint256 baseDebt,
@@ -901,8 +901,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetId,
     DataTypes.UserPosition storage userPosition
   ) internal view returns (uint256, uint256, uint256) {
-    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, userPosition.premiumDrawnShares) -
-      userPosition.premiumOffset;
+    uint256 accruedPremium = hub
+      .convertToDrawnAssets(assetId, userPosition.premiumDrawnShares)
+      .zeroFloorSub(userPosition.premiumOffset);
     return (
       hub.convertToDrawnAssets(assetId, userPosition.baseDrawnShares),
       userPosition.realizedPremium + accruedPremium,
@@ -916,8 +917,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal view returns (uint256, uint256) {
     uint256 assetId = reserve.assetId;
     ILiquidityHub hub = reserve.hub;
-    uint256 accruedPremium = hub.convertToDrawnAssets(assetId, reserve.premiumDrawnShares) -
-      reserve.premiumOffset;
+    uint256 accruedPremium = hub
+      .convertToDrawnAssets(assetId, reserve.premiumDrawnShares)
+      .zeroFloorSub(reserve.premiumOffset);
     return (
       hub.convertToDrawnAssets(assetId, reserve.baseDrawnShares),
       reserve.realizedPremium + accruedPremium
@@ -945,10 +947,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
         uint256 oldUserPremiumDrawnShares = userPosition.premiumDrawnShares;
         uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-        uint256 accruedUserPremium = vars.hub.convertToDrawnAssets(
-          vars.assetId,
-          oldUserPremiumDrawnShares
-        ) - oldUserPremiumOffset;
+        uint256 accruedUserPremium = vars
+          .hub
+          .convertToDrawnAssets(vars.assetId, oldUserPremiumDrawnShares)
+          .zeroFloorSub(oldUserPremiumOffset);
 
         userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMulUp(
           newUserRiskPremium

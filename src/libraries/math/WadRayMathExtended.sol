@@ -14,6 +14,20 @@ library WadRayMathExtended {
   uint256 internal constant RAY = 1e27;
   uint256 internal constant PERCENTAGE_FACTOR = 1e4;
 
+  /// @dev Returns max(0, x - y).
+  function zeroFloorSub(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    assembly {
+      z := mul(gt(x, y), sub(x, y))
+    }
+  }
+
+  function absDiff(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    if (x > y) {
+      return x - y;
+    }
+    return y - x;
+  }
+
   /**
    * @dev Multiplies two wad, rounding down
    * @dev assembly optimized for improved gas savings, see https://twitter.com/transmissions11/status/1451131036377571328

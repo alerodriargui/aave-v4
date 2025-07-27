@@ -261,9 +261,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     uint256 premiumDebtBefore = asset.premiumDebt();
     _applyPremiumDelta(asset, spoke, premiumDelta);
-    // can increase due to precision loss on premium debt (base unchanged)
-    // todo mathematically find premium diff ceiling and replace the `2`
-    require(asset.premiumDebt() - premiumDebtBefore <= 2, PremiumDebtChanged());
+    require(asset.premiumDebt().absDiff(premiumDebtBefore) < 2, PremiumDebtChanged());
 
     emit RefreshPremiumDebt(assetId, msg.sender, premiumDelta);
   }
@@ -386,7 +384,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   function previewOffset(uint256 assetId, uint256 shares) external view returns (uint256) {
-    return _assets[assetId].toDrawnAssetsDown(shares);
+    return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
   function previewDrawnIndex(uint256 assetId) external view returns (uint256) {
