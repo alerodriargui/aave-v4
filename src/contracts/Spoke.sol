@@ -260,32 +260,23 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.ExecuteRepayLocalVars memory vars;
     vars.hub = reserve.hub;
     vars.assetId = reserve.assetId;
-    (vars.baseDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
+
+    (vars.baseDebtRestored, vars.premiumDelta) = _calculateRestoreParams(
       vars.hub,
       vars.assetId,
-      userPosition
-    );
-    (vars.baseDebtRestored, vars.premiumDebtRestored) = _calculateRestoreAmount(
-      vars.baseDebt,
-      vars.premiumDebt,
+      userPosition,
       amount
     );
-
-    DataTypes.PremiumDelta memory premiumDelta = DataTypes.PremiumDelta({
-      drawnSharesDelta: -int256(userPosition.premiumDrawnShares),
-      offsetDelta: -int256(userPosition.premiumOffset),
-      realizedDelta: int256(vars.accruedPremium) - int256(vars.premiumDebtRestored)
-    });
     vars.restoredShares = vars.hub.restore(
       vars.assetId,
       vars.baseDebtRestored,
-      premiumDelta,
+      vars.premiumDelta,
       msg.sender
     );
 
     reserve.baseDrawnShares -= vars.restoredShares;
     userPosition.baseDrawnShares -= vars.restoredShares;
-    _settlePremiumDebt(reserve, userPosition, premiumDelta);
+    _settlePremiumDebt(reserve, userPosition, vars.premiumDelta);
 
     if (userPosition.baseDrawnShares == 0) {
       _positionStatus[onBehalfOf].setBorrowing(reserveId, false);
@@ -561,6 +552,49 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   // internal
+  function _calculateRestoreParams(
+    ILiquidityHub hub,
+    uint256 assetId,
+    DataTypes.UserPosition storage userPosition,
+    uint256 amount
+  ) internal view returns (uint256, DataTypes.PremiumDelta memory) {
+    (uint256 baseDebt, uint256 premiumDebt, ) = _getUserDebt(hub, assetId, userPosition);
+    (uint256 baseRestore, uint256 premiumRestore) = _calculateRestoreAmount(
+      baseDebt,
+      premiumDebt,
+      amount
+    );
+
+    if (premiumRestore == premiumDebt) {
+      return (
+        baseRestore,
+        DataTypes.PremiumDelta({
+          drawnSharesDelta: -int256(userPosition.premiumDrawnShares),
+          offsetDelta: -int256(userPosition.premiumOffset),
+          realizedDelta: -int256(userPosition.realizedPremium)
+        })
+      );
+    } else if (premiumRestore > userPosition.realizedPremium) {
+      return (
+        baseRestore,
+        DataTypes.PremiumDelta({
+          drawnSharesDelta: 0,
+          offsetDelta: int256(premiumRestore - userPosition.realizedPremium),
+          realizedDelta: -int256(userPosition.realizedPremium)
+        })
+      );
+    } else if (premiumRestore <= userPosition.realizedPremium) {
+      return (
+        baseRestore,
+        DataTypes.PremiumDelta({
+          drawnSharesDelta: 0,
+          offsetDelta: 0,
+          realizedDelta: int256(userPosition.realizedPremium) - int256(premiumRestore)
+        })
+      );
+    } else revert('unexpected');
+  }
+
   function _validateSupply(DataTypes.Reserve storage reserve) internal view {
     require(reserve.underlying != address(0), ReserveNotListed());
     require(!reserve.config.paused, ReservePaused());

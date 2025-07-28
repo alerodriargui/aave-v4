@@ -188,11 +188,8 @@ library DataTypes {
   struct ExecuteRepayLocalVars {
     ILiquidityHub hub;
     uint256 assetId;
-    uint256 baseDebt;
-    uint256 premiumDebt;
-    uint256 accruedPremium;
     uint256 baseDebtRestored;
-    uint256 premiumDebtRestored;
+    DataTypes.PremiumDelta premiumDelta;
     uint256 newUserRiskPremium;
     uint256 restoredShares;
   }
