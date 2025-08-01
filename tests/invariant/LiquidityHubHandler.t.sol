@@ -69,7 +69,8 @@ contract LiquidityHubHandler is Test {
       DataTypes.AssetConfig({
         feeReceiver: address(treasurySpoke),
         liquidityFee: 0,
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     spoke1.addReserve(

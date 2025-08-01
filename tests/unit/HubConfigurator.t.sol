@@ -127,7 +127,8 @@ contract HubConfiguratorTest is LiquidityHubBase {
     DataTypes.AssetConfig memory expectedConfig = DataTypes.AssetConfig({
       liquidityFee: 0,
       feeReceiver: feeReceiver,
-      irStrategy: interestRateStrategy
+      irStrategy: interestRateStrategy,
+      reinvestmentStrategy: address(0)
     });
     DataTypes.SpokeConfig memory expectedSpokeConfig = DataTypes.SpokeConfig({
       supplyCap: type(uint256).max,
@@ -402,7 +403,8 @@ contract HubConfiguratorTest is LiquidityHubBase {
       DataTypes.AssetConfig({
         liquidityFee: 0,
         feeReceiver: vm.randomAddress(),
-        irStrategy: vm.randomAddress()
+        irStrategy: vm.randomAddress(),
+        reinvestmentStrategy: address(0)
       })
     );
   }
@@ -411,7 +413,8 @@ contract HubConfiguratorTest is LiquidityHubBase {
     DataTypes.AssetConfig memory newAssetConfig = DataTypes.AssetConfig({
       liquidityFee: 0,
       feeReceiver: makeAddr('newFeeReceiver'),
-      irStrategy: makeAddr('newInterestRateStrategy')
+      irStrategy: makeAddr('newInterestRateStrategy'),
+      reinvestmentStrategy: address(0)
     });
     _mockInterestRateBps(newAssetConfig.irStrategy, 5_00);
 

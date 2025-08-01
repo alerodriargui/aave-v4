@@ -20,6 +20,7 @@ library DataTypes {
     uint8 decimals;
     uint256 suppliedShares;
     uint256 availableLiquidity;
+    uint256 sweeped;
     uint256 baseDrawnShares;
     uint256 premiumDrawnShares;
     uint256 premiumOffset; // todo make signed
@@ -41,6 +42,7 @@ library DataTypes {
     address feeReceiver;
     uint256 liquidityFee;
     address irStrategy;
+    address reinvestmentStrategy;
   }
 
   // Spoke types

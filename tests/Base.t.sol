@@ -391,7 +391,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add USDX
@@ -408,7 +409,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add DAI
@@ -425,7 +427,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add WBTC
@@ -442,7 +445,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add USDY
@@ -459,7 +463,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add DAI again
@@ -476,7 +481,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
 

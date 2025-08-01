@@ -11,7 +11,8 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
-      irStrategy: address(irStrategy)
+      irStrategy: address(irStrategy),
+      reinvestmentStrategy: address(0)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
@@ -240,7 +241,8 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     DataTypes.AssetConfig memory assetConfig = DataTypes.AssetConfig({
       feeReceiver: address(treasurySpoke),
       liquidityFee: 0,
-      irStrategy: address(irStrategy)
+      irStrategy: address(irStrategy),
+      reinvestmentStrategy: address(0)
     });
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,

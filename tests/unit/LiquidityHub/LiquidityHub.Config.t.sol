@@ -196,7 +196,8 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     DataTypes.AssetConfig memory expectedConfig = DataTypes.AssetConfig({
       feeReceiver: feeReceiver,
       liquidityFee: 0,
-      irStrategy: interestRateStrategy
+      irStrategy: interestRateStrategy,
+      reinvestmentStrategy: address(0)
     });
 
     (, uint32 baseVariableBorrowRate, , ) = abi.decode(

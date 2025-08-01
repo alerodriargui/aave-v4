@@ -66,7 +66,8 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     DataTypes.AssetConfig memory config = DataTypes.AssetConfig({
       feeReceiver: feeReceiver,
       liquidityFee: 0,
-      irStrategy: irStrategy
+      irStrategy: irStrategy,
+      reinvestmentStrategy: address(0)
     });
     _assets[assetId] = DataTypes.Asset({
       underlying: underlying,
@@ -81,6 +82,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       baseBorrowRate: baseBorrowRate,
       lastUpdateTimestamp: lastUpdateTimestamp,
       deficit: 0,
+      sweeped: 0,
       config: config
     });
 
