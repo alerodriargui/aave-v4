@@ -104,6 +104,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       decimals,
       feeReceiver,
       interestRateStrategy,
+      address(0),
       encodedIrData
     );
   }
@@ -121,6 +122,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       decimals,
       feeReceiver,
       interestRateStrategy,
+      address(0),
       encodedIrData
     );
   }
@@ -143,6 +145,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       decimals,
       address(0),
       interestRateStrategy,
+      address(0),
       encodedIrData
     );
   }
@@ -158,7 +161,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
     decimals = uint8(bound(decimals, 0, hub.MAX_ALLOWED_ASSET_DECIMALS()));
 
     vm.expectRevert(ILiquidityHub.InvalidIrStrategy.selector);
-    Utils.addAsset(hub, ADMIN, underlying, decimals, feeReceiver, address(0), encodedIrData);
+    Utils.addAsset(hub, ADMIN, underlying, decimals, feeReceiver, address(0), address(0), encodedIrData);
   }
 
   function test_addAsset_fuzz_reverts_InvalidIrData(
@@ -180,6 +183,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       decimals,
       feeReceiver,
       interestRateStrategy,
+      address(0),
       abi.encode('invalid')
     );
   }
@@ -224,6 +228,7 @@ contract LiquidityHubConfigTest is LiquidityHubBase {
       decimals,
       feeReceiver,
       interestRateStrategy,
+      address(0),
       encodedIrData
     );
 

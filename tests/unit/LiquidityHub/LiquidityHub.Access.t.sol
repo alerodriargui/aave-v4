@@ -33,11 +33,11 @@ contract LiquidityHubAccessTest is LiquidityHubBase {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), address(0), encodedIrData);
 
     // Hub Admin can add assets to the hub
     vm.prank(HUB_ADMIN);
-    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+    hub.addAsset(address(tokenA), 18, address(treasurySpoke), address(irStrategy), address(0), encodedIrData);
     uint256 assetAId = hub.getAssetCount() - 1; // Asset A Id
 
     // Only Hub Admin can update asset config

@@ -31,6 +31,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       assetA.decimals(),
       address(treasurySpoke),
       address(newIrStrategy),
+      address(0),
       encodedIrData
     );
     isolationVars.assetAId = newHub.getAssetCount() - 1;
@@ -39,6 +40,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       assetB.decimals(),
       address(treasurySpoke),
       address(newIrStrategy),
+      address(0),
       encodedIrData
     );
     isolationVars.assetBId = newHub.getAssetCount() - 1;
@@ -98,6 +100,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       assetB.decimals(),
       address(treasurySpoke),
       address(irStrategy), // Use the main hub's interest rate strategy
+      address(0),
       encodedIrData
     );
 

@@ -39,6 +39,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       assetB.decimals(),
       address(treasurySpoke),
       address(newIrStrategy),
+      address(0),
       encodedIrData
     );
     siloedVars.assetBId = newHub.getAssetCount() - 1;
@@ -74,6 +75,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       assetA.decimals(),
       address(treasurySpoke),
       address(irStrategy), // Use the canonical hub's interest rate strategy
+      address(0),
       encodedIrData
     );
     siloedVars.assetAId = hub.getAssetCount() - 1;

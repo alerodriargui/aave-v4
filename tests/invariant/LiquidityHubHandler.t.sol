@@ -63,7 +63,7 @@ contract LiquidityHubHandler is Test {
 
     vm.startPrank(hubAdmin);
     // Add dai
-    hub.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy), encodedIrData);
+    hub.addAsset(address(dai), 18, address(treasurySpoke), address(irStrategy), address(0), encodedIrData);
     hub.updateAssetConfig(
       0,
       DataTypes.AssetConfig({

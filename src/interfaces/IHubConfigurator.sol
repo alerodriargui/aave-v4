@@ -22,6 +22,7 @@ interface IHubConfigurator {
    * @param underlying The address of the underlying asset.
    * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
+   * @param reinvestmentStrategy The address of the reinvestment strategy contract. Can be address(0) on initialization.
    * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
    * @return The unique identifier of the added asset.
    */
@@ -30,6 +31,7 @@ interface IHubConfigurator {
     address underlying,
     address feeReceiver,
     address irStrategy,
+    address reinvestmentStrategy,
     bytes calldata data
   ) external returns (uint256);
 
@@ -42,6 +44,7 @@ interface IHubConfigurator {
    * @param decimals The number of decimals of the asset.
    * @param feeReceiver The address of the fee receiver spoke.
    * @param irStrategy The address of the interest rate strategy contract.
+   * @param reinvestmentStrategy The address of the reinvestment strategy contract. Can be address(0) on initialization.
    * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
    * @return The unique identifier of the added asset.
    */
@@ -51,6 +54,7 @@ interface IHubConfigurator {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
+    address reinvestmentStrategy,
     bytes calldata data
   ) external returns (uint256);
 

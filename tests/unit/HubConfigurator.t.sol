@@ -140,7 +140,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
       address(hub),
       abi.encodeCall(
         ILiquidityHub.addAsset,
-        (underlying, decimals, feeReceiver, interestRateStrategy, encodedIrData)
+        (underlying, decimals, feeReceiver, interestRateStrategy, address(0), encodedIrData)
       )
     );
 
@@ -717,6 +717,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
           underlying,
           feeReceiver,
           interestRateStrategy,
+          address(0),
           encodedIrData
         );
     } else {
@@ -727,6 +728,7 @@ contract HubConfiguratorTest is LiquidityHubBase {
           decimals,
           feeReceiver,
           interestRateStrategy,
+          address(0),
           encodedIrData
         );
     }

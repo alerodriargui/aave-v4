@@ -45,6 +45,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     uint8 decimals,
     address feeReceiver,
     address irStrategy,
+    address reinvestmentStrategy,
     bytes calldata data
   ) external restricted returns (uint256) {
     require(underlying != address(0), InvalidUnderlying());
@@ -67,7 +68,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: irStrategy,
-      reinvestmentStrategy: address(0)
+      reinvestmentStrategy: reinvestmentStrategy
     });
     _assets[assetId] = DataTypes.Asset({
       underlying: underlying,
