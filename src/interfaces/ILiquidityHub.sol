@@ -104,6 +104,7 @@ interface ILiquidityHub is IAccessManaged {
   error SurplusDeficitReported(uint256 amount);
   error SpokeNotActive();
   error InvalidFeeShares();
+  error InvalidReinvestmentStrategy();
 
   /**
    * @notice Adds a new asset to the hub.
@@ -375,6 +376,13 @@ interface ILiquidityHub is IAccessManaged {
 
   function getAvailableLiquidity(uint256 assetId) external view returns (uint256);
 
+  /**
+   * @notice Return the amount sweeped (reinvested) for a certain assetId.
+   * @param assetId The identifier of the asset.
+   * @return The sweeped amount for the asset.
+   */
+  function getSweeped(uint256 assetId) external view returns (uint256);
+
   function getDeficit(uint256 assetId) external view returns (uint256);
 
   function getBaseInterestRate(uint256 assetId) external view returns (uint256);
@@ -406,4 +414,19 @@ interface ILiquidityHub is IAccessManaged {
   function getAssetCount() external view returns (uint256);
 
   function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint8);
+
+  /**
+   * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the Reinvestment Strategy and updates accounting.
+   * @dev The Reinvestment Strategy handles the actual reinvestment of the funds and the redistribution of the interest.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount sweeped.
+   */
+  function sweep(uint256 assetId, uint256 amount) external;
+
+  /**
+   * @notice Reclaims an amount of liquidity of the corresponding asset from the Reinvestment Strategy and updates accounting.
+   * @param assetId The identifier of the asset.
+   * @param amount The amount sweeped.
+   */
+  function reclaim(uint256 assetId, uint256 amount) external;
 }

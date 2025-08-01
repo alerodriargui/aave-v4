@@ -6,6 +6,7 @@ import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IReinvestmentStrategy} from 'src/interfaces/IReinvestmentStrategy.sol';
 import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
@@ -525,12 +526,43 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     return _assets[assetId].availableLiquidity;
   }
 
+  /// @inheritdoc ILiquidityHub
+  function getSweeped(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].sweeped;  
+  }
+
   function getDeficit(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].deficit;
   }
 
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
     return _assets[assetId].config;
+  }
+
+  /// @inheritdoc ILiquidityHub
+  function sweep(uint256 assetId, uint256 amount) external{
+    DataTypes.Asset storage asset = _assets[assetId];  
+    IReinvestmentStrategy strategy = (IReinvestmentStrategy)(asset.config.reinvestmentStrategy);
+    require(address(strategy) != address(0), InvalidReinvestmentStrategy());
+    strategy.notifySweep(amount);
+    //update accounting
+    asset.availableLiquidity -= amount;
+    asset.sweeped += amount;
+    //no check for available liquidity as transfer will revert if the amount exceeds available liquidity
+    IERC20(asset.underlying).safeTransfer(address(strategy), amount);
+
+  }
+  /// @inheritdoc ILiquidityHub
+  function reclaim(uint256 assetId, uint256 amount) external{
+    DataTypes.Asset storage asset = _assets[assetId];  
+    IReinvestmentStrategy strategy = (IReinvestmentStrategy)(asset.config.reinvestmentStrategy);
+    require(address(strategy) != address(0), InvalidReinvestmentStrategy());
+    uint256 amountReclaimed = strategy.reclaim(amount);
+    //update accounting
+    asset.availableLiquidity += amountReclaimed;
+    asset.sweeped -= amountReclaimed;
+    //no check for available liquidity as transfer will revert if the amount exceeds available liquidity
+    IERC20(asset.underlying).safeTransferFrom(address(strategy), address(this), amountReclaimed);
   }
 
   //
