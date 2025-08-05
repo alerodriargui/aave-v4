@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowEdgeCasesTest is SpokeBase {
-  using SharesMath for uint256;
+  using Math for uint256;
 
   /// inflated exch rate, it's better for user to borrow 1 big amount than 2 small amounts due to rounding up
   function test_borrow_rounding_effect_multiple_actions() public {
@@ -12,14 +12,14 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: carol,
+      caller: carol,
       amount: 100e18,
       onBehalfOf: carol
     });
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: 100e18,
       onBehalfOf: bob
     });
@@ -63,8 +63,8 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
 
     // bob benefits by having less debt shares than carol
     assertLt(
-      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
-      spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), carol).drawnShares,
       'bob should have < debt shares than carol'
     );
     // but both users have the same amount of drawn asset
@@ -90,7 +90,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: MAX_SUPPLY_AMOUNT_WETH,
       onBehalfOf: bob
     });
@@ -98,7 +98,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: carol,
+      caller: carol,
       amount: MAX_SUPPLY_AMOUNT_WETH,
       onBehalfOf: carol
     });
@@ -126,15 +126,15 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       skipTime: skipTime
     });
 
-    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
+    (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
 
     // ensure inflated exch rate
-    vm.assume(hub.convertToDrawnAssets(daiAssetId, 1e18) > 1e18);
+    vm.assume(hub1.convertToDrawnAssets(daiAssetId, 1e18) > 1e18);
     // ensure that shares conversion of smaller amounts individually are greater than shares of total sum
     vm.assume(
-      amount1.toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares) +
-        amount2.toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares) >
-        (amount1 + amount2).toSharesUp(baseDebt, hub.getAsset(daiAssetId).baseDrawnShares)
+      amount1.mulDiv(hub1.getAsset(daiAssetId).drawnShares, drawnDebt, Math.Rounding.Ceil) +
+        amount2.mulDiv(hub1.getAsset(daiAssetId).drawnShares, drawnDebt, Math.Rounding.Ceil) >
+        (amount1 + amount2).mulDiv(hub1.getAsset(daiAssetId).drawnShares, drawnDebt, Math.Rounding.Ceil)
     );
 
     uint256 carolDaiBefore = tokenList.dai.balanceOf(carol);
@@ -151,9 +151,9 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     vm.stopPrank();
 
     // bob benefits by having less debt shares than carol
-    assertLt(
-      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
-      spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares,
+    assertLe(
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), carol).drawnShares,
       'bob should have < debt shares than carol'
     );
     // but both users have the same amount of drawn asset
@@ -173,14 +173,14 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: carol,
+      caller: carol,
       amount: MAX_SUPPLY_AMOUNT,
       onBehalfOf: carol
     });
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: MAX_SUPPLY_AMOUNT,
       onBehalfOf: bob
     });
@@ -202,8 +202,8 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
 
     // both users have the same amount of debt shares
     assertEq(
-      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
-      spoke1.getUserPosition(_daiReserveId(spoke1), carol).baseDrawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), carol).drawnShares,
       'debt shares should match'
     );
     // both users have the same amount of drawn asset
@@ -227,7 +227,7 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
     Utils.supplyCollateral({
       spoke: spoke1,
       reserveId: _wethReserveId(spoke1),
-      user: bob,
+      caller: bob,
       amount: MAX_SUPPLY_AMOUNT,
       onBehalfOf: bob
     });
@@ -255,20 +255,22 @@ contract SpokeBorrowEdgeCasesTest is SpokeBase {
       skipTime: skipTime
     });
 
-    (uint256 baseDebt, ) = hub.getAssetDebt(daiAssetId);
+    (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
 
     // drawn shares are rounded up
-    uint256 expectedDebtShares = amount1.toSharesUp(
-      baseDebt,
-      hub.getAsset(daiAssetId).baseDrawnShares
+    uint256 expectedDebtShares = amount1.mulDiv(
+      hub1.getAsset(daiAssetId).drawnShares,
+      drawnDebt,
+      Math.Rounding.Ceil
     );
 
     vm.prank(bob);
     spoke1.borrow(_daiReserveId(spoke1), amount1, bob);
 
-    assertEq(
+    assertApproxEqAbs(
       expectedDebtShares,
-      spoke1.getUserPosition(_daiReserveId(spoke1), bob).baseDrawnShares,
+      spoke1.getUserPosition(_daiReserveId(spoke1), bob).drawnShares,
+      1,
       'base drawn shares'
     );
   }

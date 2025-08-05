@@ -67,14 +67,6 @@ interface ISpokeConfigurator {
   ) external returns (uint256 reserveId);
 
   /**
-   * @notice Updates the active flag of a reserve.
-   * @param spoke The address of the spoke.
-   * @param reserveId The identifier of the reserve.
-   * @param active The new active flag.
-   */
-  function updateActive(address spoke, uint256 reserveId, bool active) external;
-
-  /**
    * @notice Updates the paused flag of a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
@@ -99,24 +91,12 @@ interface ISpokeConfigurator {
   function updateBorrowable(address spoke, uint256 reserveId, bool borrowable) external;
 
   /**
-   * @notice Updates the collateral flag of a reserve.
+   * @notice Updates the collateral risk of a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
-   * @param collateral The new collateral flag.
+   * @param collateralRisk The new collateral risk.
    */
-  function updateCollateral(address spoke, uint256 reserveId, bool collateral) external;
-
-  /**
-   * @notice Updates the liquidity premium of a reserve.
-   * @param spoke The address of the spoke.
-   * @param reserveId The identifier of the reserve.
-   * @param liquidityPremium The new liquidity premium.
-   */
-  function updateLiquidityPremium(
-    address spoke,
-    uint256 reserveId,
-    uint256 liquidityPremium
-  ) external;
+  function updateCollateralRisk(address spoke, uint256 reserveId, uint256 collateralRisk) external;
 
   /**
    * @notice Updates the collateral factor of a reserve.
@@ -163,14 +143,41 @@ interface ISpokeConfigurator {
   ) external;
 
   /**
-   * @notice Updates the dynamic config of a reserve.
+   * @notice Add a dynamic config of a reserve.
    * @param spoke The address of the spoke.
    * @param reserveId The identifier of the reserve.
+   * @param dynamicConfig The new dynamic config.
+   * @return configKey The key of the added dynamic config.
+   */
+  function addDynamicReserveConfig(
+    address spoke,
+    uint256 reserveId,
+    DataTypes.DynamicReserveConfig calldata dynamicConfig
+  ) external returns (uint16 configKey);
+
+  /**
+   * @notice Updates the dynamic config of a reserve at the specified key.
+   * @param spoke The address of the spoke.
+   * @param reserveId The identifier of the reserve.
+   * @param configKey The key of the dynamic config to update.
    * @param dynamicConfig The new dynamic config.
    */
   function updateDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
+    uint16 configKey,
     DataTypes.DynamicReserveConfig calldata dynamicConfig
   ) external;
+
+  /**
+   * @notice Pauses all reserves of a spoke.
+   * @param spoke The address of the spoke.
+   */
+  function pauseAllReserves(address spoke) external;
+
+  /**
+   * @notice Freezes all reserves of a spoke.
+   * @param spoke The address of the spoke.
+   */
+  function freezeAllReserves(address spoke) external;
 }
