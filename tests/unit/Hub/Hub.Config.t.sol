@@ -202,6 +202,7 @@ contract HubConfigTest is HubBase {
       18,
       address(treasurySpoke),
       address(irStrategy),
+      address(0),
       encodedIrData
     );
   }
@@ -219,6 +220,7 @@ contract HubConfigTest is HubBase {
       18,
       address(treasurySpoke),
       address(irStrategy),
+      address(0),
       encodedIrData
     );
   }

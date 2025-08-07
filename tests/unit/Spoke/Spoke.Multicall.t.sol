@@ -128,6 +128,7 @@ contract SpokeMulticall is SpokeBase {
       18,
       address(treasurySpoke),
       address(irStrategy),
+      address(0),
       encodedIrData
     );
     uint256 dai3AssetId = hub1.getAssetCount() - 1;

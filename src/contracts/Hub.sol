@@ -72,6 +72,7 @@ contract Hub is IHub, AccessManaged {
     _assets[assetId] = DataTypes.Asset({
       liquidity: 0,
       deficit: 0,
+      sweeped: 0, 
       addedShares: 0,
       drawnShares: 0,
       premiumShares: 0,
@@ -91,7 +92,7 @@ contract Hub is IHub, AccessManaged {
     emit AddAsset(assetId, underlying, decimals);
     emit AssetConfigUpdate(
       assetId,
-      DataTypes.AssetConfig({feeReceiver: feeReceiver, liquidityFee: 0, irStrategy: irStrategy})
+      DataTypes.AssetConfig({feeReceiver: feeReceiver, liquidityFee: 0, irStrategy: irStrategy, reinvestmentStrategy: address(0)})
     );
     emit AssetUpdate(assetId, drawnIndex, drawnRate, lastUpdateTimestamp);
 
@@ -348,8 +349,8 @@ contract Hub is IHub, AccessManaged {
     require(address(strategy) != address(0), InvalidReinvestmentStrategy());
     strategy.notifySweep(amount);
     //update accounting
-    asset.liquidity -= amount;
-    asset.sweeped += amount;
+    asset.liquidity -= amount.toUint128();
+    asset.sweeped += amount.toUint128();
     //no check for available liquidity as transfer will revert if the amount exceeds available liquidity
     IERC20(asset.underlying).safeTransfer(address(strategy), amount);
 
@@ -361,11 +362,12 @@ contract Hub is IHub, AccessManaged {
     require(address(strategy) != address(0), InvalidReinvestmentStrategy());
     uint256 amountReclaimed = strategy.reclaim(amount);
     //update accounting
-    asset.liquidity += amountReclaimed;
-    asset.sweeped -= amountReclaimed;
+    asset.liquidity += amountReclaimed.toUint128();
+    asset.sweeped -= amountReclaimed.toUint128();
     //no check for available liquidity as transfer will revert if the amount exceeds available liquidity
     IERC20(asset.underlying).safeTransferFrom(address(strategy), address(this), amountReclaimed);
   }
+
 
 
   /// @inheritdoc IHub
@@ -550,12 +552,19 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].deficit;
   }
 
+  /// @inheritdoc IHub
+  function getSweeped(uint256 assetId) external view override returns (uint256) {
+    return _assets[assetId].sweeped;
+  }
+
+
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory) {
     return
       DataTypes.AssetConfig({
         feeReceiver: _assets[assetId].feeReceiver,
         liquidityFee: _assets[assetId].liquidityFee,
-        irStrategy: _assets[assetId].irStrategy
+        irStrategy: _assets[assetId].irStrategy,
+        reinvestmentStrategy: _assets[assetId].reinvestmentStrategy
       });
   }
 

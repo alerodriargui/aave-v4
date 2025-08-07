@@ -365,8 +365,6 @@ interface IHub is IHubBase, IAccessManaged {
 
   function getAssetCount() external view returns (uint256);
 
-  function MAX_ALLOWED_ASSET_DECIMALS() external view returns (uint8);
-
   /**
    * @notice Sweeps an amount of liquidity of the corresponding asset and sends it to the Reinvestment Strategy and updates accounting.
    * @dev The Reinvestment Strategy handles the actual reinvestment of the funds and the redistribution of the interest.

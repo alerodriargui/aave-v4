@@ -32,6 +32,7 @@ contract HubAddTest is HubBase {
       0,
       address(treasurySpoke),
       address(irStrategy),
+      address(0),
       encodedIrData
     );
     hub1.addSpoke(zeroDecimalAssetId, address(treasurySpoke), spokeConfig);
@@ -40,7 +41,8 @@ contract HubAddTest is HubBase {
       DataTypes.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
