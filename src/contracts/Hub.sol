@@ -72,7 +72,7 @@ contract Hub is IHub, AccessManaged {
     _assets[assetId] = DataTypes.Asset({
       liquidity: 0,
       deficit: 0,
-      sweeped: 0, 
+      swept: 0, 
       addedShares: 0,
       drawnShares: 0,
       premiumShares: 0,
@@ -347,7 +347,7 @@ contract Hub is IHub, AccessManaged {
     _validateSweep(assetId, amount);
     DataTypes.Asset storage asset = _assets[assetId];  
     asset.liquidity -= amount.toUint128();
-    asset.sweeped += amount.toUint128();
+    asset.swept += amount.toUint128();
     IERC20(asset.underlying).safeTransfer(asset.reinvestmentStrategy, amount);
 
   }
@@ -356,7 +356,7 @@ contract Hub is IHub, AccessManaged {
     _validateReclaim(assetId);
     DataTypes.Asset storage asset = _assets[assetId];  
     asset.liquidity += amount.toUint128();
-    asset.sweeped -= amount.toUint128();
+    asset.swept -= amount.toUint128();
     IERC20(asset.underlying).safeTransferFrom(asset.reinvestmentStrategy, address(this), amount);
   }
 
@@ -545,8 +545,8 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getSweeped(uint256 assetId) external view override returns (uint256) {
-    return _assets[assetId].sweeped;
+  function getswept(uint256 assetId) external view override returns (uint256) {
+    return _assets[assetId].swept;
   }
 
 

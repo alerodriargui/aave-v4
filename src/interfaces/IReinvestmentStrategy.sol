@@ -10,7 +10,7 @@ interface IReinvestmentStrategy {
 
   /**
    * @notice  notifies the reinvestment strategy that a sweep action happened. 
-   * @param amount The amount sweeped.
+   * @param amount The amount swept.
    */
   function notifySweep(
     uint256 amount

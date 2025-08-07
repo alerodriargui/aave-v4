@@ -46,7 +46,7 @@ library DataTypes {
     address feeReceiver;
     uint16 liquidityFee;
     //
-    uint128 sweeped;
+    uint128 swept;
   }
 
   struct SpokeConfig {
