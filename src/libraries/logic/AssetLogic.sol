@@ -1,25 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IBasicInterestRateStrategy} from 'src/interfaces/IBasicInterestRateStrategy.sol';
-import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
+import {IHub} from 'src/interfaces/IHub.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 library AssetLogic {
   using AssetLogic for DataTypes.Asset;
   using PercentageMath for uint256;
   using SharesMath for uint256;
-  using WadRayMath for uint256;
+  using WadRayMath for *;
+  using MathUtils for uint256;
+  using SafeCast for uint256;
 
   // todo: option for cached object
-  // todo: add virtual offset for inflation attack
 
-  // debt exchange rate does not incl premiumDebt to accrue base rate separately
+  // drawn exchange rate does not include premium to accrue base rate separately
   function toDrawnAssetsUp(
     DataTypes.Asset storage asset,
     uint256 shares
@@ -48,77 +49,67 @@ library AssetLogic {
     return assets.rayDivDown(asset.getDrawnIndex());
   }
 
-  function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDrawnShares.rayMulUp(asset.getDrawnIndex());
+  function drawn(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.drawnShares.rayMulUp(asset.getDrawnIndex());
   }
 
-  function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
+  function premium(DataTypes.Asset storage asset) internal view returns (uint256) {
     // sanity: utilize solc underflow check
-    uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumDrawnShares) - asset.premiumOffset;
+    uint256 accruedPremium = asset.toDrawnAssetsUp(asset.premiumShares) - asset.premiumOffset;
     return asset.realizedPremium + accruedPremium;
   }
 
-  function debt(DataTypes.Asset storage asset) internal view returns (uint256, uint256) {
-    return (asset.baseDebt(), asset.premiumDebt());
+  function totalOwed(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.drawn() + asset.premium();
   }
 
-  function totalDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDebt() + asset.premiumDebt();
+  function totalAddedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.liquidity + asset.sweeped + asset.deficit + asset.totalOwed();
   }
 
-  function totalSuppliedAssets(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.availableLiquidity + asset.deficit + asset.sweeped + asset.totalDebt();
+  function totalAddedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
+    return asset.addedShares + asset.getFeeShares(asset.getDrawnIndex(), asset.drawnIndex);
   }
 
-  function totalSuppliedShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.suppliedShares + asset.getFeeShares(asset.getDrawnIndex(), asset.baseDebtIndex);
-  }
-
-  function toSuppliedAssetsUp(
+  function toAddedAssetsUp(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsUp(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
+    return shares.toAssetsUp(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
-  function toSuppliedAssetsDown(
+  function toAddedAssetsDown(
     DataTypes.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsDown(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
+    return shares.toAssetsDown(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
-  function toSuppliedSharesUp(
+  function toAddedSharesUp(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesUp(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
+    return assets.toSharesUp(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
-  function toSuppliedSharesDown(
+  function toAddedSharesDown(
     DataTypes.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesDown(asset.totalSuppliedAssets(), asset.totalSuppliedShares());
+    return assets.toSharesDown(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
-  function updateBorrowRate(DataTypes.Asset storage asset, uint256 assetId) internal {
-    uint256 newBorrowRate = IBasicInterestRateStrategy(asset.config.irStrategy)
-      .calculateInterestRate({
-        assetId: assetId,
-        availableLiquidity: asset.availableLiquidity,
-        baseDebt: asset.baseDebt(),
-        premiumDebt: asset.premiumDebt()
-      });
-    asset.baseBorrowRate = newBorrowRate;
+  function updateDrawnRate(DataTypes.Asset storage asset, uint256 assetId) internal {
+    uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
+      assetId: assetId,
+      liquidity: asset.liquidity,
+      drawn: asset.drawn(),
+      premium: asset.premium()
+    });
+    asset.drawnRate = newDrawnRate.toUint128();
 
     // asset accrual should have already occurred
-    emit ILiquidityHub.AssetUpdated(
-      assetId,
-      asset.baseDebtIndex,
-      newBorrowRate,
-      asset.lastUpdateTimestamp
-    );
+    emit IHub.AssetUpdate(assetId, asset.drawnIndex, newDrawnRate, asset.lastUpdateTimestamp);
   }
 
   /**
@@ -132,33 +123,33 @@ library AssetLogic {
     DataTypes.SpokeData storage feeReceiver
   ) internal {
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint256 feeShares = asset.getFeeShares(drawnIndex, asset.baseDebtIndex);
+    uint128 feeShares = asset.getFeeShares(drawnIndex, asset.drawnIndex).toUint128();
 
     // Accrue interest and fees
-    asset.baseDebtIndex = drawnIndex;
+    asset.drawnIndex = drawnIndex.toUint128();
     if (feeShares > 0) {
-      feeReceiver.suppliedShares += feeShares;
-      asset.suppliedShares += feeShares;
-      emit ILiquidityHub.AccrueFees(assetId, feeShares);
+      feeReceiver.addedShares += feeShares;
+      asset.addedShares += feeShares;
+      emit IHub.AccrueFees(assetId, feeShares);
     }
 
-    asset.lastUpdateTimestamp = block.timestamp;
+    asset.lastUpdateTimestamp = block.timestamp.toUint40();
   }
 
   /**
-   * @dev Calculates the drawn index based on the borrow rate and the previous index.
+   * @dev Calculates the drawn index based on the base drawn rate and the previous index.
    * @param asset The data struct of the asset whose index is increasing.
    * @return The resulting drawn index.
    */
   function getDrawnIndex(DataTypes.Asset storage asset) internal view returns (uint256) {
-    uint256 previousIndex = asset.baseDebtIndex;
+    uint256 previousIndex = asset.drawnIndex;
     uint256 lastUpdateTimestamp = asset.lastUpdateTimestamp;
-    if (lastUpdateTimestamp == block.timestamp || asset.baseDrawnShares == 0) {
+    if (lastUpdateTimestamp == block.timestamp || asset.drawnShares == 0) {
       return previousIndex;
     }
     return
       previousIndex.rayMulUp(
-        MathUtils.calculateLinearInterest(asset.baseBorrowRate, uint40(lastUpdateTimestamp))
+        MathUtils.calculateLinearInterest(asset.drawnRate, uint40(lastUpdateTimestamp))
       );
   }
 
@@ -174,7 +165,7 @@ library AssetLogic {
     uint256 nextDrawnIndex,
     uint256 currentDrawnIndex
   ) internal view returns (uint256) {
-    uint256 liquidityFee = asset.config.liquidityFee;
+    uint256 liquidityFee = asset.liquidityFee;
     if (nextDrawnIndex == currentDrawnIndex || liquidityFee == 0) {
       return 0;
     }
@@ -182,20 +173,20 @@ library AssetLogic {
     // liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee
     // prettier-ignore
     uint256 feesAmount = (
-      asset.baseDrawnShares.rayMulDown(nextDrawnIndex - currentDrawnIndex) +
-      asset.premiumDrawnShares.rayMulDown(nextDrawnIndex) - asset.premiumOffset
+      asset.drawnShares.rayMulDown(nextDrawnIndex - currentDrawnIndex) +
+      asset.premiumShares.rayMulDown(nextDrawnIndex) - asset.premiumOffset
     ).percentMulDown(liquidityFee);
 
-    return feesAmount.toSharesDown(asset.totalSuppliedAssets() - feesAmount, asset.suppliedShares);
+    return feesAmount.toSharesDown(asset.totalAddedAssets() - feesAmount, asset.addedShares);
   }
 
   /**
    * @dev Calculates the amount of fee shares generated from the asset's accrued interest.
-   * @dev It calculates the updated drawn index on the fly using the current index and the borrow rate.
+   * @dev It calculates the updated drawn index on the fly using the current index and the drawn rate.
    * @param asset The data struct of the asset with accruing interest
    * @return The amount of shares corresponding to the fees
    */
   function unrealizedFeeShares(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.getFeeShares(asset.getDrawnIndex(), asset.baseDebtIndex);
+    return asset.getFeeShares(asset.getDrawnIndex(), asset.drawnIndex);
   }
 }

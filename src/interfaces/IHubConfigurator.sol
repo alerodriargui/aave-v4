@@ -169,13 +169,13 @@ interface IHubConfigurator {
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @param supplyCap The new supply cap.
+   * @param addCap The new supply cap.
    */
   function updateSpokeSupplyCap(
     address hub,
     uint256 assetId,
     address spoke,
-    uint256 supplyCap
+    uint256 addCap
   ) external;
 
   /**
@@ -197,14 +197,14 @@ interface IHubConfigurator {
    * @param hub The address of the Hub contract.
    * @param assetId The identifier of the asset.
    * @param spoke The address of the spoke.
-   * @param supplyCap The new supply cap.
+   * @param addCap The new supply cap.
    * @param drawCap The new draw cap.
    */
   function updateSpokeCaps(
     address hub,
     uint256 assetId,
     address spoke,
-    uint256 supplyCap,
+    uint256 addCap,
     uint256 drawCap
   ) external;
 
@@ -221,4 +221,26 @@ interface IHubConfigurator {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external;
+
+  /**
+   * @notice Pauses all assets of a spoke
+   * @param hub The address of the Hub contract.
+   * @param spoke The address of the spoke.
+   */
+  function pauseSpoke(address hub, address spoke) external;
+
+  /**
+   * @notice Freezes all assets of a spoke
+   * @param hub The address of the Hub contract.
+   * @param spoke The address of the spoke.
+   */
+  function freezeSpoke(address hub, address spoke) external;
+
+  /**
+   * @notice Updates the interest rate data for an asset.
+   * @param hub The address of the Hub contract.
+   * @param assetId The identifier of the asset.
+   * @param data The interest rate data to apply to the given asset, all in bps, encoded in bytes.
+   */
+  function updateInterestRateData(address hub, uint256 assetId, bytes calldata data) external;
 }

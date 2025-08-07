@@ -12,8 +12,8 @@ contract TreasurySpokeTest is SpokeBase {
   }
 
   function test_initial_state() public view {
-    assertEq(address(treasurySpoke.HUB()), address(hub));
-    for (uint256 i; i < hub.getAssetCount(); ++i) {
+    assertEq(address(treasurySpoke.HUB()), address(hub1));
+    for (uint256 i; i < hub1.getAssetCount(); ++i) {
       assertEq(treasurySpoke.getSuppliedAmount(i), 0);
       assertEq(treasurySpoke.getSuppliedShares(i), 0);
     }
@@ -46,7 +46,7 @@ contract TreasurySpokeTest is SpokeBase {
   function test_withdraw_fuzz_amount_interestOnly(uint256 amount) public {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    updateLiquidityFee(hub, daiAssetId, 0);
+    updateLiquidityFee(hub1, daiAssetId, 0);
 
     Utils.supply(_treasurySpoke(), daiAssetId, TREASURY_ADMIN, amount, address(treasurySpoke));
     assertEq(treasurySpoke.getSuppliedAmount(daiAssetId), amount);
@@ -55,7 +55,7 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 suppliedAssetsBefore = treasurySpoke.getSuppliedAmount(daiAssetId);
 
     // create debt
-    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub, daiAssetId), 100e18, true);
+    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub1, daiAssetId), 100e18, true);
 
     skip(365 days);
 
@@ -79,7 +79,7 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(treasurySpoke.getSuppliedShares(daiAssetId), 0);
 
     // create debt
-    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub, daiAssetId), 100e18, true);
+    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub1, daiAssetId), 100e18, true);
 
     skip(365 days);
 
@@ -100,7 +100,7 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 suppliedAssetsBefore = treasurySpoke.getSuppliedAmount(daiAssetId);
 
     // create debt
-    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub, daiAssetId), 100e18, true);
+    _openDebtPosition(spoke1, getReserveIdByAssetId(spoke1, hub1, daiAssetId), 100e18, true);
 
     skip(365 days);
 
@@ -170,7 +170,7 @@ contract TreasurySpokeTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
 
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    updateLiquidityFee(hub, spoke1.getReserve(reserveId).assetId, 100_00);
+    updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
 
     assertEq(treasurySpoke.getSuppliedShares(reserveId), 0);
 
@@ -182,20 +182,20 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
 
     assertApproxEqAbs(
-      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
-      hub.getAssetTotalDebt(assetId) - amount,
+      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getAssetTotalOwed(assetId) - amount,
       3,
       'treasury spoke supplied amount on hub'
     );
     assertApproxEqAbs(
       fees,
-      hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
       3,
       'treasury spoke supplied amount on spoke'
     );
 
     if (fees > 0) {
-      IERC20 asset = IERC20(spoke1.getReserve(reserveId).underlying);
+      IERC20 asset = getAssetUnderlyingByReserveId(spoke1, reserveId);
       uint256 balanceBefore = asset.balanceOf(TREASURY_ADMIN);
 
       deal(address(asset), tempUser, UINT256_MAX);
@@ -205,7 +205,7 @@ contract TreasurySpokeTest is SpokeBase {
       assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
       assertEq(
         0,
-        hub.getSpokeSuppliedAmount(assetId, address(treasurySpoke)),
+        hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
         'treasury spoke remaining supplied amount'
       );
     }
