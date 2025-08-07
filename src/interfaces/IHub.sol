@@ -83,6 +83,7 @@ interface IHub is IHubBase, IAccessManaged {
   error SpokeNotActive();
   error InvalidFeeShares();
   error InvalidReinvestmentStrategy();
+  error InvalidSweepAmount();
 
   /**
    * @notice Adds a new asset to the hub.

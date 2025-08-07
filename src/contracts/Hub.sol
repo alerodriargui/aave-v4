@@ -343,29 +343,21 @@ contract Hub is IHub, AccessManaged {
 
 
   /// @inheritdoc IHub
-  function sweep(uint256 assetId, uint256 amount) external{
+  function sweep(uint256 assetId, uint256 amount) external {
+    _validateSweep(assetId, amount);
     DataTypes.Asset storage asset = _assets[assetId];  
-    IReinvestmentStrategy strategy = (IReinvestmentStrategy)(asset.reinvestmentStrategy);
-    require(address(strategy) != address(0), InvalidReinvestmentStrategy());
-    strategy.notifySweep(amount);
-    //update accounting
     asset.liquidity -= amount.toUint128();
     asset.sweeped += amount.toUint128();
-    //no check for available liquidity as transfer will revert if the amount exceeds available liquidity
-    IERC20(asset.underlying).safeTransfer(address(strategy), amount);
+    IERC20(asset.underlying).safeTransfer(asset.reinvestmentStrategy, amount);
 
   }
   /// @inheritdoc IHub
-  function reclaim(uint256 assetId, uint256 amount) external{
+  function reclaim(uint256 assetId, uint256 amount) external {
+    _validateReclaim(assetId);
     DataTypes.Asset storage asset = _assets[assetId];  
-    IReinvestmentStrategy strategy = (IReinvestmentStrategy)(asset.reinvestmentStrategy);
-    require(address(strategy) != address(0), InvalidReinvestmentStrategy());
-    uint256 amountReclaimed = strategy.reclaim(amount);
-    //update accounting
-    asset.liquidity += amountReclaimed.toUint128();
-    asset.sweeped -= amountReclaimed.toUint128();
-    //no check for available liquidity as transfer will revert if the amount exceeds available liquidity
-    IERC20(asset.underlying).safeTransferFrom(address(strategy), address(this), amountReclaimed);
+    asset.liquidity += amount.toUint128();
+    asset.sweeped -= amount.toUint128();
+    IERC20(asset.underlying).safeTransferFrom(asset.reinvestmentStrategy, address(this), amount);
   }
 
 
@@ -745,4 +737,18 @@ contract Hub is IHub, AccessManaged {
       AddCapExceeded(addCap)
     );
   }
+
+  function _validateSweep(
+    uint256 assetId,
+    uint256 amount
+   ) internal view {
+    require(msg.sender == _assets[assetId].reinvestmentStrategy, InvalidReinvestmentStrategy());
+  }
+
+  function _validateReclaim(
+    uint256 assetId
+   ) internal view {
+    require(msg.sender == _assets[assetId].reinvestmentStrategy, InvalidReinvestmentStrategy());
+  }
+
 }
