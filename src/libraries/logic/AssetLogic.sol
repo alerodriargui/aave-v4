@@ -9,6 +9,7 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 library AssetLogic {
   using AssetLogic for DataTypes.Asset;
@@ -16,11 +17,11 @@ library AssetLogic {
   using PercentageMathExtended for uint256;
   using SharesMath for uint256;
   using WadRayMathExtended for uint256;
+  using SafeCast for uint256;
 
   // todo: option for cached object
   // todo: add virtual offset for inflation attack
 
-  // debt exchange rate does not incl premiumDebt to accrue base rate separately
   function toDrawnAssetsUp(
     DataTypes.Asset storage asset,
     uint256 shares
@@ -50,7 +51,7 @@ library AssetLogic {
   }
 
   function baseDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
-    return asset.baseDrawnShares.rayMulUp(asset.previewDrawnIndex());
+    return uint256(asset.baseDrawnShares).rayMulUp(asset.previewDrawnIndex());
   }
 
   function premiumDebt(DataTypes.Asset storage asset) internal view returns (uint256) {
@@ -112,7 +113,8 @@ library AssetLogic {
         availableLiquidity: asset.availableLiquidity,
         baseDebt: asset.baseDebt(),
         premiumDebt: asset.premiumDebt()
-      });
+      })
+      .toUint128();
   }
 
   /**
@@ -125,8 +127,8 @@ library AssetLogic {
     uint256 assetId,
     DataTypes.SpokeData storage feeReceiver
   ) internal {
-    uint256 drawnIndex = asset.previewDrawnIndex();
-    uint256 feeShares = asset.previewFeeShares(drawnIndex - asset.baseDebtIndex);
+    uint128 drawnIndex = asset.previewDrawnIndex().toUint128();
+    uint112 feeShares = asset.previewFeeShares(drawnIndex - asset.baseDebtIndex).toUint112();
 
     // Accrue interest and fees
     asset.baseDebtIndex = drawnIndex;
@@ -136,7 +138,7 @@ library AssetLogic {
       emit ILiquidityHub.AccrueFees(assetId, feeShares);
     }
 
-    asset.lastUpdateTimestamp = block.timestamp;
+    asset.lastUpdateTimestamp = block.timestamp.toUint40();
     emit ILiquidityHub.DrawnIndexUpdate(assetId, drawnIndex, block.timestamp);
   }
 

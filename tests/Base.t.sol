@@ -337,8 +337,8 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
       active: true,
-      supplyCap: type(uint256).max,
-      drawCap: type(uint256).max
+      supplyCap: type(uint32).max,
+      drawCap: type(uint32).max
     });
 
     // Add all assets to the Liquidity Hub
@@ -1106,7 +1106,7 @@ abstract contract Base is Test {
     uint256 newLiquidationBonus
   ) internal {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
-    config.liquidationBonus = newLiquidationBonus;
+    config.liquidationBonus = newLiquidationBonus.toUint16();
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateDynamicReserveConfig(reserveId, config);
@@ -1120,7 +1120,7 @@ abstract contract Base is Test {
     uint256 newLiquidationFee
   ) internal {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
-    config.liquidationFee = newLiquidationFee;
+    config.liquidationFee = newLiquidationFee.toUint16();
 
     vm.prank(SPOKE_ADMIN);
     spoke.updateDynamicReserveConfig(reserveId, config);
@@ -1188,7 +1188,7 @@ abstract contract Base is Test {
     uint256 newLiquidityPremium
   ) internal {
     DataTypes.ReserveConfig memory reserveConfig = spoke.getReserve(reserveId).config;
-    reserveConfig.liquidityPremium = newLiquidityPremium;
+    reserveConfig.liquidityPremium = newLiquidityPremium.toUint16();
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, reserveConfig);
   }
@@ -1199,14 +1199,14 @@ abstract contract Base is Test {
     uint256 liquidityFee
   ) internal {
     DataTypes.AssetConfig memory config = liquidityHub.getAssetConfig(assetId);
-    config.liquidityFee = liquidityFee;
+    config.liquidityFee = liquidityFee.toUint16();
     vm.prank(HUB_ADMIN);
     hub.updateAssetConfig(assetId, config);
   }
 
   function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
-    liqConfig.closeFactor = newCloseFactor;
+    liqConfig.closeFactor = newCloseFactor.toUint128();
     vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(liqConfig);
 
@@ -1260,7 +1260,7 @@ abstract contract Base is Test {
     uint256 newDrawCap
   ) internal {
     DataTypes.SpokeConfig memory spokeConfig = liquidityHub.getSpokeConfig(assetId, spoke);
-    spokeConfig.drawCap = newDrawCap;
+    spokeConfig.drawCap = newDrawCap.toUint32();
     vm.prank(HUB_ADMIN);
     liquidityHub.updateSpokeConfig(assetId, spoke, spokeConfig);
   }
@@ -1921,14 +1921,28 @@ abstract contract Base is Test {
     assertEq(abi.encode(a), abi.encode(b), 'assertEq(SpokeConfig): all fields');
   }
 
-  function assertEq(DataTypes.LiquidationConfig memory a, DataTypes.LiquidationConfig memory b) internal pure {
+  function assertEq(
+    DataTypes.LiquidationConfig memory a,
+    DataTypes.LiquidationConfig memory b
+  ) internal pure {
     assertEq(a.closeFactor, b.closeFactor, 'assertEq(LiquidationConfig): closeFactor');
-    assertEq(a.liquidationBonusFactor, b.liquidationBonusFactor, 'assertEq(LiquidationConfig): liquidationBonusFactor');
-    assertEq(a.healthFactorForMaxBonus, b.healthFactorForMaxBonus, 'assertEq(LiquidationConfig): healthFactorForMaxBonus');
+    assertEq(
+      a.liquidationBonusFactor,
+      b.liquidationBonusFactor,
+      'assertEq(LiquidationConfig): liquidationBonusFactor'
+    );
+    assertEq(
+      a.healthFactorForMaxBonus,
+      b.healthFactorForMaxBonus,
+      'assertEq(LiquidationConfig): healthFactorForMaxBonus'
+    );
     assertEq(abi.encode(a), abi.encode(b), 'assertEq(LiquidationConfig): all fields');
   }
 
-  function assertEq(DataTypes.ReserveConfig memory a, DataTypes.ReserveConfig memory b) internal pure {
+  function assertEq(
+    DataTypes.ReserveConfig memory a,
+    DataTypes.ReserveConfig memory b
+  ) internal pure {
     assertEq(a.active, b.active, 'assertEq(ReserveConfig): active');
     assertEq(a.paused, b.paused, 'assertEq(ReserveConfig): paused');
     assertEq(a.frozen, b.frozen, 'assertEq(ReserveConfig): frozen');
@@ -1938,9 +1952,20 @@ abstract contract Base is Test {
     assertEq(abi.encode(a), abi.encode(b), 'assertEq(ReserveConfig): all fields');
   }
 
-  function assertEq(DataTypes.DynamicReserveConfig memory a, DataTypes.DynamicReserveConfig memory b) internal pure {
-    assertEq(a.collateralFactor, b.collateralFactor, 'assertEq(DynamicReserveConfig): collateralFactor');
-    assertEq(a.liquidationBonus, b.liquidationBonus, 'assertEq(DynamicReserveConfig): liquidationBonus');
+  function assertEq(
+    DataTypes.DynamicReserveConfig memory a,
+    DataTypes.DynamicReserveConfig memory b
+  ) internal pure {
+    assertEq(
+      a.collateralFactor,
+      b.collateralFactor,
+      'assertEq(DynamicReserveConfig): collateralFactor'
+    );
+    assertEq(
+      a.liquidationBonus,
+      b.liquidationBonus,
+      'assertEq(DynamicReserveConfig): liquidationBonus'
+    );
     assertEq(a.liquidationFee, b.liquidationFee, 'assertEq(DynamicReserveConfig): liquidationFee');
     assertEq(abi.encode(a), abi.encode(b), 'assertEq(DynamicReserveConfig): all fields');
   }

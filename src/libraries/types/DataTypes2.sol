@@ -3,47 +3,49 @@ pragma solidity ^0.8.10;
 
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 
-library DataTypes {
-  // Liquidity Hub types
-  struct SpokeData {
-    // --
-    uint112 suppliedShares; // 112 bits (potentially 104 bits)
-    uint112 baseDrawnShares; // 112 bits (potentially 104 bits)
-    // --
-    uint112 premiumDrawnShares; // 112 bits (potentially 104 bits)
-    uint112 premiumOffset; // 112 bits (potentially 104 bits)
-    // --
-    uint112 realizedPremium; // 112 bits (potentially 104 bits)
-    // --
-    DataTypes.SpokeConfig config; //  72 bits (potentially 65 bits)
+contract DataTypes2 {
+  struct A {
+    uint64 a;
   }
 
-  // 72 bits (potentially 65 bits)
+  struct B {
+    uint64 a;
+    A n;
+  }
+
+  B internal b;
+  uint256 internal a;
+
+  // Liquidity Hub types
+  struct SpokeData {
+    uint128 suppliedShares; // 128 bits (potentially 112 bits)
+    uint128 baseDrawnShares; // 128 bits (potentially 112 bits)
+    uint128 premiumDrawnShares; // 128 bits (potentially 112 bits)
+    uint128 premiumOffset; // 128 bits (potentially 112 bits)
+    uint128 realizedPremium; // 128 bits (potentially 112 bits)
+    SpokeConfig config;
+  }
+
+  // 136 bits (potentially 129 bits)
   struct SpokeConfig {
     bool active; // 8 bits (potentially 1 bit)
-    uint32 supplyCap; // 32 bits
-    uint32 drawCap; // 32 bits
+    uint64 supplyCap; // 64 bits
+    uint64 drawCap; // 64 bits
   }
 
   struct Asset {
-    // --
-    uint128 baseDebtIndex; // 128 bits (potentially 112 bits?)
-    uint128 baseBorrowRate; // 128 bits (potentially 112 bits?)
-    // --
-    uint112 suppliedShares; // 112 bits (potentially 104 bits)
-    uint112 availableLiquidity; // 112 bits (potentially 104 bits)
-    // --
-    uint112 baseDrawnShares; // 112 bits (potentially 104 bits)
-    uint112 premiumDrawnShares; // 112 bits (potentially 104 bits)
-    // --
-    uint112 premiumOffset; // 112 bits (potentially 104 bits)
-    uint112 realizedPremium; // 112 bits (potentially 104 bits)
-    uint8 decimals; // 8 bits
-    // --
+    uint128 suppliedShares; // 128 bits (potentially 112 bits)
+    uint128 availableLiquidity; // 128 bits (potentially 112 bits)
+    uint128 baseDrawnShares; // 128 bits (potentially 112 bits)
+    uint128 premiumDrawnShares; // 128 bits (potentially 112 bits)
+    uint128 premiumOffset; // 128 bits (potentially 112 bits)
+    uint128 realizedPremium; // 128 bits (potentially 112 bits)
+    uint128 baseDebtIndex; // 128 bits
+    uint128 baseBorrowRate; // 128 bits
     address underlying; // 160 bits
+    uint8 decimals; // 8 bits
     uint40 lastUpdateTimestamp; // 40 bits
-    // -- --
-    DataTypes.AssetConfig config; // 360 bits (potentially 333 bits)
+    AssetConfig config;
   }
 
   // 360 bits (potentially 333 bits)
@@ -58,60 +60,44 @@ library DataTypes {
 
   // Spoke types
   struct Reserve {
-    // --
+    uint128 suppliedShares; // 128 bits (potentially 112 bits)
+    uint128 baseDrawnShares; // 128 bits (potentially 112 bits)
+    uint128 premiumDrawnShares; // 128 bits (potentially 112 bits)
+    uint128 premiumOffset; // 128 bits (potentially 112 bits)
+    uint128 realizedPremium; // 128 bits (potentially 112 bits)
     uint16 reserveId; // 16 bits
     uint16 assetId; // 16 bits
-    uint112 suppliedShares; // 112 bits (potentially 104 bits)
-    uint112 baseDrawnShares; // 112 bits (potentially 104 bits)
-    // --
-    uint112 premiumDrawnShares; // 112 bits (potentially 104 bits)
-    uint112 premiumOffset; // 112 bits (potentially 104 bits)
-    // --
-    uint112 realizedPremium; // 112 bits (potentially 104 bits)
     uint16 dynamicConfigKey; // 16 bits (potentially 10 bits)
     uint8 decimals; // 8 bits
-    // --
     address underlying; // 160 bits
-    // --
     ILiquidityHub hub; // 160 bits
-    // --
-    ReserveConfig config; // 56 bits (potentially 15 bits)
+    ReserveConfig config;
   }
 
-  // 56 bits (potentially 15 bits)
+  // 72 bits (potentially 25 bits)
   struct ReserveConfig {
-    bool active; // 8 bits (potentially 1 bit)
-    bool frozen; // 8 bits (potentially 1 bit)
-    bool paused; // 8 bits (potentially 1 bit)
-    bool borrowable; // 8 bits (potentially 1 bit)
-    bool collateral; // 8 bits (potentially 1 bit)
-    uint16 liquidityPremium; // 16 bits (potentially 10 bits) // !increased
+    bool active; // 8 bits
+    bool frozen; // 8 bits
+    bool paused; // 8 bits
+    bool borrowable; // 8 bits
+    bool collateral; // 8 bits
+    uint16 liquidityPremium; // 16 bits (potentially 10 bits)
+    uint16 liquidationFee; // 16 bits (potentially 10 bits) // to be moved
   }
 
   // 32 bits (potentially 20 bits)
   struct DynamicReserveConfig {
     uint16 collateralFactor; // 16 bits (potentially 10 bits)
     uint16 liquidationBonus; // 16 bits (potentially 10 bits) // BPS, 100_00 represent a 0% bonus
-    uint16 liquidationFee; // 16 bits (potentially 10 bits)
   }
 
   struct UserPosition {
-    // --
+    uint128 suppliedShares; // 128 bits (potentially 112 bits)
+    uint128 baseDrawnShares; // 128 bits (potentially 112 bits)
+    uint128 premiumDrawnShares; // 128 bits (potentially 112 bits)
+    uint128 premiumOffset; // 128 bits (potentially 112 bits)
+    uint128 realizedPremium; // 128 bits (potentially 112 bits)
     uint16 configKey; // 16 bits (potentially 10 bits)
-    uint112 suppliedShares; // 112 bits (potentially 104 bits)
-    uint112 baseDrawnShares; // 112 bits (potentially 104 bits)
-    // --
-    uint112 premiumDrawnShares; // 112 bits (potentially 104 bits)
-    uint112 premiumOffset; // 112 bits (potentially 104 bits)
-    // --
-    uint112 realizedPremium; // 112 bits (potentially 104 bits)
-  }
-
-  // todo pack this in 112?
-  struct LiquidationConfig {
-    uint128 healthFactorForMaxBonus; // health factor under which liquidation bonus is max
-    uint128 closeFactor; // HF value to restore to during a liquidation
-    uint16 liquidationBonusFactor; // BPS, as a percentage of effective lb
   }
 
   struct PositionStatus {
@@ -140,6 +126,12 @@ library DataTypes {
     uint256 avgCollateralFactor;
     uint256 userRiskPremium;
     uint256 healthFactor;
+  }
+
+  struct LiquidationConfig {
+    uint256 closeFactor; // BPS, HF value to restore to during a liquidation, TODO: use smaller uint
+    uint256 healthFactorForMaxBonus; // health factor under which liquidation bonus is max, TODO: use smaller uint
+    uint256 liquidationBonusFactor; // BPS, as a percentage of effective lb, TODO: use smaller uint
   }
 
   struct LiquidationCallLocalVars {

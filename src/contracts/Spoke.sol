@@ -14,12 +14,14 @@ import {KeyValueListInMemory} from 'src/libraries/helpers/KeyValueListInMemory.s
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {LiquidationLogic} from 'src/libraries/logic/LiquidationLogic.sol';
 import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 // interfaces
 import {ILiquidityHub} from 'src/interfaces/ILiquidityHub.sol';
 import {ISpoke, IAaveOracle} from 'src/interfaces/ISpoke.sol';
 
 contract Spoke is ISpoke, Multicall, AccessManaged {
+  using SafeCast for *;
   using SafeERC20 for IERC20;
   using WadRayMath for uint256;
   using WadRayMathExtended for uint256;
@@ -52,7 +54,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    */
   constructor(address authority_) AccessManaged(authority_) {
     // todo move to `initialize` when adding upgradeability
-    _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+    _liquidationConfig.closeFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD.toUint16();
     emit LiquidationConfigUpdated(_liquidationConfig);
   }
 
@@ -99,8 +101,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     reservesList.push(reserveId);
     _reserves[reserveId] = DataTypes.Reserve({
-      reserveId: reserveId,
-      assetId: assetId,
+      reserveId: reserveId.toUint16(),
+      assetId: assetId.toUint16(),
       suppliedShares: 0,
       baseDrawnShares: 0,
       premiumDrawnShares: 0,
@@ -165,8 +167,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount, msg.sender);
 
-    userPosition.suppliedShares += suppliedShares;
-    reserve.suppliedShares += suppliedShares;
+    userPosition.suppliedShares += suppliedShares.toUint112();
+    reserve.suppliedShares += suppliedShares.toUint112();
 
     emit Supply(reserveId, msg.sender, suppliedShares);
   }
@@ -188,8 +190,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     uint256 withdrawnShares = hub.remove(assetId, amount, to);
 
-    userPosition.suppliedShares -= withdrawnShares;
-    reserve.suppliedShares -= withdrawnShares;
+    userPosition.suppliedShares -= withdrawnShares.toUint112();
+    reserve.suppliedShares -= withdrawnShares.toUint112();
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
@@ -219,8 +221,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
     uint256 baseDrawnShares = hub.draw(assetId, amount, to);
 
-    reserve.baseDrawnShares += baseDrawnShares;
-    userPosition.baseDrawnShares += baseDrawnShares;
+    reserve.baseDrawnShares += baseDrawnShares.toUint112();
+    userPosition.baseDrawnShares += baseDrawnShares.toUint112();
 
     // calc needs new user position, just updating base debt is enough
     uint256 newUserRiskPremium = _refreshAndValidateUserPosition(msg.sender); // validates HF
@@ -256,8 +258,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       msg.sender
     ); // we settle base debt here
 
-    reserve.baseDrawnShares -= restoredShares;
-    userPosition.baseDrawnShares -= restoredShares;
+    reserve.baseDrawnShares -= restoredShares.toUint112();
+    userPosition.baseDrawnShares -= restoredShares.toUint112();
 
     if (userPosition.baseDrawnShares == 0) {
       _positionStatus[msg.sender].setBorrowing(reserveId, false);
@@ -402,7 +404,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function getReserveRiskPremium(uint256 reserveId) external view returns (uint256) {
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    return reserve.premiumDrawnShares.rayDiv(reserve.baseDrawnShares); // trailing
+    return uint256(reserve.premiumDrawnShares).rayDiv(reserve.baseDrawnShares); // trailing
   }
 
   function getUserRiskPremium(address user) external view returns (uint256) {
@@ -568,7 +570,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   }
 
   function _validateLiquidationConfig(DataTypes.LiquidationConfig calldata config) internal pure {
-    _validateCloseFactor(config.closeFactor);
+    require(config.closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
     require(
       config.liquidationBonusFactor <= PercentageMathExtended.PERCENTAGE_FACTOR,
       InvalidLiquidationBonusFactor()
@@ -577,10 +579,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       config.healthFactorForMaxBonus < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       InvalidHealthFactorForMaxBonus()
     );
-  }
-
-  function _validateCloseFactor(uint256 closeFactor) internal pure {
-    require(closeFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD, InvalidCloseFactor());
   }
 
   function _validateLiquidationCall(
@@ -657,8 +655,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     userPosition.premiumOffset = 0;
     userPosition.realizedPremium =
       userPosition.realizedPremium +
-      accruedPremium -
-      premiumDebtRestored;
+      accruedPremium.toUint112() -
+      premiumDebtRestored.toUint112();
 
     _refreshPremiumDebt(
       reserve,
@@ -679,13 +677,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     address user,
     uint256 newUserRiskPremium
   ) internal returns (uint256, uint256) {
-    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares = userPosition
-      .baseDrawnShares
-      .percentMulUp(newUserRiskPremium);
-    uint256 userPremiumOffset = userPosition.premiumOffset = hub.previewOffset(
-      assetId,
-      userPremiumDrawnShares
-    );
+    uint256 userPremiumDrawnShares = userPosition.premiumDrawnShares = newUserRiskPremium
+      .percentMulUp(userPosition.baseDrawnShares)
+      .toUint112();
+    uint256 userPremiumOffset = userPosition.premiumOffset = hub
+      .previewOffset(assetId, userPremiumDrawnShares)
+      .toUint112();
 
     _refreshPremiumDebt(
       reserve,
@@ -734,9 +731,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 realizedPremiumAdded,
     uint256 realizedPremiumTaken
   ) internal {
-    reserve.premiumDrawnShares = _add(reserve.premiumDrawnShares, premiumDrawnSharesDelta);
-    reserve.premiumOffset = _add(reserve.premiumOffset, premiumOffsetDelta);
-    reserve.realizedPremium = reserve.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
+    reserve.premiumDrawnShares = _add(reserve.premiumDrawnShares, premiumDrawnSharesDelta)
+      .toUint112();
+    reserve.premiumOffset = _add(reserve.premiumOffset, premiumOffsetDelta).toUint112();
+    reserve.realizedPremium =
+      reserve.realizedPremium +
+      realizedPremiumAdded.toUint112() -
+      realizedPremiumTaken.toUint112();
 
     emit RefreshPremiumDebt(
       reserve.reserveId,
@@ -942,11 +943,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         uint256 accruedUserPremium = hub.convertToDrawnAssets(assetId, oldUserPremiumDrawnShares) -
           oldUserPremiumOffset;
 
-        userPosition.premiumDrawnShares = userPosition.baseDrawnShares.percentMulUp(
-          newUserRiskPremium
-        );
-        userPosition.premiumOffset = hub.previewOffset(assetId, userPosition.premiumDrawnShares);
-        userPosition.realizedPremium += accruedUserPremium;
+        userPosition.premiumDrawnShares = newUserRiskPremium
+          .percentMulUp(userPosition.baseDrawnShares)
+          .toUint112();
+        userPosition.premiumOffset = hub
+          .previewOffset(assetId, userPosition.premiumDrawnShares)
+          .toUint112();
+        userPosition.realizedPremium += accruedUserPremium.toUint112();
 
         int256 premiumDrawnSharesDelta = _signedDiff(
           userPosition.premiumDrawnShares,
@@ -1075,7 +1078,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       );
 
       // debt accounting
-      userDebtPosition.baseDrawnShares -= vars.restoredShares;
+      userDebtPosition.baseDrawnShares -= vars.restoredShares.toUint112();
       vars.totalRestoredShares += vars.restoredShares;
 
       // expected total withdrawn shares includes liquidation fee
@@ -1092,7 +1095,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.liquidationFeeShares = vars.withdrawnShares - vars.liquidatedSuppliedShares;
 
       // collateral accounting
-      userCollateralPosition.suppliedShares -= vars.withdrawnShares;
+      userCollateralPosition.suppliedShares -= vars.withdrawnShares.toUint112();
 
       // TODO: realize bad debt
       (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(vars.user);
@@ -1142,8 +1145,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     }
 
     // TODO: rm when dupe reserve accounting is rm
-    debtReserve.baseDrawnShares -= vars.totalRestoredShares;
-    collateralReserve.suppliedShares -= vars.totalWithdrawnShares;
+    debtReserve.baseDrawnShares -= vars.totalRestoredShares.toUint112();
+    collateralReserve.suppliedShares -= vars.totalWithdrawnShares.toUint112();
 
     debtReserveHub.refreshPremiumDebt(
       vars.debtAssetId,

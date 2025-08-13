@@ -11,6 +11,7 @@ import {AssetLogic} from 'src/libraries/logic/AssetLogic.sol';
 import {WadRayMathExtended} from 'src/libraries/math/WadRayMathExtended.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {PercentageMathExtended} from 'src/libraries/math/PercentageMathExtended.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 // @dev Amounts are `asset` denominated by default unless specified otherwise with `share` suffix
 contract LiquidityHub is ILiquidityHub, AccessManaged {
@@ -19,6 +20,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   using SharesMath for uint256;
   using PercentageMathExtended for uint256;
   using AssetLogic for DataTypes.Asset;
+  using SafeCast for *;
 
   uint8 public constant MAX_ALLOWED_ASSET_DECIMALS = 18;
 
@@ -67,9 +69,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      baseDebtIndex: WadRayMathExtended.RAY,
+      baseDebtIndex: WadRayMathExtended.RAY.toUint128(),
       baseBorrowRate: 0,
-      lastUpdateTimestamp: block.timestamp,
+      lastUpdateTimestamp: block.timestamp.toUint40(),
       config: config
     });
 
@@ -112,7 +114,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
       premiumDrawnShares: 0,
       premiumOffset: 0,
       realizedPremium: 0,
-      lastUpdateTimestamp: block.timestamp,
+      // lastUpdateTimestamp: block.timestamp,
       config: config
     });
 
@@ -125,7 +127,7 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     address spoke,
     DataTypes.SpokeConfig calldata config
   ) external restricted {
-    require(_spokes[assetId][spoke].lastUpdateTimestamp != 0, SpokeNotListed());
+    // require(_spokes[assetId][spoke].lastUpdateTimestamp != 0, SpokeNotListed());
 
     _spokes[assetId][spoke].config = config;
     emit SpokeConfigUpdated(assetId, spoke, config);
@@ -153,9 +155,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     // todo: Mitigate inflation attack
     uint256 suppliedShares = asset.toSuppliedSharesDown(amount);
     require(suppliedShares != 0, InvalidSharesAmount());
-    asset.suppliedShares += suppliedShares;
-    spoke.suppliedShares += suppliedShares;
-    asset.availableLiquidity += amount;
+    asset.suppliedShares += suppliedShares.toUint112();
+    spoke.suppliedShares += suppliedShares.toUint112();
+    asset.availableLiquidity += amount.toUint112();
 
     asset.updateBorrowRate(assetId);
 
@@ -176,9 +178,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _validateRemove(asset, spoke, amount);
 
     uint256 withdrawnShares = asset.toSuppliedSharesUp(amount); // non zero since we round up
-    asset.suppliedShares -= withdrawnShares;
-    spoke.suppliedShares -= withdrawnShares;
-    asset.availableLiquidity -= amount;
+    asset.suppliedShares -= withdrawnShares.toUint112();
+    spoke.suppliedShares -= withdrawnShares.toUint112();
+    asset.availableLiquidity -= amount.toUint112();
 
     asset.updateBorrowRate(assetId);
 
@@ -198,9 +200,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _validateDraw(asset, spoke, amount, spoke.config.drawCap);
 
     uint256 drawnShares = asset.toDrawnSharesUp(amount); // non zero since we round up
-    asset.baseDrawnShares += drawnShares;
-    spoke.baseDrawnShares += drawnShares;
-    asset.availableLiquidity -= amount;
+    asset.baseDrawnShares += drawnShares.toUint112();
+    spoke.baseDrawnShares += drawnShares.toUint112();
+    asset.availableLiquidity -= amount.toUint112();
 
     asset.updateBorrowRate(assetId);
 
@@ -228,10 +230,10 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
     _validateRestore(asset, spoke, baseAmount, premiumAmount);
 
     uint256 baseDrawnSharesRestored = asset.toDrawnSharesDown(baseAmount);
-    asset.baseDrawnShares -= baseDrawnSharesRestored;
-    spoke.baseDrawnShares -= baseDrawnSharesRestored;
+    asset.baseDrawnShares -= baseDrawnSharesRestored.toUint112();
+    spoke.baseDrawnShares -= baseDrawnSharesRestored.toUint112();
     uint256 totalRestoredAmount = baseAmount + premiumAmount;
-    asset.availableLiquidity += totalRestoredAmount;
+    asset.availableLiquidity += totalRestoredAmount.toUint112();
 
     /// @dev premium debt must be restored in `refreshPremiumDebt` before calling this function
     asset.updateBorrowRate(assetId);
@@ -282,13 +284,13 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     asset.accrue(assetId, receiver);
 
-    uint256 suppliedShares = sender.suppliedShares;
+    uint112 suppliedShares = sender.suppliedShares;
     uint256 suppliedAssets = asset.toSuppliedAssetsDown(suppliedShares);
     uint256 feeAmount = asset.toSuppliedAssetsDown(feeShares);
     require(feeAmount <= suppliedAssets, SuppliedAmountExceeded(suppliedAssets));
 
-    sender.suppliedShares = suppliedShares - feeShares;
-    receiver.suppliedShares += feeShares;
+    sender.suppliedShares = suppliedShares - feeShares.toUint112();
+    receiver.suppliedShares += feeShares.toUint112();
 
     emit Remove(assetId, msg.sender, feeShares, feeAmount);
     emit Add(assetId, feeReceiver, feeShares, feeAmount);
@@ -310,11 +312,17 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
 
     asset.premiumDrawnShares = _add(asset.premiumDrawnShares, premiumDrawnShareDelta);
     asset.premiumOffset = _add(asset.premiumOffset, premiumOffsetDelta);
-    asset.realizedPremium = asset.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
+    asset.realizedPremium =
+      asset.realizedPremium +
+      realizedPremiumAdded.toUint112() -
+      realizedPremiumTaken.toUint112();
 
     spoke.premiumDrawnShares = _add(spoke.premiumDrawnShares, premiumDrawnShareDelta);
     spoke.premiumOffset = _add(spoke.premiumOffset, premiumOffsetDelta);
-    spoke.realizedPremium = spoke.realizedPremium + realizedPremiumAdded - realizedPremiumTaken;
+    spoke.realizedPremium =
+      spoke.realizedPremium +
+      realizedPremiumAdded.toUint112() -
+      realizedPremiumTaken.toUint112();
 
     emit RefreshPremiumDebt(
       assetId,
@@ -550,9 +558,9 @@ contract LiquidityHub is ILiquidityHub, AccessManaged {
   }
 
   // handles underflow
-  function _add(uint256 a, int256 b) internal pure returns (uint256) {
-    if (b >= 0) return a + uint256(b);
-    return a - uint256(-b);
+  function _add(uint112 a, int256 b) internal pure returns (uint112) {
+    if (b >= 0) return a + uint112(b.toInt112());
+    return a - uint112(-b.toInt112());
   }
 
   function _validatePayFee(DataTypes.SpokeData storage spoke, uint256 feeShares) internal view {
