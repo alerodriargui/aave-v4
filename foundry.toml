@@ -15,6 +15,7 @@ optimizer_runs = 200
 bytecode_hash = "none"
 gas_snapshot_check = false
 ffi = true
+gas_limit = 1099511627776
 
 [profile.default.fuzz]
 runs = 1000

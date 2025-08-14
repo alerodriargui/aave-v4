@@ -19,8 +19,6 @@ import {TreasurySpoke, ITreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/contracts/HubConfigurator.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/contracts/SpokeConfigurator.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {SharesMath} from 'src/libraries/math/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
@@ -55,7 +53,6 @@ abstract contract Base is Test {
   using WadRayMath for uint256;
   using SharesMath for uint256;
   using PercentageMath for uint256;
-  using PercentageMath for uint256;
   using SafeCast for *;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
@@ -73,12 +70,12 @@ abstract contract Base is Test {
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_SKIP_TIME = 10_000 days;
-  uint256 internal constant MIN_LIQUIDATION_BONUS = PercentageMath.PERCENTAGE_FACTOR; // 100% == 0% bonus
-  uint256 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
-  uint256 internal constant MAX_LIQUIDATION_BONUS_FACTOR = PercentageMath.PERCENTAGE_FACTOR; // 100%
-  uint256 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
-  uint256 internal constant MIN_CLOSE_FACTOR = 1e18;
-  uint256 internal constant MAX_CLOSE_FACTOR = 2e18;
+  uint32 internal constant MIN_LIQUIDATION_BONUS = uint32(PercentageMath.PERCENTAGE_FACTOR); // 100% == 0% bonus
+  uint32 internal constant MAX_LIQUIDATION_BONUS = 150_00; // 50% bonus
+  uint16 internal constant MAX_LIQUIDATION_BONUS_FACTOR = uint16(PercentageMath.PERCENTAGE_FACTOR); // 100%
+  uint128 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
+  uint128 internal constant MIN_CLOSE_FACTOR = 1e18;
+  uint128 internal constant MAX_CLOSE_FACTOR = 2e18;
   uint256 internal constant MAX_COLLATERAL_FACTOR = 100_00;
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8; // $100M per token
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
@@ -391,7 +388,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add USDX
@@ -408,7 +406,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add DAI
@@ -425,7 +424,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add WBTC
@@ -442,7 +442,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add USDY
@@ -459,7 +460,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
     // add DAI again
@@ -476,7 +478,8 @@ abstract contract Base is Test {
       DataTypes.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy)
+        irStrategy: address(irStrategy),
+        reinvestmentStrategy: address(0)
       })
     );
 
@@ -917,17 +920,31 @@ abstract contract Base is Test {
   }
 
   function updateAssetFeeReceiver(
-    IHub targetHub,
+    IHub hub,
     uint256 assetId,
     address newFeeReceiver
   ) internal pausePrank {
-    DataTypes.AssetConfig memory config = targetHub.getAssetConfig(assetId);
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.feeReceiver = newFeeReceiver;
 
     vm.prank(HUB_ADMIN);
-    targetHub.updateAssetConfig(assetId, config);
+    hub.updateAssetConfig(assetId, config);
 
-    assertEq(targetHub.getAssetConfig(assetId), config);
+    assertEq(hub.getAssetConfig(assetId), config);
+  }
+
+  function updateAssetReinvestmentStrategy(
+    IHub hub,
+    uint256 assetId,
+    address newReinvestmentStrategy
+  ) internal pausePrank {
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
+    config.reinvestmentStrategy = newReinvestmentStrategy;
+
+    vm.prank(HUB_ADMIN);
+    hub.updateAssetConfig(assetId, config);
+
+    assertEq(hub.getAssetConfig(assetId), config);
   }
 
   function updateReserveFrozenFlag(
@@ -971,7 +988,7 @@ abstract contract Base is Test {
   function updateLiquidationBonus(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newLiquidationBonus
+    uint32 newLiquidationBonus
   ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationBonus = newLiquidationBonus;
@@ -986,7 +1003,7 @@ abstract contract Base is Test {
   function updateLiquidationFee(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newLiquidationFee
+    uint16 newLiquidationFee
   ) internal pausePrank returns (uint16) {
     DataTypes.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.liquidationFee = newLiquidationFee;
@@ -1044,7 +1061,7 @@ abstract contract Base is Test {
   function updateCollateralRisk(
     ISpoke spoke,
     uint256 reserveId,
-    uint256 newCollateralRisk
+    uint24 newCollateralRisk
   ) internal pausePrank {
     DataTypes.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
     config.collateralRisk = newCollateralRisk;
@@ -1063,7 +1080,7 @@ abstract contract Base is Test {
     assertEq(hub1.getAssetConfig(assetId), config);
   }
 
-  function updateCloseFactor(ISpoke spoke, uint256 newCloseFactor) internal pausePrank {
+  function updateCloseFactor(ISpoke spoke, uint128 newCloseFactor) internal pausePrank {
     DataTypes.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
     liqConfig.closeFactor = newCloseFactor;
     vm.prank(SPOKE_ADMIN);
@@ -1171,7 +1188,15 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (uint256, IERC20) {
     DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    return (reserve.assetId, IERC20(reserve.underlying));
+    return (reserve.assetId, IERC20(reserve.hub.getAsset(reserve.assetId).underlying));
+  }
+
+  function getAssetUnderlyingByReserveId(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (IERC20) {
+    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
+    return IERC20(reserve.hub.getAsset(reserve.assetId).underlying);
   }
 
   function getWithdrawalLimit(
@@ -1665,8 +1690,39 @@ abstract contract Base is Test {
     return a < b ? a : b;
   }
 
-  function _getCloseFactor(ISpoke spoke) internal view returns (uint256) {
+  function _max(uint256 a, uint256 b) internal pure returns (uint256) {
+    return a > b ? a : b;
+  }
+
+  function _getCloseFactor(ISpoke spoke) internal view returns (uint128) {
     return spoke.getLiquidationConfig().closeFactor;
+  }
+
+  function _calcMinimumCollAmount(
+    ISpoke spoke,
+    uint256 collReserveId,
+    uint256 debtReserveId,
+    uint256 debtAmount
+  ) internal view returns (uint256) {
+    if (debtAmount == 0) return 1;
+
+    IPriceOracle oracle = spoke.oracle();
+    DataTypes.Reserve memory collData = spoke.getReserve(collReserveId);
+    DataTypes.DynamicReserveConfig memory colDynConf = spoke.getDynamicReserveConfig(collReserveId);
+    uint256 collPrice = oracle.getReservePrice(collReserveId);
+    uint256 collAssetUnits = 10 ** hub1.getAsset(collData.assetId).decimals;
+
+    DataTypes.Reserve memory debtData = spoke.getReserve(debtReserveId);
+    uint256 debtAssetUnits = 10 ** hub1.getAsset(debtData.assetId).decimals;
+    uint256 debtPrice = oracle.getReservePrice(debtReserveId);
+
+    uint256 normalizedDebtAmount = (debtAmount * debtPrice).wadDivDown(debtAssetUnits);
+    uint256 normalizedCollPrice = collPrice.wadDivDown(collAssetUnits);
+
+    return
+      normalizedDebtAmount.wadDivUp(
+        normalizedCollPrice.toWad().percentMulDown(colDynConf.collateralFactor)
+      );
   }
 
   /// @dev Helper function to borrow without health factor check
@@ -1737,11 +1793,10 @@ abstract contract Base is Test {
   }
 
   /// @dev Helper function to calculate burnt interest in assets terms (originated from virtual shares and assets)
-  function _calculateBurntInterest(
-    IHub hub,
-    uint256 assetId
-  ) internal view returns (uint256) {
-    return hub.getTotalAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getTotalAddedShares(assetId));
+  function _calculateBurntInterest(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return
+      hub.getTotalAddedAssets(assetId) -
+      hub.previewRemoveByShares(assetId, hub.getTotalAddedShares(assetId));
   }
 
   /// @dev Helper function to withdraw fees from the treasury spoke
@@ -1775,11 +1830,11 @@ abstract contract Base is Test {
     return hub1.getAssetConfig(assetId).feeReceiver;
   }
 
-  function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+  function _getCollateralRisk(ISpoke spoke, uint256 reserveId) internal view returns (uint24) {
     return spoke.getReserveConfig(reserveId).collateralRisk;
   }
 
-  function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+  function _getCollateralFactor(ISpoke spoke, uint256 reserveId) internal view returns (uint16) {
     return spoke.getDynamicReserveConfig(reserveId).collateralFactor;
   }
 
@@ -1800,6 +1855,7 @@ abstract contract Base is Test {
     assertEq(a.feeReceiver, b.feeReceiver, 'feeReceiver');
     assertEq(a.liquidityFee, b.liquidityFee, 'liquidityFee');
     assertEq(a.irStrategy, b.irStrategy, 'irStrategy');
+    assertEq(a.reinvestmentStrategy, b.reinvestmentStrategy, 'reinvestmentStrategy');
     assertEq(abi.encode(a), abi.encode(b));
   }
 
@@ -1838,6 +1894,17 @@ abstract contract Base is Test {
     assertEq(a.collateralFactor, b.collateralFactor, 'collateralFactor');
     assertEq(a.liquidationBonus, b.liquidationBonus, 'liquidationBonus');
     assertEq(a.liquidationFee, b.liquidationFee, 'liquidationFee');
+    assertEq(abi.encode(a), abi.encode(b));
+  }
+
+  function assertEq(
+    IAssetInterestRateStrategy.InterestRateData memory a,
+    IAssetInterestRateStrategy.InterestRateData memory b
+  ) internal pure {
+    assertEq(a.optimalUsageRatio, b.optimalUsageRatio, 'optimalUsageRatio');
+    assertEq(a.baseVariableBorrowRate, b.baseVariableBorrowRate, 'baseVariableBorrowRate');
+    assertEq(a.variableRateSlope1, b.variableRateSlope1, 'variableRateSlope1');
+    assertEq(a.variableRateSlope2, b.variableRateSlope2, 'variableRateSlope2');
     assertEq(abi.encode(a), abi.encode(b));
   }
 
@@ -2044,7 +2111,7 @@ abstract contract Base is Test {
       asset.drawnRate,
       IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate(
         assetId,
-        asset.liquidity,
+        asset.liquidity + asset.swept,
         drawn,
         premium
       ),
@@ -2109,7 +2176,7 @@ abstract contract Base is Test {
         premiumOffset: assetData.premiumOffset,
         realizedPremium: assetData.realizedPremium,
         premium: premium,
-        lastUpdateTimestamp: uint40(assetData.lastUpdateTimestamp),
+        lastUpdateTimestamp: assetData.lastUpdateTimestamp.toUint40(),
         drawnIndex: assetData.drawnIndex,
         drawnRate: assetData.drawnRate
       });
