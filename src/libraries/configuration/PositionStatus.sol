@@ -175,12 +175,12 @@ library PositionStatus {
 
   function next(
     DataTypes.PositionStatusCache memory cached,
-    uint256 lastReserveId
+    uint256 startReserveId
   ) internal pure returns (uint256) {
     unchecked {
       uint256 endBucket = cached.data.length - 1;
-      uint256 bucket = lastReserveId.bucketId();
-      uint256 setBitId = cached.data[bucket].isolateFrom(lastReserveId).ffs();
+      uint256 bucket = startReserveId.bucketId();
+      uint256 setBitId = cached.data[bucket].isolateFrom(startReserveId).ffs();
       while (setBitId == 256 && bucket != endBucket) {
         setBitId = cached.data[++bucket].ffs();
       }
@@ -188,15 +188,15 @@ library PositionStatus {
     }
   }
 
-  // returns NOT_FOUND if no borrowing bits, make sure to not call with lastReserveId = NOT_FOUND
+  // returns NOT_FOUND if no borrowing bits, make sure to not call with startReserveId = NOT_FOUND
   function nextBorrowing(
     DataTypes.PositionStatusCache memory cached,
-    uint256 lastReserveId
+    uint256 startReserveId
   ) internal pure returns (uint256 reserveId) {
     unchecked {
       uint256 endBucket = cached.data.length - 1;
-      uint256 bucket = lastReserveId.bucketId(); // .min(endBucket) => only needed if dirty input, ie lastReserveId > cache.data.length.toBitId()
-      uint256 setBitId = cached.data[bucket].isolateBorrowingFrom(lastReserveId).ffs();
+      uint256 bucket = startReserveId.bucketId(); // .min(endBucket) => only needed if dirty input, ie startReserveId > cache.data.length.toBitId()
+      uint256 setBitId = cached.data[bucket].isolateBorrowingFrom(startReserveId).ffs();
       while (setBitId == 256 && bucket != endBucket) {
         setBitId = cached.data[++bucket].isolateBorrowing().ffs();
       }
