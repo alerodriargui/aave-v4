@@ -43,21 +43,4 @@ library LibBit {
             0x001f0d1e100c1d070f090b19131c1706010e11080a1a141802121b1503160405))
     }
   }
-
-  /// @dev Count leading zeros.
-  /// Returns the number of zeros preceding the most significant one bit.
-  /// If `x` is zero, returns 256.
-  function clz(uint256 x) internal pure returns (uint256 r) {
-    /// @solidity memory-safe-assembly
-    assembly {
-      r := shl(7, lt(0xffffffffffffffffffffffffffffffff, x))
-      r := or(r, shl(6, lt(0xffffffffffffffff, shr(r, x))))
-      r := or(r, shl(5, lt(0xffffffff, shr(r, x))))
-      r := or(r, shl(4, lt(0xffff, shr(r, x))))
-      r := or(r, shl(3, lt(0xff, shr(r, x))))
-      // prettier-ignore
-      r := add(xor(r, byte(and(0x1f, shr(shr(r, x), 0x8421084210842108cc6318c6db6d54be)),
-                0xf8f9f9faf9fdfafbf9fdfcfdfafbfcfef9fafdfafcfcfbfefafafcfbffffffff)), iszero(x))
-    }
-  }
 }

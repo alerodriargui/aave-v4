@@ -253,4 +253,14 @@ contract PositionStatusTest is Base {
       x >>= 1;
     }
   }
+
+  function test_ffs() public {
+    assertEq(LibBit.ffs(0xff << 3), 3);
+    for (uint256 i; i < 256; ++i) {
+      assertEq(LibBit.ffs(1 << i), i);
+      assertEq(LibBit.ffs(type(uint256).max << i), i);
+      assertEq(LibBit.ffs((vm.randomUint() | 1) << i), i);
+    }
+    assertEq(LibBit.ffs(0), 256);
+  }
 }
