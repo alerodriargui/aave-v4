@@ -30,7 +30,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using PercentageMath for *;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
-  using PositionStatus for DataTypes.PositionStatus;
+  using PositionStatus for *;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
   using MathUtils for uint128;
 
@@ -903,44 +903,41 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal returns (bool) {
     DataTypes.NotifyRiskPremiumUpdateVars memory vars;
     vars.reserveCount = _reserveCount;
-    DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    while (vars.reserveId < vars.reserveCount) {
-      // todo keep borrowed assets in transient storage/pass through?
-      if (positionStatus.isBorrowing(vars.reserveId)) {
-        DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
-        DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
-        vars.assetId = reserve.assetId;
-        vars.hub = reserve.hub;
+    DataTypes.PositionStatusCache memory cached = _positionStatus[user].cache(vars.reserveCount);
+    while ((vars.reserveId = cached.nextBorrowing(vars.reserveId)) != PositionStatus.NOT_FOUND) {
+      DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
+      DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
+      vars.assetId = reserve.assetId;
+      vars.hub = reserve.hub;
 
-        uint256 oldUserPremiumShares = userPosition.premiumShares;
-        uint256 oldUserPremiumOffset = userPosition.premiumOffset;
-        uint256 accruedUserPremium = vars.hub.previewRestoreByShares(
-          vars.assetId,
-          oldUserPremiumShares
-        ) - oldUserPremiumOffset;
+      uint256 oldUserPremiumShares = userPosition.premiumShares;
+      uint256 oldUserPremiumOffset = userPosition.premiumOffset;
+      uint256 accruedUserPremium = vars.hub.previewRestoreByShares(
+        vars.assetId,
+        oldUserPremiumShares
+      ) - oldUserPremiumOffset;
 
-        userPosition.premiumShares = userPosition
-          .drawnShares
-          .percentMulUp(newUserRiskPremium)
-          .toUint128();
-        userPosition.premiumOffset = _previewOffset(
-          vars.hub,
-          vars.assetId,
-          userPosition.premiumShares
-        ).toUint128();
-        userPosition.realizedPremium += accruedUserPremium.toUint128();
+      userPosition.premiumShares = userPosition
+        .drawnShares
+        .percentMulUp(newUserRiskPremium)
+        .toUint128();
+      userPosition.premiumOffset = _previewOffset(
+        vars.hub,
+        vars.assetId,
+        userPosition.premiumShares
+      ).toUint128();
+      userPosition.realizedPremium += accruedUserPremium.toUint128();
 
-        vars.premiumDelta = DataTypes.PremiumDelta({
-          sharesDelta: userPosition.premiumShares.signedSub(oldUserPremiumShares),
-          offsetDelta: userPosition.premiumOffset.signedSub(oldUserPremiumOffset),
-          realizedDelta: int256(accruedUserPremium)
-        });
+      vars.premiumDelta = DataTypes.PremiumDelta({
+        sharesDelta: userPosition.premiumShares.signedSub(oldUserPremiumShares),
+        offsetDelta: userPosition.premiumOffset.signedSub(oldUserPremiumOffset),
+        realizedDelta: int256(accruedUserPremium)
+      });
 
-        if (!vars.premiumIncrease) vars.premiumIncrease = vars.premiumDelta.sharesDelta > 0;
+      if (!vars.premiumIncrease) vars.premiumIncrease = vars.premiumDelta.sharesDelta > 0;
 
-        vars.hub.refreshPremium(vars.assetId, vars.premiumDelta);
-        emit RefreshPremiumDebt(vars.reserveId, user, vars.premiumDelta);
-      }
+      vars.hub.refreshPremium(vars.assetId, vars.premiumDelta);
+      emit RefreshPremiumDebt(vars.reserveId, user, vars.premiumDelta);
       unchecked {
         ++vars.reserveId;
       }
