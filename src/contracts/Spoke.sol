@@ -58,7 +58,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @param authority_ The address of the authority contract which manages permissions.
    */
   constructor(address authority_) AccessManaged(authority_) {
-    // todo move to `initialize` when adding upgradeability
     _liquidationConfig.closeFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdate(_liquidationConfig);
   }
@@ -130,7 +129,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 reserveId,
     DataTypes.ReserveConfig calldata config
   ) external restricted {
-    // TODO: More sophisticated
     require(reserveId < _reserveCount, ReserveNotListed());
     DataTypes.Reserve storage reserve = _reserves[reserveId];
     _validateReserveConfig(config);
@@ -506,7 +504,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       uint256 totalDebtInBaseCurrency
     )
   {
-    // todo separate getter with refreshed config for users trying to incrementally build hf?
     (
       userRiskPremium,
       avgCollateralFactor,
@@ -582,12 +579,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     // HF checked at the end of borrow action
   }
 
-  // TODO: Place this and LH equivalent in a generic logic library
   function _validateRepay(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
     require(!reserve.paused, ReservePaused());
-    // todo validate user not trying to repay more
-    // todo NoExplicitAmountToRepayOnBehalf
   }
 
   /**
@@ -882,7 +876,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     );
   }
 
-  // todo optimize, merge logic duped borrow/repay, rename
   /**
    * @dev Trigger risk premium update on all drawn reserves of `user`.
    * @param user The address of the user whose risk premium is being updated.
@@ -894,8 +887,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 newUserRiskPremium
   ) internal returns (bool) {
     DataTypes.NotifyRiskPremiumUpdateVars memory vars;
-    vars.reserveCount = _reserveCount;
-    DataTypes.PositionStatusCache memory cached = _positionStatus[user].cache(vars.reserveCount);
+    DataTypes.PositionStatusCache memory cached = _positionStatus[user].cache(_reserveCount);
     while ((vars.reserveId = cached.nextBorrowing(vars.reserveId)) != PositionStatus.NOT_FOUND) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
