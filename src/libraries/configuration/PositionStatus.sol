@@ -119,7 +119,7 @@ library PositionStatus {
   ) internal view returns (uint256) {
     unchecked {
       uint256 bucket = reserveCount.bucketId();
-      uint256 count = self.map[bucket].isolateCollateralFrom(reserveCount).popCount(); // disregard bits after `reserveCount`
+      uint256 count = self.map[bucket].isolateCollateralUntil(reserveCount).popCount(); // disregard bits after `reserveCount`
       while (bucket != 0) {
         count += self.map[--bucket].isolateCollateral().popCount();
       }
@@ -133,11 +133,11 @@ library PositionStatus {
   ) internal view returns (DataTypes.PositionStatusCache memory cached) {
     unchecked {
       uint256 bucket = reserveCount.bucketId();
-      cached.status = new uint256[](bucket + 1);
-      cached.status[bucket] = self.map[bucket];
+      cached.data = new uint256[](bucket + 1);
+      cached.data[bucket] = self.map[bucket];
       while (bucket != 0) {
         --bucket;
-        cached.status[bucket] = self.map[bucket];
+        cached.data[bucket] = self.map[bucket];
       }
       return cached;
     }
@@ -149,17 +149,42 @@ library PositionStatus {
   ) internal view returns (DataTypes.PositionStatusCache memory cached, uint256 collCount) {
     unchecked {
       uint256 bucket = reserveCount.bucketId();
-      uint256 map = self.map[bucket];
-      cached.status = new uint256[](bucket + 1);
-      collCount = map.isolateCollateralFrom(reserveCount).popCount();
-      cached.status[bucket] = self.map[bucket];
+      cached.data = new uint256[](bucket + 1);
+      collCount = (cached.data[bucket] = self.map[bucket])
+        .isolateCollateralUntil(reserveCount)
+        .popCount();
+
       while (bucket != 0) {
         --bucket;
-        map = self.map[bucket];
-        cached.status[bucket] = map;
-        collCount += map.isolateCollateral().popCount();
+        collCount += (cached.data[bucket] = self.map[bucket]).isolateCollateral().popCount();
       }
       return (cached, collCount);
+    }
+  }
+
+  function status(
+    DataTypes.PositionStatusCache memory cached,
+    uint256 reserveId
+  ) internal pure returns (bool borrowing, bool collateral) {
+    unchecked {
+      uint256 word = (cached.data[reserveId.bucketId()] >> ((reserveId % 128) << 1));
+      borrowing = word & 1 != 0;
+      collateral = word & 2 != 0;
+    }
+  }
+
+  function next(
+    DataTypes.PositionStatusCache memory cached,
+    uint256 lastReserveId
+  ) internal pure returns (uint256) {
+    unchecked {
+      uint256 endBucket = cached.data.length - 1;
+      uint256 bucket = lastReserveId.bucketId();
+      uint256 setBitId = cached.data[bucket].isolateFrom(lastReserveId).ffs();
+      while (setBitId == 256 && bucket != endBucket) {
+        setBitId = cached.data[++bucket].ffs();
+      }
+      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket);
     }
   }
 
@@ -169,13 +194,13 @@ library PositionStatus {
     uint256 lastReserveId
   ) internal pure returns (uint256 reserveId) {
     unchecked {
-      uint256 endBucket = cached.status.length - 1;
-      uint256 bucket = lastReserveId.bucketId();
-      uint256 setBitId = cached.status[bucket].isolateBorrowingUntil(lastReserveId).ffs();
+      uint256 endBucket = cached.data.length - 1;
+      uint256 bucket = lastReserveId.bucketId(); // .min(endBucket) => only needed if dirty input, ie lastReserveId > cache.data.length.toBitId()
+      uint256 setBitId = cached.data[bucket].isolateBorrowingFrom(lastReserveId).ffs();
       while (setBitId == 256 && bucket != endBucket) {
-        setBitId = cached.status[++bucket].isolateBorrowing().ffs();
+        setBitId = cached.data[++bucket].isolateBorrowing().ffs();
       }
-      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(); // check if branchless is cheaper
+      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket); // check if branchless is cheaper
     }
   }
 
@@ -209,9 +234,9 @@ library PositionStatus {
     }
   }
 
-  function fromBitId(uint256 bitId) internal pure returns (uint256 reserveId) {
+  function fromBitId(uint256 bitId, uint256 bucket) internal pure returns (uint256 reserveId) {
     assembly ('memory-safe') {
-      reserveId := shr(1, bitId)
+      reserveId := add(shr(1, bitId), shl(7, bucket))
     }
   }
 
@@ -222,7 +247,7 @@ library PositionStatus {
   }
 
   // disregard bits before `reserveId`
-  function isolateBorrowingUntil(
+  function isolateBorrowingFrom(
     uint256 word,
     uint256 reserveId
   ) internal pure returns (uint256 ret) {
@@ -233,7 +258,7 @@ library PositionStatus {
   }
 
   // disregard bits before `reserveId`
-  function isolateUntil(uint256 word, uint256 reserveId) internal pure returns (uint256 ret) {
+  function isolateFrom(uint256 word, uint256 reserveId) internal pure returns (uint256 ret) {
     // ret = word & (type(uint256).max << ((reserveId % 128) << 1));
     assembly ('memory-safe') {
       ret := and(word, shl(shl(1, mod(reserveId, 128)), not(0)))
@@ -246,14 +271,14 @@ library PositionStatus {
     }
   }
 
-  // disregard bits after `reserveId`
-  function isolateCollateralFrom(
+  // disregard bits after `reserveCount`
+  function isolateCollateralUntil(
     uint256 word,
-    uint256 reserveId
+    uint256 reserveCount
   ) internal pure returns (uint256 ret) {
-    // ret = word & (COLLATERAL_MASK >> (256 - ((reserveId % 128) << 1)));
+    // ret = word & (COLLATERAL_MASK >> (256 - ((reserveCount % 128) << 1)));
     assembly ('memory-safe') {
-      ret := and(word, shr(sub(256, shl(1, mod(reserveId, 128))), COLLATERAL_MASK))
+      ret := and(word, shr(sub(256, shl(1, mod(reserveCount, 128))), COLLATERAL_MASK))
     }
   }
 }

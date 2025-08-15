@@ -107,7 +107,7 @@ library DataTypes {
   }
 
   struct PositionStatusCache {
-    uint256[] status;
+    uint256[] data;
   }
 
   struct ReserveConfig {

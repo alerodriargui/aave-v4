@@ -747,19 +747,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     address user
   ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
     DataTypes.CalculateUserAccountDataVars memory vars;
-    uint256 reserveCount = _reserveCount;
-    DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
-    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
-      positionStatus.collateralCount(reserveCount)
-    );
-
-    while (vars.reserveId < reserveCount) {
-      if (!positionStatus.isUsingAsCollateralOrBorrowing(vars.reserveId)) {
-        unchecked {
-          ++vars.reserveId;
-        }
-        continue;
-      }
+    (DataTypes.PositionStatusCache memory position, uint256 collateralCount) = _positionStatus[user]
+      .cacheWithData(_reserveCount);
+    KeyValueListInMemory.List memory list = KeyValueListInMemory.init(collateralCount);
+    while ((vars.reserveId = position.next(vars.reserveId)) != PositionStatus.NOT_FOUND) {
+      (bool borrowing, bool collateral) = position.status(vars.reserveId);
 
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
       DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
@@ -770,7 +762,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.assetUnit = 10 ** reserve.decimals;
       }
 
-      if (positionStatus.isUsingAsCollateral(vars.reserveId)) {
+      if (collateral) {
         DataTypes.DynamicReserveConfig storage dynConfig = _dynamicConfig[vars.reserveId][
           userPosition.configKey
         ];
@@ -792,7 +784,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         }
       }
 
-      if (positionStatus.isBorrowing(vars.reserveId)) {
+      if (borrowing) {
         vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           userPosition,
           hub,
