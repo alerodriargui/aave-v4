@@ -106,6 +106,10 @@ library DataTypes {
     mapping(uint256 slot => uint256 status) map;
   }
 
+  struct PositionStatusCache {
+    uint256[] status;
+  }
+
   struct ReserveConfig {
     bool paused;
     bool frozen;
