@@ -179,6 +179,12 @@ contract WadRayMathDifferentialTests is Test {
     assertEq(w.fromWadDown(a), a / w.WAD());
   }
 
+  function test_fromWadUp_fuzz(uint256 a) public {
+    uint256 res = w.fromWadUp(a);
+    assertEq(res, a % w.WAD() == 0 ? a / w.WAD() : a / w.WAD() + 1);
+    assertEq(res, w.wadMulUp(a, 1));
+  }
+
   function test_toWad_fuzz(uint256 a) public {
     uint256 b;
     bool safetyCheck;
