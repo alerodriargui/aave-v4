@@ -179,13 +179,24 @@ library WadRayMath {
   }
 
   /**
-   * @notice Truncates number from Wad precision
+   * @notice Converts number from Wad precision by rounding down
    * @param a The number in Wad precision
-   * @return b (= a / 1e18)
+   * @return b (= a / 1e18, rounded down)
    */
   function fromWadDown(uint256 a) internal pure returns (uint256 b) {
     assembly {
       b := div(a, WAD)
+    }
+  }
+
+  /**
+   * @notice Converts number from Wad precision by rounding up
+   * @param a The number in Wad precision
+   * @return b (= a / 1e18, rounded up)
+   */
+  function fromWadUp(uint256 a) internal pure returns (uint256 b) {
+    assembly {
+      b := add(div(a, WAD), gt(mod(a, WAD), 0))
     }
   }
 
