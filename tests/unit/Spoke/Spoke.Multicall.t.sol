@@ -132,14 +132,14 @@ contract SpokeMulticall is SpokeBase {
     );
     uint256 dai3AssetId = hub1.getAssetCount() - 1;
 
-    DataTypes.Reserve memory dai2ReserveExpected;
+    Reserve memory dai2ReserveExpected;
     dai2ReserveExpected.reserveId = dai2ReserveId;
     dai2ReserveExpected.assetId = daiAssetId.toUint16();
     dai2ReserveExpected.paused = dai2Config.paused;
     dai2ReserveExpected.frozen = dai2Config.frozen;
     dai2ReserveExpected.borrowable = dai2Config.borrowable;
     dai2ReserveExpected.collateralRisk = dai2Config.collateralRisk;
-    DataTypes.Reserve memory dai3ReserveExpected;
+    Reserve memory dai3ReserveExpected;
     dai3ReserveExpected.reserveId = dai3ReserveId;
     dai3ReserveExpected.assetId = daiAssetId.toUint16();
     dai3ReserveExpected.paused = dai3Config.paused;
@@ -227,5 +227,16 @@ contract SpokeMulticall is SpokeBase {
     assertEq(ret[2].length, 0);
     assertEq(ret[3], abi.encode(_calculateExpectedUserRP(alice, spoke1)));
     assertEq(ret[4], abi.encode(80e18, 0));
+  }
+
+  function test_multicall_forwards_first_revert() public {
+    bytes[] memory calls = new bytes[](3);
+    calls[0] = abi.encodeCall(ISpokeBase.supply, (_daiReserveId(spoke1), 120e18, alice));
+    calls[1] = abi.encodeCall(ISpokeBase.withdraw, (_daiReserveId(spoke1), 121e18, alice));
+    calls[2] = abi.encodeCall(ISpoke.setUsingAsCollateral, (_daiReserveId(spoke1), true, alice));
+
+    vm.prank(alice);
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.InsufficientSupply.selector, 120e18));
+    spoke1.multicall(calls);
   }
 }
