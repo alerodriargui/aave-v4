@@ -7,7 +7,7 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {ECDSA} from 'src/dependencies/openzeppelin/ECDSA.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
-import {EIP712} from 'src/dependencies/openzeppelin/EIP712.sol';
+import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -57,12 +57,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    * @dev Constructor.
    * @dev The authority should implement the AccessManaged interface to control access.
    * @param authority_ The address of the authority contract which manages permissions.
-   * @param name_ The name of the spoke used for the EIP712 domain separator.
    */
-  constructor(
-    address authority_,
-    string memory name_
-  ) AccessManaged(authority_) EIP712(name_, '1') {
+  constructor(address authority_) AccessManaged(authority_) {
     _liquidationConfig.closeFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdate(_liquidationConfig);
   }
@@ -385,7 +381,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     bytes32 s
   ) external {
     require(block.timestamp <= deadline, InvalidSignature());
-    bytes32 hash = _hashTypedDataV4(
+    bytes32 hash = _hashTypedData(
       keccak256(
         abi.encode(
           Constants.SET_USER_POSITION_MANAGER_TYPEHASH,
@@ -1277,6 +1273,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
       vars.premiumDebtToLiquidate,
       vars.hasDeficit
     );
+  }
+
+  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
+    return ('Spoke', '1');
   }
 
   function _useNonce(address user) internal returns (uint256) {

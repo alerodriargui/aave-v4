@@ -43,7 +43,7 @@ contract HubHandler is Test {
     accessManager = new AccessManager(hubAdmin);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    spoke1 = new Spoke(address(accessManager), 'Spoke 1');
+    spoke1 = new Spoke(address(accessManager));
     oracle = new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)');
     spoke1.updateOracle(address(oracle));
     treasurySpoke = new TreasurySpoke(hubAdmin, address(hub1));
