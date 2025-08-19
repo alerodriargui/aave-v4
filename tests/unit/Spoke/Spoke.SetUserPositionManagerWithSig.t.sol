@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.0;
 
-import {IERC5267} from 'src/dependencies/openzeppelin/IERC5267.sol';
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
@@ -208,19 +206,5 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     spoke1.useNonce();
 
     assertEq(spoke1.nonces(user), currentNonce + 1);
-  }
-
-  function _getTypedDataHash(
-    ISpoke spoke,
-    EIP712Types.SetUserPositionManager memory setUserPositionManager
-  ) internal view returns (bytes32) {
-    return
-      keccak256(
-        abi.encodePacked(
-          '\x19\x01',
-          spoke.DOMAIN_SEPARATOR(),
-          vm.eip712HashStruct('SetUserPositionManager', abi.encode(setUserPositionManager))
-        )
-      );
   }
 }
