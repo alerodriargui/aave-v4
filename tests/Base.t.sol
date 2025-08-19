@@ -229,9 +229,9 @@ abstract contract Base is Test {
     accessManager = new AccessManager(ADMIN);
     hub1 = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
-    spoke1 = ISpoke(new Spoke(address(accessManager)));
-    spoke2 = ISpoke(new Spoke(address(accessManager)));
-    spoke3 = ISpoke(new Spoke(address(accessManager)));
+    spoke1 = ISpoke(new Spoke(address(accessManager), 'Spoke 1'));
+    spoke2 = ISpoke(new Spoke(address(accessManager), 'Spoke 2'));
+    spoke3 = ISpoke(new Spoke(address(accessManager), 'Spoke 3'));
     oracle1 = IAaveOracle(new AaveOracle(address(spoke1), 8, 'Spoke 1 (USD)'));
     oracle2 = IAaveOracle(new AaveOracle(address(spoke2), 8, 'Spoke 2 (USD)'));
     oracle3 = IAaveOracle(new AaveOracle(address(spoke3), 8, 'Spoke 3 (USD)'));

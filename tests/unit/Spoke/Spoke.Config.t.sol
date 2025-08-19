@@ -20,7 +20,7 @@ contract SpokeConfigTest is SpokeBase {
         liquidationBonusFactor: 0
       })
     );
-    new Spoke(address(accessManager));
+    new Spoke(address(accessManager), 'Spoke');
   }
 
   function test_updateOracle_revertsWith_AccessManagedUnauthorized(address caller) public {
@@ -225,7 +225,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidOracle() public {
-    Spoke newSpoke = new Spoke(address(accessManager));
+    Spoke newSpoke = new Spoke(address(accessManager), 'New Spoke');
 
     DataTypes.ReserveConfig memory newReserveConfig = DataTypes.ReserveConfig({
       paused: true,

@@ -8,4 +8,8 @@ library Constants {
   /// @dev Spoke Constants
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   uint24 public constant MAX_COLLATERAL_RISK = 1000_00; // 1000.00%
+  bytes32 public constant SET_USER_POSITION_MANAGER_TYPEHASH =
+    keccak256(
+      'SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce)'
+    );
 }

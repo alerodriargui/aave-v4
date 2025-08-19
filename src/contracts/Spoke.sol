@@ -34,8 +34,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
   using MathUtils for uint128;
 
-  bytes32 private constant _PERMIT_TYPEHASH = keccak256('');
-
   IAaveOracle public oracle;
 
   uint256 internal _reserveCount;
@@ -107,12 +105,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     uint256 reserveId = _reserveCount++;
     uint16 dynamicConfigKey; // 0 as first key to use
 
-    require(assetId < IHub(hub).getAssetCount(), AssetNotListed());
     DataTypes.Asset memory asset = IHub(hub).getAsset(assetId);
+    require(asset.underlying != address(0), AssetNotListed());
 
     _updateReservePriceSource(reserveId, priceSource);
 
     _reserves[reserveId] = DataTypes.Reserve({
+      underlying: asset.underlying,
       hub: IHub(hub),
       assetId: assetId.toUint16(),
       decimals: asset.decimals,
@@ -333,14 +332,11 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
     DataTypes.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-
     // process only if collateral status changes
-    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
-      return;
-    }
+    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) return;
 
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    _validateSetUsingAsCollateral(reserve, reserveId, usingAsCollateral);
+    _validateSetUsingAsCollateral(reserve, usingAsCollateral);
 
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
@@ -375,34 +371,37 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   /// @inheritdoc ISpoke
   function setUserPositionManager(address positionManager, bool approve) external {
-    _setUserPositionManager({
-      positionManager: positionManager,
-      onBehalfOf: msg.sender,
-      approve: approve
-    });
+    _setUserPositionManager({positionManager: positionManager, user: msg.sender, approve: approve});
   }
 
-  function setUserPositionManagerWithPermit(
+  /// @inheritdoc ISpoke
+  function setUserPositionManagerWithSig(
     address positionManager,
-    address onBehalfOf,
+    address user,
     bool approve,
+    uint256 deadline,
     uint8 v,
     bytes32 r,
     bytes32 s
   ) external {
+    require(block.timestamp <= deadline, InvalidSignature());
     bytes32 hash = _hashTypedDataV4(
       keccak256(
-        abi.encode(_PERMIT_TYPEHASH, positionManager, onBehalfOf, approve, _useNonce(onBehalfOf))
+        abi.encode(
+          Constants.SET_USER_POSITION_MANAGER_TYPEHASH,
+          positionManager,
+          user,
+          approve,
+          deadline,
+          _useNonce(user)
+        )
       )
     );
-    require(ECDSA.recover(hash, v, r, s) == onBehalfOf, InvalidPermit());
-    _setUserPositionManager({
-      positionManager: positionManager,
-      onBehalfOf: onBehalfOf,
-      approve: approve
-    });
+    require(ECDSA.recover(hash, v, r, s) == user, InvalidSignature());
+    _setUserPositionManager({positionManager: positionManager, user: user, approve: approve});
   }
 
+  /// @inheritdoc ISpoke
   function useNonce() external {
     _useNonce(msg.sender);
   }
@@ -413,6 +412,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     emit SetUserPositionManager(onBehalfOf, msg.sender, false);
   }
 
+  /// @inheritdoc ISpoke
   function permitReserve(
     uint256 reserveId,
     address onBehalfOf,
@@ -422,13 +422,13 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     bytes32 r,
     bytes32 s
   ) external {
-    require(reserveId < _reserveCount, ReserveNotListed());
     DataTypes.Reserve storage reserve = _reserves[reserveId];
-    IHub hub = reserve.hub;
+    address hub = address(reserve.hub);
+    require(hub != address(0), ReserveNotListed());
     try
-      IERC20Permit(hub.getUnderlying(reserve.assetId)).permit({
+      IERC20Permit(reserve.underlying).permit({
         owner: onBehalfOf,
-        spender: address(hub),
+        spender: hub,
         value: value,
         deadline: deadline,
         v: v,
@@ -1279,21 +1279,17 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     );
   }
 
-  function _setUserPositionManager(
-    address positionManager,
-    address onBehalfOf,
-    bool approve
-  ) internal {
-    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
-    // @dev only allow approval when position manager is active for improved UX
-    require(!approve || config.active, InactivePositionManager());
-    config.approval[msg.sender] = approve;
-    emit SetUserPositionManager(msg.sender, positionManager, approve);
-  }
-
   function _useNonce(address user) internal returns (uint256) {
     unchecked {
       return _nonces[user]++;
     }
+  }
+
+  function _setUserPositionManager(address positionManager, address user, bool approve) private {
+    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
+    // @dev only allow approval when position manager is active for improved UX
+    require(!approve || config.active, InactivePositionManager());
+    config.approval[user] = approve;
+    emit SetUserPositionManager(user, positionManager, approve);
   }
 }
