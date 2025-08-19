@@ -12,6 +12,9 @@ optimizer_runs = 200
 bytecode_hash = "none"
 gas_snapshot_check = false
 
+[lint]
+ignore = ["src/dependencies/**/*", "tests/**/*"]
+
 [profile.default.fuzz]
 runs = 1000
 seed = "0x640"
