@@ -3,10 +3,11 @@ pragma solidity ^0.8.0;
 
 import {Multicall} from 'src/misc/Multicall.sol';
 
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {ECDSA} from 'src/dependencies/openzeppelin/ECDSA.sol';
+import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
+import {EIP712} from 'src/dependencies/openzeppelin/EIP712.sol';
 
 // libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -23,8 +24,7 @@ import {IHub} from 'src/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
-contract Spoke is ISpoke, Multicall, AccessManaged {
-  using SafeERC20 for IERC20;
+contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
@@ -34,6 +34,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
   using MathUtils for uint128;
 
+  bytes32 private constant _PERMIT_TYPEHASH = keccak256('');
+
   IAaveOracle public oracle;
 
   uint256 internal _reserveCount;
@@ -42,6 +44,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   mapping(address user => DataTypes.PositionStatus positionStatus) internal _positionStatus;
   mapping(uint256 reserveId => DataTypes.Reserve reserveData) internal _reserves;
   mapping(address positionManager => DataTypes.PositionManagerConfig) internal _positionManager;
+  mapping(address user => uint256) internal _nonces;
   mapping(uint256 reserveId => mapping(uint16 configKey => DataTypes.DynamicReserveConfig config))
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   DataTypes.LiquidationConfig internal _liquidationConfig;
@@ -56,8 +59,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @dev Constructor.
    * @dev The authority should implement the AccessManaged interface to control access.
    * @param authority_ The address of the authority contract which manages permissions.
+   * @param name_ The name of the spoke used for the EIP712 domain separator.
    */
-  constructor(address authority_) AccessManaged(authority_) {
+  constructor(
+    address authority_,
+    string memory name_
+  ) AccessManaged(authority_) EIP712(name_, '1') {
     // todo move to `initialize` when adding upgradeability
     _liquidationConfig.closeFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     emit LiquidationConfigUpdate(_liquidationConfig);
@@ -376,17 +383,67 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   /// @inheritdoc ISpoke
   function setUserPositionManager(address positionManager, bool approve) external {
-    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
-    // @dev only allow approval when position manager is active for improved UX
-    require(!approve || config.active, InactivePositionManager());
-    config.approval[msg.sender] = approve;
-    emit SetUserPositionManager(msg.sender, positionManager, approve);
+    _setUserPositionManager({
+      positionManager: positionManager,
+      onBehalfOf: msg.sender,
+      approve: approve
+    });
+  }
+
+  function setUserPositionManagerWithPermit(
+    address positionManager,
+    address onBehalfOf,
+    bool approve,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external {
+    bytes32 hash = _hashTypedDataV4(
+      keccak256(
+        abi.encode(_PERMIT_TYPEHASH, positionManager, onBehalfOf, approve, _useNonce(onBehalfOf))
+      )
+    );
+    require(ECDSA.recover(hash, v, r, s) == onBehalfOf, InvalidPermit());
+    _setUserPositionManager({
+      positionManager: positionManager,
+      onBehalfOf: onBehalfOf,
+      approve: approve
+    });
+  }
+
+  function useNonce() external {
+    _useNonce(msg.sender);
   }
 
   /// @inheritdoc ISpoke
   function renouncePositionManagerRole(address onBehalfOf) external {
     _positionManager[msg.sender].approval[onBehalfOf] = false;
     emit SetUserPositionManager(onBehalfOf, msg.sender, false);
+  }
+
+  function permitReserve(
+    uint256 reserveId,
+    address onBehalfOf,
+    uint256 value,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external {
+    require(reserveId < _reserveCount, ReserveNotListed());
+    DataTypes.Reserve storage reserve = _reserves[reserveId];
+    IHub hub = reserve.hub;
+    try
+      IERC20Permit(hub.getUnderlying(reserve.assetId)).permit({
+        owner: onBehalfOf,
+        spender: address(hub),
+        value: value,
+        deadline: deadline,
+        v: v,
+        r: r,
+        s: s
+      })
+    {} catch {}
   }
 
   /// @inheritdoc ISpoke
@@ -559,6 +616,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return _userPositions[user][reserveId];
   }
 
+  function nonces(address user) external view returns (uint256) {
+    return _nonces[user];
+  }
+
   // internal
   function _validateSupply(DataTypes.Reserve storage reserve) internal view {
     require(address(reserve.hub) != address(0), ReserveNotListed());
@@ -694,12 +755,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @dev Validates the reserve can be set as collateral.
    * @dev Collateral can be disabled if the reserve is frozen.
    * @param reserve The reserve to be set as collateral.
-   * @param reserveId The identifier of the reserve.
    * @param usingAsCollateral True if enables the reserve as collateral, false otherwise.
    */
   function _validateSetUsingAsCollateral(
     DataTypes.Reserve storage reserve,
-    uint256 reserveId,
     bool usingAsCollateral
   ) internal view {
     require(!reserve.paused, ReservePaused());
@@ -1231,5 +1290,23 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.premiumDebtToLiquidate,
       vars.hasDeficit
     );
+  }
+
+  function _setUserPositionManager(
+    address positionManager,
+    address onBehalfOf,
+    bool approve
+  ) internal {
+    DataTypes.PositionManagerConfig storage config = _positionManager[positionManager];
+    // @dev only allow approval when position manager is active for improved UX
+    require(!approve || config.active, InactivePositionManager());
+    config.approval[msg.sender] = approve;
+    emit SetUserPositionManager(msg.sender, positionManager, approve);
+  }
+
+  function _useNonce(address user) internal returns (uint256) {
+    unchecked {
+      return _nonces[user]++;
+    }
   }
 }

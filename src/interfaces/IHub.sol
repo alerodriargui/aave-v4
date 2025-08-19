@@ -313,6 +313,8 @@ interface IHub is IHubBase, IAccessManaged {
 
   function getAssetConfig(uint256 assetId) external view returns (DataTypes.AssetConfig memory);
 
+  function getUnderlying(uint256 assetId) external view returns (address);
+
   function getAssetOwed(uint256 assetId) external view returns (uint256, uint256);
 
   function getAssetAddedAmount(uint256 assetId) external view returns (uint256);

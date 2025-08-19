@@ -528,6 +528,10 @@ contract Hub is IHub, AccessManaged {
       });
   }
 
+  function getUnderlying(uint256 assetId) external view returns (address) {
+    return _assets[assetId].underlying;
+  }
+
   function _updateSpokeConfig(
     uint256 assetId,
     address spoke,
