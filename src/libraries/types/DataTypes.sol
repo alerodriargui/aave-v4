@@ -106,10 +106,6 @@ library DataTypes {
     mapping(uint256 slot => uint256 status) map;
   }
 
-  struct PositionStatusCache {
-    uint256[] data;
-  }
-
   struct ReserveConfig {
     bool paused;
     bool frozen;
@@ -136,7 +132,6 @@ library DataTypes {
     uint256 assetId;
     uint256 assetPrice;
     uint256 assetUnit;
-    uint256 reserveId;
     uint256 reservePrice;
     uint256 collateralRisk;
     uint256 userCollateralInBaseCurrency;
