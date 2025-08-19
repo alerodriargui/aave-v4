@@ -335,4 +335,8 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   function getLiquidationConfig() external view returns (DataTypes.LiquidationConfig memory);
 
   function oracle() external view returns (IAaveOracle);
+
+  function nonces(address user) external view returns (uint256);
+
+  function DOMAIN_SEPARATOR() external view returns (bytes32);
 }

@@ -388,8 +388,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
           positionManager,
           user,
           approve,
-          deadline,
-          _useNonce(user)
+          _useNonce(user),
+          deadline
         )
       )
     );
@@ -605,6 +605,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   function nonces(address user) external view returns (uint256) {
     return _nonces[user];
+  }
+
+  function DOMAIN_SEPARATOR() external view returns (bytes32) {
+    return _domainSeparator();
   }
 
   // internal

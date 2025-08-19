@@ -1,8 +1,8 @@
 {
   "borrow: first": "276413",
   "borrow: second action, same reserve": "264447",
-  "liquidationCall: full": "317946",
-  "liquidationCall: partial": "412454",
+  "liquidationCall: full": "317924",
+  "liquidationCall: partial": "412432",
   "repay: full": "188516",
   "repay: partial": "255075",
   "supply + enable collateral": "200872",
