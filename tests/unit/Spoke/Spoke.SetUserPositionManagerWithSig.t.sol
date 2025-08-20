@@ -47,7 +47,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     assertEq(spoke.DOMAIN_SEPARATOR(), expectedDomainSeparator);
   }
 
-  function test_setUserPositionManager_typeHash() public {
+  function test_setUserPositionManager_typeHash() public pure {
     assertEq(
       Constants.SET_USER_POSITION_MANAGER_TYPEHASH,
       vm.eip712HashType('SetUserPositionManager')
@@ -60,7 +60,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     );
   }
 
-  function test_setUserPositionManagerWitSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
+  function test_setUserPositionManagerWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
     public
   {
     (, uint256 alicePk) = makeAddrAndKey('alice');
@@ -91,7 +91,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     );
   }
 
-  function test_setUserPositionManagerWitSig_revertsWith_InvalidSignature_dueTo_InvalidSigner()
+  function test_setUserPositionManagerWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner()
     public
   {
     (address randomUser, uint256 randomUserPk) = makeAddrAndKey(string(vm.randomBytes(32)));
@@ -122,7 +122,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     );
   }
 
-  function test_setUserPositionManagerWitSig_revertsWith_InvalidSignature_dueTo_InvalidNonce()
+  function test_setUserPositionManagerWithSig_revertsWith_InvalidSignature_dueTo_InvalidNonce()
     public
   {
     (, uint256 alicePk) = makeAddrAndKey('alice');
