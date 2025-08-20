@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
-  using MathUtils for uint256;
+  using Math for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   /**
@@ -89,21 +89,20 @@ library LiquidationLogic {
   ) internal pure returns (uint256) {
     // represents the effective value loss from the collateral per unit of debt repaid
     // the greater the penalty, the more debt must be repaid to restore the user's health factor
-    uint256 effectiveLiquidationPenalty = (params.liquidationBonus.toWad())
-      .percentMulDown(params.collateralFactor)
-      .fromBpsDown();
+    uint256 effectiveLiquidationPenalty = params.liquidationBonus.bpsToWad().percentMulDown(
+      params.collateralFactor
+    );
 
     // prevent underflow in denominator
     if (params.closeFactor < effectiveLiquidationPenalty) {
       return type(uint256).max;
     }
 
-    // add 1 to denominator to round down, ensuring HF is always <= close factor
     return
-      (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
-        (params.closeFactor - params.healthFactor)) /
-        ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
-        .fromWadDown();
+      params.totalDebtInBaseCurrency.mulDiv(
+        params.debtAssetUnit * (params.closeFactor - params.healthFactor),
+        (params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice.toWad()
+      );
   }
 
   /**
@@ -142,9 +141,11 @@ library LiquidationLogic {
         params.debtAssetUnit;
     } else {
       // add 1 to round collateral amount up, ensuring HF is always <= close factor
-      vars.collateralAmount = (vars.maxCollateralToLiquidate * params.collateralAssetUnit)
-        .wadDivUp(params.collateralAssetPrice.toWad())
-        .fromWadUp();
+      vars.collateralAmount = vars.maxCollateralToLiquidate.mulDiv(
+        params.collateralAssetUnit,
+        params.collateralAssetPrice.toWad(),
+        Math.Rounding.Ceil
+      );
       vars.debtAmountNeeded = params.actualDebtToLiquidate;
       vars.collateralToLiquidateInBaseCurrency =
         (vars.collateralAmount * params.collateralAssetPrice).toWad() /

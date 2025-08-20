@@ -179,12 +179,6 @@ contract WadRayMathDifferentialTests is Test {
     assertEq(w.fromWadDown(a), a / w.WAD());
   }
 
-  function test_fromWadUp_fuzz(uint256 a) public {
-    uint256 res = w.fromWadUp(a);
-    assertEq(res, a % w.WAD() == 0 ? a / w.WAD() : a / w.WAD() + 1);
-    assertEq(res, w.wadMulUp(a, 1));
-  }
-
   function test_toWad_fuzz(uint256 a) public {
     uint256 b;
     bool safetyCheck;
@@ -198,6 +192,22 @@ contract WadRayMathDifferentialTests is Test {
     } else {
       assertEq(w.toWad(a), a * w.WAD());
       assertEq(w.toWad(a), b);
+    }
+  }
+
+  function test_bpsToWad_fuzz(uint256 a) public {
+    uint256 b;
+    bool safetyCheck;
+    unchecked {
+      b = a * w.WAD();
+      safetyCheck = b / w.WAD() == a;
+    }
+    if (!safetyCheck) {
+      vm.expectRevert();
+      w.bpsToWad(a);
+    } else {
+      assertEq(w.bpsToWad(a), (a * w.WAD()) / 100_00);
+      assertEq(w.bpsToWad(a), b / 100_00);
     }
   }
 

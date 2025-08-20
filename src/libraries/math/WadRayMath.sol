@@ -190,14 +190,12 @@ library WadRayMath {
   }
 
   /**
-   * @notice Converts number from Wad precision by rounding up
-   * @param a The number in Wad precision
-   * @return b (= a / 1e18, rounded up)
+   * @notice Converts value from basis points to wad
+   * @param a The value in basis points
+   * @return The value in wad (= a * 1e18 / 1e4)
    */
-  function fromWadUp(uint256 a) internal pure returns (uint256 b) {
-    assembly {
-      b := add(div(a, WAD), gt(mod(a, WAD), 0))
-    }
+  function bpsToWad(uint256 a) internal pure returns (uint256) {
+    return (a * WAD) / PERCENTAGE_FACTOR;
   }
 
   /**
