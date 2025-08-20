@@ -74,7 +74,7 @@ contract SpokePermitReserveTest is SpokeBase {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, digest);
 
     vm.expectEmit(address(tokenList.dai));
-    emit IERC20.Approval(params.owner, params.spender, params.value);
+    emit IERC20.Approval(user, hub, params.value);
     vm.prank(vm.randomAddress());
     spoke1.permitReserve(_daiReserveId(spoke1), user, params.value, params.deadline, v, r, s);
 
