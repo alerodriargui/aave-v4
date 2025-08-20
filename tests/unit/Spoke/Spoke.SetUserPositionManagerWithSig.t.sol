@@ -160,7 +160,7 @@ contract SpokeSetUserPositionManagerWithSigTest is SpokeBase {
     );
   }
 
-  function test_setUserPositionManagerWitSig() public {
+  function test_setUserPositionManagerWithSig() public {
     (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
     vm.label(user, 'user');
     address positionManager = vm.randomAddress();
