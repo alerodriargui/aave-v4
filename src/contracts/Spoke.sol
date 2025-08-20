@@ -672,8 +672,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
-    _refreshDynamicConfig(user); // opt: merge with _calculateUserAccountData
-    (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
+    (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateAndRefreshUserAccountData(
+      user
+    );
     require(
       healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
@@ -788,6 +789,20 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     return config.active && config.approval[user];
   }
 
+  function _calculateUserAccountData(
+    address user
+  ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
+    // SAFETY: function does not modify state when refreshConfig is false
+    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
+  }
+
+  function _calculateAndRefreshUserAccountData(
+    address user
+  ) internal returns (uint256, uint256, uint256, uint256, uint256) {
+    emit RefreshAllUserDynamicConfig(user);
+    return _calculateAndPotentiallyRefreshUserAccountData(user, true);
+  }
+
   /**
    * @dev User rp calc runs until the first of either debt or collateral is exhausted
    * @param user address of the user
@@ -797,9 +812,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
    * @return totalCollateralInBaseCurrency
    * @return totalDebtInBaseCurrency
    */
-  function _calculateUserAccountData(
-    address user
-  ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
+  function _calculateAndPotentiallyRefreshUserAccountData(
+    address user,
+    bool refreshConfig
+  ) internal returns (uint256, uint256, uint256, uint256, uint256) {
     DataTypes.CalculateUserAccountDataVars memory vars;
     uint256 reserveCount = _reserveCount;
     DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
@@ -826,7 +842,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
 
       if (positionStatus.isUsingAsCollateral(vars.reserveId)) {
         DataTypes.DynamicReserveConfig storage dynConfig = _dynamicConfig[vars.reserveId][
-          userPosition.configKey
+          refreshConfig
+            ? (userPosition.configKey = reserve.dynamicConfigKey)
+            : userPosition.configKey
         ];
 
         vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
@@ -1296,5 +1314,22 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
     require(!approve || config.active, InactivePositionManager());
     config.approval[user] = approve;
     emit SetUserPositionManager(user, positionManager, approve);
+  }
+
+  function _castToView(
+    function(address, bool) internal returns (uint256, uint256, uint256, uint256, uint256) fnIn
+  )
+    internal
+    pure
+    returns (
+      function(address, bool)
+        internal
+        view
+        returns (uint256, uint256, uint256, uint256, uint256) fnOut
+    )
+  {
+    assembly ('memory-safe') {
+      fnOut := fnIn
+    }
   }
 }
