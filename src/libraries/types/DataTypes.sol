@@ -118,7 +118,6 @@ library DataTypes {
 
   struct NotifyRiskPremiumUpdateVars {
     bool premiumIncrease;
-    uint256 reserveCount;
     uint256 reserveId;
     uint256 assetId;
     IHub hub;
@@ -136,7 +135,6 @@ library DataTypes {
     uint256 assetId;
     uint256 assetPrice;
     uint256 assetUnit;
-    uint256 reserveId;
     uint256 reservePrice;
     uint256 collateralRisk;
     uint256 userCollateralInBaseCurrency;

@@ -11,7 +11,10 @@ import {DataTypes} from 'src/libraries/types/DataTypes.sol';
  * @notice Implements the bitmap logic to handle the user configuration.
  */
 library PositionStatus {
-  using PositionStatus for DataTypes.PositionStatus;
+  using PositionStatus for *;
+  using LibBit for uint256;
+
+  uint256 internal constant NOT_FOUND = type(uint256).max;
 
   uint256 internal constant BORROWING_MASK =
     0x5555555555555555555555555555555555555555555555555555555555555555;
@@ -116,14 +119,51 @@ library PositionStatus {
     uint256 reserveCount
   ) internal view returns (uint256) {
     unchecked {
-      uint256 bucket = reserveCount >> 7;
-      uint256 count = LibBit.popCount(
-        self.map[bucket] & (COLLATERAL_MASK >> (256 - ((reserveCount % 128) << 1)))
-      ); // disregard bits after `reserveCount`
+      uint256 bucket = reserveCount.bucketId();
+      uint256 count = self.map[bucket].isolateCollateralUntil(reserveCount).popCount();
       while (bucket != 0) {
-        count += LibBit.popCount(self.map[--bucket] & COLLATERAL_MASK);
+        count += self.map[--bucket].isolateCollateral().popCount();
       }
       return count;
+    }
+  }
+
+  function next(
+    DataTypes.PositionStatus storage self,
+    uint256 startReserveId,
+    uint256 reserveCount
+  ) internal view returns (uint256, bool, bool) {
+    unchecked {
+      uint256 endBucket = reserveCount.bucketId();
+      uint256 bucket = startReserveId.bucketId();
+      uint256 map = self.map[bucket];
+      uint256 setBitId = map.isolateFrom(startReserveId).ffs();
+      while (setBitId == 256 && bucket != endBucket) {
+        map = self.map[++bucket];
+        setBitId = map.ffs();
+      }
+      if (setBitId == 256) {
+        return (NOT_FOUND, false, false);
+      } else {
+        uint256 word = map >> ((setBitId >> 1) << 1);
+        return (setBitId.fromBitId(bucket), word & 1 != 0, word & 2 != 0);
+      }
+    }
+  }
+
+  function nextBorrowing(
+    DataTypes.PositionStatus storage self,
+    uint256 startReserveId,
+    uint256 reserveCount
+  ) internal view returns (uint256 reserveId) {
+    unchecked {
+      uint256 endBucket = reserveCount.bucketId();
+      uint256 bucket = startReserveId.bucketId();
+      uint256 setBitId = self.map[bucket].isolateBorrowingFrom(startReserveId).ffs();
+      while (setBitId == 256 && bucket != endBucket) {
+        setBitId = self.map[++bucket].isolateBorrowing().ffs();
+      }
+      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket); // check if branchless is cheaper
     }
   }
 
@@ -136,6 +176,60 @@ library PositionStatus {
     DataTypes.PositionStatus storage self,
     uint256 reserveId
   ) internal view returns (uint256) {
-    return self.map[reserveId >> 7];
+    return self.map[reserveId.bucketId()];
+  }
+
+  function bucketId(uint256 reserveId) internal pure returns (uint256 wordId) {
+    assembly ('memory-safe') {
+      wordId := shr(7, reserveId)
+    }
+  }
+
+  function fromBitId(uint256 bitId, uint256 bucket) internal pure returns (uint256 reserveId) {
+    assembly ('memory-safe') {
+      reserveId := add(shr(1, bitId), shl(7, bucket))
+    }
+  }
+
+  function isolateBorrowing(uint256 word) internal pure returns (uint256 ret) {
+    assembly ('memory-safe') {
+      ret := and(word, BORROWING_MASK)
+    }
+  }
+
+  // disregard bits before `reserveId`
+  function isolateBorrowingFrom(
+    uint256 word,
+    uint256 reserveId
+  ) internal pure returns (uint256 ret) {
+    // ret = word & (BORROWING_MASK << ((reserveId % 128) << 1));
+    assembly ('memory-safe') {
+      ret := and(word, shl(shl(1, mod(reserveId, 128)), BORROWING_MASK))
+    }
+  }
+
+  // disregard bits before `reserveId`
+  function isolateFrom(uint256 word, uint256 reserveId) internal pure returns (uint256 ret) {
+    // ret = word & (type(uint256).max << ((reserveId % 128) << 1));
+    assembly ('memory-safe') {
+      ret := and(word, shl(shl(1, mod(reserveId, 128)), not(0)))
+    }
+  }
+
+  function isolateCollateral(uint256 word) internal pure returns (uint256 ret) {
+    assembly ('memory-safe') {
+      ret := and(word, COLLATERAL_MASK)
+    }
+  }
+
+  // disregard bits after `reserveCount`
+  function isolateCollateralUntil(
+    uint256 word,
+    uint256 reserveCount
+  ) internal pure returns (uint256 ret) {
+    // ret = word & (COLLATERAL_MASK >> (256 - ((reserveCount % 128) << 1)));
+    assembly ('memory-safe') {
+      ret := and(word, shr(sub(256, shl(1, mod(reserveCount, 128))), COLLATERAL_MASK))
+    }
   }
 }
