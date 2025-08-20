@@ -8,13 +8,13 @@ library DataTypes {
   // Hub types
   struct SpokeData {
     //
-    uint128 addedShares;
-    uint128 drawnShares;
-    //
     uint128 premiumShares;
     uint128 premiumOffset;
     //
     uint128 realizedPremium;
+    uint128 drawnShares;
+    //
+    uint128 addedShares;
     uint56 addCap;
     uint56 drawCap;
     bool active;
@@ -23,10 +23,10 @@ library DataTypes {
   struct Asset {
     //
     uint128 liquidity;
-    uint128 swept;
+    uint128 addedShares;
     //
     uint128 deficit;
-    uint128 addedShares;
+    uint128 swept;
     //
     uint128 premiumShares;
     uint128 premiumOffset;
@@ -35,6 +35,7 @@ library DataTypes {
     uint128 drawnShares;
     //
     uint128 realizedPremium;
+    uint16 liquidityFee;
     uint40 lastUpdateTimestamp;
     uint8 decimals;
     //
@@ -46,7 +47,6 @@ library DataTypes {
     address reinvestmentController;
     //
     address feeReceiver;
-    uint16 liquidityFee;
   }
 
   struct SpokeConfig {
@@ -90,13 +90,13 @@ library DataTypes {
 
   struct UserPosition {
     //
-    uint128 suppliedShares;
     uint128 drawnShares;
+    uint128 realizedPremium;
     //
     uint128 premiumShares;
     uint128 premiumOffset;
     //
-    uint128 realizedPremium;
+    uint128 suppliedShares;
     uint16 configKey; // key of the last user config
   }
 
