@@ -77,4 +77,31 @@ library MathUtils {
       return a - b;
     }
   }
+
+  // performs 256 bit
+  function mulDivDown(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
+    assembly ('memory-safe') {
+      if iszero(c) {
+        revert(0, 0)
+      }
+      if iszero(or(iszero(b), iszero(gt(a, div(not(0), b))))) {
+        revert(0, 0)
+      }
+      d := div(mul(a, b), c)
+    }
+  }
+
+  // performs 256 bit
+  function mulDivUp(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
+    assembly ('memory-safe') {
+      if iszero(c) {
+        revert(0, 0)
+      }
+      if iszero(or(iszero(b), iszero(gt(a, div(not(0), b))))) {
+        revert(0, 0)
+      }
+      let product := mul(a, b)
+      d := add(div(product, c), gt(mod(product, c), 0))
+    }
+  }
 }

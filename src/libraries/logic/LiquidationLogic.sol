@@ -2,16 +2,16 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 
 library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
-  using Math for uint256;
+  using MathUtils for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
 
   /**
@@ -100,7 +100,7 @@ library LiquidationLogic {
     }
 
     return
-      params.totalDebtInBaseCurrency.mulDiv(
+      params.totalDebtInBaseCurrency.mulDivDown(
         params.debtAssetUnit * (params.closeFactor - params.healthFactor),
         (params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice.toWad()
       );
@@ -141,11 +141,9 @@ library LiquidationLogic {
         (vars.debtAmountNeeded * params.debtAssetPrice).toWad() /
         params.debtAssetUnit;
     } else {
-      // add 1 to round collateral amount up, ensuring HF is always <= close factor
-      vars.collateralAmount = vars.maxCollateralToLiquidate.mulDiv(
+      vars.collateralAmount = vars.maxCollateralToLiquidate.mulDivUp(
         params.collateralAssetUnit,
-        params.collateralAssetPrice.toWad(),
-        Math.Rounding.Ceil
+        params.collateralAssetPrice.toWad()
       );
       vars.debtAmountNeeded = params.actualDebtToLiquidate;
       vars.collateralToLiquidateInBaseCurrency =
