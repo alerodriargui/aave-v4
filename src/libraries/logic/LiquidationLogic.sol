@@ -45,9 +45,10 @@ library LiquidationLogic {
     // otherwise linearly interpolate between min and max
     return
       minLiquidationBonus +
-      ((liquidationBonus - minLiquidationBonus) *
-        (healthFactorLiquidationThreshold - healthFactor)) /
-      (healthFactorLiquidationThreshold - config.healthFactorForMaxBonus);
+      (liquidationBonus - minLiquidationBonus).mulDivDown(
+        healthFactorLiquidationThreshold - healthFactor,
+        healthFactorLiquidationThreshold - config.healthFactorForMaxBonus
+      );
   }
 
   /**
@@ -68,8 +69,8 @@ library LiquidationLogic {
       return actualDebtToLiquidate;
     }
 
-    uint256 remainingDebtInBaseCurrency = ((params.totalBorrowerReserveDebt -
-      actualDebtToLiquidate) * params.debtAssetPrice).toWad() / params.debtAssetUnit;
+    uint256 remainingDebtInBaseCurrency = 
+      (params.totalBorrowerReserveDebt - actualDebtToLiquidate).mulDivDown(params.debtAssetPrice.toWad(), params.debtAssetUnit);
 
     // check for (non zero) debt dust remaining
     if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE) {
@@ -121,8 +122,7 @@ library LiquidationLogic {
 
     // convert existing collateral to base currency
     vars.borrowerCollateralBalanceInBaseCurrency =
-      (params.borrowerCollateralBalance * params.collateralAssetPrice).toWad() /
-      params.collateralAssetUnit;
+      params.borrowerCollateralBalance.mulDivDown(params.collateralAssetPrice.toWad(), params.collateralAssetUnit);
 
     // find collateral in base currency that corresponds to the debt to cover
     vars.baseCollateral = (params.actualDebtToLiquidate * params.debtAssetPrice).wadDivUp(
@@ -138,8 +138,7 @@ library LiquidationLogic {
         .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).fromWadDown();
       vars.collateralToLiquidateInBaseCurrency = vars.borrowerCollateralBalanceInBaseCurrency;
       vars.debtToLiquidateInBaseCurrency =
-        (vars.debtAmountNeeded * params.debtAssetPrice).toWad() /
-        params.debtAssetUnit;
+        vars.debtAmountNeeded.mulDivDown(params.debtAssetPrice.toWad(), params.debtAssetUnit);
     } else {
       vars.collateralAmount = vars.maxCollateralToLiquidate.mulDivUp(
         params.collateralAssetUnit,
@@ -147,8 +146,7 @@ library LiquidationLogic {
       );
       vars.debtAmountNeeded = params.actualDebtToLiquidate;
       vars.collateralToLiquidateInBaseCurrency =
-        (vars.collateralAmount * params.collateralAssetPrice).toWad() /
-        params.collateralAssetUnit;
+        vars.collateralAmount.mulDivDown(params.collateralAssetPrice.toWad(), params.collateralAssetUnit);
       vars.debtToLiquidateInBaseCurrency = vars.baseCollateral;
     }
 

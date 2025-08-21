@@ -239,7 +239,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     params.collateralAssetUnit = 0;
     DataTypes.LiquidationCallLocalVars memory args = setStructFields(params);
 
-    vm.expectRevert(stdError.divisionError);
+    vm.expectRevert(); // MathUtils reverts with no data if division by zero
     LiquidationLogic.calculateAvailableCollateralToLiquidate(args);
   }
 
