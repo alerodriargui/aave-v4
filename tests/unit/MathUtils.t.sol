@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'forge-std/Test.sol';
@@ -85,5 +86,10 @@ contract MathUtilsTest is Test {
 
     assertTrue(result >= type(int256).min);
     assertTrue(result <= INT256_MAX);
+  }
+
+  function test_uncheckedSub(uint256 a, uint256 b) public pure {
+    uint256 result = a >= b ? a - b : UINT256_MAX - b + a + 1;
+    assertEq(MathUtils.uncheckedSub(a, b), result);
   }
 }
