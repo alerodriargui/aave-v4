@@ -145,6 +145,7 @@ library DataTypes {
     uint256 avgCollateralFactor;
     uint256 userRiskPremium;
     uint256 healthFactor;
+    uint256 reserveCount;
   }
 
   struct LiquidationCallLocalVars {
