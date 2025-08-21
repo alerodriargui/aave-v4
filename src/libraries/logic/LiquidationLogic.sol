@@ -100,6 +100,7 @@ library LiquidationLogic {
       return type(uint256).max;
     }
 
+    // add 1 to denominator to round down, ensuring HF is always <= close factor
     return
       params.totalDebtInBaseCurrency.mulDivDown(
         params.debtAssetUnit * (params.closeFactor - params.healthFactor),
