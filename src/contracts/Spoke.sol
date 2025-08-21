@@ -1013,10 +1013,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _refreshDynamicConfig(address user) internal {
     uint256 reserveCount = _reserveCount;
     uint256 reserveId;
-    while (reserveId < reserveCount) {
-      if (_positionStatus[user].isUsingAsCollateral(reserveId)) {
-        _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
-      }
+    DataTypes.PositionStatus storage position = _positionStatus[user];
+    while (
+      (reserveId = position.nextCollateral(reserveId, reserveCount)) != PositionStatus.NOT_FOUND
+    ) {
+      _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
+
       unchecked {
         ++reserveId;
       }

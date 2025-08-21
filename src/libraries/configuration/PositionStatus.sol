@@ -163,7 +163,23 @@ library PositionStatus {
       while (setBitId == 256 && bucket != endBucket) {
         setBitId = self.map[++bucket].isolateBorrowing().ffs();
       }
-      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket); // check if branchless is cheaper
+      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket);
+    }
+  }
+
+  function nextCollateral(
+    DataTypes.PositionStatus storage self,
+    uint256 startReserveId,
+    uint256 reserveCount
+  ) internal view returns (uint256 reserveId) {
+    unchecked {
+      uint256 endBucket = reserveCount.bucketId();
+      uint256 bucket = startReserveId.bucketId();
+      uint256 setBitId = self.map[bucket].isolateCollateralFrom(startReserveId).ffs();
+      while (setBitId == 256 && bucket != endBucket) {
+        setBitId = self.map[++bucket].isolateBorrowing().ffs();
+      }
+      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket);
     }
   }
 
@@ -219,6 +235,17 @@ library PositionStatus {
   function isolateCollateral(uint256 word) internal pure returns (uint256 ret) {
     assembly ('memory-safe') {
       ret := and(word, COLLATERAL_MASK)
+    }
+  }
+
+  // disregard bits before `reserveId`
+  function isolateCollateralFrom(
+    uint256 word,
+    uint256 reserveId
+  ) internal pure returns (uint256 ret) {
+    // ret = word & (COLLATERAL_MASK << ((reserveId % 128) << 1));
+    assembly ('memory-safe') {
+      ret := and(word, shl(shl(1, mod(reserveId, 128)), COLLATERAL_MASK))
     }
   }
 
