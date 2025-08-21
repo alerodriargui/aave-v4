@@ -33,7 +33,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using PositionStatus for *;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
-  using MathUtils for uint128;
+  using MathUtils for *;
 
   IAaveOracle public oracle;
 
@@ -931,21 +931,21 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         oldUserPremiumShares
       ) - oldUserPremiumOffset;
 
-      userPosition.premiumShares = userPosition
+      uint256 newPremiumShares = (userPosition.premiumShares = userPosition
         .drawnShares
         .percentMulUp(newUserRiskPremium)
-        .toUint128();
-      userPosition.premiumOffset = _previewOffset(
+        .toUint128());
+      uint256 newPremiumOffset = (userPosition.premiumOffset = _previewOffset(
         vars.hub,
         vars.assetId,
         userPosition.premiumShares
-      ).toUint128();
+      ).toUint128());
       userPosition.realizedPremium += accruedUserPremium.toUint128();
 
       vars.premiumDelta = DataTypes.PremiumDelta({
-        sharesDelta: userPosition.premiumShares.signedSub(oldUserPremiumShares),
-        offsetDelta: userPosition.premiumOffset.signedSub(oldUserPremiumOffset),
-        realizedDelta: int256(accruedUserPremium)
+        sharesDelta: newPremiumShares.signedSub(oldUserPremiumShares),
+        offsetDelta: newPremiumOffset.signedSub(oldUserPremiumOffset),
+        realizedDelta: accruedUserPremium.toInt256()
       });
 
       if (!vars.premiumIncrease) vars.premiumIncrease = vars.premiumDelta.sharesDelta > 0;
