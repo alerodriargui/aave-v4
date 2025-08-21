@@ -280,6 +280,24 @@ contract PositionStatusTest is Base {
     assertEq(p.isBorrowing(reserveId), reserveId != PositionStatus.NOT_FOUND);
   }
 
+  function test_nextCollateral(uint256 reserveCount) public {
+    reserveCount = bound(reserveCount, 1, 1 << 10); // gas limit
+    vm.setArbitraryStorage(address(p));
+
+    uint256 startReserveId = vm.randomUint(0, reserveCount - 1);
+    uint256 expectedReserveId = PositionStatus.NOT_FOUND;
+    uint256 endReserveId = ((reserveCount / 128) + 1) * 128; // last bucket
+    for (uint256 i = startReserveId; i < endReserveId; ++i) {
+      if (p.isUsingAsCollateral(i)) {
+        expectedReserveId = i;
+        break;
+      }
+    }
+    uint256 reserveId = p.nextCollateral(startReserveId, reserveCount);
+    assertEq(reserveId, expectedReserveId);
+    assertEq(p.isUsingAsCollateral(reserveId), reserveId != PositionStatus.NOT_FOUND);
+  }
+
   // non state reading helpers tests below
   function test_bucketId() public {
     uint256 reserveId = vm.randomUint();

@@ -206,7 +206,7 @@ library PositionStatus {
       uint256 bucket = startReserveId.bucketId();
       uint256 setBitId = self.map[bucket].isolateCollateralFrom(startReserveId).ffs();
       while (setBitId == 256 && bucket != endBucket) {
-        setBitId = self.map[++bucket].isolateBorrowing().ffs();
+        setBitId = self.map[++bucket].isolateCollateral().ffs();
       }
       return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket);
     }
