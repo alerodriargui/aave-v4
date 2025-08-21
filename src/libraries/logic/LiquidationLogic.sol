@@ -16,9 +16,9 @@ library LiquidationLogic {
 
   /**
    * @dev This constant represents the minimum amount of assets in base currency that need to be leftover after a liquidation, if not clearing collateral on a position completely.
-   * @notice The default value assumes that the basePrice is usd denominated by 26 decimals.
+   * @notice The default value assumes that the basePrice is usd denominated by 8 decimals.
    */
-  uint256 constant MIN_LEFTOVER_BASE = 1000e26;
+  uint256 constant MIN_LEFTOVER_BASE = 1000e8;
 
   error MustNotLeaveDust();
 
@@ -69,7 +69,7 @@ library LiquidationLogic {
     }
 
     uint256 remainingDebtInBaseCurrency = ((params.totalBorrowerReserveDebt -
-      actualDebtToLiquidate) * params.debtAssetPrice).toWad() / params.debtAssetUnit;
+      actualDebtToLiquidate) * params.debtAssetPrice) / params.debtAssetUnit;
 
     // check for (non zero) debt dust remaining
     if (remainingDebtInBaseCurrency < MIN_LEFTOVER_BASE) {
@@ -101,10 +101,9 @@ library LiquidationLogic {
 
     // add 1 to denominator to round down, ensuring HF is always <= close factor
     return
-      (((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
+      ((params.totalDebtInBaseCurrency * params.debtAssetUnit) *
         (params.closeFactor - params.healthFactor)) /
-        ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice))
-        .fromWadDown();
+      ((params.closeFactor - effectiveLiquidationPenalty + 1) * params.debtAssetPrice);
   }
 
   /**
@@ -122,12 +121,12 @@ library LiquidationLogic {
 
     // convert existing collateral to base currency
     vars.borrowerCollateralBalanceInBaseCurrency =
-      (params.borrowerCollateralBalance * params.collateralAssetPrice).toWad() /
+      (params.borrowerCollateralBalance * params.collateralAssetPrice) /
       params.collateralAssetUnit;
 
     // find collateral in base currency that corresponds to the debt to cover
     vars.baseCollateral =
-      (params.actualDebtToLiquidate * params.debtAssetPrice).toWad() /
+      (params.actualDebtToLiquidate * params.debtAssetPrice) /
       params.debtAssetUnit;
 
     // account for additional collateral required due to liquidation bonus
@@ -135,21 +134,24 @@ library LiquidationLogic {
 
     if (vars.maxCollateralToLiquidate >= vars.borrowerCollateralBalanceInBaseCurrency) {
       vars.collateralAmount = params.borrowerCollateralBalance;
-      vars.debtAmountNeeded = ((params.debtAssetUnit * vars.borrowerCollateralBalanceInBaseCurrency)
-        .percentDivDown(params.liquidationBonus) / params.debtAssetPrice).fromWadDown();
+      vars.debtAmountNeeded =
+        (params.debtAssetUnit * vars.borrowerCollateralBalanceInBaseCurrency).percentDivDown(
+          params.liquidationBonus
+        ) /
+        params.debtAssetPrice;
       vars.collateralToLiquidateInBaseCurrency = vars.borrowerCollateralBalanceInBaseCurrency;
       vars.debtToLiquidateInBaseCurrency =
-        (vars.debtAmountNeeded * params.debtAssetPrice).toWad() /
+        (vars.debtAmountNeeded * params.debtAssetPrice) /
         params.debtAssetUnit;
     } else {
       // add 1 to round collateral amount up, ensuring HF is always <= close factor
       vars.collateralAmount =
-        ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice)
-          .fromWadDown() +
+        ((vars.maxCollateralToLiquidate * params.collateralAssetUnit) /
+          params.collateralAssetPrice) +
         1;
       vars.debtAmountNeeded = params.actualDebtToLiquidate;
       vars.collateralToLiquidateInBaseCurrency =
-        (vars.collateralAmount * params.collateralAssetPrice).toWad() /
+        (vars.collateralAmount * params.collateralAssetPrice) /
         params.collateralAssetUnit;
       vars.debtToLiquidateInBaseCurrency = vars.baseCollateral;
     }

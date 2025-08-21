@@ -9,7 +9,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
   using WadRayMath for uint256;
   using SafeCast for uint256;
 
-  uint256 internal dustInBase = 10e26; // $10 in base currency
+  uint256 internal dustInBase = 10e8; // $10 in base currency
 
   /// weth/usdx collateral
   /// dai/usdx debt
@@ -31,7 +31,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         healthFactorForMaxBonus: 0
       }),
       liqBonus: 105_00,
-      supplyAmountInBase: 10_000e26,
+      supplyAmountInBase: 10_000e8,
       liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
@@ -67,7 +67,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         healthFactorForMaxBonus: 0
       }),
       liqBonus: 105_00,
-      supplyAmountInBase: 10_000e26,
+      supplyAmountInBase: 10_000e8,
       liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,
@@ -104,7 +104,7 @@ contract LiquidationCallCloseFactorMultiReserveTest is SpokeLiquidationBase {
         healthFactorForMaxBonus: 0
       }),
       liqBonus: 105_00,
-      supplyAmountInBase: 10_000_000e26,
+      supplyAmountInBase: 10_000_000e8,
       liquidationFee: 5_00,
       collateralReserveIds: collateralReserveIds,
       debtReserveIds: debtReserveIds,

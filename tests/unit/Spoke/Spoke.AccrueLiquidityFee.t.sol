@@ -479,7 +479,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
   }
 
   /// 100.00% liquidity fee redirect all liquidity growth to fee receiver and nothing to suppliers
-  function test_accrueLiquidityFee_maxLiquidityFee() public {
+  function test_accrueLiquidityFee_maxLiquidityFee_1() public {
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
 
@@ -488,6 +488,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     uint256 borrowAmount = 1000e18;
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, borrowAmount);
+    console.log('supplyAmount %e, borrowAmount %e', supplyAmount, borrowAmount);
     uint256 rate = 50_00; // 50.00% base borrow rate
     uint256 expectedDrawnDebtAccrual = borrowAmount.percentMulUp(rate);
     uint256 expectedDrawnDebt = borrowAmount + expectedDrawnDebtAccrual;

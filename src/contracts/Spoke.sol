@@ -23,17 +23,18 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHub} from 'src/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
+import {console2 as console} from 'forge-std/console2.sol';
 
 contract Spoke is ISpoke, Multicall, AccessManaged {
   using SafeERC20 for IERC20;
   using SafeCast for *;
   using WadRayMath for uint256;
   using PercentageMath for *;
+  using MathUtils for *;
   using KeyValueListInMemory for KeyValueListInMemory.List;
   using LiquidationLogic for DataTypes.LiquidationConfig;
   using PositionStatus for DataTypes.PositionStatus;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
-  using MathUtils for uint128;
 
   IAaveOracle public oracle;
 
@@ -814,6 +815,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       }
     }
 
+    console.log('vars.totalDebtInBaseCurrency %8e', vars.totalDebtInBaseCurrency);
+    console.log('vars.avgCollateralFactor %12e', vars.avgCollateralFactor);
+
     // at this point avgCollateralFactor is a weighted sum of collateral scaled by collateralFactor
     // (avgCollateralFactor / totalCollateral) * totalCollateral can be simplified to avgCollateralFactor
     // strip BPS factor from result, because running avgCollateralFactor sum has been scaled by collateralFactor (in BPS) above
@@ -821,6 +825,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       ? type(uint256).max
       : vars.avgCollateralFactor.wadDivDown(vars.totalDebtInBaseCurrency).fromBpsDown(); // HF of 1 -> 1e18
 
+    console.log('hf %18e', vars.healthFactor);
     // divide by total collateral to get avg collateral factor in wad
     vars.avgCollateralFactor = vars.totalCollateralInBaseCurrency == 0
       ? 0
@@ -867,7 +872,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetUnit
   ) internal view returns (uint256) {
     (uint256 drawnDebt, uint256 premiumDebt, ) = _getUserDebt(hub, assetId, userPosition);
-    return ((drawnDebt + premiumDebt) * assetPrice).wadDivUp(assetUnit);
+    return (drawnDebt + premiumDebt).mulDivUp(assetPrice, assetUnit);
   }
 
   function _getUserBalanceInBaseCurrency(
@@ -878,9 +883,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     uint256 assetUnit
   ) internal view returns (uint256) {
     return
-      (hub.previewRemoveByShares(assetId, userPosition.suppliedShares) * assetPrice).wadDivDown(
-        assetUnit
-      );
+      (hub.previewRemoveByShares(assetId, userPosition.suppliedShares) * assetPrice) / assetUnit;
   }
 
   function _getUserDebt(

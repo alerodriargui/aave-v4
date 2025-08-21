@@ -304,8 +304,8 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     state.liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 10e26),
-      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e36)
+      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 10e8),
+      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e18)
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable
@@ -553,7 +553,7 @@ contract LiquidationCallMultiReserveBadPremiumDebtTest is SpokeLiquidationBase {
     vars.requiredDebtInBase = _getRequiredDebtForGtHf(spoke, user, desiredHf);
     vars.remaining = vars.requiredDebtInBase;
     // make sure that each reserve has at least dustInBase in debt
-    uint256 dustInBase = 1e26;
+    uint256 dustInBase = 1e8;
 
     // mock with high base borrow rate so that less time must be skipped to reach desired HF
     _mockInterestRateBps(500_00);

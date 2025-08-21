@@ -32,6 +32,20 @@ library MathUtils {
     return WadRayMath.RAY + result;
   }
 
+  // performs 256 bit
+  function mulDivUp(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
+    assembly ('memory-safe') {
+      if iszero(c) {
+        revert(0, 0)
+      }
+      if iszero(or(iszero(b), iszero(gt(a, div(not(0), b))))) {
+        revert(0, 0)
+      }
+      let product := mul(a, b)
+      d := add(div(product, c), gt(mod(product, c), 0))
+    }
+  }
+
   /**
    * @notice Returns the minimum of two values.
    * @param a The first value to compare.

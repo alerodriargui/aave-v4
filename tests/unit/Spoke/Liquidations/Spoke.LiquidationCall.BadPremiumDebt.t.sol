@@ -203,8 +203,8 @@ contract LiquidationCallBadPremiumDebtTest is SpokeLiquidationBase {
     liquidationFee = bound(liquidationFee, 0, 100_00).toUint16();
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 10e26),
-      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e36)
+      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 10e8),
+      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e18)
     );
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     skipTimeForPremiumAccrual = bound(skipTimeForPremiumAccrual, 5 * 365 days, MAX_SKIP_TIME); // enough time to accrue debt so that HF is liquidatable

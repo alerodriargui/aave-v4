@@ -50,7 +50,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
     // $1 - $500 collateral
     daiAmount = bound(
       daiAmount,
-      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 1e26),
+      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 1e8),
       minLeftoverAmount[_daiReserveId(spoke1)] / 2
     );
     // more debt exists than collateral, results in deficit if all debt is liquidated
@@ -101,7 +101,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
   ) public {
     daiAmount = bound(
       daiAmount,
-      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 1e26), // $1 - $500
+      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 1e8), // $1 - $500
       minLeftoverAmount[_daiReserveId(spoke1)] / 2
     );
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, daiAmount, alice);
@@ -152,7 +152,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
   ) public {
     daiAmount = bound(
       daiAmount,
-      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 1e26), // $1 - $500
+      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 1e8), // $1 - $500
       minLeftoverAmount[_daiReserveId(spoke1)] / 2
     );
 
@@ -193,7 +193,7 @@ contract LiquidationCallMinLeftoverBaseScenarioTest is SpokeLiquidationBase {
   ) public {
     daiAmount = bound(
       daiAmount,
-      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 1e26), // $1 - $500
+      _convertBaseCurrencyToAmount(spoke1, _daiReserveId(spoke1), 1e8), // $1 - $500
       minLeftoverAmount[_daiReserveId(spoke1)] / 2
     );
 

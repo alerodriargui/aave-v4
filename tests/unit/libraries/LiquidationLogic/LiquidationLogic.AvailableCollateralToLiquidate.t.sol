@@ -66,17 +66,17 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     params.collateralAssetPrice = bound(
       params.collateralAssetPrice,
       1,
-      1e59 / params.borrowerCollateralBalance
+      1e41 / params.borrowerCollateralBalance
     );
     params.actualDebtToLiquidate = bound(
       params.actualDebtToLiquidate,
       1,
-      1e59 / params.debtAssetPrice
+      1e41 / params.debtAssetPrice
     );
 
     uint256 maxCollateralToLiquidateInBaseCurrency = calcMaxCollateralToLiquidate(params);
 
-    vm.assume(maxCollateralToLiquidateInBaseCurrency < 1e59 / params.collateralAssetUnit);
+    vm.assume(maxCollateralToLiquidateInBaseCurrency < 1e41 / params.collateralAssetUnit);
     // so that borrowerCollateralBalanceInBaseCurrency < maxCollateralToLiquidate
     vm.assume(
       params.borrowerCollateralBalance <
@@ -115,14 +115,16 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(vars);
 
     if (params.liquidationFee == 0) {
-      assertEq(
+      assertApproxEqAbs(
         res.actualCollateralToLiquidate,
         params.borrowerCollateralBalance,
+        1,
         'actualCollateralToLiquidate without liquidationFee'
       );
-      assertEq(
+      assertApproxEqAbs(
         res.actualDebtToLiquidate,
         calcDebtAmountNeeded(params),
+        1,
         'actualDebtToLiquidate without liquidationFee'
       );
       assertEq(res.liquidationFeeAmount, 0, 'liquidationFeeAmount without liquidationFee');
@@ -133,7 +135,12 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
       );
 
       assertEq(res.actualCollateralToLiquidate, collateralAmount, 'actualCollateralToLiquidate');
-      assertEq(res.actualDebtToLiquidate, calcDebtAmountNeeded(params), 'actualDebtToLiquidate');
+      assertApproxEqAbs(
+        res.actualDebtToLiquidate,
+        calcDebtAmountNeeded(params),
+        1,
+        'actualDebtToLiquidate'
+      );
       assertEq(res.liquidationFeeAmount, liquidationFeeAmount, 'liquidationFeeAmount');
     }
   }
@@ -144,16 +151,15 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
   ) public pure {
     params = bound(params);
     // prevent overflow
-    vm.assume(params.borrowerCollateralBalance * params.collateralAssetPrice < 1e59);
-    vm.assume(params.actualDebtToLiquidate * params.debtAssetPrice < 1e59);
+    vm.assume(params.borrowerCollateralBalance * params.collateralAssetPrice < 1e41);
+    vm.assume(params.actualDebtToLiquidate * params.debtAssetPrice < 1e41);
 
     uint256 maxCollateralToLiquidate = calcMaxCollateralToLiquidate(params);
-    vm.assume(maxCollateralToLiquidate < 1e59 / params.collateralAssetUnit);
+    vm.assume(maxCollateralToLiquidate < 1e41 / params.collateralAssetUnit);
     // so that maxCollateralToLiquidate > borrowerCollateralBalanceInBaseCurrency
     vm.assume(
       params.borrowerCollateralBalance >
-        (maxCollateralToLiquidate * params.collateralAssetUnit).fromWadDown() /
-          params.collateralAssetPrice
+        (maxCollateralToLiquidate * params.collateralAssetUnit) / params.collateralAssetPrice
     );
     vm.assume(
       params.totalBorrowerReserveDebt >
@@ -171,7 +177,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(vars);
 
     uint256 collateralAmount = ((maxCollateralToLiquidate * params.collateralAssetUnit) /
-      params.collateralAssetPrice).fromWadDown() + 1;
+      params.collateralAssetPrice) + 1;
     (uint256 actualCollateralToLiquidate, uint256 liquidationFeeAmount) = calcLiquidationFeeAmount(
       params,
       collateralAmount
@@ -356,12 +362,11 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
     TestAvailableCollateralParams memory params
   ) internal pure returns (uint256) {
     uint256 borrowerCollateralBalanceInBaseCurrency = (params.borrowerCollateralBalance *
-      params.collateralAssetPrice).toWad() / params.collateralAssetUnit;
+      params.collateralAssetPrice) / params.collateralAssetUnit;
 
     return
       ((params.debtAssetUnit * borrowerCollateralBalanceInBaseCurrency) / params.debtAssetPrice)
-        .percentDivDown(params.liquidationBonus)
-        .fromWadDown();
+        .percentDivDown(params.liquidationBonus);
   }
 
   function randomizedParams() internal returns (TestAvailableCollateralParams memory params) {

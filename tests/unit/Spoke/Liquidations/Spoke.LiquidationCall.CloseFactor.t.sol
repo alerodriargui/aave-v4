@@ -423,7 +423,7 @@ contract LiquidationCallCloseFactorTest is SpokeLiquidationBase {
     liquidationFee = bound(liquidationFee, 0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
     supplyAmount = bound(
       supplyAmount,
-      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e26),
+      _convertBaseCurrencyToAmount(state.spoke, state.collateralReserve.reserveId, 1e8),
       _min(
         _convertBaseCurrencyToAmount(
           state.spoke,

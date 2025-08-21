@@ -55,6 +55,7 @@ abstract contract Base is Test {
   using SharesMath for uint256;
   using PercentageMath for uint256;
   using SafeCast for *;
+  using MathUtils for *;
 
   uint256 internal constant MAX_SUPPLY_AMOUNT = 1e30;
   uint256 internal constant MAX_TOKEN_DECIMALS_SUPPORTED = 18;
@@ -1291,7 +1292,7 @@ abstract contract Base is Test {
     assertEq(newRate, oldRate, string.concat('debt rate should be constant ', label));
   }
 
-  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
+  /// returns the USD value of the reserve normalized by it's decimals
   function _getValueInBaseCurrency(
     ISpoke spoke,
     uint256 reserveId,
@@ -1300,7 +1301,7 @@ abstract contract Base is Test {
     IPriceOracle oracle = spoke.oracle();
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     return
-      (amount * oracle.getReservePrice(reserveId).toWad()) /
+      (amount * oracle.getReservePrice(reserveId)) /
       (10 ** spoke.getReserve(reserveId).hub.getAsset(assetId).decimals);
   }
 
@@ -1624,7 +1625,7 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return (amount * assetPrice).toWad() / assetUnit;
+    return (amount * assetPrice) / assetUnit;
   }
 
   function _convertBaseCurrencyToAmount(
@@ -1648,7 +1649,7 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return ((baseCurrencyAmount * assetUnit) / assetPrice).fromWadDown();
+    return (baseCurrencyAmount * assetUnit) / assetPrice;
   }
 
   /**
