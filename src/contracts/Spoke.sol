@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {Multicall} from 'src/misc/Multicall.sol';
@@ -610,8 +611,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
 
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
-    _refreshDynamicConfig(user); // opt: merge with _calculateUserAccountData
-    (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateUserAccountData(user);
+    (uint256 userRiskPremium, , uint256 healthFactor, , ) = _calculateAndRefreshUserAccountData(
+      user
+    );
     require(
       healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
@@ -728,6 +730,20 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     return config.active && config.approval[user];
   }
 
+  function _calculateUserAccountData(
+    address user
+  ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
+    // SAFETY: function does not modify state when refreshConfig is false
+    return _castToView(_calculateAndPotentiallyRefreshUserAccountData)(user, false);
+  }
+
+  function _calculateAndRefreshUserAccountData(
+    address user
+  ) internal returns (uint256, uint256, uint256, uint256, uint256) {
+    emit RefreshAllUserDynamicConfig(user);
+    return _calculateAndPotentiallyRefreshUserAccountData(user, true);
+  }
+
   /**
    * @dev User rp calc runs until the first of either debt or collateral is exhausted
    * @param user address of the user
@@ -737,34 +753,38 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
    * @return totalCollateralInBaseCurrency
    * @return totalDebtInBaseCurrency
    */
-  function _calculateUserAccountData(
-    address user
-  ) internal view returns (uint256, uint256, uint256, uint256, uint256) {
+  function _calculateAndPotentiallyRefreshUserAccountData(
+    address user,
+    bool refreshConfig
+  ) internal returns (uint256, uint256, uint256, uint256, uint256) {
     DataTypes.CalculateUserAccountDataVars memory vars;
+    vars.oracle = oracle;
     uint256 reserveCount = _reserveCount;
     DataTypes.PositionStatus storage position = _positionStatus[user];
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
       position.collateralCount(reserveCount)
     );
-    uint256 reserveId = 0;
-    bool borrowing = false;
-    bool collateral = false;
     while (true) {
-      (reserveId, borrowing, collateral) = position.next(reserveId, reserveCount);
-      if (reserveId == PositionStatus.NOT_FOUND) break;
+      (vars.reserveId, vars.borrowing, vars.collateral) = position.next(
+        vars.reserveId,
+        reserveCount
+      );
+      if (vars.reserveId == PositionStatus.NOT_FOUND) break;
 
-      DataTypes.UserPosition storage userPosition = _userPositions[user][reserveId];
-      DataTypes.Reserve storage reserve = _reserves[reserveId];
+      DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
+      DataTypes.Reserve storage reserve = _reserves[vars.reserveId];
       vars.assetId = reserve.assetId;
       IHub hub = reserve.hub;
-      vars.assetPrice = oracle.getReservePrice(reserveId);
+      vars.assetPrice = vars.oracle.getReservePrice(vars.reserveId);
       unchecked {
         vars.assetUnit = 10 ** reserve.decimals;
       }
 
-      if (collateral) {
-        DataTypes.DynamicReserveConfig storage dynConfig = _dynamicConfig[reserveId][
-          userPosition.configKey
+      if (vars.collateral) {
+        DataTypes.DynamicReserveConfig storage dynConfig = _dynamicConfig[vars.reserveId][
+          refreshConfig
+            ? (userPosition.configKey = reserve.dynamicConfigKey)
+            : userPosition.configKey
         ];
 
         vars.userCollateralInBaseCurrency = _getUserBalanceInBaseCurrency(
@@ -784,7 +804,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         }
       }
 
-      if (borrowing) {
+      if (vars.borrowing) {
         vars.totalDebtInBaseCurrency += _getUserDebtInBaseCurrency(
           userPosition,
           hub,
@@ -795,7 +815,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       }
 
       unchecked {
-        ++reserveId;
+        ++vars.reserveId;
       }
     }
 
@@ -1219,5 +1239,22 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
       vars.premiumDebtToLiquidate,
       vars.hasDeficit
     );
+  }
+
+  function _castToView(
+    function(address, bool) internal returns (uint256, uint256, uint256, uint256, uint256) fnIn
+  )
+    internal
+    pure
+    returns (
+      function(address, bool)
+        internal
+        view
+        returns (uint256, uint256, uint256, uint256, uint256) fnOut
+    )
+  {
+    assembly ('memory-safe') {
+      fnOut := fnIn
+    }
   }
 }

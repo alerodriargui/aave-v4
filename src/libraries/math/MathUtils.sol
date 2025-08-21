@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {WadRayMath} from './WadRayMath.sol';
@@ -63,5 +64,17 @@ library MathUtils {
    */
   function signedSub(uint256 a, uint256 b) internal pure returns (int256) {
     return int256(a) - int256(b);
+  }
+
+  /**
+   * @notice Subtracts an unsigned integer from an unsigned integer which does not revert on underflow.
+   * @param a The unsigned integer.
+   * @param b The unsigned integer.
+   * @return The unsigned result of the subtraction.
+   */
+  function uncheckedSub(uint256 a, uint256 b) internal pure returns (uint256) {
+    unchecked {
+      return a - b;
+    }
   }
 }
