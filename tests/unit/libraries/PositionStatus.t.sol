@@ -243,6 +243,109 @@ contract PositionStatusTest is Base {
     assertEq(reads[0], keccak256(abi.encode(bucket, p.slot())));
   }
 
+  // non state reading helpers tests below
+
+  function test_bucketId() public {
+    uint256 reserveId = vm.randomUint();
+    assertEq(p.bucketId(reserveId), reserveId / 128);
+  }
+
+  function test_fromBitId(uint256 bitId, uint256 bucket) public view {
+    bitId = bound(bitId, 0, 255);
+    bucket = bound(bucket, 0, 1 << 20);
+    uint256 expectedReserveId = bitId / 2 + bucket * 128;
+    assertEq(p.fromBitId(bitId, bucket), expectedReserveId);
+  }
+
+  function test_isolateBorrowing(uint256 word) public view {
+    assertEq(p.isolateBorrowing(word), word & p.BORROWING_MASK());
+    uint256 maskedWord = word & p.BORROWING_MASK();
+    for (uint256 bitId; bitId < 256; ++bitId) {
+      uint256 resultBit = (maskedWord >> bitId) & 1;
+      // retain borrow info on even bits, ignore collateral info on odd bits
+      uint256 expectedBit = bitId % 2 == 0 ? (word >> bitId) & 1 : 0;
+      assertEq(resultBit, expectedBit);
+    }
+  }
+
+  function test_isolateBorrowingFrom(uint256 word, uint256 reserveId) public view {
+    uint256 result = p.isolateBorrowingFrom(word, reserveId);
+    uint256 startBitId = (reserveId % 128) * 2;
+
+    for (uint256 bitId; bitId < 256; ++bitId) {
+      uint256 resultBit = (result >> bitId) & 1;
+      if (bitId < startBitId) {
+        // bit value before startBitId should be 0 (disregarded)
+        assertEq(resultBit, 0);
+      } else {
+        // retain borrow info on even bits, ignore collateral info on odd bits
+        uint256 expectedBit = bitId % 2 == 0 ? (word >> bitId) & 1 : 0;
+        assertEq(resultBit, expectedBit);
+      }
+    }
+  }
+
+  function test_isolateFrom(uint256 word, uint256 reserveId) public view {
+    uint256 result = p.isolateFrom(word, reserveId);
+    uint256 startBitId = (reserveId % 128) * 2;
+
+    for (uint256 bitId; bitId < 256; ++bitId) {
+      uint256 resultBit = (result >> bitId) & 1;
+      if (bitId < startBitId) {
+        // bit value before startBitId should be 0 (disregarded)
+        assertEq(resultBit, 0);
+      } else {
+        // bit value after startBitId should be retained
+        assertEq(resultBit, (word >> bitId) & 1);
+      }
+    }
+  }
+
+  function test_isolateCollateral(uint256 word) public view {
+    assertEq(p.isolateCollateral(word), word & p.COLLATERAL_MASK());
+    uint256 maskedWord = word & p.COLLATERAL_MASK();
+    for (uint256 bitId; bitId < 256; ++bitId) {
+      uint256 resultBit = (maskedWord >> bitId) & 1;
+      // retain collateral info on odd bits, ignore borrow info on even bits
+      uint256 expectedBit = bitId % 2 == 0 ? 0 : (word >> bitId) & 1;
+      assertEq(resultBit, expectedBit);
+    }
+  }
+
+  function test_isolateCollateralFrom(uint256 word, uint256 reserveId) public view {
+    uint256 result = p.isolateCollateralFrom(word, reserveId);
+    uint256 startBitId = (reserveId % 128) * 2;
+
+    for (uint256 bitId; bitId < 256; ++bitId) {
+      uint256 resultBit = (result >> bitId) & 1;
+      if (bitId < startBitId) {
+        // bit value before startBitId should be 0 (disregarded)
+        assertEq(resultBit, 0);
+      } else {
+        // retain collateral info on odd bits, ignore borrow info on even bits
+        uint256 expectedBit = bitId % 2 == 0 ? 0 : (word >> bitId) & 1;
+        assertEq(resultBit, expectedBit);
+      }
+    }
+  }
+
+  function test_isolateCollateralUntil(uint256 word, uint256 reserveCount) public view {
+    uint256 result = p.isolateCollateralUntil(word, reserveCount);
+    uint256 endBitId = (reserveCount % 128) * 2;
+
+    for (uint256 bitId; bitId < 256; ++bitId) {
+      uint256 resultBit = (result >> bitId) & 1;
+      if (bitId > endBitId) {
+        // bit value after endBitId should be 0 (disregarded)
+        assertEq(resultBit, 0);
+      } else {
+        // retain collateral info on odd bits, ignore borrow info on even bits
+        uint256 expectedBit = bitId % 2 == 0 ? 0 : (word >> bitId) & 1;
+        assertEq(resultBit, expectedBit);
+      }
+    }
+  }
+
   function test_popCount(bytes32) public {
     uint256 bits = vm.randomUint();
     assertEq(LibBit.popCount(bits), _popCountNaive(bits));
