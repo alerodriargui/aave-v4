@@ -123,7 +123,6 @@ interface ISpoke is ISpokeBase, IMulticall, IAccessManaged {
   error InvalidDebtToCover();
   error InvalidLiquidationFee();
   error InvalidOracle();
-  error UsersAndDebtLengthMismatch();
   error Unauthorized();
   error ConfigKeyUninitialized();
   error InactivePositionManager();

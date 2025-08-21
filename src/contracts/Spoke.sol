@@ -311,13 +311,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     address user,
     uint256 debtToCover
   ) external {
-    address[] memory users = new address[](1);
-    users[0] = user;
-
-    uint256[] memory debtsToCover = new uint256[](1);
-    debtsToCover[0] = debtToCover;
-
-    _executeLiquidationCall(collateralReserveId, debtReserveId, users, debtsToCover, msg.sender);
+    _executeLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, msg.sender);
   }
 
   /// @inheritdoc ISpoke
@@ -1033,12 +1027,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _executeLiquidationCall(
     uint256 collateralReserveId,
     uint256 debtReserveId,
-    address[] memory users,
-    uint256[] memory debtsToCover,
+    address user,
+    uint256 debtToCover,
     address liquidator
   ) internal {
-    require(users.length == debtsToCover.length, UsersAndDebtLengthMismatch());
-
     DataTypes.Reserve storage collateralReserve = _reserves[collateralReserveId];
     DataTypes.Reserve storage debtReserve = _reserves[debtReserveId];
 
@@ -1048,104 +1040,94 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.collateralAssetId = collateralReserve.assetId;
     vars.debtReserveHub = debtReserve.hub;
     vars.debtAssetId = debtReserve.assetId;
-    vars.debtReserveId = debtReserveId;
 
-    while (vars.i < users.length) {
-      vars.user = users[vars.i];
-      DataTypes.UserPosition storage userCollateralPosition = _userPositions[vars.user][
-        collateralReserveId
-      ];
-      DataTypes.UserPosition storage userDebtPosition = _userPositions[vars.user][
-        vars.debtReserveId
-      ];
+    DataTypes.UserPosition storage userCollateralPosition = _userPositions[user][
+      collateralReserveId
+    ];
+    DataTypes.UserPosition storage userDebtPosition = _userPositions[user][debtReserveId];
 
-      (vars.drawnDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
-        vars.debtReserveHub,
+    (vars.drawnDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
+      vars.debtReserveHub,
+      vars.debtAssetId,
+      userDebtPosition
+    );
+
+    (
+      vars.collateralToLiquidate,
+      vars.liquidationFeeAmount,
+      vars.drawnDebtToLiquidate,
+      vars.premiumDebtToLiquidate,
+      vars.hasDeficit
+    ) = _calculateLiquidationParameters(
+      collateralReserve,
+      debtReserve,
+      collateralReserveId,
+      debtReserveId,
+      user,
+      debtToCover,
+      vars.drawnDebt,
+      vars.premiumDebt
+    );
+
+    // expected total withdrawn shares includes liquidation fee
+    vars.withdrawnShares = vars.collateralReserveHub.previewRemoveByAssets(
+      vars.collateralAssetId,
+      vars.liquidationFeeAmount + vars.collateralToLiquidate
+    );
+
+    // perform collateral accounting first so that restore donations can not affect collateral shares calcs
+    // in case the same reserve is being repaid and liquidated
+    userCollateralPosition.suppliedShares -= vars.withdrawnShares.toUint128();
+
+    // remove collateral, send liquidated collateral directly to liquidator
+    vars.liquidatedSuppliedShares = vars.collateralReserveHub.remove(
+      vars.collateralAssetId,
+      vars.collateralToLiquidate,
+      liquidator
+    );
+    vars.liquidationFeeShares = vars.withdrawnShares - vars.liquidatedSuppliedShares;
+
+    // repay debt
+    {
+      vars.premiumDelta = DataTypes.PremiumDelta({
+        sharesDelta: -userDebtPosition.premiumShares.toInt256(),
+        offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
+        realizedDelta: vars.accruedPremium.toInt256() - vars.premiumDebtToLiquidate.toInt256()
+      });
+      vars.restoredShares = vars.debtReserveHub.restore(
         vars.debtAssetId,
-        userDebtPosition
-      );
-
-      (
-        vars.collateralToLiquidate,
-        vars.liquidationFeeAmount,
         vars.drawnDebtToLiquidate,
         vars.premiumDebtToLiquidate,
-        vars.hasDeficit
-      ) = _calculateLiquidationParameters(
-        collateralReserve,
-        debtReserve,
-        collateralReserveId,
-        debtReserveId,
-        vars.user,
-        debtsToCover[vars.i],
-        vars.drawnDebt,
-        vars.premiumDebt
-      );
-
-      // expected total withdrawn shares includes liquidation fee
-      vars.withdrawnShares = vars.collateralReserveHub.previewRemoveByAssets(
-        vars.collateralAssetId,
-        vars.liquidationFeeAmount + vars.collateralToLiquidate
-      );
-
-      // perform collateral accounting first so that restore donations can not affect collateral shares calcs
-      // in case the same reserve is being repaid and liquidated
-      userCollateralPosition.suppliedShares -= vars.withdrawnShares.toUint128();
-
-      // remove collateral, send liquidated collateral directly to liquidator
-      vars.liquidatedSuppliedShares = vars.collateralReserveHub.remove(
-        vars.collateralAssetId,
-        vars.collateralToLiquidate,
+        vars.premiumDelta,
         liquidator
       );
-      vars.liquidationFeeShares = vars.withdrawnShares - vars.liquidatedSuppliedShares;
-
-      // repay debt
-      {
-        vars.premiumDelta = DataTypes.PremiumDelta({
-          sharesDelta: -userDebtPosition.premiumShares.toInt256(),
-          offsetDelta: -userDebtPosition.premiumOffset.toInt256(),
-          realizedDelta: vars.accruedPremium.toInt256() - vars.premiumDebtToLiquidate.toInt256()
-        });
-        vars.restoredShares = vars.debtReserveHub.restore(
-          vars.debtAssetId,
-          vars.drawnDebtToLiquidate,
-          vars.premiumDebtToLiquidate,
-          vars.premiumDelta,
-          liquidator
-        );
-        // debt accounting
-        _settlePremiumDebt(userDebtPosition, vars.premiumDelta);
-        userDebtPosition.drawnShares -= vars.restoredShares.toUint128();
-      }
-
-      if (userDebtPosition.drawnShares == 0) {
-        _positionStatus[vars.user].setBorrowing(vars.debtReserveId, false);
-      }
-
-      if (vars.hasDeficit) {
-        _reportDeficits(vars.user);
-      } else {
-        // new risk premium only needs to be propagated if no deficit exists
-        (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(vars.user);
-        _notifyRiskPremiumUpdate(vars.user, vars.newUserRiskPremium);
-      }
-
-      vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
-
-      emit LiquidationCall(
-        collateralReserveId,
-        debtReserveId,
-        vars.user,
-        vars.drawnDebtToLiquidate + vars.premiumDebtToLiquidate,
-        vars.collateralToLiquidate,
-        liquidator
-      );
-
-      unchecked {
-        ++vars.i;
-      }
+      // debt accounting
+      _settlePremiumDebt(userDebtPosition, vars.premiumDelta);
+      userDebtPosition.drawnShares -= vars.restoredShares.toUint128();
     }
+
+    if (userDebtPosition.drawnShares == 0) {
+      _positionStatus[user].setBorrowing(debtReserveId, false);
+    }
+
+    if (vars.hasDeficit) {
+      _reportDeficits(user);
+    } else {
+      // new risk premium only needs to be propagated if no deficit exists
+      (vars.newUserRiskPremium, , , , ) = _calculateUserAccountData(user);
+      _notifyRiskPremiumUpdate(user, vars.newUserRiskPremium);
+    }
+
+    vars.totalLiquidationFeeShares += vars.liquidationFeeShares;
+
+    emit LiquidationCall(
+      collateralReserveId,
+      debtReserveId,
+      user,
+      vars.drawnDebtToLiquidate + vars.premiumDebtToLiquidate,
+      vars.collateralToLiquidate,
+      liquidator
+    );
     if (vars.totalLiquidationFeeShares > 0) {
       vars.collateralReserveHub.payFee(vars.collateralAssetId, vars.totalLiquidationFeeShares);
     }

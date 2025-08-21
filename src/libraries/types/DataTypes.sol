@@ -184,12 +184,8 @@ library DataTypes {
   }
 
   struct ExecuteLiquidationLocalVars {
-    uint256 i;
-    address user;
     uint256 debtAssetId;
     uint256 collateralAssetId;
-    uint256 debtReserveId;
-    uint256 collateralReserveId;
     uint256 drawnDebt;
     uint256 premiumDebt;
     uint256 accruedPremium;
@@ -202,7 +198,6 @@ library DataTypes {
     uint256 withdrawnShares;
     uint256 newUserRiskPremium;
     uint256 totalLiquidationFeeShares;
-    uint256 usersLength;
     uint256 liquidatedSuppliedShares;
     DataTypes.PremiumDelta premiumDelta;
     bool hasDeficit;
