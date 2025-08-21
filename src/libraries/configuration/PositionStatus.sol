@@ -129,7 +129,9 @@ library PositionStatus {
   }
 
   /**
-   * @dev Returns the next reserveId that is borrowing or using as collateral. Returns NOT_FOUND if no such reserveId exists.
+   * @dev Returns the next reserveId that is borrowing or using as collateral.
+   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`.
+   * @dev Does not disregard potential dirty bits set after `reserveCount` in it's bucket.
    * @param self The configuration object.
    * @param startReserveId The reserveId to start searching from.
    * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
@@ -161,7 +163,9 @@ library PositionStatus {
   }
 
   /**
-   * @dev Returns the next reserveId that is borrowing. Returns NOT_FOUND if no such reserveId exists.
+   * @dev Returns the next reserveId that is borrowing.
+   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`.
+   * @dev Does not disregard potential dirty bits set after `reserveCount` in it's bucket.
    * @param self The configuration object.
    * @param startReserveId The reserveId to start searching from.
    * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
@@ -184,7 +188,9 @@ library PositionStatus {
   }
 
   /**
-   * @dev Returns the next reserveId that is using as collateral. Returns NOT_FOUND if no such reserveId exists.
+   * @dev Returns the next reserveId that is using as collateral.
+   * @dev Returns NOT_FOUND if no such reserveId exists, starts searching from `startReserveId`.
+   * @dev Does not disregard potential dirty bits set after `reserveCount` in it's bucket.
    * @param self The configuration object.
    * @param startReserveId The reserveId to start searching from.
    * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.

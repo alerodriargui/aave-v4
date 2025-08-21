@@ -243,8 +243,44 @@ contract PositionStatusTest is Base {
     assertEq(reads[0], keccak256(abi.encode(bucket, p.slot())));
   }
 
-  // non state reading helpers tests below
+  function test_next(uint256 reserveCount) public {
+    reserveCount = bound(reserveCount, 1, 1 << 10); // gas limit
+    vm.setArbitraryStorage(address(p));
 
+    uint256 startReserveId = vm.randomUint(0, reserveCount - 1);
+    uint256 expectedReserveId = PositionStatus.NOT_FOUND;
+    uint256 endReserveId = ((reserveCount / 128) + 1) * 128; // last bucket
+    for (uint256 i = startReserveId; i < endReserveId; ++i) {
+      if (p.isUsingAsCollateral(i) || p.isBorrowing(i)) {
+        expectedReserveId = i;
+        break;
+      }
+    }
+    (uint256 reserveId, bool borrowing, bool collateral) = p.next(startReserveId, reserveCount);
+    assertEq(reserveId, expectedReserveId);
+    assertEq(borrowing, reserveId != PositionStatus.NOT_FOUND && p.isBorrowing(reserveId));
+    assertEq(collateral, reserveId != PositionStatus.NOT_FOUND && p.isUsingAsCollateral(reserveId));
+  }
+
+  function test_nextBorrowing(uint256 reserveCount) public {
+    reserveCount = bound(reserveCount, 1, 1 << 10); // gas limit
+    vm.setArbitraryStorage(address(p));
+
+    uint256 startReserveId = vm.randomUint(0, reserveCount - 1);
+    uint256 expectedReserveId = PositionStatus.NOT_FOUND;
+    uint256 endReserveId = ((reserveCount / 128) + 1) * 128; // last bucket
+    for (uint256 i = startReserveId; i < endReserveId; ++i) {
+      if (p.isBorrowing(i)) {
+        expectedReserveId = i;
+        break;
+      }
+    }
+    uint256 reserveId = p.nextBorrowing(startReserveId, reserveCount);
+    assertEq(reserveId, expectedReserveId);
+    assertEq(p.isBorrowing(reserveId), reserveId != PositionStatus.NOT_FOUND);
+  }
+
+  // non state reading helpers tests below
   function test_bucketId() public {
     uint256 reserveId = vm.randomUint();
     assertEq(p.bucketId(reserveId), reserveId / 128);
