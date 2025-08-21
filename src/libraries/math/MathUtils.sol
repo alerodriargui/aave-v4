@@ -78,7 +78,14 @@ library MathUtils {
     }
   }
 
-  // performs 256 bit
+  /**
+   * @notice Multiplies two numbers and divides the result by a third number, rounding down.
+   * @dev Reverts if division by zero or overflow occurs.
+   * @param a The first number.
+   * @param b The second number.
+   * @param c The divisor.
+   * @return d The result of the multiplication and division, rounded down.
+   */
   function mulDivDown(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
     assembly ('memory-safe') {
       if iszero(c) {
@@ -91,7 +98,14 @@ library MathUtils {
     }
   }
 
-  // performs 256 bit
+  /**
+   * @notice Multiplies two numbers and divides the result by a third number, rounding up.
+   * @dev Reverts if division by zero or overflow occurs.
+   * @param a The first number.
+   * @param b The second number.
+   * @param c The divisor.
+   * @return d The result of the multiplication and division, rounded up.
+   */
   function mulDivUp(uint256 a, uint256 b, uint256 c) internal pure returns (uint256 d) {
     assembly ('memory-safe') {
       if iszero(c) {
