@@ -35,9 +35,9 @@ library PositionStatus {
     unchecked {
       uint256 bit = 1 << ((reserveId % 128) << 1);
       if (borrowing) {
-        self.map[reserveId >> 7] |= bit;
+        self.map[reserveId.bucketId()] |= bit;
       } else {
-        self.map[reserveId >> 7] &= ~bit;
+        self.map[reserveId.bucketId()] &= ~bit;
       }
     }
   }
@@ -56,9 +56,9 @@ library PositionStatus {
     unchecked {
       uint256 bit = 1 << (((reserveId % 128) << 1) + 1);
       if (usingAsCollateral) {
-        self.map[reserveId >> 7] |= bit;
+        self.map[reserveId.bucketId()] |= bit;
       } else {
-        self.map[reserveId >> 7] &= ~bit;
+        self.map[reserveId.bucketId()] &= ~bit;
       }
     }
   }
@@ -74,7 +74,7 @@ library PositionStatus {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      return (self.getBucketWord(reserveId) >> ((reserveId % 128) << 1)) & 3 != 0;
+      return (self.map[reserveId.bucketId()] >> ((reserveId % 128) << 1)) & 3 != 0;
     }
   }
 
@@ -128,6 +128,15 @@ library PositionStatus {
     }
   }
 
+  /**
+   * @dev Returns the next reserveId that is borrowing or using as collateral. Returns NOT_FOUND if no such reserveId exists.
+   * @param self The configuration object.
+   * @param startReserveId The reserveId to start searching from.
+   * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
+   * @return reserveId The next reserveId that is borrowing or using as collateral.
+   * @return borrowing True if the next reserveId is borrowing, false otherwise.
+   * @return collateral True if the next reserveId is using as collateral, false otherwise.
+   */
   function next(
     DataTypes.PositionStatus storage self,
     uint256 startReserveId,
@@ -151,6 +160,13 @@ library PositionStatus {
     }
   }
 
+  /**
+   * @dev Returns the next reserveId that is borrowing. Returns NOT_FOUND if no such reserveId exists.
+   * @param self The configuration object.
+   * @param startReserveId The reserveId to start searching from.
+   * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
+   * @return reserveId The next reserveId that is borrowing.
+   */
   function nextBorrowing(
     DataTypes.PositionStatus storage self,
     uint256 startReserveId,
@@ -167,6 +183,13 @@ library PositionStatus {
     }
   }
 
+  /**
+   * @dev Returns the next reserveId that is using as collateral. Returns NOT_FOUND if no such reserveId exists.
+   * @param self The configuration object.
+   * @param startReserveId The reserveId to start searching from.
+   * @param reserveCount The current reserveCount, to avoid reading uninitialized buckets.
+   * @return reserveId The next reserveId that is using as collateral.
+   */
   function nextCollateral(
     DataTypes.PositionStatus storage self,
     uint256 startReserveId,
@@ -195,25 +218,37 @@ library PositionStatus {
     return self.map[reserveId.bucketId()];
   }
 
+  /**
+   * @dev Converts a reserveId to it's corresponding bucketId.
+   */
   function bucketId(uint256 reserveId) internal pure returns (uint256 wordId) {
     assembly ('memory-safe') {
       wordId := shr(7, reserveId)
     }
   }
 
+  /**
+   * @dev Converts a bitId (bit index) to it's corresponding reserveId.
+   * @dev BitId 0, 1 correspond to reserveId 1; BitId 2, 3 correspond to reserveId 2; etc.
+   */
   function fromBitId(uint256 bitId, uint256 bucket) internal pure returns (uint256 reserveId) {
     assembly ('memory-safe') {
       reserveId := add(shr(1, bitId), shl(7, bucket))
     }
   }
 
+  /**
+   * @dev Isolates the borrowing bits from word.
+   */
   function isolateBorrowing(uint256 word) internal pure returns (uint256 ret) {
     assembly ('memory-safe') {
       ret := and(word, BORROWING_MASK)
     }
   }
 
-  // disregard bits before `reserveId`
+  /**
+   * @dev Isolates the borrowing bits from word, disregarding bits before `reserveId`.
+   */
   function isolateBorrowingFrom(
     uint256 word,
     uint256 reserveId
@@ -224,7 +259,9 @@ library PositionStatus {
     }
   }
 
-  // disregard bits before `reserveId`
+  /**
+   * @dev Isolates the bits from word, disregarding bits before `reserveId`.
+   */
   function isolateFrom(uint256 word, uint256 reserveId) internal pure returns (uint256 ret) {
     // ret = word & (type(uint256).max << ((reserveId % 128) << 1));
     assembly ('memory-safe') {
@@ -238,7 +275,9 @@ library PositionStatus {
     }
   }
 
-  // disregard bits before `reserveId`
+  /**
+   * @dev Isolates the bits from word, disregarding bits before `reserveId`.
+   */
   function isolateCollateralFrom(
     uint256 word,
     uint256 reserveId
@@ -249,7 +288,9 @@ library PositionStatus {
     }
   }
 
-  // disregard bits after `reserveCount`
+  /**
+   * @dev Isolates the bits from word, disregarding bits after `reserveCount`.
+   */
   function isolateCollateralUntil(
     uint256 word,
     uint256 reserveCount
