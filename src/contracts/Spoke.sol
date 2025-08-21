@@ -760,12 +760,12 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     DataTypes.CalculateUserAccountDataVars memory vars;
     vars.oracle = oracle;
     uint256 reserveCount = _reserveCount;
-    DataTypes.PositionStatus storage position = _positionStatus[user];
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     KeyValueListInMemory.List memory list = KeyValueListInMemory.init(
-      position.collateralCount(reserveCount)
+      positionStatus.collateralCount(reserveCount)
     );
     while (true) {
-      (vars.reserveId, vars.borrowing, vars.collateral) = position.next(
+      (vars.reserveId, vars.borrowing, vars.collateral) = positionStatus.next(
         vars.reserveId,
         reserveCount
       );
@@ -914,9 +914,9 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   ) internal returns (bool) {
     DataTypes.NotifyRiskPremiumUpdateVars memory vars;
     uint256 reserveCount = _reserveCount;
-    DataTypes.PositionStatus storage position = _positionStatus[user];
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     while (
-      (vars.reserveId = position.nextBorrowing(vars.reserveId, reserveCount)) !=
+      (vars.reserveId = positionStatus.nextBorrowing(vars.reserveId, reserveCount)) !=
       PositionStatus.NOT_FOUND
     ) {
       DataTypes.UserPosition storage userPosition = _userPositions[user][vars.reserveId];
@@ -1013,9 +1013,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
   function _refreshDynamicConfig(address user) internal {
     uint256 reserveCount = _reserveCount;
     uint256 reserveId;
-    DataTypes.PositionStatus storage position = _positionStatus[user];
+    DataTypes.PositionStatus storage positionStatus = _positionStatus[user];
     while (
-      (reserveId = position.nextCollateral(reserveId, reserveCount)) != PositionStatus.NOT_FOUND
+      (reserveId = positionStatus.nextCollateral(reserveId, reserveCount)) !=
+      PositionStatus.NOT_FOUND
     ) {
       _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
 
