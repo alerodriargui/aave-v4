@@ -8,7 +8,7 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
   using WadRayMath for uint256;
   using PercentageMath for uint256;
   using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
-  using Math for uint256;
+  using MathUtils for uint256;
 
   struct TestAvailableCollateralParams {
     uint256 debtAssetPrice;
@@ -170,10 +170,9 @@ contract LiquidationAvailableCollateralToLiquidateTest is LiquidationLogicBaseTe
 
     ) = LiquidationLogic.calculateAvailableCollateralToLiquidate(vars);
 
-    uint256 collateralAmount = maxCollateralToLiquidate.mulDiv(
+    uint256 collateralAmount = maxCollateralToLiquidate.mulDivUp(
       params.collateralAssetUnit,
-      params.collateralAssetPrice.toWad(),
-      Math.Rounding.Ceil
+      params.collateralAssetPrice.toWad()
     );
     (uint256 actualCollateralToLiquidate, uint256 liquidationFeeAmount) = calcLiquidationFeeAmount(
       params,
