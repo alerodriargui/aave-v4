@@ -235,7 +235,7 @@ library PositionStatus {
 
   /**
    * @dev Converts a bitId (bit index) to it's corresponding reserveId.
-   * @dev BitId 0, 1 correspond to reserveId 1; BitId 2, 3 correspond to reserveId 2; etc.
+   * @dev BitId 0, 1 correspond to reserveId 0; BitId 2, 3 correspond to reserveId 1; etc.
    */
   function fromBitId(uint256 bitId, uint256 bucket) internal pure returns (uint256 reserveId) {
     assembly ('memory-safe') {
@@ -275,6 +275,9 @@ library PositionStatus {
     }
   }
 
+  /**
+   * @dev Isolates the borrowing bits from word.
+   */
   function isolateCollateral(uint256 word) internal pure returns (uint256 ret) {
     assembly ('memory-safe') {
       ret := and(word, COLLATERAL_MASK)
