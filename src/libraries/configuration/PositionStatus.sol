@@ -276,7 +276,7 @@ library PositionStatus {
   }
 
   /**
-   * @dev Isolates the borrowing bits from word.
+   * @dev Isolates the collateral bits from word.
    */
   function isolateCollateral(uint256 word) internal pure returns (uint256 ret) {
     assembly ('memory-safe') {
