@@ -2,17 +2,23 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {PositionStatus} from 'src/libraries/configuration/PositionStatus.sol';
 import {DataTypes} from 'src/libraries/types/DataTypes.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
+import {Constants} from 'src/libraries/helpers/Constants.sol';
+
+import {ISpoke} from 'src/interfaces/ISpoke.sol';
+import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
 library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using MathUtils for uint256;
-  using LiquidationLogic for DataTypes.LiquidationCallLocalVars;
+  using LiquidationLogic for *;
+  using PositionStatus for DataTypes.PositionStatus;
 
   /**
    * @dev This constant represents the minimum amount of assets in base currency that need to be leftover after a liquidation, if not clearing collateral on a position completely.
@@ -21,6 +27,73 @@ library LiquidationLogic {
   uint256 constant MIN_LEFTOVER_BASE = 1000e26;
 
   error MustNotLeaveDust();
+
+  function calculateLiquidationParameters(
+    DataTypes.Reserve storage collateralReserve,
+    DataTypes.Reserve storage debtReserve,
+    DataTypes.PositionStatus storage positionStatus,
+    DataTypes.DynamicReserveConfig storage collateralDynConfig,
+    DataTypes.LiquidationConfig storage liquidationConfig,
+    DataTypes.CalculateLiquidationParametersArgs memory params
+  ) external view returns (uint256, uint256, uint256, uint256, bool) {
+    DataTypes.LiquidationCallLocalVars memory vars;
+    vars.collateralReserveId = params.collateralReserveId;
+    vars.debtReserveId = params.debtReserveId;
+    vars.borrowerCollateralBalance = params.borrowerCollateralBalance;
+    vars.collateralFactor = collateralDynConfig.collateralFactor;
+    vars.totalBorrowerReserveDebt = params.drawnReserveDebt + params.premiumReserveDebt;
+
+    (vars.healthFactor, vars.totalCollateralInBaseCurrency, vars.totalDebtInBaseCurrency) = (
+      params.healthFactor,
+      params.totalCollateralInBaseCurrency,
+      params.totalDebtInBaseCurrency
+    );
+
+    _validateLiquidationCall(
+      collateralReserve,
+      debtReserve,
+      positionStatus,
+      params.collateralReserveId,
+      params.debtToCover,
+      vars.totalBorrowerReserveDebt,
+      vars.healthFactor,
+      vars.collateralFactor
+    );
+
+    vars.debtAssetPrice = params.oracle.getReservePrice(params.debtReserveId);
+    vars.debtAssetUnit = 10 ** debtReserve.decimals;
+    vars.liquidationBonus = liquidationConfig.calculateVariableLiquidationBonus(
+      params.collateralReserveId,
+      collateralDynConfig.liquidationBonus,
+      vars.healthFactor
+    );
+    vars.closeFactor = liquidationConfig.closeFactor;
+    vars.collateralAssetPrice = params.oracle.getReservePrice(params.collateralReserveId);
+    vars.collateralAssetUnit = 10 ** collateralReserve.decimals;
+    vars.liquidationFee = collateralDynConfig.liquidationFee;
+    vars.debtToRestoreCloseFactor = vars.calculateDebtToRestoreCloseFactor();
+    vars.actualDebtToLiquidate = vars.calculateActualDebtToLiquidate(params.debtToCover);
+    (
+      vars.actualCollateralToLiquidate,
+      vars.actualDebtToLiquidate,
+      vars.liquidationFeeAmount,
+      vars.hasDeficit
+    ) = vars.calculateAvailableCollateralToLiquidate();
+
+    (vars.drawnDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
+      params.drawnReserveDebt,
+      params.premiumReserveDebt,
+      vars.actualDebtToLiquidate
+    );
+
+    return (
+      vars.actualCollateralToLiquidate,
+      vars.liquidationFeeAmount,
+      vars.drawnDebtToLiquidate,
+      vars.premiumDebtToLiquidate,
+      vars.hasDeficit
+    );
+  }
 
   function calculateVariableLiquidationBonus(
     DataTypes.LiquidationConfig storage config,
@@ -174,5 +247,45 @@ library LiquidationLogic {
     } else {
       return (vars.collateralAmount, vars.debtAmountNeeded, 0, vars.hasDeficit);
     }
+  }
+
+  function _validateLiquidationCall(
+    DataTypes.Reserve storage collateralReserve,
+    DataTypes.Reserve storage debtReserve,
+    DataTypes.PositionStatus storage positionStatus,
+    uint256 collateralReserveId,
+    uint256 debtToCover,
+    uint256 totalDebt,
+    uint256 healthFactor,
+    uint256 collateralFactor
+  ) internal view {
+    require(debtToCover > 0, ISpoke.InvalidDebtToCover());
+    require(
+      address(collateralReserve.hub) != address(0) && address(debtReserve.hub) != address(0),
+      ISpoke.ReserveNotListed()
+    );
+    require(!collateralReserve.paused && !debtReserve.paused, ISpoke.ReservePaused());
+    require(
+      healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      ISpoke.HealthFactorNotBelowThreshold()
+    );
+    bool isCollateralEnabled = collateralFactor != 0 &&
+      positionStatus.isUsingAsCollateral(collateralReserveId);
+    require(isCollateralEnabled, ISpoke.CollateralCannotBeLiquidated());
+    require(totalDebt > 0, ISpoke.SpecifiedCurrencyNotBorrowedByUser());
+  }
+
+  function _calculateRestoreAmount(
+    uint256 drawnDebt,
+    uint256 premiumDebt,
+    uint256 amount
+  ) internal pure returns (uint256, uint256) {
+    if (amount >= drawnDebt + premiumDebt) {
+      return (drawnDebt, premiumDebt);
+    }
+    if (amount <= premiumDebt) {
+      return (0, amount);
+    }
+    return (amount - premiumDebt, premiumDebt);
   }
 }

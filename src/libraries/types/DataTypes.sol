@@ -3,6 +3,7 @@
 pragma solidity ^0.8.10;
 
 import {IHub} from 'src/interfaces/IHub.sol';
+import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
 library DataTypes {
   // Hub types
@@ -145,6 +146,19 @@ library DataTypes {
     uint256 avgCollateralFactor;
     uint256 userRiskPremium;
     uint256 healthFactor;
+  }
+
+  struct CalculateLiquidationParametersArgs {
+    uint256 collateralReserveId;
+    uint256 debtReserveId;
+    IAaveOracle oracle;
+    uint256 debtToCover;
+    uint256 drawnReserveDebt;
+    uint256 premiumReserveDebt;
+    uint256 borrowerCollateralBalance;
+    uint256 healthFactor;
+    uint256 totalCollateralInBaseCurrency;
+    uint256 totalDebtInBaseCurrency;
   }
 
   struct LiquidationCallLocalVars {
