@@ -11,6 +11,7 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {Constants} from 'src/libraries/helpers/Constants.sol';
 
 import {ISpoke} from 'src/interfaces/ISpoke.sol';
+import {IHub} from 'src/interfaces/IHub.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
 library LiquidationLogic {
@@ -33,15 +34,21 @@ library LiquidationLogic {
     DataTypes.Reserve storage debtReserve,
     DataTypes.PositionStatus storage positionStatus,
     DataTypes.DynamicReserveConfig storage collateralDynConfig,
+    DataTypes.UserPosition storage userDebtPosition,
     DataTypes.LiquidationConfig storage liquidationConfig,
     DataTypes.CalculateLiquidationParametersArgs memory params
-  ) external view returns (uint256, uint256, uint256, uint256, bool) {
+  ) external view returns (uint256, uint256, uint256, uint256, uint256, bool) {
     DataTypes.LiquidationCallLocalVars memory vars;
     vars.collateralReserveId = params.collateralReserveId;
     vars.debtReserveId = params.debtReserveId;
     vars.borrowerCollateralBalance = params.borrowerCollateralBalance;
     vars.collateralFactor = collateralDynConfig.collateralFactor;
-    vars.totalBorrowerReserveDebt = params.drawnReserveDebt + params.premiumReserveDebt;
+    (
+      vars.borrowerDrawnReserveDebt,
+      vars.borrowerPremiumReserveDebt,
+      vars.borrowerReserveAccruedPremium
+    ) = _getUserTotalDebt(userDebtPosition, debtReserve.hub, debtReserve.assetId);
+    vars.totalBorrowerReserveDebt = vars.borrowerDrawnReserveDebt + vars.borrowerPremiumReserveDebt;
 
     (vars.healthFactor, vars.totalCollateralInBaseCurrency, vars.totalDebtInBaseCurrency) = (
       params.healthFactor,
@@ -81,8 +88,8 @@ library LiquidationLogic {
     ) = vars.calculateAvailableCollateralToLiquidate();
 
     (vars.drawnDebtToLiquidate, vars.premiumDebtToLiquidate) = _calculateRestoreAmount(
-      params.drawnReserveDebt,
-      params.premiumReserveDebt,
+      vars.borrowerDrawnReserveDebt,
+      vars.borrowerPremiumReserveDebt,
       vars.actualDebtToLiquidate
     );
 
@@ -91,6 +98,7 @@ library LiquidationLogic {
       vars.liquidationFeeAmount,
       vars.drawnDebtToLiquidate,
       vars.premiumDebtToLiquidate,
+      vars.borrowerReserveAccruedPremium,
       vars.hasDeficit
     );
   }
@@ -287,5 +295,19 @@ library LiquidationLogic {
       return (0, amount);
     }
     return (amount - premiumDebt, premiumDebt);
+  }
+
+  function _getUserTotalDebt(
+    DataTypes.UserPosition storage userPosition,
+    IHub hub,
+    uint256 assetId
+  ) internal view returns (uint256, uint256, uint256) {
+    uint256 accruedPremium = hub.previewRestoreByShares(assetId, userPosition.premiumShares) -
+      userPosition.premiumOffset;
+    return (
+      hub.previewRestoreByShares(assetId, userPosition.drawnShares),
+      userPosition.realizedPremium + accruedPremium,
+      accruedPremium
+    );
   }
 }

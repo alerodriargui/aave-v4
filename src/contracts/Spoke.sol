@@ -1022,13 +1022,6 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
     vars.collateralAssetId = collateralReserve.assetId;
     vars.debtReserveHub = debtReserve.hub;
     vars.debtAssetId = debtReserve.assetId;
-
-    (vars.drawnDebt, vars.premiumDebt, vars.accruedPremium) = _getUserDebt(
-      vars.debtReserveHub,
-      vars.debtAssetId,
-      userDebtPosition
-    );
-
     {
       (
         ,
@@ -1043,20 +1036,21 @@ contract Spoke is ISpoke, Multicall, AccessManaged {
         vars.liquidationFeeAmount,
         vars.drawnDebtToLiquidate,
         vars.premiumDebtToLiquidate,
+        vars.accruedPremium,
         vars.hasDeficit
       ) = LiquidationLogic.calculateLiquidationParameters(
         collateralReserve,
         debtReserve,
         positionStatus,
         collateralDynConfig,
+        userDebtPosition,
         _liquidationConfig,
         DataTypes.CalculateLiquidationParametersArgs(
           collateralReserveId,
           debtReserveId,
           oracle,
           debtToCover,
-          vars.drawnDebt,
-          vars.premiumDebt,
+          user,
           vars.collateralReserveHub.previewRemoveByAssets(
             vars.collateralAssetId,
             userCollateralPosition.suppliedShares

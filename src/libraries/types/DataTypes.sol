@@ -153,8 +153,7 @@ library DataTypes {
     uint256 debtReserveId;
     IAaveOracle oracle;
     uint256 debtToCover;
-    uint256 drawnReserveDebt;
-    uint256 premiumReserveDebt;
+    address user;
     uint256 borrowerCollateralBalance;
     uint256 healthFactor;
     uint256 totalCollateralInBaseCurrency;
@@ -173,6 +172,9 @@ library DataTypes {
     uint256 debtAssetPrice;
     uint256 debtAssetUnit;
     uint256 totalBorrowerReserveDebt;
+    uint256 borrowerReserveAccruedPremium;
+    uint256 borrowerDrawnReserveDebt;
+    uint256 borrowerPremiumReserveDebt;
     uint256 debtToRestoreCloseFactor;
     uint256 healthFactor;
     uint256 liquidationBonus;
@@ -200,8 +202,6 @@ library DataTypes {
   struct ExecuteLiquidationLocalVars {
     uint256 debtAssetId;
     uint256 collateralAssetId;
-    uint256 drawnDebt;
-    uint256 premiumDebt;
     uint256 accruedPremium;
     uint256 collateralToLiquidate;
     uint256 liquidationFeeAmount;
