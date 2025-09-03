@@ -39,9 +39,7 @@ library MathUtils {
    * @return result The minimum of the two values.
    */
   function min(uint256 a, uint256 b) internal pure returns (uint256 result) {
-    assembly ('memory-safe') {
-      result := xor(b, mul(xor(a, b), lt(a, b)))
-    }
+    return ternary(a < b, a, b);
   }
 
   /**
@@ -52,8 +50,7 @@ library MathUtils {
    * @return The result of the addition.
    */
   function add(uint256 a, int256 b) internal pure returns (uint256) {
-    if (b >= 0) return a + uint256(b);
-    return a - uint256(-b);
+    return ternary(b >= 0, a + uint256(b), a - uint256(-b));
   }
 
   /**
@@ -116,6 +113,12 @@ library MathUtils {
       }
       let product := mul(a, b)
       d := add(div(product, c), gt(mod(product, c), 0))
+    }
+  }
+
+  function ternary(bool condition, uint256 a, uint256 b) internal pure returns (uint256 ret) {
+    assembly ('memory-safe') {
+      ret := xor(b, mul(xor(a, b), condition))
     }
   }
 }
