@@ -91,7 +91,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     );
 
     // Fetch supply exchange rate before partial withdraw
-    uint256 addExRateBefore = getAddExRate(daiAssetId);
+    uint256 addExRateBefore = getAddExRate(hub1, daiAssetId);
 
     // Withdraw partial supplied assets
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, partialWithdrawAmount, bob);
@@ -111,21 +111,25 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     );
 
     // Check supply rate monotonically increasing after partial withdraw
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after partial withdraw');
+    _checkSupplyRateIncreasing(
+      addExRateBefore,
+      getAddExRate(hub1, daiAssetId),
+      'after partial withdraw'
+    );
 
     // Fetch supply exchange rate before withdraw
-    addExRateBefore = getAddExRate(daiAssetId);
+    addExRateBefore = getAddExRate(hub1, daiAssetId);
 
     // Withdraw all supplied assets
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, type(uint256).max, bob);
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, type(uint256).max);
+    withdrawLiquidityFees(hub2, daiAssetId, type(uint256).max);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after withdraw');
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(hub1, daiAssetId), 'after withdraw');
   }
 
   // multiple users, same asset
@@ -196,12 +200,13 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     TestUserData[3] memory bobData;
     TokenData[3] memory tokenData;
 
+    IHub hub = spoke1.getReserve(params.reserveId).hub;
     state.stage = 0;
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
     aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
-    uint256 addExRate = getAddExRate(state.assetId);
+    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1), address(hub));
+    uint256 addExRate = getAddExRate(hub, state.assetId);
 
     // make sure alice has a share to withdraw
     vm.assume(
@@ -217,7 +222,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), 'after alice withdraw');
+    _checkSupplyRateIncreasing(addExRate, getAddExRate(hub, state.assetId), 'after alice withdraw');
 
     // skip time to accrue interest for bob
     skip(params.skipTime[1]);
@@ -226,8 +231,8 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
     aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
-    addExRate = getAddExRate(state.assetId);
+    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1), address(hub));
+    addExRate = getAddExRate(hub, state.assetId);
 
     // make sure bob has a share to withdraw
     vm.assume(
@@ -243,16 +248,16 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), 'after bob withdraw');
+    _checkSupplyRateIncreasing(addExRate, getAddExRate(hub, state.assetId), 'after bob withdraw');
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(state.assetId, type(uint256).max);
+    withdrawLiquidityFees(hub, state.assetId, type(uint256).max);
 
     state.stage = 2;
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
     aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
-    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
+    tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1), address(hub));
 
     // reserve
     (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(

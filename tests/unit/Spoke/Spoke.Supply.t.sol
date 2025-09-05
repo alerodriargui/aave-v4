@@ -230,7 +230,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1), address(hub2));
 
     deal(address(tokenList.dai), carol, amount);
 
@@ -242,7 +242,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1), address(hub2));
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance after-supply');
@@ -342,7 +342,11 @@ contract SpokeSupplyTest is SpokeBase {
 
     carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
     reserveData[stage] = loadReserveInfo(spoke1, reserveId);
-    tokenData[stage] = getTokenBalances(state.underlying, address(spoke1));
+    tokenData[stage] = getTokenBalances(
+      state.underlying,
+      address(spoke1),
+      address(spoke1.getReserve(reserveId).hub)
+    );
 
     uint256 expectedSuppliedShares = hub1.convertToAddedShares(state.assetId, amount);
     vm.assume(expectedSuppliedShares > 0);
@@ -355,7 +359,11 @@ contract SpokeSupplyTest is SpokeBase {
 
     carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
     reserveData[stage] = loadReserveInfo(spoke1, reserveId);
-    tokenData[stage] = getTokenBalances(state.underlying, address(spoke1));
+    tokenData[stage] = getTokenBalances(
+      state.underlying,
+      address(spoke1),
+      address(spoke1.getReserve(reserveId).hub)
+    );
 
     // token balance
     assertEq(
@@ -364,7 +372,7 @@ contract SpokeSupplyTest is SpokeBase {
       'user token balance after-supply'
     );
     assertEq(
-      state.underlying.balanceOf(address(hub1)),
+      state.underlying.balanceOf(address(spoke1.getReserve(reserveId).hub)),
       tokenData[stage - 1].hubBalance + amount,
       'hub token balance after-supply'
     );
@@ -411,7 +419,7 @@ contract SpokeSupplyTest is SpokeBase {
 
     carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1), address(hub2));
 
     assertGt(daiData[stage].data.premiumShares, 0, 'reserve premiumShares after-supply');
 
@@ -425,12 +433,12 @@ contract SpokeSupplyTest is SpokeBase {
 
     carolData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), carol);
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
-    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
+    tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1), address(hub2));
 
     // dai balance
     assertEq(tokenList.dai.balanceOf(carol), 0, 'user token balance after-supply');
     assertEq(
-      tokenList.dai.balanceOf(address(hub1)),
+      tokenList.dai.balanceOf(address(hub2)),
       tokenData[stage - 1].hubBalance + amount,
       'hub token balance after-supply'
     );
@@ -503,10 +511,11 @@ contract SpokeSupplyTest is SpokeBase {
     TestData[2] memory reserveData;
     TokenData[2] memory tokenData;
     uint256 stage = 0;
+    IHub hub = spoke1.getReserve(reserveId).hub;
 
     carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
     reserveData[stage] = loadReserveInfo(spoke1, reserveId);
-    tokenData[stage] = getTokenBalances(underlying, address(spoke1));
+    tokenData[stage] = getTokenBalances(underlying, address(spoke1), address(hub));
 
     assertGt(reserveData[stage].data.premiumShares, 0);
 
@@ -520,7 +529,7 @@ contract SpokeSupplyTest is SpokeBase {
     stage = 1;
     carolData[stage] = loadUserInfo(spoke1, reserveId, carol);
     reserveData[stage] = loadReserveInfo(spoke1, reserveId);
-    tokenData[stage] = getTokenBalances(underlying, address(spoke1));
+    tokenData[stage] = getTokenBalances(underlying, address(spoke1), address(hub));
 
     // token balance
     assertEq(underlying.balanceOf(carol), 0, 'user token balance after-supply');

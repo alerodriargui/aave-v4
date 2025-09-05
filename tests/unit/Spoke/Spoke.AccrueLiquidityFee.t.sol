@@ -68,7 +68,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     uint256 userRp = spoke1.getUserRiskPremium(bob);
 
     // withdraw any treasury fees
-    withdrawLiquidityFees(assetId, type(uint256).max);
+    withdrawLiquidityFees(hub1, assetId, type(uint256).max);
 
     // Time passes
     skip(skipTime);
@@ -127,7 +127,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     initialBaseIndex = hub1.getAsset(assetId).drawnIndex;
 
     // withdraw any treasury fees
-    withdrawLiquidityFees(assetId, type(uint256).max);
+    withdrawLiquidityFees(hub1, assetId, type(uint256).max);
 
     // todo: updateCollateralRisk, updateLiquidityFee or updateInterestRateStrategy needs reserve update?
 
@@ -159,7 +159,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     updateLiquidityFee(hub1, assetId, 0);
 
     // withdraw any treasury fees
-    withdrawLiquidityFees(assetId, type(uint256).max);
+    withdrawLiquidityFees(hub1, assetId, type(uint256).max);
 
     // Time passes
     skip(skipTime);
@@ -226,7 +226,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
-    withdrawLiquidityFees(assetId, type(uint256).max);
+    withdrawLiquidityFees(hub1, assetId, type(uint256).max);
     _assertEventNotEmitted(IHubBase.Add.selector);
     _assertEventNotEmitted(IHub.AccrueFees.selector);
 
@@ -264,7 +264,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
-    withdrawLiquidityFees(assetId, type(uint256).max);
+    withdrawLiquidityFees(hub1, assetId, type(uint256).max);
     _assertEventNotEmitted(IHubBase.Add.selector);
     _assertEventNotEmitted(IHub.AccrueFees.selector);
 
@@ -343,7 +343,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
-    withdrawLiquidityFees(assetId, type(uint256).max);
+    withdrawLiquidityFees(hub1, assetId, type(uint256).max);
     _assertEventNotEmitted(IHubBase.Add.selector);
     _assertEventNotEmitted(IHub.AccrueFees.selector);
 
@@ -381,7 +381,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
-    withdrawLiquidityFees(assetId, type(uint256).max);
+    withdrawLiquidityFees(hub1, assetId, type(uint256).max);
     _assertEventNotEmitted(IHubBase.Add.selector);
     _assertEventNotEmitted(IHub.AccrueFees.selector);
 

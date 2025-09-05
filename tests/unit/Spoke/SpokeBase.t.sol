@@ -432,9 +432,12 @@ contract SpokeBase is Base {
     return userInfo;
   }
 
-  function getTokenBalances(IERC20 token, address spoke) internal view returns (TokenData memory) {
-    return
-      TokenData({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(address(hub1))});
+  function getTokenBalances(
+    IERC20 token,
+    address spoke,
+    address hub
+  ) internal view returns (TokenData memory) {
+    return TokenData({spokeBalance: token.balanceOf(spoke), hubBalance: token.balanceOf(hub)});
   }
 
   function _calcMaxDebtAmount(

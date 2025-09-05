@@ -25,7 +25,7 @@ contract HubRoundingTest is HubBase {
       skipTime: 12
     });
 
-    uint256 initialSharePrice = getAddExRate(daiAssetId);
+    uint256 initialSharePrice = getAddExRate(hub1, daiAssetId);
     assertGt(initialSharePrice, 1e30);
     assertLt(initialSharePrice, 1.000001e30);
 
@@ -47,7 +47,7 @@ contract HubRoundingTest is HubBase {
       });
 
       assertLt(
-        getAddExRate(daiAssetId),
+        getAddExRate(hub1, daiAssetId),
         initialSharePrice +
           initialSharePrice.mulDiv(i + 1, SharesMath.VIRTUAL_ASSETS, Math.Rounding.Ceil)
       );
