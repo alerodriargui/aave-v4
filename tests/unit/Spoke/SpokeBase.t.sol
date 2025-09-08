@@ -280,10 +280,12 @@ contract SpokeBase is Base {
       skipTime: 365 days
     });
 
+    IHub hub = spoke.getReserve(reserveId).hub;
+
     // index has increased, ie now the shares are less than the amount
     assertGt(
       borrow.supplyAmount,
-      hub1.convertToAddedShares(state.borrowReserveAssetId, borrow.supplyAmount)
+      hub.convertToAddedShares(state.borrowReserveAssetId, borrow.supplyAmount)
     );
 
     return (
