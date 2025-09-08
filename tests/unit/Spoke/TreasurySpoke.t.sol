@@ -176,7 +176,10 @@ contract TreasurySpokeTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
 
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
+    IHub hub = spoke1.getReserve(reserveId).hub;
+    ITreasurySpoke treasurySpoke = ITreasurySpoke(hub.getAsset(assetId).feeReceiver);
+
+    updateLiquidityFee(hub, spoke1.getReserve(reserveId).assetId, 100_00);
 
     assertEq(treasurySpoke.getSuppliedShares(reserveId), 0);
 
@@ -188,14 +191,14 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
 
     assertApproxEqAbs(
-      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
-      hub1.getAssetTotalOwed(assetId) - amount,
+      hub.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub.getAssetTotalOwed(assetId) - amount,
       3,
       'treasury spoke supplied amount on hub'
     );
     assertApproxEqAbs(
       fees,
-      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub.getSpokeAddedAmount(assetId, address(treasurySpoke)),
       3,
       'treasury spoke supplied amount on spoke'
     );
@@ -206,12 +209,12 @@ contract TreasurySpokeTest is SpokeBase {
 
       deal(address(asset), tempUser, UINT256_MAX);
       Utils.repay(spoke1, reserveId, tempUser, UINT256_MAX, tempUser);
-      Utils.withdraw(_treasurySpoke(), assetId, TREASURY_ADMIN, fees, address(treasurySpoke));
+      Utils.withdraw(treasurySpoke, assetId, TREASURY_ADMIN, fees, address(treasurySpoke));
 
       assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
       assertEq(
         0,
-        hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+        hub.getSpokeAddedAmount(assetId, address(treasurySpoke)),
         'treasury spoke remaining supplied amount'
       );
     }

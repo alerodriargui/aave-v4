@@ -260,6 +260,10 @@ abstract contract Base is Test {
     setUpRoles(hub1, spoke1, accessManager);
     setUpRoles(hub1, spoke2, accessManager);
     setUpRoles(hub1, spoke3, accessManager);
+
+    setUpRoles(hub2, spoke1, accessManager);
+    setUpRoles(hub2, spoke2, accessManager);
+    setUpRoles(hub2, spoke3, accessManager);
   }
 
   function setUpRoles(IHub targetHub, ISpoke spoke, IAccessManager manager) internal virtual {
@@ -1118,12 +1122,14 @@ abstract contract Base is Test {
   }
 
   function updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal pausePrank {
-    DataTypes.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    DataTypes.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
+    console.log('maybe an issue here');
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, config);
+    hub.updateAssetConfig(assetId, config);
+    console.log('not an issue here');
 
-    assertEq(hub1.getAssetConfig(assetId), config);
+    assertEq(hub.getAssetConfig(assetId), config);
   }
 
   function updateCloseFactor(ISpoke spoke, uint128 newCloseFactor) internal pausePrank {
