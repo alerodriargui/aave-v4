@@ -1872,6 +1872,7 @@ abstract contract Base is Test {
 
   /// @dev Helper function to withdraw fees from the treasury spoke
   function withdrawLiquidityFees(IHub hub, uint256 assetId, uint256 amount) internal {
+    ISpoke treasurySpoke = ISpoke(hub.getAsset(assetId).feeReceiver);
     uint256 fees = hub.getSpokeAddedAmount(assetId, address(treasurySpoke));
     if (amount > fees) {
       amount = fees;

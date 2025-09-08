@@ -216,6 +216,8 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: bob
     });
 
+    assertEq(spoke1.getReserveTotalDebt(_daiReserveId(spoke1)), 0, 'debt is fully repaid');
+
     uint256 addExRate = getAddExRate(hub2, daiAssetId);
 
     // bob withdraws all
