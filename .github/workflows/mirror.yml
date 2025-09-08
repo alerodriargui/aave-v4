@@ -1,0 +1,40 @@
+name: Snapshot to private repo (cross-org)
+on:
+  push:
+    branches: [ testing-pipeline ]
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: aave-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build snapshot tree
+        run: |
+          mkdir -p /tmp/snap
+          git archive --format=tar HEAD | tar -x -C /tmp/snap
+          cd /tmp/snap
+          git init
+          git add .
+          git -c user.name="Snapshot Bot" -c user.email="snapshot-bot@local" commit -m "Snapshot: ${GITHUB_SHA}"
+
+      - name: Create GitHub App token for target repo
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: adamavaralabs
+          repositories: aave-v4
+
+      - name: Push to snapshot repo (replace everything)
+        run: |
+          cd /tmp/snap
+          git branch -M main
+          git remote add origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/adamavaralabs/aave-v4.git
+          git push origin main --force   # keep a single-commit repo
