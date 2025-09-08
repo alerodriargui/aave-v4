@@ -34,6 +34,8 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
     partialWithdrawAmount = bound(partialWithdrawAmount, 1, supplyAmount - 1);
     elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint40();
+    IHub hub = spoke1.getReserve(_daiReserveId(spoke1)).hub;
+    ITreasurySpoke treasurySpoke = ITreasurySpoke(hub.getAsset(daiAssetId).feeReceiver);
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -65,7 +67,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     skip(elapsed);
 
     // Ensure interest has accrued
-    vm.assume(hub1.getAssetAddedAmount(daiAssetId) > supplyAmount);
+    vm.assume(hub.getAssetAddedAmount(daiAssetId) > supplyAmount);
 
     // Give Bob enough dai to repay
     uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
@@ -79,8 +81,8 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
       onBehalfOf: bob
     });
 
-    uint256 treasuryFees = hub1.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
-    uint256 interestAccrued = hub1.getAssetAddedAmount(daiAssetId) - treasuryFees - supplyAmount;
+    uint256 treasuryFees = hub.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
+    uint256 interestAccrued = hub.getAssetAddedAmount(daiAssetId) - treasuryFees - supplyAmount;
 
     uint256 totalSupplied = interestAccrued + supplyAmount;
     assertApproxEqAbs(
@@ -91,14 +93,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     );
 
     // Fetch supply exchange rate before partial withdraw
-    uint256 addExRateBefore = getAddExRate(hub1, daiAssetId);
+    uint256 addExRateBefore = getAddExRate(hub, daiAssetId);
 
     // Withdraw partial supplied assets
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, partialWithdrawAmount, bob);
 
-    treasuryFees = hub1.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
+    treasuryFees = hub.getSpokeAddedAmount(daiAssetId, address(treasurySpoke));
     interestAccrued =
-      hub1.getAssetAddedAmount(daiAssetId) -
+      hub.getAssetAddedAmount(daiAssetId) -
       treasuryFees -
       (supplyAmount - partialWithdrawAmount);
 
@@ -113,23 +115,23 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Check supply rate monotonically increasing after partial withdraw
     _checkSupplyRateIncreasing(
       addExRateBefore,
-      getAddExRate(hub1, daiAssetId),
+      getAddExRate(hub, daiAssetId),
       'after partial withdraw'
     );
 
     // Fetch supply exchange rate before withdraw
-    addExRateBefore = getAddExRate(hub1, daiAssetId);
+    addExRateBefore = getAddExRate(hub, daiAssetId);
 
     // Withdraw all supplied assets
     Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, type(uint256).max, bob);
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(hub2, daiAssetId, type(uint256).max);
+    withdrawLiquidityFees(hub, daiAssetId, type(uint256).max);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(hub1, daiAssetId), 'after withdraw');
+    _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(hub, daiAssetId), 'after withdraw');
   }
 
   // multiple users, same asset
@@ -309,6 +311,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
+    IHub hub = spoke1.getReserve(reserveId).hub;
 
     // Set up initial state of the vault by having derl supply some starting balance
     Utils.supply({
@@ -326,17 +329,17 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Deal caller the balance to deposit, and approve hub
     deal(address(underlying), caller, assets);
     vm.prank(caller);
-    underlying.approve(address(hub1), assets);
+    underlying.approve(address(hub), assets);
 
     // Supply and confirm share amount from event emission
-    uint256 shares1 = hub1.convertToAddedShares(reserve.assetId, assets);
+    uint256 shares1 = hub.convertToAddedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares1);
     vm.prank(caller);
     spoke1.supply(reserveId, assets, caller);
 
     // Withdraw and confirm share amount from event emission
-    uint256 shares2 = hub1.convertToAddedShares(reserve.assetId, assets);
+    uint256 shares2 = hub.convertToAddedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares2);
     vm.prank(caller);
@@ -358,6 +361,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     protocolStartingBalance = bound(protocolStartingBalance, 1, MAX_SUPPLY_AMOUNT - 1); // Allow some buffer from supply cap
     assets = bound(assets, 1, MAX_SUPPLY_AMOUNT - protocolStartingBalance);
+    IHub hub = spoke1.getReserve(reserveId).hub;
     // Caller starting balance must be at least the amount they will withdraw during test
     callerStartingBalance = bound(
       callerStartingBalance,
@@ -381,7 +385,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     // Deal caller the balance they will supply, and approve hub
     deal(address(underlying), caller, callerStartingBalance);
     vm.prank(caller);
-    underlying.approve(address(hub1), UINT256_MAX);
+    underlying.approve(address(hub), UINT256_MAX);
 
     // Set up initial state of caller by supplying their starting balance
     Utils.supply({
@@ -393,14 +397,14 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     // Withdraw and confirm share amount from event emission
-    uint256 shares1 = hub1.convertToAddedShares(reserve.assetId, assets);
+    uint256 shares1 = hub.convertToAddedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares1);
     vm.prank(caller);
     spoke1.withdraw(reserveId, assets, caller);
 
     // Supply and confirm share amount from event emission
-    uint256 shares2 = hub1.convertToAddedShares(reserve.assetId, assets);
+    uint256 shares2 = hub.convertToAddedShares(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares2);
     vm.prank(caller);
