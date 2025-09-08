@@ -16,6 +16,8 @@ jobs:
 
       - name: Build snapshot tree
         run: |
+          # Clean up any existing snapshot directory from previous runs
+          rm -rf /tmp/snap
           mkdir -p /tmp/snap
           git archive --format=tar HEAD | tar -x -C /tmp/snap
           cd /tmp/snap
@@ -38,5 +40,12 @@ jobs:
         run: |
           cd /tmp/snap
           git branch -M main
+          # Remove any existing remote and add fresh one
+          git remote remove origin 2>/dev/null || true
           git remote add origin https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/adamavaralabs/aave-v4.git
           git push origin main --force   # keep a single-commit repo
+
+      - name: Clean up
+        if: always()
+        run: |
+          rm -rf /tmp/snap
