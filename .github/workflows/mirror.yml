@@ -19,6 +19,8 @@ jobs:
           mkdir -p /tmp/snap
           git archive --format=tar HEAD | tar -x -C /tmp/snap
           cd /tmp/snap
+          # Remove .github directory to avoid workflow permission issues
+          rm -rf .github
           git init
           git add .
           git -c user.name="Snapshot Bot" -c user.email="snapshot-bot@local" commit -m "Snapshot: ${GITHUB_SHA}"
