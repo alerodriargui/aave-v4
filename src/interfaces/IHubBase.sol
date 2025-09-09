@@ -75,4 +75,12 @@ interface IHubBase {
     DataTypes.PremiumDelta calldata premiumDelta,
     address from
   ) external returns (uint256);
+
+  function maxAdd(uint256 assetId, address spoke) external view returns (uint256);
+
+  function maxRemove(uint256 assetId, address spoke) external view returns (uint256);
+
+  function maxDraw(uint256 assetId, address spoke) external view returns (uint256);
+
+  function maxRestore(uint256 assetId, address spoke) external view returns (uint256);
 }
