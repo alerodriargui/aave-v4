@@ -500,7 +500,9 @@ contract Hub is IHub, AccessManaged {
 
     if (!spokeData.active) return 0;
     uint256 addedAssets = previewAddByShares(assetId, spokeData.addedShares);
-    uint256 assetsCap = spokeData.addCap * 10 ** asset.decimals;
+    uint256 addCap = spokeData.addCap;
+    if (addCap == Constants.MAX_CAP) return type(uint256).max;
+    uint256 assetsCap = addCap * 10 ** asset.decimals;
     if (assetsCap <= addedAssets) return 0;
 
     return assetsCap - addedAssets;
@@ -722,10 +724,10 @@ contract Hub is IHub, AccessManaged {
     require(to != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
-    uint256 drawCap = spoke.drawCap * 10 ** asset.decimals;
+    uint256 drawCap = spoke.drawCap;
     uint256 totalOwed = _getSpokeTotalOwed(spoke, assetId);
     require(
-      drawCap == Constants.MAX_CAP || drawCap >= totalOwed + amount,
+      drawCap == Constants.MAX_CAP || drawCap * 10 ** asset.decimals >= totalOwed + amount,
       DrawCapExceeded(drawCap)
     );
   }
