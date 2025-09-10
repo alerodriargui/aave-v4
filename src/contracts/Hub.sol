@@ -523,11 +523,13 @@ contract Hub is IHub, AccessManaged {
 
     if (!spokeData.active) return 0;
     uint256 owed = _getSpokeTotalOwed(spokeData, assetId);
-    uint256 drawCap = spokeData.drawCap * 10 ** asset.decimals;
-    if (drawCap <= owed) return 0;
+    uint256 drawCap = spokeData.drawCap;
+    if (drawCap == Constants.MAX_CAP) return asset.liquidity;
+    uint256 assetsCap = drawCap * 10 ** asset.decimals;
+    if (assetsCap <= owed) return 0;
 
     uint256 liquidity = asset.liquidity;
-    uint256 maxDrawable = drawCap - owed;
+    uint256 maxDrawable = assetsCap - owed;
     return liquidity <= maxDrawable ? liquidity : maxDrawable;
   }
 

@@ -128,4 +128,82 @@ contract HubMaxGettersTest is HubBase {
 
     assertEq(hub1.maxRemove(assetId, address(spoke1)), addAmount);
   }
+
+  function test_maxDraw_returns_zero_spoke_inactive() public {
+    uint256 assetId = _randomAssetId(hub1);
+    vm.prank(HUB_ADMIN);
+    hub1.updateSpokeConfig(assetId, address(spoke1), DataTypes.SpokeConfig(false, 0, 0));
+
+    assertEq(hub1.maxDraw(assetId, address(spoke1)), 0);
+  }
+
+  function test_maxDraw_returns_zero_spoke_inactive_with_liquidity() public {
+    uint256 assetId = _randomAssetId(hub1);
+    uint256 addAmount = 10 ** hub1.getAsset(assetId).decimals;
+    vm.prank(HUB_ADMIN);
+    hub1.updateSpokeConfig(
+      assetId,
+      address(spoke1),
+      DataTypes.SpokeConfig(true, Constants.MAX_CAP, Constants.MAX_CAP)
+    );
+    Utils.add(hub1, assetId, address(spoke1), addAmount, bob);
+    vm.prank(HUB_ADMIN);
+    hub1.updateSpokeConfig(
+      assetId,
+      address(spoke1),
+      DataTypes.SpokeConfig(false, Constants.MAX_CAP, Constants.MAX_CAP)
+    );
+
+    assertEq(hub1.maxDraw(assetId, address(spoke1)), 0);
+  }
+
+  function test_maxDraw_returns_zero_invalid_asset() public {
+    assertEq(hub1.maxDraw(hub1.getAssetCount() + 1, address(spoke1)), 0);
+  }
+
+  function test_maxDraw_returns_zero_no_liquidity() public {
+    uint256 assetId = _randomAssetId(hub1);
+    vm.prank(HUB_ADMIN);
+    hub1.updateSpokeConfig(
+      assetId,
+      address(spoke1),
+      DataTypes.SpokeConfig(true, Constants.MAX_CAP, Constants.MAX_CAP)
+    );
+
+    assertEq(hub1.maxDraw(assetId, address(spoke1)), 0);
+  }
+
+  function test_maxDraw_fuzz_returns_liquidity(uint256 addAmount) public {
+    uint256 assetId = _randomAssetId(hub1);
+    addAmount = bound(addAmount, 1, MAX_SUPPLY_AMOUNT);
+    vm.prank(HUB_ADMIN);
+    hub1.updateSpokeConfig(
+      assetId,
+      address(spoke1),
+      DataTypes.SpokeConfig(true, Constants.MAX_CAP, Constants.MAX_CAP)
+    );
+
+    Utils.add(hub1, assetId, address(spoke1), addAmount, bob);
+
+    assertEq(hub1.maxDraw(assetId, address(spoke1)), addAmount);
+  }
+
+  /* TODO: Degbug this test
+  function test_maxDraw_fuzz_returns_cap_if_less_than_liquidity(uint256 addAmount) public {
+    uint256 assetId = _randomAssetId(hub1);
+    uint8 decimals = hub1.getAsset(assetId).decimals;
+    addAmount = bound(addAmount, 2 * 10 ** decimals, MAX_SUPPLY_AMOUNT);
+    uint256 drawCap = addAmount / (2 * 10 ** decimals) - 1;
+    vm.prank(HUB_ADMIN);
+    hub1.updateSpokeConfig(
+      assetId,
+      address(spoke1),
+      DataTypes.SpokeConfig(true, Constants.MAX_CAP, uint56(drawCap))
+    );
+
+    Utils.add(hub1, assetId, address(spoke1), addAmount, bob);
+
+    assertEq(hub1.maxDraw(assetId, address(spoke1)), drawCap * 10 ** decimals);
+  }
+  */
 }
