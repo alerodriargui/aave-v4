@@ -80,14 +80,6 @@ contract HubMaxGettersTest is HubBase {
     assertEq(hub1.maxAdd(assetId, address(spoke1)), cap * 10 ** decimals - addAmount);
   }
 
-  function test_maxRemove_returns_zero_spoke_inactive() public {
-    uint256 assetId = _randomAssetId(hub1);
-    vm.prank(HUB_ADMIN);
-    hub1.updateSpokeConfig(assetId, address(spoke1), DataTypes.SpokeConfig(false, 0, 0));
-
-    assertEq(hub1.maxRemove(assetId, address(spoke1)), 0);
-  }
-
   function test_maxRemove_returns_zero_invalid_spoke() public {
     uint256 assetId = _randomAssetId(hub1);
 
@@ -96,6 +88,14 @@ contract HubMaxGettersTest is HubBase {
 
   function test_maxRemove_returns_zero_invalid_asset() public {
     assertEq(hub1.maxRemove(hub1.getAssetCount() + 1, address(spoke1)), 0);
+  }
+
+  function test_maxRemove_returns_zero_spoke_inactive() public {
+    uint256 assetId = _randomAssetId(hub1);
+    vm.prank(HUB_ADMIN);
+    hub1.updateSpokeConfig(assetId, address(spoke1), DataTypes.SpokeConfig(false, 0, 0));
+
+    assertEq(hub1.maxRemove(assetId, address(spoke1)), 0);
   }
 
   function test_maxRemove_returns_zero_spoke_inactive_with_added_shares() public {
@@ -241,7 +241,11 @@ contract HubMaxGettersTest is HubBase {
   function test_maxRestore_returns_zero_spoke_inactive() public {
     uint256 assetId = _randomAssetId(hub1);
     vm.prank(HUB_ADMIN);
-    hub1.updateSpokeConfig(assetId, address(spoke1), DataTypes.SpokeConfig(false, 0, 0));
+    hub1.updateSpokeConfig(
+      assetId,
+      address(spoke1),
+      DataTypes.SpokeConfig(false, Constants.MAX_CAP, Constants.MAX_CAP)
+    );
 
     assertEq(hub1.maxRestore(assetId, address(spoke1)), 0);
   }
