@@ -494,6 +494,7 @@ contract Hub is IHub, AccessManaged {
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
+  /// @inheritdoc IHubBase
   function maxAdd(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
@@ -508,12 +509,14 @@ contract Hub is IHub, AccessManaged {
     return assetsCap - addedAssets;
   }
 
+  /// @inheritdoc IHubBase
   function maxRemove(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
     if (!spokeData.active) return 0;
     return previewRemoveByShares(assetId, spokeData.addedShares);
   }
 
+  /// @inheritdoc IHubBase
   function maxDraw(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.Asset storage asset = _assets[assetId];
     DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
@@ -528,6 +531,7 @@ contract Hub is IHub, AccessManaged {
     return liquidity <= maxDrawable ? liquidity : maxDrawable;
   }
 
+  /// @inheritdoc IHubBase
   function maxRestore(uint256 assetId, address spoke) external view returns (uint256) {
     DataTypes.SpokeData storage spokeData = _spokes[assetId][spoke];
     if (!spokeData.active) return 0;
