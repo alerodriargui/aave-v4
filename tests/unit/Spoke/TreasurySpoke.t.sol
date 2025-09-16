@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -9,6 +10,11 @@ contract TreasurySpokeTest is SpokeBase {
   function setUp() public virtual override {
     super.setUp();
     _testToken = new MockERC20();
+  }
+
+  function test_deploy_revertsWith_InvalidAddress_hub() public {
+    vm.expectRevert(abi.encodeWithSelector(ISpoke.InvalidAddress.selector));
+    new TreasurySpoke(vm.randomAddress(), address(0));
   }
 
   function test_initial_state() public view {
@@ -182,14 +188,14 @@ contract TreasurySpokeTest is SpokeBase {
     uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
 
     assertApproxEqAbs(
-      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       hub1.getAssetTotalOwed(assetId) - amount,
       3,
       'treasury spoke supplied amount on hub'
     );
     assertApproxEqAbs(
       fees,
-      hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+      hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       3,
       'treasury spoke supplied amount on spoke'
     );
@@ -205,10 +211,71 @@ contract TreasurySpokeTest is SpokeBase {
       assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
       assertEq(
         0,
-        hub1.getSpokeAddedAmount(assetId, address(treasurySpoke)),
+        hub1.getSpokeAddedAssets(assetId, address(treasurySpoke)),
         'treasury spoke remaining supplied amount'
       );
     }
+  }
+
+  function test_borrow_revertsWith_UnsupportedAction() public {
+    vm.expectRevert(ITreasurySpoke.UnsupportedAction.selector);
+    treasurySpoke.borrow(vm.randomUint(), vm.randomUint(), vm.randomAddress());
+  }
+
+  function test_repay_revertsWith_UnsupportedAction() public {
+    vm.expectRevert(ITreasurySpoke.UnsupportedAction.selector);
+    treasurySpoke.repay(vm.randomUint(), vm.randomUint(), vm.randomAddress());
+  }
+
+  function test_liquidationCall_revertsWith_UnsupportedAction() public {
+    vm.expectRevert(ITreasurySpoke.UnsupportedAction.selector);
+    treasurySpoke.liquidationCall(
+      vm.randomUint(),
+      vm.randomUint(),
+      vm.randomAddress(),
+      vm.randomUint()
+    );
+  }
+
+  function test_getters() public {
+    uint256 reserveId = _daiReserveId(spoke1);
+    uint256 assetId = daiAssetId;
+    uint256 amount = 10_000e18;
+    uint256 skipTime = 322 days;
+
+    (uint256 drawn, uint256 premium) = treasurySpoke.getUserDebt(reserveId, alice);
+    assertEq(drawn, 0);
+    assertEq(premium, 0);
+    assertEq(treasurySpoke.getUserTotalDebt(reserveId, alice), 0);
+
+    updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
+
+    // create debt
+    address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);
+
+    skip(skipTime);
+
+    uint256 fees = treasurySpoke.getSuppliedAmount(assetId);
+
+    assertApproxEqAbs(
+      treasurySpoke.getReserveSuppliedAssets(reserveId),
+      fees,
+      1,
+      'reserve supplied assets'
+    );
+    assertApproxEqAbs(
+      treasurySpoke.getReserveSuppliedShares(reserveId),
+      hub1.convertToAddedShares(assetId, fees),
+      1,
+      'reserve supplied shares'
+    );
+
+    assertEq(treasurySpoke.getUserSuppliedAssets(reserveId, alice), 0);
+    assertEq(treasurySpoke.getUserSuppliedShares(reserveId, alice), 0);
+    (drawn, premium) = treasurySpoke.getReserveDebt(reserveId);
+    assertEq(drawn, 0);
+    assertEq(premium, 0);
+    assertEq(treasurySpoke.getReserveTotalDebt(reserveId), 0);
   }
 
   function _treasurySpoke() internal view returns (ISpoke) {

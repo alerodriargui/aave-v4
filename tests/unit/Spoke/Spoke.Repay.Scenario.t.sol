@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -958,11 +959,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, action1.borrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiBefore;
     bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
@@ -995,7 +992,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -1003,7 +1000,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     if (action1.repayAmount == 0) {
-      vm.expectRevert(IHub.InvalidRestoreAmount.selector);
+      vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
       emit ISpokeBase.Repay(
@@ -1017,7 +1014,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, action1.repayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiAfter = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     assertEq(bobDaiDataAfter.suppliedShares, bobDaiDataBefore.suppliedShares);
@@ -1110,7 +1107,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     );
 
     if (action2.repayAmount == 0) {
-      vm.expectRevert(IHub.InvalidRestoreAmount.selector);
+      vm.expectRevert(IHub.InvalidAmount.selector);
     } else {
       vm.expectEmit(address(spoke1));
       emit ISpokeBase.Repay(
@@ -1164,11 +1161,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     // Bob borrows DAI
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiBefore;
     Debts memory bobWethBefore;
     bobDaiBefore.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
@@ -1206,7 +1199,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
       daiAssetId
     );
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -1225,7 +1218,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     Utils.repay(spoke1, _daiReserveId(spoke1), bob, partialRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     Debts memory bobDaiAfter;
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
     (bobDaiAfter.drawnDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
@@ -1342,7 +1335,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     skip(skipTime);
 
-    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+    ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
 
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 
@@ -1397,7 +1390,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     skip(skipTime);
 
-    DataTypes.Reserve memory reserve = spoke1.getReserve(reserveId);
+    ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
 
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 

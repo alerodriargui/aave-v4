@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -102,20 +103,20 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     // Alice borrow all reserves
     if (daiBorrowAmount > 0) {
-      assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke1, state.daiReserveId, alice, daiBorrowAmount, alice);
     }
     if (usdxBorrowAmount > 0) {
-      assertGt(spoke1.getHealthFactor(alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, alice), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke1, state.usdxReserveId, alice, usdxBorrowAmount, alice);
     }
     // Bob borrow all reserves
     if (daiBorrowAmount2 > 0) {
-      assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke1, state.daiReserveId, bob, daiBorrowAmount2, bob);
     }
     if (usdxBorrowAmount2 > 0) {
-      assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke1, state.usdxReserveId, bob, usdxBorrowAmount2, bob);
     }
 
@@ -254,19 +255,19 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     // Bob borrow all reserves
     if (daiBorrowAmount > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke2, state.daiReserveId, bob, daiBorrowAmount, bob);
     }
     if (wethBorrowAmount > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke2, state.wethReserveId, bob, wethBorrowAmount, bob);
     }
     if (usdxBorrowAmount > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke2, state.usdxReserveId, bob, usdxBorrowAmount, bob);
     }
     if (wbtcBorrowAmount > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       Utils.borrow(spoke2, state.wbtcReserveId, bob, wbtcBorrowAmount, bob);
     }
 
@@ -407,22 +408,22 @@ contract SpokeBorrowScenarioTest is SpokeBase {
 
     // Bob borrow all reserves
     if (daiBorrowAmount > 0) {
-      assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
       spoke1.borrow(states[0].daiReserveId, daiBorrowAmount, bob);
     }
     if (usdxBorrowAmount > 0) {
-      assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
       spoke1.borrow(states[0].usdxReserveId, usdxBorrowAmount, bob);
     }
     if (daiBorrowAmount2 > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
       spoke2.borrow(states[1].daiReserveId, daiBorrowAmount2, bob);
     }
     if (usdxBorrowAmount2 > 0) {
-      assertGt(spoke2.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+      assertGt(_getUserHealthFactor(spoke2, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
       vm.prank(bob);
       spoke2.borrow(states[1].usdxReserveId, usdxBorrowAmount2, bob);
     }
@@ -574,5 +575,39 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
       label: 'bob dai data after'
     });
+  }
+
+  function test_userAccountData_does_not_include_zero_cf_collateral() public {
+    uint256 coll1ReserveId = _daiReserveId(spoke1);
+    uint256 coll1Amount = 1000e18;
+    uint256 coll2ReserveId = _wethReserveId(spoke1);
+    uint256 coll2Amount = 1e18;
+    uint256 debtReserveId = _usdxReserveId(spoke1);
+    uint256 debtBorrowAmount = 500e6;
+
+    assertNotEq(_getCollateralFactor(spoke1, coll1ReserveId), 0);
+    assertNotEq(_getCollateralFactor(spoke1, coll2ReserveId), 0);
+
+    uint256 coll1InBaseCurrency = _getValueInBaseCurrency(spoke1, coll1ReserveId, coll1Amount);
+    uint256 coll2InBaseCurrency = _getValueInBaseCurrency(spoke1, coll2ReserveId, coll2Amount);
+
+    Utils.supplyCollateral(spoke1, coll1ReserveId, alice, coll1Amount, alice);
+    Utils.supplyCollateral(spoke1, coll2ReserveId, alice, coll2Amount, alice);
+    _openSupplyPosition(spoke1, debtReserveId, debtBorrowAmount);
+    Utils.borrow(spoke1, debtReserveId, alice, debtBorrowAmount, alice);
+
+    ISpoke.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
+    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
+    assertEq(
+      coll1InBaseCurrency + coll2InBaseCurrency,
+      userAccountData.totalCollateralInBaseCurrency
+    );
+
+    uint16 configKey = spoke1.getUserPosition(coll1ReserveId, alice).configKey;
+    updateCollateralFactorAtKey(spoke1, coll1ReserveId, configKey, 0);
+
+    userAccountData = spoke1.getUserAccountData(alice);
+    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
+    assertEq(coll2InBaseCurrency, userAccountData.totalCollateralInBaseCurrency); // coll1 is not included
   }
 }

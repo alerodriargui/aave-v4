@@ -1,9 +1,8 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
-
-import {Utils} from 'tests/Utils.sol';
 
 /// forge-config: default.disable_block_gas_limit = true
 contract HubRoundingTest is HubBase {

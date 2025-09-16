@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -13,10 +14,10 @@ contract HubAddTest is HubBase {
     super.setUp();
 
     /// @dev add a zero decimal asset to test add cap rounding
-    DataTypes.SpokeConfig memory spokeConfig = DataTypes.SpokeConfig({
+    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      addCap: Constants.MAX_CAP,
-      drawCap: Constants.MAX_CAP
+      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
     });
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
@@ -34,15 +35,15 @@ contract HubAddTest is HubBase {
       address(irStrategy),
       encodedIrData
     );
-    hub1.addSpoke(zeroDecimalAssetId, address(treasurySpoke), spokeConfig);
     hub1.updateAssetConfig(
       zeroDecimalAssetId,
-      DataTypes.AssetConfig({
+      IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
         irStrategy: address(irStrategy),
-        reinvestmentStrategy: address(0)
-      })
+        reinvestmentController: address(0)
+      }),
+      new bytes(0)
     );
     hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
     vm.stopPrank();
@@ -133,7 +134,7 @@ contract HubAddTest is HubBase {
     uint256 amount = newAddCap * 10 ** tokenList.dai.decimals();
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, alice);
-    assertEq(hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)), amount);
+    assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)), amount);
   }
 
   /// add reverts if the cap is exceeded, with proper rounding (up) applied to shares into assets conversion
@@ -141,8 +142,8 @@ contract HubAddTest is HubBase {
     _addLiquidity(zeroDecimalAssetId, 100e18);
     _drawLiquidity(zeroDecimalAssetId, 45e18, true);
 
-    uint256 totalAddedAssets = hub1.getTotalAddedAssets(zeroDecimalAssetId);
-    uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
+    uint256 totalAddedAssets = hub1.getAddedAssets(zeroDecimalAssetId);
+    uint256 totalAddedShares = hub1.getAddedShares(zeroDecimalAssetId);
 
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
@@ -180,7 +181,7 @@ contract HubAddTest is HubBase {
     hub1.add(zeroDecimalAssetId, addedAmount, alice);
 
     // check that add cap is not exceeded if assets are rounded down
-    uint256 addedAssetsRoundedDown = hub1.getSpokeAddedAmount(zeroDecimalAssetId, address(spoke1));
+    uint256 addedAssetsRoundedDown = hub1.getSpokeAddedAssets(zeroDecimalAssetId, address(spoke1));
     assertEq(addedAssetsRoundedDown + addedAmount, newAddCap);
   }
 
@@ -219,8 +220,8 @@ contract HubAddTest is HubBase {
     _addLiquidity(zeroDecimalAssetId, 100e18);
     _drawLiquidity(zeroDecimalAssetId, 45e18, true);
 
-    uint256 totalAddedAssets = hub1.getTotalAddedAssets(zeroDecimalAssetId);
-    uint256 totalAddedShares = hub1.getAssetAddedShares(zeroDecimalAssetId);
+    uint256 totalAddedAssets = hub1.getAddedAssets(zeroDecimalAssetId);
+    uint256 totalAddedShares = hub1.getAddedShares(zeroDecimalAssetId);
 
     // Depending on the borrow rate, this may not be true
     // It can be adjusted by changing the amount of assets passed to _addLiquidity and _drawLiquidity
@@ -269,13 +270,13 @@ contract HubAddTest is HubBase {
 
     IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
 
-    (uint256 drawnBefore, uint256 premiumBefore) = hub1.getAssetOwed(assetId);
+    (uint256 drawnBefore, ) = hub1.getAssetOwed(assetId);
     uint256 liquidityBefore = hub1.getLiquidity(assetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (assetId, liquidityBefore + amount, drawnBefore, premiumBefore)
+        (assetId, liquidityBefore + amount, drawnBefore, 0, 0)
       )
     );
 
@@ -283,20 +284,21 @@ contract HubAddTest is HubBase {
     underlying.approve(address(hub1), amount);
     deal(address(underlying), user, amount);
 
-    uint256 shares = hub1.convertToAddedShares(assetId, amount);
+    uint256 shares = hub1.previewAddByAssets(assetId, amount);
     vm.expectEmit(address(underlying));
     emit IERC20.Transfer(user, address(hub1), amount);
     vm.expectEmit(address(hub1));
     emit IHubBase.Add(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
-    hub1.add(assetId, amount, user);
+    uint256 addedShares = hub1.add(assetId, amount, user);
 
     // hub
-    assertEq(hub1.getAssetAddedAmount(assetId), amount, 'hub asset addedAmount after');
-    assertEq(hub1.getAssetAddedShares(assetId), shares, 'hub asset addedShares after');
+    assertEq(addedShares, shares);
+    assertEq(hub1.getAddedAssets(assetId), amount, 'hub asset addedAmount after');
+    assertEq(hub1.getAddedShares(assetId), shares, 'hub asset addedShares after');
     assertEq(
-      hub1.getSpokeAddedAmount(assetId, address(spoke1)),
+      hub1.getSpokeAddedAssets(assetId, address(spoke1)),
       amount,
       'hub spoke addedAmount after'
     );
@@ -355,11 +357,11 @@ contract HubAddTest is HubBase {
 
     // asset1
     assertEq(
-      hub1.getAssetAddedShares(assetId),
+      hub1.getAddedShares(assetId),
       hub1.convertToAddedShares(assetId, amount),
       'asset addedShares after'
     );
-    assertEq(hub1.getAssetAddedAmount(assetId), amount, 'asset addedAmount after');
+    assertEq(hub1.getAddedAssets(assetId), amount, 'asset addedAmount after');
     assertEq(hub1.getLiquidity(assetId), amount, 'asset liquidity after');
     assertEq(
       hub1.getAsset(assetId).lastUpdateTimestamp,
@@ -372,7 +374,7 @@ contract HubAddTest is HubBase {
       'spoke1 addedShares after'
     );
     assertEq(
-      hub1.getSpokeAddedAmount(assetId, address(spoke1)),
+      hub1.getSpokeAddedAssets(assetId, address(spoke1)),
       amount,
       'spoke1 addedAmount after'
     );
@@ -381,7 +383,7 @@ contract HubAddTest is HubBase {
     assertEq(underlying.balanceOf(address(hub1)), amount, 'hub asset1 balance after');
     // asset2
     assertEq(
-      hub1.getAssetAddedShares(assetId2),
+      hub1.getAddedShares(assetId2),
       hub1.convertToAddedShares(assetId2, amount2),
       'asset2 addedShares after'
     );
@@ -397,7 +399,7 @@ contract HubAddTest is HubBase {
       'spoke2 addedShares after'
     );
     assertEq(
-      hub1.getSpokeAddedAmount(assetId2, address(spoke2)),
+      hub1.getSpokeAddedAssets(assetId2, address(spoke2)),
       amount2,
       'spoke2 addedAmount after'
     );
@@ -410,16 +412,16 @@ contract HubAddTest is HubBase {
     assertEq(underlying2.balanceOf(address(hub1)), amount2, 'hub asset2 balance after');
   }
 
-  function test_add_revertsWith_InvalidAddAmount() public {
+  function test_add_revertsWith_InvalidAmount() public {
     uint256 assetId = 0;
     uint256 amount = 0;
 
-    vm.expectRevert(IHub.InvalidAddAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.add(assetId, amount, alice);
   }
 
-  function test_add_revertsWith_InvalidSharesAmount() public {
+  function test_add_revertsWith_InvalidShares() public {
     // inflate exchange rate
     uint256 daiAmount = 1e9 * 1e18;
     uint256 drawAmount = daiAmount;
@@ -441,12 +443,12 @@ contract HubAddTest is HubBase {
     uint256 amount = 1;
     assertTrue(hub1.convertToAddedShares(daiAssetId, amount) == 0);
 
-    vm.expectRevert(IHub.InvalidSharesAmount.selector);
+    vm.expectRevert(IHub.InvalidShares.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, amount, alice);
   }
 
-  function test_add_fuzz_revertsWith_InvalidSharesAmount_due_to_index(
+  function test_add_fuzz_revertsWith_InvalidShares_due_to_index(
     uint256 daiAmount,
     uint256 addAmount,
     uint256 skipTime
@@ -473,13 +475,13 @@ contract HubAddTest is HubBase {
     // add < 1 share with an amount > 0
     addAmount = bound(addAmount, 1, minAllowedAddedAmount - 1);
 
-    vm.expectRevert(IHub.InvalidSharesAmount.selector);
+    vm.expectRevert(IHub.InvalidShares.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, addAmount, alice);
   }
 
-  function test_add_revertsWith_InvalidFromAddress() public {
-    vm.expectRevert(IHub.InvalidFromAddress.selector);
+  function test_add_revertsWith_InvalidAddress() public {
+    vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(address(spoke1));
     hub1.add(daiAssetId, 100e18, address(hub1));
   }
@@ -506,16 +508,17 @@ contract HubAddTest is HubBase {
     uint256 shares = hub1.convertToAddedShares(daiAssetId, addAmount);
     assertLt(shares, addAmount); // index increased, exch rate > 1
 
-    uint256 addedAssetsBefore = hub1.getAssetAddedAmount(daiAssetId);
-    uint256 addedSharesBefore = hub1.getAssetAddedShares(daiAssetId);
+    uint256 spokeAddedSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke2));
+    uint256 addedAssetsBefore = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
+    uint256 addedSharesBefore = hub1.getAddedShares(daiAssetId);
 
-    (uint256 drawnBefore, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
+    (uint256 drawnBefore, ) = hub1.getAssetOwed(daiAssetId);
     uint256 liquidityBefore = hub1.getLiquidity(daiAssetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
-        (daiAssetId, liquidityBefore + addAmount, drawnBefore, premiumBefore)
+        (daiAssetId, liquidityBefore + addAmount, drawnBefore, 0, 0)
       )
     );
 
@@ -531,26 +534,22 @@ contract HubAddTest is HubBase {
     hub1.add(daiAssetId, addAmount, alice);
 
     assertEq(
-      hub1.getSpokeAddedAmount(daiAssetId, address(spoke2)),
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
       addedAssetsBefore + addAmount,
       'spoke addedAssets after'
     );
     assertEq(
       hub1.getSpokeAddedShares(daiAssetId, address(spoke2)),
-      addedSharesBefore + shares,
+      spokeAddedSharesBefore + shares,
       'spoke addedShares after'
     );
     // Hub and Spoke accounting do not match because of liquidity fees
     assertGe(
-      hub1.getAssetAddedAmount(daiAssetId),
+      hub1.getAddedAssets(daiAssetId),
       addedAssetsBefore + addAmount,
       'hub addedAssets after'
     );
-    assertGe(
-      hub1.getAssetAddedShares(daiAssetId),
-      addedSharesBefore + shares,
-      'hub addedShares after'
-    );
+    assertGe(hub1.getAddedShares(daiAssetId), addedSharesBefore + shares, 'hub addedShares after');
     assertEq(
       hub1.getAsset(daiAssetId).liquidity,
       liquidityBefore + addAmount,
@@ -570,13 +569,13 @@ contract HubAddTest is HubBase {
     uint256 addAmount = 10e18;
     uint256 expectedAddedShares = hub1.convertToAddedShares(daiAssetId, addAmount);
 
-    uint256 addedAssetsBefore = hub1.getSpokeAddedAmount(daiAssetId, address(spoke2));
+    uint256 addedAssetsBefore = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
     uint256 addedSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke2));
     // effective add amount (taking into account potential donation)
     uint256 spokeAddedAmount = calculateEffectiveAddedAssets(
       addAmount,
-      hub1.getTotalAddedAssets(daiAssetId),
-      hub1.getTotalAddedShares(daiAssetId)
+      hub1.getAddedAssets(daiAssetId),
+      hub1.getAddedShares(daiAssetId)
     );
 
     Utils.add({
@@ -588,7 +587,7 @@ contract HubAddTest is HubBase {
     });
 
     assertEq(
-      hub1.getSpokeAddedAmount(daiAssetId, address(spoke2)),
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
       addedAssetsBefore + spokeAddedAmount,
       'spoke addedAssets after'
     );
@@ -599,12 +598,12 @@ contract HubAddTest is HubBase {
     );
     // Hub and Spoke accounting do not match because of liquidity fees
     assertGe(
-      hub1.getAssetAddedAmount(daiAssetId),
+      hub1.getAddedAssets(daiAssetId),
       addedAssetsBefore + spokeAddedAmount,
       'hub addedAssets after'
     );
     assertGe(
-      hub1.getAssetAddedShares(daiAssetId),
+      hub1.getAddedShares(daiAssetId),
       addedSharesBefore + expectedAddedShares,
       'hub addedShares after'
     );
@@ -625,17 +624,17 @@ contract HubAddTest is HubBase {
       skipTime: 365 days
     });
 
-    uint256 addedAssetsBefore1 = hub1.getSpokeAddedAmount(daiAssetId, address(spoke1));
+    uint256 addedAssetsBefore1 = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
     uint256 addedSharesBefore1 = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
-    uint256 addedAssetsBefore2 = hub1.getSpokeAddedAmount(daiAssetId, address(spoke2));
+    uint256 addedAssetsBefore2 = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
     uint256 addedSharesBefore2 = hub1.getSpokeAddedShares(daiAssetId, address(spoke2));
     uint256 addShares = 1; // minimum for 1 share
     uint256 addAmount = minimumAssetsPerAddedShare(hub1, daiAssetId);
     // effective add amount (taking into account potential donation)
     uint256 spokeAddedAmount = calculateEffectiveAddedAssets(
       addAmount,
-      hub1.getTotalAddedAssets(daiAssetId),
-      hub1.getTotalAddedShares(daiAssetId)
+      hub1.getAddedAssets(daiAssetId),
+      hub1.getAddedShares(daiAssetId)
     );
 
     Utils.add({
@@ -654,12 +653,12 @@ contract HubAddTest is HubBase {
 
     // hub
     assertGe(
-      hub1.getAssetAddedAmount(daiAssetId),
+      hub1.getAddedAssets(daiAssetId),
       addedAssetsBefore1 + addedAssetsBefore2 + spokeAddedAmount,
       'hub addedAssets after'
     );
     assertGe(
-      hub1.getAssetAddedShares(daiAssetId),
+      hub1.getAddedShares(daiAssetId),
       addedSharesBefore1 + addShares,
       'hub addedShares after'
     );
@@ -675,7 +674,7 @@ contract HubAddTest is HubBase {
     );
     // spoke1
     assertEq(
-      hub1.getSpokeAddedAmount(daiAssetId, address(spoke1)),
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)),
       spokeAddedAmount,
       'spoke1 addedAssets after'
     );
@@ -686,7 +685,7 @@ contract HubAddTest is HubBase {
     );
     // spoke2
     assertGe(
-      hub1.getSpokeAddedAmount(daiAssetId, address(spoke2)),
+      hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
       addedAssetsBefore2,
       'spoke2 addedAmount after'
     );
@@ -769,8 +768,8 @@ contract HubAddTest is HubBase {
       params.bobBalance -= addAmount;
 
       // hub
-      assertGe(hub1.getAssetAddedAmount(assetId), params.assetAddedAmount, 'hub addedAmount after');
-      assertGe(hub1.getAssetAddedShares(assetId), params.assetAddedShares, 'hub addedShares after');
+      assertGe(hub1.getAddedAssets(assetId), params.assetAddedAmount, 'hub addedAmount after');
+      assertGe(hub1.getAddedShares(assetId), params.assetAddedShares, 'hub addedShares after');
       assertEq(hub1.getLiquidity(assetId), params.availableLiq, 'asset liquidity after');
       assertEq(
         hub1.getAsset(assetId).lastUpdateTimestamp,
@@ -779,7 +778,7 @@ contract HubAddTest is HubBase {
       );
       // spoke1
       assertEq(
-        hub1.getSpokeAddedAmount(assetId, address(spoke1)),
+        hub1.getSpokeAddedAssets(assetId, address(spoke1)),
         hub1.convertToAddedAssets(assetId, params.spoke1AddedShares),
         'spoke1 addedAmount after'
       );
@@ -790,7 +789,7 @@ contract HubAddTest is HubBase {
       );
       // spoke2
       assertEq(
-        hub1.getSpokeAddedAmount(assetId, address(spoke2)),
+        hub1.getSpokeAddedAssets(assetId, address(spoke2)),
         hub1.convertToAddedAssets(assetId, params.spoke2AddedShares),
         'spoke2 addedAmount after'
       );

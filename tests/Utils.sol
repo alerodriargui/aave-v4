@@ -1,25 +1,24 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {IHub, IHubBase} from 'src/interfaces/IHub.sol';
-import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
+import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
+import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 library Utils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   // hub
   function add(
-    IHub hub,
+    IHubBase hub,
     uint256 assetId,
     address caller,
     uint256 amount,
     address user
   ) internal returns (uint256) {
-    approve(hub, assetId, caller, amount);
+    approve(IHub(address(hub)), assetId, user, amount);
     vm.prank(caller);
     return hub.add(assetId, amount, user);
   }
@@ -47,15 +46,15 @@ library Utils {
   }
 
   function restoreDrawn(
-    IHub hub,
+    IHubBase hub,
     uint256 assetId,
     address caller,
     uint256 drawnAmount,
     address restorer
   ) internal returns (uint256) {
-    approve(hub, assetId, restorer, drawnAmount);
+    approve(IHub(address(hub)), assetId, restorer, drawnAmount);
     vm.prank(caller);
-    return hub.restore(assetId, drawnAmount, 0, DataTypes.PremiumDelta(0, 0, 0), restorer);
+    return hub.restore(assetId, drawnAmount, 0, IHubBase.PremiumDelta(0, 0, 0), restorer);
   }
 
   function addSpoke(
@@ -63,7 +62,7 @@ library Utils {
     address hubAdmin,
     uint256 assetId,
     address spoke,
-    DataTypes.SpokeConfig memory spokeConfig
+    IHub.SpokeConfig memory spokeConfig
   ) internal {
     vm.prank(hubAdmin);
     hub.addSpoke(assetId, spoke, spokeConfig);
@@ -74,7 +73,7 @@ library Utils {
     address hubAdmin,
     uint256 assetId,
     address spoke,
-    DataTypes.SpokeConfig memory spokeConfig
+    IHub.SpokeConfig memory spokeConfig
   ) internal {
     vm.prank(hubAdmin);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
@@ -97,10 +96,11 @@ library Utils {
     IHub hub,
     address hubAdmin,
     uint256 assetId,
-    DataTypes.AssetConfig memory config
+    IHub.AssetConfig memory config,
+    bytes memory encodedIrData
   ) internal {
     vm.prank(hubAdmin);
-    hub.updateAssetConfig(assetId, config);
+    hub.updateAssetConfig(assetId, config, encodedIrData);
   }
 
   // spoke
@@ -171,11 +171,23 @@ library Utils {
   }
 
   function approve(ISpoke spoke, uint256 reserveId, address owner, uint256 amount) internal {
-    IHub hub = spoke.getReserve(reserveId).hub;
+    IHubBase hub = spoke.getReserve(reserveId).hub;
+    (address underlying, ) = hub.getAssetUnderlyingAndDecimals(spoke.getReserve(reserveId).assetId);
+    _approve(IERC20(underlying), owner, address(hub), amount);
+  }
+
+  function approve(
+    ISpoke spoke,
+    uint256 reserveId,
+    address owner,
+    address spender,
+    uint256 amount
+  ) internal {
+    IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
     _approve(
       IERC20(hub.getAsset(spoke.getReserve(reserveId).assetId).underlying),
       owner,
-      address(hub),
+      spender,
       amount
     );
   }
@@ -185,12 +197,9 @@ library Utils {
   }
 
   function _approve(IERC20 underlying, address owner, address spender, uint256 amount) private {
-    uint256 allowance = underlying.allowance(owner, spender);
-    if (allowance < amount) {
-      vm.startPrank(owner);
-      underlying.approve(spender, 0);
-      underlying.approve(spender, amount);
-      vm.stopPrank();
-    }
+    vm.startPrank(owner);
+    underlying.approve(spender, 0);
+    underlying.approve(spender, amount);
+    vm.stopPrank();
   }
 }

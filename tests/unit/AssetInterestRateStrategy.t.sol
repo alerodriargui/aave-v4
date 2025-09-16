@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
 import 'tests/Base.t.sol';
@@ -126,7 +127,8 @@ contract AssetInterestRateStrategyTest is Base {
     encodedRateData = abi.encode(rateData);
 
     vm.expectEmit(address(rateStrategy));
-    emit IAssetInterestRateStrategy.RateDataUpdate(
+    emit IAssetInterestRateStrategy.UpdateRateData(
+      address(hub1),
       mockAssetId,
       rateData.optimalUsageRatio,
       rateData.baseVariableBorrowRate,
@@ -149,11 +151,17 @@ contract AssetInterestRateStrategyTest is Base {
     uint256 mockAssetId2 = uint256(keccak256('mockAssetId2'));
     vm.expectRevert(
       abi.encodeWithSelector(
-        IAssetInterestRateStrategy.InterestRateDataNotSet.selector,
+        IBasicInterestRateStrategy.InterestRateDataNotSet.selector,
         mockAssetId2
       )
     );
-    rateStrategy.calculateInterestRate({assetId: mockAssetId2, liquidity: 0, drawn: 0, premium: 0});
+    rateStrategy.calculateInterestRate({
+      assetId: mockAssetId2,
+      liquidity: 0,
+      drawn: 0,
+      deficit: 0,
+      swept: 0
+    });
   }
 
   function test_calculateInterestRate_fuzz_ZeroDebt(uint256 liquidity) public view {
@@ -163,7 +171,8 @@ contract AssetInterestRateStrategyTest is Base {
       assetId: mockAssetId,
       liquidity: liquidity,
       drawn: 0,
-      premium: 0
+      deficit: 0,
+      swept: 0
     });
 
     assertEq(variableBorrowRate, rateData.baseVariableBorrowRate.bpsToRay());
@@ -176,15 +185,19 @@ contract AssetInterestRateStrategyTest is Base {
   function test_calculateInterestRate_LeftToKinkPoint(uint256 utilizationRatio) public {
     uint256 utilizationRatioRay = bound(utilizationRatio, 1, rateData.optimalUsageRatio).bpsToRay();
 
-    (uint256 liquidity, uint256 drawn, uint256 premium) = _generateCalculateInterestRateParams(
-      utilizationRatioRay
-    );
+    (
+      uint256 liquidity,
+      uint256 drawn,
+      uint256 deficit,
+      uint256 swept
+    ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       liquidity: liquidity,
       drawn: drawn,
-      premium: premium
+      deficit: deficit,
+      swept: swept
     });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
@@ -207,15 +220,19 @@ contract AssetInterestRateStrategyTest is Base {
     uint256 utilizationRatioRay = bound(utilizationRatio, rateData.optimalUsageRatio + 1, 100_00)
       .bpsToRay();
 
-    (uint256 liquidity, uint256 drawn, uint256 premium) = _generateCalculateInterestRateParams(
-      utilizationRatioRay
-    );
+    (
+      uint256 liquidity,
+      uint256 drawn,
+      uint256 deficit,
+      uint256 swept
+    ) = _generateCalculateInterestRateParams(utilizationRatioRay);
 
     uint256 variableBorrowRate = rateStrategy.calculateInterestRate({
       assetId: mockAssetId,
       liquidity: liquidity,
       drawn: drawn,
-      premium: premium
+      deficit: deficit,
+      swept: swept
     });
 
     uint256 expectedVariableRate = rateData.baseVariableBorrowRate.bpsToRay() +
@@ -239,7 +256,7 @@ contract AssetInterestRateStrategyTest is Base {
 
   function _generateCalculateInterestRateParams(
     uint256 targetUtilizationRatioRay
-  ) internal returns (uint256 liquidity, uint256 drawn, uint256 premium) {
+  ) internal returns (uint256 liquidity, uint256 drawn, uint256 deficit, uint256 swept) {
     drawn = bound(vm.randomUint(), 1, MAX_SUPPLY_AMOUNT);
 
     // utilizationRatio = drawn / (drawn + liquidity)
@@ -248,8 +265,11 @@ contract AssetInterestRateStrategyTest is Base {
     liquidity = drawn.rayMulUp(WadRayMath.RAY - targetUtilizationRatioRay).rayDivUp(
       targetUtilizationRatioRay
     );
+    // Take a random portion of liquidity as swept
+    swept = vm.randomUint(0, liquidity);
+    liquidity -= swept;
 
-    // unused in the current IR strategy
-    premium = vm.randomUint();
+    // deficit unused in the current IR strategy
+    deficit = vm.randomUint();
   }
 }

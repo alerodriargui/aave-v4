@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -18,7 +19,7 @@ contract HubDrawTest is HubBase {
 
     uint256 shares = hub1.previewDrawByAssets(assetId, amount);
 
-    DataTypes.Asset memory assetBefore = hub1.getAsset(assetId);
+    IHub.Asset memory assetBefore = hub1.getAsset(assetId);
     (, uint256 premium) = hub1.getAssetOwed(assetId);
     vm.expectCall(
       address(irStrategy),
@@ -26,22 +27,24 @@ contract HubDrawTest is HubBase {
         IBasicInterestRateStrategy.calculateInterestRate,
         (
           assetId,
-          assetBefore.liquidity - amount,
+          assetBefore.liquidity - assetBefore.swept - amount,
           hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-          premium
+          assetBefore.deficit,
+          assetBefore.swept
         )
       )
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.AssetUpdate(
+    emit IHub.UpdateAsset(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
-        liquidity: assetBefore.liquidity - amount,
+        liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-        premium: premium
+        deficit: assetBefore.deficit,
+        swept: assetBefore.swept
       }),
       vm.getBlockTimestamp()
     );
@@ -98,30 +101,31 @@ contract HubDrawTest is HubBase {
 
     uint256 shares = hub1.previewDrawByAssets(assetId, amount);
 
-    DataTypes.Asset memory assetBefore = hub1.getAsset(assetId);
-    (, uint256 premium) = hub1.getAssetOwed(assetId);
+    IHub.Asset memory assetBefore = hub1.getAsset(assetId);
     vm.expectCall(
       address(irStrategy),
       abi.encodeCall(
         IBasicInterestRateStrategy.calculateInterestRate,
         (
           assetId,
-          assetBefore.liquidity - amount,
+          assetBefore.liquidity - assetBefore.swept - amount,
           hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-          premium
+          assetBefore.deficit,
+          assetBefore.swept
         )
       )
     );
 
     vm.expectEmit(address(hub1));
-    emit IHub.AssetUpdate(
+    emit IHub.UpdateAsset(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
-        liquidity: assetBefore.liquidity - amount,
+        liquidity: assetBefore.liquidity - assetBefore.swept - amount,
         drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
-        premium: premium
+        deficit: assetBefore.deficit,
+        swept: assetBefore.swept
       }),
       vm.getBlockTimestamp()
     );
@@ -296,10 +300,10 @@ contract HubDrawTest is HubBase {
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_revertsWith_InvalidDrawAmount() public {
+  function test_draw_revertsWith_InvalidAmount() public {
     uint256 drawAmount = 0;
 
-    vm.expectRevert(IHub.InvalidDrawAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
@@ -341,7 +345,7 @@ contract HubDrawTest is HubBase {
       assetId: daiAssetId,
       drawnAmount: singleShareInAssets,
       premiumAmount: 0,
-      premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
+      premiumDelta: IHubBase.PremiumDelta(0, 0, 0),
       from: alice
     });
 
@@ -378,7 +382,7 @@ contract HubDrawTest is HubBase {
       assetId: daiAssetId,
       drawnAmount: minimumAssetsPerDrawnShare(hub1, daiAssetId),
       premiumAmount: 0,
-      premiumDelta: DataTypes.PremiumDelta(0, 0, 0),
+      premiumDelta: IHubBase.PremiumDelta(0, 0, 0),
       from: alice
     });
     vm.stopPrank();
@@ -406,8 +410,8 @@ contract HubDrawTest is HubBase {
     hub1.draw({assetId: daiAssetId, amount: drawAmount, to: address(spoke1)});
   }
 
-  function test_draw_fuzz_revertsWith_InvalidToAddress(uint256 daiAmount) public {
-    vm.expectRevert(IHub.InvalidToAddress.selector);
+  function test_draw_fuzz_revertsWith_InvalidAddress(uint256 daiAmount) public {
+    vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(address(spoke1));
     hub1.draw({assetId: daiAssetId, amount: daiAmount, to: address(hub1)});
   }

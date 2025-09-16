@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -67,7 +68,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
 
-    DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
+    ISpoke.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
 
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(POSITION_MANAGER), address(hub1), amount);
@@ -76,8 +77,8 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.supply(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, POSITION_MANAGER), 0);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), amount);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, POSITION_MANAGER), 0);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), amount);
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -95,7 +96,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
 
-    DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
+    ISpoke.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
     amount /= 2;
 
     vm.expectEmit(address(tokenList.usdx));
@@ -105,8 +106,8 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.withdraw(spoke1, reserveId, POSITION_MANAGER, amount, alice);
 
     assertEq(spoke1.getUserPosition(reserveId, POSITION_MANAGER), posBefore);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, POSITION_MANAGER), 0);
-    assertEq(spoke1.getUserSuppliedAmount(reserveId, alice), amount);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, POSITION_MANAGER), 0);
+    assertEq(spoke1.getUserSuppliedAssets(reserveId, alice), amount);
 
     _disablePositionManager();
     vm.expectRevert(ISpoke.Unauthorized.selector);
@@ -124,7 +125,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
 
-    DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
+    ISpoke.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
 
     vm.expectEmit(address(tokenList.usdx));
     emit IERC20.Transfer(address(hub1), address(POSITION_MANAGER), amount);
@@ -155,10 +156,10 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
     _resetTokenAllowance(alice);
 
-    DataTypes.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
+    ISpoke.UserPosition memory posBefore = spoke1.getUserPosition(reserveId, POSITION_MANAGER);
     uint256 repayAmount = amount / 3;
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       alice,
       reserveId,
@@ -201,7 +202,7 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UsingAsCollateral(reserveId, POSITION_MANAGER, alice, usingAsCollateral);
+    emit ISpoke.SetUsingAsCollateral(reserveId, POSITION_MANAGER, alice, usingAsCollateral);
     Utils.setUsingAsCollateral(spoke1, reserveId, POSITION_MANAGER, usingAsCollateral, alice);
 
     assertEq(spoke1.isUsingAsCollateral(reserveId, alice), usingAsCollateral);
@@ -217,9 +218,9 @@ contract SpokePositionManagerTest is SpokeBase {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
     Utils.borrow(spoke1, _usdxReserveId(spoke1), alice, 1500e6, alice);
 
-    uint256 riskPremiumBefore = spoke1.getUserRiskPremium(alice);
+    uint256 riskPremiumBefore = _getUserRiskPremium(spoke1, alice);
     updateCollateralRisk(spoke1, _wethReserveId(spoke1), 100_00);
-    assertGt(spoke1.getUserRiskPremium(alice), riskPremiumBefore);
+    assertGt(_getUserRiskPremium(spoke1, alice), riskPremiumBefore);
 
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, POSITION_MANAGER)
@@ -230,13 +231,13 @@ contract SpokePositionManagerTest is SpokeBase {
     _approvePositionManager(alice);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UserRiskPremiumUpdate(alice, _calculateExpectedUserRP(alice, spoke1));
+    emit ISpoke.UpdateUserRiskPremium(alice, _calculateExpectedUserRP(alice, spoke1));
     vm.prank(POSITION_MANAGER);
     spoke1.updateUserRiskPremium(alice);
 
-    riskPremiumBefore = spoke1.getUserRiskPremium(alice);
+    riskPremiumBefore = _getUserRiskPremium(spoke1, alice);
     updateCollateralRisk(spoke1, _wethReserveId(spoke1), 1000_00);
-    assertGt(spoke1.getUserRiskPremium(alice), riskPremiumBefore);
+    assertGt(_getUserRiskPremium(spoke1, alice), riskPremiumBefore);
     _disablePositionManager();
 
     vm.expectRevert(
@@ -285,7 +286,7 @@ contract SpokePositionManagerTest is SpokeBase {
     assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.PositionManagerUpdate(POSITION_MANAGER, true);
+    emit ISpoke.UpdatePositionManager(POSITION_MANAGER, true);
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(POSITION_MANAGER, true);
 
@@ -300,7 +301,7 @@ contract SpokePositionManagerTest is SpokeBase {
 
   function _disablePositionManager() internal {
     vm.expectEmit(address(spoke1));
-    emit ISpoke.PositionManagerUpdate(POSITION_MANAGER, false);
+    emit ISpoke.UpdatePositionManager(POSITION_MANAGER, false);
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(POSITION_MANAGER, false);
 

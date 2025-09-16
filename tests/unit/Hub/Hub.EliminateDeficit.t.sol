@@ -1,26 +1,27 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubEliminateDeficitTest is HubBase {
-  function test_eliminateDeficit_revertsWith_InvalidDeficitAmount_zero() public {
+  function test_eliminateDeficit_revertsWith_InvalidAmount_zero() public {
     uint256 assetId = _randomAssetId(hub1);
-    vm.expectRevert(IHub.InvalidDeficitAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.eliminateDeficit(assetId, 0);
 
     _createDeficit(assetId, spoke1, 1000e6);
     assertEq(hub1.getDeficit(assetId), 1000e6);
-    vm.expectRevert(IHub.InvalidDeficitAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.eliminateDeficit(assetId, 0);
   }
 
-  function test_eliminateDeficit_revertsWith_InvalidDeficitAmount_excess() public {
+  function test_eliminateDeficit_revertsWith_InvalidAmount_excess() public {
     uint256 assetId = _randomAssetId(hub1);
     _createDeficit(assetId, spoke1, 1000e6);
-    vm.expectRevert(IHub.InvalidDeficitAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.eliminateDeficit(assetId, vm.randomUint(1000e6 + 1, UINT256_MAX));
   }
@@ -43,11 +44,11 @@ contract HubEliminateDeficitTest is HubBase {
 
     uint256 clearedDeficit = vm.randomUint(1, deficit);
     _supply(hub1, spoke1, assetId, clearedDeficit);
-    assertGe(hub1.getSpokeAddedAmount(assetId, address(spoke1)), clearedDeficit);
+    assertGe(hub1.getSpokeAddedAssets(assetId, address(spoke1)), clearedDeficit);
 
     uint256 expectedRemoveShares = hub1.previewRemoveByAssets(assetId, clearedDeficit);
     uint256 spokeAddedShares = hub1.getSpokeAddedShares(assetId, address(spoke1));
-    uint256 assetSuppliedShares = hub1.getAssetAddedShares(assetId);
+    uint256 assetSuppliedShares = hub1.getAddedShares(assetId);
     uint256 addExRate = getAddExRate(assetId);
 
     vm.expectEmit(address(hub1));
@@ -57,7 +58,7 @@ contract HubEliminateDeficitTest is HubBase {
 
     assertEq(removedShares, expectedRemoveShares);
     assertEq(hub1.getDeficit(assetId), deficit - clearedDeficit);
-    assertEq(hub1.getAssetAddedShares(assetId), assetSuppliedShares - expectedRemoveShares);
+    assertEq(hub1.getAddedShares(assetId), assetSuppliedShares - expectedRemoveShares);
     assertEq(
       hub1.getSpokeAddedShares(assetId, address(spoke1)),
       spokeAddedShares - expectedRemoveShares
@@ -75,7 +76,7 @@ contract HubEliminateDeficitTest is HubBase {
 
     uint256 clearedDeficit = vm.randomUint(1, deficit - 1);
     _supply(hub1, spoke1, assetId, clearedDeficit);
-    assertGe(hub1.getSpokeAddedAmount(assetId, address(spoke1)), clearedDeficit);
+    assertGe(hub1.getSpokeAddedAssets(assetId, address(spoke1)), clearedDeficit);
 
     uint256 expectedRemoveShares = hub1.previewRemoveByAssets(assetId, clearedDeficit);
 
@@ -93,7 +94,7 @@ contract HubEliminateDeficitTest is HubBase {
     _addLiquidity(assetId, amount);
     _drawLiquidityFromSpoke(address(spoke), assetId, amount, 322 days, true);
     vm.prank(address(spoke));
-    hub1.reportDeficit(assetId, amount, 0, DataTypes.PremiumDelta(0, 0, 0));
+    hub1.reportDeficit(assetId, amount, 0, IHubBase.PremiumDelta(0, 0, 0));
 
     assertEq(hub1.getDeficit(assetId), amount);
   }

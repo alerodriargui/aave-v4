@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -133,23 +134,23 @@ contract HubRemoveTest is HubBase {
     });
 
     uint256 aliceBalanceBefore = underlying.balanceOf(alice);
-    uint256 spoke1Amount = hub1.getSpokeAddedAmount(assetId, address(spoke1));
+    uint256 spoke1Amount = hub1.getSpokeAddedAssets(assetId, address(spoke1));
     Utils.remove(hub1, assetId, address(spoke1), spoke1Amount, alice);
 
-    uint256 spoke2Amount = hub1.getSpokeAddedAmount(assetId, address(spoke2));
+    uint256 spoke2Amount = hub1.getSpokeAddedAssets(assetId, address(spoke2));
     Utils.remove(hub1, assetId, address(spoke2), spoke2Amount, alice);
 
     AssetPosition memory assetData = getAssetPosition(hub1, assetId);
     SpokePosition memory spokePosition1 = getSpokePosition(spoke1, _daiReserveId);
     SpokePosition memory spokePosition2 = getSpokePosition(spoke2, _daiReserveId);
 
-    address feeReceiver = _getFeeReceiver(assetId);
+    address feeReceiver = _getFeeReceiver(hub1, assetId);
 
     // asset
     // only remaining added amount are fees
     assertEq(
       assetData.addedAmount,
-      hub1.getSpokeAddedAmount(assetId, feeReceiver),
+      hub1.getSpokeAddedAssets(assetId, feeReceiver),
       'asset addedAmount after'
     );
     assertEq(
@@ -159,7 +160,7 @@ contract HubRemoveTest is HubBase {
     );
     assertEq(
       assetData.liquidity,
-      hub1.getSpokeAddedAmount(assetId, feeReceiver) + _calculateBurntInterest(hub1, assetId),
+      hub1.getSpokeAddedAssets(assetId, feeReceiver) + _calculateBurntInterest(hub1, assetId),
       'asset liquidity after'
     );
     assertEq(
@@ -221,9 +222,9 @@ contract HubRemoveTest is HubBase {
     // reset available liquidity variable
     initialLiquidity = hub1.getAsset(daiAssetId).liquidity;
 
-    uint256 removeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke2));
+    uint256 removeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
-    uint256 feeAmount = hub1.getSpokeAddedAmount(
+    uint256 feeAmount = hub1.getSpokeAddedAssets(
       daiAssetId,
       hub1.getAssetConfig(daiAssetId).feeReceiver
     );
@@ -322,9 +323,9 @@ contract HubRemoveTest is HubBase {
       'dai liquidity'
     );
 
-    uint256 removeAmount = hub1.getSpokeAddedAmount(daiAssetId, address(spoke2));
+    uint256 removeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke2));
     uint256 daiBalanceBefore = tokenList.dai.balanceOf(bob);
-    uint256 feeAmount = hub1.getSpokeAddedAmount(
+    uint256 feeAmount = hub1.getSpokeAddedAssets(
       daiAssetId,
       hub1.getAssetConfig(daiAssetId).feeReceiver
     );
@@ -422,8 +423,8 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, amount, address(spoke1));
   }
 
-  function test_remove_revertsWith_InvalidRemoveAmount() public {
-    vm.expectRevert(IHub.InvalidRemoveAmount.selector);
+  function test_remove_revertsWith_InvalidAmount() public {
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, 0, alice);
   }
@@ -435,8 +436,8 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, 100e18, alice);
   }
 
-  function test_remove_revertsWith_InvalidToAddress() public {
-    vm.expectRevert(IHub.InvalidToAddress.selector);
+  function test_remove_revertsWith_InvalidAddress() public {
+    vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(address(spoke1));
     hub1.remove(daiAssetId, 100e18, address(hub1));
   }

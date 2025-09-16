@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
@@ -21,15 +22,15 @@ contract HubBase is Base {
   }
 
   struct HubData {
-    DataTypes.Asset daiData;
-    DataTypes.Asset daiData1;
-    DataTypes.Asset daiData2;
-    DataTypes.Asset daiData3;
-    DataTypes.Asset wethData;
-    DataTypes.SpokeData spoke1WethData;
-    DataTypes.SpokeData spoke1DaiData;
-    DataTypes.SpokeData spoke2WethData;
-    DataTypes.SpokeData spoke2DaiData;
+    IHub.Asset daiData;
+    IHub.Asset daiData1;
+    IHub.Asset daiData2;
+    IHub.Asset daiData3;
+    IHub.Asset wethData;
+    IHub.SpokeData spoke1WethData;
+    IHub.SpokeData spoke1DaiData;
+    IHub.SpokeData spoke2WethData;
+    IHub.SpokeData spoke2DaiData;
     uint256 timestamp;
     uint256 accruedBase;
     uint256 initialLiquidity;
@@ -49,7 +50,7 @@ contract HubBase is Base {
   }
 
   function _updateAddCap(uint256 assetId, address spoke, uint56 newAddCap) internal {
-    DataTypes.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spoke);
+    IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, spoke);
     spokeConfig.addCap = newAddCap;
     vm.prank(HUB_ADMIN);
     hub1.updateSpokeConfig(assetId, spoke, spokeConfig);
@@ -103,13 +104,17 @@ contract HubBase is Base {
     hub1.addSpoke(
       assetId,
       tempSpoke,
-      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
+      IHub.SpokeConfig({
+        active: true,
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+      })
     );
 
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(tempSpoke);
-      hub1.refreshPremium(assetId, DataTypes.PremiumDelta(sharesDelta, premiumOffsetDelta, 0));
+      hub1.refreshPremium(assetId, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDelta, 0));
     }
 
     Utils.draw(hub1, assetId, tempSpoke, tempUser, amount);
@@ -125,7 +130,7 @@ contract HubBase is Base {
       vm.prank(tempSpoke);
       hub1.refreshPremium(
         assetId,
-        DataTypes.PremiumDelta(-sharesDelta, -premiumOffsetDelta, int256(premium))
+        IHubBase.PremiumDelta(-sharesDelta, -premiumOffsetDelta, int256(premium))
       );
     }
   }
@@ -153,7 +158,7 @@ contract HubBase is Base {
     if (withPremium) {
       // inflate premium data to create premium debt
       vm.prank(spoke);
-      hub1.refreshPremium(assetId, DataTypes.PremiumDelta(sharesDelta, premiumOffsetDelta, 0));
+      hub1.refreshPremium(assetId, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDelta, 0));
     }
 
     Utils.draw({hub: hub1, assetId: assetId, caller: spoke, amount: amount, to: tempUser});
@@ -169,7 +174,7 @@ contract HubBase is Base {
       vm.prank(spoke);
       hub1.refreshPremium(
         assetId,
-        DataTypes.PremiumDelta(-sharesDelta, -premiumOffsetDelta, int256(premium))
+        IHubBase.PremiumDelta(-sharesDelta, -premiumOffsetDelta, int256(premium))
       );
     }
   }
@@ -191,12 +196,39 @@ contract HubBase is Base {
     hub1.addSpoke(
       assetId,
       tempSpoke,
-      DataTypes.SpokeConfig({addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP, active: true})
+      IHub.SpokeConfig({
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        active: true
+      })
     );
 
     Utils.add({hub: hub1, assetId: assetId, caller: tempSpoke, amount: amount, user: tempUser});
 
     assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+  }
+
+  function _getExpectedPremiumDelta(
+    ISpoke spoke,
+    address user,
+    uint256 reserveId,
+    uint256 premiumRestored
+  ) internal view override returns (IHubBase.PremiumDelta memory) {
+    ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
+    uint256 assetId = spoke.getReserve(reserveId).assetId;
+
+    IHubBase.PremiumDelta memory expectedPremiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: -int256(uint256(userPosition.premiumShares)),
+      offsetDelta: -int256(uint256(userPosition.premiumOffset)),
+      realizedDelta: 0
+    });
+
+    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPosition.premiumShares) -
+      userPosition.premiumOffset;
+
+    expectedPremiumDelta.realizedDelta = int256(accruedPremium) - int256(premiumRestored);
+
+    return expectedPremiumDelta;
   }
 
   function _randomAssetId(IHub hub) internal returns (uint256) {

@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -24,7 +25,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     assertFalse(spoke1.getReserve(reserveId).borrowable);
 
     // Bob tries to draw
-    vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotBorrowable.selector, reserveId));
+    vm.expectRevert(ISpoke.ReserveNotBorrowable.selector);
     vm.prank(bob);
     spoke1.borrow(reserveId, amount, bob);
   }
@@ -115,16 +116,16 @@ contract SpokeBorrowValidationTest is SpokeBase {
     spoke1.borrow(daiReserveId, borrowAmount, bob);
   }
 
-  function test_borrow_revertsWith_InvalidDrawAmount() public {
+  function test_borrow_revertsWith_InvalidAmount() public {
     // Bob draws 0 dai
-    test_borrow_fuzz_revertsWith_InvalidDrawAmount(_daiReserveId(spoke1));
+    test_borrow_fuzz_revertsWith_InvalidAmount(_daiReserveId(spoke1));
   }
 
-  function test_borrow_fuzz_revertsWith_InvalidDrawAmount(uint256 reserveId) public {
+  function test_borrow_fuzz_revertsWith_InvalidAmount(uint256 reserveId) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
 
     // Bob draws 0
-    vm.expectRevert(IHub.InvalidDrawAmount.selector);
+    vm.expectRevert(IHub.InvalidAmount.selector);
     vm.prank(bob);
     spoke1.borrow(reserveId, 0, bob);
   }
@@ -175,7 +176,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     Utils.supply(spoke1, daiReserveId, bob, 1e18, bob);
 
     // Bob should be able to borrow 1 dai
-    assertGt(spoke1.getHealthFactor(bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
+    assertGt(_getUserHealthFactor(spoke1, bob), HEALTH_FACTOR_LIQUIDATION_THRESHOLD);
 
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     Utils.borrow(spoke1, daiReserveId, bob, 1, bob);

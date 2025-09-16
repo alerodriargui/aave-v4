@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -135,7 +136,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     }
 
     // Check Bob's risk premium
-    uint256 bobRp = spoke2.getUserRiskPremium(bob);
+    uint256 bobRp = _getUserRiskPremium(spoke2, bob);
     assertEq(bobRp, _calculateExpectedUserRP(bob, spoke2), 'user risk premium Before');
 
     // Store base borrow rates
@@ -246,7 +247,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     skip(skipTime);
 
     // Check bob's drawn debt, premium debt, and supplied amounts for all assets at user, reserve, spoke, and asset level
-    DataTypes.UserPosition memory bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
+    ISpoke.UserPosition memory bobPosition = spoke2.getUserPosition(_daiReserveId(spoke2), bob);
     drawnDebt = _calculateExpectedDrawnDebt(
       amounts.daiBorrowAmount,
       rates.daiBaseBorrowRate,
@@ -257,7 +258,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       drawnDebt,
       bobRp
     );
-    uint256 interest = (drawnDebt + expectedPremiumDebt) - amounts.daiBorrowAmount - _calculateBurntInterest(hub1, daiAssetId);
+    uint256 interest = (drawnDebt + expectedPremiumDebt) -
+      amounts.daiBorrowAmount -
+      _calculateBurntInterest(hub1, daiAssetId);
     _assertSingleUserProtocolDebt(
       spoke2,
       _daiReserveId(spoke2),
@@ -299,7 +302,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       startTime
     );
     expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wethBorrowAmount, drawnDebt, bobRp);
-    interest = (drawnDebt + expectedPremiumDebt) - amounts.wethBorrowAmount - _calculateBurntInterest(hub1, wethAssetId);
+    interest =
+      (drawnDebt + expectedPremiumDebt) -
+      amounts.wethBorrowAmount -
+      _calculateBurntInterest(hub1, wethAssetId);
     _assertSingleUserProtocolDebt(
       spoke2,
       _wethReserveId(spoke2),
@@ -341,7 +347,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       startTime
     );
     expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.usdxBorrowAmount, drawnDebt, bobRp);
-    interest = (drawnDebt + expectedPremiumDebt) - amounts.usdxBorrowAmount - _calculateBurntInterest(hub1, usdxAssetId);
+    interest =
+      (drawnDebt + expectedPremiumDebt) -
+      amounts.usdxBorrowAmount -
+      _calculateBurntInterest(hub1, usdxAssetId);
     _assertSingleUserProtocolDebt(
       spoke2,
       _usdxReserveId(spoke2),
@@ -383,7 +392,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       startTime
     );
     expectedPremiumDebt = _calculateExpectedPremiumDebt(amounts.wbtcBorrowAmount, drawnDebt, bobRp);
-    interest = (drawnDebt + expectedPremiumDebt) - amounts.wbtcBorrowAmount - _calculateBurntInterest(hub1, wbtcAssetId);
+    interest =
+      (drawnDebt + expectedPremiumDebt) -
+      amounts.wbtcBorrowAmount -
+      _calculateBurntInterest(hub1, wbtcAssetId);
     _assertSingleUserProtocolDebt(
       spoke2,
       _wbtcReserveId(spoke2),
@@ -419,7 +431,7 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     );
 
     // Only proceed with test if position is healthy
-    if (spoke2.getHealthFactor(bob) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
+    if (_getUserHealthFactor(spoke2, bob) >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD) {
       // Supply more collateral to ensure bob can borrow more dai to trigger accrual
       deal(address(tokenList.dai), bob, MAX_SUPPLY_AMOUNT);
       Utils.supplyCollateral(spoke2, _dai2ReserveId(spoke2), bob, MAX_SUPPLY_AMOUNT, bob);
@@ -534,7 +546,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       expectedPremiumDebt =
         _calculateExpectedPremiumDebt(amounts.daiBorrowAmount, drawnDebt, bobRp) +
         bobPosition.realizedPremium;
-      interest = (drawnDebt + expectedPremiumDebt) - (originalAmounts.daiBorrowAmount + 1e18) - _calculateBurntInterest(hub1, daiAssetId); // subtract out the extra amount we borrowed
+      interest =
+        (drawnDebt + expectedPremiumDebt) -
+        (originalAmounts.daiBorrowAmount + 1e18) -
+        _calculateBurntInterest(hub1, daiAssetId); // subtract out the extra amount we borrowed
       _assertSingleUserProtocolDebt(
         spoke2,
         _daiReserveId(spoke2),
@@ -586,7 +601,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       expectedPremiumDebt =
         _calculateExpectedPremiumDebt(amounts.wethBorrowAmount, drawnDebt, bobRp) +
         bobPosition.realizedPremium;
-      interest = (drawnDebt + expectedPremiumDebt) - originalAmounts.wethBorrowAmount - _calculateBurntInterest(hub1, wethAssetId);
+      interest =
+        (drawnDebt + expectedPremiumDebt) -
+        originalAmounts.wethBorrowAmount -
+        _calculateBurntInterest(hub1, wethAssetId);
       _assertSingleUserProtocolDebt(
         spoke2,
         _wethReserveId(spoke2),
@@ -633,7 +651,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       expectedPremiumDebt =
         _calculateExpectedPremiumDebt(amounts.usdxBorrowAmount, drawnDebt, bobRp) +
         bobPosition.realizedPremium;
-      interest = (drawnDebt + expectedPremiumDebt) - originalAmounts.usdxBorrowAmount - _calculateBurntInterest(hub1, usdxAssetId);
+      interest =
+        (drawnDebt + expectedPremiumDebt) -
+        originalAmounts.usdxBorrowAmount -
+        _calculateBurntInterest(hub1, usdxAssetId);
       _assertSingleUserProtocolDebt(
         spoke2,
         _usdxReserveId(spoke2),
@@ -680,7 +701,10 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       expectedPremiumDebt =
         _calculateExpectedPremiumDebt(amounts.wbtcBorrowAmount, drawnDebt, bobRp) +
         bobPosition.realizedPremium;
-      interest = (drawnDebt + expectedPremiumDebt) - originalAmounts.wbtcBorrowAmount - _calculateBurntInterest(hub1, wbtcAssetId);
+      interest =
+        (drawnDebt + expectedPremiumDebt) -
+        originalAmounts.wbtcBorrowAmount -
+        _calculateBurntInterest(hub1, wbtcAssetId);
       _assertSingleUserProtocolDebt(
         spoke2,
         _wbtcReserveId(spoke2),

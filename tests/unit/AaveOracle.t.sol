@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.10;
 
 import 'tests/Base.t.sol';
@@ -100,7 +101,7 @@ contract AaveOracleTest is Base {
     _mockSourceLatestRoundData(_source1, 1e8);
 
     vm.expectEmit();
-    emit IAaveOracle.ReserveSourceUpdated(reserveId1, _source1);
+    emit IAaveOracle.UpdateReserveSource(reserveId1, _source1);
     vm.expectCall(_source1, abi.encodeCall(AggregatorV3Interface.latestRoundData, ()));
 
     vm.prank(address(spoke1));

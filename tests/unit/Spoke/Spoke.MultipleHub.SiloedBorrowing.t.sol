@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/Spoke.MultipleHub.Base.t.sol';
@@ -48,12 +49,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(newHub),
       siloedVars.assetBId,
       _deployMockPriceFeed(newSpoke, 2000e8),
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 15_00
-      }),
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
       dynReserveConfig
     );
 
@@ -61,9 +57,9 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     newHub.addSpoke(
       siloedVars.assetBId,
       address(newSpoke),
-      DataTypes.SpokeConfig({
+      IHub.SpokeConfig({
         active: true,
-        addCap: Constants.MAX_CAP,
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: siloedVars.assetBDrawCap
       })
     );
@@ -83,12 +79,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(hub1),
       siloedVars.assetAId,
       _deployMockPriceFeed(spoke1, 50_000e8),
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 15_00
-      }),
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
       dynReserveConfig
     );
 
@@ -96,7 +87,11 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       siloedVars.assetAId,
       address(spoke1),
-      DataTypes.SpokeConfig({active: true, addCap: Constants.MAX_CAP, drawCap: Constants.MAX_CAP})
+      IHub.SpokeConfig({
+        active: true,
+        addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+      })
     );
 
     // Add reserve A from canonical hub to the new spoke
@@ -104,12 +99,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(hub1),
       siloedVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
-      DataTypes.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: true,
-        collateralRisk: 15_00
-      }),
+      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
       dynReserveConfig
     );
 
@@ -117,7 +107,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       siloedVars.assetAId,
       address(newSpoke),
-      DataTypes.SpokeConfig({active: true, addCap: siloedVars.assetAAddCap, drawCap: 0})
+      IHub.SpokeConfig({active: true, addCap: siloedVars.assetAAddCap, drawCap: 0})
     );
     vm.stopPrank();
 
@@ -144,7 +134,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     uint256 assetAAddCapAmount = siloedVars.assetAAddCap * 10 ** assetA.decimals();
     Utils.supplyCollateral(newSpoke, siloedVars.reserveAIdNewSpoke, bob, assetAAddCapAmount, bob);
     assertEq(
-      newSpoke.getUserSuppliedAmount(siloedVars.reserveAIdNewSpoke, bob),
+      newSpoke.getUserSuppliedAssets(siloedVars.reserveAIdNewSpoke, bob),
       assetAAddCapAmount,
       'bob supplied amount of asset A on new spoke'
     );
@@ -153,7 +143,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       'bob using asset A as collateral on new spoke'
     );
     assertEq(
-      hub1.getAssetAddedAmount(siloedVars.assetAId),
+      hub1.getAddedAssets(siloedVars.assetAId),
       assetAAddCapAmount,
       'total supplied amount of asset A on canonical hub'
     );

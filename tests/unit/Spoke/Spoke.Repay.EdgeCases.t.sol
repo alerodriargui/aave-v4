@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -47,7 +48,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       daiAssetId
     );
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -209,16 +210,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // Bob borrows DAI
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiDebtBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
     assertEq(bobDaiDataBefore.suppliedShares, 0);
@@ -283,16 +276,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // Bob borrows DAI
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiBefore;
     Debts memory bobWethBefore;
 
@@ -346,7 +331,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       daiAssetId
     );
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -363,12 +348,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), repayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiAfter;
     bobDaiAfter.totalDebt = spoke1.getUserTotalDebt(_daiReserveId(spoke1), bob);
     (bobDaiAfter.drawnDebt, bobDaiAfter.premiumDebt) = spoke1.getUserDebt(
@@ -416,16 +397,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiBefore;
     Debts memory bobWethBefore;
     bobWethBefore.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
@@ -476,7 +449,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
       daiAssetId
     );
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -494,12 +467,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiAfter;
     Debts memory bobWethAfter;
     bobWethAfter.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
@@ -545,16 +514,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     // Bob borrow dai
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _daiReserveId(spoke1)
-    );
-    DataTypes.UserPosition memory bobWethDataBefore = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataBefore = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiBefore;
     Debts memory bobWethBefore;
     uint256 bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
@@ -590,7 +551,7 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     uint256 daiRepayAmount = bobDaiBefore.drawnDebt - daiBorrowAmount;
     assertGt(daiRepayAmount, 0); // interest is not zero
 
-    DataTypes.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
+    IHubBase.PremiumDelta memory expectedPremiumDelta = _getExpectedPremiumDelta(
       spoke1,
       bob,
       _daiReserveId(spoke1),
@@ -608,12 +569,8 @@ contract SpokeRepayEdgeCaseTest is SpokeBase {
     vm.prank(bob);
     spoke1.repay(_daiReserveId(spoke1), daiRepayAmount, bob);
 
-    DataTypes.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
-    DataTypes.UserPosition memory bobWethDataAfter = getUserInfo(
-      spoke1,
-      bob,
-      _wethReserveId(spoke1)
-    );
+    ISpoke.UserPosition memory bobDaiDataAfter = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
+    ISpoke.UserPosition memory bobWethDataAfter = getUserInfo(spoke1, bob, _wethReserveId(spoke1));
     Debts memory bobDaiAfter;
     Debts memory bobWethAfter;
     bobWethAfter.totalDebt = spoke1.getUserTotalDebt(_wethReserveId(spoke1), bob);
