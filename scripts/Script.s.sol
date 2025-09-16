@@ -36,8 +36,8 @@ contract Deploy is Script, StdAssertions {
 
   /// ---------- TOKEN -----------
   struct Token {
-    TestnetERC20 token;
-    uint price;
+    address token;
+    address priceSource;
   }
   mapping(string key => Token token) internal tokens;
   bool tokenSetup;
@@ -53,17 +53,63 @@ contract Deploy is Script, StdAssertions {
 
   function setUpTokens() public {
     // move price per reserve listing
-    tokens[WETH] = Token(TestnetERC20(address(new WETH9())), 1922e8);
-    tokens[WBTC] = Token(new TestnetERC20('WBTC', 'WBTC', 8), 98_999e8);
-    tokens[cbBTC] = Token(new TestnetERC20('cbBTC', 'cbBTC', 8), 98_981e8);
-    tokens[wstETH] = Token(new TestnetERC20('wstETH', 'wstETH', 18), 2010e8);
-    tokens[USDC] = Token(new TestnetERC20('USDC', 'USDC', 6), 1.00112e8);
-    tokens[GHO] = Token(new TestnetERC20('GHO', 'GHO', 18), 1.00232e8);
-    tokens[USDS] = Token(new TestnetERC20('USDS', 'USDS', 18), 0.999923e8);
-    tokens[AAVE] = Token(new TestnetERC20('AAVE', 'AAVE', 18), 240.321e8);
-    tokens[MKR] = Token(new TestnetERC20('MKR', 'MKR', 18), 113.21e8);
-    tokens[UNI] = Token(new TestnetERC20('UNI', 'UNI', 8), 9.2323e8);
-    tokens[sUSDe] = Token(new TestnetERC20('sUSDe', 'sUSDe', 18), 1.023213e8);
+    // tokens[WETH] = Token(TestnetERC20(address(new WETH9())), 1922e8);
+    // tokens[WBTC] = Token(new TestnetERC20('WBTC', 'WBTC', 8), 98_999e8);
+    // tokens[cbBTC] = Token(new TestnetERC20('cbBTC', 'cbBTC', 8), 98_981e8);
+    // tokens[wstETH] = Token(new TestnetERC20('wstETH', 'wstETH', 18), 2010e8);
+    // tokens[USDC] = Token(new TestnetERC20('USDC', 'USDC', 6), 1.00112e8);
+    // tokens[GHO] = Token(new TestnetERC20('GHO', 'GHO', 18), 1.00232e8);
+    // tokens[USDS] = Token(new TestnetERC20('USDS', 'USDS', 18), 0.999923e8);
+    // tokens[AAVE] = Token(new TestnetERC20('AAVE', 'AAVE', 18), 240.321e8);
+    // tokens[MKR] = Token(new TestnetERC20('MKR', 'MKR', 18), 113.21e8);
+    // tokens[UNI] = Token(new TestnetERC20('UNI', 'UNI', 8), 9.2323e8);
+    // tokens[sUSDe] = Token(new TestnetERC20('sUSDe', 'sUSDe', 18), 1.023213e8);
+
+    tokens[WETH] = Token(
+      0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
+      0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
+    );
+    tokens[WBTC] = Token(
+      0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
+      0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c
+    );
+    tokens[cbBTC] = Token(
+      0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf,
+      0x2665701293fCbEB223D11A08D826563EDcCE423A
+    );
+    tokens[wstETH] = Token(
+      0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0,
+      // 0x8B6851156023f4f5A66F68BEA80851c3D905Ac93
+      _deployMockPriceFeed(550429206740, 'wstETH')
+    );
+    tokens[USDC] = Token(
+      0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,
+      0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6
+    );
+    tokens[GHO] = Token(
+      0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f,
+      0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC
+    );
+    tokens[USDS] = Token(
+      0xdC035D45d973E3EC169d2276DDab16f1e407384F,
+      0xfF30586cD0F29eD462364C7e81375FC0C71219b1
+    );
+    tokens[AAVE] = Token(
+      0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9,
+      0xbd7F896e60B650C01caf2d7279a1148189A68884
+    );
+    tokens[MKR] = Token(
+      0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2,
+      0xec1D1B3b0443256cc3860e24a46F108e699484Aa
+    );
+    tokens[UNI] = Token(
+      0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984,
+      0x553303d460EE0afB37EdFf9bE42922D8FF63220e
+    );
+    tokens[sUSDe] = Token(
+      0x9D39A5DE30e57443BfF2A8307A4256c8797A3497,
+      0xFF3BC18cCBd5999CE63E788A1c250a88626aD099
+    );
 
     tokenSetup = true;
   }
@@ -328,10 +374,10 @@ contract Deploy is Script, StdAssertions {
     string hubKey;
     bool collateral;
     bool borrowable;
-    uint liquidationBonus;
-    uint collateralRisk;
-    uint collateralFactor;
-    uint liquidationFee;
+    uint32 liquidationBonus;
+    uint24 collateralRisk;
+    uint16 collateralFactor;
+    uint16 liquidationFee;
   }
 
   function setUpReserves() public {
@@ -597,13 +643,7 @@ contract Deploy is Script, StdAssertions {
       liquidationFee: conf.liquidationFee
     });
 
-    uint reserveId = spoke.addReserve(
-      address(hub),
-      assetId,
-      _deployMockPriceFeed(spoke, t.price),
-      st,
-      dyn
-    );
+    uint reserveId = spoke.addReserve(address(hub), assetId, t.priceSource, st, dyn);
 
     assertEq(abi.encode(spoke.getReserveConfig(reserveId)), abi.encode(st));
     assertEq(abi.encode(spoke.getDynamicReserveConfig(reserveId)), abi.encode(dyn));
@@ -632,11 +672,11 @@ contract Deploy is Script, StdAssertions {
     console.log('token\t\t\t\t\t', conf.key);
 
     HubGlobalConfig storage hubConf = _hub(hubKey);
-    TestnetERC20 token = _token(conf.key).token;
+    address token = _token(conf.key).token;
 
     uint assetId = hubConf.hub.addAsset(
       address(token),
-      token.decimals(),
+      TestnetERC20(token).decimals(),
       address(hubConf.treasury),
       address(hubConf.irStrategy),
       abi.encode(conf.irData)
@@ -666,10 +706,10 @@ contract Deploy is Script, StdAssertions {
   }
 
   // doesn't work with asset listed multiple times on hub
-  function _assetId(Hub hub, TestnetERC20 token) internal view returns (uint) {
+  function _assetId(Hub hub, address token) internal view returns (uint) {
     uint assetCount = hub.getAssetCount();
     for (uint i; i < assetCount; ++i) {
-      if (hub.getAsset(i).underlying == address(token)) return i;
+      if (hub.getAsset(i).underlying == token) return i;
     }
     revert('token not found');
   }
@@ -679,7 +719,7 @@ contract Deploy is Script, StdAssertions {
     console.log('token\t\t\t\t\t', conf.assetKey);
     Hub hub = _hub(hubKey).hub;
     Spoke spoke = _spoke(conf.spokeKey);
-    TestnetERC20 token = _token(conf.assetKey).token;
+    address token = _token(conf.assetKey).token;
     uint assetId = _assetId(hub, token);
 
     hub.addSpoke(assetId, address(spoke), DataTypes.SpokeConfig(true, conf.addCap, conf.drawCap));
@@ -807,7 +847,7 @@ contract Deploy is Script, StdAssertions {
     {
       string[11] memory keys = [WETH, cbBTC, WBTC, wstETH, USDC, GHO, USDS, AAVE, MKR, UNI, sUSDe];
       for (uint i; i < keys.length; ++i) {
-        tokens[keys[i]].token = TestnetERC20(deploy.readAddress(string.concat('.token.', keys[i])));
+        tokens[keys[i]].token = deploy.readAddress(string.concat('.token.', keys[i]));
         console.log(address(_token(keys[i]).token), keys[i]);
       }
     }
@@ -831,9 +871,8 @@ contract Deploy is Script, StdAssertions {
     return string(result);
   }
 
-  function _deployMockPriceFeed(Spoke spoke, uint price) internal returns (address) {
-    AaveOracle oracle = AaveOracle(address(spoke.oracle()));
-    return address(new MockPriceFeed(oracle.DECIMALS(), oracle.DESCRIPTION(), price));
+  function _deployMockPriceFeed(uint price, string memory description) internal returns (address) {
+    return address(new MockPriceFeed(8, description, price));
   }
 
   function seed() public {
@@ -844,11 +883,11 @@ contract Deploy is Script, StdAssertions {
       for (uint i; i < keys.length; ++i) {
         Spoke spoke = _spoke(keys[i]);
         console.log(keys[i]);
-        _run(spoke, _supply);
-        _run(spoke, _withdraw);
         // _run(spoke, _supply);
-        // _run(spoke, _borrow);
-        // _run(spoke, _repay);
+        // _run(spoke, _withdraw);
+        _run(spoke, _supply);
+        _run(spoke, _borrow);
+        _run(spoke, _repay);
         console.log();
       }
     }
@@ -865,7 +904,7 @@ contract Deploy is Script, StdAssertions {
     if (reserve.hub.getSpokeConfig(reserve.assetId, address(spoke)).addCap == 0) return;
 
     TestnetERC20 token = TestnetERC20(reserve.hub.getAsset(reserve.assetId).underlying);
-    uint amount = _getAmount(bound(vm.randomUint(), 0.01e8, 1_000e8), spoke, reserveId, token);
+    uint amount = _getAmount(bound(vm.randomUint(), 0.01e8, 100e8), spoke, reserveId, token);
     _mint(token, amount);
 
     token.approve(address(reserve.hub), amount);
@@ -886,9 +925,10 @@ contract Deploy is Script, StdAssertions {
 
   function _borrow(Spoke spoke, uint reserveId) internal {
     if (!spoke.getReserveConfig(reserveId).borrowable) return;
+    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
 
     (, address caller, ) = vm.readCallers();
-    TestnetERC20 token = TestnetERC20(spoke.getReserve(reserveId).underlying);
+    TestnetERC20 token = TestnetERC20(reserve.hub.getAsset(reserve.assetId).underlying);
     uint amount = bound(vm.randomUint(), 2, 10 ** (token.decimals() - 3));
     if (amount != 0) spoke.borrow(reserveId, amount, caller);
   }
@@ -896,9 +936,10 @@ contract Deploy is Script, StdAssertions {
   function _repay(Spoke spoke, uint reserveId) internal {
     (, address caller, ) = vm.readCallers();
     uint amount = (spoke.getUserTotalDebt(reserveId, caller) * 3) / 5;
+    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
 
-    TestnetERC20 token = TestnetERC20(spoke.getReserve(reserveId).underlying);
-    token.approve(address(spoke.getReserve(reserveId).hub), amount);
+    TestnetERC20 token = TestnetERC20(reserve.hub.getAsset(reserve.assetId).underlying);
+    token.approve(address(reserve.hub), amount);
     _mint(token, amount);
 
     if (amount != 0) spoke.repay(reserveId, amount, caller);
@@ -915,8 +956,14 @@ contract Deploy is Script, StdAssertions {
   }
 
   function _mint(TestnetERC20 token, uint amount) internal {
-    if (keccak256(abi.encode(token.name())) == keccak256(abi.encode('Wrapped Ether'))) {
-      WETH9(payable(address(token))).deposit{value: amount}();
-    } else token.mint(amount);
+    // if (
+    //   keccak256(abi.encode(TestnetERC20(token).name())) == keccak256(abi.encode('Wrapped Ether'))
+    // ) {
+    //   WETH9(payable(address(token))).deposit{value: amount}();
+    // } else token.mint(amount);
+  }
+
+  function _mint(address token, uint amount) internal {
+    _mint(TestnetERC20(token), amount);
   }
 }
