@@ -24,7 +24,6 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   // collateral to liquidator = 6000 - 100 = 5900
   function setUp() public override {
     super.setUp();
-    (hub2, , ) = hub2Fixture();
 
     // Mock params
     usdxReserveId = _usdxReserveId(spoke1);
@@ -53,7 +52,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     });
     vm.startPrank(HUB_ADMIN);
     hub1.addSpoke(usdxAssetId, address(liquidationLogicWrapper), spokeConfig);
-    hub2.addSpoke(wethAssetId, address(liquidationLogicWrapper), spokeConfig);
+    hub2.addSpoke(wethAssetId2, address(liquidationLogicWrapper), spokeConfig);
     vm.stopPrank();
 
     // Mock storage for collateral side
@@ -65,9 +64,9 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setCollateralStatus(usdxReserveId, true);
 
     // Mock storage for debt side
-    require(hub2.getAsset(wethAssetId).underlying == address(tokenList.weth));
+    require(hub2.getAsset(wethAssetId2).underlying == address(tokenList.weth));
     liquidationLogicWrapper.setDebtReserveHub(hub2);
-    liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId);
+    liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId2);
     liquidationLogicWrapper.setDebtReserveDecimals(18);
     liquidationLogicWrapper.setBorrowingStatus(wethReserveId, true);
 
@@ -94,13 +93,13 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
     // Debt hub: Add liquidity, remove liquidity, refresh premium and skip time to accrue both drawn and premium debt
     deal(address(tokenList.weth), tempUser, MAX_SUPPLY_AMOUNT);
-    Utils.add(hub2, wethAssetId, address(liquidationLogicWrapper), MAX_SUPPLY_AMOUNT, tempUser);
-    Utils.draw(hub2, wethAssetId, address(liquidationLogicWrapper), tempUser, MAX_SUPPLY_AMOUNT);
+    Utils.add(hub2, wethAssetId2, address(liquidationLogicWrapper), MAX_SUPPLY_AMOUNT, tempUser);
+    Utils.draw(hub2, wethAssetId2, address(liquidationLogicWrapper), tempUser, MAX_SUPPLY_AMOUNT);
     vm.startPrank(address(liquidationLogicWrapper));
     hub2.refreshPremium(
-      wethAssetId,
+      wethAssetId2,
       IHubBase.PremiumDelta(
-        hub2.previewRestoreByAssets(wethAssetId, 1e6 * 1e18).toInt256(),
+        hub2.previewRestoreByAssets(wethAssetId2, 1e6 * 1e18).toInt256(),
         1e6 * 1e18,
         0
       )
@@ -108,28 +107,28 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     vm.stopPrank();
     skip(365 days);
     (uint256 spokeDrawnOwed, uint256 spokePremiumOwed) = hub2.getSpokeOwed(
-      wethAssetId,
+      wethAssetId2,
       address(liquidationLogicWrapper)
     );
     assertGt(spokeDrawnOwed, 10000e18);
     assertGt(spokePremiumOwed, 10000e18);
 
     // Refresh premium to realise some premium debt
-    uint256 realizedPremium = hub2.previewRestoreByShares(wethAssetId, 1e3 * 1e18) - 1e3 * 1e18;
+    uint256 realizedPremium = hub2.previewRestoreByShares(wethAssetId2, 1e3 * 1e18) - 1e3 * 1e18;
     assertGt(realizedPremium, 10e18);
     vm.prank(address(liquidationLogicWrapper));
     hub2.refreshPremium(
-      wethAssetId,
+      wethAssetId2,
       IHubBase.PremiumDelta(-1e3 * 1e18, -1e3 * 1e18, realizedPremium.toInt256())
     );
     liquidationLogicWrapper.setDebtPositionRealizedPremium(realizedPremium);
 
     // Mock user debt position
     liquidationLogicWrapper.setDebtPositionDrawnShares(
-      hub2.previewRestoreByAssets(wethAssetId, params.drawnDebt)
+      hub2.previewRestoreByAssets(wethAssetId2, params.drawnDebt)
     );
     liquidationLogicWrapper.setDebtPositionPremiumShares(
-      hub2.previewRestoreByAssets(wethAssetId, params.premiumDebt)
+      hub2.previewRestoreByAssets(wethAssetId2, params.premiumDebt)
     );
     liquidationLogicWrapper.setDebtPositionPremiumOffset(
       params.premiumDebt - params.accruedPremium
@@ -137,7 +136,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
 
     // Mint tokens to liquidator and approve hub
     deal(address(tokenList.weth), params.liquidator, spokeDrawnOwed + spokePremiumOwed);
-    Utils.approve(hub2, wethAssetId, params.liquidator, spokeDrawnOwed + spokePremiumOwed);
+    Utils.approve(hub2, wethAssetId2, params.liquidator, spokeDrawnOwed + spokePremiumOwed);
   }
 
   function test_liquidateUser() public {
@@ -169,7 +168,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       abi.encodeCall(
         IHubBase.restore,
         (
-          wethAssetId,
+          wethAssetId2,
           2e18,
           0.5e18,
           IHubBase.PremiumDelta(
