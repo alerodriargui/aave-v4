@@ -7,8 +7,6 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   using SafeCast for *;
 
-  IHub hub2;
-
   uint256 usdxReserveId;
   uint256 wethReserveId;
 
@@ -26,7 +24,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   // collateral to liquidator = 6000 - 100 = 5900
   function setUp() public override {
     super.setUp();
-    (hub2, ) = hub2Fixture();
+    (hub2, , ) = hub2Fixture();
 
     // Mock params
     usdxReserveId = _usdxReserveId(spoke1);

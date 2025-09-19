@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeMultipleHubTest is SpokeBase {
-  IHub internal hub2;
   IHub internal hub3;
   AssetInterestRateStrategy internal hub2IrStrategy;
   AssetInterestRateStrategy internal hub3IrStrategy;
@@ -23,8 +22,8 @@ contract SpokeMultipleHubTest is SpokeBase {
     super.setUp();
 
     // Configure both hubs
-    (hub2, hub2IrStrategy) = hub2Fixture();
-    (hub3, hub3IrStrategy) = hub3Fixture();
+    (hub2, hub2IrStrategy, ) = hub2Fixture();
+    (hub3, hub3IrStrategy, ) = hub3Fixture();
 
     vm.startPrank(ADMIN);
     // Relist hub 2's dai on spoke1

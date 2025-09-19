@@ -124,13 +124,18 @@ abstract contract Base is Test {
   IAaveOracle internal oracle1;
   IAaveOracle internal oracle2;
   IAaveOracle internal oracle3;
+  IAaveOracle internal oracle4;
   IHub internal hub1;
+  IHub internal hub2;
   ITreasurySpoke internal treasurySpoke;
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
+  ISpoke internal multiHubSpoke;
   AssetInterestRateStrategy internal irStrategy;
+  AssetInterestRateStrategy internal irStrategy2;
   AccessManager internal accessManager;
+  AccessManager internal accessManager2;
 
   // TODO: remove after migrating to other mock users
   address internal USER1 = makeAddr('USER1');
@@ -150,12 +155,18 @@ abstract contract Base is Test {
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
 
   TokenList internal tokenList;
+  // assetIds for hub1
   uint256 internal wethAssetId = 0;
   uint256 internal usdxAssetId = 1;
   uint256 internal daiAssetId = 2;
   uint256 internal wbtcAssetId = 3;
   uint256 internal usdyAssetId = 4;
   uint256 internal dai2AssetId = 5;
+  // assetIds for hub2
+  uint256 internal daiAssetId2 = 0;
+  uint256 internal wbtcAssetId2 = 1;
+  uint256 internal wethAssetId2 = 2;
+  uint256 internal usdxAssetId2 = 3;
 
   uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
   uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
@@ -271,10 +282,16 @@ abstract contract Base is Test {
     vm.startPrank(ADMIN);
     accessManager = new AccessManager(ADMIN);
     hub1 = new Hub(address(accessManager));
+    (hub2, irStrategy2, accessManager2) = _initHub2Fixture();
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
+    (multiHubSpoke, oracle4) = _deploySpokeWithOracle(
+      ADMIN,
+      address(accessManager),
+      'MultiHubSpoke (USD)'
+    );
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
     dai = new MockERC20();
     eth = new MockERC20();
@@ -283,13 +300,40 @@ abstract contract Base is Test {
     wbtc = new MockERC20();
     vm.stopPrank();
 
-    vm.label(address(spoke1), 'spoke1');
-    vm.label(address(spoke2), 'spoke2');
-    vm.label(address(spoke3), 'spoke3');
+    _setupLabels();
 
     setUpRoles(hub1, spoke1, accessManager);
     setUpRoles(hub1, spoke2, accessManager);
     setUpRoles(hub1, spoke3, accessManager);
+    setUpRoles(hub1, multiHubSpoke, accessManager);
+  }
+
+  function _setupLabels() internal {
+    vm.label(address(hub1), 'hub1');
+    vm.label(address(hub2), 'hub2');
+
+    vm.label(address(spoke1), 'spoke1');
+    vm.label(address(spoke2), 'spoke2');
+    vm.label(address(spoke3), 'spoke3');
+    vm.label(address(multiHubSpoke), 'multiHubSpoke');
+    vm.label(address(treasurySpoke), 'treasurySpoke');
+
+    vm.label(address(irStrategy), 'irStrategy');
+    vm.label(address(irStrategy2), 'irStrategy2');
+
+    vm.label(address(accessManager), 'accessManager');
+    vm.label(address(accessManager2), 'accessManager2');
+
+    vm.label(address(tokenList.weth), 'WETH');
+    vm.label(address(tokenList.usdx), 'USDX');
+    vm.label(address(tokenList.dai), 'DAI');
+    vm.label(address(tokenList.wbtc), 'WBTC');
+    vm.label(address(tokenList.usdy), 'USDY');
+
+    vm.label(address(oracle1), 'oracle1');
+    vm.label(address(oracle2), 'oracle2');
+    vm.label(address(oracle3), 'oracle3');
+    vm.label(address(oracle4), 'oracle4');
   }
 
   function setUpRoles(IHub targetHub, ISpoke spoke, IAccessManager manager) internal virtual {
@@ -349,12 +393,6 @@ abstract contract Base is Test {
       new TestnetERC20('WBTC', 'WBTC', decimals.wbtc),
       new TestnetERC20('USDY', 'USDY', decimals.usdy)
     );
-
-    vm.label(address(tokenList.weth), 'WETH');
-    vm.label(address(tokenList.usdx), 'USDX');
-    vm.label(address(tokenList.dai), 'DAI');
-    vm.label(address(tokenList.wbtc), 'WBTC');
-    vm.label(address(tokenList.usdy), 'USDY');
 
     MAX_SUPPLY_AMOUNT_USDX = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdx.decimals();
     MAX_SUPPLY_AMOUNT_WETH = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.weth.decimals();
@@ -838,21 +876,151 @@ abstract contract Base is Test {
     hub1.addSpoke(wethAssetId, address(spoke3), spokeConfig);
     hub1.addSpoke(wbtcAssetId, address(spoke3), spokeConfig);
 
+    // MultiHub Spoke reserve configs
+    spokeInfo[multiHubSpoke].weth.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: 0
+    });
+    spokeInfo[multiHubSpoke].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 108_00,
+      liquidationFee: 8_00
+    });
+    spokeInfo[multiHubSpoke].wbtc.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: 5_00
+    });
+    spokeInfo[multiHubSpoke].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 110_00,
+      liquidationFee: 7_00
+    });
+    spokeInfo[multiHubSpoke].dai.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: 15_00
+    });
+    spokeInfo[multiHubSpoke].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 74_00,
+      maxLiquidationBonus: 106_00,
+      liquidationFee: 6_00
+    });
+    spokeInfo[multiHubSpoke].usdx.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: 40_00
+    });
+    spokeInfo[multiHubSpoke].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 112_00,
+      liquidationFee: 5_00
+    });
+    spokeInfo[multiHubSpoke].usdy.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: 45_00
+    });
+    spokeInfo[multiHubSpoke].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 81_00,
+      maxLiquidationBonus: 109_00,
+      liquidationFee: 4_00
+    });
+
+    spokeInfo[multiHubSpoke].weth.reserveId = multiHubSpoke.addReserve(
+      address(hub1),
+      wethAssetId,
+      _deployMockPriceFeed(multiHubSpoke, 2000e8),
+      spokeInfo[multiHubSpoke].weth.reserveConfig,
+      spokeInfo[multiHubSpoke].weth.dynReserveConfig
+    );
+    spokeInfo[multiHubSpoke].usdx.reserveId = multiHubSpoke.addReserve(
+      address(hub1),
+      usdxAssetId,
+      _deployMockPriceFeed(multiHubSpoke, 1e8),
+      spokeInfo[multiHubSpoke].usdx.reserveConfig,
+      spokeInfo[multiHubSpoke].usdx.dynReserveConfig
+    );
+    spokeInfo[multiHubSpoke].dai.reserveId = multiHubSpoke.addReserve(
+      address(hub1),
+      daiAssetId,
+      _deployMockPriceFeed(multiHubSpoke, 1e8),
+      spokeInfo[multiHubSpoke].dai.reserveConfig,
+      spokeInfo[multiHubSpoke].dai.dynReserveConfig
+    );
+    spokeInfo[multiHubSpoke].wbtc.reserveId = multiHubSpoke.addReserve(
+      address(hub1),
+      wbtcAssetId,
+      _deployMockPriceFeed(multiHubSpoke, 50_000e8),
+      spokeInfo[multiHubSpoke].wbtc.reserveConfig,
+      spokeInfo[multiHubSpoke].wbtc.dynReserveConfig
+    );
+    spokeInfo[multiHubSpoke].usdy.reserveId = multiHubSpoke.addReserve(
+      address(hub1),
+      usdyAssetId,
+      _deployMockPriceFeed(multiHubSpoke, 1e8),
+      spokeInfo[multiHubSpoke].usdy.reserveConfig,
+      spokeInfo[multiHubSpoke].usdy.dynReserveConfig
+    );
+
+    hub1.addSpoke(wethAssetId, address(multiHubSpoke), spokeConfig);
+    hub1.addSpoke(wbtcAssetId, address(multiHubSpoke), spokeConfig);
+    hub1.addSpoke(daiAssetId, address(multiHubSpoke), spokeConfig);
+    hub1.addSpoke(usdxAssetId, address(multiHubSpoke), spokeConfig);
+    hub1.addSpoke(usdyAssetId, address(multiHubSpoke), spokeConfig);
+
+    multiHubSpoke.addReserve(
+      address(hub2),
+      daiAssetId2,
+      _deployMockPriceFeed(multiHubSpoke, 1e8),
+      spokeInfo[multiHubSpoke].dai.reserveConfig,
+      spokeInfo[multiHubSpoke].dai.dynReserveConfig
+    );
+    multiHubSpoke.addReserve(
+      address(hub1),
+      wbtcAssetId2,
+      _deployMockPriceFeed(multiHubSpoke, 40_000e8), // different price than hub1
+      spokeInfo[multiHubSpoke].wbtc.reserveConfig,
+      spokeInfo[multiHubSpoke].wbtc.dynReserveConfig
+    );
+    multiHubSpoke.addReserve(
+      address(hub2),
+      wethAssetId2,
+      _deployMockPriceFeed(multiHubSpoke, 4000e8), // different price than hub1
+      spokeInfo[multiHubSpoke].weth.reserveConfig,
+      spokeInfo[multiHubSpoke].weth.dynReserveConfig
+    );
+    multiHubSpoke.addReserve(
+      address(hub2),
+      usdxAssetId2,
+      _deployMockPriceFeed(multiHubSpoke, 1e8),
+      spokeInfo[multiHubSpoke].usdx.reserveConfig,
+      spokeInfo[multiHubSpoke].usdx.dynReserveConfig
+    );
+
     vm.stopPrank();
   }
 
-  /* @dev Configures Hub 2 with the following assetIds:
-   * 0: WETH
-   * 1: USDX
-   * 2: DAI
-   * 3: WBTC
-   */
-  function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
-    IAccessManager accessManager2 = new AccessManager(ADMIN);
-    IHub hub2 = new Hub(address(accessManager2));
+  function _initHub2Fixture() internal returns (IHub, AssetInterestRateStrategy, AccessManager) {
+    accessManager2 = new AccessManager(ADMIN);
+    hub2 = new Hub(address(accessManager2));
     vm.label(address(hub2), 'Hub2');
-    AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
+    irStrategy2 = new AssetInterestRateStrategy(address(hub2));
 
+    return (hub2, irStrategy2, accessManager2);
+  }
+
+  function _configureHub2Assets(
+    IHub hub2,
+    AssetInterestRateStrategy irStrategy,
+    AccessManager accessManager2
+  ) internal {
     // Configure IR Strategy for hub 2
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
@@ -864,33 +1032,24 @@ abstract contract Base is Test {
     );
 
     vm.startPrank(ADMIN);
-
     // Add assets to the second hub
-    // Add WETH
-    hub2.addAsset(
-      address(tokenList.weth),
-      tokenList.weth.decimals(),
-      address(treasurySpoke),
-      address(hub2IrStrategy),
-      encodedIrData
-    );
-
-    // Add USDX
-    hub2.addAsset(
-      address(tokenList.usdx),
-      tokenList.usdx.decimals(),
-      address(treasurySpoke),
-      address(hub2IrStrategy),
-      encodedIrData
-    );
-
     // Add DAI
     hub2.addAsset(
       address(tokenList.dai),
       tokenList.dai.decimals(),
       address(treasurySpoke),
-      address(hub2IrStrategy),
+      address(irStrategy),
       encodedIrData
+    );
+    hub2.updateAssetConfig(
+      daiAssetId2,
+      IHub.AssetConfig({
+        liquidityFee: 6_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy),
+        reinvestmentController: address(0)
+      }),
+      new bytes(0)
     );
 
     // Add WBTC
@@ -898,14 +1057,74 @@ abstract contract Base is Test {
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
-      address(hub2IrStrategy),
+      address(irStrategy),
       encodedIrData
+    );
+    hub2.updateAssetConfig(
+      wbtcAssetId2,
+      IHub.AssetConfig({
+        liquidityFee: 4_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy),
+        reinvestmentController: address(0)
+      }),
+      new bytes(0)
+    );
+
+    // Add WETH
+    hub2.addAsset(
+      address(tokenList.weth),
+      tokenList.weth.decimals(),
+      address(treasurySpoke),
+      address(irStrategy),
+      encodedIrData
+    );
+    hub2.updateAssetConfig(
+      wethAssetId2,
+      IHub.AssetConfig({
+        liquidityFee: 5_00,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy),
+        reinvestmentController: address(0)
+      }),
+      new bytes(0)
+    );
+
+    // Add USDX
+    hub2.addAsset(
+      address(tokenList.usdx),
+      tokenList.usdx.decimals(),
+      address(treasurySpoke),
+      address(irStrategy),
+      encodedIrData
+    );
+    hub2.updateAssetConfig(
+      usdxAssetId2,
+      IHub.AssetConfig({
+        liquidityFee: 6_50,
+        feeReceiver: address(treasurySpoke),
+        irStrategy: address(irStrategy),
+        reinvestmentController: address(0)
+      }),
+      new bytes(0)
     );
     vm.stopPrank();
 
     setUpRoles(hub2, spoke1, accessManager2);
+    setUpRoles(hub2, multiHubSpoke, accessManager2);
+  }
 
-    return (hub2, hub2IrStrategy);
+  /* @dev Configures Hub 2 with the following assetIds:
+   * 0: WETH
+   * 1: USDX
+   * 2: DAI
+   * 3: WBTC
+   */
+  function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy, AccessManager) {
+    (hub2, irStrategy2, accessManager2) = _initHub2Fixture();
+    _configureHub2Assets(hub2, irStrategy2, accessManager2);
+
+    return (hub2, irStrategy, AccessManager(address(accessManager2)));
   }
 
   /* @dev Configures Hub 3 with the following assetIds:
@@ -914,7 +1133,7 @@ abstract contract Base is Test {
    * 2: WBTC
    * 3: WETH
    */
-  function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
+  function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy, AccessManager) {
     IAccessManager accessManager3 = new AccessManager(ADMIN);
     IHub hub3 = new Hub(address(accessManager3));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
@@ -970,7 +1189,7 @@ abstract contract Base is Test {
 
     setUpRoles(hub3, spoke1, accessManager3);
 
-    return (hub3, hub3IrStrategy);
+    return (hub3, hub3IrStrategy, AccessManager(address(accessManager3)));
   }
 
   function updateAssetFeeReceiver(
