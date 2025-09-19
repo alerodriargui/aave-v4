@@ -131,7 +131,7 @@ abstract contract Base is Test {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
-  ISpoke internal multiHubSpoke;
+  ISpoke internal spoke4; // multi-hub spoke
   AssetInterestRateStrategy internal irStrategy;
   AssetInterestRateStrategy internal irStrategy2;
   AccessManager internal accessManager;
@@ -198,7 +198,10 @@ abstract contract Base is Test {
     ReserveInfo dai;
     ReserveInfo usdx;
     ReserveInfo usdy;
-    ReserveInfo dai2; // Special case: dai listed twice on hub and spoke2 (unique assetIds)
+    ReserveInfo dai2; // Special case: when dai is listed twice on hub and spoke (unique assetIds)
+    ReserveInfo weth2; // Special case: when weth is listed twice on hub and spoke (unique assetIds)
+    ReserveInfo wbtc2; // Special case: when wbtc is listed twice on hub and spoke (unique assetIds)
+    ReserveInfo usdx2; // Special case: when dai is listed twice on hub and spoke (unique assetIds)
     uint256 MAX_ALLOWED_ASSET_ID;
   }
 
@@ -287,10 +290,10 @@ abstract contract Base is Test {
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
-    (multiHubSpoke, oracle4) = _deploySpokeWithOracle(
+    (spoke4, oracle4) = _deploySpokeWithOracle(
       ADMIN,
       address(accessManager),
-      'MultiHubSpoke (USD)'
+      'MultiHubSpoke4 (USD)'
     );
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
     dai = new MockERC20();
@@ -305,7 +308,7 @@ abstract contract Base is Test {
     setUpRoles(hub1, spoke1, accessManager);
     setUpRoles(hub1, spoke2, accessManager);
     setUpRoles(hub1, spoke3, accessManager);
-    setUpRoles(hub1, multiHubSpoke, accessManager);
+    setUpRoles(hub1, spoke4, accessManager);
   }
 
   function _setupLabels() internal {
@@ -315,7 +318,7 @@ abstract contract Base is Test {
     vm.label(address(spoke1), 'spoke1');
     vm.label(address(spoke2), 'spoke2');
     vm.label(address(spoke3), 'spoke3');
-    vm.label(address(multiHubSpoke), 'multiHubSpoke');
+    vm.label(address(spoke4), 'spoke4');
     vm.label(address(treasurySpoke), 'treasurySpoke');
 
     vm.label(address(irStrategy), 'irStrategy');
@@ -876,135 +879,136 @@ abstract contract Base is Test {
     hub1.addSpoke(wethAssetId, address(spoke3), spokeConfig);
     hub1.addSpoke(wbtcAssetId, address(spoke3), spokeConfig);
 
-    // MultiHub Spoke reserve configs
-    spokeInfo[multiHubSpoke].weth.reserveConfig = ISpoke.ReserveConfig({
+    // MultiHub Spoke4 reserve configs
+    // list all assets from hub1 and hub2
+    spokeInfo[spoke4].weth.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 0
     });
-    spokeInfo[multiHubSpoke].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    spokeInfo[spoke4].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
       maxLiquidationBonus: 108_00,
       liquidationFee: 8_00
     });
-    spokeInfo[multiHubSpoke].wbtc.reserveConfig = ISpoke.ReserveConfig({
+    spokeInfo[spoke4].wbtc.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 5_00
     });
-    spokeInfo[multiHubSpoke].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    spokeInfo[spoke4].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
       maxLiquidationBonus: 110_00,
       liquidationFee: 7_00
     });
-    spokeInfo[multiHubSpoke].dai.reserveConfig = ISpoke.ReserveConfig({
+    spokeInfo[spoke4].dai.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 15_00
     });
-    spokeInfo[multiHubSpoke].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    spokeInfo[spoke4].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 74_00,
       maxLiquidationBonus: 106_00,
       liquidationFee: 6_00
     });
-    spokeInfo[multiHubSpoke].usdx.reserveConfig = ISpoke.ReserveConfig({
+    spokeInfo[spoke4].usdx.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 40_00
     });
-    spokeInfo[multiHubSpoke].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    spokeInfo[spoke4].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 80_00,
       maxLiquidationBonus: 112_00,
       liquidationFee: 5_00
     });
-    spokeInfo[multiHubSpoke].usdy.reserveConfig = ISpoke.ReserveConfig({
+    spokeInfo[spoke4].usdy.reserveConfig = ISpoke.ReserveConfig({
       paused: false,
       frozen: false,
       borrowable: true,
       collateralRisk: 45_00
     });
-    spokeInfo[multiHubSpoke].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
+    spokeInfo[spoke4].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 81_00,
       maxLiquidationBonus: 109_00,
       liquidationFee: 4_00
     });
 
-    spokeInfo[multiHubSpoke].weth.reserveId = multiHubSpoke.addReserve(
+    spokeInfo[spoke4].weth.reserveId = spoke4.addReserve(
       address(hub1),
       wethAssetId,
-      _deployMockPriceFeed(multiHubSpoke, 2000e8),
-      spokeInfo[multiHubSpoke].weth.reserveConfig,
-      spokeInfo[multiHubSpoke].weth.dynReserveConfig
+      _deployMockPriceFeed(spoke4, 2000e8),
+      spokeInfo[spoke4].weth.reserveConfig,
+      spokeInfo[spoke4].weth.dynReserveConfig
     );
-    spokeInfo[multiHubSpoke].usdx.reserveId = multiHubSpoke.addReserve(
+    spokeInfo[spoke4].usdx.reserveId = spoke4.addReserve(
       address(hub1),
       usdxAssetId,
-      _deployMockPriceFeed(multiHubSpoke, 1e8),
-      spokeInfo[multiHubSpoke].usdx.reserveConfig,
-      spokeInfo[multiHubSpoke].usdx.dynReserveConfig
+      _deployMockPriceFeed(spoke4, 1e8),
+      spokeInfo[spoke4].usdx.reserveConfig,
+      spokeInfo[spoke4].usdx.dynReserveConfig
     );
-    spokeInfo[multiHubSpoke].dai.reserveId = multiHubSpoke.addReserve(
+    spokeInfo[spoke4].dai.reserveId = spoke4.addReserve(
       address(hub1),
       daiAssetId,
-      _deployMockPriceFeed(multiHubSpoke, 1e8),
-      spokeInfo[multiHubSpoke].dai.reserveConfig,
-      spokeInfo[multiHubSpoke].dai.dynReserveConfig
+      _deployMockPriceFeed(spoke4, 1e8),
+      spokeInfo[spoke4].dai.reserveConfig,
+      spokeInfo[spoke4].dai.dynReserveConfig
     );
-    spokeInfo[multiHubSpoke].wbtc.reserveId = multiHubSpoke.addReserve(
+    spokeInfo[spoke4].wbtc.reserveId = spoke4.addReserve(
       address(hub1),
       wbtcAssetId,
-      _deployMockPriceFeed(multiHubSpoke, 50_000e8),
-      spokeInfo[multiHubSpoke].wbtc.reserveConfig,
-      spokeInfo[multiHubSpoke].wbtc.dynReserveConfig
+      _deployMockPriceFeed(spoke4, 50_000e8),
+      spokeInfo[spoke4].wbtc.reserveConfig,
+      spokeInfo[spoke4].wbtc.dynReserveConfig
     );
-    spokeInfo[multiHubSpoke].usdy.reserveId = multiHubSpoke.addReserve(
+    spokeInfo[spoke4].usdy.reserveId = spoke4.addReserve(
       address(hub1),
       usdyAssetId,
-      _deployMockPriceFeed(multiHubSpoke, 1e8),
-      spokeInfo[multiHubSpoke].usdy.reserveConfig,
-      spokeInfo[multiHubSpoke].usdy.dynReserveConfig
+      _deployMockPriceFeed(spoke4, 1e8),
+      spokeInfo[spoke4].usdy.reserveConfig,
+      spokeInfo[spoke4].usdy.dynReserveConfig
     );
 
-    hub1.addSpoke(wethAssetId, address(multiHubSpoke), spokeConfig);
-    hub1.addSpoke(wbtcAssetId, address(multiHubSpoke), spokeConfig);
-    hub1.addSpoke(daiAssetId, address(multiHubSpoke), spokeConfig);
-    hub1.addSpoke(usdxAssetId, address(multiHubSpoke), spokeConfig);
-    hub1.addSpoke(usdyAssetId, address(multiHubSpoke), spokeConfig);
+    hub1.addSpoke(wethAssetId, address(spoke4), spokeConfig);
+    hub1.addSpoke(wbtcAssetId, address(spoke4), spokeConfig);
+    hub1.addSpoke(daiAssetId, address(spoke4), spokeConfig);
+    hub1.addSpoke(usdxAssetId, address(spoke4), spokeConfig);
+    hub1.addSpoke(usdyAssetId, address(spoke4), spokeConfig);
 
     // hub2 setup
     _configureHub2Assets();
 
-    multiHubSpoke.addReserve(
+    spokeInfo[spoke4].weth2.reserveId = spoke4.addReserve(
       address(hub2),
       daiAssetId2,
-      _deployMockPriceFeed(multiHubSpoke, 1e8),
-      spokeInfo[multiHubSpoke].dai.reserveConfig,
-      spokeInfo[multiHubSpoke].dai.dynReserveConfig
+      _deployMockPriceFeed(spoke4, 1e8),
+      spokeInfo[spoke4].dai.reserveConfig,
+      spokeInfo[spoke4].dai.dynReserveConfig
     );
-    multiHubSpoke.addReserve(
+    spokeInfo[spoke4].wbtc2.reserveId = spoke4.addReserve(
       address(hub2),
       wbtcAssetId2,
-      _deployMockPriceFeed(multiHubSpoke, 40_000e8), // different price than hub1
-      spokeInfo[multiHubSpoke].wbtc.reserveConfig,
-      spokeInfo[multiHubSpoke].wbtc.dynReserveConfig
+      _deployMockPriceFeed(spoke4, 40_000e8), // different price than hub1
+      spokeInfo[spoke4].wbtc.reserveConfig,
+      spokeInfo[spoke4].wbtc.dynReserveConfig
     );
-    multiHubSpoke.addReserve(
+    spokeInfo[spoke4].weth2.reserveId = spoke4.addReserve(
       address(hub2),
       wethAssetId2,
-      _deployMockPriceFeed(multiHubSpoke, 4000e8), // different price than hub1
-      spokeInfo[multiHubSpoke].weth.reserveConfig,
-      spokeInfo[multiHubSpoke].weth.dynReserveConfig
+      _deployMockPriceFeed(spoke4, 4000e8), // different price than hub1
+      spokeInfo[spoke4].weth.reserveConfig,
+      spokeInfo[spoke4].weth.dynReserveConfig
     );
-    multiHubSpoke.addReserve(
+    spokeInfo[spoke4].dai2.reserveId = spoke4.addReserve(
       address(hub2),
       usdxAssetId2,
-      _deployMockPriceFeed(multiHubSpoke, 1e8),
-      spokeInfo[multiHubSpoke].usdx.reserveConfig,
-      spokeInfo[multiHubSpoke].usdx.dynReserveConfig
+      _deployMockPriceFeed(spoke4, 1e8),
+      spokeInfo[spoke4].usdx.reserveConfig,
+      spokeInfo[spoke4].usdx.dynReserveConfig
     );
 
     vm.stopPrank();
@@ -1110,7 +1114,7 @@ abstract contract Base is Test {
     vm.stopPrank();
 
     setUpRoles(hub2, spoke1, accessManager2);
-    setUpRoles(hub2, multiHubSpoke, accessManager2);
+    setUpRoles(hub2, spoke4, accessManager2);
   }
 
   /* @dev Configures Hub 2 with the following assetIds:
