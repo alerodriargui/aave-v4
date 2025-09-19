@@ -975,6 +975,9 @@ abstract contract Base is Test {
     hub1.addSpoke(usdxAssetId, address(multiHubSpoke), spokeConfig);
     hub1.addSpoke(usdyAssetId, address(multiHubSpoke), spokeConfig);
 
+    // hub2 setup
+    _configureHub2Assets();
+
     multiHubSpoke.addReserve(
       address(hub2),
       daiAssetId2,
@@ -983,7 +986,7 @@ abstract contract Base is Test {
       spokeInfo[multiHubSpoke].dai.dynReserveConfig
     );
     multiHubSpoke.addReserve(
-      address(hub1),
+      address(hub2),
       wbtcAssetId2,
       _deployMockPriceFeed(multiHubSpoke, 40_000e8), // different price than hub1
       spokeInfo[multiHubSpoke].wbtc.reserveConfig,
@@ -1016,11 +1019,7 @@ abstract contract Base is Test {
     return (hub2, irStrategy2, accessManager2);
   }
 
-  function _configureHub2Assets(
-    IHub hub2,
-    AssetInterestRateStrategy irStrategy,
-    AccessManager accessManager2
-  ) internal {
+  function _configureHub2Assets() internal pausePrank {
     // Configure IR Strategy for hub 2
     bytes memory encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
@@ -1038,7 +1037,7 @@ abstract contract Base is Test {
       address(tokenList.dai),
       tokenList.dai.decimals(),
       address(treasurySpoke),
-      address(irStrategy),
+      address(irStrategy2),
       encodedIrData
     );
     hub2.updateAssetConfig(
@@ -1046,7 +1045,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 6_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
+        irStrategy: address(irStrategy2),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -1057,7 +1056,7 @@ abstract contract Base is Test {
       address(tokenList.wbtc),
       tokenList.wbtc.decimals(),
       address(treasurySpoke),
-      address(irStrategy),
+      address(irStrategy2),
       encodedIrData
     );
     hub2.updateAssetConfig(
@@ -1065,7 +1064,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 4_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
+        irStrategy: address(irStrategy2),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -1076,7 +1075,7 @@ abstract contract Base is Test {
       address(tokenList.weth),
       tokenList.weth.decimals(),
       address(treasurySpoke),
-      address(irStrategy),
+      address(irStrategy2),
       encodedIrData
     );
     hub2.updateAssetConfig(
@@ -1084,7 +1083,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
+        irStrategy: address(irStrategy2),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -1095,7 +1094,7 @@ abstract contract Base is Test {
       address(tokenList.usdx),
       tokenList.usdx.decimals(),
       address(treasurySpoke),
-      address(irStrategy),
+      address(irStrategy2),
       encodedIrData
     );
     hub2.updateAssetConfig(
@@ -1103,7 +1102,7 @@ abstract contract Base is Test {
       IHub.AssetConfig({
         liquidityFee: 6_50,
         feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
+        irStrategy: address(irStrategy2),
         reinvestmentController: address(0)
       }),
       new bytes(0)
@@ -1122,7 +1121,7 @@ abstract contract Base is Test {
    */
   function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy, AccessManager) {
     (hub2, irStrategy2, accessManager2) = _initHub2Fixture();
-    _configureHub2Assets(hub2, irStrategy2, accessManager2);
+    _configureHub2Assets();
 
     return (hub2, irStrategy, AccessManager(address(accessManager2)));
   }
