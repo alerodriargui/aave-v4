@@ -6,7 +6,6 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeMultipleHubTest is SpokeBase {
   IHub internal hub3;
-  AssetInterestRateStrategy internal hub2IrStrategy;
   AssetInterestRateStrategy internal hub3IrStrategy;
 
   uint256 internal daiHub2ReserveId;
@@ -15,14 +14,13 @@ contract SpokeMultipleHubTest is SpokeBase {
   uint256 internal hub3DaiAssetId = 0;
 
   /* @dev Configures spoke1 to have 2 additional reserves:
-   * dai from hub 2
+   * dai from hub 2 already exists
    * dai from hub 3
    */
   function setUp() public virtual override {
     super.setUp();
 
-    // Configure both hubs
-    (hub2, hub2IrStrategy, ) = hub2Fixture();
+    // Configure new hub
     (hub3, hub3IrStrategy, ) = hub3Fixture();
 
     vm.startPrank(ADMIN);
@@ -40,7 +38,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     });
     daiHub2ReserveId = spoke1.addReserve(
       address(hub2),
-      daiAssetId,
+      daiAssetId2,
       _deployMockPriceFeed(spoke1, 1e8),
       daiHub2Config,
       dynDaiHub2Config
@@ -73,7 +71,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     });
 
     // Connect hub 2 and spoke 1 for dai
-    hub2.addSpoke(daiAssetId, address(spoke1), spokeConfig);
+    hub2.addSpoke(daiAssetId2, address(spoke1), spokeConfig);
 
     // Connect hub 3 and spoke 1 for dai
     hub3.addSpoke(hub3DaiAssetId, address(spoke1), spokeConfig);
@@ -118,7 +116,7 @@ contract SpokeMultipleHubTest is SpokeBase {
     // Bob can also borrow dai from hub 2 via spoke 1
     Utils.borrow(spoke1, daiHub2ReserveId, bob, hub2BorrowAmount, bob);
     assertEq(spoke1.getUserTotalDebt(daiHub2ReserveId, bob), hub2BorrowAmount);
-    assertEq(hub2.getAssetTotalOwed(daiAssetId), hub2BorrowAmount);
+    assertEq(hub2.getAssetTotalOwed(daiAssetId2), hub2BorrowAmount);
 
     // Verify Dai is indeed the asset Bob is borrowing from both hubs
     assertEq(
@@ -140,7 +138,7 @@ contract SpokeMultipleHubTest is SpokeBase {
 
     Utils.repay(spoke1, daiHub2ReserveId, bob, hub2RepayAmount, bob);
     assertEq(spoke1.getUserTotalDebt(daiHub2ReserveId, bob), hub2BorrowAmount - hub2RepayAmount);
-    assertEq(hub2.getAssetTotalOwed(daiAssetId), hub2BorrowAmount - hub2RepayAmount);
+    assertEq(hub2.getAssetTotalOwed(daiAssetId2), hub2BorrowAmount - hub2RepayAmount);
   }
 
   /// @dev Test showcasing collateral on hub 3 can suffice for debt position on hub 1
