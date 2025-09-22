@@ -8,73 +8,29 @@ contract HubHorizonTest is HubBase {
   using SharesMath for uint256;
   using SafeCast for uint256;
 
-  uint256 zeroDecimalAssetId;
+  uint256 internal assetId;
+  IERC20 internal underlying;
 
   function setUp() public override {
     super.setUp();
 
-    /// @dev add a zero decimal asset to test add cap rounding
-    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
-      active: true,
-      addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
-    });
-    bytes memory encodedIrData = abi.encode(
-      IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: 90_00, // 90.00%
-        baseVariableBorrowRate: 5_00, // 5.00%
-        variableRateSlope1: 5_00, // 5.00%
-        variableRateSlope2: 5_00 // 5.00%
-      })
-    );
-    vm.startPrank(ADMIN);
-    zeroDecimalAssetId = hub1.addAsset(
-      address(tokenList.dai),
-      0,
-      address(treasurySpoke),
-      address(irStrategy),
-      encodedIrData
-    );
-    hub1.updateAssetConfig(
-      zeroDecimalAssetId,
-      IHub.AssetConfig({
-        liquidityFee: 5_00,
-        feeReceiver: address(treasurySpoke),
-        irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
-      }),
-      new bytes(0)
-    );
-    hub1.addSpoke(zeroDecimalAssetId, address(spoke1), spokeConfig);
-    vm.stopPrank();
+    assetId = daiAssetId; // assume dai is RWA and borrowable
+    underlying = IERC20(hub1.getAsset(assetId).underlying);
+
+    deal(address(underlying), address(spoke1), MAX_SUPPLY_AMOUNT);
+    deal(address(underlying), address(spoke2), MAX_SUPPLY_AMOUNT);
   }
 
   /// assume that asset is an RWA, and is borrowable
-  function test_RWA_virtual_remaining() public {
-    uint256 assetId = daiAssetId;
-    address user = alice;
-    uint256 amount = 100e18;
-
-    _assumeValidSupplier(user);
-
-    IERC20 underlying = IERC20(hub1.getAsset(assetId).underlying);
-
-    deal(address(underlying), address(spoke2), MAX_SUPPLY_AMOUNT);
-
-    vm.prank(user);
-    underlying.approve(address(hub1), amount);
-    deal(address(underlying), user, MAX_SUPPLY_AMOUNT);
-
-    vm.prank(address(spoke1));
-    uint256 addedShares = hub1.add(assetId, amount, user);
+  function test_RWA_virtual_remaining_borrowable() public {
+    Utils.add(hub1, assetId, address(spoke1), 100e18, address(spoke1));
 
     Utils.draw(hub1, assetId, address(spoke2), address(spoke2), 1e18);
 
-    Utils.add(hub1, assetId, address(spoke2), 100e18, user);
+    Utils.add(hub1, assetId, address(spoke2), 200e18, address(spoke2));
 
+    // skip time to accrue interest
     skip(365 days);
-
-    console.log('added amt %e %e', addedShares, hub1.getSpokeAddedAssets(assetId, address(spoke1)));
 
     Utils.remove(
       hub1,
@@ -84,14 +40,18 @@ contract HubHorizonTest is HubBase {
       address(spoke1)
     );
 
-    console.log('remaining spoke1 amt %e', hub1.getSpokeAddedAssets(assetId, address(spoke1)));
-
     Utils.restoreDrawn(
       hub1,
       assetId,
       address(spoke2),
       hub1.getSpokeTotalOwed(assetId, address(spoke2)),
       address(spoke2)
+    );
+
+    assertEq(
+      hub1.getSpokeTotalOwed(assetId, address(spoke2)),
+      0,
+      'spoke2 total owed after restore'
     );
 
     Utils.remove(
@@ -102,12 +62,43 @@ contract HubHorizonTest is HubBase {
       address(spoke2)
     );
 
-    console.log(
-      'total added amt %e; spoke1 %e; spoke2 %e',
-      hub1.getAddedAssets(assetId),
-      hub1.getSpokeAddedAssets(assetId, address(spoke2)),
-      hub1.getSpokeAddedAssets(assetId, address(spoke1))
+    assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke1)), 0);
+    assertEq(hub1.getAssetTotalOwed(assetId), 0, 'total debt');
+    assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke1)), 0, 'spoke1 added assets after');
+    assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke2)), 0, 'spoke2 added assets after');
+
+    // THESE ARE PROBLEMS FOR RWA TOKENS - hub shouldnt have remaining RWA tokens remaining
+    assertEq(hub1.getAddedAssets(assetId), 0, 'hub remaining added assets');
+    assertEq(underlying.balanceOf(address(hub1)), 0, 'hub remaining underlying');
+  }
+
+  function test_RWA_virtual_remaining() public {
+    Utils.add(hub1, assetId, address(spoke1), 200e18, address(spoke1));
+
+    Utils.add(hub1, assetId, address(spoke2), 100e18, address(spoke2));
+
+    skip(365 days);
+
+    Utils.remove(
+      hub1,
+      assetId,
+      address(spoke1),
+      hub1.getSpokeAddedAssets(assetId, address(spoke1)),
+      address(spoke1)
     );
-    console.log('remaining underlying %e', underlying.balanceOf(address(hub1)));
+
+    Utils.remove(
+      hub1,
+      assetId,
+      address(spoke2),
+      hub1.getSpokeAddedAssets(assetId, address(spoke2)),
+      address(spoke2)
+    );
+
+    assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke1)), 0, 'spoke1 added assets after');
+    assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke2)), 0, 'spoke2 added assets after');
+
+    assertEq(hub1.getAddedAssets(assetId), 0, 'hub added assets');
+    assertEq(underlying.balanceOf(address(hub1)), 0, 'hub remaining underlying');
   }
 }
