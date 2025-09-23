@@ -62,10 +62,21 @@ contract HubHorizonTest is HubBase {
       address(spoke2)
     );
 
+    address feeReceiver = _getFeeReceiver(hub1, assetId);
+
+    Utils.remove(
+      hub1,
+      assetId,
+      feeReceiver,
+      hub1.getSpokeAddedAssets(assetId, feeReceiver),
+      feeReceiver
+    );
+
     assertEq(hub1.getSpokeTotalOwed(assetId, address(spoke1)), 0);
     assertEq(hub1.getAssetTotalOwed(assetId), 0, 'total debt');
     assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke1)), 0, 'spoke1 added assets after');
     assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke2)), 0, 'spoke2 added assets after');
+    assertEq(hub1.getSpokeAddedAssets(assetId, feeReceiver), 0, 'fee receiver added assets after');
 
     // THESE ARE PROBLEMS FOR RWA TOKENS - hub shouldnt have remaining RWA tokens remaining
     assertEq(hub1.getAddedAssets(assetId), 0, 'hub remaining added assets');
@@ -95,6 +106,8 @@ contract HubHorizonTest is HubBase {
       address(spoke2)
     );
 
+    address feeReceiver = _getFeeReceiver(hub1, assetId);
+    assertEq(hub1.getSpokeAddedAssets(assetId, feeReceiver), 0, 'fee receiver has no fees accrued');
     assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke1)), 0, 'spoke1 added assets after');
     assertEq(hub1.getSpokeAddedAssets(assetId, address(spoke2)), 0, 'spoke2 added assets after');
 
