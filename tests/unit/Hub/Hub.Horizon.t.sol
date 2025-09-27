@@ -79,6 +79,11 @@ contract HubHorizonTest is HubBase {
     assertEq(hub1.getSpokeAddedAssets(assetId, feeReceiver), 0, 'fee receiver added assets after');
 
     // THESE ARE PROBLEMS FOR RWA TOKENS - hub shouldnt have remaining RWA tokens remaining
+    assertEq(
+      _calculateBurntInterest(hub1, assetId),
+      hub1.getAddedAssets(assetId),
+      'burnt interest'
+    );
     assertEq(hub1.getAddedAssets(assetId), 0, 'hub remaining added assets');
     assertEq(underlying.balanceOf(address(hub1)), 0, 'hub remaining underlying');
   }
