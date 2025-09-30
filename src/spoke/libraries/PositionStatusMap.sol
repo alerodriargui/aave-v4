@@ -33,7 +33,7 @@ library PositionStatusMap {
     bool borrowing
   ) internal {
     unchecked {
-      uint256 bit = 1 << ((reserveId % 128) << 1);
+      uint256 bit = 1 << reserveId.toBorrowingBitId();
       if (borrowing) {
         self.map[reserveId.bucketId()] |= bit;
       } else {
@@ -54,7 +54,7 @@ library PositionStatusMap {
     bool usingAsCollateral
   ) internal {
     unchecked {
-      uint256 bit = 1 << (((reserveId % 128) << 1) + 1);
+      uint256 bit = 1 << reserveId.toCollateralBitId();
       if (usingAsCollateral) {
         self.map[reserveId.bucketId()] |= bit;
       } else {
@@ -74,7 +74,7 @@ library PositionStatusMap {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      return (self.map[reserveId.bucketId()] >> ((reserveId % 128) << 1)) & 3 != 0;
+      return (self.map[reserveId.bucketId()] >> reserveId.toBorrowingBitId()) & 3 != 0;
     }
   }
 
@@ -89,7 +89,7 @@ library PositionStatusMap {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      return (self.getBucketWord(reserveId) >> ((reserveId % 128) << 1)) & 1 != 0;
+      return (self.getBucketWord(reserveId) >> reserveId.toBorrowingBitId()) & 1 != 0;
     }
   }
 
@@ -104,7 +104,33 @@ library PositionStatusMap {
     uint256 reserveId
   ) internal view returns (bool) {
     unchecked {
-      return (self.getBucketWord(reserveId) >> (((reserveId % 128) << 1) + 1)) & 1 != 0;
+      return (self.getBucketWord(reserveId) >> reserveId.toCollateralBitId()) & 1 != 0;
+    }
+  }
+
+  function isBorrowingAny(
+    ISpoke.PositionStatus storage self,
+    uint256 reserveCount
+  ) internal view returns (bool) {
+    unchecked {
+      uint256 bucket = reserveCount.bucketId();
+      while (bucket-- > 0) {
+        if (self.map[bucket].isolateBorrowing() > 0) return true;
+      }
+      return self.map[0].isolateBorrowing() > 0;
+    }
+  }
+
+  function isEmpty(
+    ISpoke.PositionStatus storage self,
+    uint256 reserveCount
+  ) internal view returns (bool) {
+    unchecked {
+      uint256 bucket = reserveCount.bucketId();
+      while (bucket-- > 0) {
+        if (self.map[bucket] > 0) return false;
+      }
+      return self.map[0] == 0;
     }
   }
 
@@ -224,6 +250,18 @@ library PositionStatusMap {
   function bucketId(uint256 reserveId) internal pure returns (uint256 wordId) {
     assembly ('memory-safe') {
       wordId := shr(7, reserveId)
+    }
+  }
+
+  function toBorrowingBitId(uint256 reserveId) internal pure returns (uint256 bitId) {
+    assembly ('memory-safe') {
+      bitId := shl(1, mod(reserveId, 128))
+    }
+  }
+
+  function toCollateralBitId(uint256 reserveId) internal pure returns (uint256 bitId) {
+    assembly ('memory-safe') {
+      bitId := add(shl(1, mod(reserveId, 128)), 1)
     }
   }
 

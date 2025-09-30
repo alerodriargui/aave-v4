@@ -765,8 +765,13 @@ abstract contract Spoke is ISpoke, Multicall, AccessManagedUpgradeable, EIP712 {
     bool refreshConfig
   ) internal returns (UserAccountData memory userAccountData) {
     PositionStatus storage positionStatus = _positionStatus[user];
-
     uint256 reserveId = _reserveCount;
+
+    if (positionStatus.isEmpty(reserveId)) {
+      userAccountData.healthFactor = type(uint256).max;
+      return userAccountData;
+    }
+
     KeyValueList.List memory list = KeyValueList.init(positionStatus.collateralCount(reserveId));
     bool borrowing;
     bool collateral;
