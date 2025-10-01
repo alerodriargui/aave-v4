@@ -23,6 +23,8 @@ import {IHub} from 'src/interfaces/IHub.sol';
 import {ISpokeBase, ISpoke} from 'src/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/interfaces/IAaveOracle.sol';
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   using SafeCast for *;
   using WadRayMath for uint256;
@@ -689,6 +691,7 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
   function _refreshAndValidateUserPosition(address user) internal returns (uint256) {
     // @dev refresh user position dynamic config only on borrow, withdraw, disableUsingAsCollateral
     DataTypes.UserAccountData memory userAccountData = _calculateAndRefreshUserAccountData(user);
+    console.log('hf %e', userAccountData.healthFactor);
     require(
       userAccountData.healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
@@ -811,10 +814,10 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
             : userPosition.configKey
         ].collateralFactor;
         if (collateralFactor > 0) {
-          uint256 userCollateralInBaseCurrency = (reserve.hub.previewRemoveByShares(
-            reserve.assetId,
-            userPosition.suppliedShares
-          ) * assetPrice).wadDivDown(assetUnit);
+          uint256 userCollateralInBaseCurrency = reserve
+            .hub
+            .previewRemoveByShares(reserve.assetId, userPosition.suppliedShares)
+            .mulDivDown(assetPrice, assetUnit);
 
           if (userCollateralInBaseCurrency > 0) {
             userAccountData.totalCollateralInBaseCurrency += userCollateralInBaseCurrency;
@@ -838,8 +841,8 @@ contract Spoke is ISpoke, Multicall, AccessManaged, EIP712 {
           userPosition
         );
         userAccountData.totalDebtInBaseCurrency +=
-          (drawnDebt * assetPrice).wadDivUp(assetUnit) +
-          (premiumDebt * assetPrice).wadDivUp(assetUnit);
+          drawnDebt.mulDivUp(assetPrice, assetUnit) +
+          premiumDebt.mulDivUp(assetPrice, assetUnit);
         userAccountData.borrowedReservesCount = userAccountData.borrowedReservesCount.uncheckedAdd(
           1
         );

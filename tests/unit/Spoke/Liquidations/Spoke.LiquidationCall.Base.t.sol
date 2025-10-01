@@ -10,8 +10,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   using WadRayMath for *;
   using KeyValueListInMemory for KeyValueListInMemory.List;
 
-  uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e26; // 1 billion USD
-  uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e26; // 1 USD
+  uint256 internal constant MAX_AMOUNT_IN_BASE_CURRENCY = 1_000_000_000e8; // 1 billion USD
+  uint256 internal constant MIN_AMOUNT_IN_BASE_CURRENCY = 1e8; // 1 USD
 
   struct CheckedLiquidationCallParams {
     ISpoke spoke;
@@ -120,7 +120,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal virtual returns (uint256) {
     debtToCover = bound(
       debtToCover,
-      _convertBaseCurrencyToAmount(spoke, debtReserveId, 1e26),
+      _convertBaseCurrencyToAmount(spoke, debtReserveId, 1e8),
       MAX_SUPPLY_AMOUNT
     );
 

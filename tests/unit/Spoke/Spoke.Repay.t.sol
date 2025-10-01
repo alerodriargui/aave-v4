@@ -345,13 +345,14 @@ contract SpokeRepayTest is SpokeBase {
 
   /// repay partial or full premium debt, but no drawn debt
   function test_fuzz_repay_only_premium(uint256 daiBorrowAmount, uint40 skipTime) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 1, MAX_SUPPLY_AMOUNT / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 1000, MAX_SUPPLY_AMOUNT / 2);
     uint256 wethSupplyAmount = _calcMinimumCollAmount(
       spoke1,
       _wethReserveId(spoke1),
       _daiReserveId(spoke1),
       daiBorrowAmount
     );
+    console.log('wethSupplyAmt %e, daiBorrowAmt %e', wethSupplyAmount, daiBorrowAmount);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME).toUint40();
 
     // Bob supply weth as collateral

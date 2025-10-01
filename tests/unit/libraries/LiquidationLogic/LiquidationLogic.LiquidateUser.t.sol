@@ -41,7 +41,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       drawnDebt: 4.5e18,
       premiumDebt: 0.5e18,
       accruedPremium: 0.2e18,
-      totalDebtInBaseCurrency: 10_000e26,
+      totalDebtInBaseCurrency: 10_000e8,
       liquidator: makeAddr('liquidator'),
       suppliedCollateralsCount: 1,
       borrowedReservesCount: 1
@@ -212,11 +212,11 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.liquidateUser(params);
   }
 
-  function updateStorage(DataTypes.LiquidationConfig memory liquidationConfig) internal {
-    liquidationLogicWrapper.setLiquidationConfig(liquidationConfig);
+  function updateStorage(DataTypes.LiquidationConfig memory _liquidationConfig) internal {
+    liquidationLogicWrapper.setLiquidationConfig(_liquidationConfig);
   }
 
-  function updateStorage(DataTypes.DynamicReserveConfig memory dynamicCollateralConfig) internal {
-    liquidationLogicWrapper.setDynamicCollateralConfig(dynamicCollateralConfig);
+  function updateStorage(DataTypes.DynamicReserveConfig memory _dynamicCollateralConfig) internal {
+    liquidationLogicWrapper.setDynamicCollateralConfig(_dynamicCollateralConfig);
   }
 }

@@ -184,7 +184,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    _processAdditionalCollateralReserves(user, 1e26);
+    _processAdditionalCollateralReserves(user, 1e8);
 
     _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
@@ -212,7 +212,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    _processAdditionalCollateralReserves(user, 1e26);
+    _processAdditionalCollateralReserves(user, 1e8);
 
     _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
   }
@@ -240,7 +240,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    _processAdditionalDebtReserves(user, 1e26);
+    _processAdditionalDebtReserves(user, 1e8);
 
     _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
@@ -268,7 +268,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    _processAdditionalDebtReserves(user, 1e26);
+    _processAdditionalDebtReserves(user, 1e8);
 
     _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
   }
@@ -296,8 +296,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    _processAdditionalCollateralReserves(user, 1e26);
-    _processAdditionalDebtReserves(user, 1e26);
+    _processAdditionalCollateralReserves(user, 1e8);
+    _processAdditionalDebtReserves(user, 1e8);
 
     _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, true);
   }
@@ -325,8 +325,8 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
       user
     );
 
-    _processAdditionalCollateralReserves(user, 1e26);
-    _processAdditionalDebtReserves(user, 1e26);
+    _processAdditionalCollateralReserves(user, 1e8);
+    _processAdditionalDebtReserves(user, 1e8);
 
     _testLiquidationCall(collateralReserveId, debtReserveId, user, debtToCover, false);
   }
@@ -337,7 +337,7 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus_SmallPosition is
   SpokeLiquidationCallHelperTest
 {
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
-    return 100e26;
+    return 100e8;
   }
 }
 
@@ -346,7 +346,7 @@ contract SpokeLiquidationCallTest_NoLiquidationBonus_LargePosition is
   SpokeLiquidationCallHelperTest
 {
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
-    return 10000e26;
+    return 10000e8;
   }
 }
 
@@ -368,7 +368,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_SmallPosition is
   }
 
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
-    return 100e26;
+    return 100e8;
   }
 }
 
@@ -390,7 +390,7 @@ contract SpokeLiquidationCallTest_SmallLiquidationBonus_LargePosition is
   }
 
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
-    return 10000e26;
+    return 10000e8;
   }
 }
 
@@ -417,7 +417,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_SmallPosition is
   }
 
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
-    return 100e26;
+    return 100e8;
   }
 }
 
@@ -444,7 +444,7 @@ contract SpokeLiquidationCallTest_LargeLiquidationBonus_LargePosition is
   }
 
   function _baseAmountInBaseCurrency() internal virtual override returns (uint256) {
-    return 10000e26;
+    return 10000e8;
   }
 }
 
