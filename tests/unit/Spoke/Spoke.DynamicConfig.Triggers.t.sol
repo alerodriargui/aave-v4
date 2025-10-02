@@ -256,8 +256,8 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
 
     // Alice's dai debt is exactly covered by her weth collateral
     assertEq(
-      _getValue(spoke1, _daiReserveId(spoke1), 2000e18),
-      _getValue(spoke1, _wethReserveId(spoke1), 1e18),
+      _getValueInBaseCurrency(spoke1, _daiReserveId(spoke1), 2000e18),
+      _getValueInBaseCurrency(spoke1, _wethReserveId(spoke1), 1e18),
       'weth supply covers debt'
     );
 
@@ -266,8 +266,8 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     skip(365 days);
 
     // Change some dynamic config
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
-    _updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 95_00);
+    updateCollateralFactor(spoke1, _wethReserveId(spoke1), 90_00);
 
     // Alice updates her dynamic config
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
@@ -285,7 +285,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
 
     // Change CF such that alice's position is undercollateralized
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 1);
+    updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 1);
 
     // Alice cannot update her dynamic config due to HF check
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);

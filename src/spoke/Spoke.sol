@@ -397,8 +397,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
-    uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
-    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
+    uint256 newUserRiskPremium = _refreshAndValidateUserPosition(onBehalfOf); // validates HF
+    _notifyRiskPremiumUpdate(onBehalfOf, newUserRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -967,10 +967,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (amount >= drawnDebt + premiumDebt) {
       return (drawnDebt, premiumDebt);
     }
-    if (amount <= premiumDebt) {
-      return (0, amount);
-    }
-    return (amount - premiumDebt, premiumDebt);
+    emit UpdateUserRiskPremium(user, 0);
+  }
+
+  function _refreshDynamicConfig(address user, uint256 reserveId) internal {
+    _userPositions[user][reserveId].configKey = _reserves[reserveId].dynamicConfigKey;
+    emit RefreshSingleUserDynamicConfig(user, reserveId);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
