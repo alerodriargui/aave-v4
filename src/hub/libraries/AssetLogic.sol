@@ -130,10 +130,14 @@ library AssetLogic {
 
   /// @notice Accrues interest and fees for the specified asset.
   function accrue(
-    IHub.Asset storage asset,
-    uint256 assetId,
-    IHub.SpokeData storage feeReceiver
-  ) internal {
+    mapping(uint256 => IHub.Asset) storage assets,
+    mapping(uint256 => mapping(address => IHub.SpokeData)) storage spokes,
+    uint256 assetId
+  ) internal returns (IHub.Asset storage) {
+    IHub.Asset storage asset = assets[assetId];
+
+    if (asset.lastUpdateTimestamp == block.timestamp) return asset;
+
     uint256 drawnIndex = asset.getDrawnIndex();
     uint256 indexDelta = drawnIndex.uncheckedSub(asset.drawnIndex);
 
@@ -142,10 +146,12 @@ library AssetLogic {
 
     uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
     if (feeShares > 0) {
-      feeReceiver.addedShares += feeShares;
+      address feeReceiver = asset.feeReceiver;
       asset.addedShares += feeShares;
-      emit IHub.AccrueFees(assetId, feeShares);
+      spokes[assetId][feeReceiver].addedShares += feeShares;
+      emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
     }
+    return asset;
   }
 
   /// @notice Calculates the drawn index of a specified asset based on the existing drawn rate and index.
