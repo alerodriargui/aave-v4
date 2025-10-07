@@ -368,12 +368,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       }
     }
 
-    if (!liquidationMetadata.hasDeficit) {
-      vm.expectEmit(false, false, false, false, address(params.spoke));
-      // topics > 0 and data are not checked here
-      // they are checked after the liquidation call since risk premium calculation is an approximation
-      emit ISpoke.UpdateUserRiskPremium(address(0), 0);
-    } else {
+    if (liquidationMetadata.hasDeficit) {
       vm.expectEmit(address(params.spoke));
       emit ISpoke.UpdateUserRiskPremium(params.user, 0);
     }
@@ -919,6 +914,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkRiskPremium(
     CheckedLiquidationCallParams memory params,
+    AccountsInfo memory accountsInfoBefore,
     AccountsInfo memory accountsInfoAfter,
     LiquidationMetadata memory liquidationMetadata,
     Vm.Log[] memory logs
@@ -937,7 +933,15 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         );
       }
     }
-    assertTrue(riskPremiumEventEmitted, 'user risk premium: event emitted');
+
+    if (
+      accountsInfoBefore.userAccountData.riskPremium !=
+      accountsInfoAfter.userAccountData.riskPremium
+    ) {
+      assertTrue(riskPremiumEventEmitted, 'UpdateUserRiskPremium: on premium change');
+    } else {
+      assertFalse(riskPremiumEventEmitted, 'UpdateUserRiskPremium: no premium change');
+    }
 
     assertApproxEqRel(
       accountsInfoAfter.userAccountData.riskPremium,
@@ -1009,7 +1013,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkErc20Balances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkSpokeBalances(accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkHubBalances(accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
-    _checkRiskPremium(params, accountsInfoAfter, liquidationMetadata, logs);
+    _checkRiskPremium(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata, logs);
     _checkAvgCollateralFactor(accountsInfoAfter, liquidationMetadata);
   }
 }
