@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
@@ -24,7 +26,7 @@ contract Hub is IHub, AccessManaged {
   using SafeCast for uint256;
   using WadRayMath for uint256;
   using SharesMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMath for *;
   using AssetLogic for Asset;
   using MathUtils for *;
 
@@ -696,6 +698,15 @@ contract Hub is IHub, AccessManaged {
     spoke.premiumShares = spoke.premiumShares.add(premium.sharesDelta).toUint128();
     spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta).toUint128();
     spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta).toUint128();
+
+    console.log('spoke premium shares actual', spoke.premiumShares);
+    console.log('spoke premium shares max theoretical', spoke.drawnShares.percentMulUp(1000_00));
+
+    // Spoke premium shares cannot exceed max RP times drawn shares
+    require(
+      spoke.premiumShares + 1 <= spoke.drawnShares.percentMulUp(1000_00),
+      InvalidPremiumChange()
+    );
 
     // can increase due to precision loss on premium (drawn unchanged)
     require(asset.premium() + premiumAmount - assetPremiumBefore <= 2, InvalidPremiumChange());
