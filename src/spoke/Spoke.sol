@@ -67,7 +67,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     internal _dynamicConfig; // dictionary of dynamic configs per reserve
   LiquidationConfig internal _liquidationConfig;
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
-  mapping(address user => uint256) internal _riskPremiums;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
@@ -792,18 +791,18 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev If risk premium has changed, notify update. Otherwise, refresh risk premium for the given reserve.
   /// @dev If risk premium has not changed and refreshReserveId is INVALID_RESERVE_ID, no state change is performed.
   /// @param user The address of the user whose risk premium is potentially being updated.
-  /// @param newUserRiskPremium The new risk premium of the user.
+  /// @param newRiskPremium The new risk premium of the user.
   /// @param refreshReserveId The reserve id to refresh risk premium for, only applicable if risk premium has not changed.
   function _notifyOrRefreshRiskPremium(
     address user,
-    uint256 newUserRiskPremium,
+    uint256 newRiskPremium,
     uint256 refreshReserveId
   ) internal {
-    uint256 oldUserRiskPremium = _riskPremiums[user];
-    if (newUserRiskPremium != oldUserRiskPremium) {
-      _notifyRiskPremiumUpdate(user, newUserRiskPremium);
+    uint256 riskPremium = _positionStatus[user].riskPremium;
+    if (newRiskPremium != riskPremium) {
+      _notifyRiskPremiumUpdate(user, newRiskPremium);
     } else if (refreshReserveId != INVALID_RESERVE_ID) {
-      _refreshRiskPremium(user, refreshReserveId, oldUserRiskPremium);
+      _refreshRiskPremium(user, refreshReserveId, riskPremium);
     }
   }
 
@@ -816,7 +815,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       _refreshRiskPremium(user, reserveId, newRiskPremium);
     }
 
-    _riskPremiums[user] = newRiskPremium;
+    positionStatus.riskPremium = newRiskPremium;
     emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
