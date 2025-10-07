@@ -699,12 +699,16 @@ contract Hub is IHub, AccessManaged {
     spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta).toUint128();
     spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta).toUint128();
 
+    console.log('spoke drawn shares actual', spoke.drawnShares);
     console.log('spoke premium shares actual', spoke.premiumShares);
-    console.log('spoke premium shares max theoretical', spoke.drawnShares.percentMulUp(1000_00));
+    console.log(
+      'spoke premium shares max theoretical',
+      (spoke.drawnShares + 1).percentMulUp(1000_00)
+    );
 
-    // Spoke premium shares cannot exceed max RP times drawn shares
+    // Asset premium shares cannot exceed max RP times drawn shares
     require(
-      spoke.premiumShares <= (spoke.drawnShares + 1).percentMulUp(1000_00),
+      asset.premiumShares <= (asset.drawnShares + 1).percentMulUp(1000_00),
       InvalidPremiumChange()
     );
 
