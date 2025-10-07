@@ -703,7 +703,7 @@ contract Hub is IHub, AccessManaged {
 
     // Spoke premium shares cannot exceed max RP times drawn shares
     require(
-      spoke.premiumShares + 1 <= spoke.drawnShares.percentMulUp(1000_00),
+      spoke.premiumShares <= (spoke.drawnShares + 1).percentMulUp(1000_00),
       InvalidPremiumChange()
     );
 

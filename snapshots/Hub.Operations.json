@@ -1,9 +1,14 @@
 {
   "add": "117155",
   "draw": "124145",
+  "eliminateDeficit: full": "61244",
+  "eliminateDeficit: partial": "70820",
   "payFee": "72817",
+  "refreshPremium": "107671",
   "remove: full": "77151",
   "remove: partial": "83668",
-  "restore: partial": "118006",
+  "reportDeficit": "125928",
+  "restore: full": "104642",
+  "restore: partial": "118072",
   "transferShares": "78539"
 }
