@@ -13,7 +13,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
-    spoke = spoke1;
+    spoke = spoke2;
     reserveId = _getReserveIds(spoke);
     _seed();
   }
@@ -75,28 +75,28 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
   function test_withdraw() public {
     vm.startPrank(alice);
-    spoke.supply(reserveId.usdx, 100e6, alice);
-    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+    spoke.supply(reserveId.wbtc, 1e8, alice);
+    spoke.setUsingAsCollateral(reserveId.wbtc, true, alice);
 
-    spoke.withdraw(reserveId.usdx, 1e6, alice);
+    spoke.withdraw(reserveId.wbtc, 0.1e8, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: 0 borrows, partial');
 
     skip(100);
 
-    spoke.withdraw(reserveId.usdx, UINT256_MAX, alice);
+    spoke.withdraw(reserveId.wbtc, UINT256_MAX, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: 0 borrows, full');
 
-    spoke.supply(reserveId.usdx, 10000e6, alice);
+    spoke.supply(reserveId.wbtc, 1e8, alice);
     spoke.borrow(reserveId.dai, 1e18, alice);
     skip(100);
 
-    spoke.withdraw(reserveId.usdx, 1e6, alice);
+    spoke.withdraw(reserveId.wbtc, 0.1e8, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: 1 borrow, partial');
     spoke.borrow(reserveId.weth, 1e18, alice);
 
     skip(100);
 
-    spoke.withdraw(reserveId.usdx, 1e6, alice);
+    spoke.withdraw(reserveId.wbtc, 0.1e8, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'withdraw: 2 borrows, partial');
     spoke.supply(reserveId.weth, 1000e18, alice);
 
@@ -347,18 +347,5 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     hub1.add(usdxAssetId, 10000e6, bob);
     hub1.add(wbtcAssetId, 10000e8, bob);
     vm.stopPrank();
-  }
-}
-
-/// forge-config: default.isolate = true
-contract SpokeOperations_ZeroRiskPremium_Gas_Tests is SpokeOperations_Gas_Tests {
-  function setUp() public override {
-    super.setUp();
-    NAMESPACE = 'Spoke.Operations.ZeroRiskPremium';
-
-    updateCollateralRisk(spoke, reserveId.dai, 0);
-    updateCollateralRisk(spoke, reserveId.weth, 0);
-    updateCollateralRisk(spoke, reserveId.usdx, 0);
-    updateCollateralRisk(spoke, reserveId.wbtc, 0);
   }
 }
