@@ -144,39 +144,20 @@ contract HubBase is Base {
   function _drawLiquidityFromSpoke(
     address spoke,
     uint256 assetId,
+    uint256 reserveId,
     uint256 amount,
-    uint256 skipTime,
-    bool withPremium
+    uint256 skipTime
   ) internal returns (uint256 drawn, uint256 premium) {
-    address tempUser = vm.randomAddress();
-
-    int256 sharesDelta = 1000;
-    int256 premiumOffsetDelta = 1000;
-
     assertTrue(hub1.getSpoke(assetId, spoke).active);
 
-    if (withPremium) {
-      // inflate premium data to create premium debt
-      vm.prank(spoke);
-      hub1.refreshPremium(assetId, IHubBase.PremiumDelta(sharesDelta, premiumOffsetDelta, 0));
-    }
-
-    Utils.draw({hub: hub1, assetId: assetId, caller: spoke, amount: amount, to: tempUser});
+    Utils.supplyCollateral(ISpoke(spoke), reserveId, alice, amount * 2, alice);
+    Utils.borrow(ISpokeBase(spoke), reserveId, alice, amount, alice);
 
     skip(skipTime);
 
     (drawn, premium) = hub1.getAssetOwed(assetId);
     assertGt(drawn, 0); // non-zero premium debt
-
-    if (withPremium) {
-      assertGt(premium, 0); // non-zero premium debt
-      // restore premium data
-      vm.prank(spoke);
-      hub1.refreshPremium(
-        assetId,
-        IHubBase.PremiumDelta(-sharesDelta, -premiumOffsetDelta, int256(premium))
-      );
-    }
+    assertGt(premium, 0); // non-zero premium debt
   }
 
   /// @dev Adds liquidity to the Hub via a random spoke

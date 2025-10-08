@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubReportDeficitTest is HubBase {
+  using SafeCast for uint256;
+
   struct ReportDeficitTestParams {
     uint256 drawn;
     uint256 premium;
@@ -102,14 +104,18 @@ contract HubReportDeficitTest is HubBase {
 
     ReportDeficitTestParams memory params;
 
+    console.log('calling into helper');
+
     // create premium debt via spoke1
     (params.drawn, params.premium) = _drawLiquidityFromSpoke(
       address(spoke1),
       usdxAssetId,
+      _usdxReserveId(spoke1),
       drawnAmount,
-      skipTime,
-      true
+      skipTime
     );
+
+    console.log('never made it out of helper function');
 
     baseAmount = bound(baseAmount, 0, params.drawn);
     premiumAmount = bound(premiumAmount, 0, params.premium);
@@ -122,11 +128,14 @@ contract HubReportDeficitTest is HubBase {
     uint256 drawnSharesBefore = hub1.getAsset(usdxAssetId).drawnShares;
     uint256 totalDeficit = baseAmount + premiumAmount;
 
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: 0,
-      offsetDelta: 0,
-      realizedDelta: -int256(premiumAmount)
-    });
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      _usdxReserveId(spoke1),
+      totalDeficit
+    );
+
+    console.log('premiumdelta.sharesDelta', premiumDelta.sharesDelta);
 
     vm.expectEmit(address(hub1));
     emit IHubBase.ReportDeficit(
