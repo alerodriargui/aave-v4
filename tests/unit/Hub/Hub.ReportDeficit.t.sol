@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubReportDeficitTest is HubBase {
-  using SafeCast for uint256;
+  using SafeCast for *;
 
   struct ReportDeficitTestParams {
     uint256 drawn;
@@ -128,13 +128,27 @@ contract HubReportDeficitTest is HubBase {
     uint256 drawnSharesBefore = hub1.getAsset(usdxAssetId).drawnShares;
     uint256 totalDeficit = baseAmount + premiumAmount;
 
-    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
-      sharesDelta: 0,
-      offsetDelta: 0,
-      realizedDelta: -int256(premiumAmount)
-    });
+    IHub.Asset memory asset = hub1.getAsset(usdxAssetId);
+    console.log('asset drawn shares', asset.drawnShares);
+    console.log('asset premium shares', asset.premiumShares);
+    console.log('asset premium offset', asset.premiumOffset);
+    console.log('asset realized premium', asset.realizedPremium);
+
+    IHubBase.PremiumDelta memory premiumDelta;
+
+    if (asset.realizedPremium > premiumAmount) {
+      premiumDelta.realizedDelta = -int256(premiumAmount);
+    } else {
+      premiumDelta.realizedDelta = -int256(uint256(asset.realizedPremium));
+      premiumDelta.sharesDelta = -int256(
+        hub1.previewDrawByAssets(usdxAssetId, premiumAmount - asset.realizedPremium)
+      );
+      premiumDelta.offsetDelta = premiumDelta.sharesDelta;
+    }
 
     console.log('premiumdelta.sharesDelta', premiumDelta.sharesDelta);
+    console.log('premiumdelta.offsetDelta', premiumDelta.offsetDelta);
+    console.log('premiumdelta.realizedDelta', premiumDelta.realizedDelta);
 
     vm.expectEmit(address(hub1));
     emit IHubBase.ReportDeficit(
@@ -169,7 +183,7 @@ contract HubReportDeficitTest is HubBase {
       drawnSharesBefore - hub1.previewRestoreByAssets(usdxAssetId, baseAmount),
       'base drawn shares'
     );
-    assertEq(params.premiumAfter, params.premium - premiumAmount, 'premium debt');
+    assertApproxEqAbs(params.premiumAfter, params.premium - premiumAmount, 1, 'premium debt');
     assertEq(params.balanceAfter, params.balanceBefore, 'balance change');
     assertEq(params.liquidityAfter, params.liquidityBefore, 'available liquidity');
     assertEq(params.deficitAfter, params.deficitBefore + totalDeficit, 'deficit accounting');

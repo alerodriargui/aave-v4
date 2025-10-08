@@ -158,6 +158,11 @@ contract HubBase is Base {
     (drawn, premium) = hub1.getAssetOwed(assetId);
     assertGt(drawn, 0); // non-zero premium debt
     assertGt(premium, 0); // non-zero premium debt
+
+    vm.prank(alice);
+    ISpoke(spoke).supply(reserveId, 5, alice);
+
+    (drawn, premium) = hub1.getAssetOwed(assetId);
   }
 
   /// @dev Adds liquidity to the Hub via a random spoke
