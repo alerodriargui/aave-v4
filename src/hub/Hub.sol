@@ -708,10 +708,7 @@ contract Hub is IHub, AccessManaged {
     console.log('asset drawn shares actual', asset.drawnShares);
 
     // Asset premium shares cannot exceed max RP times drawn shares
-    require(
-      asset.premiumShares <= (asset.drawnShares + 1).percentMulUp(1000_00),
-      InvalidPremiumChange()
-    );
+    require(asset.premiumShares <= asset.drawnShares.percentMulUp(1000_00), InvalidPremiumChange());
 
     // can increase due to precision loss on premium (drawn unchanged)
     require(asset.premium() + premiumAmount - assetPremiumBefore <= 2, InvalidPremiumChange());
