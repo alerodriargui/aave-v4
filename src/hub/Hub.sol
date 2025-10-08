@@ -709,6 +709,8 @@ contract Hub is IHub, AccessManaged {
     // Asset premium shares cannot exceed max RP times drawn shares
     require(asset.premiumShares <= asset.drawnShares.percentMulUp(1000_00), InvalidPremiumChange());
 
+    console.log('past new invalid premium check with theoretical max rp');
+
     // can increase due to precision loss on premium (drawn unchanged)
     require(asset.premium() + premiumAmount - assetPremiumBefore <= 2, InvalidPremiumChange());
     uint256 spokePremiumAfter = _getSpokePremium(spoke, assetId);
