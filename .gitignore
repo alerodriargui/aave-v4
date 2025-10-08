@@ -23,3 +23,8 @@ lcov*
 report/
 
 .DS_Store
+
+# Invariant testing artifacts
+_corpus/
+crytic-export/
+slither_results.json

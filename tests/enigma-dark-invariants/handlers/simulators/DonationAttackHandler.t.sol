@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+// Test Contracts
+import {BaseHandler} from "../../base/BaseHandler.t.sol";
+import {TestnetERC20} from "tests/mocks/TestnetERC20.sol";
+
+/// @title DonationAttackHandler
+/// @notice Handler test contract for a set of actions
+contract DonationAttackHandler is BaseHandler {
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                      STATE VARIABLES                                      //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                          ACTIONS                                          //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                         OWNER ACTIONS                                     //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function donateUnderlyingToHub(uint256 amount, uint8 i) external {
+        address underlying = _getRandomBaseAsset(i);
+
+        TestnetERC20(underlying).mint(address(hub), amount);
+    }
+
+    function donateUnderlyingToSpoke(uint256 amount, uint8 i, uint8 j) external {
+        address spoke = _getRandomSpoke(j);
+        address underlying = _getRandomBaseAsset(i);
+
+        TestnetERC20(underlying).mint(address(spoke), amount);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                           HELPERS                                         //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+}

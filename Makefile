@@ -29,3 +29,22 @@ coverage :
 	make coverage-clean
 	make coverage-report
 	make coverage-badge
+
+# Echidna
+echidna:
+	echidna tests/enigma-dark-invariants/Tester.t.sol --contract Tester --config ./tests/enigma-dark-invariants/_config/echidna_config.yaml
+echidna-assert:
+	echidna tests/enigma-dark-invariants/Tester.t.sol --contract Tester --test-mode assertion --config ./tests/enigma-dark-invariants/_config/echidna_config.yaml
+echidna-explore:
+	echidna tests/enigma-dark-invariants/Tester.t.sol --contract Tester --test-mode exploration --config ./tests/enigma-dark-invariants/_config/echidna_config.yaml
+
+# Medusa
+medusa:
+	medusa fuzz --config ./medusa.json
+
+foundry-invariants:
+	forge test --mc TesterFoundry -vvv 
+
+# Echidna Results
+runes:
+	runes convert ./tests/enigma-dark-invariants/_corpus/echidna/default/_data/corpus/reproducers --output ./tests/enigma-dark-invariants/replays

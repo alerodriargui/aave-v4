@@ -1,0 +1,72 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+// Interfaces
+import {ISpokeBase} from "src/spoke/interfaces/ISpokeBase.sol";
+import {ISpoke} from "src/spoke/interfaces/ISpoke.sol";
+
+// Contracts
+import {HandlerAggregator} from "../HandlerAggregator.t.sol";
+
+/// @title SpokeInvariants
+/// @notice Implements Spoke Invariants for the protocol
+/// @dev Inherits HandlerAggregator to check actions in assertion testing mode
+abstract contract SpokeInvariants is HandlerAggregator {
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                          SPOKE                                             //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function assert_INV_SP_A(address spoke, uint256 reserveId) internal {
+        // Get the assetId related to the reserveId of the spoke
+        uint256 assetId = _getAssetId(spoke, reserveId);
+
+        // supply
+        assertEq(
+            ISpokeBase(spoke).getReserveSuppliedShares(reserveId), hub.getSpokeAddedShares(assetId, spoke), INV_SP_A
+        );
+        assertEq(
+            ISpokeBase(spoke).getReserveSuppliedAssets(reserveId), hub.getSpokeAddedAssets(assetId, spoke), INV_SP_A
+        );
+
+        // debt
+        (uint256 d1, uint256 p1) = hub.getSpokeOwed(assetId, spoke);
+        (uint256 d2, uint256 p2) = ISpokeBase(spoke).getReserveDebt(reserveId);
+        assertEq(d2, d1, INV_SP_A);
+        assertEq(p2, p1, INV_SP_A);
+    }
+
+    function assert_INV_SP_B(address spoke, uint256 reserveId, address user) internal {
+        // reserve supply
+        if (ISpokeBase(spoke).getReserveSuppliedAssets(reserveId) > 0) {
+            assertGt(ISpokeBase(spoke).getReserveSuppliedShares(reserveId), 0, INV_SP_B);
+        }
+        // reserve debt
+        if (ISpokeBase(spoke).getReserveTotalDebt(reserveId) > 0) {
+            assertGt(hub.getSpokeDrawnShares(_getAssetId(spoke, reserveId), spoke), 0, INV_SP_B);
+        }
+        // user supply
+        if (ISpokeBase(spoke).getUserSuppliedAssets(reserveId, user) > 0) {
+            assertGt(ISpokeBase(spoke).getUserSuppliedShares(reserveId, user), 0, INV_SP_B);
+        }
+        // user debt
+        if (ISpokeBase(spoke).getUserTotalDebt(reserveId, user) > 0) {
+            ISpoke.UserPosition memory up = ISpoke(spoke).getUserPosition(reserveId, user);
+            assertTrue(up.drawnShares > 0 || up.premiumShares > 0, INV_SP_B);
+        }
+    }
+
+    function assert_INV_SP_C(address spoke, uint256 reserveId) internal {
+        uint256 sumSpokeDebts;
+        for (uint256 i; i < actorAddresses.length; i++) {
+            sumSpokeDebts += ISpokeBase(spoke).getUserTotalDebt(reserveId, actorAddresses[i]);
+        }
+        assertGe(sumSpokeDebts, ISpokeBase(spoke).getReserveTotalDebt(reserveId), INV_SP_C);
+    }
+
+    function assert_INV_SP_D(address spoke, address user) internal {
+        ISpoke.UserAccountData memory d = ISpoke(spoke).getUserAccountData(user);
+        if (d.totalCollateralInBaseCurrency == 0) {
+            assertEq(d.totalDebtInBaseCurrency, 0, INV_SP_D);
+        }
+    }
+}
