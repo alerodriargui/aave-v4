@@ -5,6 +5,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubRefreshPremiumTest is HubBase {
   using SafeCast for *;
+  using PercentageMath for *;
   using MathUtils for uint256;
 
   struct PremiumDataLocal {
@@ -66,8 +67,14 @@ contract HubRefreshPremiumTest is HubBase {
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
     bool reverting;
+    IHub.Asset memory asset = hub1.getAsset(assetId);
 
-    if (offsetDelta > sharesDelta) {
+    if (
+      (asset.drawnShares + 1).percentMulUp(1000_00) < asset.premiumShares + sharesDelta.toUint256()
+    ) {
+      reverting = true;
+      vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    } else if (offsetDelta > sharesDelta) {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     } else if (sharesDelta - offsetDelta + realizedDelta > 2) {
