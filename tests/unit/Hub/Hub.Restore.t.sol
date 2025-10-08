@@ -463,7 +463,7 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
   }
 
-  function test_restore_two_wei_shares_delta_increase() public {
+  function test_restore_two_wei_shares_delta_increase_revertsWith_InvalidPremiumChange() public {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;
 
@@ -495,8 +495,9 @@ contract HubRestoreTest is HubBase {
       reserveId: daiAssetId,
       premiumRestored: premium
     });
-    premiumDelta.sharesDelta += vm.randomUint(0, 2).toInt256();
+    premiumDelta.sharesDelta += 2.toInt256();
 
+    vm.expectRevert(IHub.InvalidPremiumChange.selector);
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, drawnRestored, premium, premiumDelta, alice);
   }
