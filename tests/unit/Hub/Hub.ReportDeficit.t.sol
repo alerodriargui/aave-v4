@@ -128,12 +128,11 @@ contract HubReportDeficitTest is HubBase {
     uint256 drawnSharesBefore = hub1.getAsset(usdxAssetId).drawnShares;
     uint256 totalDeficit = baseAmount + premiumAmount;
 
-    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
-      spoke1,
-      alice,
-      _usdxReserveId(spoke1),
-      totalDeficit
-    );
+    IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
+      sharesDelta: 0,
+      offsetDelta: 0,
+      realizedDelta: -int256(premiumAmount)
+    });
 
     console.log('premiumdelta.sharesDelta', premiumDelta.sharesDelta);
 
