@@ -70,6 +70,7 @@ import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
+import {MathUtilsWrapper} from 'tests/mocks/MathUtilsWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
@@ -1079,7 +1080,7 @@ abstract contract Base is Test {
     uint256 reserveId,
     uint256 newCollateralFactor,
     uint256 newLiquidationBonus
-  ) internal {
+  ) internal pausePrank returns (uint16) {
     ISpoke.DynamicReserveConfig memory config = spoke.getDynamicReserveConfig(reserveId);
     config.collateralFactor = newCollateralFactor.toUint16();
     config.maxLiquidationBonus = newLiquidationBonus.toUint32();
@@ -1088,6 +1089,7 @@ abstract contract Base is Test {
     uint16 configKey = spoke.addDynamicReserveConfig(reserveId, config);
 
     assertEq(spoke.getDynamicReserveConfig(reserveId), config);
+    return configKey;
   }
 
   function _updateCollateralFactor(
@@ -1145,12 +1147,12 @@ abstract contract Base is Test {
   }
 
   function updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal pausePrank {
-    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
+    IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
     vm.prank(HUB_ADMIN);
-    hub1.updateAssetConfig(assetId, config, new bytes(0));
+    hub.updateAssetConfig(assetId, config, new bytes(0));
 
-    assertEq(hub1.getAssetConfig(assetId), config);
+    assertEq(hub.getAssetConfig(assetId), config);
   }
 
   function _updateTargetHealthFactor(
@@ -1175,12 +1177,12 @@ abstract contract Base is Test {
     return vm.randomUint(min, max);
   }
 
-  function _randomNonceKey() internal returns (uint192) {
-    return uint192(vm.randomUint());
+  function _randomNonceKey() internal view returns (uint192) {
+    return vm.randomUint(192).toUint192();
   }
 
-  function _randomNonce() internal returns (uint64) {
-    return uint64(vm.randomUint());
+  function _randomNonce() internal view returns (uint64) {
+    return vm.randomUint(64).toUint64();
   }
 
   // assumes spoke has usdx supported
@@ -2281,7 +2283,7 @@ abstract contract Base is Test {
     string memory operation
   ) internal view {
     IHub.Asset memory asset = targetHub.getAsset(assetId);
-    (uint256 drawn, uint256 premium) = hub1.getAssetOwed(assetId);
+    (uint256 drawn, ) = hub1.getAssetOwed(assetId);
 
     vm.assertEq(
       asset.drawnRate,
@@ -2539,7 +2541,7 @@ abstract contract Base is Test {
     INoncesKeyed verifier,
     address user,
     uint192 key
-  ) internal returns (uint256) {
+  ) internal view returns (uint256) {
     (uint192 currentKey, uint64 currentNonce) = _unpackNonce(verifier.nonces(user, key));
     assertEq(currentKey, key);
     uint64 nonce = _randomNonce();
