@@ -13,7 +13,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
-    spoke = spoke2;
+    spoke = spoke1;
     reserveId = _getReserveIds(spoke);
     _seed();
   }
@@ -117,8 +117,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     skip(100);
 
     vm.startPrank(alice);
-    spoke.supply(reserveId.wbtc, 0.1e8, alice);
-    spoke.setUsingAsCollateral(reserveId.wbtc, true, alice);
+    spoke.supply(reserveId.usdx, 1000e6, alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
 
     spoke.borrow(reserveId.dai, 500e18, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'borrow: first');
@@ -148,6 +148,9 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation() public {
+    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
+    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
+
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1_000_000e18, bob);
 
@@ -347,5 +350,18 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     hub1.add(usdxAssetId, 10000e6, bob);
     hub1.add(wbtcAssetId, 10000e8, bob);
     vm.stopPrank();
+  }
+}
+
+/// forge-config: default.isolate = true
+contract SpokeOperations_ZeroRiskPremium_Gas_Tests is SpokeOperations_Gas_Tests {
+  function setUp() public override {
+    super.setUp();
+    NAMESPACE = 'Spoke.Operations.ZeroRiskPremium';
+
+    _updateCollateralRisk(spoke, reserveId.dai, 0);
+    _updateCollateralRisk(spoke, reserveId.weth, 0);
+    _updateCollateralRisk(spoke, reserveId.usdx, 0);
+    _updateCollateralRisk(spoke, reserveId.wbtc, 0);
   }
 }
