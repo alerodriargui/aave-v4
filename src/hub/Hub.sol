@@ -38,7 +38,7 @@ contract Hub is IHub, AccessManaged {
   uint56 public constant MAX_ALLOWED_SPOKE_CAP = type(uint56).max;
 
   /// @inheritdoc IHub
-  uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
+  uint24 public constant MAX_ALLOWED_RISK_PREMIUM = 1000_00; // 1000.00%
 
   uint256 internal _assetCount;
   mapping(uint256 assetId => Asset) internal _assets;
@@ -701,7 +701,7 @@ contract Hub is IHub, AccessManaged {
     spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta).toUint128();
 
     require(
-      spoke.premiumShares <= spoke.drawnShares.percentMulUp(MAX_ALLOWED_COLLATERAL_RISK),
+      spoke.premiumShares <= spoke.drawnShares.percentMulUp(MAX_ALLOWED_RISK_PREMIUM),
       InvalidPremiumChange()
     );
 
