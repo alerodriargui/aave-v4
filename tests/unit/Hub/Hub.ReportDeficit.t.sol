@@ -6,6 +6,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubReportDeficitTest is HubBase {
   using SafeCast for *;
+  using PercentageMath for uint256;
 
   struct ReportDeficitTestParams {
     uint256 drawn;
@@ -115,7 +116,7 @@ contract HubReportDeficitTest is HubBase {
       skipTime
     );
 
-    console.log('never made it out of helper function');
+    console.log('made it out of helper function');
 
     baseAmount = bound(baseAmount, 0, params.drawn);
     premiumAmount = bound(premiumAmount, 0, params.premium);
@@ -134,8 +135,23 @@ contract HubReportDeficitTest is HubBase {
     console.log('asset premium offset', asset.premiumOffset);
     console.log('asset realized premium', asset.realizedPremium);
 
-    IHubBase.PremiumDelta memory premiumDelta;
+    console.log('total deficit to report', totalDeficit);
+    console.log('base deficit to report', baseAmount);
+    console.log('premium deficit to report', premiumAmount);
 
+    IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
+      spoke1,
+      alice,
+      usdxAssetId,
+      premiumAmount
+    );
+
+    uint256 baseDeficitShares = hub1.previewRestoreByAssets(usdxAssetId, baseAmount);
+    uint256 expectedNewPremiumShares = premiumDelta.sharesDelta < 0
+      ? asset.premiumShares - uint256(-premiumDelta.sharesDelta)
+      : asset.premiumShares + uint256(premiumDelta.sharesDelta);
+
+    /*
     if (asset.realizedPremium > premiumAmount) {
       premiumDelta.realizedDelta = -int256(premiumAmount);
     } else {
@@ -145,53 +161,70 @@ contract HubReportDeficitTest is HubBase {
       );
       premiumDelta.offsetDelta = premiumDelta.sharesDelta;
     }
+    */
 
-    console.log('premiumdelta.sharesDelta', premiumDelta.sharesDelta);
-    console.log('premiumdelta.offsetDelta', premiumDelta.offsetDelta);
-    console.log('premiumdelta.realizedDelta', premiumDelta.realizedDelta);
+    if (
+      premiumDelta.realizedDelta < 0 && uint256(-premiumDelta.realizedDelta) > asset.realizedPremium
+    ) {
+      vm.expectRevert(stdError.arithmeticError);
+      vm.prank(address(spoke1));
+      hub1.reportDeficit(usdxAssetId, baseAmount, premiumAmount, premiumDelta);
+    } else if (
+      expectedNewPremiumShares > (drawnSharesBefore - baseDeficitShares).percentMulUp(1000_00)
+    ) {
+      vm.expectRevert(IHub.InvalidPremiumChange.selector);
+      vm.prank(address(spoke1));
+      hub1.reportDeficit(usdxAssetId, baseAmount, premiumAmount, premiumDelta);
+    } else {
+      console.log('premiumdelta.sharesDelta', premiumDelta.sharesDelta);
+      console.log('premiumdelta.offsetDelta', premiumDelta.offsetDelta);
+      console.log('premiumdelta.realizedDelta', premiumDelta.realizedDelta);
 
-    vm.expectEmit(address(hub1));
-    emit IHubBase.ReportDeficit(
-      usdxAssetId,
-      address(spoke1),
-      hub1.previewRestoreByAssets(usdxAssetId, baseAmount),
-      premiumDelta,
-      baseAmount,
-      premiumAmount
-    );
-    vm.prank(address(spoke1));
-    hub1.reportDeficit(usdxAssetId, baseAmount, premiumAmount, premiumDelta);
+      vm.expectEmit(address(hub1));
+      emit IHubBase.ReportDeficit(
+        usdxAssetId,
+        address(spoke1),
+        hub1.previewRestoreByAssets(usdxAssetId, baseAmount),
+        premiumDelta,
+        baseAmount,
+        premiumAmount
+      );
+      vm.prank(address(spoke1));
+      hub1.reportDeficit(usdxAssetId, baseAmount, premiumAmount, premiumDelta);
 
-    (params.drawnAfter, params.premiumAfter) = hub1.getAssetOwed(usdxAssetId);
+      (params.drawnAfter, params.premiumAfter) = hub1.getAssetOwed(usdxAssetId);
 
-    params.deficitAfter = getDeficit(hub1, usdxAssetId);
-    params.supplyExchangeRateAfter = hub1.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
-    params.liquidityAfter = hub1.getAssetLiquidity(usdxAssetId);
-    params.balanceAfter = IERC20(hub1.getAsset(usdxAssetId).underlying).balanceOf(address(spoke1));
-    uint256 drawnSharesAfter = hub1.getAsset(usdxAssetId).drawnShares;
+      params.deficitAfter = getDeficit(hub1, usdxAssetId);
+      params.supplyExchangeRateAfter = hub1.convertToAddedAssets(usdxAssetId, WadRayMath.RAY);
+      params.liquidityAfter = hub1.getAssetLiquidity(usdxAssetId);
+      params.balanceAfter = IERC20(hub1.getAsset(usdxAssetId).underlying).balanceOf(
+        address(spoke1)
+      );
+      uint256 drawnSharesAfter = hub1.getAsset(usdxAssetId).drawnShares;
 
-    // due to rounding of donation, drawn debt can differ by asset amount of one share
-    // and 1 wei imprecision
-    assertApproxEqAbs(
-      params.drawnAfter,
-      params.drawn - baseAmount,
-      minimumAssetsPerDrawnShare(hub1, usdxAssetId) + 1,
-      'drawn debt'
-    );
-    assertEq(
-      drawnSharesAfter,
-      drawnSharesBefore - hub1.previewRestoreByAssets(usdxAssetId, baseAmount),
-      'base drawn shares'
-    );
-    assertApproxEqAbs(params.premiumAfter, params.premium - premiumAmount, 1, 'premium debt');
-    assertEq(params.balanceAfter, params.balanceBefore, 'balance change');
-    assertEq(params.liquidityAfter, params.liquidityBefore, 'available liquidity');
-    assertEq(params.deficitAfter, params.deficitBefore + totalDeficit, 'deficit accounting');
-    assertGe(
-      params.supplyExchangeRateAfter,
-      params.supplyExchangeRateBefore,
-      'supply exchange rate should increase'
-    );
-    assertBorrowRateSynced(hub1, usdxAssetId, 'reportDeficit');
+      // due to rounding of donation, drawn debt can differ by asset amount of one share
+      // and 1 wei imprecision
+      assertApproxEqAbs(
+        params.drawnAfter,
+        params.drawn - baseAmount,
+        minimumAssetsPerDrawnShare(hub1, usdxAssetId) + 1,
+        'drawn debt'
+      );
+      assertEq(
+        drawnSharesAfter,
+        drawnSharesBefore - hub1.previewRestoreByAssets(usdxAssetId, baseAmount),
+        'base drawn shares'
+      );
+      assertApproxEqAbs(params.premiumAfter, params.premium - premiumAmount, 1, 'premium debt');
+      assertEq(params.balanceAfter, params.balanceBefore, 'balance change');
+      assertEq(params.liquidityAfter, params.liquidityBefore, 'available liquidity');
+      assertEq(params.deficitAfter, params.deficitBefore + totalDeficit, 'deficit accounting');
+      assertGe(
+        params.supplyExchangeRateAfter,
+        params.supplyExchangeRateBefore,
+        'supply exchange rate should increase'
+      );
+      assertBorrowRateSynced(hub1, usdxAssetId, 'reportDeficit');
+    }
   }
 }
