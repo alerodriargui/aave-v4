@@ -373,4 +373,9 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev The value is not inclusive; using the maximum value indicates no cap.
   /// @return The maximum cap value, expressed in asset units.
   function MAX_ALLOWED_SPOKE_CAP() external view returns (uint56);
+
+  /// @notice Returns the maximum allowed collateral risk value.
+  /// @dev This is used to validate and limit premium values reported by spokes.
+  /// @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%).
+  function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
 }

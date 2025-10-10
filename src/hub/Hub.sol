@@ -37,6 +37,9 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   uint56 public constant MAX_ALLOWED_SPOKE_CAP = type(uint56).max;
 
+  /// @inheritdoc IHub
+  uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
+
   uint256 internal _assetCount;
   mapping(uint256 assetId => Asset) internal _assets;
   mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
@@ -676,8 +679,9 @@ contract Hub is IHub, AccessManaged {
     receiver.addedShares += shares.toUint128();
   }
 
-  /// @dev Applies premium deltas on asset & spoke premium owed, also checks premium
-  /// does not increase by more than `premiumAmount`.
+  /// @dev Applies premium deltas on asset & spoke premium owed.
+  /// @dev Checks premium does not increase by more than `premiumAmount`.
+  /// @dev Checks spoke premium shares do not exceed max collateral risk times drawn shares.
   function _applyPremiumDelta(
     uint256 assetId,
     Asset storage asset,
@@ -696,8 +700,10 @@ contract Hub is IHub, AccessManaged {
     spoke.premiumOffset = spoke.premiumOffset.add(premium.offsetDelta).toUint128();
     spoke.realizedPremium = spoke.realizedPremium.add(premium.realizedDelta).toUint128();
 
-    // Asset premium shares cannot exceed max RP times drawn shares
-    require(asset.premiumShares <= asset.drawnShares.percentMulUp(1000_00), InvalidPremiumChange());
+    require(
+      spoke.premiumShares <= spoke.drawnShares.percentMulUp(MAX_ALLOWED_COLLATERAL_RISK),
+      InvalidPremiumChange()
+    );
 
     // can increase due to precision loss on premium (drawn unchanged)
     require(asset.premium() + premiumAmount - assetPremiumBefore <= 2, InvalidPremiumChange());
