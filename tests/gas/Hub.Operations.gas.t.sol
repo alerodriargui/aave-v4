@@ -79,10 +79,11 @@ contract HubOperations_Gas_Tests is Base {
   }
 
   function test_refreshPremium() public {
-    vm.startPrank(address(spoke1));
-    hub1.add(daiAssetId, 1000e18, alice);
-    hub1.draw(daiAssetId, 500e18, bob);
-    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(1, 1, 0));
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
+    skip(100);
+    vm.prank(address(spoke1));
+    hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(-1, -1, 1));
     vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
     vm.stopPrank();
   }
