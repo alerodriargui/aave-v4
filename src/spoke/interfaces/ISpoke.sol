@@ -371,6 +371,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     bytes32 permitS
   ) external;
 
+  function initialize(address authority) external;
+
   /// @notice Returns the address of the external `LiquidationLogic` library.
   /// @return The address of the library.
   function getLiquidationLogic() external pure returns (address);
