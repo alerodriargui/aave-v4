@@ -85,7 +85,6 @@ contract HubOperations_Gas_Tests is Base {
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, IHubBase.PremiumDelta(-1, -1, 1));
     vm.snapshotGasLastCall('Hub.Operations', 'refreshPremium');
-    vm.stopPrank();
   }
 
   function test_payFee_transferShares() public {

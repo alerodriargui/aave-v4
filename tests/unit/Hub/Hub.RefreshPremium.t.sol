@@ -246,7 +246,7 @@ contract HubRefreshPremiumTest is HubBase {
       ? asset.premiumShares + premiumDelta.sharesDelta.toUint256()
       : asset.premiumShares - (-premiumDelta.sharesDelta).toUint256();
 
-    if ((asset.drawnShares).percentMulUp(1000_00) < expectedPremiumShares) {
+    if (asset.drawnShares.percentMulUp(1000_00) < expectedPremiumShares) {
       reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
     } else if (
