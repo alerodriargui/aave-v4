@@ -150,20 +150,15 @@ contract HubBase is Base {
   ) internal returns (uint256 drawn, uint256 premium) {
     assertTrue(hub1.getSpoke(assetId, spoke).active);
 
-    deal(hub1.getAsset(assetId).underlying, alice, amount * 2 + 5);
+    deal(hub1.getAsset(assetId).underlying, alice, amount * 2);
     Utils.supplyCollateral(ISpoke(spoke), reserveId, alice, amount * 2, alice);
     Utils.borrow(ISpokeBase(spoke), reserveId, alice, amount, alice);
 
     skip(skipTime);
 
     (drawn, premium) = hub1.getAssetOwed(assetId);
-    assertGt(drawn, 0); // non-zero premium debt
+    assertGt(drawn, 0); // non-zero drawn debt
     assertGt(premium, 0); // non-zero premium debt
-
-    vm.prank(alice);
-    ISpoke(spoke).supply(reserveId, 5, alice);
-
-    (drawn, premium) = hub1.getAssetOwed(assetId);
   }
 
   /// @dev Adds liquidity to the Hub via a random spoke

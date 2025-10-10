@@ -130,7 +130,7 @@ contract HubReportDeficitTest is HubBase {
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
       spoke1,
       alice,
-      usdxAssetId,
+      _usdxReserveId(spoke1),
       premiumAmount
     );
 
