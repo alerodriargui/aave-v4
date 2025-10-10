@@ -105,8 +105,6 @@ contract HubReportDeficitTest is HubBase {
 
     ReportDeficitTestParams memory params;
 
-    console.log('calling into helper');
-
     // create premium debt via spoke1
     (params.drawn, params.premium) = _drawLiquidityFromSpoke(
       address(spoke1),
@@ -115,8 +113,6 @@ contract HubReportDeficitTest is HubBase {
       drawnAmount,
       skipTime
     );
-
-    console.log('made it out of helper function');
 
     baseAmount = bound(baseAmount, 0, params.drawn);
     premiumAmount = bound(premiumAmount, 0, params.premium);
@@ -130,14 +126,6 @@ contract HubReportDeficitTest is HubBase {
     uint256 totalDeficit = baseAmount + premiumAmount;
 
     IHub.Asset memory asset = hub1.getAsset(usdxAssetId);
-    console.log('asset drawn shares', asset.drawnShares);
-    console.log('asset premium shares', asset.premiumShares);
-    console.log('asset premium offset', asset.premiumOffset);
-    console.log('asset realized premium', asset.realizedPremium);
-
-    console.log('total deficit to report', totalDeficit);
-    console.log('base deficit to report', baseAmount);
-    console.log('premium deficit to report', premiumAmount);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
       spoke1,
@@ -150,18 +138,6 @@ contract HubReportDeficitTest is HubBase {
     uint256 expectedNewPremiumShares = premiumDelta.sharesDelta < 0
       ? asset.premiumShares - uint256(-premiumDelta.sharesDelta)
       : asset.premiumShares + uint256(premiumDelta.sharesDelta);
-
-    /*
-    if (asset.realizedPremium > premiumAmount) {
-      premiumDelta.realizedDelta = -int256(premiumAmount);
-    } else {
-      premiumDelta.realizedDelta = -int256(uint256(asset.realizedPremium));
-      premiumDelta.sharesDelta = -int256(
-        hub1.previewDrawByAssets(usdxAssetId, premiumAmount - asset.realizedPremium)
-      );
-      premiumDelta.offsetDelta = premiumDelta.sharesDelta;
-    }
-    */
 
     if (
       premiumDelta.realizedDelta < 0 && uint256(-premiumDelta.realizedDelta) > asset.realizedPremium
@@ -176,10 +152,6 @@ contract HubReportDeficitTest is HubBase {
       vm.prank(address(spoke1));
       hub1.reportDeficit(usdxAssetId, baseAmount, premiumAmount, premiumDelta);
     } else {
-      console.log('premiumdelta.sharesDelta', premiumDelta.sharesDelta);
-      console.log('premiumdelta.offsetDelta', premiumDelta.offsetDelta);
-      console.log('premiumdelta.realizedDelta', premiumDelta.realizedDelta);
-
       vm.expectEmit(address(hub1));
       emit IHubBase.ReportDeficit(
         usdxAssetId,
