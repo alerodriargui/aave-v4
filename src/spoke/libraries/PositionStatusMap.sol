@@ -28,9 +28,9 @@ library PositionStatusMap {
     unchecked {
       uint256 bit = 1 << ((reserveId % 128) << 1);
       if (borrowing) {
-        self.map[reserveId.bucketId()] |= bit;
+        self.map |= bit;
       } else {
-        self.map[reserveId.bucketId()] &= ~bit;
+        self.map &= ~bit;
       }
     }
   }
@@ -44,57 +44,42 @@ library PositionStatusMap {
     unchecked {
       uint256 bit = 1 << (((reserveId % 128) << 1) + 1);
       if (usingAsCollateral) {
-        self.map[reserveId.bucketId()] |= bit;
+        self.map |= bit;
       } else {
-        self.map[reserveId.bucketId()] &= ~bit;
+        self.map &= ~bit;
       }
     }
   }
 
   /// @notice Returns if a user is using the specified reserve for borrowing or as collateral.
   function isUsingAsCollateralOrBorrowing(
-    ISpoke.PositionStatus storage self,
+    uint256 map,
     uint256 reserveId
-  ) internal view returns (bool) {
+  ) internal pure returns (bool) {
     unchecked {
-      return (self.map[reserveId.bucketId()] >> ((reserveId % 128) << 1)) & 3 != 0;
+      return (map >> ((reserveId % 128) << 1)) & 3 != 0;
     }
   }
 
   /// @notice Returns if a user is using the specified reserve for borrowing.
-  function isBorrowing(
-    ISpoke.PositionStatus storage self,
-    uint256 reserveId
-  ) internal view returns (bool) {
+  function isBorrowing(uint256 map, uint256 reserveId) internal pure returns (bool) {
     unchecked {
-      return (self.getBucketWord(reserveId) >> ((reserveId % 128) << 1)) & 1 != 0;
+      return (map >> ((reserveId % 128) << 1)) & 1 != 0;
     }
   }
 
   /// @notice Returns if a user is using the specified reserve as collateral.
-  function isUsingAsCollateral(
-    ISpoke.PositionStatus storage self,
-    uint256 reserveId
-  ) internal view returns (bool) {
+  function isUsingAsCollateral(uint256 map, uint256 reserveId) internal pure returns (bool) {
     unchecked {
-      return (self.getBucketWord(reserveId) >> (((reserveId % 128) << 1) + 1)) & 1 != 0;
+      return (map >> (((reserveId % 128) << 1) + 1)) & 1 != 0;
     }
   }
 
   /// @notice Counts the number of reserves enabled as collateral.
   /// @dev Disregards potential dirty bits set after `reserveCount`.
-  /// @param reserveCount The current `reserveCount`, to avoid reading uninitialized buckets.
-  function collateralCount(
-    ISpoke.PositionStatus storage self,
-    uint256 reserveCount
-  ) internal view returns (uint256) {
+  function collateralCount(uint256 map, uint256 reserveCount) internal pure returns (uint256) {
     unchecked {
-      uint256 bucket = reserveCount.bucketId();
-      uint256 count = self.map[bucket].isolateCollateralUntil(reserveCount).popCount();
-      while (bucket != 0) {
-        count += self.map[--bucket].isolateCollateral().popCount();
-      }
-      return count;
+      return map.isolateCollateralUntil(reserveCount).popCount();
     }
   }
 
@@ -106,23 +91,14 @@ library PositionStatusMap {
   /// @return reserveId The reserve identifier for the next reserve that is borrowed or used as collateral.
   /// @return borrowing True if the next reserveId is borrowed, false otherwise.
   /// @return collateral True if the next reserveId is used as collateral, false otherwise.
-  function next(
-    ISpoke.PositionStatus storage self,
-    uint256 fromReserveId
-  ) internal view returns (uint256, bool, bool) {
+  function next(uint256 map, uint256 fromReserveId) internal pure returns (uint256, bool, bool) {
     unchecked {
-      uint256 bucket = fromReserveId.bucketId();
-      uint256 map = self.map[bucket];
       uint256 setBitId = map.isolateUntil(fromReserveId).fls();
-      while (setBitId == 256 && bucket != 0) {
-        map = self.map[--bucket];
-        setBitId = map.fls();
-      }
       if (setBitId == 256) {
         return (NOT_FOUND, false, false);
       } else {
         uint256 word = map >> ((setBitId >> 1) << 1);
-        return (setBitId.fromBitId(bucket), word & 1 != 0, word & 2 != 0);
+        return (setBitId.fromBitId(0), word & 1 != 0, word & 2 != 0);
       }
     }
   }
@@ -133,17 +109,10 @@ library PositionStatusMap {
   /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
   /// @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
   /// @return The previous borrowed reserveId, or `NOT_FOUND` if none is found.
-  function nextBorrowing(
-    ISpoke.PositionStatus storage self,
-    uint256 fromReserveId
-  ) internal view returns (uint256) {
+  function nextBorrowing(uint256 map, uint256 fromReserveId) internal pure returns (uint256) {
     unchecked {
-      uint256 bucket = fromReserveId.bucketId();
-      uint256 setBitId = self.map[bucket].isolateBorrowingUntil(fromReserveId).fls();
-      while (setBitId == 256 && bucket != 0) {
-        setBitId = self.map[--bucket].isolateBorrowing().fls();
-      }
-      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket);
+      uint256 setBitId = map.isolateBorrowingUntil(fromReserveId).fls();
+      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(0);
     }
   }
 
@@ -153,26 +122,11 @@ library PositionStatusMap {
   /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
   /// @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
   /// @return The previous collateral reserveId, or `NOT_FOUND` if none is found.
-  function nextCollateral(
-    ISpoke.PositionStatus storage self,
-    uint256 fromReserveId
-  ) internal view returns (uint256) {
+  function nextCollateral(uint256 map, uint256 fromReserveId) internal pure returns (uint256) {
     unchecked {
-      uint256 bucket = fromReserveId.bucketId();
-      uint256 setBitId = self.map[bucket].isolateCollateralUntil(fromReserveId).fls();
-      while (setBitId == 256 && bucket != 0) {
-        setBitId = self.map[--bucket].isolateCollateral().fls();
-      }
-      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(bucket);
+      uint256 setBitId = map.isolateCollateralUntil(fromReserveId).fls();
+      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(0);
     }
-  }
-
-  /// @notice Returns the word containing the reserve state in the bitmap.
-  function getBucketWord(
-    ISpoke.PositionStatus storage self,
-    uint256 reserveId
-  ) internal view returns (uint256) {
-    return self.map[reserveId.bucketId()];
   }
 
   /// @notice Converts a reserveId to its corresponding bucketId.

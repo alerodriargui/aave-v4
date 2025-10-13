@@ -20,6 +20,7 @@ library LiquidationLogic {
   using PercentageMath for uint256;
   using WadRayMath for uint256;
   using MathUtils for *;
+  using PositionStatusMap for uint256;
 
   struct LiquidateUserParams {
     uint256 collateralReserveId;
@@ -146,7 +147,7 @@ library LiquidationLogic {
         collateralReservePaused: collateralReserve.paused,
         debtReservePaused: debtReserve.paused,
         healthFactor: params.healthFactor,
-        isUsingAsCollateral: positionStatus.isUsingAsCollateral(params.collateralReserveId),
+        isUsingAsCollateral: positionStatus.map.isUsingAsCollateral(params.collateralReserveId),
         collateralFactor: collateralDynConfig.collateralFactor,
         collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebt

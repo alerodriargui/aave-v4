@@ -10,7 +10,7 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 
 contract LiquidationLogicWrapper {
   using SafeCast for uint256;
-  using PositionStatusMap for ISpoke.PositionStatus;
+  using PositionStatusMap for *;
 
   ISpoke.Reserve internal collateralReserve;
   ISpoke.UserPosition internal collateralPosition;
@@ -92,11 +92,11 @@ contract LiquidationLogicWrapper {
   }
 
   function getCollateralStatus(uint256 reserveId) public view returns (bool) {
-    return positionStatus.isUsingAsCollateral(reserveId);
+    return positionStatus.map.isUsingAsCollateral(reserveId);
   }
 
   function getBorrowingStatus(uint256 reserveId) public view returns (bool) {
-    return positionStatus.isBorrowing(reserveId);
+    return positionStatus.map.isBorrowing(reserveId);
   }
 
   function setLiquidationConfig(ISpoke.LiquidationConfig memory newLiquidationConfig) public {

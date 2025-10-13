@@ -69,7 +69,7 @@ import {Utils} from 'tests/Utils.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
-import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
+// import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';

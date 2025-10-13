@@ -226,7 +226,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     userPosition.suppliedShares -= withdrawnShares.toUint128();
 
-    if (_positionStatus[onBehalfOf].isUsingAsCollateral(reserveId)) {
+    if (_positionStatus[onBehalfOf].map.isUsingAsCollateral(reserveId)) {
       uint256 newRiskPremium = _refreshAndValidateUserPosition(onBehalfOf);
       _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
     }
@@ -248,7 +248,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint128();
-    if (!positionStatus.isBorrowing(reserveId)) {
+    if (!positionStatus.map.isBorrowing(reserveId)) {
       positionStatus.setBorrowing(reserveId, true);
     }
 
@@ -368,7 +368,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     _validateSetUsingAsCollateral(_reserves[reserveId], usingAsCollateral);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
 
-    if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
+    if (positionStatus.map.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
     }
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
@@ -544,13 +544,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool) {
     _getReserve(reserveId);
-    return _positionStatus[user].isUsingAsCollateral(reserveId);
+    return _positionStatus[user].map.isUsingAsCollateral(reserveId);
   }
 
   /// @inheritdoc ISpoke
   function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
     _getReserve(reserveId);
-    return _positionStatus[user].isBorrowing(reserveId);
+    return _positionStatus[user].map.isBorrowing(reserveId);
   }
 
   /// @inheritdoc ISpokeBase
@@ -679,16 +679,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     address user,
     bool refreshConfig
   ) internal returns (UserAccountData memory accountData) {
-    PositionStatus storage positionStatus = _positionStatus[user];
-
+    uint256 map = _positionStatus[user].map;
     uint256 reserveId = _reserveCount;
-    KeyValueList.List memory collateralInfo = KeyValueList.init(
-      positionStatus.collateralCount(reserveId)
-    );
+    KeyValueList.List memory collateralInfo = KeyValueList.init(map.collateralCount(reserveId));
     bool borrowing;
     bool collateral;
     while (true) {
-      (reserveId, borrowing, collateral) = positionStatus.next(reserveId);
+      (reserveId, borrowing, collateral) = map.next(reserveId);
       if (reserveId == PositionStatusMap.NOT_FOUND) break;
 
       UserPosition storage userPosition = _userPositions[user][reserveId];
@@ -785,14 +782,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev Skips the refresh if the user risk premium remains zero.
   function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
-
+    uint256 map = positionStatus.map;
     if (newRiskPremium == 0 && !positionStatus.hasPositiveRiskPremium) {
       return;
     }
     positionStatus.hasPositiveRiskPremium = newRiskPremium > 0;
 
     uint256 reserveId = _reserveCount;
-    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
+    while ((reserveId = map.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
       UserPosition storage userPosition = _userPositions[user][reserveId];
       Reserve storage reserve = _reserves[reserveId];
       uint256 assetId = reserve.assetId;
@@ -827,9 +824,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev Deficit validation should already have occurred during liquidation.
   function _reportDeficit(address user) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
+    uint256 map = positionStatus.map;
     uint256 reserveId = _reserveCount;
 
-    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
+    while ((reserveId = map.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
       UserPosition storage userPosition = _userPositions[user][reserveId];
       Reserve storage reserve = _reserves[reserveId];
       IHubBase hub = reserve.hub;
