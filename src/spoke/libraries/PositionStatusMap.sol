@@ -51,16 +51,6 @@ library PositionStatusMap {
     }
   }
 
-  /// @notice Returns if a user is using the specified reserve for borrowing or as collateral.
-  function isUsingAsCollateralOrBorrowing(
-    uint256 map,
-    uint256 reserveId
-  ) internal pure returns (bool) {
-    unchecked {
-      return (map >> ((reserveId % 128) << 1)) & 3 != 0;
-    }
-  }
-
   /// @notice Returns if a user is using the specified reserve for borrowing.
   function isBorrowing(uint256 map, uint256 reserveId) internal pure returns (bool) {
     unchecked {
@@ -98,7 +88,7 @@ library PositionStatusMap {
         return (NOT_FOUND, false, false);
       } else {
         uint256 word = map >> ((setBitId >> 1) << 1);
-        return (setBitId.fromBitId(0), word & 1 != 0, word & 2 != 0);
+        return (setBitId.fromBitId(), word & 1 != 0, word & 2 != 0);
       }
     }
   }
@@ -112,35 +102,15 @@ library PositionStatusMap {
   function nextBorrowing(uint256 map, uint256 fromReserveId) internal pure returns (uint256) {
     unchecked {
       uint256 setBitId = map.isolateBorrowingUntil(fromReserveId).fls();
-      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(0);
-    }
-  }
-
-  /// @notice Finds the previous collateral reserve strictly before `fromReserveId`.
-  /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
-  /// @dev Returns `NOT_FOUND` if no collateral reserve exists before the bound.
-  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
-  /// @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
-  /// @return The previous collateral reserveId, or `NOT_FOUND` if none is found.
-  function nextCollateral(uint256 map, uint256 fromReserveId) internal pure returns (uint256) {
-    unchecked {
-      uint256 setBitId = map.isolateCollateralUntil(fromReserveId).fls();
-      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId(0);
-    }
-  }
-
-  /// @notice Converts a reserveId to its corresponding bucketId.
-  function bucketId(uint256 reserveId) internal pure returns (uint256 wordId) {
-    assembly ('memory-safe') {
-      wordId := shr(7, reserveId)
+      return setBitId == 256 ? NOT_FOUND : setBitId.fromBitId();
     }
   }
 
   /// @notice Converts a bit index to its corresponding reserve index in the bitmap.
   /// @dev BitId 0, 1 correspond to reserveId 0; BitId 2, 3 correspond to reserveId 1; etc.
-  function fromBitId(uint256 bitId, uint256 bucket) internal pure returns (uint256 reserveId) {
+  function fromBitId(uint256 bitId) internal pure returns (uint256 reserveId) {
     assembly ('memory-safe') {
-      reserveId := add(shr(1, bitId), shl(7, bucket))
+      reserveId := shr(1, bitId)
     }
   }
 
