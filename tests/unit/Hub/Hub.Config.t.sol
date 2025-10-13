@@ -28,6 +28,10 @@ contract HubConfigTest is HubBase {
     new Hub(address(0));
   }
 
+  function test_hub_max_riskPremium() public {
+    assertEq(Constants.MAX_ALLOWED_RISK_PREMIUM, hub1.MAX_ALLOWED_RISK_PREMIUM());
+  }
+
   function test_addSpoke_fuzz_revertsWith_AssetNotListed(
     uint256 assetId,
     IHub.SpokeConfig calldata spokeConfig

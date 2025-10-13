@@ -73,7 +73,10 @@ contract HubRefreshPremiumTest is HubBase {
     bool reverting;
     IHub.Asset memory asset = hub1.getAsset(assetId);
 
-    if ((asset.drawnShares).percentMulUp(1000_00) < asset.premiumShares + sharesDelta.toUint256()) {
+    if (
+      asset.drawnShares.percentMulUp(Constants.MAX_ALLOWED_RISK_PREMIUM) <
+      asset.premiumShares + sharesDelta.toUint256()
+    ) {
       reverting = true;
       vm.expectRevert(IHub.InvalidPremiumChange.selector);
     } else if (offsetDelta > sharesDelta) {

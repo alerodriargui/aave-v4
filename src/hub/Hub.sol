@@ -683,7 +683,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @dev Applies premium deltas on asset & spoke premium owed.
   /// @dev Checks premium does not increase by more than `premiumAmount`.
-  /// @dev Checks spoke premium shares do not exceed max collateral risk times drawn shares.
+  /// @dev Checks updated risk premium is within allowed limit.
   function _applyPremiumDelta(
     Asset storage asset,
     SpokeData storage spoke,
