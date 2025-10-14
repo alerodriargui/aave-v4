@@ -47,12 +47,14 @@ import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRat
 
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
+import {RiskFreeSpoke, IRiskFreeSpoke} from 'src/spoke/RiskFreeSpoke.sol';
 import {TreasurySpoke, ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
 import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
+import {RiskFreeSpokeInstance} from 'src/spoke/instances/RiskFreeSpokeInstance.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
@@ -129,11 +131,13 @@ abstract contract Base is Test {
   IAaveOracle internal oracle1;
   IAaveOracle internal oracle2;
   IAaveOracle internal oracle3;
+  IAaveOracle internal oracle4;
   IHub internal hub1;
   ITreasurySpoke internal treasurySpoke;
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
+  ISpoke internal spoke4;
   AssetInterestRateStrategy internal irStrategy;
   AccessManager internal accessManager;
 
@@ -280,6 +284,11 @@ abstract contract Base is Test {
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
+    (spoke4, oracle4) = _deployRiskFreeSpokeWithOracle(
+      ADMIN,
+      address(accessManager),
+      'RF Spoke (USD)'
+    );
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
     dai = new MockERC20();
     eth = new MockERC20();
@@ -291,10 +300,12 @@ abstract contract Base is Test {
     vm.label(address(spoke1), 'spoke1');
     vm.label(address(spoke2), 'spoke2');
     vm.label(address(spoke3), 'spoke3');
+    vm.label(address(spoke4), 'spoke4');
 
     setUpRoles(hub1, spoke1, accessManager);
     setUpRoles(hub1, spoke2, accessManager);
     setUpRoles(hub1, spoke3, accessManager);
+    setUpRoles(hub1, spoke4, accessManager);
   }
 
   function setUpRoles(IHub targetHub, ISpoke spoke, IAccessManager manager) internal virtual {
@@ -843,6 +854,105 @@ abstract contract Base is Test {
     hub1.addSpoke(usdxAssetId, address(spoke3), spokeConfig);
     hub1.addSpoke(wethAssetId, address(spoke3), spokeConfig);
     hub1.addSpoke(wbtcAssetId, address(spoke3), spokeConfig);
+
+    // Spoke 4 reserve configs
+    spokeInfo[spoke4].weth.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: 15_00
+    });
+    spokeInfo[spoke4].weth.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 80_00,
+      maxLiquidationBonus: 105_00,
+      liquidationFee: 10_00
+    });
+    spokeInfo[spoke4].wbtc.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: 15_00
+    });
+    spokeInfo[spoke4].wbtc.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 75_00,
+      maxLiquidationBonus: 103_00,
+      liquidationFee: 15_00
+    });
+    spokeInfo[spoke4].dai.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: 20_00
+    });
+    spokeInfo[spoke4].dai.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 102_00,
+      liquidationFee: 10_00
+    });
+    spokeInfo[spoke4].usdx.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: 50_00
+    });
+    spokeInfo[spoke4].usdx.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 101_00,
+      liquidationFee: 12_00
+    });
+    spokeInfo[spoke4].usdy.reserveConfig = ISpoke.ReserveConfig({
+      paused: false,
+      frozen: false,
+      borrowable: true,
+      collateralRisk: 50_00
+    });
+    spokeInfo[spoke4].usdy.dynReserveConfig = ISpoke.DynamicReserveConfig({
+      collateralFactor: 78_00,
+      maxLiquidationBonus: 101_50,
+      liquidationFee: 15_00
+    });
+
+    spokeInfo[spoke4].weth.reserveId = spoke4.addReserve(
+      address(hub1),
+      wethAssetId,
+      _deployMockPriceFeed(spoke4, 2000e8),
+      spokeInfo[spoke4].weth.reserveConfig,
+      spokeInfo[spoke4].weth.dynReserveConfig
+    );
+    spokeInfo[spoke4].wbtc.reserveId = spoke4.addReserve(
+      address(hub1),
+      wbtcAssetId,
+      _deployMockPriceFeed(spoke4, 50_000e8),
+      spokeInfo[spoke4].wbtc.reserveConfig,
+      spokeInfo[spoke4].wbtc.dynReserveConfig
+    );
+    spokeInfo[spoke4].dai.reserveId = spoke4.addReserve(
+      address(hub1),
+      daiAssetId,
+      _deployMockPriceFeed(spoke4, 1e8),
+      spokeInfo[spoke4].dai.reserveConfig,
+      spokeInfo[spoke4].dai.dynReserveConfig
+    );
+    spokeInfo[spoke4].usdx.reserveId = spoke4.addReserve(
+      address(hub1),
+      usdxAssetId,
+      _deployMockPriceFeed(spoke4, 1e8),
+      spokeInfo[spoke4].usdx.reserveConfig,
+      spokeInfo[spoke4].usdx.dynReserveConfig
+    );
+    spokeInfo[spoke4].usdy.reserveId = spoke4.addReserve(
+      address(hub1),
+      usdyAssetId,
+      _deployMockPriceFeed(spoke4, 1e8),
+      spokeInfo[spoke4].usdy.reserveConfig,
+      spokeInfo[spoke4].usdy.dynReserveConfig
+    );
+
+    hub1.addSpoke(wethAssetId, address(spoke4), spokeConfig);
+    hub1.addSpoke(wbtcAssetId, address(spoke4), spokeConfig);
+    hub1.addSpoke(daiAssetId, address(spoke4), spokeConfig);
+    hub1.addSpoke(usdxAssetId, address(spoke4), spokeConfig);
+    hub1.addSpoke(usdyAssetId, address(spoke4), spokeConfig);
 
     vm.stopPrank();
   }
@@ -2022,6 +2132,29 @@ abstract contract Base is Test {
         spokeImpl,
         proxyAdminOwner,
         abi.encodeCall(Spoke.initialize, (_accessManager))
+      )
+    );
+    assertEq(address(spoke), predictedSpoke, 'predictedSpoke');
+    assertEq(spoke.ORACLE(), address(oracle));
+    assertEq(oracle.SPOKE(), address(spoke));
+    return (spoke, oracle);
+  }
+
+  function _deployRiskFreeSpokeWithOracle(
+    address proxyAdminOwner,
+    address _accessManager,
+    string memory _oracleDesc
+  ) internal pausePrank returns (ISpoke, IAaveOracle) {
+    address deployer = makeAddr('deployer');
+    address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
+    IAaveOracle oracle = new AaveOracle(predictedSpoke, 8, _oracleDesc);
+    address spokeImpl = address(new RiskFreeSpokeInstance(address(oracle)));
+    ISpoke spoke = ISpoke(
+      _proxify(
+        deployer,
+        spokeImpl,
+        proxyAdminOwner,
+        abi.encodeCall(RiskFreeSpoke.initialize, (_accessManager))
       )
     );
     assertEq(address(spoke), predictedSpoke, 'predictedSpoke');

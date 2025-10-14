@@ -365,3 +365,15 @@ contract SpokeOperations_ZeroRiskPremium_Gas_Tests is SpokeOperations_Gas_Tests 
     _updateCollateralRisk(spoke, reserveId.wbtc, 0);
   }
 }
+
+/// forge-config: default.isolate = true
+contract RiskFreeSpokeOperations_ZeroRiskPremium_Gas_Tests is SpokeOperations_Gas_Tests {
+  function setUp() public override {
+    NAMESPACE = 'RiskFreeSpoke.Operations';
+    deployFixtures();
+    initEnvironment();
+    spoke = spoke4;
+    reserveId = _getReserveIds(spoke);
+    _seed();
+  }
+}

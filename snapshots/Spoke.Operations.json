@@ -3,7 +3,7 @@
   "borrow: second action, same reserve": "212677",
   "liquidationCall: full": "324435",
   "liquidationCall: partial": "348529",
-  "permitReserve + repay (multicall)": "268887",
+  "permitReserve + repay (multicall)": "268899",
   "permitReserve + supply (multicall)": "140866",
   "permitReserve + supply + enable collateral (multicall)": "176163",
   "repay: full": "146213",
