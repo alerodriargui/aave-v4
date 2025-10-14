@@ -5,6 +5,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubRefreshPremiumTest is HubBase {
   using SafeCast for *;
+  using PercentageMath for uint128;
   using MathUtils for uint256;
 
   struct PremiumDataLocal {
@@ -22,6 +23,10 @@ contract HubRefreshPremiumTest is HubBase {
   }
 
   function test_refreshPremium_emitsEvent() public {
+    vm.startPrank(address(spoke1));
+    hub1.add(daiAssetId, 10000e18, alice);
+    hub1.draw(daiAssetId, 5000e18, alice);
+
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, daiAssetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
 
@@ -33,7 +38,6 @@ contract HubRefreshPremiumTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHubBase.RefreshPremium(daiAssetId, address(spoke1), premiumDelta);
 
-    vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
 
     (, uint256 premiumAfter) = hub1.getAssetOwed(daiAssetId);
@@ -44,6 +48,7 @@ contract HubRefreshPremiumTest is HubBase {
     );
     assertLe(premiumAfter - premiumBefore, 2, 'premium should not increase by more than 2');
     assertBorrowRateSynced(hub1, daiAssetId, 'after refreshPremium');
+    vm.stopPrank();
   }
 
   /// @dev offsetDelta can't be more than sharesDelta or else underflow
@@ -66,8 +71,15 @@ contract HubRefreshPremiumTest is HubBase {
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
     (, uint256 premiumBefore) = hub1.getAssetOwed(daiAssetId);
     bool reverting;
+    IHub.Asset memory asset = hub1.getAsset(assetId);
 
-    if (offsetDelta > sharesDelta) {
+    if (
+      asset.drawnShares.percentMulUp(Constants.MAX_ALLOWED_RISK_PREMIUM) <
+      asset.premiumShares + sharesDelta.toUint256()
+    ) {
+      reverting = true;
+      vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    } else if (offsetDelta > sharesDelta) {
       reverting = true;
       vm.expectRevert(stdError.arithmeticError);
     } else if (sharesDelta - offsetDelta + realizedDelta > 2) {
@@ -233,7 +245,14 @@ contract HubRefreshPremiumTest is HubBase {
       realizedDelta: userAccruedPremium.toInt256()
     });
 
-    if (
+    uint256 expectedPremiumShares = premiumDelta.sharesDelta >= 0
+      ? asset.premiumShares + premiumDelta.sharesDelta.toUint256()
+      : asset.premiumShares - (-premiumDelta.sharesDelta).toUint256();
+
+    if (asset.drawnShares.percentMulUp(1000_00) < expectedPremiumShares) {
+      reverting = true;
+      vm.expectRevert(IHub.InvalidPremiumChange.selector);
+    } else if (
       premiumDelta.sharesDelta < 0 && -premiumDelta.sharesDelta > asset.premiumShares.toInt256()
     ) {
       reverting = true;

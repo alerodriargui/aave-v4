@@ -24,7 +24,7 @@ contract Hub is IHub, AccessManaged {
   using SafeCast for uint256;
   using WadRayMath for uint256;
   using SharesMath for uint256;
-  using PercentageMath for uint256;
+  using PercentageMath for uint128;
   using AssetLogic for Asset;
   using MathUtils for *;
 
@@ -36,6 +36,9 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   uint56 public constant MAX_ALLOWED_SPOKE_CAP = type(uint56).max;
+
+  /// @inheritdoc IHub
+  uint24 public constant MAX_ALLOWED_RISK_PREMIUM = 1000_00; // 1000.00%
 
   uint256 internal _assetCount;
   mapping(uint256 assetId => Asset) internal _assets;
@@ -678,8 +681,9 @@ contract Hub is IHub, AccessManaged {
     receiver.addedShares += shares.toUint128();
   }
 
-  /// @dev Applies premium deltas on asset & spoke premium owed, also checks premium
-  /// does not increase by more than `premiumAmount`.
+  /// @dev Applies premium deltas on asset & spoke premium owed.
+  /// @dev Checks premium does not increase by more than `premiumAmount`.
+  /// @dev Checks updated risk premium is within allowed limit.
   function _applyPremiumDelta(
     Asset storage asset,
     SpokeData storage spoke,
@@ -705,6 +709,10 @@ contract Hub is IHub, AccessManaged {
       spoke.realizedPremium,
       premium,
       premiumAmount
+    );
+    require(
+      spoke.premiumShares <= spoke.drawnShares.percentMulUp(MAX_ALLOWED_RISK_PREMIUM),
+      InvalidPremiumChange()
     );
   }
 

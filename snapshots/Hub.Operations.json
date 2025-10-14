@@ -4,11 +4,11 @@
   "eliminateDeficit: full": "57840",
   "eliminateDeficit: partial": "67416",
   "payFee": "73573",
-  "refreshPremium": "96823",
+  "refreshPremium": "69400",
   "remove: full": "74910",
   "remove: partial": "80157",
-  "reportDeficit": "118573",
-  "restore: full": "97289",
-  "restore: partial": "110719",
+  "reportDeficit": "118866",
+  "restore: full": "97582",
+  "restore: partial": "111012",
   "transferShares": "79097"
 }
