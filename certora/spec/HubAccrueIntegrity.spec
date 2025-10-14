@@ -144,6 +144,7 @@ rule viewFunctionsIntegrity(uint256 assetId, method f) filtered { f-> f.isView &
                                 f.selector != sig:toAssetsUp(uint256,uint256,uint256).selector &&
                                 f.selector != sig:getAssetSuppliedAmountUp(uint256).selector &&
                                 f.selector != sig:unrealizedFeeShares(uint256 ).selector &&
+                                f.selector != sig:MAX_ALLOWED_RISK_PREMIUM().selector &&
                                 f.selector != sig:MAX_ALLOWED_UNDERLYING_DECIMALS().selector &&
                                 f.selector != sig:MAX_ALLOWED_SPOKE_CAP().selector &&
                                 f.selector != sig:getAssetUnderlyingAndDecimals(uint256).selector 
