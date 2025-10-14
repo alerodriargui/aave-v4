@@ -553,6 +553,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return _positionStatus[user].isBorrowing(reserveId);
   }
 
+  function typeAndVersion() external pure returns (string memory) {
+    return 'Spoke v1.0.0';
+  }
+
   /// @inheritdoc ISpokeBase
   function getUserSuppliedAssets(uint256 reserveId, address user) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);

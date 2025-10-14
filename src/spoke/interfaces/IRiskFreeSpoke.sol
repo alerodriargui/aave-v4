@@ -351,7 +351,7 @@ interface IRiskFreeSpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged
   /// @notice Returns the reserve struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @param reserveId The identifier of the reserve.
-  function getReserve(uint256 reserveId) external view returns (Reserve memory);
+  function getReserve(uint256 reserveId) external view returns (ISpoke.Reserve memory);
 
   /// @notice Returns the reserve configuration struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.

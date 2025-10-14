@@ -1,0 +1,93 @@
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
+pragma solidity ^0.8.0;
+
+import {RiskFreeSpoke, ISpoke, IHubBase, SafeCast, PositionStatusMap} from 'src/spoke/RiskFreeSpoke.sol';
+import {Test} from 'forge-std/Test.sol';
+
+/// @dev inherit from Test to exclude contract from forge size check
+contract MockRiskFreeSpoke is RiskFreeSpoke, Test {
+  using SafeCast for *;
+  using PositionStatusMap for *;
+
+  // Data structure to mock the user account data
+  struct AccountDataInfo {
+    uint256[] collateralReserveIds;
+    uint256[] collateralAmounts;
+    uint256[] collateralDynamicConfigKeys;
+    uint256[] suppliedAssetsReserveIds;
+    uint256[] suppliedAssetsAmounts;
+    uint256[] debtReserveIds;
+    uint256[] drawnDebtAmounts;
+    uint256[] realizedPremiumAmounts;
+    uint256[] accruedPremiumAmounts;
+  }
+
+  constructor(address oracle_) RiskFreeSpoke(oracle_) {}
+
+  function initialize(address) external override {}
+
+  // same as spoke's borrow, but without health factor check
+  function borrowWithoutHfCheck(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) {
+    Reserve storage reserve = _reserves[reserveId];
+    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    ISpoke.PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
+    uint256 assetId = reserve.assetId;
+    IHubBase hub = reserve.hub;
+
+    uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
+
+    userPosition.drawnShares += drawnShares.toUint128();
+    positionStatus.setBorrowing(reserveId, true);
+
+    _calculateAndRefreshUserAccountData(onBehalfOf);
+
+    emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares);
+  }
+
+  // Mock the user account data
+  function mockStorage(address user, AccountDataInfo memory info) external {
+    ISpoke.PositionStatus storage positionStatus = _positionStatus[user];
+    for (uint256 i = 0; i < info.collateralReserveIds.length; i++) {
+      positionStatus.setUsingAsCollateral(info.collateralReserveIds[i], true);
+      Reserve storage reserve = _reserves[info.collateralReserveIds[i]];
+      _userPositions[user][info.collateralReserveIds[i]].suppliedShares = reserve
+        .hub
+        .previewAddByAssets(reserve.assetId, info.collateralAmounts[i])
+        .toUint128();
+
+      _userPositions[user][info.collateralReserveIds[i]].configKey = info
+        .collateralDynamicConfigKeys[i]
+        .toUint16();
+    }
+
+    for (uint256 i = 0; i < info.suppliedAssetsReserveIds.length; i++) {
+      Reserve storage reserve = _reserves[info.suppliedAssetsReserveIds[i]];
+      _userPositions[user][info.suppliedAssetsReserveIds[i]].suppliedShares = reserve
+        .hub
+        .previewAddByAssets(reserve.assetId, info.suppliedAssetsAmounts[i])
+        .toUint128();
+    }
+
+    for (uint256 i = 0; i < info.debtReserveIds.length; i++) {
+      positionStatus.setBorrowing(info.debtReserveIds[i], true);
+      Reserve storage reserve = _reserves[info.debtReserveIds[i]];
+      _userPositions[user][info.debtReserveIds[i]].drawnShares = reserve
+        .hub
+        .previewDrawByAssets(reserve.assetId, info.drawnDebtAmounts[i])
+        .toUint128();
+    }
+  }
+
+  // Exposes spoke's calculateAndPotentiallyRefreshUserAccountData
+  function calculateAndPotentiallyRefreshUserAccountData(
+    address user,
+    bool refreshConfig
+  ) external returns (UserAccountData memory) {
+    return _calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig);
+  }
+}

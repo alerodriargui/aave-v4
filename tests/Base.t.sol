@@ -75,6 +75,7 @@ import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 import {NoncesKeyedMock} from 'tests/mocks/NoncesKeyedMock.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
+import {MockRiskFreeSpoke} from 'tests/mocks/MockRiskFreeSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 

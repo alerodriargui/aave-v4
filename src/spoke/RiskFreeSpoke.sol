@@ -474,8 +474,20 @@ abstract contract RiskFreeSpoke is
   }
 
   /// @inheritdoc IRiskFreeSpoke
-  function getReserve(uint256 reserveId) external view returns (Reserve memory) {
-    return _getReserve(reserveId);
+  function getReserve(uint256 reserveId) external view returns (ISpoke.Reserve memory) {
+    Reserve storage reserve = _getReserve(reserveId);
+    return
+      ISpoke.Reserve({
+        underlying: reserve.underlying,
+        hub: reserve.hub,
+        assetId: reserve.assetId,
+        decimals: reserve.decimals,
+        dynamicConfigKey: reserve.dynamicConfigKey,
+        paused: reserve.paused,
+        frozen: reserve.frozen,
+        borrowable: reserve.borrowable,
+        collateralRisk: 0
+      });
   }
 
   /// @inheritdoc IRiskFreeSpoke
@@ -517,6 +529,10 @@ abstract contract RiskFreeSpoke is
   function isBorrowing(uint256 reserveId, address user) external view returns (bool) {
     _getReserve(reserveId);
     return _positionStatus[user].isBorrowing(reserveId);
+  }
+
+  function typeAndVersion() external pure returns (string memory) {
+    return 'RiskFreeSpoke v1.0.0';
   }
 
   /// @inheritdoc ISpokeBase

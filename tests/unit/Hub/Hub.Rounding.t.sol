@@ -52,3 +52,49 @@ contract HubRoundingTest is HubBase {
     }
   }
 }
+
+contract HubRoundingPrecisionSymTest is Test {
+  using WadRayMath for *;
+  using MathUtils for *;
+
+  IHub public hub;
+
+  function setUp() public {
+    hub = new Hub(makeAddr('authority'));
+  }
+
+  function test_previewRemoveByShares(bytes32) public {
+    vm.setArbitraryStorage(address(hub));
+    uint256 assetId = vm.randomUint();
+
+    // uint256 blockTimestamp = vm.randomUint(32);
+    // vm.warp(blockTimestamp);
+    // vm.assume(hub.getAsset(assetId).lastUpdateTimestamp <= blockTimestamp);
+    IHub.Asset memory asset = hub.getAsset(assetId);
+    vm.warp(asset.lastUpdateTimestamp);
+    vm.assume(asset.liquidity <= type(uint96).max);
+    vm.assume(asset.swept <= type(uint96).max);
+    vm.assume(asset.deficit <= type(uint96).max);
+    vm.assume(asset.premiumShares <= type(uint96).max);
+    vm.assume(asset.premiumShares.rayMulUp(asset.drawnIndex) >= asset.premiumOffset);
+    vm.assume(hub.getAddedAssets(assetId) >= hub.getAddedShares(assetId));
+
+    uint256 shares = vm.randomUint(128);
+    vm.assume(shares > 0);
+
+    assertNotEq(hub.previewRemoveByShares(assetId, shares), 0);
+  }
+
+  function test_previewRemoveByShares2(bytes32) public view {
+    uint256 totalAssets = vm.randomUint(128);
+    uint256 totalShares = vm.randomUint(128);
+
+    vm.assume(totalAssets >= totalShares);
+
+    uint256 shares = vm.randomUint(128);
+    vm.assume(shares > 0);
+
+    uint256 assets = shares.mulDivDown(totalAssets + 1e6, totalShares + 1e6);
+    assertNotEq(assets, 0);
+  }
+}

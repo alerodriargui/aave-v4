@@ -1013,6 +1013,7 @@ contract SpokeBase is Base {
   ) internal returns (uint256, uint256) {
     uint256 requiredDebtAmount = _getRequiredDebtAmountForHf(spoke, user, reserveId, desiredHf);
     require(requiredDebtAmount <= MAX_SUPPLY_AMOUNT, 'required debt amount too high');
+    console.log('requiredDebtAmount', requiredDebtAmount);
 
     _borrowWithoutHfCheck(spoke, user, reserveId, requiredDebtAmount);
 
@@ -1046,6 +1047,15 @@ contract SpokeBase is Base {
 
     vm.prank(_getProxyAdminAddress(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
+  }
+
+  function _deployMockSpoke(ISpoke spoke) internal returns (address) {
+    string memory typeAndVersion = spoke.typeAndVersion();
+    if (keccak256(bytes(typeAndVersion)) == keccak256(bytes('Spoke v1.0.0')))
+      return address(new MockSpoke(spoke.ORACLE()));
+    else if (keccak256(bytes(typeAndVersion)) == keccak256(bytes('MockSpoke v1.0.0')))
+      return address(new MockRiskFreeSpoke(spoke.ORACLE()));
+    revert('_deployMockSpoke: unsupported spoke');
   }
 
   function _getReserveIds(ISpoke spoke) internal view returns (ReserveIds memory) {
