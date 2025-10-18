@@ -9,7 +9,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
     super.setUp();
 
     // Add a bunch of new reserves and assets to hub1 and spoke1
-    _addNewAssetsAndReserves(2000);
+    _addNewAssetsAndReserves(3000);
   }
 
   function test_oog() public {
@@ -23,7 +23,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
       skip(1 days); // Ensure interest accrual
 
       vm.prank(alice);
-      spoke1.borrow(i, 600e18, alice);
+      spoke1.borrow(i, 500e18, alice);
 
       console.log('Alice could borrow using', i + 1, 'collaterals');
     }
