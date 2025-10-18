@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeGettersTest is SpokeBase {
+contract SpokeInvestigateOogTest is SpokeBase {
   function setUp() public override {
     super.setUp();
 
