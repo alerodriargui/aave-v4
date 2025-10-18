@@ -21,6 +21,40 @@ library AssetLogic {
   using MathUtils for uint256;
   using SafeCast for uint256;
 
+  struct AssetCache {
+    uint256 totalAssets;
+    uint256 totalShares;
+    uint256 drawnIndex;
+    uint256 liquidity;
+    uint256 swept;
+    uint256 deficit;
+    uint256 addedShares;
+    uint256 premiumShares;
+    uint256 premiumOffset;
+    uint256 drawnShares;
+    uint256 realizedPremium;
+  }
+
+  function clone(IHub.Asset storage asset) internal view returns (AssetCache memory cache) {
+    cache.drawnIndex = asset.getDrawnIndex(); // can be split since it reads index, rate, time, {drawn,premium}Shares
+    cache.liquidity = asset.liquidity;
+    cache.addedShares = asset.addedShares;
+    cache.deficit = asset.deficit;
+    cache.swept = asset.swept;
+    cache.premiumShares = asset.premiumShares;
+    cache.premiumOffset = asset.premiumOffset;
+    cache.drawnShares = asset.drawnShares;
+    cache.realizedPremium = asset.realizedPremium;
+
+    uint256 owed = cache.premiumShares.rayMulUp(cache.drawnIndex) - cache.premiumOffset;
+    owed += cache.realizedPremium;
+    owed += cache.drawnShares.rayMulUp(cache.drawnIndex);
+    cache.totalAssets = cache.liquidity + cache.swept + cache.deficit + owed;
+    cache.totalShares = cache.addedShares; // ! todo: add fee shares
+
+    return cache;
+  }
+
   /// @notice Converts an amount of shares to the equivalent amount of drawn assets, rounding up.
   function toDrawnAssetsUp(
     IHub.Asset storage asset,
@@ -51,6 +85,38 @@ library AssetLogic {
     uint256 assets
   ) internal view returns (uint256) {
     return assets.rayDivDown(asset.getDrawnIndex());
+  }
+
+  /// @notice Converts an amount of shares to the equivalent amount of drawn assets, rounding up.
+  function toDrawnAssetsUp(
+    AssetCache memory cache,
+    uint256 shares
+  ) internal view returns (uint256) {
+    return shares.rayMulUp(cache.drawnIndex);
+  }
+
+  /// @notice Converts an amount of shares to the equivalent amount of drawn assets, rounding down.
+  function toDrawnAssetsDown(
+    AssetCache memory cache,
+    uint256 shares
+  ) internal view returns (uint256) {
+    return shares.rayMulDown(cache.drawnIndex);
+  }
+
+  /// @notice Converts an amount of drawn assets to the equivalent amount of shares, rounding up.
+  function toDrawnSharesUp(
+    AssetCache memory cache,
+    uint256 assets
+  ) internal view returns (uint256) {
+    return assets.rayDivUp(cache.drawnIndex);
+  }
+
+  /// @notice Converts an amount of drawn assets to the equivalent amount of shares, rounding down.
+  function toDrawnSharesDown(
+    AssetCache memory cache,
+    uint256 assets
+  ) internal view returns (uint256) {
+    return assets.rayDivDown(cache.drawnIndex);
   }
 
   /// @notice Returns the total drawn assets amount for the specified asset.
@@ -112,25 +178,62 @@ library AssetLogic {
     return assets.toSharesDown(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
+  /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
+  function toAddedAssetsUp(
+    AssetCache memory cache,
+    uint256 shares
+  ) internal pure returns (uint256) {
+    return shares.toAssetsUp(cache.totalAssets, cache.totalShares);
+  }
+
+  /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding down.
+  function toAddedAssetsDown(
+    AssetCache memory cache,
+    uint256 shares
+  ) internal pure returns (uint256) {
+    return shares.toAssetsDown(cache.totalAssets, cache.totalShares);
+  }
+
+  /// @notice Converts an amount of added assets to the equivalent amount of shares, rounding up.
+  function toAddedSharesUp(
+    AssetCache memory cache,
+    uint256 assets
+  ) internal pure returns (uint256) {
+    return assets.toSharesUp(cache.totalAssets, cache.totalShares);
+  }
+
+  /// @notice Converts an amount of added assets to the equivalent amount of shares, rounding down.
+  function toAddedSharesDown(
+    AssetCache memory cache,
+    uint256 assets
+  ) internal pure returns (uint256) {
+    return assets.toSharesDown(cache.totalAssets, cache.totalShares);
+  }
+
   /// @notice Updates the drawn rate of a specified asset.
   /// @dev Premium debt is not used in the interest rate calculation.
-  function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
+  function updateDrawnRate(
+    IHub.Asset storage asset,
+    AssetCache memory cache,
+    uint256 assetId
+  ) internal {
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
-      liquidity: asset.liquidity,
-      drawn: asset.drawn(),
-      deficit: asset.deficit,
-      swept: asset.swept
+      liquidity: cache.liquidity,
+      drawn: cache.drawnShares.rayMulUp(cache.drawnIndex),
+      deficit: cache.deficit,
+      swept: cache.swept
     });
     asset.drawnRate = newDrawnRate.toUint96();
 
     // asset accrual should have already occurred
-    emit IHub.UpdateAsset(assetId, asset.drawnIndex, newDrawnRate);
+    emit IHub.UpdateAsset(assetId, cache.drawnIndex, newDrawnRate);
   }
 
   /// @notice Accrues interest and fees for the specified asset.
   function accrue(
     IHub.Asset storage asset,
+    AssetCache memory cache,
     mapping(uint256 => mapping(address => IHub.SpokeData)) storage spokes,
     uint256 assetId
   ) internal {
@@ -138,17 +241,18 @@ library AssetLogic {
       return;
     }
 
-    uint256 newDrawnIndex = asset.getDrawnIndex();
+    uint256 newDrawnIndex = cache.drawnIndex;
     uint256 indexDelta = newDrawnIndex.uncheckedSub(asset.drawnIndex);
 
     asset.drawnIndex = newDrawnIndex.toUint128();
     asset.lastUpdateTimestamp = block.timestamp.toUint32();
 
-    uint128 feeShares = asset.getFeeShares(indexDelta).toUint128();
+    uint128 feeShares = asset.getFeeShares(cache, indexDelta).toUint128();
     if (feeShares > 0) {
       address feeReceiver = asset.feeReceiver;
-      asset.addedShares += feeShares;
+      asset.addedShares = (cache.addedShares + feeShares).toUint128();
       spokes[assetId][feeReceiver].addedShares += feeShares;
+      cache.totalShares += feeShares;
       emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
     }
   }
@@ -173,6 +277,7 @@ library AssetLogic {
   /// @param indexDelta The delta between the current and next drawn index.
   function getFeeShares(
     IHub.Asset storage asset,
+    AssetCache memory cache,
     uint256 indexDelta
   ) internal view returns (uint256) {
     if (indexDelta == 0) return 0;
@@ -180,14 +285,15 @@ library AssetLogic {
     if (liquidityFee == 0) return 0;
 
     // we do not simplify further to avoid overestimating the liquidity growth
-    uint256 feeAmount = (asset.drawnShares.rayMulDown(indexDelta) +
-      asset.premiumShares.rayMulDown(indexDelta)).percentMulDown(liquidityFee);
+    uint256 feeAmount = (cache.drawnShares.rayMulDown(indexDelta) +
+      cache.premiumShares.rayMulDown(indexDelta)).percentMulDown(liquidityFee);
 
-    return feeAmount.toSharesDown(asset.totalAddedAssets() - feeAmount, asset.addedShares);
+    return feeAmount.toSharesDown(cache.totalAssets - feeAmount, cache.addedShares);
   }
 
   /// @notice Calculates the amount of unrealized fee shares since last accrual.
   function unrealizedFeeShares(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.getFeeShares(asset.getDrawnIndex().uncheckedSub(asset.drawnIndex));
+    AssetCache memory cache = asset.clone();
+    return asset.getFeeShares(cache, cache.drawnIndex.uncheckedSub(asset.drawnIndex));
   }
 }
