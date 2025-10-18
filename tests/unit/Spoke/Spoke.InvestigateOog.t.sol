@@ -9,7 +9,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
     super.setUp();
 
     // Add a bunch of new reserves and assets to hub1 and spoke1
-    for (uint256 i = 0; i < 165; i++) {
+    for (uint256 i = 0; i < 164; i++) {
       MockERC20 newToken = new MockERC20();
       newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
       vm.prank(alice);
@@ -86,12 +86,11 @@ contract SpokeInvestigateOogTest is SpokeBase {
     // Supply x collaterals
     for (i = 0; i < spoke1.getReserveCount(); i++) {
       Utils.supplyCollateral(spoke1, i, alice, 1000e18, alice);
-      Utils.borrow(spoke1, i, alice, 500e18, alice);
 
       skip(1 days); // Ensure interest accrual
 
       vm.prank(alice);
-      spoke1.borrow(0, 1, alice);
+      spoke1.borrow(i, 500e18, alice);
 
       console.log('Alice could borrow using', i + 1, 'collaterals');
     }
