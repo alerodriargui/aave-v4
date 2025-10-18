@@ -9,7 +9,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
     super.setUp();
 
     // Add a bunch of new reserves and assets to hub1 and spoke1
-    _addNewAssetsAndReserves(164);
+    _addNewAssetsAndReserves(2000);
   }
 
   function test_oog() public {
@@ -23,14 +23,14 @@ contract SpokeInvestigateOogTest is SpokeBase {
       skip(1 days); // Ensure interest accrual
 
       vm.prank(alice);
-      spoke1.borrow(i, 500e18, alice);
+      spoke1.borrow(i, 600e18, alice);
 
       console.log('Alice could borrow using', i + 1, 'collaterals');
     }
 
     console.log('exited loop');
 
-    skip(10000 days);
+    skip(1000 days);
     // Alice can be liquidated
     assertLe(
       spoke1.getUserAccountData(alice).healthFactor,
