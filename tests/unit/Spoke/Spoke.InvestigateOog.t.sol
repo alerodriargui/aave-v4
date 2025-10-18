@@ -56,7 +56,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        collateralRisk: 15_00
+        collateralRisk: _randomBps()
       });
       ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
         collateralFactor: 80_00,
