@@ -32,6 +32,10 @@ contract SpokeInvestigateOogTest is SpokeBase {
 
     skip(10000 days);
     // Alice can be liquidated
+    assertLe(
+      spoke1.getUserAccountData(alice).healthFactor,
+      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
+    );
 
     console.log('Attempting liquidation with alice at ', i, ' collaterals');
     vm.prank(bob);
