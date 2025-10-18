@@ -9,7 +9,38 @@ contract SpokeInvestigateOogTest is SpokeBase {
     super.setUp();
 
     // Add a bunch of new reserves and assets to hub1 and spoke1
-    for (uint256 i = 0; i < 164; i++) {
+    _addNewAssetsAndReserves(164);
+  }
+
+  function test_oog() public {
+    console.log('made it out of setup');
+
+    uint256 i;
+    // Supply x collaterals
+    for (i = 0; i < spoke1.getReserveCount(); i++) {
+      Utils.supplyCollateral(spoke1, i, alice, 1000e18, alice);
+
+      skip(1 days); // Ensure interest accrual
+
+      vm.prank(alice);
+      spoke1.borrow(i, 500e18, alice);
+
+      console.log('Alice could borrow using', i + 1, 'collaterals');
+    }
+
+    console.log('exited loop');
+
+    skip(10000 days);
+    // Alice can be liquidated
+
+    console.log('Attempting liquidation with alice at ', i, ' collaterals');
+    vm.prank(bob);
+    spoke1.liquidationCall(0, 1, alice, 1, false);
+    console.log('Liquidation succeeded with alice at ', i, ' collaterals');
+  }
+
+  function _addNewAssetsAndReserves(uint256 count) internal {
+    for (uint256 i = 0; i < count; i++) {
       MockERC20 newToken = new MockERC20();
       newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
       vm.prank(alice);
@@ -77,32 +108,5 @@ contract SpokeInvestigateOogTest is SpokeBase {
       hub1.addSpoke(newTokenAssetId, address(spoke1), spokeConfig);
       vm.stopPrank();
     }
-  }
-
-  function test_oog() public {
-    console.log('made it out of setup');
-
-    uint256 i;
-    // Supply x collaterals
-    for (i = 0; i < spoke1.getReserveCount(); i++) {
-      Utils.supplyCollateral(spoke1, i, alice, 1000e18, alice);
-
-      skip(1 days); // Ensure interest accrual
-
-      vm.prank(alice);
-      spoke1.borrow(i, 500e18, alice);
-
-      console.log('Alice could borrow using', i + 1, 'collaterals');
-    }
-
-    console.log('exited loop');
-
-    skip(10000 days);
-    // Alice can be liquidated
-
-    console.log('Attempting liquidation with alice at ', i, ' collaterals');
-    vm.prank(bob);
-    spoke1.liquidationCall(0, 1, alice, 1, false);
-    console.log('Liquidation succeeded with alice at ', i, ' collaterals');
   }
 }
