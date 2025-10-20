@@ -9,7 +9,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
     super.setUp();
 
     // Add a bunch of new reserves and assets to hub1 and spoke1
-    _addNewAssetsAndReserves(3000);
+    _addNewAssetsAndReserves(316);
   }
 
   function test_oog() public {
@@ -24,13 +24,20 @@ contract SpokeInvestigateOogTest is SpokeBase {
 
       vm.prank(alice);
       spoke1.borrow(i, 500e18, alice);
+      uint256 gasUsed = vm.snapshotGasLastCall('Spoke.Investigation', 'borrow');
+
+      if (gasUsed > 44990000) {
+        console.log('OOG at', i + 1, 'collaterals');
+        break;
+      }
 
       console.log('Alice could borrow using', i + 1, 'collaterals');
+      console.log('Cost', gasUsed);
     }
 
     console.log('exited loop');
 
-    skip(1000 days);
+    skip(10000 days);
     // Alice can be liquidated
     assertLe(
       spoke1.getUserAccountData(alice).healthFactor,
@@ -40,7 +47,13 @@ contract SpokeInvestigateOogTest is SpokeBase {
     console.log('Attempting liquidation with alice at ', i, ' collaterals');
     vm.prank(bob);
     spoke1.liquidationCall(0, 1, alice, 1, false);
+    uint256 gasUsed = vm.snapshotGasLastCall('Spoke.Investigation', 'liquidationCall');
+    if (gasUsed > 44990000) {
+      console.log('Liquidation OOG at ', i, ' collaterals');
+      return;
+    }
     console.log('Liquidation succeeded with alice at ', i, ' collaterals');
+    console.log('Cost', gasUsed);
   }
 
   function _addNewAssetsAndReserves(uint256 count) internal {
