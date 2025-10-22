@@ -28,12 +28,12 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     uint256 supplyAmount,
     uint256 borrowAmount,
     uint256 partialWithdrawAmount,
-    uint40 elapsed
+    uint32 elapsed
   ) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
     partialWithdrawAmount = bound(partialWithdrawAmount, 1, supplyAmount - 1);
-    elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint40();
+    elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint32();
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -120,10 +120,10 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     addExRateBefore = getAddExRate(daiAssetId);
 
     // Withdraw all supplied assets
-    Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, type(uint256).max, bob);
+    Utils.withdraw(spoke1, _daiReserveId(spoke1), bob, UINT256_MAX, bob);
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, type(uint256).max);
+    withdrawLiquidityFees(daiAssetId, UINT256_MAX);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
 
@@ -198,6 +198,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     TestUserData[3] memory aliceData;
     TestUserData[3] memory bobData;
     TokenData[3] memory tokenData;
+    TestReturnValues[2] memory returnValues;
 
     state.stage = 0;
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
@@ -214,7 +215,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // withdraw all supplied
     vm.prank(alice);
-    spoke1.withdraw({
+    (returnValues[0].shares, returnValues[0].amount) = spoke1.withdraw({
       reserveId: params.reserveId,
       amount: aliceData[state.stage].suppliedAmount,
       onBehalfOf: alice
@@ -240,7 +241,7 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
 
     // bob withdraws all supplied
     vm.prank(bob);
-    spoke1.withdraw({
+    (returnValues[1].shares, returnValues[1].amount) = spoke1.withdraw({
       reserveId: params.reserveId,
       amount: bobData[state.stage].suppliedAmount,
       onBehalfOf: bob
@@ -249,13 +250,19 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     _checkSupplyRateIncreasing(addExRate, getAddExRate(state.assetId), 'after bob withdraw');
 
     // treasury spoke withdraw fees
-    withdrawLiquidityFees(state.assetId, type(uint256).max);
+    withdrawLiquidityFees(state.assetId, UINT256_MAX);
 
     state.stage = 2;
     reserveData[state.stage] = loadReserveInfo(spoke1, params.reserveId);
     aliceData[state.stage] = loadUserInfo(spoke1, params.reserveId, alice);
     bobData[state.stage] = loadUserInfo(spoke1, params.reserveId, bob);
     tokenData[state.stage] = getTokenBalances(state.underlying, address(spoke1));
+
+    assertEq(returnValues[0].amount, aliceData[0].suppliedAmount);
+    assertEq(returnValues[1].amount, bobData[1].suppliedAmount);
+
+    assertEq(returnValues[0].shares, aliceData[0].data.suppliedShares);
+    assertEq(returnValues[1].shares, bobData[1].data.suppliedShares);
 
     // reserve
     (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(
@@ -296,6 +303,50 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     );
   }
 
+  /// Put position underwater, and show can withdraw reserve not set as collateral
+  function test_withdraw_underwater_reserve_not_collateral() public {
+    // Supply 2 collaterals, one used to borrow, and one not set as collateral
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 wbtcReserveId = _wbtcReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
+
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: daiReserveId,
+      caller: bob,
+      amount: 10_000e18,
+      onBehalfOf: bob
+    });
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: wbtcReserveId,
+      caller: bob,
+      amount: 1e8,
+      onBehalfOf: bob
+    });
+
+    _openSupplyPosition(spoke1, wethReserveId, 2e18);
+
+    // Bob borrows weth
+    Utils.borrow({
+      spoke: spoke1,
+      reserveId: wethReserveId,
+      caller: bob,
+      amount: 2e18,
+      onBehalfOf: bob
+    });
+
+    skip(3560 days);
+
+    // Position is underwater
+    ISpoke.UserAccountData memory userData = spoke1.getUserAccountData(bob);
+    assertLt(userData.healthFactor, 1e18, 'hf below 1');
+
+    // Can still withdraw wbtc because not set as collateral
+    vm.prank(bob);
+    spoke1.withdraw(wbtcReserveId, UINT256_MAX, bob);
+  }
+
   /// Let protocol have some funds initially. User deposits, immediately withdraws, check delta on share amounts
   function test_withdraw_round_trip_deposit_withdraw(
     uint256 reserveId,
@@ -327,20 +378,26 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     underlying.approve(address(hub1), assets);
 
     // Supply and confirm share amount from event emission
-    uint256 shares1 = hub1.convertToAddedShares(reserve.assetId, assets);
+    TestReturnValues memory returnValues1;
+    uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares1);
     vm.prank(caller);
-    spoke1.supply(reserveId, assets, caller);
+    (returnValues1.shares, returnValues1.amount) = spoke1.supply(reserveId, assets, caller);
 
     // Withdraw and confirm share amount from event emission
-    uint256 shares2 = hub1.convertToAddedShares(reserve.assetId, assets);
+    TestReturnValues memory returnValues2;
+    uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares2);
     vm.prank(caller);
-    spoke1.withdraw(reserveId, assets, caller);
+    (returnValues2.shares, returnValues2.amount) = spoke1.withdraw(reserveId, assets, caller);
 
     assertEq(shares2, shares1, 'supplied and withdrawn shares');
+    assertEq(returnValues1.shares, shares1);
+    assertEq(returnValues1.amount, assets);
+    assertEq(returnValues2.shares, shares2);
+    assertEq(returnValues2.amount, assets);
   }
 
   /// Let protocol have some funds initially. Assume user has a nonzero balance to withdraw.
@@ -391,19 +448,25 @@ contract SpokeWithdrawScenarioTest is SpokeBase {
     });
 
     // Withdraw and confirm share amount from event emission
-    uint256 shares1 = hub1.convertToAddedShares(reserve.assetId, assets);
+    TestReturnValues memory returnValues1;
+    uint256 shares1 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(reserveId, caller, caller, shares1);
     vm.prank(caller);
-    spoke1.withdraw(reserveId, assets, caller);
+    (returnValues1.shares, returnValues1.amount) = spoke1.withdraw(reserveId, assets, caller);
 
     // Supply and confirm share amount from event emission
-    uint256 shares2 = hub1.convertToAddedShares(reserve.assetId, assets);
+    TestReturnValues memory returnValues2;
+    uint256 shares2 = hub1.previewAddByAssets(reserve.assetId, assets);
     vm.expectEmit(address(spoke1));
     emit ISpokeBase.Supply(reserveId, caller, caller, shares2);
     vm.prank(caller);
-    spoke1.supply(reserveId, assets, caller);
+    (returnValues2.shares, returnValues2.amount) = spoke1.supply(reserveId, assets, caller);
 
     assertEq(shares2, shares1, 'supplied and withdrawn shares');
+    assertEq(returnValues1.shares, shares1);
+    assertEq(returnValues1.amount, assets);
+    assertEq(returnValues2.shares, shares2);
+    assertEq(returnValues2.amount, assets);
   }
 }

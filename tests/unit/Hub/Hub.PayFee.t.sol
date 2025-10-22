@@ -8,17 +8,17 @@ contract HubPayFeeTest is HubBase {
   function test_payFee_revertsWith_InvalidShares() public {
     vm.expectRevert(IHub.InvalidShares.selector, address(hub1));
     vm.prank(address(spoke1));
-    hub1.payFee(daiAssetId, 0);
+    hub1.payFeeShares(daiAssetId, 0);
   }
 
   function test_payFee_revertsWith_SpokeNotActive() public {
     updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
     vm.prank(address(spoke1));
-    hub1.payFee(daiAssetId, 1);
+    hub1.payFeeShares(daiAssetId, 1);
   }
 
-  function test_payFee_revertsWith_AddedSharesExceeded() public {
+  function test_payFee_revertsWith_underflow_added_shares_exceeded() public {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub1,
@@ -31,15 +31,12 @@ contract HubPayFeeTest is HubBase {
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
     uint256 feeAmount = hub1.getSpokeAddedAssets(daiAssetId, address(spoke1));
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares),
-      address(hub1)
-    );
+    vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));
-    hub1.payFee(daiAssetId, feeShares + 1);
+    hub1.payFeeShares(daiAssetId, feeShares + 1);
   }
 
-  function test_payFee_revertsWith_AddedSharesExceeded_with_interest() public {
+  function test_payFee_revertsWith_underflow_added_shares_exceeded_with_interest() public {
     uint256 addAmount = 100e18;
     Utils.add({
       hub: hub1,
@@ -58,12 +55,9 @@ contract HubPayFeeTest is HubBase {
     // supply ex rate increases due to interest
     assertGt(feeAmount, feeShares);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(IHub.AddedSharesExceeded.selector, feeShares),
-      address(hub1)
-    );
+    vm.expectRevert(stdError.arithmeticError);
     vm.prank(address(spoke1));
-    hub1.payFee(daiAssetId, feeShares + 1);
+    hub1.payFeeShares(daiAssetId, feeShares + 1);
   }
 
   function test_payFee_fuzz(uint256 addAmount, uint256 feeShares) public {
@@ -92,7 +86,7 @@ contract HubPayFeeTest is HubBase {
     uint256 spokeSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
 
     // supply ex rate increases due to interest
-    assertGe(hub1.convertToAddedAssets(daiAssetId, WadRayMath.RAY), WadRayMath.RAY);
+    assertGe(hub1.previewRemoveByShares(daiAssetId, WadRayMath.RAY), WadRayMath.RAY);
 
     feeShares = bound(feeShares, 1, spokeSharesBefore);
 
@@ -104,13 +98,13 @@ contract HubPayFeeTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHubBase.TransferShares(
       daiAssetId,
-      feeShares,
       address(spoke1),
-      _getFeeReceiver(hub1, daiAssetId)
+      _getFeeReceiver(hub1, daiAssetId),
+      feeShares
     );
 
     vm.prank(address(spoke1));
-    hub1.payFee(daiAssetId, feeShares);
+    hub1.payFeeShares(daiAssetId, feeShares);
 
     assertBorrowRateSynced(hub1, daiAssetId, 'payFee');
     uint256 spokeSharesAfter = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));

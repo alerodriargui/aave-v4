@@ -91,22 +91,26 @@ contract SpokeBorrowTest is SpokeBase {
       label: 'alice weth data before'
     });
 
+    uint256 expectedShares = hub1.previewRestoreByAssets(daiAssetId, state.daiBob.borrowAmount);
+
     // Bob draw all dai reserve liquidity
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(
-      state.daiReserveId,
-      bob,
-      bob,
-      hub1.convertToDrawnShares(daiAssetId, state.daiBob.borrowAmount)
-    );
+    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares);
     vm.prank(bob);
-    spoke1.borrow(state.daiReserveId, state.daiBob.borrowAmount, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.borrow(
+      state.daiReserveId,
+      state.daiBob.borrowAmount,
+      bob
+    );
 
     state.daiBob.userBalanceAfter = tokenList.dai.balanceOf(bob);
     state.wethBob.userBalanceAfter = tokenList.weth.balanceOf(bob);
     state.daiAlice.userBalanceAfter = tokenList.dai.balanceOf(alice);
     state.wethAlice.userBalanceAfter = tokenList.weth.balanceOf(alice);
 
+    assertEq(returnValues.shares, expectedShares);
+    assertEq(returnValues.amount, state.daiBob.borrowAmount);
     _assertUserPositionAndDebt({
       spoke: spoke1,
       reserveId: state.daiReserveId,
@@ -247,21 +251,26 @@ contract SpokeBorrowTest is SpokeBase {
       label: 'alice weth data before'
     });
 
+    uint256 expectedShares = hub1.previewRestoreByAssets(daiAssetId, state.daiBob.borrowAmount);
+
     // Bob draw dai
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(
-      state.daiReserveId,
-      bob,
-      bob,
-      hub1.convertToDrawnShares(daiAssetId, state.daiBob.borrowAmount)
-    );
+    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares);
     vm.prank(bob);
-    spoke1.borrow(state.daiReserveId, state.daiBob.borrowAmount, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.borrow(
+      state.daiReserveId,
+      state.daiBob.borrowAmount,
+      bob
+    );
 
     state.daiBob.userBalanceAfter = tokenList.dai.balanceOf(bob);
     state.wethBob.userBalanceAfter = tokenList.weth.balanceOf(bob);
     state.daiAlice.userBalanceAfter = tokenList.dai.balanceOf(alice);
     state.wethAlice.userBalanceAfter = tokenList.weth.balanceOf(alice);
+
+    assertEq(returnValues.shares, expectedShares);
+    assertEq(returnValues.amount, state.daiBob.borrowAmount);
 
     // token balance
     assertEq(
