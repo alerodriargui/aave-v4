@@ -28,7 +28,7 @@ contract HubDrawTest is HubBase {
         (
           assetId,
           assetBefore.liquidity - assetBefore.swept - amount,
-          hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
+          hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
           assetBefore.deficit,
           assetBefore.swept
         )
@@ -42,7 +42,7 @@ contract HubDrawTest is HubBase {
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
-        drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
+        drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficit,
         swept: assetBefore.swept
       })
@@ -89,7 +89,7 @@ contract HubDrawTest is HubBase {
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 asset final balance');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 asset final balance');
     assertEq(
-      hub1.convertToDrawnShares(assetId, amount),
+      hub1.previewDrawByAssets(assetId, amount),
       hub1.previewRestoreByShares(assetId, amount)
     );
   }
@@ -112,7 +112,7 @@ contract HubDrawTest is HubBase {
         (
           assetId,
           assetBefore.liquidity - assetBefore.swept - amount,
-          hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
+          hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
           assetBefore.deficit,
           assetBefore.swept
         )
@@ -126,7 +126,7 @@ contract HubDrawTest is HubBase {
       IBasicInterestRateStrategy(irStrategy).calculateInterestRate({
         assetId: assetId,
         liquidity: assetBefore.liquidity - assetBefore.swept - amount,
-        drawn: hub1.convertToDrawnAssets(assetId, assetBefore.drawnShares + shares),
+        drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficit,
         swept: assetBefore.swept
       })
@@ -318,11 +318,11 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_fuzz_revertsWith_DrawCapExceeded_due_to_interest(
-    uint56 drawCap,
+    uint40 drawCap,
     uint256 rate,
     uint256 skipTime
   ) public {
-    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals() - 1;
     rate = bound(rate, 1, MAX_BORROW_RATE);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
@@ -364,7 +364,7 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_revertsWith_DrawCapExceeded_due_to_deficit() public {
-    uint56 drawCap = 100;
+    uint40 drawCap = 100;
     updateDrawCap(hub1, daiAssetId, address(spoke1), drawCap);
 
     uint256 amount = drawCap * 10 ** tokenList.dai.decimals();
@@ -396,7 +396,7 @@ contract HubDrawTest is HubBase {
 
   /// Tests that the draw cap is checked against spoke's debt, not the hub's debt
   function test_draw_DifferentSpokes() public {
-    uint56 drawCap = 100;
+    uint40 drawCap = 100;
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 drawAmount = daiAmount;
 
@@ -438,8 +438,8 @@ contract HubDrawTest is HubBase {
     hub1.draw({assetId: daiAssetId, amount: 1, to: bob});
   }
 
-  function test_draw_fuzz_revertsWith_DrawCapExceeded(uint56 drawCap) public {
-    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
+  function test_draw_fuzz_revertsWith_DrawCapExceeded(uint40 drawCap) public {
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 drawAmount = daiAmount + 1;
 

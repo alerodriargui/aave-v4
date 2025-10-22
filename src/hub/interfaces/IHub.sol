@@ -52,8 +52,9 @@ interface IHub is IHubBase, IAccessManaged {
     uint128 drawnShares;
     //
     uint128 addedShares;
-    uint56 addCap;
-    uint56 drawCap;
+    uint40 addCap;
+    uint40 drawCap;
+    uint24 riskPremiumCap;
     bool active;
     bool paused;
     //
@@ -61,10 +62,11 @@ interface IHub is IHubBase, IAccessManaged {
   }
 
   struct SpokeConfig {
+    uint40 addCap;
+    uint40 drawCap;
+    uint24 riskPremiumCap;
     bool active;
     bool paused;
-    uint56 addCap;
-    uint56 drawCap;
   }
 
   /// @notice Emitted when an asset is added.
@@ -133,14 +135,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown when the add cap is exceeded.
   /// @param addCap The current `addCap` of the asset.
   error AddCapExceeded(uint256 addCap);
-
-  /// @notice Thrown when the added amount is exceeded.
-  /// @param addedAmount The current removable asset balance.
-  error AddedAmountExceeded(uint256 addedAmount);
-
-  /// @notice Thrown when the added shares are exceeded.
-  /// @param addedShares The current removable shares balance.
-  error AddedSharesExceeded(uint256 addedShares);
 
   /// @notice Thrown when the liquidity is insufficient.
   /// @param liquidity The current available liquidity.
@@ -280,34 +274,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The number of listed assets.
   function getAssetCount() external view returns (uint256);
 
-  /// @notice Converts the given amount of supplied shares to assets amount for the specified asset.
-  /// @dev Rounds down to the nearest assets amount.
-  /// @param assetId The identifier of the asset.
-  /// @param shares The amount of supplied shares to convert to assets amount.
-  /// @return The amount of supplied assets converted from shares amount.
-  function convertToAddedAssets(uint256 assetId, uint256 shares) external view returns (uint256);
-
-  /// @notice Converts the given amount of supplied assets to shares amount for the specified asset.
-  /// @dev Rounds down to the nearest shares amount.
-  /// @param assetId The identifier of the asset.
-  /// @param assets The amount of supplied assets to convert to shares amount.
-  /// @return The amount of supplied shares converted from assets amount.
-  function convertToAddedShares(uint256 assetId, uint256 assets) external view returns (uint256);
-
-  /// @notice Converts the given amount of drawn shares to assets amount for the specified asset.
-  /// @dev Rounds up to the nearest assets amount.
-  /// @param assetId The identifier of the asset.
-  /// @param shares The amount of drawn shares to convert to assets amount.
-  /// @return The amount of drawn assets converted from shares amount.
-  function convertToDrawnAssets(uint256 assetId, uint256 shares) external view returns (uint256);
-
-  /// @notice Converts the specified amount of drawn assets to shares amount.
-  /// @dev Rounds up to the nearest shares amount.
-  /// @param assetId The identifier of the asset.
-  /// @param assets The amount of drawn assets to convert to shares amount.
-  /// @return The amount of drawn shares converted from assets amount.
-  function convertToDrawnShares(uint256 assetId, uint256 assets) external view returns (uint256);
-
   /// @notice Returns information regarding the specified asset.
   /// @dev `drawnIndex`, `drawnRate` and `lastUpdateTimestamp` can be outdated due to passage of time.
   /// @param assetId The identifier of the asset.
@@ -377,5 +343,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Returns the maximum value for any spoke cap (add or draw).
   /// @dev The value is not inclusive; using the maximum value indicates no cap.
   /// @return The maximum cap value, expressed in asset units.
-  function MAX_ALLOWED_SPOKE_CAP() external view returns (uint56);
+  function MAX_ALLOWED_SPOKE_CAP() external view returns (uint40);
+
+  function MAX_ALLOWED_RISK_PREMIUM_CAP() external view returns (uint24);
 }

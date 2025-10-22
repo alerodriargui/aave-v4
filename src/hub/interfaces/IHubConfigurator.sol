@@ -17,6 +17,7 @@ interface IHubConfigurator {
   /// @param hub The address of the Hub contract.
   /// @param underlying The address of the underlying asset.
   /// @param feeReceiver The address of the fee receiver spoke.
+  /// @param liquidityFee The liquidity fee of the asset, in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
@@ -24,6 +25,7 @@ interface IHubConfigurator {
     address hub,
     address underlying,
     address feeReceiver,
+    uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
   ) external returns (uint256);
@@ -35,6 +37,7 @@ interface IHubConfigurator {
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
   /// @param feeReceiver The address of the fee receiver spoke.
+  /// @param liquidityFee The liquidity fee of the asset, in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
@@ -43,6 +46,7 @@ interface IHubConfigurator {
     address underlying,
     uint8 decimals,
     address feeReceiver,
+    uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
   ) external returns (uint256);
@@ -173,18 +177,32 @@ interface IHubConfigurator {
     uint256 drawCap
   ) external;
 
+  /// @notice Updates the risk premium cap of an asset's spoke.
+  /// @param hub The address of the Hub contract.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the spoke.
+  /// @param riskPremiumCap The new risk premium cap.
+  function updateSpokeRiskPremiumCap(
+    address hub,
+    uint256 assetId,
+    address spoke,
+    uint256 riskPremiumCap
+  ) external;
+
   /// @notice Updates the caps of an asset's spoke.
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
   /// @param addCap The new supply cap.
   /// @param drawCap The new draw cap.
+  /// @param riskPremiumCap The new risk premium cap.
   function updateSpokeCaps(
     address hub,
     uint256 assetId,
     address spoke,
     uint256 addCap,
-    uint256 drawCap
+    uint256 drawCap,
+    uint256 riskPremiumCap
   ) external;
 
   /// @notice Deactivates all assets of a spoke on a specified hub by setting the active flag to false.

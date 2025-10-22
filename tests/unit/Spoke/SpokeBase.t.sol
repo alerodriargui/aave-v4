@@ -33,6 +33,11 @@ contract SpokeBase is Base {
     address borrower;
   }
 
+  struct TestReturnValues {
+    uint256 amount;
+    uint256 shares;
+  }
+
   struct DebtData {
     uint256 totalDebt;
     uint256 drawnDebt;
@@ -301,7 +306,7 @@ contract SpokeBase is Base {
     // index has increased, ie now the shares are less than the amount
     assertGt(
       borrow.supplyAmount,
-      hub1.convertToAddedShares(state.borrowReserveAssetId, borrow.supplyAmount)
+      hub1.previewAddByAssets(state.borrowReserveAssetId, borrow.supplyAmount)
     );
 
     return (
@@ -330,11 +335,11 @@ contract SpokeBase is Base {
     }
     (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
     (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
-    state.collateralSupplyShares = hub1.convertToAddedShares(
+    state.collateralSupplyShares = hub1.previewAddByAssets(
       state.collateralReserveAssetId,
       collateral.supplyAmount
     );
-    state.borrowSupplyShares = hub1.convertToAddedShares(
+    state.borrowSupplyShares = hub1.previewAddByAssets(
       state.borrowReserveAssetId,
       borrow.supplyAmount
     );
@@ -519,10 +524,10 @@ contract SpokeBase is Base {
     uint256 assetId,
     ISpoke.UserPosition memory userPos
   ) internal view returns (DebtData memory userDebt) {
-    uint256 accruedPremium = hub1.convertToDrawnAssets(assetId, userPos.premiumShares) -
+    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPos.premiumShares) -
       userPos.premiumOffset;
     userDebt.premiumDebt = userPos.realizedPremium + accruedPremium;
-    userDebt.drawnDebt = hub1.convertToDrawnAssets(assetId, userPos.drawnShares);
+    userDebt.drawnDebt = hub1.previewRestoreByShares(assetId, userPos.drawnShares);
     userDebt.totalDebt = userDebt.drawnDebt + userDebt.premiumDebt;
   }
 
@@ -612,9 +617,9 @@ contract SpokeBase is Base {
       .previewRestoreByAssets(assetId, debtAmount)
       .percentMulUp(userAccountData.riskPremium)
       .toUint128();
-    userPos.premiumOffset = hub1.convertToDrawnAssets(assetId, userPos.premiumShares).toUint128();
+    userPos.premiumOffset = hub1.previewRestoreByShares(assetId, userPos.premiumShares).toUint128();
     userPos.realizedPremium = expectedRealizedPremium.toUint128();
-    userPos.suppliedShares = hub1.convertToAddedShares(assetId, suppliedAmount).toUint128();
+    userPos.suppliedShares = hub1.previewAddByAssets(assetId, suppliedAmount).toUint128();
   }
 
   /// calculated expected realized premium
@@ -627,7 +632,7 @@ contract SpokeBase is Base {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     ISpoke.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
     return
-      (hub1.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset)
+      (hub1.previewRestoreByShares(assetId, userPos.premiumShares) - userPos.premiumOffset)
         .toUint128();
   }
 
@@ -677,13 +682,13 @@ contract SpokeBase is Base {
 
       assertEq(
         drawnDebt,
-        hub1.convertToDrawnAssets(assetId, userData.drawnShares),
+        hub1.previewRestoreByShares(assetId, userData.drawnShares),
         string.concat('user ', vm.toString(i), ' drawn debt ', label)
       );
       assertEq(
         premiumDebt,
         userData.realizedPremium +
-          hub1.convertToDrawnAssets(assetId, userData.premiumShares) -
+          hub1.previewRestoreByShares(assetId, userData.premiumShares) -
           userData.premiumOffset,
         string.concat('user ', vm.toString(i), ' premium debt ', label)
       );
@@ -827,7 +832,7 @@ contract SpokeBase is Base {
       (uint256 collateralRisk, uint256 reserveId) = reserveCollateralRisk.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      uint256 suppliedAssets = hub1.convertToAddedAssets(assetId, userPosition.suppliedShares);
+      uint256 suppliedAssets = hub1.previewRemoveByShares(assetId, userPosition.suppliedShares);
       uint256 supplyAmount = _getValue(spoke, reserveId, suppliedAssets);
 
       if (supplyAmount >= totalDebt) {

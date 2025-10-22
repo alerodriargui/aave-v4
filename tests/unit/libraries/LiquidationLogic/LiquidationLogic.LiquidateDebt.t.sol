@@ -17,6 +17,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   address internal liquidator;
   uint256 internal realizedPremium;
   address internal user;
+
   function setUp() public override {
     super.setUp();
 
@@ -40,7 +41,8 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
       active: true,
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.prank(HUB_ADMIN);
     hub.addSpoke(assetId, address(spoke), spokeConfig);
