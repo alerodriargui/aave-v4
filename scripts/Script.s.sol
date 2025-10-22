@@ -4,17 +4,21 @@ pragma solidity ^0.8.0;
 
 import {Script, stdJson, console2 as console} from 'forge-std/Script.sol';
 import {StdAssertions} from 'forge-std/StdAssertions.sol';
-import {Hub, IHub} from 'src/contracts/Hub.sol';
-import {Spoke, ISpoke} from 'src/contracts/Spoke.sol';
-import {TreasurySpoke} from 'src/contracts/TreasurySpoke.sol';
+import {Hub, IHub} from 'src/hub/Hub.sol';
+import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
+import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
+
+import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
-import {AaveOracle, IAaveOracle} from 'src/contracts/AaveOracle.sol';
+import {AaveOracle, IAaveOracle} from 'src/spoke/AaveOracle.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
-import {DataTypes} from 'src/libraries/types/DataTypes.sol';
-import {IAssetInterestRateStrategy} from 'src/interfaces/IAssetInterestRateStrategy.sol';
-import {AssetInterestRateStrategy} from 'src/contracts/AssetInterestRateStrategy.sol';
+import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {IERC20} from 'forge-std/interfaces/IERC20.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -375,7 +379,7 @@ contract Deploy is Script, StdAssertions {
     string hubKey;
     bool collateral;
     bool borrowable;
-    uint32 liquidationBonus;
+    uint32 maxLiquidationBonus;
     uint24 collateralRisk;
     uint16 collateralFactor;
     uint16 liquidationFee;
@@ -392,7 +396,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: true,
           borrowable: false,
-          liquidationBonus: 105_00,
+          maxLiquidationBonus: 105_00,
           collateralRisk: 0,
           collateralFactor: 85_00,
           liquidationFee: 10_00 //
@@ -402,7 +406,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: true,
           borrowable: false,
-          liquidationBonus: 107_50,
+          maxLiquidationBonus: 107_50,
           collateralRisk: 4_50,
           collateralFactor: 78_00,
           liquidationFee: 10_00
@@ -412,7 +416,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: true,
           borrowable: false,
-          liquidationBonus: 105_00,
+          maxLiquidationBonus: 105_00,
           collateralRisk: 5_00,
           collateralFactor: 78_00,
           liquidationFee: 10_00
@@ -422,7 +426,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: true,
           borrowable: true,
-          liquidationBonus: 100_00,
+          maxLiquidationBonus: 100_00,
           collateralRisk: 0,
           collateralFactor: 0,
           liquidationFee: 10_00
@@ -432,7 +436,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: true,
           borrowable: true,
-          liquidationBonus: 100_00,
+          maxLiquidationBonus: 100_00,
           collateralRisk: 0,
           collateralFactor: 0,
           liquidationFee: 10_00
@@ -442,7 +446,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: true,
           borrowable: true,
-          liquidationBonus: 100_00,
+          maxLiquidationBonus: 100_00,
           collateralRisk: 0,
           collateralFactor: 0,
           liquidationFee: 10_00
@@ -452,7 +456,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: true,
           borrowable: false,
-          liquidationBonus: 106_00,
+          maxLiquidationBonus: 106_00,
           collateralRisk: 3_00,
           collateralFactor: 83_00,
           liquidationFee: 10_00
@@ -471,7 +475,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: true,
           borrowable: true,
-          liquidationBonus: 100_00,
+          maxLiquidationBonus: 100_00,
           collateralRisk: 0,
           collateralFactor: 0, // why?
           liquidationFee: 10_00
@@ -481,7 +485,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: true,
           borrowable: false,
-          liquidationBonus: 106_00,
+          maxLiquidationBonus: 106_00,
           collateralRisk: 3_00,
           collateralFactor: 93_00,
           liquidationFee: 10_00
@@ -500,7 +504,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: ISO_GOV_HUB,
           collateral: true,
           borrowable: false,
-          liquidationBonus: 107_50,
+          maxLiquidationBonus: 107_50,
           collateralRisk: 20_00,
           collateralFactor: 76_00,
           liquidationFee: 10_00
@@ -510,7 +514,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: ISO_GOV_HUB,
           collateral: true,
           borrowable: false,
-          liquidationBonus: 105_00,
+          maxLiquidationBonus: 105_00,
           collateralRisk: 25_00,
           collateralFactor: 74_00,
           liquidationFee: 10_00
@@ -520,7 +524,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: ISO_GOV_HUB,
           collateral: true,
           borrowable: false,
-          liquidationBonus: 108_50,
+          maxLiquidationBonus: 108_50,
           collateralRisk: 30_00,
           collateralFactor: 70_00,
           liquidationFee: 10_00
@@ -530,7 +534,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: ISO_GOV_HUB,
           collateral: true,
           borrowable: true,
-          liquidationBonus: 100_00,
+          maxLiquidationBonus: 100_00,
           collateralRisk: 0,
           collateralFactor: 0,
           liquidationFee: 10_00
@@ -540,7 +544,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: ISO_GOV_HUB,
           collateral: true,
           borrowable: true,
-          liquidationBonus: 100_00,
+          maxLiquidationBonus: 100_00,
           collateralRisk: 10_00,
           collateralFactor: 80_00,
           liquidationFee: 10_00
@@ -550,7 +554,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: ISO_GOV_HUB,
           collateral: true,
           borrowable: true,
-          liquidationBonus: 100_00,
+          maxLiquidationBonus: 100_00,
           collateralRisk: 8_50,
           collateralFactor: 82_50,
           liquidationFee: 10_00
@@ -561,7 +565,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: false,
           borrowable: true,
-          liquidationBonus: 100_00,
+          maxLiquidationBonus: 100_00,
           collateralRisk: 0,
           collateralFactor: 0,
           liquidationFee: 10_00
@@ -571,7 +575,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: false,
           borrowable: true,
-          liquidationBonus: 100_00,
+          maxLiquidationBonus: 100_00,
           collateralRisk: 0,
           collateralFactor: 0,
           liquidationFee: 10_00
@@ -590,7 +594,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: ISO_STABLE_HUB,
           collateral: true,
           borrowable: true,
-          liquidationBonus: 100_00,
+          maxLiquidationBonus: 100_00,
           collateralRisk: 10_00, //
           collateralFactor: 95_00, //
           liquidationFee: 10_00
@@ -600,9 +604,9 @@ contract Deploy is Script, StdAssertions {
           hubKey: ISO_STABLE_HUB,
           collateral: true,
           borrowable: false,
-          liquidationBonus: 108_50,
+          maxLiquidationBonus: 108_50,
           collateralRisk: 8_00, //
-          collateralFactor: 95_00, //
+          collateralFactor: 75_00, //
           liquidationFee: 10_00
         }),
         // CORE
@@ -611,7 +615,7 @@ contract Deploy is Script, StdAssertions {
           hubKey: CORE_HUB,
           collateral: false,
           borrowable: true,
-          liquidationBonus: 100_00,
+          maxLiquidationBonus: 100_00,
           collateralRisk: 0,
           collateralFactor: 0,
           liquidationFee: 10_00
@@ -628,19 +632,19 @@ contract Deploy is Script, StdAssertions {
     console.log('token\t\t\t\t\t', conf.assetKey);
 
     Hub hub = _hub(conf.hubKey).hub;
-    Spoke spoke = _spoke(spokeKey);
+    ISpoke spoke = _spoke(spokeKey);
     Token storage t = _token(conf.assetKey);
     uint assetId = _assetId(hub, t.token);
 
-    DataTypes.ReserveConfig memory st = DataTypes.ReserveConfig({
+    ISpoke.ReserveConfig memory st = ISpoke.ReserveConfig({
       frozen: false,
       paused: false,
       borrowable: conf.borrowable,
       collateralRisk: conf.collateralRisk
     });
-    DataTypes.DynamicReserveConfig memory dyn = DataTypes.DynamicReserveConfig({
+    ISpoke.DynamicReserveConfig memory dyn = ISpoke.DynamicReserveConfig({
       collateralFactor: conf.collateralFactor.toUint16(),
-      liquidationBonus: conf.liquidationBonus,
+      maxLiquidationBonus: conf.maxLiquidationBonus,
       liquidationFee: conf.liquidationFee
     });
 
@@ -655,11 +659,11 @@ contract Deploy is Script, StdAssertions {
     console.log('paused\t\t\t\t', st.paused);
     console.log('borrowable\t\t\t\t', st.borrowable);
     console.log('collateralRisk\t\t\t', st.collateralRisk);
-    console.log('liquidationBonus\t\t\t', dyn.liquidationBonus);
+    console.log('maxLiquidationBonus\t\t\t', dyn.maxLiquidationBonus);
     console.log('liquidationFee\t\t\t', dyn.liquidationFee);
     console.log('collateralFactor\t\t\t', dyn.collateralFactor);
-    console.log('price feed\t\t\t\t', spoke.oracle().getReserveSource(reserveId));
-    console.log('price\t\t\t\t\t %e', spoke.oracle().getReservePrice(reserveId));
+    console.log('price feed\t\t\t\t', IAaveOracle(spoke.ORACLE()).getReserveSource(reserveId));
+    console.log('price\t\t\t\t\t %e', IAaveOracle(spoke.ORACLE()).getReservePrice(reserveId));
     console.log();
   }
 
@@ -686,9 +690,9 @@ contract Deploy is Script, StdAssertions {
     assertEq(abi.encode(hubConf.irStrategy.getInterestRateData(assetId)), abi.encode(conf.irData));
 
     {
-      DataTypes.AssetConfig memory assetConfig = hubConf.hub.getAssetConfig(assetId);
+      IHub.AssetConfig memory assetConfig = hubConf.hub.getAssetConfig(assetId);
       assetConfig.liquidityFee = conf.liquidityFee;
-      hubConf.hub.updateAssetConfig(assetId, assetConfig);
+      hubConf.hub.updateAssetConfig(assetId, assetConfig, new bytes(0));
       assetConfig = hubConf.hub.getAssetConfig(assetId);
       assertEq(assetConfig.liquidityFee, conf.liquidityFee);
       assertEq(assetConfig.feeReceiver, address(hubConf.treasury));
@@ -719,12 +723,12 @@ contract Deploy is Script, StdAssertions {
     console.log('spoke\t\t\t\t\t', conf.spokeKey);
     console.log('token\t\t\t\t\t', conf.assetKey);
     Hub hub = _hub(hubKey).hub;
-    Spoke spoke = _spoke(conf.spokeKey);
+    ISpoke spoke = _spoke(conf.spokeKey);
     address token = _token(conf.assetKey).token;
     uint assetId = _assetId(hub, token);
 
-    hub.addSpoke(assetId, address(spoke), DataTypes.SpokeConfig(true, conf.addCap, conf.drawCap));
-    DataTypes.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, address(spoke));
+    hub.addSpoke(assetId, address(spoke), IHub.SpokeConfig(true, conf.addCap, conf.drawCap));
+    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, address(spoke));
     assertEq(spokeConfig.addCap, conf.addCap);
     assertEq(spokeConfig.drawCap, conf.drawCap);
     assertTrue(spokeConfig.active);
@@ -741,7 +745,7 @@ contract Deploy is Script, StdAssertions {
   string internal constant ISO_STABLE_SPOKE = 'ISO_STABLE_SPOKE';
 
   struct SpokeGlobalConfig {
-    Spoke spoke;
+    ISpoke spoke;
   }
   mapping(string key => SpokeGlobalConfig spoke) internal spokes;
 
@@ -749,13 +753,28 @@ contract Deploy is Script, StdAssertions {
     string[4] memory keys = [CORE_SPOKE, E_MODE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
 
     for (uint i; i < keys.length; ++i) {
-      Spoke s = new Spoke(address(ACCESS_MANAGER));
-      s.updateOracle(address(new AaveOracle(address(s), 8, string.concat(keys[i], ' (USD)'))));
-      spokes[keys[i]] = SpokeGlobalConfig(s);
+      (, address deployer, ) = vm.readCallers();
+      address predictedOracle = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 2);
+      address spokeImpl = address(new SpokeInstance(predictedOracle));
+      ISpoke spoke = ISpoke(
+        address(
+          new TransparentUpgradeableProxy(
+            spokeImpl,
+            deployer,
+            abi.encodeCall(SpokeInstance.initialize, (address(ACCESS_MANAGER)))
+          )
+        )
+      );
+      IAaveOracle oracle = new AaveOracle(address(spoke), 8, string.concat(keys[i], ' (USD)'));
+      assertEq(address(oracle), predictedOracle, 'predictedOracle');
+      assertEq(spoke.ORACLE(), address(oracle));
+      assertEq(oracle.SPOKE(), address(spoke));
+
+      spokes[keys[i]] = SpokeGlobalConfig(spoke);
     }
   }
 
-  function _spoke(string memory key) internal view returns (Spoke) {
+  function _spoke(string memory key) internal view returns (ISpoke) {
     SpokeGlobalConfig storage ret = spokes[key];
     require(address(ret.spoke) != address(0), 'zero spoke');
     return ret.spoke;
@@ -769,16 +788,15 @@ contract Deploy is Script, StdAssertions {
 
     string[3] memory spokeKeys = [CORE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
     for (uint i; i < spokeKeys.length; ++i) {
-      Spoke spoke = _spoke(spokeKeys[i]);
+      ISpoke spoke = _spoke(spokeKeys[i]);
       {
-        bytes4[] memory selectors = new bytes4[](7);
-        selectors[0] = ISpoke.updateOracle.selector;
+        bytes4[] memory selectors = new bytes4[](6);
+        selectors[0] = ISpoke.updateUserRiskPremium.selector;
         selectors[1] = ISpoke.updateReservePriceSource.selector;
         selectors[2] = ISpoke.updateLiquidationConfig.selector;
         selectors[3] = ISpoke.addReserve.selector;
         selectors[4] = ISpoke.updateReserveConfig.selector;
         selectors[5] = ISpoke.updateDynamicReserveConfig.selector;
-        selectors[6] = ISpoke.updateUserRiskPremium.selector;
         ACCESS_MANAGER.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
       }
 
@@ -799,11 +817,18 @@ contract Deploy is Script, StdAssertions {
     {
       string[3] memory keys = [CORE_HUB, ISO_GOV_HUB, ISO_STABLE_HUB];
       string memory HUBS;
+      string memory IR_STRATEGIES;
       for (uint i; i < keys.length; ++i) {
         console.log(address(_hub(keys[i]).hub), keys[i]);
         HUBS = vm.serializeAddress('hub', keys[i], address(_hub(keys[i]).hub));
+        IR_STRATEGIES = vm.serializeAddress(
+          'irStrategy',
+          keys[i],
+          address(_hub(keys[i]).irStrategy)
+        );
       }
       vm.serializeString(root, 'hub', HUBS);
+      vm.serializeString(root, 'irStrategy', IR_STRATEGIES);
     }
 
     {
@@ -841,7 +866,7 @@ contract Deploy is Script, StdAssertions {
     {
       string[4] memory keys = [CORE_SPOKE, E_MODE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
       for (uint i; i < keys.length; ++i) {
-        spokes[keys[i]].spoke = Spoke(deploy.readAddress(string.concat('.spoke.', keys[i])));
+        spokes[keys[i]].spoke = ISpoke(deploy.readAddress(string.concat('.spoke.', keys[i])));
         console.log(address(_spoke(keys[i])), keys[i]);
       }
     }
@@ -882,7 +907,7 @@ contract Deploy is Script, StdAssertions {
     {
       string[4] memory keys = [CORE_SPOKE, E_MODE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
       for (uint i; i < keys.length; ++i) {
-        Spoke spoke = _spoke(keys[i]);
+        ISpoke spoke = _spoke(keys[i]);
         console.log(keys[i]);
         // _run(spoke, _supply);
         // _run(spoke, _withdraw);
@@ -894,17 +919,42 @@ contract Deploy is Script, StdAssertions {
     }
   }
 
-  function _run(Spoke spoke, function(Spoke, uint) internal _action) internal {
+  function periphery() public {
+    vm.startBroadcast();
+    (, address caller, ) = vm.readCallers();
+    load();
+    {
+      string[4] memory keys = [CORE_SPOKE, E_MODE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
+      for (uint i; i < keys.length; ++i) {
+        ISpoke spoke = _spoke(keys[i]);
+        console.log(keys[i]);
+        SignatureGateway signatureGateway = new SignatureGateway(address(spoke), caller);
+        NativeTokenGateway nativeTokenGateway = new NativeTokenGateway(
+          tokens[WETH].token,
+          address(spoke),
+          caller
+        );
+        spoke.updatePositionManager(address(signatureGateway), true);
+        spoke.updatePositionManager(address(nativeTokenGateway), true);
+        console.log('signatureGateway', address(signatureGateway));
+        console.log('nativeTokenGateway', address(nativeTokenGateway));
+        console.log();
+      }
+    }
+  }
+
+  function _run(ISpoke spoke, function(ISpoke, uint) internal _action) internal {
     uint reserveCount = spoke.getReserveCount();
     for (uint i; i < reserveCount; ++i) _action(spoke, i);
   }
 
-  function _supply(Spoke spoke, uint reserveId) internal {
+  function _supply(ISpoke spoke, uint reserveId) internal {
     (, address caller, ) = vm.readCallers();
-    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
-    if (reserve.hub.getSpokeConfig(reserve.assetId, address(spoke)).addCap == 0) return;
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
+    if (IHub(address(reserve.hub)).getSpokeConfig(reserve.assetId, address(spoke)).addCap == 0)
+      return;
 
-    TestnetERC20 token = TestnetERC20(reserve.hub.getAsset(reserve.assetId).underlying);
+    TestnetERC20 token = TestnetERC20(reserve.underlying);
     uint amount = _getAmount(bound(vm.randomUint(), 0.01e8, 100e8), spoke, reserveId, token);
     _mint(token, amount);
 
@@ -913,9 +963,9 @@ contract Deploy is Script, StdAssertions {
     spoke.setUsingAsCollateral(reserveId, true, caller);
   }
 
-  function _withdraw(Spoke spoke, uint reserveId) internal {
+  function _withdraw(ISpoke spoke, uint reserveId) internal {
     (, address caller, ) = vm.readCallers();
-    uint amount = bound(vm.randomUint(), 0, spoke.getUserSuppliedAmount(reserveId, caller));
+    uint amount = bound(vm.randomUint(), 0, spoke.getUserSuppliedAssets(reserveId, caller));
     if (amount != 0) spoke.withdraw(reserveId, amount, caller);
 
     if (spoke.isUsingAsCollateral(reserveId, caller)) {
@@ -924,22 +974,22 @@ contract Deploy is Script, StdAssertions {
     }
   }
 
-  function _borrow(Spoke spoke, uint reserveId) internal {
+  function _borrow(ISpoke spoke, uint reserveId) internal {
     if (!spoke.getReserveConfig(reserveId).borrowable) return;
-    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
 
     (, address caller, ) = vm.readCallers();
-    TestnetERC20 token = TestnetERC20(reserve.hub.getAsset(reserve.assetId).underlying);
+    TestnetERC20 token = TestnetERC20(reserve.underlying);
     uint amount = bound(vm.randomUint(), 2, 10 ** (token.decimals() - 3));
     if (amount != 0) spoke.borrow(reserveId, amount, caller);
   }
 
-  function _repay(Spoke spoke, uint reserveId) internal {
+  function _repay(ISpoke spoke, uint reserveId) internal {
     (, address caller, ) = vm.readCallers();
     uint amount = (spoke.getUserTotalDebt(reserveId, caller) * 3) / 5;
-    DataTypes.Reserve memory reserve = spoke.getReserve(reserveId);
+    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
 
-    TestnetERC20 token = TestnetERC20(reserve.hub.getAsset(reserve.assetId).underlying);
+    TestnetERC20 token = TestnetERC20(reserve.underlying);
     token.approve(address(reserve.hub), amount);
     _mint(token, amount);
 
@@ -948,11 +998,11 @@ contract Deploy is Script, StdAssertions {
 
   function _getAmount(
     uint targetPrice,
-    Spoke spoke,
+    ISpoke spoke,
     uint reserveId,
     TestnetERC20 token
   ) internal view returns (uint) {
-    uint currentPrice = spoke.oracle().getReservePrice(reserveId);
+    uint currentPrice = IAaveOracle(spoke.ORACLE()).getReservePrice(reserveId);
     return (targetPrice * (10 ** token.decimals())) / currentPrice;
   }
 
