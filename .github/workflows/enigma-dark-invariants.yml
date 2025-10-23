@@ -14,14 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  echidna:
-    name: Echidna Enigma Dark Invariants
+  setup:
+    name: Setup
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        mode: [property, assertion] # Define the modes here
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,7 +32,7 @@ jobs:
           owner: ${{ github.repository_owner }}
           repositories: aave-v4-invariants-corpus
 
-      - name: Clone the private repo into corpus folder
+      - name: Clone Corpus
         run: |
           git clone https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/Enigma-Dark/aave-v4-invariants-corpus.git corpus
 
@@ -46,9 +41,53 @@ jobs:
         with:
           version: nightly
 
-      - name: Compile contracts
+      - name: Build contracts
         run: |
           forge build tests/enigma-dark-invariants/Tester.t.sol --build-info
+
+      - name: Cache corpus
+        uses: actions/cache@v4
+        with:
+          path: corpus
+          key: corpus-${{ hashFiles('corpus/**') }}
+  
+      - name: Cache build artifacts
+        id: save-build
+        uses: actions/cache@v4
+        with:
+          path: |
+            out
+            cache
+          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml', 'tests/enigma-dark-invariants/**/*.sol') }}
+
+  echidna:
+    name: Echidna Enigma Dark Invariants (${{ matrix.mode }})
+    runs-on: ubuntu-latest
+    needs: setup
+
+    strategy:
+      matrix:
+        mode: [property, assertion]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Restore corpus
+        uses: actions/cache@v4
+        with:
+          path: corpus
+          key: corpus-${{ hashFiles('corpus/**') }}
+
+      - name: Restore build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            out
+            cache
+          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml', 'tests/enigma-dark-invariants/**/*.sol') }}
 
       - name: Run Echidna ${{ matrix.mode == 'property' && 'Property' || 'Assertion' }} Mode
         uses: crytic/echidna-action@v2
