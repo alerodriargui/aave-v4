@@ -1,4 +1,4 @@
-name: Echidna Enigma Dark Invariants
+name: Echidna-Invariants Enigma-Dark
 
 on:
   push:
@@ -75,7 +75,7 @@ jobs:
           key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml', 'tests/enigma-dark-invariants/**/*.sol') }}
 
   echidna:
-    name: Echidna Enigma Dark Invariants (${{ matrix.mode }})
+    name: Echidna-Invariants (${{ matrix.mode }}) Enigma-Dark
     runs-on: ubuntu-latest
     needs: setup
 
