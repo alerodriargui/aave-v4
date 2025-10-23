@@ -42,7 +42,7 @@ coverage: true
 coverageFormats: [ "html" ]
 
 #directory to save the corpus; by default is disabled
-corpusDir: "tests/enigma-dark-invariants/_corpus/echidna/default/_data/corpus"
+corpusDir: "corpus"
 # constants for corpus mutations (for experimentation only)
 #mutConsts: [100, 1, 1]
 

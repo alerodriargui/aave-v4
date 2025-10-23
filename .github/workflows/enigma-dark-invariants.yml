@@ -17,6 +17,8 @@ jobs:
   setup:
     name: Setup
     runs-on: ubuntu-latest
+    outputs:
+      corpus-sha: ${{ steps.clone-corpus.outputs.sha }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,25 +35,37 @@ jobs:
           repositories: aave-v4-invariants-corpus
 
       - name: Clone Corpus
+        id: clone-corpus
         run: |
           git clone https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/Enigma-Dark/aave-v4-invariants-corpus.git corpus
+          echo "sha=$(git -C corpus rev-parse HEAD)" >> $GITHUB_OUTPUT
+          
+      - name: Cache corpus
+        uses: actions/cache@v4
+        with:
+          path: corpus
+          key: corpus-${{ steps.clone-corpus.outputs.sha }}
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
 
-      - name: Build contracts
-        run: |
-          forge build tests/enigma-dark-invariants/Tester.t.sol --build-info
-
-      - name: Cache corpus
+      - name: Restore build cache
+        id: restore-build
         uses: actions/cache@v4
         with:
-          path: corpus
-          key: corpus-${{ hashFiles('corpus/**') }}
+          path: |
+            out
+            cache
+          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml', 'tests/enigma-dark-invariants/**/*.sol') }}
+
+      - name: Build contracts (skip if cache hit)
+        if: steps.restore-build.outputs.cache-hit != 'true'
+        run: forge build tests/enigma-dark-invariants/Tester.t.sol --build-info
   
       - name: Cache build artifacts
+        if: steps.restore-build.outputs.cache-hit != 'true'
         id: save-build
         uses: actions/cache@v4
         with:
@@ -79,7 +93,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: corpus
-          key: corpus-${{ hashFiles('corpus/**') }}
+          key: corpus-${{ needs.setup.outputs.corpus-sha }}
 
       - name: Restore build cache
         uses: actions/cache@v4
