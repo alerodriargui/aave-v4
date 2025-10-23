@@ -149,10 +149,10 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
 
     function assert_GPOST_HUB_B(address hubAddress, uint256 assetId) internal {
         assertFullMulGe(
-            defaultVarsBefore.assetVars[hubAddress][assetId].totalAssets,
-            defaultVarsBefore.assetVars[hubAddress][assetId].totalShares,
             defaultVarsAfter.assetVars[hubAddress][assetId].totalAssets,
             defaultVarsAfter.assetVars[hubAddress][assetId].totalShares,
+            defaultVarsBefore.assetVars[hubAddress][assetId].totalAssets,
+            defaultVarsBefore.assetVars[hubAddress][assetId].totalShares,
             GPOST_HUB_B
         );
     }
@@ -168,10 +168,10 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                 IAssetInterestRateStrategy(hubInfo[hubAddress].irStrategy)
                     .calculateInterestRate(
                         assetId,
-                        IHub(hubAddress).getLiquidity(assetId),
+                        IHub(hubAddress).getAssetLiquidity(assetId),
                         defaultVarsAfter.assetVars[hubAddress][assetId].drawn,
-                        IHub(hubAddress).getDeficit(assetId),
-                        IHub(hubAddress).getSwept(assetId)
+                        IHub(hubAddress).getAssetDeficit(assetId),
+                        IHub(hubAddress).getAssetSwept(assetId)
                     ),
                 GPOST_HUB_C
             );
@@ -184,7 +184,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
 
     function assert_GPOST_SP_A(address spoke, uint256 reserveId, address user) internal {
         ISpoke.UserPosition memory userPosition = ISpoke(spoke).getUserPosition(reserveId, user);
-        uint256 userRiskPremium = ISpoke(spoke).getUserAccountData(user).userRiskPremium;
+        uint256 userRiskPremium = ISpoke(spoke).getUserAccountData(user).riskPremium;
 
         uint256 expected = PercentageMath.percentMulUp(userPosition.drawnShares, userRiskPremium);
         assertEq(userPosition.premiumShares, expected, GPOST_SP_A);
@@ -203,7 +203,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
         // latest reserve key
         uint16 latestKey = ISpoke(spoke).getReserve(reserveId).dynamicConfigKey;
         // user-stored key
-        uint16 userKey = ISpoke(spoke).getUserPosition(reserveId, user).configKey;
+        uint16 userKey = ISpoke(spoke).getUserPosition(reserveId, user).dynamicConfigKey;
 
         if (
             msg.sig == ISpokeHandler.borrow.selector || msg.sig == ISpokeHandler.withdraw.selector

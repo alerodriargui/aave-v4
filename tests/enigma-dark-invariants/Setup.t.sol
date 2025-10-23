@@ -109,16 +109,23 @@ contract Setup is BaseTest {
         returns (ISpoke, IAaveOracle)
     {
         bytes32 salt = keccak256(abi.encodePacked(_oracleDesc));
-        address predictedOracle = CREATE3.predictDeterministicAddress(salt, admin);
-        address spokeImpl = address(new SpokeInstance(predictedOracle));
-
-        ISpoke spoke = ISpoke(_proxify(spokeImpl, proxyAdminOwner, abi.encodeCall(Spoke.initialize, (_accessManager))));
-        IAaveOracle oracle = IAaveOracle(
-            CREATE3.deployDeterministic(
-                abi.encodePacked(type(AaveOracle).creationCode, abi.encode(address(spoke), uint8(8), _oracleDesc)), salt
-            )
+        address predictedSpoke = CREATE3.predictDeterministicAddress(salt, admin);
+        
+        // Deploy oracle with predicted spoke address
+        IAaveOracle oracle = new AaveOracle(predictedSpoke, uint8(8), _oracleDesc);
+        
+        // Deploy spoke implementation with oracle address
+        address spokeImpl = address(new SpokeInstance(address(oracle)));
+        
+        // Deploy spoke proxy using CREATE3
+        bytes memory proxyCreationCode = abi.encodePacked(
+            type(TransparentUpgradeableProxy).creationCode,
+            abi.encode(spokeImpl, proxyAdminOwner, abi.encodeCall(Spoke.initialize, (_accessManager)))
         );
-        assertEq(address(oracle), predictedOracle, "predictedOracle mismatch");
+        address spokeProxy = CREATE3.deployDeterministic(proxyCreationCode, salt);
+        ISpoke spoke = ISpoke(spokeProxy);
+        
+        assertEq(address(spoke), predictedSpoke, "predictedSpoke mismatch");
         assertEq(spoke.ORACLE(), address(oracle), "spoke.ORACLE() mismatch");
         assertEq(oracle.SPOKE(), address(spoke), "oracle.SPOKE() mismatch");
 
@@ -365,32 +372,44 @@ contract Setup is BaseTest {
             hub1UsdcAssetId,
             address(spoke1),
             IHub.SpokeConfig({
-                active: true, addCap: Constants.MAX_ALLOWED_SPOKE_CAP, drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+                addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                active: true,
+                paused: false
             })
         );
         hub2.addSpoke(
             hub2UsdcAssetId,
             address(spoke1),
             IHub.SpokeConfig({
-                active: true,
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3,
-                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3
+                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3,
+                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                active: true,
+                paused: false
             })
         );
         hub1.addSpoke(
             hub1WethAssetId,
             address(spoke1),
             IHub.SpokeConfig({
-                active: true, addCap: Constants.MAX_ALLOWED_SPOKE_CAP, drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+                addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                active: true,
+                paused: false
             })
         );
         hub2.addSpoke(
             hub2WethAssetId,
             address(spoke1),
             IHub.SpokeConfig({
-                active: true,
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
-                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2
+                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
+                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                active: true,
+                paused: false
             })
         );
 
@@ -399,32 +418,44 @@ contract Setup is BaseTest {
             hub2WethAssetId,
             address(spoke2),
             IHub.SpokeConfig({
-                active: true, addCap: Constants.MAX_ALLOWED_SPOKE_CAP, drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+                addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                active: true,
+                paused: false
             })
         );
         hub1.addSpoke(
             hub1WethAssetId,
             address(spoke2),
             IHub.SpokeConfig({
-                active: true,
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
-                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2
+                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
+                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                active: true,
+                paused: false
             })
         );
         hub2.addSpoke(
             hub2UsdcAssetId,
             address(spoke2),
             IHub.SpokeConfig({
-                active: true, addCap: Constants.MAX_ALLOWED_SPOKE_CAP, drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+                addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                active: true,
+                paused: false
             })
         );
         hub1.addSpoke(
             hub1UsdcAssetId,
             address(spoke2),
             IHub.SpokeConfig({
-                active: true,
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3,
-                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3
+                drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3,
+                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                active: true,
+                paused: false
             })
         );
     }

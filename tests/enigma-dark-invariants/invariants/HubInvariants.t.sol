@@ -98,8 +98,8 @@ abstract contract HubInvariants is HandlerAggregator {
 
     function assert_INV_HUB_I(address hubAddress, uint256 assetId, address underlying) internal {
         // Query values
-        uint256 liquidity = IHub(hubAddress).getLiquidity(assetId);
-        uint256 swept = IHub(hubAddress).getSwept(assetId);
+        uint256 liquidity = IHub(hubAddress).getAssetLiquidity(assetId);
+        uint256 swept = IHub(hubAddress).getAssetSwept(assetId);
         uint256 underlyingBalance = IERC20(underlying).balanceOf(address(IHub(hubAddress)));
 
         // Checks

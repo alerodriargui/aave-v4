@@ -61,7 +61,7 @@ contract ReplayTest7 is Invariants, Setup {
         _setUpActor(USER1);
         _delay(2711741);
         Tester.setPrice(929774615256615712219717710056, 0);
-        Tester.liquidationCall(8492579161489, 203, 220, 184, 37);
+        Tester.liquidationCall(8492579161489, false, 203, 220, 184, 37);
         // Invalid: 8492579161489>=7790 failed, reason: HSPOST_SP_LIQ_A: Liquidation cannot result in an amount of liquidated debt > user's total debt position
     }
 

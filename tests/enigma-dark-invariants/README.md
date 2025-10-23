@@ -1,61 +1,101 @@
-# Enigma Dark – Invariant & Fuzzing Suite
+# Enigma Dark – Fuzzing & Invariant Testing Suite
 
-This folder contains a Handler-based invariant testing suite for the Aave v4 protocol. It performs stateful fuzzing (supply/withdraw/borrow/repay, liquidations, config updates) through handler contracts and checks system-level postconditions after every call and for every state.
+A comprehensive handler-based invariant testing suite for the Aave v4 protocol. This suite performs deep stateful fuzzing across multiple hubs and spokes, validating critical system properties through automated property checking and postcondition verification.
 
-This suite helps identify invariants violations and protocol misconfigurations via stateful fuzzing.
+## Overview
+
+The suite tests a complex multi-hub, multi-spoke deployment with:
+- **2 Hubs** with distinct interest rate strategies and asset configurations
+- **2 Spokes** with varying risk parameters (conservative vs. aggressive)
+- **Cross-hub liquidity flows** simulating bridge mechanics with different capacity caps
+- **Multiple actors** executing concurrent operations (supply, borrow, repay, liquidations)
+
+All protocol actions are monitored by hooks that snapshot state and verify postconditions after each transaction, enabling detection of invariant violations and edge cases that could lead to protocol insolvency or user fund loss.
 
 ## Tooling
 
-This suite is compatible with Echidna, Medusa, and Foundry.
+Compatible with industry-standard fuzzing tools:
+- **Echidna** - battle tested haskell based property-based fuzzer
+- **Medusa** - parallelized, coverage-guided, smart contract fuzzing, powered by go-ethereum
+- **Foundry** - native invariant testing framework
 
-## Project Layout
+## Architecture
 
-- Setup
-  - `Setup.t.sol` – deploys core protocol (Hub, Spokes, Oracle, IR strategy), assets, and actors
-  - `base/` – shared storage, hooks plumbing, assertions, and helpers
-- Execution
-  - `HandlerAggregator.t.sol` – collects handlers used by the fuzzer
-  - `handlers/` – user- and admin-facing action drivers (Spoke, TreasurySpoke, Hub/Spoke configurators)
-  - `hooks/` – before/after hooks, state snapshots, and postcondition checks
-  - `specs/` – property strings
-  - `invariants/` – invariant entrypoints (`invariant_*`) and campaign wiring
-  - `replays/` – minimal repro tests for failures
-- Entrypoint
-  - `Tester.t.sol` – top-level test contract that wires the suite together
+### Core Components
 
-## Workflow
+**Setup Layer** (`Setup.t.sol`, `base/`)
+- Deploys 2-hub, 2-spoke architecture with deterministic addresses (CREATE3)
+- Configures distinct collateral factors, liquidation parameters, and interest rate curves
+- Initializes multiple actors with protocol permissions
 
-- The fuzzer calls into handlers with fuzzed inputs.
-- Each call is wrapped by hooks that snapshot state and then assert postconditions.
-- Handlers use actor proxies to simulate realistic multi-user flows and respect protocol roles.
-- Admin handlers exercise configuration updates (reserve config, dynamic reserve config, liquidation settings).
+**Handler Layer** (`handlers/`)
+- `SpokeHandler` – user operations (supply, borrow, repay, withdraw, liquidations)
+- `HubHandler` – liquidity management and treasury operations
+- `TreasurySpoke` – fee collection and distribution
+- `Configurator Handlers` – admin operations (reserve updates, risk parameter changes)
+- `Simulator Handlers` – price feeds, donation attacks
 
-## Running tests
+**Verification Layer** (`hooks/`, `invariants/`)
+- Before/after hooks with state snapshots
+- Global and handler-specific postcondition assertions
+- Hub invariants (liquidity accounting, share calculations, interest accrual)
+- Spoke invariants (position tracking, collateralization, debt limits)
 
-- Echidna:
-    - Property mode:
-        ```bash
-        make echidna
-        ```
-    - Assertion mode:
-        ```bash
-        make echidna-assert
-        ```
-    - Exploration mode:
-        ```bash
-        make echidna-explore
-        ```
-    - Generate Replay Tests:
-        ```bash
-        make runes
-        ```
-- Medusa:
-    - Property & Assertion mode:
-        ```bash
-        make medusa
-        ```
-- Foundry Invariants:
-    ```bash
-    make foundry-invariants
-    ```
+**Replay Layer** (`replays/`)
+- Minimal reproduction tests for discovered violations
+- Facilitates debugging and regression prevention
+
+## How It Works
+
+1. **Fuzzer** generates random inputs and selects handler functions
+2. **Handlers** execute protocol actions through actor proxies (respects roles and permissions)
+3. **Hooks** capture snapshots of relevant state variables for analysis
+4. **Postconditions** validate expected outcomes and state transitions (e.g., "drawn rate matches calculated rate after hub non-view operations")
+5. **Invariants** continuously checked across all protocol states
+
+## Quick Start
+
+```bash
+# Run full fuzzing campaign with Medusa
+make medusa
+
+# Run with Echidna in assertion mode
+make echidna-assert
+
+# Generate replay tests from Echidna corpus
+make runes-echidna
+
+# Generate replay tests from Medusa corpus
+make runes-medusa
+```
+
+## Advanced Usage
+
+**Echidna Modes:**
+```bash
+make echidna          # Property mode (boolean invariants)
+make echidna-assert   # Assertion mode (require/assert violations)
+make echidna-explore  # Exploration mode (maximize coverage)
+```
+
+**Foundry:**
+```bash
+make foundry-invariants  # Native Foundry invariant runner
+```
+
+**Replay Specific Failure:**
+```bash
+forge test --mc ReplayTest_1 -vvv
+```
+
+## Key Features
+
+- Multi-hub, multi-spoke testing for cross-protocol interactions
+- Comprehensive postcondition checking after every state transition
+- Actor-based modeling for realistic multi-user scenarios
+- Admin operation fuzzing (config updates, parameter changes)
+
+---
+
+**Note:** This suite complements unit tests by exploring unbounded state spaces and adversarial scenarios that are difficult to anticipate manually.
 

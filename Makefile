@@ -37,11 +37,15 @@ echidna-assert:
 	echidna tests/enigma-dark-invariants/Tester.t.sol --contract Tester --test-mode assertion --config ./tests/enigma-dark-invariants/_config/echidna_config.yaml
 echidna-explore:
 	echidna tests/enigma-dark-invariants/Tester.t.sol --contract Tester --test-mode exploration --config ./tests/enigma-dark-invariants/_config/echidna_config.yaml
+rm-echidna-corpus:
+	rm -rf tests/enigma-dark-invariants/_corpus/echidna
 
 # Medusa
 medusa:
 	medusa fuzz --config ./medusa.json
-
+rm-medusa-corpus:
+	rm -rf tests/enigma-dark-invariants/_corpus/medusa
+	
 foundry-invariants:
 	forge test --mc TesterFoundry -vvv 
 

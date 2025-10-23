@@ -146,7 +146,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         }
     }
 
-    function liquidationCall(uint256 debtToCover, uint8 i, uint8 j, uint8 k, uint8 l) external setup {
+    function liquidationCall(uint256 debtToCover, bool receiveShares, uint8 i, uint8 j, uint8 k, uint8 l) external setup {
         bool success;
         bytes memory returnData;
 
@@ -157,7 +157,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         collateralReserveId = _getReserveId(spoke, k);
         debtReserveId = _getReserveId(spoke, l);
 
-        uint256 debtValueInBaseCurrency = ISpoke(spoke).getUserAccountData(_getRandomActor(i)).totalDebtInBaseCurrency;
+        uint256 debtValueInBaseCurrency = ISpoke(spoke).getUserAccountData(_getRandomActor(i)).totalDebtValue;
 
         // Register users to check postconditions: liquidated user and liquidator for both reserves
         _registerUserToCheck(spoke, debtReserveId, _getRandomActor(i));
@@ -168,7 +168,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         _before();
         (success, returnData) = actor.proxy(
             spoke,
-            abi.encodeCall(Spoke.liquidationCall, (collateralReserveId, debtReserveId, _getRandomActor(i), debtToCover))
+            abi.encodeCall(Spoke.liquidationCall, (collateralReserveId, debtReserveId, _getRandomActor(i), debtToCover, receiveShares))
         );
 
         if (success) {
@@ -180,7 +180,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
             assertLt(debtToCover, userTotalDebt, HSPOST_SP_LIQ_A);
 
-            if (debtValueInBaseCurrency > ISpoke(spoke).DUST_DEBT_LIQUIDATION_THRESHOLD()) {
+            if (debtValueInBaseCurrency > ISpoke(spoke).DUST_LIQUIDATION_THRESHOLD()) {
                 assertEq(userTotalDebt, 0, HSPOST_SP_LIQ_C);
             }
         } else {

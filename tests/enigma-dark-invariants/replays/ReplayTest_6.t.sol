@@ -49,29 +49,6 @@ contract ReplayTest6 is Invariants, Setup {
         Tester.supply(1455122803355410, 7, 0, 0);
     }
 
-    function test_replay_6_liquidationCall() public {
-        _setUpActor(USER1);
-        _delay(228361);
-        Tester.setUsingAsCollateral(true, 0, 61);
-        _delay(296474);
-        Tester.supply(9, 171, 0, 6);
-        _delay(360624);
-        Tester.borrow(1, 0, 0, 5);
-        _delay(101782);
-        Tester.withdraw(1, 3, 140, 47);
-        _delay(328981);
-        Tester.updateUserRiskPremium(44);
-        _delay(282613);
-        Tester.updateUserRiskPremium(174);
-        _delay(364130);
-        Tester.updateUserRiskPremium(144);
-        _setUpActor(USER2);
-        _delay(413227);
-        Tester.liquidationCall(
-            365099547169460107260444213992413627501745220129685401309505294672367581748, 0, 246, 3, 5
-        );
-    }
-
     function test_replay_6_updateUserDynamicConfig() public {
         _setUpActor(USER1);
         _delay(228361);

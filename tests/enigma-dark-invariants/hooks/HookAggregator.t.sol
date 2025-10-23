@@ -4,6 +4,8 @@ pragma solidity ^0.8.19;
 // Hook Contracts
 import {DefaultBeforeAfterHooks} from "./DefaultBeforeAfterHooks.t.sol";
 
+import "forge-std/console.sol";
+
 /// @title HookAggregator
 /// @notice Helper contract to aggregate all before / after hook contracts, inherited on each handler
 abstract contract HookAggregator is DefaultBeforeAfterHooks {
@@ -53,11 +55,8 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
         }
     }
 
-    /// @dev postconditions checks entrypoint, should vbe self-called
+    /// @dev postconditions checks entrypoint, should be self-called
     function checkPostConditions() external {
-        // Reset the state
-        _resetState();
-
         // Hub postconditions
         _hubPostConditions();
         // Spoke postconditions
@@ -89,7 +88,7 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
             // Check properties for all reserves of the spoke, used after actions: updateUserRiskPremium, updateUserDynamicConfig
             if (reserveId == CHECK_ALL_RESERVES) {
                 // Iterate through all reserves of the spoke
-                for (uint256 j; j < spokeReserveIds[spoke].length; i++) {
+                for (uint256 j; j < spokeReserveIds[spoke].length; j++) {
                     assert_GPOST_SP_A(spoke, spokeReserveIds[spoke][i], user);
                     assert_GPOST_SP_B(spoke, spokeReserveIds[spoke][i], user);
                     assert_GPOST_SP_E(spoke, spokeReserveIds[spoke][i], user);

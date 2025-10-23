@@ -8,7 +8,7 @@ interface ISpokeHandler {
     function withdraw(uint256 amount, uint8 i, uint8 j, uint8 k) external;
     function borrow(uint256 amount, uint8 i, uint8 j, uint8 k) external;
     function repay(uint256 amount, uint8 i, uint8 j, uint8 k) external;
-    function liquidationCall(uint256 debtToCover, uint8 i, uint8 j, uint8 k, uint8 l) external;
+    function liquidationCall(uint256 debtToCover, bool receiveShares, uint8 i, uint8 j, uint8 k, uint8 l) external;
     function setUsingAsCollateral(bool usingAsCollateral, uint8 i, uint8 j) external;
     function updateUserRiskPremium(uint8 i) external;
     function updateUserDynamicConfig(uint8 i) external;

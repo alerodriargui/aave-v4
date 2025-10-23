@@ -84,7 +84,7 @@ contract ReplayTest2 is Invariants, Setup {
         _delay(827249);
         _setUpActor(USER1);
         _delay(405856);
-        Tester.liquidationCall(61422963954080211324642765950298638470789887452796784425666156856462101843613, 53, 251, 56, 20);
+        Tester.liquidationCall(61422963954080211324642765950298638470789887452796784425666156856462101843613, false, 53, 251, 56, 20);
         
     }
     
