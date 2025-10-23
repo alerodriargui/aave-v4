@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 // Interfaces
 import {ITreasurySpokeHandler} from "../interfaces/ITreasurySpokeHandler.sol";
+import {ITreasurySpoke} from "src/spoke/interfaces/ITreasurySpoke.sol";
 
 // Libraries
 import "forge-std/console.sol";
@@ -32,39 +33,50 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
     //                                         OWNER ACTIONS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function supply(uint256 amount, uint8 i) external setup {
+    function supply(uint256 amount, uint8 i, uint8 j) external {
+        // Get one of the hub addresses randomly
+        address hubAddress = _getRandomHubAddress(i);
+        address treasurySpoke = hubInfo[hubAddress].treasureSpoke;
+
         // Get one of the reserves IDs randomly
-        uint256 reserveId = _getRandomReserveId(address(treasurySpoke), i);
+        uint256 reserveId = _getRandomReserveId(treasurySpoke, j);
 
         _before();
-        try treasurySpoke.supply(reserveId, amount, msg.sender) {
+        try ITreasurySpoke(treasurySpoke).supply(reserveId, amount, msg.sender) {
             _after();
         } catch {
             revert("DefaultHandler: supply failed");
         }
     }
 
-    function withdraw(uint256 amount, uint8 i) external setup {
+    function withdraw(uint256 amount, uint8 i, uint8 j) external {
+        // Get one of the hub addresses randomly
+        address hubAddress = _getRandomHubAddress(i);
+        address treasurySpoke = hubInfo[hubAddress].treasureSpoke;
+        
         // Get one of the reserves IDs randomly
-        uint256 reserveId = _getRandomReserveId(address(treasurySpoke), i);
+        uint256 reserveId = _getRandomReserveId(treasurySpoke, j);
 
         _before();
-        try treasurySpoke.withdraw(reserveId, amount, msg.sender) {
+        try ITreasurySpoke(treasurySpoke).withdraw(reserveId, amount, msg.sender) {
             _after();
         } catch {
             revert("DefaultHandler: withdraw failed");
         }
     }
 
-    function transfer(uint256 amount, uint8 i, uint8 j) external setup {
-        // Get one of the actors randomly
-        address to = _getRandomActor(i);
+    function transfer(uint256 amount, uint8 i, uint8 j, uint8 k) external {
+        // Get one of the hub addresses randomly
+        address hubAddress = _getRandomHubAddress(i);
 
         // Get one of the assets IDs randomly
         address asset = _getRandomBaseAsset(j);
 
+        // Get one of the actors randomly
+        address to = _getRandomActor(k);
+
         _before();
-        try treasurySpoke.transfer(asset, to, amount) {
+        try ITreasurySpoke(hubInfo[hubAddress].treasureSpoke).transfer(asset, to, amount) {
             _after();
         } catch {
             revert("DefaultHandler: transfer failed");

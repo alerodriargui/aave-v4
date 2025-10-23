@@ -20,17 +20,22 @@ contract DonationAttackHandler is BaseHandler {
     //                                         OWNER ACTIONS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function donateUnderlyingToHub(uint256 amount, uint8 i) external {
+    function donateUnderlyingToHub(uint256 amount, uint8 i, uint8 j) external {
+        // Get one of the hub addresses randomly
+        address hubAddress = _getRandomHubAddress(j);
+        // Get one of the assets IDs randomly
         address underlying = _getRandomBaseAsset(i);
 
-        TestnetERC20(underlying).mint(address(hub), amount);
+        TestnetERC20(underlying).mint(hubAddress, amount);
     }
 
     function donateUnderlyingToSpoke(uint256 amount, uint8 i, uint8 j) external {
+        // Get one of the spoke addresses randomly
         address spoke = _getRandomSpoke(j);
+        // Get one of the assets IDs randomly
         address underlying = _getRandomBaseAsset(i);
 
-        TestnetERC20(underlying).mint(address(spoke), amount);
+        TestnetERC20(underlying).mint(spoke, amount);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

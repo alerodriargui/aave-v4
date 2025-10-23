@@ -61,18 +61,19 @@ abstract contract BaseStorage {
     /// @notice The WETH token
     TestnetERC20 internal weth;
 
-    /// @notice The asset IDs of the USDC and WETH tokens
-    uint256 internal usdcAssetId;
-    uint256 internal wethAssetId;
-
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                       SUITE STORAGE                                       //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    // PROTOCOL CONTRACTS
-    IHub internal hub;
+    // HUB CONTRACTS
+    IHub internal hub1;
+    IHub internal hub2;
+    AssetInterestRateStrategy internal irStrategy1;
+    AssetInterestRateStrategy internal irStrategy2;
 
-    ITreasurySpoke internal treasurySpoke;
+    // SPOKE CONTRACTS
+    ITreasurySpoke internal treasurySpoke1;
+    ITreasurySpoke internal treasurySpoke2;
     ISpoke internal spoke1;
     ISpoke internal spoke2;
 
@@ -81,10 +82,7 @@ abstract contract BaseStorage {
     IAaveOracle internal oracle2;
 
     // CONFIGURATION
-    AssetInterestRateStrategy internal irStrategy;
     AccessManager internal accessManager;
-
-    // MOCKS
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                       EXTRA VARIABLES                                     //
@@ -94,9 +92,22 @@ abstract contract BaseStorage {
     /// @notice Array of base assets for the suite
     AssetInfo[] internal baseAssets;
 
+    // HUB
+    uint256 internal hub1WethAssetId;
+    uint256 internal hub1UsdcAssetId;
+    uint256 internal hub2WethAssetId;
+    uint256 internal hub2UsdcAssetId;
+
+    /// @notice Array of hub addresses for the suite
+    address[] internal hubAddresses;
+    /// @notice Spoke configurations
+    mapping(address => HubInfo) internal hubInfo;
+
     // SPOKES
     /// @notice Array of spokes addresses for the suite
     address[] internal spokesAddresses;
+    /// @notice spokesAddresses + treasurySpoke address
+    address[] internal allSpokes;
     /// @notice Spoke configurations
     mapping(ISpoke => SpokeInfo) internal spokeInfo;
     /// @notice Spoke reserveIds
@@ -105,6 +116,8 @@ abstract contract BaseStorage {
     mapping(address => mapping(uint256 => uint256)) internal reserveIdToAssetId;
     /// @notice Spoke assetIds to reserveIds info
     mapping(address => mapping(uint256 => uint256)) internal assetIdToReserveId;
+    /// @notice Spoke reserveIds to hub addresses
+    mapping(address => mapping(uint256 => address)) internal reserveIdToHubAddress;
 
     // PRICE FEEDS
     address[] internal priceFeeds;
@@ -116,7 +129,14 @@ abstract contract BaseStorage {
     struct SpokeInfo {
         ReserveInfo weth;
         ReserveInfo usdc;
+        ReserveInfo weth2;
+        ReserveInfo usdc2;
         uint256 MAX_ALLOWED_ASSET_ID;
+    }
+
+    struct HubInfo {
+        address treasureSpoke;
+        address irStrategy;
     }
 
     struct ReserveInfo {
@@ -126,7 +146,6 @@ abstract contract BaseStorage {
     }
 
     struct AssetInfo {
-        uint256 assetId;
         address underlying;
         uint8 decimals;
     }

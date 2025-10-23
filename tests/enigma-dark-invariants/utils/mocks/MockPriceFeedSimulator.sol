@@ -40,7 +40,7 @@ contract MockPriceFeedSimulator is AggregatorV3Interface {
         answeredInRound = roundId;
     }
 
-    function setPrice(uint256 price) external {
-        _price = int256(price);
+    function setPrice(int256 price) external {
+        _price = price;
     }
 }

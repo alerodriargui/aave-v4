@@ -5,6 +5,8 @@ pragma solidity ^0.8.19;
 import {BaseHandler} from "../../base/BaseHandler.t.sol";
 import {MockPriceFeedSimulator} from "../../utils/mocks/MockPriceFeedSimulator.sol";
 
+import "forge-std/console.sol";
+
 /// @title PriceFeeSimulatorHandler
 /// @notice Handler test contract for a set of actions
 contract PriceFeeSimulatorHandler is BaseHandler {
@@ -20,8 +22,10 @@ contract PriceFeeSimulatorHandler is BaseHandler {
     //                                         OWNER ACTIONS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function setPrice(uint256 price, uint8 i) public {
+    function setPrice(int256 price, uint8 i) public {
         address priceFeed = _getRandomPriceFeed(i);
+
+        price = clampBetween(price, PRICE_MIN, PRICE_MAX);
 
         MockPriceFeedSimulator(priceFeed).setPrice(price);
     }

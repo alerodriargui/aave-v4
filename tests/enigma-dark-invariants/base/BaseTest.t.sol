@@ -75,12 +75,6 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
         return baseAssets[_assetIndex].underlying;
     }
 
-    /// @notice Helper function to get a random base asset id
-    function _getRandomBaseAssetId(uint256 i) internal view returns (uint256) {
-        uint256 _assetIndex = i % baseAssets.length;
-        return baseAssets[_assetIndex].assetId;
-    }
-
     /// @notice Helper function to get random base asset full info
     function _getRandomBaseAssetFullInfo(uint256 i) internal view returns (AssetInfo memory) {
         uint256 _assetIndex = i % baseAssets.length;
@@ -105,6 +99,12 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
         return priceFeeds[_priceFeedIndex];
     }
 
+    /// @notice Helper function to get a random hub address
+    function _getRandomHubAddress(uint256 i) internal view returns (address) {
+        uint256 _hubIndex = i % hubAddresses.length;
+        return hubAddresses[_hubIndex];
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      HELPERS: GETTERS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -115,6 +115,10 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
 
     function _getReserveId(address spoke, uint256 assetId) internal view returns (uint256) {
         return assetIdToReserveId[spoke][assetId];
+    }
+
+    function _getHubAddress(address spoke, uint256 reserveId) internal view returns (address) {
+        return reserveIdToHubAddress[spoke][reserveId];
     }
 
     function _isHealthy(address spoke, address user) internal view returns (bool) {

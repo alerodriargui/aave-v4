@@ -14,6 +14,7 @@ import {StdAsserts} from "../utils/StdAsserts.sol";
 import {ISpokeHandler} from "../handlers/interfaces/ISpokeHandler.sol";
 import {ISpoke} from "src/spoke/interfaces/ISpoke.sol";
 import {IHub} from "src/hub/interfaces/IHub.sol";
+import {IAssetInterestRateStrategy} from "src/hub/interfaces/IAssetInterestRateStrategy.sol";
 
 // Contracts
 import {BaseHooks} from "../base/BaseHooks.t.sol";
@@ -40,7 +41,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     }
 
     struct DefaultVars {
-        mapping(uint256 assetId => AssetVars) assetVars;
+        mapping(address hub => mapping(uint256 assetId => AssetVars)) assetVars;
         mapping(address spoke => mapping(uint256 reserveId => mapping(address user => UserVars))) userVars;
     }
 
@@ -94,13 +95,16 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     function _setAssetValues(DefaultVars storage _defaultVars) internal {
-        // Iterate through all assets IDs registered in the hub
-        for (uint256 i; i < baseAssets.length; i++) {
-            _defaultVars.assetVars[i].drawnIndex = hub.getAssetDrawnIndex(baseAssets[i].assetId);
-            _defaultVars.assetVars[i].totalAssets = hub.getAddedAssets(baseAssets[i].assetId);
-            _defaultVars.assetVars[i].totalShares = hub.getAddedShares(baseAssets[i].assetId);
-            (_defaultVars.assetVars[i].drawn, _defaultVars.assetVars[i].premium) =
-                hub.getAssetOwed(baseAssets[i].assetId);
+        for (uint256 i; i < hubAddresses.length; i++) {
+            address hubAddress = hubAddresses[i];
+            uint256 assetCount = IHub(hubAddress).getAssetCount();
+            for (uint256 j; j < assetCount; j++) {
+                _defaultVars.assetVars[hubAddress][j].drawnIndex = IHub(hubAddress).getAssetDrawnIndex(j);
+                _defaultVars.assetVars[hubAddress][j].totalAssets = IHub(hubAddress).getAddedAssets(j);
+                _defaultVars.assetVars[hubAddress][j].totalShares = IHub(hubAddress).getAddedShares(j);
+                (_defaultVars.assetVars[hubAddress][j].drawn, _defaultVars.assetVars[hubAddress][j].premium) =
+                    IHub(hubAddress).getAssetOwed(j);
+            }
         }
     }
 
@@ -114,10 +118,10 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                 // Iterate through all reserves of the spoke
                 for (uint256 j; j < spokeReserveIds[userInfo.spoke].length; j++) {
                     (
-                        ,
-                        _defaultVars.userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
+                            ,
+                            _defaultVars.userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
                             .premiumDebt
-                    ) = ISpoke(userInfo.spoke).getUserDebt(spokeReserveIds[userInfo.spoke][j], userInfo.user);
+                        ) = ISpoke(userInfo.spoke).getUserDebt(spokeReserveIds[userInfo.spoke][j], userInfo.user);
                     _defaultVars.userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user].totalDebt =
                         ISpoke(userInfo.spoke).getUserTotalDebt(spokeReserveIds[userInfo.spoke][j], userInfo.user);
                 }
@@ -135,39 +139,43 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     //                                   POST CONDITIONS: HUB                                    //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function assert_GPOST_HUB_A(uint256 assetId) internal {
+    function assert_GPOST_HUB_A(address hubAddress, uint256 assetId) internal {
         assertGe(
-            defaultVarsAfter.assetVars[assetId].drawnIndex, defaultVarsBefore.assetVars[assetId].drawnIndex, GPOST_HUB_A
+            defaultVarsAfter.assetVars[hubAddress][assetId].drawnIndex,
+            defaultVarsBefore.assetVars[hubAddress][assetId].drawnIndex,
+            GPOST_HUB_A
         );
     }
 
-    function assert_GPOST_HUB_B(uint256 assetId) internal {
-        uint256 totalSharesBefore = defaultVarsBefore.assetVars[assetId].totalShares;
-        uint256 totalSharesAfter = defaultVarsAfter.assetVars[assetId].totalShares;
-
-        uint256 rateWadRawBefore = totalSharesBefore == 0
-            ? 0
-            : MathUtils.mulDivDown(defaultVarsBefore.assetVars[assetId].totalAssets, 1e18, totalSharesBefore);
-
-        uint256 rateWadRawAfter = totalSharesAfter == 0
-            ? 0
-            : MathUtils.mulDivDown(defaultVarsAfter.assetVars[assetId].totalAssets, 1e18, totalSharesAfter);
-
-        assertGe(rateWadRawAfter, rateWadRawBefore, GPOST_HUB_B);
+    function assert_GPOST_HUB_B(address hubAddress, uint256 assetId) internal {
+        assertFullMulGe(
+            defaultVarsBefore.assetVars[hubAddress][assetId].totalAssets,
+            defaultVarsBefore.assetVars[hubAddress][assetId].totalShares,
+            defaultVarsAfter.assetVars[hubAddress][assetId].totalAssets,
+            defaultVarsAfter.assetVars[hubAddress][assetId].totalShares,
+            GPOST_HUB_B
+        );
     }
 
-    function assert_GPOST_HUB_C(uint256 assetId) internal {
-        assertEq(
-            hub.getAssetDrawnRate(assetId),
-            irStrategy.calculateInterestRate(
-                assetId,
-                hub.getLiquidity(assetId),
-                defaultVarsAfter.assetVars[assetId].drawn,
-                hub.getDeficit(assetId),
-                hub.getSwept(assetId)
-            ),
-            GPOST_HUB_C
-        );
+    function assert_GPOST_HUB_C(address hubAddress, uint256 assetId) internal {
+        if (
+            msg.sig == ISpokeHandler.supply.selector || msg.sig == ISpokeHandler.withdraw.selector
+                || msg.sig == ISpokeHandler.borrow.selector || msg.sig == ISpokeHandler.repay.selector
+                || msg.sig == ISpokeHandler.updateUserRiskPremium.selector
+        ) {
+            assertEq(
+                IHub(hubAddress).getAssetDrawnRate(assetId),
+                IAssetInterestRateStrategy(hubInfo[hubAddress].irStrategy)
+                    .calculateInterestRate(
+                        assetId,
+                        IHub(hubAddress).getLiquidity(assetId),
+                        defaultVarsAfter.assetVars[hubAddress][assetId].drawn,
+                        IHub(hubAddress).getDeficit(assetId),
+                        IHub(hubAddress).getSwept(assetId)
+                    ),
+                GPOST_HUB_C
+            );
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

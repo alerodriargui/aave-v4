@@ -11,6 +11,7 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
     bytes4 internal constant _PANIC_SELECTOR = 0x4e487b71;
     /// @dev Panic code for assertion failed (0x01)
     uint256 internal constant _PANIC_ASSERTION_FAILED = 0x01;
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                          SETUP                                            //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -64,12 +65,17 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
     }
 
     function _hubPostConditions() internal {
-        // Iterate through all assets IDs registered in the hub
-        for (uint256 i; i < baseAssets.length; i++) {
-            uint256 assetId = baseAssets[i].assetId;
-            assert_GPOST_HUB_A(assetId);
-            assert_GPOST_HUB_B(assetId);
-            assert_GPOST_HUB_C(assetId);
+        // Iterate through all users to check
+        for (uint256 i; i < usersToCheck.length; i++) {
+            // Avoid checking postconditions for CHECK_ALL_RESERVES actions
+            if (usersToCheck[i].reserveId != CHECK_ALL_RESERVES) {
+                uint256 assetId = _getAssetId(usersToCheck[i].spoke, usersToCheck[i].reserveId);
+                address hubAddress = _getHubAddress(usersToCheck[i].spoke, usersToCheck[i].reserveId);
+
+                assert_GPOST_HUB_A(hubAddress, assetId);
+                assert_GPOST_HUB_B(hubAddress, assetId);
+                assert_GPOST_HUB_C(hubAddress, assetId);
+            }
         }
     }
 

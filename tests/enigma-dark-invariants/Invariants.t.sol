@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+// Interfaces
+import {IHub} from "src/hub/interfaces/IHub.sol";
+
 // Invariant Contracts
 import {HubInvariants} from "./invariants/HubInvariants.t.sol";
 import {SpokeInvariants} from "./invariants/SpokeInvariants.t.sol";
@@ -15,19 +18,20 @@ abstract contract Invariants is HubInvariants, SpokeInvariants {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     function invariant_INV_HUB() public returns (bool) {
-        // Applied per assetId registered in the hub
-        for (uint256 i; i < baseAssets.length; i++) {
-            uint256 assetId = baseAssets[i].assetId;
+        for (uint256 i; i < hubAddresses.length; i++) {
+            address hubAddress = hubAddresses[i];
 
-            // Hub invariants
-            assert_INV_HUB_A(assetId);
-            assert_INV_HUB_B(assetId);
-            assert_INV_HUB_C(assetId);
-            assert_INV_HUB_EF(assetId);
-            assert_INV_HUB_GH(assetId);
-            assert_INV_HUB_I(assetId, baseAssets[i].underlying);
-            assert_INV_HUB_K(assetId);
-            assert_INV_HUB_L(assetId);
+            uint256 assetCount = IHub(hubAddress).getAssetCount();
+            for (uint256 j; j < assetCount; j++) {
+                assert_INV_HUB_A(hubAddress, j);
+                assert_INV_HUB_B(hubAddress, j);
+                assert_INV_HUB_C(hubAddress, j);
+                assert_INV_HUB_EF(hubAddress, j);
+                assert_INV_HUB_GH(hubAddress, j);
+                assert_INV_HUB_I(hubAddress, j, baseAssets[i].underlying);
+                assert_INV_HUB_K(hubAddress, j);
+                assert_INV_HUB_L(hubAddress, j);
+            }
         }
 
         return true;

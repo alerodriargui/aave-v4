@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 // Interfaces
 import {ISpokeBase} from "src/spoke/interfaces/ISpokeBase.sol";
 import {ISpoke} from "src/spoke/interfaces/ISpoke.sol";
+import {IHub} from "src/hub/interfaces/IHub.sol";
 
 // Contracts
 import {HandlerAggregator} from "../HandlerAggregator.t.sol";
@@ -19,6 +20,8 @@ abstract contract SpokeInvariants is HandlerAggregator {
     function assert_INV_SP_A(address spoke, uint256 reserveId) internal {
         // Get the assetId related to the reserveId of the spoke
         uint256 assetId = _getAssetId(spoke, reserveId);
+
+        IHub hub = IHub(_getHubAddress(spoke, reserveId));
 
         // supply
         assertEq(
@@ -42,7 +45,11 @@ abstract contract SpokeInvariants is HandlerAggregator {
         }
         // reserve debt
         if (ISpokeBase(spoke).getReserveTotalDebt(reserveId) > 0) {
-            assertGt(hub.getSpokeDrawnShares(_getAssetId(spoke, reserveId), spoke), 0, INV_SP_B);
+            assertGt(
+                IHub(_getHubAddress(spoke, reserveId)).getSpokeDrawnShares(_getAssetId(spoke, reserveId), spoke),
+                0,
+                INV_SP_B
+            );
         }
         // user supply
         if (ISpokeBase(spoke).getUserSuppliedAssets(reserveId, user) > 0) {

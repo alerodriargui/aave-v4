@@ -46,5 +46,7 @@ foundry-invariants:
 	forge test --mc TesterFoundry -vvv 
 
 # Echidna Results
-runes:
+runes-echidna:
 	runes convert ./tests/enigma-dark-invariants/_corpus/echidna/default/_data/corpus/reproducers --output ./tests/enigma-dark-invariants/replays
+runes-medusa:
+	runes convert ./tests/enigma-dark-invariants/_corpus/medusa/ --output ./tests/enigma-dark-invariants/replays

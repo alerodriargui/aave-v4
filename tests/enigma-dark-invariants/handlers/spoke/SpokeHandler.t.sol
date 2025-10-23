@@ -202,7 +202,11 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         uint256 reserveId = _getReserveId(spoke, j);
 
         // Register user to check postconditions
-        _registerUserToCheck(spoke, reserveId, onBehalfOf);
+        /// @dev setUsingAsCollateral(reserveId, FALSE) all reserves in user position should be refreshed,
+        ///      so we check all reserves in user position
+        ///      setUsingAsCollateral(reserveId, TRUE) only reserveId in user position should be refreshed,
+        ///      so we check only the reserveId in user position
+        _registerUserToCheck(spoke, (usingAsCollateral ? reserveId : CHECK_ALL_RESERVES), onBehalfOf);
 
         _before();
         (success, returnData) =
@@ -236,9 +240,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
             ///// HSPOST /////
 
-            assertApproxEqAbs(
-                totalDebt, totalDebt, 2, HSPOST_SP_F
-            );
+            assertApproxEqAbs(totalDebt, totalDebt, 2, HSPOST_SP_F);
         } else {
             revert("DefaultHandler: updateUserRiskPremium failed");
         }
