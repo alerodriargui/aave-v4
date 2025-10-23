@@ -16,8 +16,10 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: 1000,
-      drawCap: 1000
+      drawCap: 1000,
+      riskPremiumCap: 1000_00
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -135,7 +137,13 @@ contract HubAccessTest is HubBase {
     hub1.updateSpokeConfig(
       daiAssetId,
       address(spoke1),
-      IHub.SpokeConfig({active: true, addCap: 1000, drawCap: 1000})
+      IHub.SpokeConfig({
+        active: true,
+        paused: false,
+        addCap: 1000,
+        drawCap: 1000,
+        riskPremiumCap: 1000_00
+      })
     );
   }
 
@@ -234,7 +242,7 @@ contract HubAccessTest is HubBase {
   }
 
   /// @dev Test showcasing authority contract can be accessed via hub contract.
-  function test_hub_access_manager_exposure() public {
+  function test_hub_access_manager_exposure() public view {
     assertEq(address(hub1.authority()), address(accessManager));
   }
 
@@ -248,8 +256,10 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: 1000,
-      drawCap: 1000
+      drawCap: 1000,
+      riskPremiumCap: 1000_00
     });
 
     IAccessManager authority = IAccessManager(hub1.authority());

@@ -33,6 +33,11 @@ contract SpokeBase is Base {
     address borrower;
   }
 
+  struct TestReturnValues {
+    uint256 amount;
+    uint256 shares;
+  }
+
   struct DebtData {
     uint256 totalDebt;
     uint256 drawnDebt;
@@ -89,7 +94,7 @@ contract SpokeBase is Base {
     uint256 supplyAmount;
     uint256 borrowAmount;
     uint256 repayAmount;
-    uint40 skipTime;
+    uint32 skipTime;
   }
 
   struct AssetInfo {
@@ -142,22 +147,7 @@ contract SpokeBase is Base {
 
   /// @dev Opens a supply position for a random user
   function _openSupplyPosition(ISpoke spoke, uint256 reserveId, uint256 amount) public {
-    uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = _hub(spoke, reserveId).getLiquidity(assetId);
-
-    address tempUser = makeUser();
-    deal(spoke, reserveId, tempUser, amount);
-    Utils.approve(spoke, reserveId, tempUser, UINT256_MAX);
-
-    Utils.supply({
-      spoke: spoke,
-      reserveId: reserveId,
-      caller: tempUser,
-      amount: amount,
-      onBehalfOf: tempUser
-    });
-
-    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+    _increaseCollateralSupply(spoke, reserveId, amount, makeUser());
   }
 
   /// @dev Increases the collateral supply for a user
@@ -168,7 +158,7 @@ contract SpokeBase is Base {
     address user
   ) public {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 initialLiq = _hub(spoke, reserveId).getLiquidity(assetId);
+    uint256 initialLiq = _hub(spoke, reserveId).getAssetLiquidity(assetId);
 
     deal(spoke, reserveId, user, amount);
     Utils.approve(spoke, reserveId, user, UINT256_MAX);
@@ -181,7 +171,17 @@ contract SpokeBase is Base {
       onBehalfOf: user
     });
 
-    assertEq(hub1.getLiquidity(assetId), initialLiq + amount);
+    assertEq(hub1.getAssetLiquidity(assetId), initialLiq + amount);
+  }
+
+  function _increaseReserveDebt(
+    ISpoke spoke,
+    uint256 reserveId,
+    uint256 amount,
+    address user
+  ) internal {
+    _openSupplyPosition(spoke, reserveId, amount);
+    Utils.borrow(spoke, reserveId, user, amount, user);
   }
 
   /// @dev Opens a debt position for a random user, using same asset as collateral and borrow
@@ -216,7 +216,7 @@ contract SpokeBase is Base {
     uint24 cachedCollateralRisk;
     if (withPremium) {
       cachedCollateralRisk = _getCollateralRisk(spoke, reserveId);
-      updateCollateralRisk(spoke, reserveId, 50_00);
+      _updateCollateralRisk(spoke, reserveId, 50_00);
     }
 
     Utils.borrow({
@@ -234,7 +234,7 @@ contract SpokeBase is Base {
     if (withPremium) {
       assertGt(premiumDebt, 0);
       // restore cached collateral risk
-      updateCollateralRisk(spoke, reserveId, cachedCollateralRisk);
+      _updateCollateralRisk(spoke, reserveId, cachedCollateralRisk);
     }
 
     return tempUser;
@@ -306,7 +306,7 @@ contract SpokeBase is Base {
     // index has increased, ie now the shares are less than the amount
     assertGt(
       borrow.supplyAmount,
-      hub1.convertToAddedShares(state.borrowReserveAssetId, borrow.supplyAmount)
+      hub1.previewAddByAssets(state.borrowReserveAssetId, borrow.supplyAmount)
     );
 
     return (
@@ -335,11 +335,11 @@ contract SpokeBase is Base {
     }
     (state.collateralReserveAssetId, ) = getAssetByReserveId(spoke, collateral.reserveId);
     (state.borrowReserveAssetId, ) = getAssetByReserveId(spoke, borrow.reserveId);
-    state.collateralSupplyShares = hub1.convertToAddedShares(
+    state.collateralSupplyShares = hub1.previewAddByAssets(
       state.collateralReserveAssetId,
       collateral.supplyAmount
     );
-    state.borrowSupplyShares = hub1.convertToAddedShares(
+    state.borrowSupplyShares = hub1.previewAddByAssets(
       state.borrowReserveAssetId,
       borrow.supplyAmount
     );
@@ -524,10 +524,10 @@ contract SpokeBase is Base {
     uint256 assetId,
     ISpoke.UserPosition memory userPos
   ) internal view returns (DebtData memory userDebt) {
-    uint256 accruedPremium = hub1.convertToDrawnAssets(assetId, userPos.premiumShares) -
+    uint256 accruedPremium = hub1.previewRestoreByShares(assetId, userPos.premiumShares) -
       userPos.premiumOffset;
     userDebt.premiumDebt = userPos.realizedPremium + accruedPremium;
-    userDebt.drawnDebt = hub1.convertToDrawnAssets(assetId, userPos.drawnShares);
+    userDebt.drawnDebt = hub1.previewRestoreByShares(assetId, userPos.drawnShares);
     userDebt.totalDebt = userDebt.drawnDebt + userDebt.premiumDebt;
   }
 
@@ -612,14 +612,14 @@ contract SpokeBase is Base {
   ) internal view returns (ISpoke.UserPosition memory userPos) {
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
-    userPos.drawnShares = hub1.convertToDrawnShares(assetId, debtAmount).toUint128();
+    userPos.drawnShares = hub1.previewRestoreByAssets(assetId, debtAmount).toUint128();
     userPos.premiumShares = hub1
-      .convertToDrawnShares(assetId, debtAmount)
-      .percentMulUp(userAccountData.userRiskPremium)
+      .previewRestoreByAssets(assetId, debtAmount)
+      .percentMulUp(userAccountData.riskPremium)
       .toUint128();
-    userPos.premiumOffset = hub1.convertToDrawnAssets(assetId, userPos.premiumShares).toUint128();
+    userPos.premiumOffset = hub1.previewRestoreByShares(assetId, userPos.premiumShares).toUint128();
     userPos.realizedPremium = expectedRealizedPremium.toUint128();
-    userPos.suppliedShares = hub1.convertToAddedShares(assetId, suppliedAmount).toUint128();
+    userPos.suppliedShares = hub1.previewAddByAssets(assetId, suppliedAmount).toUint128();
   }
 
   /// calculated expected realized premium
@@ -632,7 +632,7 @@ contract SpokeBase is Base {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     ISpoke.UserPosition memory userPos = getUserInfo(spoke, user, assetId);
     return
-      (hub1.convertToDrawnAssets(assetId, userPos.premiumShares) - userPos.premiumOffset)
+      (hub1.previewRestoreByShares(assetId, userPos.premiumShares) - userPos.premiumOffset)
         .toUint128();
   }
 
@@ -642,8 +642,8 @@ contract SpokeBase is Base {
     uint256 reserveId,
     uint256 prevDrawnDebt,
     ISpoke.UserPosition memory userPos,
-    uint40 lastTimestamp
-  ) internal view returns (uint256) {
+    uint32 lastTimestamp
+  ) internal view {
     uint256 assetId = spoke.getReserve(reserveId).assetId;
     uint256 accruedBase = MathUtils
       .calculateLinearInterest(hub1.getAsset(assetId).drawnRate, lastTimestamp)
@@ -682,13 +682,13 @@ contract SpokeBase is Base {
 
       assertEq(
         drawnDebt,
-        hub1.convertToDrawnAssets(assetId, userData.drawnShares),
+        hub1.previewRestoreByShares(assetId, userData.drawnShares),
         string.concat('user ', vm.toString(i), ' drawn debt ', label)
       );
       assertEq(
         premiumDebt,
         userData.realizedPremium +
-          hub1.convertToDrawnAssets(assetId, userData.premiumShares) -
+          hub1.previewRestoreByShares(assetId, userData.premiumShares) -
           userData.premiumOffset,
         string.concat('user ', vm.toString(i), ' premium debt ', label)
       );
@@ -729,7 +729,7 @@ contract SpokeBase is Base {
     assertEq(a.premiumShares, b.premiumShares, 'premiumShares');
     assertEq(a.premiumOffset, b.premiumOffset, 'premiumOffset');
     assertEq(a.realizedPremium, b.realizedPremium, 'realizedPremium');
-    assertEq(a.configKey, b.configKey, 'configKey');
+    assertEq(a.dynamicConfigKey, b.dynamicConfigKey, 'dynamicConfigKey');
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
@@ -737,7 +737,7 @@ contract SpokeBase is Base {
     ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
     uint256 riskPremiumStored = pos.premiumShares.percentDivDown(pos.drawnShares);
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
-    assertEq(userAccountData.userRiskPremium, riskPremiumStored, 'user risk premium mismatch');
+    assertEq(userAccountData.riskPremium, riskPremiumStored, 'user risk premium mismatch');
   }
 
   function _getUserRpStored(
@@ -805,7 +805,7 @@ contract SpokeBase is Base {
         ++suppliedReservesCount;
       }
       uint256 userDebt = spoke.getUserTotalDebt(reserveId, user);
-      totalDebt += _getValueInBaseCurrency(spoke, reserveId, userDebt);
+      totalDebt += _getValue(spoke, reserveId, userDebt);
     }
 
     if (totalDebt == 0) {
@@ -832,8 +832,8 @@ contract SpokeBase is Base {
       (uint256 collateralRisk, uint256 reserveId) = reserveCollateralRisk.get(idx);
       userPosition = getUserInfo(spoke, user, reserveId);
       (assetId, ) = getAssetByReserveId(spoke, reserveId);
-      uint256 suppliedAssets = hub1.convertToAddedAssets(assetId, userPosition.suppliedShares);
-      uint256 supplyAmount = _getValueInBaseCurrency(spoke, reserveId, suppliedAssets);
+      uint256 suppliedAssets = hub1.previewRemoveByShares(assetId, userPosition.suppliedShares);
+      uint256 supplyAmount = _getValue(spoke, reserveId, suppliedAssets);
 
       if (supplyAmount >= totalDebt) {
         userRP += totalDebt * collateralRisk;
@@ -880,7 +880,10 @@ contract SpokeBase is Base {
     uint256 reserveId
   ) internal view returns (ISpoke.DynamicReserveConfig memory) {
     return
-      spoke.getDynamicReserveConfig(reserveId, spoke.getUserPosition(reserveId, user).configKey);
+      spoke.getDynamicReserveConfig(
+        reserveId,
+        spoke.getUserPosition(reserveId, user).dynamicConfigKey
+      );
   }
 
   // deref and return current UserDynamicReserveConfig for a specific reserveId on user position.
@@ -890,7 +893,7 @@ contract SpokeBase is Base {
     uint256 reserveId
   ) internal view returns (DynamicConfig memory) {
     ISpoke.UserPosition memory pos = spoke.getUserPosition(reserveId, user);
-    return DynamicConfig(pos.configKey, spoke.isUsingAsCollateral(reserveId, user));
+    return DynamicConfig(pos.dynamicConfigKey, spoke.isUsingAsCollateral(reserveId, user));
   }
 
   function assertEq(DynamicConfig[] memory a, DynamicConfig[] memory b) internal pure {
@@ -913,6 +916,10 @@ contract SpokeBase is Base {
 
   function _randomReserveId(ISpoke spoke) internal returns (uint256) {
     return vm.randomUint(0, spoke.getReserveCount() - 1);
+  }
+
+  function _randomInvalidReserveId(ISpoke spoke) internal returns (uint256) {
+    return vm.randomUint(spoke.getReserveCount(), UINT256_MAX);
   }
 
   function _randomConfigKey() internal returns (uint16) {
@@ -943,20 +950,51 @@ contract SpokeBase is Base {
     ISpoke spoke,
     uint256 reserveId
   ) internal returns (uint16) {
-    uint16 configKey = _nextDynamicConfigKey(spoke, reserveId);
-    if (spoke.getDynamicReserveConfig(reserveId, configKey).maxLiquidationBonus != 0) {
+    uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    if (spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).maxLiquidationBonus != 0) {
       revert('no uninitialized config keys');
     }
-    return vm.randomUint(configKey, type(uint16).max).toUint16();
+    return vm.randomUint(dynamicConfigKey, type(uint16).max).toUint16();
   }
 
   function _randomInitializedConfigKey(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
-    uint16 configKey = _nextDynamicConfigKey(spoke, reserveId);
-    if (spoke.getDynamicReserveConfig(reserveId, configKey).maxLiquidationBonus != 0) {
+    uint16 dynamicConfigKey = _nextDynamicConfigKey(spoke, reserveId);
+    if (spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).maxLiquidationBonus != 0) {
       // all config keys are initialized
       return vm.randomUint(0, type(uint16).max).toUint16();
     }
     return vm.randomUint(0, spoke.getReserve(reserveId).dynamicConfigKey).toUint16();
+  }
+
+  function _maxLiquidationBonusUpperBound(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint32) {
+    return
+      (PercentageMath.PERCENTAGE_FACTOR - 1)
+        .percentDivDown(spoke.getDynamicReserveConfig(reserveId).collateralFactor)
+        .toUint32();
+  }
+
+  function _randomMaxLiquidationBonus(ISpoke spoke, uint256 reserveId) internal returns (uint32) {
+    return
+      vm
+        .randomUint(MIN_LIQUIDATION_BONUS, _maxLiquidationBonusUpperBound(spoke, reserveId))
+        .toUint32();
+  }
+
+  function _collateralFactorUpperBound(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint16) {
+    return
+      (PercentageMath.PERCENTAGE_FACTOR - 1)
+        .percentDivDown(spoke.getDynamicReserveConfig(reserveId).maxLiquidationBonus)
+        .toUint16();
+  }
+
+  function _randomCollateralFactor(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
+    return vm.randomUint(1, _collateralFactorUpperBound(spoke, reserveId)).toUint16();
   }
 
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id
@@ -1016,5 +1054,15 @@ contract SpokeBase is Base {
 
     vm.prank(_getProxyAdminAddress(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
+  }
+
+  function _getReserveIds(ISpoke spoke) internal view returns (ReserveIds memory) {
+    return
+      ReserveIds({
+        dai: _daiReserveId(spoke),
+        weth: _wethReserveId(spoke),
+        usdx: _usdxReserveId(spoke),
+        wbtc: _wbtcReserveId(spoke)
+      });
   }
 }

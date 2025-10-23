@@ -1,25 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
-/**
- * @title SpokeConfigurator
- * @author Aave Labs
- * @notice SpokeConfigurator contract for the Aave protocol
- * @dev Must be granted permission by the Spoke
- */
+/// @title SpokeConfigurator
+/// @author Aave Labs
+/// @notice Handles administrative functions on the spoke.
+/// @dev Must be granted permission by the spoke.
 contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   using SafeCast for uint256;
 
-  /**
-   * @dev Constructor
-   * @param owner_ The address of the owner
-   */
+  /// @dev Constructor.
+  /// @param owner_ The address of the owner.
   constructor(address owner_) Ownable(owner_) {}
 
   /// @inheritdoc ISpokeConfigurator
@@ -80,7 +76,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     address priceSource,
     ISpoke.ReserveConfig calldata config,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external onlyOwner returns (uint256 reserveId) {
+  ) external onlyOwner returns (uint256) {
     return ISpoke(spoke).addReserve(hub, assetId, priceSource, config, dynamicConfig);
   }
 
@@ -125,59 +121,59 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint16 collateralFactor
-  ) external onlyOwner {
+  ) external onlyOwner returns (uint16) {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId
     );
     dynamicReserveConfig.collateralFactor = collateralFactor;
-    targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
+    return targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
   function updateCollateralFactor(
     address spoke,
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     uint16 collateralFactor
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId,
-      configKey
+      dynamicConfigKey
     );
     dynamicReserveConfig.collateralFactor = collateralFactor;
-    targetSpoke.updateDynamicReserveConfig(reserveId, configKey, dynamicReserveConfig);
+    targetSpoke.updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function addLiquidationBonus(
+  function addMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
-    uint256 liquidationBonus
-  ) external onlyOwner {
+    uint256 maxLiquidationBonus
+  ) external onlyOwner returns (uint16) {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId
     );
-    dynamicReserveConfig.maxLiquidationBonus = liquidationBonus.toUint32();
-    targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
+    dynamicReserveConfig.maxLiquidationBonus = maxLiquidationBonus.toUint32();
+    return targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
   function updateMaxLiquidationBonus(
     address spoke,
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     uint256 maxLiquidationBonus
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId,
-      configKey
+      dynamicConfigKey
     );
     dynamicReserveConfig.maxLiquidationBonus = maxLiquidationBonus.toUint32();
-    targetSpoke.updateDynamicReserveConfig(reserveId, configKey, dynamicReserveConfig);
+    targetSpoke.updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -185,29 +181,29 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 liquidationFee
-  ) external onlyOwner {
+  ) external onlyOwner returns (uint16) {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId
     );
     dynamicReserveConfig.liquidationFee = liquidationFee.toUint16();
-    targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
+    return targetSpoke.addDynamicReserveConfig(reserveId, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
   function updateLiquidationFee(
     address spoke,
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     uint256 liquidationFee
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.DynamicReserveConfig memory dynamicReserveConfig = targetSpoke.getDynamicReserveConfig(
       reserveId,
-      configKey
+      dynamicConfigKey
     );
     dynamicReserveConfig.liquidationFee = liquidationFee.toUint16();
-    targetSpoke.updateDynamicReserveConfig(reserveId, configKey, dynamicReserveConfig);
+    targetSpoke.updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicReserveConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -215,7 +211,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external onlyOwner returns (uint16 configKey) {
+  ) external onlyOwner returns (uint16) {
     return ISpoke(spoke).addDynamicReserveConfig(reserveId, dynamicConfig);
   }
 
@@ -223,10 +219,10 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   function updateDynamicReserveConfig(
     address spoke,
     uint256 reserveId,
-    uint16 configKey,
+    uint16 dynamicConfigKey,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
   ) external onlyOwner {
-    ISpoke(spoke).updateDynamicReserveConfig(reserveId, configKey, dynamicConfig);
+    ISpoke(spoke).updateDynamicReserveConfig(reserveId, dynamicConfigKey, dynamicConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator

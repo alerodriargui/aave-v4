@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.10;
+pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
 
@@ -29,9 +29,40 @@ contract UnitPriceFeedTest is Base {
     assertEq(unitPriceFeed.version(), 1);
   }
 
-  function test_getRoundData_revertsWith_OperationNotSupported() public {
-    vm.expectRevert(UnitPriceFeed.OperationNotSupported.selector);
-    unitPriceFeed.getRoundData(0);
+  function test_getRoundData() public {
+    uint80 skipTime = vm.randomUint(80).toUint80();
+    skip(skipTime);
+    uint80 _roundId = uint80(vm.randomUint(0, skipTime));
+    (
+      uint80 roundId,
+      int256 answer,
+      uint256 startedAt,
+      uint256 updatedAt,
+      uint80 answeredInRound
+    ) = unitPriceFeed.getRoundData(_roundId);
+    assertEq(roundId, _roundId);
+    assertEq(answer, int256(10 ** _decimals));
+    assertEq(startedAt, roundId);
+    assertEq(updatedAt, roundId);
+    assertEq(answeredInRound, roundId);
+  }
+
+  function test_getRoundData_futureRound() public {
+    uint80 skipTime = vm.randomUint(0, type(uint80).max - 1).toUint80();
+    skip(skipTime);
+    uint80 _roundId = vm.randomUint(skipTime + 1, type(uint80).max).toUint80();
+    (
+      uint80 roundId,
+      int256 answer,
+      uint256 startedAt,
+      uint256 updatedAt,
+      uint80 answeredInRound
+    ) = unitPriceFeed.getRoundData(_roundId);
+    assertEq(roundId, 0);
+    assertEq(answer, 0);
+    assertEq(startedAt, 0);
+    assertEq(updatedAt, 0);
+    assertEq(answeredInRound, 0);
   }
 
   function test_fuzz_latestRoundData(uint80 blockTimestamp) public {

@@ -16,6 +16,7 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
   uint256 internal reserveId;
   address internal liquidator;
   uint256 internal realizedPremium;
+  address internal user;
 
   function setUp() public override {
     super.setUp();
@@ -26,17 +27,22 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     asset = IERC20(hub.getAsset(assetId).underlying);
     reserveId = 1;
     liquidator = makeAddr('liquidator');
+    user = makeAddr('user');
 
     // Set initial storage values
+    liquidationLogicWrapper.setDebtReserveId(reserveId);
     liquidationLogicWrapper.setDebtReserveHub(hub);
     liquidationLogicWrapper.setDebtReserveAssetId(assetId);
     liquidationLogicWrapper.setBorrowingStatus(reserveId, true);
+    liquidationLogicWrapper.setBorrower(user);
 
     // Add liquidation logic wrapper as a spoke
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+      drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+      riskPremiumCap: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.prank(HUB_ADMIN);
     hub.addSpoke(assetId, address(spoke), spokeConfig);
@@ -129,11 +135,12 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     );
     bool isPositionEmpty = liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
-        reserveId: reserveId,
+        debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
-        liquidator: liquidator
+        liquidator: liquidator,
+        user: user
       })
     );
 
@@ -162,11 +169,12 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     vm.expectRevert(stdError.arithmeticError);
     liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
-        reserveId: reserveId,
+        debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
-        liquidator: liquidator
+        liquidator: liquidator,
+        user: user
       })
     );
   }
@@ -184,11 +192,12 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
-        reserveId: reserveId,
+        debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
-        liquidator: liquidator
+        liquidator: liquidator,
+        user: user
       })
     );
   }
@@ -206,11 +215,12 @@ contract LiquidationLogicLiquidateDebtTest is LiquidationLogicBaseTest {
     vm.expectRevert();
     liquidationLogicWrapper.liquidateDebt(
       LiquidationLogic.LiquidateDebtParams({
-        reserveId: reserveId,
+        debtReserveId: reserveId,
         debtToLiquidate: debtToLiquidate,
         premiumDebt: premiumDebt,
         accruedPremium: accruedPremium,
-        liquidator: liquidator
+        liquidator: liquidator,
+        user: user
       })
     );
   }

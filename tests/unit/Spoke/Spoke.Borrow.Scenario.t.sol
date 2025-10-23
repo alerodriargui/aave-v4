@@ -514,11 +514,20 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     // Bob supply weth as collateral
     Utils.supplyCollateral(spoke1, state.wethReserveId, bob, state.wethBob.supplyAmount, bob);
 
+    uint256 expectedShares = hub1.previewRestoreByAssets(daiAssetId, borrowAmount1);
+
     // Bob borrow dai
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    spoke1.borrow(state.daiReserveId, borrowAmount1, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.borrow(
+      state.daiReserveId,
+      borrowAmount1,
+      bob
+    );
 
     // assertions
+    assertEq(returnValues.shares, expectedShares);
+    assertEq(returnValues.amount, borrowAmount1);
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'spoke1 bob dai after');
     _assertUserPositionAndDebt({
       spoke: spoke1,
@@ -531,7 +540,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     });
 
     state.daiBob.userPosBefore = spoke1.getUserPosition(state.daiReserveId, bob);
-    uint40 lastTimestamp = vm.getBlockTimestamp().toUint40();
+    uint32 lastTimestamp = vm.getBlockTimestamp().toUint32();
     (uint256 drawnDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
 
     skip(skipTime);
@@ -556,15 +565,24 @@ contract SpokeBorrowScenarioTest is SpokeBase {
       lastTimestamp
     );
 
+    uint256 expectedShares2 = hub1.previewRestoreByAssets(daiAssetId, borrowAmount2);
+
     // Bob borrow more dai
+    TestReturnValues memory returnValues2;
     vm.prank(bob);
-    spoke1.borrow(state.daiReserveId, borrowAmount2, bob);
+    (returnValues2.shares, returnValues2.amount) = spoke1.borrow(
+      state.daiReserveId,
+      borrowAmount2,
+      bob
+    );
 
     (drawnDebt, ) = spoke1.getUserDebt(state.daiReserveId, bob);
     // check that accrued drawn debt matches expected
     assertApproxEqAbs(drawnDebt, expectedDrawnDebt, 3, 'drawn debt after borrow2');
 
     // assertions for 2nd borrow
+    assertApproxEqAbs(returnValues2.shares, expectedShares2, 1);
+    assertEq(returnValues2.amount, borrowAmount2);
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'spoke1 bob dai after');
     _assertUserPositionAndDebt({
       spoke: spoke1,
@@ -585,11 +603,12 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     uint256 debtReserveId = _usdxReserveId(spoke1);
     uint256 debtBorrowAmount = 500e6;
 
-    assertNotEq(_getCollateralFactor(spoke1, coll1ReserveId), 0);
+    _updateCollateralFactor(spoke1, coll1ReserveId, 0);
+    assertEq(_getCollateralFactor(spoke1, coll1ReserveId), 0); // initially
     assertNotEq(_getCollateralFactor(spoke1, coll2ReserveId), 0);
 
-    uint256 coll1InBaseCurrency = _getValueInBaseCurrency(spoke1, coll1ReserveId, coll1Amount);
-    uint256 coll2InBaseCurrency = _getValueInBaseCurrency(spoke1, coll2ReserveId, coll2Amount);
+    uint256 coll1Value = _getValue(spoke1, coll1ReserveId, coll1Amount);
+    uint256 coll2Value = _getValue(spoke1, coll2ReserveId, coll2Amount);
 
     Utils.supplyCollateral(spoke1, coll1ReserveId, alice, coll1Amount, alice);
     Utils.supplyCollateral(spoke1, coll2ReserveId, alice, coll2Amount, alice);
@@ -597,17 +616,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     Utils.borrow(spoke1, debtReserveId, alice, debtBorrowAmount, alice);
 
     ISpoke.UserAccountData memory userAccountData = spoke1.getUserAccountData(alice);
-    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
-    assertEq(
-      coll1InBaseCurrency + coll2InBaseCurrency,
-      userAccountData.totalCollateralInBaseCurrency
-    );
-
-    uint16 configKey = spoke1.getUserPosition(coll1ReserveId, alice).configKey;
-    updateCollateralFactorAtKey(spoke1, coll1ReserveId, configKey, 0);
-
-    userAccountData = spoke1.getUserAccountData(alice);
-    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.userRiskPremium);
-    assertEq(coll2InBaseCurrency, userAccountData.totalCollateralInBaseCurrency); // coll1 is not included
+    assertEq(_calculateExpectedUserRP(alice, spoke1), userAccountData.riskPremium);
+    assertEq(coll2Value, userAccountData.totalCollateralValue); // coll1 is not included
   }
 }
