@@ -56,5 +56,4 @@ jobs:
           files: .
           contract: Tester
           config: tests/enigma-dark-invariants/_config/echidna_config_ci.yaml
-          crytic-args: --ignore-compile --compile-libraries=(LiquidationLogic,0xf01)
           test-mode: ${{ matrix.mode == 'assertion' && 'assertion' || '' }}
