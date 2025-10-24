@@ -16,7 +16,7 @@ concurrency:
 jobs:
   setup:
     name: Setup
-    runs-on: ubuntu-latest
+    runs-on: aave-latest
     outputs:
       corpus-sha: ${{ steps.clone-corpus.outputs.sha }}
     steps:
