@@ -28,7 +28,7 @@ abstract contract Invariants is HubInvariants, SpokeInvariants {
                 assert_INV_HUB_C(hubAddress, j);
                 assert_INV_HUB_EF(hubAddress, j);
                 assert_INV_HUB_GH(hubAddress, j);
-                assert_INV_HUB_I(hubAddress, j, baseAssets[i].underlying);
+                assert_INV_HUB_I(hubAddress, j);
                 assert_INV_HUB_K(hubAddress, j);
                 assert_INV_HUB_L(hubAddress, j);
             }

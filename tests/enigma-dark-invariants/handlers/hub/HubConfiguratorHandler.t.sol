@@ -18,36 +18,42 @@ contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
-/* 
-    
-    E.g. num of active pools
-    uint256 public activePools;
-        
-    */
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                          ACTIONS                                          //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                         OWNER ACTIONS                                     //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                          ACTIONS                                          //
-///////////////////////////////////////////////////////////////////////////////////////////////
+    function updateSpokeSupplyCap(uint256 addCap, uint8 i, uint8 j, uint8 k) external setup {
+        address hub = _getRandomHub(i);
+        uint256 assetId = _getRandomHubAssetId(hub, j);
+        address spoke = _getRandomSpoke(k);
+        hubConfigurator.updateSpokeSupplyCap(hub, assetId, spoke, addCap);
+    }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                         OWNER ACTIONS                                     //
-///////////////////////////////////////////////////////////////////////////////////////////////
+    function updateSpokeDrawCap(uint256 drawCap, uint8 i, uint8 j, uint8 k) external setup {
+        address hub = _getRandomHub(i);
+        uint256 assetId = _getRandomHubAssetId(hub, j);
+        address spoke = _getRandomSpoke(k);
+        hubConfigurator.updateSpokeDrawCap(hub, assetId, spoke, drawCap);
+    }
 
-// TODO:
-// updateLiquidityFee
-// updateFeeConfig
-// updateInterestRateStrategy
-// freezeAsset
-// pauseAsset
-// updateSpokeActive
-// updateSpokeSupplyCap
-// updateSpokeDrawCap
-// updateSpokeCaps
-// pauseSpoke
-// freezeSpoke
-// updateInterestRateData
+    function updateSpokeRiskPremiumCap(uint256 riskPremiumCap, uint8 i, uint8 j, uint8 k) external setup {
+        address hub = _getRandomHub(i);
+        uint256 assetId = _getRandomHubAssetId(hub, j);
+        address spoke = _getRandomSpoke(k);
+        hubConfigurator.updateSpokeRiskPremiumCap(hub, assetId, spoke, riskPremiumCap);
+    }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
-//                                           HELPERS                                         //
-///////////////////////////////////////////////////////////////////////////////////////////////
+    function updateSpokePaused(bool paused, uint8 i, uint8 j, uint8 k) external setup {
+        address hub = _getRandomHub(i);
+        uint256 assetId = _getRandomHubAssetId(hub, j);
+        address spoke = _getRandomSpoke(k);
+        hubConfigurator.updateSpokePaused(hub, assetId, spoke, paused);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                           HELPERS                                         //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 }

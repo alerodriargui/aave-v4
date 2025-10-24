@@ -35,11 +35,6 @@ contract HubHandler is BaseHandler, IHubHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // TODO:
-    // Configurator:
-    // updateAssetConfig
-    // updateSpokeConfig
-    // setInterestRateData
-
     // Reinvestment controller:
     // sweep
     // reclaim

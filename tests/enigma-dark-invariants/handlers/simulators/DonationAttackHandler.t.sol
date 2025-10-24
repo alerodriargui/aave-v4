@@ -22,7 +22,7 @@ contract DonationAttackHandler is BaseHandler {
 
     function donateUnderlyingToHub(uint256 amount, uint8 i, uint8 j) external {
         // Get one of the hub addresses randomly
-        address hubAddress = _getRandomHubAddress(j);
+        address hubAddress = _getRandomHub(j);
         // Get one of the assets IDs randomly
         address underlying = _getRandomBaseAsset(i);
 

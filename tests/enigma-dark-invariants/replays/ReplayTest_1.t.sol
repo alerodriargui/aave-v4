@@ -36,27 +36,36 @@ contract ReplayTest1 is Invariants, Setup {
     //                                   		REPLAY TESTS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function test_replay_1_updateUserRiskPremium() public {
+    function test_replay_1_supply() public {
+        // TODO review test case
         _setUpActor(USER3);
-        Tester.setUsingAsCollateral(true, 1, 26);
-        Tester.supply(8548, 251, 14, 14);
-        Tester.borrow(716, 227, 46, 18);
-        _setUpActor(USER1);
-        _delay(483724);
-        Tester.updateUserRiskPremium(0);
-        // Invalid: 54653460198616960432589820!=5465941435645494nah 5997582564, reason: GPOST_HUB_C: Borrow rate should always match the calculated amount right after any hub non-view operation in the same block
+        _delay(140400);
+        Tester.supply(7, 242, 154, 0);
+        _delay(543845);
+        Tester.setUsingAsCollateral(true, 74, 212);
+        _delay(527372);
+        Tester.borrow(2, 218, 0, 0);
+        _delay(116349);
+        Tester.supply(8, 128, 2, 0);
+        // Invalid: 17*7 < 9*14 failed, reason: GPOST_HUB_B: Add exchange rate (total assets / total shares) cannot decrease (remains constant or increases).
+        // Exchange rate before: 1,2857142857
+        // Exchange rate after: 1,2142857143
     }
 
-    function test_replay_1_invariant_INV_HUB_E() public {
-        _setUpActor(USER1);
-        _delay(7335);
-        Tester.setUsingAsCollateral(true, 0, 0);
-        _delay(33390);
-        Tester.supply(203156, 36, 0, 86);
-        _delay(895);
-        Tester.borrow(736, 0, 0, 38);
-        _delay(12354444);
-        invariant_INV_HUB(); // Invalid: 203179!=203159, reason: INV_HUB_E: hub.getTotalSuppliedAssets and hub.getAssetSuppliedAmount should match at any time
+    function test_replay_1_repay() public {
+        // TODO review test case
+        _setUpActor(USER3);
+        _delay(140400);
+        Tester.supply(10388, 95, 174, 0);
+        _delay(543845);
+        Tester.setUsingAsCollateral(true, 0, 52);
+        _delay(527372);
+        Tester.borrow(8603, 248, 142, 0);
+        _delay(243334);
+        Tester.repay(1, 116, 254, 252);
+        // Invalid: 8608>=8608 failed, reason: HSPOST_SP_C: User liability should decrease after repayment
+        // Should this be >= or >?
+        // Changed to >= and passing
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

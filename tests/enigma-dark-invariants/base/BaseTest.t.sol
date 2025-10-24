@@ -30,9 +30,7 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
 
     /// @dev Actor proxy mechanism
     modifier setup() virtual {
-        console.log("setup", msg.sender);
         actor = actors[msg.sender];
-        console.log("actor", address(actor));
         _;
         delete actor;
     }
@@ -81,6 +79,12 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
         return baseAssets[_assetIndex];
     }
 
+    /// @notice Helper function to get a random hub asset id
+    function _getRandomHubAssetId(address hub, uint256 i) internal view returns (uint256) {
+        uint256 _assetIndex = i % hubAssetIds[hub].length;
+        return hubAssetIds[hub][_assetIndex];
+    }
+
     /// @notice Helper function to get a random spoke address
     function _getRandomSpoke(uint256 i) internal view returns (address) {
         uint256 _spokeIndex = i % spokesAddresses.length;
@@ -100,7 +104,7 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
     }
 
     /// @notice Helper function to get a random hub address
-    function _getRandomHubAddress(uint256 i) internal view returns (address) {
+    function _getRandomHub(uint256 i) internal view returns (address) {
         uint256 _hubIndex = i % hubAddresses.length;
         return hubAddresses[_hubIndex];
     }

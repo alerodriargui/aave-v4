@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 // Libraries
 import {MathUtils} from "src/libraries/math/MathUtils.sol";
 import {PercentageMath} from "src/libraries/math/PercentageMath.sol";
+import "forge-std/console.sol";
 
 // Utils
 import {Actor} from "../utils/Actor.sol";
@@ -148,20 +149,22 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     }
 
     function assert_GPOST_HUB_B(address hubAddress, uint256 assetId) internal {
-        assertFullMulGe(
+        assertFullMulGe( // TODO review test_replay_1_supply
             defaultVarsAfter.assetVars[hubAddress][assetId].totalAssets,
-            defaultVarsAfter.assetVars[hubAddress][assetId].totalShares,
-            defaultVarsBefore.assetVars[hubAddress][assetId].totalAssets,
             defaultVarsBefore.assetVars[hubAddress][assetId].totalShares,
+            defaultVarsBefore.assetVars[hubAddress][assetId].totalAssets,
+            defaultVarsAfter.assetVars[hubAddress][assetId].totalShares,
             GPOST_HUB_B
         );
     }
 
     function assert_GPOST_HUB_C(address hubAddress, uint256 assetId) internal {
+        // Read the cached signature of the current action
+        bytes4 signature = currentActionSignature;
         if (
-            msg.sig == ISpokeHandler.supply.selector || msg.sig == ISpokeHandler.withdraw.selector
-                || msg.sig == ISpokeHandler.borrow.selector || msg.sig == ISpokeHandler.repay.selector
-                || msg.sig == ISpokeHandler.updateUserRiskPremium.selector
+            signature == ISpokeHandler.supply.selector || signature == ISpokeHandler.withdraw.selector
+                || signature == ISpokeHandler.borrow.selector || signature == ISpokeHandler.repay.selector
+                || signature == ISpokeHandler.updateUserRiskPremium.selector
         ) {
             assertEq(
                 IHub(hubAddress).getAssetDrawnRate(assetId),
@@ -195,7 +198,11 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
             defaultVarsAfter.userVars[spoke][reserveId][user].premiumDebt
                 < defaultVarsBefore.userVars[spoke][reserveId][user].premiumDebt
         ) {
-            assertTrue(msg.sig == ISpokeHandler.repay.selector, GPOST_SP_B);
+            assertTrue(
+                currentActionSignature == ISpokeHandler.repay.selector
+                    || currentActionSignature == ISpokeHandler.liquidationCall.selector,
+                GPOST_SP_B
+            );
         }
     }
 
@@ -205,10 +212,13 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
         // user-stored key
         uint16 userKey = ISpoke(spoke).getUserPosition(reserveId, user).dynamicConfigKey;
 
+        // Read the cached signature of the current action
+        bytes4 signature = currentActionSignature;
+
         if (
-            msg.sig == ISpokeHandler.borrow.selector || msg.sig == ISpokeHandler.withdraw.selector
-                || msg.sig == ISpokeHandler.setUsingAsCollateral.selector
-                || msg.sig == ISpokeHandler.updateUserDynamicConfig.selector
+            signature == ISpokeHandler.borrow.selector || signature == ISpokeHandler.withdraw.selector
+                || signature == ISpokeHandler.setUsingAsCollateral.selector
+                || signature == ISpokeHandler.updateUserDynamicConfig.selector
         ) {
             assertEq(latestKey, userKey, GPOST_SP_E);
         }
@@ -220,5 +230,9 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
 
     function _registerUserToCheck(address spoke, uint256 reserveId, address user) internal {
         usersToCheck.push(UserInfo(spoke, reserveId, user));
+    }
+
+    function _cacheCurrentActionSignature() internal {
+        currentActionSignature = bytes4(msg.sig);
     }
 }

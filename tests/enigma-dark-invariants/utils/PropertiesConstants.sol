@@ -28,4 +28,10 @@ abstract contract PropertiesConstants {
     uint16 constant BASE_VARIABLE_BORROW_RATE_IR2 = 2_00; // 2.00%
     uint16 constant VARIABLE_RATE_SLOPE_1_IR2 = 7_00; // 7.00%
     uint16 constant VARIABLE_RATE_SLOPE_2_IR2 = 75_00; // 75.00%
+
+    // Spoke 1 liquidation config
+    uint128 constant TARGET_HEALTH_FACTOR_SPOKE1 = 1.05e18;
+
+    // Spoke 2 liquidation config
+    uint128 constant TARGET_HEALTH_FACTOR_SPOKE2 = 1.02e18;
 }

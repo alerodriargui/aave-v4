@@ -9,6 +9,8 @@ import {ISpoke} from "src/spoke/Spoke.sol";
 import {IAaveOracle} from "src/spoke/interfaces/IAaveOracle.sol";
 import {AssetInterestRateStrategy} from "src/hub/AssetInterestRateStrategy.sol";
 import {AccessManager} from "src/dependencies/openzeppelin/AccessManager.sol";
+import {HubConfigurator} from "src/hub/HubConfigurator.sol";
+import {SpokeConfigurator} from "src/spoke/SpokeConfigurator.sol";
 
 // Mock Contracts
 
@@ -52,6 +54,9 @@ abstract contract BaseStorage {
     /// @notice The address that is targeted when executing an action (OPTIONAL)
     address internal targetActor;
 
+    /// @notice The signature of the action that is being executed
+    bytes4 internal currentActionSignature;
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                       ASSETS STORAGE                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,12 +75,14 @@ abstract contract BaseStorage {
     IHub internal hub2;
     AssetInterestRateStrategy internal irStrategy1;
     AssetInterestRateStrategy internal irStrategy2;
+    HubConfigurator internal hubConfigurator;
 
     // SPOKE CONTRACTS
     ITreasurySpoke internal treasurySpoke1;
     ITreasurySpoke internal treasurySpoke2;
     ISpoke internal spoke1;
     ISpoke internal spoke2;
+    SpokeConfigurator internal spokeConfigurator;
 
     // ORACLES
     IAaveOracle internal oracle1;
@@ -102,6 +109,8 @@ abstract contract BaseStorage {
     address[] internal hubAddresses;
     /// @notice Spoke configurations
     mapping(address => HubInfo) internal hubInfo;
+    /// @notice Hub assetIds
+    mapping(address => uint256[]) internal hubAssetIds;
 
     // SPOKES
     /// @notice Array of spokes addresses for the suite

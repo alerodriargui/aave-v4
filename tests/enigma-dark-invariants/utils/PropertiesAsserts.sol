@@ -129,7 +129,7 @@ abstract contract PropertiesAsserts {
             string memory yStr = PropertiesLibString.toString(y);
 
             bytes memory assertMsg =
-                abi.encodePacked("Invalid: ", aStr, "*", bStr, " <", xStr, "*", yStr, " failed, reason: ", reason);
+                abi.encodePacked("Invalid: ", aStr, "*", bStr, " < ", xStr, "*", yStr, " failed, reason: ", reason);
 
             emit AssertGeFail(string(assertMsg));
             assert(false);

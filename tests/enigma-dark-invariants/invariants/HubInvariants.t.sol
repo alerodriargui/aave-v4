@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+// Libraries
+import "forge-std/console.sol";
+
 // Interfaces
 import {IHub} from "src/hub/interfaces/IHub.sol";
 import {IERC20} from "src/dependencies/openzeppelin/IERC20.sol";
@@ -35,7 +38,7 @@ abstract contract HubInvariants is HandlerAggregator {
         }
 
         uint256 assetTotal = IHub(hubAddress).getAssetTotalOwed(assetId); // drawn + premium
-        assertGe(sumDebt, assetTotal, INV_HUB_B);
+        assertGe(sumDebt, assetTotal, INV_HUB_B); // TODO review test case test_replay_2_INV_HUB_B
     }
 
     function assert_INV_HUB_C(address hubAddress, uint256 assetId) internal {
@@ -77,7 +80,12 @@ abstract contract HubInvariants is HandlerAggregator {
         uint256 totalDebt = IHub(hubAddress).getAssetTotalOwed(assetId);
 
         // Checks
-        //assertEq(totalSuppliedAssets, convertedAssets, INV_HUB_E); TODO review this invariant test_replay_invariant_INV_HUB_E
+        assertApproxEqAbs( // TODO review test_replay_3_setUsingAsCollateral
+            totalSuppliedAssets,
+            convertedAssets,
+            IHub(hubAddress).previewRemoveByShares(assetId, 1),
+            INV_HUB_E
+        );
         assertEq(totalSuppliedAssets, asset.liquidity + totalDebt + asset.deficit + asset.swept, INV_HUB_F);
     }
 
@@ -92,11 +100,14 @@ abstract contract HubInvariants is HandlerAggregator {
             totalAddedShares += IHub(hubAddress).getSpokeAddedShares(assetId, allSpokes[i]);
         }
         // Checks
-        //assertApproxEqAbs(totalAddedAssets, IHub(hubAddress).getAddedAssets(assetId), SPOKE_COUNT, INV_HUB_G); TODO remove comment after going over test_replay_12_donateUnderlyingToSpoke
+        assertApproxEqAbs(totalAddedAssets, IHub(hubAddress).getAddedAssets(assetId), SPOKE_COUNT, INV_HUB_G);
         assertEq(totalAddedShares, IHub(hubAddress).getAddedShares(assetId), INV_HUB_H);
     }
 
-    function assert_INV_HUB_I(address hubAddress, uint256 assetId, address underlying) internal {
+    function assert_INV_HUB_I(address hubAddress, uint256 assetId) internal {
+        // Get underlying from assetId
+        (address underlying,) = IHub(hubAddress).getAssetUnderlyingAndDecimals(assetId);
+
         // Query values
         uint256 liquidity = IHub(hubAddress).getAssetLiquidity(assetId);
         uint256 swept = IHub(hubAddress).getAssetSwept(assetId);
@@ -107,7 +118,7 @@ abstract contract HubInvariants is HandlerAggregator {
     }
 
     function assert_INV_HUB_K(address hubAddress, uint256 assetId) internal {
-        // TODO for this check to be meaningful, strategy configuration operations have to be integrated
+        /// @dev for this check to be meaningful, strategy configuration operations have to be integrated
         IHub.AssetConfig memory assetConfig = IHub(hubAddress).getAssetConfig(assetId);
 
         // Checks

@@ -26,6 +26,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     /// @dev should be zeroed after each liquidation call
     uint256 internal collateralReserveId;
     uint256 internal debtReserveId;
+    uint256 internal totalDebtValueBefore;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                          ACTIONS                                          //
@@ -41,7 +42,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         address spoke = _getRandomSpoke(j);
 
         // Get one of the reserves IDs randomly
-        uint256 reserveId = _getReserveId(spoke, k);
+        uint256 reserveId = _getRandomReserveId(spoke, k);
 
         // Register user to check postconditions
         _registerUserToCheck(spoke, reserveId, onBehalfOf);
@@ -66,7 +67,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         address spoke = _getRandomSpoke(j);
 
         // Get one of the reserves IDs randomly
-        uint256 reserveId = _getReserveId(spoke, k);
+        uint256 reserveId = _getRandomReserveId(spoke, k);
 
         // Register user to check postconditions
         _registerUserToCheck(spoke, reserveId, address(actor));
@@ -91,7 +92,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         address spoke = _getRandomSpoke(j);
 
         // Get one of the reserves IDs randomly
-        uint256 reserveId = _getReserveId(spoke, k);
+        uint256 reserveId = _getRandomReserveId(spoke, k);
 
         // Register user to check postconditions
         _registerUserToCheck(spoke, reserveId, address(actor));
@@ -123,7 +124,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         address spoke = _getRandomSpoke(j);
 
         // Get one of the reserves IDs randomly
-        uint256 reserveId = _getReserveId(spoke, k);
+        uint256 reserveId = _getRandomReserveId(spoke, k);
 
         // Register user to check postconditions
         _registerUserToCheck(spoke, reserveId, onBehalfOf);
@@ -136,7 +137,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
             ///// HSPOST /////
 
-            assertLt(
+            assertLe(
                 defaultVarsAfter.userVars[spoke][reserveId][onBehalfOf].totalDebt,
                 defaultVarsBefore.userVars[spoke][reserveId][onBehalfOf].totalDebt,
                 HSPOST_SP_C
@@ -146,7 +147,10 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         }
     }
 
-    function liquidationCall(uint256 debtToCover, bool receiveShares, uint8 i, uint8 j, uint8 k, uint8 l) external setup {
+    function liquidationCall(uint256 debtToCover, bool receiveShares, uint8 i, uint8 j, uint8 k, uint8 l)
+        external
+        setup
+    {
         bool success;
         bytes memory returnData;
 
@@ -154,10 +158,11 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         address spoke = _getRandomSpoke(j);
 
         // Get one of the reserves IDs randomly
-        collateralReserveId = _getReserveId(spoke, k);
-        debtReserveId = _getReserveId(spoke, l);
+        collateralReserveId = _getRandomReserveId(spoke, k);
+        debtReserveId = _getRandomReserveId(spoke, l);
 
-        uint256 debtValueInBaseCurrency = ISpoke(spoke).getUserAccountData(_getRandomActor(i)).totalDebtValue;
+        totalDebtValueBefore = ISpoke(spoke).getUserAccountData(_getRandomActor(i)).totalDebtValue;
+        uint256 reserveDebtBefore = ISpoke(spoke).getReserveTotalDebt(debtReserveId);
 
         // Register users to check postconditions: liquidated user and liquidator for both reserves
         _registerUserToCheck(spoke, debtReserveId, _getRandomActor(i));
@@ -168,27 +173,40 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         _before();
         (success, returnData) = actor.proxy(
             spoke,
-            abi.encodeCall(Spoke.liquidationCall, (collateralReserveId, debtReserveId, _getRandomActor(i), debtToCover, receiveShares))
+            abi.encodeCall(
+                Spoke.liquidationCall,
+                (collateralReserveId, debtReserveId, _getRandomActor(i), debtToCover, receiveShares)
+            )
         );
 
         if (success) {
             _after();
 
+            // Calculate the debt liquidated
+            uint256 reserveDebtAfter = ISpoke(spoke).getReserveTotalDebt(debtReserveId);
+            uint256 debtLiquidated = (reserveDebtBefore > reserveDebtAfter) ? reserveDebtBefore - reserveDebtAfter : 0;
+
             ///// HSPOST /////
+            assertLe(
+                debtLiquidated,
+                defaultVarsBefore.userVars[spoke][debtReserveId][_getRandomActor(i)].totalDebt,
+                HSPOST_SP_LIQ_A
+            );
 
-            uint256 userTotalDebt = ISpoke(spoke).getUserTotalDebt(debtReserveId, _getRandomActor(i));
-
-            assertLt(debtToCover, userTotalDebt, HSPOST_SP_LIQ_A);
-
-            if (debtValueInBaseCurrency > ISpoke(spoke).DUST_LIQUIDATION_THRESHOLD()) {
-                assertEq(userTotalDebt, 0, HSPOST_SP_LIQ_C);
+            if (totalDebtValueBefore < ISpoke(spoke).DUST_LIQUIDATION_THRESHOLD()) {
+                assertEq(
+                    defaultVarsAfter.userVars[spoke][debtReserveId][_getRandomActor(i)].totalDebt, 0, HSPOST_SP_LIQ_C
+                );
             }
+
+            assertGe(debtToCover, debtLiquidated, HSPOST_SP_LIQ_D);
         } else {
             revert("DefaultHandler: liquidationCall failed");
         }
 
         delete collateralReserveId;
         delete debtReserveId;
+        delete totalDebtValueBefore;
     }
 
     function setUsingAsCollateral(bool usingAsCollateral, uint8 i, uint8 j) external setup {
@@ -199,7 +217,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
         address spoke = _getRandomSpoke(i);
 
-        uint256 reserveId = _getReserveId(spoke, j);
+        uint256 reserveId = _getRandomReserveId(spoke, j);
 
         // Register user to check postconditions
         /// @dev setUsingAsCollateral(reserveId, FALSE) all reserves in user position should be refreshed,
@@ -269,13 +287,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                         OWNER ACTIONS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    // TODO
-    // Configurator:
-    // updateLiquidationConfig
-    // updateReserveConfig
-    // addDynamicReserveConfig
-    // updateDynamicReserveConfig
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                           HELPERS                                         //

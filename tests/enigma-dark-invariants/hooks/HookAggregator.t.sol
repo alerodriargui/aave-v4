@@ -49,6 +49,9 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
 
     /// @notice Postconditions for the handlers
     function _checkPostConditions() internal {
+        // Store the message signature to avoid losing it inside the checkPostConditions call context
+        _cacheCurrentActionSignature();
+
         try this.checkPostConditions() {}
         catch (bytes memory returnData) {
             _handleAssertionError(false, returnData, true, GPOST_CHECK_FAILED);
@@ -109,6 +112,7 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
     /// @notice Resets the state of the handlers
     function _resetState() internal {
         delete usersToCheck;
+        delete currentActionSignature;
     }
 
     /// @notice Checks if a call failed due to an assertion error and propagates the error if found.

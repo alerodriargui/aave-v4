@@ -42,7 +42,7 @@ abstract contract InvariantsSpec {
 
     string constant INV_HUB_H = "INV_HUB_H: totalAddedShares = sum of addedShares of all registered spokes";
 
-    string constant INV_HUB_I = "INV_HUB_I: asset.underlying.balanceOf(hub) >= asset.liquidity - asset.swept";
+    string constant INV_HUB_I = "INV_HUB_I: asset.underlying.balanceOf(hub) + asset.swept >= asset.liquidity";
 
     string constant INV_HUB_J =
         "INV_HUB_J: totalDrawn{Shares,Assets} >= any spoke totalDrawn{Shares,Assets} (same for premium debt)"; // TODO

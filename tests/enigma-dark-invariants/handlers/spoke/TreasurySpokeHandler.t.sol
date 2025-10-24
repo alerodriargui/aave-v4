@@ -33,9 +33,9 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
     //                                         OWNER ACTIONS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function supply(uint256 amount, uint8 i, uint8 j) external {
+    function supply(uint256 amount, uint8 i, uint8 j) external {// TODO fix coverage issues
         // Get one of the hub addresses randomly
-        address hubAddress = _getRandomHubAddress(i);
+        address hubAddress = _getRandomHub(i);
         address treasurySpoke = hubInfo[hubAddress].treasureSpoke;
 
         // Get one of the reserves IDs randomly
@@ -51,7 +51,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
 
     function withdraw(uint256 amount, uint8 i, uint8 j) external {
         // Get one of the hub addresses randomly
-        address hubAddress = _getRandomHubAddress(i);
+        address hubAddress = _getRandomHub(i);
         address treasurySpoke = hubInfo[hubAddress].treasureSpoke;
         
         // Get one of the reserves IDs randomly
@@ -67,7 +67,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
 
     function transfer(uint256 amount, uint8 i, uint8 j, uint8 k) external {
         // Get one of the hub addresses randomly
-        address hubAddress = _getRandomHubAddress(i);
+        address hubAddress = _getRandomHub(i);
 
         // Get one of the assets IDs randomly
         address asset = _getRandomBaseAsset(j);

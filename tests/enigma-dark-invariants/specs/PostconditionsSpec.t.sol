@@ -43,7 +43,7 @@ abstract contract PostconditionsSpec {
         "GPOST_SP_A: Stored (user.premiumDrawnShares/user.baseDrawnShares) & calculated user risk premium (calculation based on user's position, via spoke.calculateUserAccountData) need to be the same right after an operation";
 
     string constant GPOST_SP_B =
-        "GPOST_SP_B: Premium debt of an individual user, spoke can only decrease by calling repay when premium debt is not zero";
+        "GPOST_SP_B: Premium debt of an individual user, spoke can only decrease by calling repay when premium debt is not zero";// TODO add liquidationCall to the condition
 
     string constant HSPOST_SP_C = "HSPOST_SP_C: User liability should decrease after repayment";
 
@@ -70,4 +70,7 @@ abstract contract PostconditionsSpec {
 
     string constant HSPOST_SP_LIQ_C =
         "HSPOST_SP_LIQ_C: Liquidator is always forced to repay all the debt of a user if debt value is below DUST_DEBT_LIQUIDATION_THRESHOLD";
+
+    string constant HSPOST_SP_LIQ_D =
+        "HSPOST_SP_LIQ_D: Liquidation cannot result in an amount of liquidated debt > debtToCover";
 }

@@ -4,6 +4,8 @@ pragma solidity ^0.8.19;
 // Libraries
 import {CREATE3} from "./utils/CREATE3.sol";
 import {Constants} from "tests/Constants.sol";
+import {Roles} from "src/libraries/types/Roles.sol";
+import "forge-std/console.sol";
 
 // Interfaces
 import {IAaveOracle} from "src/spoke/interfaces/IAaveOracle.sol";
@@ -27,6 +29,8 @@ import {SpokeInstance} from "src/spoke/instances/SpokeInstance.sol";
 import {Spoke} from "src/spoke/Spoke.sol";
 import {TransparentUpgradeableProxy} from "src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol";
 import {AaveOracle} from "src/spoke/AaveOracle.sol";
+import {HubConfigurator} from "src/hub/HubConfigurator.sol";
+import {SpokeConfigurator} from "src/spoke/SpokeConfigurator.sol";
 
 /// @notice Setup contract for the invariant test Suite, inherited by Tester
 contract Setup is BaseTest {
@@ -90,9 +94,16 @@ contract Setup is BaseTest {
         allSpokes.push(address(treasurySpoke1));
         allSpokes.push(address(treasurySpoke2));
 
+        // Configurators
+        hubConfigurator = new HubConfigurator(admin);
+        spokeConfigurator = new SpokeConfigurator(admin);
+        _setUpConfiguratorRoles();
+
         vm.label(address(accessManager), "accessManager");
         vm.label(address(hub1), "hub1");
         vm.label(address(hub2), "hub2");
+        vm.label(address(hubConfigurator), "hubConfigurator");
+        vm.label(address(spokeConfigurator), "spokeConfigurator");
         vm.label(address(irStrategy1), "irStrategy1");
         vm.label(address(irStrategy2), "irStrategy2");
         vm.label(address(spoke1), "spoke1");
@@ -110,13 +121,13 @@ contract Setup is BaseTest {
     {
         bytes32 salt = keccak256(abi.encodePacked(_oracleDesc));
         address predictedSpoke = CREATE3.predictDeterministicAddress(salt, admin);
-        
+
         // Deploy oracle with predicted spoke address
         IAaveOracle oracle = new AaveOracle(predictedSpoke, uint8(8), _oracleDesc);
-        
+
         // Deploy spoke implementation with oracle address
         address spokeImpl = address(new SpokeInstance(address(oracle)));
-        
+
         // Deploy spoke proxy using CREATE3
         bytes memory proxyCreationCode = abi.encodePacked(
             type(TransparentUpgradeableProxy).creationCode,
@@ -124,7 +135,7 @@ contract Setup is BaseTest {
         );
         address spokeProxy = CREATE3.deployDeterministic(proxyCreationCode, salt);
         ISpoke spoke = ISpoke(spokeProxy);
-        
+
         assertEq(address(spoke), predictedSpoke, "predictedSpoke mismatch");
         assertEq(spoke.ORACLE(), address(oracle), "spoke.ORACLE() mismatch");
         assertEq(oracle.SPOKE(), address(spoke), "oracle.SPOKE() mismatch");
@@ -179,6 +190,7 @@ contract Setup is BaseTest {
             }),
             new bytes(0)
         );
+        hubAssetIds[address(hub1)].push(hub1UsdcAssetId);
 
         // Add WETH
         hub1WethAssetId = hub1.addAsset(
@@ -194,6 +206,7 @@ contract Setup is BaseTest {
             }),
             new bytes(0)
         );
+        hubAssetIds[address(hub1)].push(hub1WethAssetId);
 
         // HUB 2
         bytes memory encodedIrData2 = abi.encode(
@@ -219,6 +232,7 @@ contract Setup is BaseTest {
             }),
             new bytes(0)
         );
+        hubAssetIds[address(hub2)].push(hub2WethAssetId);
 
         // Add USDC
         hub2UsdcAssetId = hub2.addAsset(
@@ -230,13 +244,18 @@ contract Setup is BaseTest {
                 liquidityFee: 5_00,
                 feeReceiver: address(treasurySpoke2),
                 irStrategy: address(irStrategy2),
-                reinvestmentController: address(0) // TODO should this be integrated?
+                reinvestmentController: address(0)
             }),
             new bytes(0)
         );
+        hubAssetIds[address(hub2)].push(hub2UsdcAssetId);
     }
 
     function _configureSpokes() internal {
+        // Configure spoke liquidation configs
+        spokeConfigurator.updateLiquidationTargetHealthFactor(address(spoke1), TARGET_HEALTH_FACTOR_SPOKE1);
+        spokeConfigurator.updateLiquidationTargetHealthFactor(address(spoke2), TARGET_HEALTH_FACTOR_SPOKE2);
+
         // Spoke 1 reserve configs
         spokeInfo[spoke1].usdc.reserveConfig =
             ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 30_00});
@@ -246,18 +265,18 @@ contract Setup is BaseTest {
         spokeInfo[spoke1].weth.reserveConfig =
             ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 20_00});
         spokeInfo[spoke1].weth.dynReserveConfig =
-            ISpoke.DynamicReserveConfig({collateralFactor: 80_00, maxLiquidationBonus: 100_00, liquidationFee: 0});
+            ISpoke.DynamicReserveConfig({collateralFactor: 80_00, maxLiquidationBonus: 105_00, liquidationFee: 0});
 
         // Spoke 2 reserve configs
         spokeInfo[spoke2].weth.reserveConfig =
             ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 10_00});
         spokeInfo[spoke2].weth.dynReserveConfig =
-            ISpoke.DynamicReserveConfig({collateralFactor: 70_00, maxLiquidationBonus: 110_00, liquidationFee: 0});
+            ISpoke.DynamicReserveConfig({collateralFactor: 70_00, maxLiquidationBonus: 105_00, liquidationFee: 0});
 
         spokeInfo[spoke2].usdc.reserveConfig =
             ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00});
         spokeInfo[spoke2].usdc.dynReserveConfig =
-            ISpoke.DynamicReserveConfig({collateralFactor: 80_00, maxLiquidationBonus: 110_00, liquidationFee: 0});
+            ISpoke.DynamicReserveConfig({collateralFactor: 80_00, maxLiquidationBonus: 100_00, liquidationFee: 0});
 
         // Deploy price feeds
         priceFeeds.push(_deployMockPriceFeed(spoke1, 1e8));
@@ -458,6 +477,35 @@ contract Setup is BaseTest {
                 paused: false
             })
         );
+    }
+
+    /// @notice Set up roles for the configurators
+    function _setUpConfiguratorRoles() internal virtual {
+        // Grant roles to configurators
+        accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
+        accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, address(spokeConfigurator), 0);
+
+        // Grant responsibilities to spokes
+        {
+            bytes4[] memory selectors = new bytes4[](6);
+            selectors[0] = ISpoke.updateLiquidationConfig.selector;
+            selectors[1] = ISpoke.updateReserveConfig.selector;
+            selectors[2] = ISpoke.updateDynamicReserveConfig.selector;
+            selectors[3] = ISpoke.addDynamicReserveConfig.selector;
+            selectors[4] = ISpoke.updatePositionManager.selector;
+            selectors[5] = ISpoke.updateReservePriceSource.selector;
+            accessManager.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
+            accessManager.setTargetFunctionRole(address(spoke2), selectors, Roles.SPOKE_ADMIN_ROLE);
+        }
+
+        // Grant responsibilities to hubs
+        {
+            bytes4[] memory selectors = new bytes4[](2);
+            selectors[0] = IHub.updateSpokeConfig.selector;
+            selectors[1] = IHub.setInterestRateData.selector;
+            accessManager.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_ADMIN_ROLE);
+            accessManager.setTargetFunctionRole(address(hub2), selectors, Roles.HUB_ADMIN_ROLE);
+        }
     }
 
     function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
