@@ -9,11 +9,10 @@ contract SpokeInvestigateOogTest is SpokeBase {
     super.setUp();
 
     // Add a bunch of new reserves and assets to hub1 and spoke1
-    _addNewAssetsAndReserves(316);
+    _addNewAssetsAndReserves(161);
   }
 
   function test_oog() public {
-    vm.skip(true, 'No need to run on ci');
     console.log('made it out of setup');
 
     uint256 i;
@@ -58,6 +57,18 @@ contract SpokeInvestigateOogTest is SpokeBase {
   }
 
   function _addNewAssetsAndReserves(uint256 count) internal {
+    // Ensure spoke1's collateral risks are sorted
+    uint24 collateralRisk;
+    for (uint256 i = 0; i < spoke1.getReserveCount(); i++) {
+      assertLe(
+        collateralRisk,
+        spoke1.getReserveConfig(i).collateralRisk,
+        'Spoke1 reserves not sorted by collateral risk'
+      );
+      collateralRisk = spoke1.getReserveConfig(i).collateralRisk;
+    }
+
+    collateralRisk = spoke1.getReserveConfig(spoke1.getReserveCount() - 1).collateralRisk; // Get the last reserve's collateral risk
     for (uint256 i = 0; i < count; i++) {
       MockERC20 newToken = new MockERC20();
       newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
@@ -106,7 +117,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        collateralRisk: _randomBps()
+        collateralRisk: ++collateralRisk // Increasing collateral risk to maintain sorted order (worst case for quicksort)
       });
       ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
         collateralFactor: 80_00,
