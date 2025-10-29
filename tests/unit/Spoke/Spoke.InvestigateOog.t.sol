@@ -13,6 +13,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
   }
 
   function test_oog() public {
+    vm.skip(true, 'No need to run on ci');
     console.log('made it out of setup');
 
     uint256 i;
@@ -67,7 +68,8 @@ contract SpokeInvestigateOogTest is SpokeBase {
         active: true,
         paused: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: 1000_00
       });
 
       bytes memory encodedIrData = abi.encode(
