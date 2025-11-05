@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {SpokeInstance} from 'src/contracts/spoke/instances/SpokeInstance.sol';
+import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
 
 contract AaveV4SpokeInstanceDeployProcedure {
   function _deploySpokeInstance(address oracle_) internal returns (address) {

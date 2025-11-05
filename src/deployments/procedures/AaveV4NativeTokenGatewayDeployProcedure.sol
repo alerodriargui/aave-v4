@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {NativeTokenGateway} from 'src/contracts/position-manager/NativeTokenGateway.sol';
+import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 
 contract AaveV4NativeTokenGatewayDeployProcedure {
   function _deployNativeTokenGateway(

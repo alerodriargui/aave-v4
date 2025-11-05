@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {AaveOracle} from 'src/contracts/spoke/AaveOracle.sol';
+import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 
 contract AaveV4AaveOracleDeployProcedure {
   function _deployAaveOracle(
