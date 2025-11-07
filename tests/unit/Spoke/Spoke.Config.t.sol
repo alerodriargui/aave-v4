@@ -137,7 +137,7 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.AddReserve(reserveId, dai2AssetId, address(hub1));
+    emit ISpoke.AddReserve(reserveId, usdzAssetId, address(hub1));
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateReserveConfig(reserveId, newReserveConfig);
     vm.expectEmit(address(spoke1));
@@ -150,7 +150,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
@@ -242,7 +242,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
@@ -252,7 +252,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
