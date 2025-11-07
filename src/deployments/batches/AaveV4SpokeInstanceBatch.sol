@@ -36,7 +36,7 @@ contract AaveV4SpokeInstanceBatch is
       oracleDescription_
     );
     address spokeImplementationAddress = _deploySpokeInstance(aaveOracleAddress);
-    address spokeProxyAddress = _deployTransparentUpgradeableProxy(
+    address spokeProxyAddress = _proxify(
       spokeImplementationAddress,
       admin_,
       abi.encodeWithSignature('initialize(address)', accessManagerAddress_)

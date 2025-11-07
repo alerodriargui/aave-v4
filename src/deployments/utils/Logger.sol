@@ -5,7 +5,7 @@ import 'forge-std/StdJson.sol';
 import 'forge-std/Vm.sol';
 import {console} from 'forge-std/console.sol';
 
-contract LogUtils {
+contract Logger {
   using stdJson for string;
 
   struct AddressEntry {

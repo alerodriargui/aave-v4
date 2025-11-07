@@ -11,7 +11,7 @@ contract AaveV4GatewaysBatch is
 {
   BatchReports.GatewaysBatchReport internal _report;
 
-  constructor(address nativeWrapper_, address admin_) {
+  constructor(address admin_, address nativeWrapper_) {
     address nativeGatewayAddress = _deployNativeTokenGateway(nativeWrapper_, admin_);
     address signatureGatewayAddress = _deploySignatureGateway(admin_);
 
