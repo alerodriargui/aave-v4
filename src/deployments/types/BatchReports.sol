@@ -6,18 +6,21 @@ library BatchReports {
     address accessManagerAddress;
   }
 
+  struct ConfiguratorBatchReport {
+    address hubConfiguratorAddress;
+    address spokeConfiguratorAddress;
+  }
+
   struct SpokeInstanceBatchReport {
     address spokeImplementationAddress;
     address spokeProxyAddress;
     address aaveOracleAddress;
-    address spokeConfiguratorAddress;
   }
 
   struct HubBatchReport {
     address hubAddress;
     address irStrategyAddress;
     address treasurySpokeAddress;
-    address hubConfiguratorAddress;
   }
 
   struct GatewaysBatchReport {

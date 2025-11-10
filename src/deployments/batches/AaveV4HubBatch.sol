@@ -5,13 +5,11 @@ import {BatchReports} from 'src/deployments/types/BatchReports.sol';
 import {AaveV4HubDeployProcedure} from 'src/deployments/procedures/AaveV4HubDeployProcedure.sol';
 import {AaveV4InterestRateStrategyDeployProcedure} from 'src/deployments/procedures/AaveV4InterestRateStrategyDeployProcedure.sol';
 import {AaveV4TreasurySpokeDeployProcedure} from 'src/deployments/procedures/AaveV4TreasurySpokeDeployProcedure.sol';
-import {AaveV4HubConfiguratorDeployProcedure} from 'src/deployments/procedures/AaveV4HubConfiguratorDeployProcedure.sol';
 
 contract AaveV4HubBatch is
   AaveV4HubDeployProcedure,
   AaveV4InterestRateStrategyDeployProcedure,
-  AaveV4TreasurySpokeDeployProcedure,
-  AaveV4HubConfiguratorDeployProcedure
+  AaveV4TreasurySpokeDeployProcedure
 {
   BatchReports.HubBatchReport internal _report;
 
@@ -19,13 +17,11 @@ contract AaveV4HubBatch is
     address hubAddress = _deployHub(accessManagerAddress_);
     address irStrategyAddress = _deployInterestRateStrategy(hubAddress);
     address treasurySpokeAddress = _deployTreasurySpoke(admin_, hubAddress);
-    address hubConfiguratorAddress = _deployHubConfigurator(admin_);
 
     _report = BatchReports.HubBatchReport({
       hubAddress: hubAddress,
       irStrategyAddress: irStrategyAddress,
-      treasurySpokeAddress: treasurySpokeAddress,
-      hubConfiguratorAddress: hubConfiguratorAddress
+      treasurySpokeAddress: treasurySpokeAddress
     });
   }
 
