@@ -28,15 +28,15 @@ contract Logger {
     _outputPath = outputPath_;
   }
 
-  function log(string memory label, address value) public view {
+  function log(string memory label, address value) public pure {
     _log(label, value);
   }
 
-  function log(string memory label, uint256 value) public view {
+  function log(string memory label, uint256 value) public pure {
     _log(label, value);
   }
 
-  function log(string memory value) public view {
+  function log(string memory value) public pure {
     _log(value);
   }
 
@@ -67,15 +67,15 @@ contract Logger {
     vm.writeJson(_root, _outputPath);
   }
 
-  function _log(string memory label, address value) internal view {
+  function _log(string memory label, address value) internal pure {
     console.log('%s: %s', label, value);
   }
 
-  function _log(string memory label, uint256 value) internal view {
+  function _log(string memory label, uint256 value) internal pure {
     console.log('%s: %s', label, value);
   }
 
-  function _log(string memory value) internal view {
+  function _log(string memory value) internal pure {
     console.log(value);
   }
 

@@ -10,17 +10,20 @@ contract InputUtils {
   struct FullDeployInputs {
     address admin;
     address nativeWrapperAddress;
+    bool setRoles;
     string[] hubLabels;
     string[] spokeLabels;
   }
 
   struct SpokeDeployInputs {
     address admin;
+    bool setRoles;
     string spokeLabel;
   }
 
   struct HubDeployInputs {
     address admin;
+    bool setRoles;
     string hubLabel;
   }
 

@@ -20,25 +20,22 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
   function run() external {
     Logger logger = new Logger(OUTPUT_PATH);
     FullDeployInputs memory inputs = loadFullDeployInputs(INPUT_PATH);
-    //TODO : load roles
 
     address deployer = msg.sender;
 
     logger.log('Starting Aave V4 Batch Deployment');
 
     vm.startBroadcast();
-    AaveV4DeployOrchestration.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(
-        logger,
-        deployer,
-        inputs.admin,
-        inputs.nativeWrapperAddress,
-        inputs.hubLabels,
-        inputs.spokeLabels
-      );
+    AaveV4DeployOrchestration.deployAaveV4(
+      logger,
+      deployer,
+      inputs.admin,
+      inputs.nativeWrapperAddress,
+      inputs.hubLabels,
+      inputs.spokeLabels,
+      inputs.setRoles
+    );
     vm.stopBroadcast();
-
-    // TODO : apply roles
 
     logger.log('Batch Deployment Completed');
     logger.log('Saving Logs');
