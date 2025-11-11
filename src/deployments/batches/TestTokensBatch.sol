@@ -7,7 +7,7 @@ import {WETHDeployProcedure} from 'src/deployments/procedures/deploy/WETHDeployP
 import {TestnetERC20DeployProcedure} from 'src/deployments/procedures/deploy/TestnetERC20DeployProcedure.sol';
 
 contract TestTokensBatch is WETHDeployProcedure, TestnetERC20DeployProcedure {
-  struct TestTokensInput {
+  struct TestTokenInput {
     string name;
     string symbol;
     uint8 decimals;
@@ -15,12 +15,12 @@ contract TestTokensBatch is WETHDeployProcedure, TestnetERC20DeployProcedure {
 
   BatchReports.TestTokensBatchReport internal _report;
 
-  constructor(TestTokensInput[] memory inputs_) {
+  constructor(TestTokenInput[] memory inputs_) {
     _report.tokenAddresses = new address[](inputs_.length);
     _report.wethAddress = _deployWETH();
 
     for (uint256 i; i < inputs_.length; i++) {
-      TestTokensInput memory input = inputs_[i];
+      TestTokenInput memory input = inputs_[i];
       address tokenAddress = _deployTestnetERC20(input.name, input.symbol, input.decimals);
       _report.tokenAddresses[i] = tokenAddress;
     }

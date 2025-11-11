@@ -23,7 +23,7 @@ library AaveV4TestOrchestration {
 
   struct TestHubReport {
     address hubAddress;
-    address interestRateStrategyAddress;
+    address irStrategyAddress;
     address treasurySpokeAddress;
   }
 
@@ -45,8 +45,8 @@ library AaveV4TestOrchestration {
     address treasuryAdmin,
     uint256 hubCount,
     uint256 spokeCount,
-    TestTokensBatch.TestTokenInput[] memory tokenInputs,
-  ) external returns(TestEnvReport memory) {
+    TestTokensBatch.TestTokenInput[] memory tokenInputs
+  ) external returns (TestEnvReport memory) {
     TestEnvReport memory report;
 
     report.testTokenAddresses = new address[](tokenInputs.length);
@@ -68,7 +68,7 @@ library AaveV4TestOrchestration {
         report.accessManagerAddress
       );
       report.hubReports[i].hubAddress = hubReport.hubAddress;
-      report.hubReports[i].interestRateStrategyAddress = hubReport.interestRateStrategyAddress;
+      report.hubReports[i].irStrategyAddress = hubReport.irStrategyAddress;
       report.hubReports[i].treasurySpokeAddress = hubReport.treasurySpokeAddress;
     }
 
@@ -77,7 +77,7 @@ library AaveV4TestOrchestration {
       BatchReports.SpokeInstanceBatchReport memory spokeReport = _deploySpokeInstanceBatch(
         admin,
         report.accessManagerAddress,
-        string.concat('Spoke ', i, ' (USD)')
+        string.concat('Spoke ', string(abi.encode(i)), ' (USD)')
       );
       report.spokeReports[i].spokeAddress = spokeReport.spokeProxyAddress;
       report.spokeReports[i].aaveOracleAddress = spokeReport.aaveOracleAddress;
@@ -93,14 +93,8 @@ library AaveV4TestOrchestration {
     TestEnvReport memory report
   ) external {
     // Set Admin Roles
-    AaveV4AdminRolesProcedure.setAdminRoles(
-      report.accessManagerAddress,
-      admin
-    );
-    AaveV4AdminRolesProcedure.setConfiguratorHubAdminRole(
-      report.accessManagerAddress,
-      hubAdmin
-    );
+    AaveV4AdminRolesProcedure.setConfiguratorAdminRoles(report.accessManagerAddress, admin, admin);
+    AaveV4AdminRolesProcedure.setConfiguratorHubAdminRole(report.accessManagerAddress, hubAdmin);
     AaveV4AdminRolesProcedure.setConfiguratorSpokeAdminRole(
       report.accessManagerAddress,
       spokeAdmin
@@ -164,5 +158,4 @@ library AaveV4TestOrchestration {
     );
     return spokeInstanceBatch.getReport();
   }
-
 }
