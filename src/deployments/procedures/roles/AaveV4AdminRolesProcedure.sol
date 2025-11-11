@@ -18,4 +18,34 @@ library AaveV4AdminRolesProcedure {
       0
     );
   }
+
+  function setConfiguratorHubAdminRole(
+    address accessManagerAddress,
+    address hubConfiguratorAddress
+  ) internal {
+    IAccessManager(accessManagerAddress).grantRole(Roles.HUB_ADMIN_ROLE, hubConfiguratorAddress, 0);
+  }
+
+  function setConfiguratorSpokeAdminRole(
+    address accessManagerAddress,
+    address spokeConfiguratorAddress
+  ) internal {
+    IAccessManager(accessManagerAddress).grantRole(
+      Roles.SPOKE_ADMIN_ROLE,
+      spokeConfiguratorAddress,
+      0
+    );
+  }
+
+  function setNewAdminRole(
+    address accessManagerAddress,
+    address newAdminAddress,
+    address currentAdminAddress
+  ) internal {
+    IAccessManager(accessManagerAddress).grantRole(Roles.DEFAULT_ADMIN_ROLE, newAdminAddress, 0);
+    IAccessManager(accessManagerAddress).renounceRole(
+      Roles.DEFAULT_ADMIN_ROLE,
+      currentAdminAddress
+    );
+  }
 }

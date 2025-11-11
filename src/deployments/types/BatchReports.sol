@@ -27,4 +27,9 @@ library BatchReports {
     address signatureGatewayAddress;
     address nativeGatewayAddress;
   }
+
+  struct TestTokensBatchReport {
+    address wethAddress;
+    address[] tokenAddresses;
+  }
 }

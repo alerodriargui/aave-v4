@@ -22,4 +22,18 @@ library AaveV4SpokeRolesProcedure {
       Roles.SPOKE_ADMIN_ROLE
     );
   }
+
+  function setSpokeUserPositionAdapterRole(
+    address accessManagerAddress,
+    address spokeAddress
+  ) internal {
+    bytes4[] memory selectors = new bytes4[](2);
+    selectors[0] = ISpoke.updateUserDynamicConfig.selector;
+    selectors[1] = ISpoke.updateUserRiskPremium.selector;
+    IAccessManager(accessManagerAddress).setTargetFunctionRole(
+      spokeAddress,
+      selectors,
+      Roles.USER_POSITION_UPDATER_ROLE
+    );
+  }
 }

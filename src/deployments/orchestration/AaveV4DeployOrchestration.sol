@@ -142,6 +142,11 @@ library AaveV4DeployOrchestration {
           report.spokeInstanceBatchReports[i].report.spokeProxyAddress
         );
       }
+      AaveV4AdminRolesProcedure.setNewAdminRole(
+        report.accessBatchReport.accessManagerAddress,
+        admin,
+        deployer
+      );
     }
 
     return report;
