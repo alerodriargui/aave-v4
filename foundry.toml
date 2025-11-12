@@ -6,7 +6,6 @@ fs_permissions = [
 solc_version = "0.8.28"
 src = 'src'
 test = 'tests'
-script = 'scripts'
 out = 'out'
 libs = ['lib']
 evm_version = "cancun"
