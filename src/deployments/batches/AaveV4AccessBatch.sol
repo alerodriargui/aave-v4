@@ -2,13 +2,13 @@
 pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/types/BatchReports.sol';
-import {AaveV4AccessManagerDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4AccessManagerDeployProcedure.sol';
+import {AaveV4AccessManagerEnumerableDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4AccessManagerEnumerableDeployProcedure.sol';
 
-contract AaveV4AccessBatch is AaveV4AccessManagerDeployProcedure {
+contract AaveV4AccessBatch is AaveV4AccessManagerEnumerableDeployProcedure {
   BatchReports.AccessBatchReport internal _report;
 
   constructor(address admin_) {
-    address accessManagerAddress = _deployAccessManager(admin_);
+    address accessManagerAddress = _deployAccessManagerEnumerable(admin_);
     _report = BatchReports.AccessBatchReport({accessManagerAddress: accessManagerAddress});
   }
 
