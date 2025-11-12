@@ -16,6 +16,7 @@ import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4Hu
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 
 library AaveV4TestOrchestration {
+  bool public constant IS_TEST = true;
   Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
 
   uint8 constant ORACLE_DECIMALS = 8;
