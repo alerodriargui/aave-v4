@@ -10,12 +10,14 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
+import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
 
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {AaveOracle, IAaveOracle} from 'src/spoke/AaveOracle.sol';
+import {Ownable2Step} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
@@ -42,16 +44,20 @@ contract Deploy is Script, StdAssertions {
   /// ---------- TOKEN -----------
   struct Token {
     address token;
-    address priceSource;
+    address priceFeed;
   }
   mapping(string key => Token token) internal tokens;
   bool tokenSetup;
+
+  address signatureGateway;
+  address nativeTokenGateway;
 
   function run() external {
     vm.startBroadcast();
     setUpTokens();
     setUpHubs();
     setUpReserves();
+    periphery();
     logAddy();
     // seed();
   }
@@ -140,8 +146,8 @@ contract Deploy is Script, StdAssertions {
   struct SpokeListConfig {
     string assetKey;
     string spokeKey;
-    uint56 addCap;
-    uint56 drawCap;
+    uint40 addCap;
+    uint40 drawCap;
   }
   struct AssetConfig {
     string key;
@@ -634,7 +640,7 @@ contract Deploy is Script, StdAssertions {
     Hub hub = _hub(conf.hubKey).hub;
     ISpoke spoke = _spoke(spokeKey);
     Token storage t = _token(conf.assetKey);
-    uint assetId = _assetId(hub, t.token);
+    uint assetId = _assetId(hub, address(t.token));
 
     ISpoke.ReserveConfig memory st = ISpoke.ReserveConfig({
       frozen: false,
@@ -648,7 +654,7 @@ contract Deploy is Script, StdAssertions {
       liquidationFee: conf.liquidationFee
     });
 
-    uint reserveId = spoke.addReserve(address(hub), assetId, t.priceSource, st, dyn);
+    uint reserveId = spoke.addReserve(address(hub), assetId, t.priceFeed, st, dyn);
 
     assertEq(abi.encode(spoke.getReserveConfig(reserveId)), abi.encode(st));
     assertEq(abi.encode(spoke.getDynamicReserveConfig(reserveId)), abi.encode(dyn));
@@ -677,7 +683,7 @@ contract Deploy is Script, StdAssertions {
     console.log('token\t\t\t\t\t', conf.key);
 
     HubGlobalConfig storage hubConf = _hub(hubKey);
-    address token = _token(conf.key).token;
+    address token = address(_token(conf.key).token);
 
     uint assetId = hubConf.hub.addAsset(
       address(token),
@@ -724,10 +730,20 @@ contract Deploy is Script, StdAssertions {
     console.log('token\t\t\t\t\t', conf.assetKey);
     Hub hub = _hub(hubKey).hub;
     ISpoke spoke = _spoke(conf.spokeKey);
-    address token = _token(conf.assetKey).token;
+    address token = address(_token(conf.assetKey).token);
     uint assetId = _assetId(hub, token);
 
-    hub.addSpoke(assetId, address(spoke), IHub.SpokeConfig(true, conf.addCap, conf.drawCap));
+    hub.addSpoke(
+      assetId,
+      address(spoke),
+      IHub.SpokeConfig({
+        addCap: conf.addCap,
+        drawCap: conf.drawCap,
+        riskPremiumThreshold: spoke.MAX_ALLOWED_COLLATERAL_RISK(),
+        active: true,
+        paused: false
+      })
+    );
     IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, address(spoke));
     assertEq(spokeConfig.addCap, conf.addCap);
     assertEq(spokeConfig.drawCap, conf.drawCap);
@@ -754,8 +770,13 @@ contract Deploy is Script, StdAssertions {
 
     for (uint i; i < keys.length; ++i) {
       (, address deployer, ) = vm.readCallers();
-      address predictedOracle = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 2);
-      address spokeImpl = address(new SpokeInstance(predictedOracle));
+      address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 2);
+      IAaveOracle oracle = new AaveOracle(
+        address(predictedSpoke),
+        8,
+        string.concat(keys[i], ' (USD)')
+      );
+      address spokeImpl = address(new SpokeInstance(address(oracle)));
       ISpoke spoke = ISpoke(
         address(
           new TransparentUpgradeableProxy(
@@ -765,8 +786,7 @@ contract Deploy is Script, StdAssertions {
           )
         )
       );
-      IAaveOracle oracle = new AaveOracle(address(spoke), 8, string.concat(keys[i], ' (USD)'));
-      assertEq(address(oracle), predictedOracle, 'predictedOracle');
+      assertEq(address(predictedSpoke), address(spoke), 'predictedSpoke');
       assertEq(spoke.ORACLE(), address(oracle));
       assertEq(oracle.SPOKE(), address(spoke));
 
@@ -849,6 +869,10 @@ contract Deploy is Script, StdAssertions {
       }
       vm.serializeString(root, 'token', TOKENS);
     }
+    {
+      vm.serializeAddress(root, 'signatureGateway', signatureGateway);
+      vm.serializeAddress(root, 'nativeTokenGateway', nativeTokenGateway);
+    }
     root = vm.serializeString(root, 'commit', _commit());
     console.log(root);
     vm.writeJson(root, './output/deploy.json');
@@ -873,10 +897,12 @@ contract Deploy is Script, StdAssertions {
     {
       string[11] memory keys = [WETH, cbBTC, WBTC, wstETH, USDC, GHO, USDS, AAVE, MKR, UNI, sUSDe];
       for (uint i; i < keys.length; ++i) {
-        tokens[keys[i]].token = deploy.readAddress(string.concat('.token.', keys[i]));
+        tokens[keys[i]].token = address(deploy.readAddress(string.concat('.token.', keys[i])));
         console.log(address(_token(keys[i]).token), keys[i]);
       }
     }
+    signatureGateway = deploy.readAddress('.signatureGateway');
+    nativeTokenGateway = deploy.readAddress('.nativeTokenGateway');
   }
 
   function _commit() internal returns (string memory) {
@@ -909,36 +935,34 @@ contract Deploy is Script, StdAssertions {
       for (uint i; i < keys.length; ++i) {
         ISpoke spoke = _spoke(keys[i]);
         console.log(keys[i]);
-        // _run(spoke, _supply);
-        // _run(spoke, _withdraw);
         _run(spoke, _supply);
-        _run(spoke, _borrow);
-        _run(spoke, _repay);
+        // _run(spoke, _withdraw);
+        // _run(spoke, _supply);
+        // _run(spoke, _borrow);
+        // _run(spoke, _repay);
         console.log();
       }
     }
   }
 
   function periphery() public {
+    load();
     vm.startBroadcast();
     (, address caller, ) = vm.readCallers();
-    load();
     {
+      // signatureGateway = address(new SignatureGateway(caller));
+      // nativeTokenGateway = address(new NativeTokenGateway(address(tokens[WETH].token), caller));
+      console.log('signatureGateway', address(signatureGateway));
+      console.log('nativeTokenGateway', address(nativeTokenGateway));
+
       string[4] memory keys = [CORE_SPOKE, E_MODE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
       for (uint i; i < keys.length; ++i) {
         ISpoke spoke = _spoke(keys[i]);
-        console.log(keys[i]);
-        SignatureGateway signatureGateway = new SignatureGateway(address(spoke), caller);
-        NativeTokenGateway nativeTokenGateway = new NativeTokenGateway(
-          tokens[WETH].token,
-          address(spoke),
-          caller
-        );
+        console.log('registered for: ', keys[i]);
+        IGatewayBase(signatureGateway).registerSpoke(address(spoke), true);
+        IGatewayBase(nativeTokenGateway).registerSpoke(address(spoke), true);
         spoke.updatePositionManager(address(signatureGateway), true);
         spoke.updatePositionManager(address(nativeTokenGateway), true);
-        console.log('signatureGateway', address(signatureGateway));
-        console.log('nativeTokenGateway', address(nativeTokenGateway));
-        console.log();
       }
     }
   }
@@ -1012,6 +1036,18 @@ contract Deploy is Script, StdAssertions {
     // ) {
     //   WETH9(payable(address(token))).deposit{value: amount}();
     // } else token.mint(amount);
+    (, address caller, ) = vm.readCallers();
+    vm.rpc(
+      'tenderly_setErc20Balance',
+      string.concat(
+        '["',
+        vm.toString(address(token)),
+        '", "',
+        vm.toString(caller),
+        '", "0x13DA329B633647180000000000"]'
+      )
+    );
+    // assertGe(token.balanceOf(caller), amount);
   }
 
   function _mint(address token, uint amount) internal {
