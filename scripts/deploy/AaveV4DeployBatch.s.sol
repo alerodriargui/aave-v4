@@ -7,8 +7,6 @@ import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {DeployUtils} from 'src/deployments/utils/DeployUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 
-import {BatchReports} from 'src/deployments/types/BatchReports.sol';
-
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
 contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {

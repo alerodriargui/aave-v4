@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {BatchReports} from 'src/deployments/types/BatchReports.sol';
+import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 
 import {WETHDeployProcedure} from 'src/deployments/procedures/deploy/WETHDeployProcedure.sol';
 import {TestnetERC20DeployProcedure} from 'src/deployments/procedures/deploy/TestnetERC20DeployProcedure.sol';

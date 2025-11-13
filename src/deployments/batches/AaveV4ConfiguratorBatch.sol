@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {BatchReports} from 'src/deployments/types/BatchReports.sol';
+import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4HubConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4HubConfiguratorDeployProcedure.sol';
 import {AaveV4SpokeConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4SpokeConfiguratorDeployProcedure.sol';
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {BatchReports} from 'src/deployments/types/BatchReports.sol';
+import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4NativeTokenGatewayDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4NativeTokenGatewayDeployProcedure.sol';
 import {AaveV4SignatureGatewayDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4SignatureGatewayDeployProcedure.sol';
 
