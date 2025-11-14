@@ -5,7 +5,7 @@
   "liquidationCall (receiveShares): partial": "316685",
   "liquidationCall: full": "337150",
   "liquidationCall: partial": "323992",
-  "permitReserve + repay (multicall)": "195488",
+  "permitReserve + repay (multicall)": "195476",
   "permitReserve + supply (multicall)": "173494",
   "permitReserve + supply + enable collateral (multicall)": "216808",
   "repay: full": "155641",

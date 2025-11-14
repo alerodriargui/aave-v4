@@ -68,6 +68,11 @@ import {SignatureGateway, ISignatureGateway} from 'src/position-manager/Signatur
 import {Constants} from 'tests/Constants.sol';
 import {Utils} from 'tests/Utils.sol';
 
+// orchestration
+import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
+import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {AaveV4TestOrchestration} from 'src/deployments/orchestration/AaveV4TestOrchestration.sol';
+
 // mocks
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockERC20} from 'tests/mocks/MockERC20.sol';
@@ -125,13 +130,6 @@ abstract contract Base is Test {
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
     PercentageMath.PERCENTAGE_FACTOR;
 
-  // TODO: remove after migrating to token list
-  IERC20 internal usdc;
-  IERC20 internal dai;
-  IERC20 internal usdt;
-  IERC20 internal eth;
-  IERC20 internal wbtc;
-
   IAaveOracle internal oracle1;
   IAaveOracle internal oracle2;
   IAaveOracle internal oracle3;
@@ -142,10 +140,6 @@ abstract contract Base is Test {
   ISpoke internal spoke3;
   AssetInterestRateStrategy internal irStrategy;
   IAccessManager internal accessManager;
-
-  // TODO: remove after migrating to other mock users
-  address internal USER1 = makeAddr('USER1');
-  address internal USER2 = makeAddr('USER2');
 
   address internal alice = makeAddr('alice');
   address internal bob = makeAddr('bob');
@@ -290,11 +284,6 @@ abstract contract Base is Test {
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
     (spoke3, oracle3) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 3 (USD)');
     treasurySpoke = ITreasurySpoke(new TreasurySpoke(TREASURY_ADMIN, address(hub1)));
-    dai = new MockERC20();
-    eth = new MockERC20();
-    usdc = new MockERC20();
-    usdt = new MockERC20();
-    wbtc = new MockERC20();
     vm.stopPrank();
 
     vm.label(address(spoke1), 'spoke1');
@@ -357,13 +346,41 @@ abstract contract Base is Test {
   }
 
   function deployMintAndApproveTokenList() internal {
+    ConfigData.TestTokenInput[] memory tokenInputs = new ConfigData.TestTokenInput[](5);
+    tokenInputs[0] = ConfigData.TestTokenInput({
+      name: 'USDX',
+      symbol: 'USDX',
+      decimals: decimals.usdx
+    });
+    tokenInputs[1] = ConfigData.TestTokenInput({
+      name: 'DAI',
+      symbol: 'DAI',
+      decimals: decimals.dai
+    });
+    tokenInputs[2] = ConfigData.TestTokenInput({
+      name: 'WBTC',
+      symbol: 'WBTC',
+      decimals: decimals.wbtc
+    });
+    tokenInputs[3] = ConfigData.TestTokenInput({
+      name: 'USDY',
+      symbol: 'USDY',
+      decimals: decimals.usdy
+    });
+    tokenInputs[4] = ConfigData.TestTokenInput({
+      name: 'USDZ',
+      symbol: 'USDZ',
+      decimals: decimals.usdz
+    });
+    OrchestrationReports.TestTokensReport memory tokensReport = AaveV4TestOrchestration
+      .deployTestTokens(tokenInputs);
     tokenList = TokenList(
-      new WETH9(),
-      new TestnetERC20('USDX', 'USDX', decimals.usdx),
-      new TestnetERC20('DAI', 'DAI', decimals.dai),
-      new TestnetERC20('WBTC', 'WBTC', decimals.wbtc),
-      new TestnetERC20('USDY', 'USDY', decimals.usdy),
-      new TestnetERC20('USDZ', 'USDZ', decimals.usdz)
+      WETH9(payable(tokensReport.wethAddress)),
+      TestnetERC20(tokensReport.testTokenAddresses[0]),
+      TestnetERC20(tokensReport.testTokenAddresses[1]),
+      TestnetERC20(tokensReport.testTokenAddresses[2]),
+      TestnetERC20(tokensReport.testTokenAddresses[3]),
+      TestnetERC20(tokensReport.testTokenAddresses[4])
     );
 
     vm.label(address(tokenList.weth), 'WETH');

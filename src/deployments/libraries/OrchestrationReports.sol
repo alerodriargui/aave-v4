@@ -35,10 +35,13 @@ library OrchestrationReports {
   }
 
   struct TestEnvReport {
-    address wethAddress;
-    address[] testTokenAddresses;
     address accessManagerAddress;
     TestHubReport[] hubReports;
     TestSpokeReport[] spokeReports;
+  }
+
+  struct TestTokensReport {
+    address wethAddress;
+    address[] testTokenAddresses;
   }
 }

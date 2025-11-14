@@ -32,19 +32,12 @@ library AaveV4TestOrchestration {
     address admin,
     address treasuryAdmin,
     uint256 hubCount,
-    uint256 spokeCount,
-    TestTokensBatch.TestTokenInput[] memory tokenInputs
+    uint256 spokeCount
   ) external returns (OrchestrationReports.TestEnvReport memory) {
     OrchestrationReports.TestEnvReport memory report;
 
-    report.testTokenAddresses = new address[](tokenInputs.length);
     report.hubReports = new OrchestrationReports.TestHubReport[](hubCount);
     report.spokeReports = new OrchestrationReports.TestSpokeReport[](spokeCount);
-
-    // Deploy Test Tokens Batch
-    BatchReports.TestTokensBatchReport memory tokensReport = _deployTokensBatch(tokenInputs);
-    report.wethAddress = tokensReport.wethAddress;
-    report.testTokenAddresses = tokensReport.tokenAddresses;
 
     // Deploy Access Batch
     report.accessManagerAddress = _deployAccessBatch(admin).accessManagerAddress;
@@ -70,6 +63,21 @@ library AaveV4TestOrchestration {
       report.spokeReports[i].spokeAddress = spokeReport.spokeProxyAddress;
       report.spokeReports[i].aaveOracleAddress = spokeReport.aaveOracleAddress;
     }
+
+    return report;
+  }
+
+  function deployTestTokens(
+    ConfigData.TestTokenInput[] memory tokenInputs
+  ) external returns (OrchestrationReports.TestTokensReport memory) {
+    OrchestrationReports.TestTokensReport memory report;
+
+    report.testTokenAddresses = new address[](tokenInputs.length);
+
+    // Deploy Test Tokens Batch
+    BatchReports.TestTokensBatchReport memory tokensReport = _deployTokensBatch(tokenInputs);
+    report.wethAddress = tokensReport.wethAddress;
+    report.testTokenAddresses = tokensReport.tokenAddresses;
 
     return report;
   }
@@ -109,10 +117,38 @@ library AaveV4TestOrchestration {
     }
   }
 
-  function configureHubsAssets(ConfigData.AddAssetParams[] memory paramsList) external {
+  function deployTestHub(
+    address admin,
+    address treasuryAdmin,
+    ConfigData.AddAssetParams[] memory paramsList
+  ) external returns (address, OrchestrationReports.TestHubReport memory) {
+    OrchestrationReports.TestHubReport memory report;
+
+    address accessManagerAddress = _deployAccessBatch(admin).accessManagerAddress;
+
+    // Deploy Hub Batch
+    BatchReports.HubBatchReport memory hubReport = _deployHubBatch(
+      treasuryAdmin,
+      accessManagerAddress
+    );
+    report.hubAddress = hubReport.hubAddress;
+    report.irStrategyAddress = hubReport.irStrategyAddress;
+    report.treasurySpokeAddress = hubReport.treasurySpokeAddress;
+
+    // Set Hub Roles
+    AaveV4HubRolesProcedure.setHubRoles(accessManagerAddress, report.hubAddress);
+
+    return (accessManagerAddress, report);
+  }
+
+  function configureHubsAssets(
+    ConfigData.AddAssetParams[] memory paramsList
+  ) external returns (uint256[] memory) {
+    uint256[] memory assetIds = new uint256[](paramsList.length);
     for (uint256 i; i < paramsList.length; ++i) {
-      AaveV4HubConfigProcedures.addAsset(paramsList[i]);
+      assetIds[i] = AaveV4HubConfigProcedures.addAsset(paramsList[i]);
     }
+    return assetIds;
   }
 
   function configureHubsSpokes(ConfigData.AddSpokeParams[] memory paramsList) external {
@@ -124,17 +160,19 @@ library AaveV4TestOrchestration {
   function configureSpokes(
     ConfigData.UpdateLiquidationConfigParams[] memory liquidationParamsList,
     ConfigData.AddReserveParams[] memory reserveParamsList
-  ) external {
+  ) external returns (uint256[] memory) {
     for (uint256 i; i < liquidationParamsList.length; ++i) {
       AaveV4SpokeConfigProcedures.updateLiquidationConfig(liquidationParamsList[i]);
     }
+    uint256[] memory reserveIds = new uint256[](reserveParamsList.length);
     for (uint256 i; i < reserveParamsList.length; ++i) {
-      AaveV4SpokeConfigProcedures.addReserve(reserveParamsList[i]);
+      reserveIds[i] = AaveV4SpokeConfigProcedures.addReserve(reserveParamsList[i]);
     }
+    return reserveIds;
   }
 
   function _deployTokensBatch(
-    TestTokensBatch.TestTokenInput[] memory tokenInputs
+    ConfigData.TestTokenInput[] memory tokenInputs
   ) internal returns (BatchReports.TestTokensBatchReport memory) {
     TestTokensBatch tokensBatch = new TestTokensBatch(tokenInputs);
     return tokensBatch.getReport();
