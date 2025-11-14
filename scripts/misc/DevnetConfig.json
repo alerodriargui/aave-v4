@@ -1,0 +1,328 @@
+{
+  "tokens": {
+    "1INCH": "0x111111111117dC0aa78b770fA6A738034120C302",
+    "AAVE": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+    "GHO": "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
+    "LDO": "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
+    "MKR": "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",
+    "PT_sUSDe": "0x62C6E813b9589C3631Ba0Cdb013acdB8544038B7",
+    "UNI": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+    "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "USDS": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+    "USDT": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    "WBTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+    "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "cbBTC": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+    "sUSDe": "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497",
+    "wstETH": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
+  },
+  "hubConfigs": [
+    {
+      "label": "PRIME_HUB",
+      "address": "0x6ACF162ca44eB6929eff8c3296a2cdD6bFA7b8BF",
+      "config": {
+        "assets": [
+          {
+            "id": 0,
+            "label": "WETH"
+          },
+          {
+            "id": 1,
+            "label": "wstETH"
+          },
+          {
+            "id": 2,
+            "label": "USDT"
+          },
+          {
+            "id": 3,
+            "label": "USDC"
+          },
+          {
+            "id": 4,
+            "label": "GHO"
+          }
+        ],
+        "spokes": [
+          {
+            "label": "PRIME_SPOKE",
+            "assetIds": [0, 1, 2, 3, 4]
+          }
+        ]
+      }
+    },
+    {
+      "label": "CORE_HUB",
+      "address": "0xaD905aD5EA5B98cD50AE40Cfe368344686a21366",
+      "config": {
+        "assets": [
+          {
+            "id": 0,
+            "label": "WETH"
+          },
+          {
+            "id": 1,
+            "label": "wstETH"
+          },
+          {
+            "id": 2,
+            "label": "WBTC"
+          },
+          {
+            "id": 3,
+            "label": "cbBTC"
+          },
+          {
+            "id": 4,
+            "label": "AAVE"
+          },
+          {
+            "id": 5,
+            "label": "USDC"
+          },
+          {
+            "id": 6,
+            "label": "USDT"
+          },
+          {
+            "id": 7,
+            "label": "GHO"
+          }
+        ],
+        "spokes": [
+          {
+            "label": "CORE_SPOKE",
+            "assetIds": [0, 1, 2, 3, 4, 5, 6, 7]
+          },
+
+          {
+            "label": "LST_SPOKE",
+            "assetIds": [0, 1]
+          },
+
+          {
+            "label": "ETHENA_SPOKE",
+            "assetIds": [5]
+          },
+
+          {
+            "label": "FRONTIER_SPOKE",
+            "assetIds": [5]
+          }
+        ]
+      }
+    },
+    {
+      "label": "ETHENA_HUB",
+      "address": "0x86F37ba3b480c5fE22A7eb1ba2B2D49c94089FBB",
+      "config": {
+        "assets": [
+          {
+            "id": 0,
+            "label": "PT_sUSDe"
+          },
+          {
+            "id": 1,
+            "label": "sUSDe"
+          },
+          {
+            "id": 2,
+            "label": "USDC"
+          },
+          {
+            "id": 3,
+            "label": "USDT"
+          },
+          {
+            "id": 4,
+            "label": "GHO"
+          }
+        ],
+        "spokes": [
+          {
+            "label": "ETHENA_SPOKE",
+            "assetIds": [0, 1, 2, 3, 4]
+          }
+        ]
+      }
+    },
+    {
+      "label": "FRONTIER_HUB",
+      "address": "0x5DDF2369cB82F9514043627731157B8d313E8295",
+      "config": {
+        "assets": [
+          {
+            "id": 0,
+            "label": "UNI"
+          },
+          {
+            "id": 1,
+            "label": "LDO"
+          },
+          {
+            "id": 2,
+            "label": "1INCH"
+          },
+          {
+            "id": 3,
+            "label": "USDC"
+          },
+          {
+            "id": 4,
+            "label": "USDT"
+          },
+          {
+            "id": 5,
+            "label": "GHO"
+          }
+        ],
+        "spokes": [
+          {
+            "label": "FRONTIER_SPOKE",
+            "assetIds": [0, 1, 2, 3, 4, 5]
+          }
+        ]
+      }
+    }
+  ],
+  "spokeConfigs": [
+    {
+      "label": "PRIME_SPOKE",
+      "address": "0x637F9E189332a2821e5B046E2d7EEFae2405d6c5",
+      "reserves": [
+        {
+          "hub": "PRIME_HUB",
+          "reserveId": 0
+        },
+        {
+          "hub": "PRIME_HUB",
+          "reserveId": 1
+        },
+        {
+          "hub": "PRIME_HUB",
+          "reserveId": 2
+        },
+        {
+          "hub": "PRIME_HUB",
+          "reserveId": 3
+        },
+        {
+          "hub": "PRIME_HUB",
+          "reserveId": 4
+        }
+      ]
+    },
+    {
+      "label": "CORE_SPOKE",
+      "address": "0xBa97c5E52cd5BC3D7950Ae70779F8FfE92d40CdC",
+      "reserves": [
+        {
+          "hub": "CORE_HUB",
+          "reserveId": 0
+        },
+        {
+          "hub": "CORE_HUB",
+          "reserveId": 1
+        },
+        {
+          "hub": "CORE_HUB",
+          "reserveId": 2
+        },
+        {
+          "hub": "CORE_HUB",
+          "reserveId": 3
+        },
+        {
+          "hub": "CORE_HUB",
+          "reserveId": 4
+        },
+        {
+          "hub": "CORE_HUB",
+          "reserveId": 5
+        },
+        {
+          "hub": "CORE_HUB",
+          "reserveId": 6
+        }
+      ]
+    },
+    {
+      "label": "LST_SPOKE",
+      "address": "0x4f7202367f72ADae87393c3e49b3Fbc353a9110D",
+      "reserves": [
+        {
+          "hub": "CORE_HUB",
+          "reserveId": 0
+        },
+        {
+          "hub": "CORE_HUB",
+          "reserveId": 1
+        }
+      ]
+    },
+    {
+      "label": "ETHENA_SPOKE",
+      "address": "0x2559E4E04F2cA7180e5f20C2872d22EC89601b56",
+      "reserves": [
+        {
+          "hub": "ETHENA_HUB",
+          "reserveId": 0
+        },
+        {
+          "hub": "ETHENA_HUB",
+          "reserveId": 1
+        },
+        {
+          "hub": "ETHENA_HUB",
+          "reserveId": 2
+        },
+        {
+          "hub": "ETHENA_HUB",
+          "reserveId": 3
+        },
+        {
+          "hub": "ETHENA_HUB",
+          "reserveId": 4
+        },
+        {
+          "hub": "CORE_HUB",
+          "reserveId": 5
+        }
+      ]
+    },
+    {
+      "label": "FRONTIER_SPOKE",
+      "address": "0x4054a9EbfcdB692599a8dF61eb0b3484F2d279D4",
+      "reserves": [
+        {
+          "hub": "FRONTIER_HUB",
+          "reserveId": 0
+        },
+        {
+          "hub": "FRONTIER_HUB",
+          "reserveId": 1
+        },
+        {
+          "hub": "FRONTIER_HUB",
+          "reserveId": 2
+        },
+        {
+          "hub": "FRONTIER_HUB",
+          "reserveId": 3
+        },
+        {
+          "hub": "FRONTIER_HUB",
+          "reserveId": 4
+        },
+        {
+          "hub": "FRONTIER_HUB",
+          "reserveId": 5
+        },
+        {
+          "hub": "CORE_HUB",
+          "reserveId": 6
+        }
+      ]
+    }
+  ]
+}
