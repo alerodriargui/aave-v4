@@ -29,3 +29,19 @@ coverage :
 	make coverage-clean
 	make coverage-report
 	make coverage-badge
+
+# Scripts
+# make supply-and-borrow CHAIN=mainnet ACCOUNT={accountName}
+supply-and-borrow :; 
+	FOUNDRY_PROFILE=${CHAIN} forge script scripts/liquidationCall.s.sol:SupplyAndBorrowScript \
+	--rpc-url ${CHAIN} \
+	--account ${ACCOUNT} --slow --gas-estimate-multiplier 150 \
+	--broadcast
+
+# make liquidation-call CHAIN=mainnet ACCOUNT={accountName}
+liquidation-call :; 
+	FOUNDRY_PROFILE=${CHAIN} forge script scripts/liquidationCall.s.sol:LiquidationCallScript \
+	--rpc-url ${CHAIN} \
+	--account ${ACCOUNT} --slow --gas-estimate-multiplier 150 \
+	--broadcast
+
