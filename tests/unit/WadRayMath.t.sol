@@ -72,7 +72,7 @@ contract WadRayMathDifferentialTests is Test {
     assertEq(w.rayDivUp(a, b), a == 0 ? 0 : (a * w.RAY() - 1) / b + 1);
   }
 
-  function test_wadMul() public {
+  function test_wadMul() public view {
     assertEq(w.wadMulDown(0, 1e18), 0);
     assertEq(w.wadMulDown(1e18, 0), 0);
     assertEq(w.wadMulDown(0, 0), 0);
@@ -94,7 +94,7 @@ contract WadRayMathDifferentialTests is Test {
     assertEq(w.wadMulUp(6e18, 2e18), 12e18);
   }
 
-  function test_rayMul() public {
+  function test_rayMul() public view {
     assertEq(w.rayMulDown(0, 1e27), 0);
     assertEq(w.rayMulDown(1e27, 0), 0);
     assertEq(w.rayMulDown(0, 0), 0);
@@ -176,8 +176,17 @@ contract WadRayMathDifferentialTests is Test {
     assertEq(w.rayDivUp(2, 100000000000000e27), 1);
   }
 
-  function test_fromWadDown_fuzz(uint256 a) public {
+  function test_fromWadDown_fuzz(uint256 a) public view {
     assertEq(w.fromWadDown(a), a / w.WAD());
+  }
+
+  function test_fromRayUp_fuzz(uint256 a) public view {
+    assertEq(
+      w.fromRayUp(a),
+      (a <= type(uint256).max - w.RAY() + 1)
+        ? (a + (w.RAY() - 1)) / w.RAY()
+        : type(uint256).max / w.RAY() + 1
+    );
   }
 
   function test_toWad_fuzz(uint256 a) public {
@@ -193,6 +202,22 @@ contract WadRayMathDifferentialTests is Test {
     } else {
       assertEq(w.toWad(a), a * w.WAD());
       assertEq(w.toWad(a), b);
+    }
+  }
+
+  function test_toRay_fuzz(uint256 a) public {
+    uint256 b;
+    bool safetyCheck;
+    unchecked {
+      b = a * w.RAY();
+      safetyCheck = b / w.RAY() == a;
+    }
+    if (!safetyCheck) {
+      vm.expectRevert();
+      w.toRay(a);
+    } else {
+      assertEq(w.toRay(a), a * w.RAY());
+      assertEq(w.toRay(a), b);
     }
   }
 

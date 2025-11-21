@@ -65,17 +65,18 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice User position data per reserve.
   /// @dev drawnShares The drawn shares of the user position.
-  /// @dev realizedPremium The interest-free premium debt already accrued for the user position, expressed in asset units.
+  /// @dev realizedPremiumRay The interest-free premium debt already accrued for the user position, expressed in asset units and scaled by RAY.
   /// @dev premiumShares The premium shares of the user position.
-  /// @dev premiumOffset The premium offset of the user position, used to calculate the premium, expressed in asset units.
+  /// @dev premiumOffsetRay The premium offset of the user position, used to calculate the premium, expressed in asset units and scaled by RAY.
   /// @dev suppliedShares The supplied shares of the user position.
   /// @dev dynamicConfigKey The key of the user position dynamic config.
   struct UserPosition {
     uint120 drawnShares;
-    uint120 realizedPremium;
-    //
     uint120 premiumShares;
-    uint120 premiumOffset;
+    //
+    uint200 realizedPremiumRay;
+    //
+    uint200 premiumOffsetRay;
     //
     uint120 suppliedShares;
     uint24 dynamicConfigKey;
@@ -205,6 +206,18 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   event RefreshPremiumDebt(
     uint256 indexed reserveId,
     address indexed user,
+    IHubBase.PremiumDelta premiumDelta
+  );
+
+  /// @notice Emitted on liquidations that report deficit to the Hub.
+  /// @param reserveId The identifier of the reserve.
+  /// @param user The address of the user.
+  /// @param drawnShares The amount of drawn shares reported as deficit.
+  /// @param premiumDelta The premium delta data struct reported as deficit.
+  event ReportDeficit(
+    uint256 indexed reserveId,
+    address indexed user,
+    uint256 drawnShares,
     IHubBase.PremiumDelta premiumDelta
   );
 
@@ -439,13 +452,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param reserveId The identifier of the reserve.
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory);
 
-  /// @notice Returns the dynamic reserve configuration struct data in storage.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @param reserveId The identifier of the reserve.
-  function getDynamicReserveConfig(
-    uint256 reserveId
-  ) external view returns (DynamicReserveConfig memory);
-
   /// @notice Returns the dynamic reserve configuration struct at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Does not revert if `dynamicConfigKey` is unset.
@@ -456,18 +462,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint24 dynamicConfigKey
   ) external view returns (DynamicReserveConfig memory);
 
-  /// @notice Returns true if the reserve is set as collateral for the user.
+  /// @notice Returns two flags indicating whether the reserve is used as collateral and whether it is borrowed by the user.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Even if enabled as collateral, it will only count towards user position if the collateral factor is greater than 0.
   /// @param reserveId The identifier of the reserve.
   /// @param user The address of the user.
-  function isUsingAsCollateral(uint256 reserveId, address user) external view returns (bool);
-
-  /// @notice Returns true if the user is borrowing the reserve.
-  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @param reserveId The identifier of the reserve.
-  /// @param user The address of the user.
-  function isBorrowing(uint256 reserveId, address user) external view returns (bool);
+  /// @return True if the reserve is enabled as collateral by the user.
+  /// @return True if the reserve is borrowed by the user.
+  function getUserReserveStatus(uint256 reserveId, address user) external view returns (bool, bool);
 
   /// @notice Returns the user position struct in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -511,33 +513,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @return The address of the library.
   function getLiquidationLogic() external pure returns (address);
 
-  /// @notice Returns the maximum allowed value for an asset identifier.
-  /// @return The maximum asset identifier value (inclusive).
-  function MAX_ALLOWED_ASSET_ID() external view returns (uint256);
-
-  /// @notice Returns the maximum allowed collateral risk value for a reserve.
-  /// @return The maximum collateral risk value, expressed in bps (e.g. 100_00 is 100.00%).
-  function MAX_ALLOWED_COLLATERAL_RISK() external view returns (uint24);
-
-  /// @notice Returns the maximum allowed value for a dynamic configuration key.
-  /// @return The maximum dynamic configuration key value (inclusive).
-  function MAX_ALLOWED_DYNAMIC_CONFIG_KEY() external view returns (uint256);
-
   /// @notice Returns the type hash for the SetUserPositionManager intent.
   /// @return The bytes-encoded EIP-712 struct hash representing the intent.
   function SET_USER_POSITION_MANAGER_TYPEHASH() external view returns (bytes32);
-
-  /// @notice Returns the minimum health factor below which a position is considered unhealthy and subject to liquidation.
-  /// @return The minimum health factor considered healthy, expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
-  function HEALTH_FACTOR_LIQUIDATION_THRESHOLD() external view returns (uint64);
-
-  /// @notice Returns the maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
-  /// @return The maximum amount considered as dust, expressed in USD with 26 decimals.
-  function DUST_LIQUIDATION_THRESHOLD() external view returns (uint256);
-
-  /// @notice Returns the number of decimals used by the oracle.
-  /// @return The number of decimals.
-  function ORACLE_DECIMALS() external view returns (uint8);
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);
