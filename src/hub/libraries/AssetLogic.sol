@@ -80,9 +80,9 @@ library AssetLogic {
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint256 liquidityGrowth = (uint256(asset.drawnShares) * asset.drawnIndex) +
+    uint256 liquidityGrowth = (uint256(asset.drawnShares) * drawnIndex) +
       (uint256(asset.premiumShares) *
-        asset.drawnIndex -
+        drawnIndex -
         asset.premiumOffsetRay +
         asset.realizedPremiumRay);
     return
