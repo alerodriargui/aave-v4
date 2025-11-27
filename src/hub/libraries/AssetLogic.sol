@@ -80,11 +80,10 @@ library AssetLogic {
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint256 liquidityGrowth = (uint256(asset.drawnShares) * drawnIndex) +
-      (uint256(asset.premiumShares) *
-        drawnIndex -
-        asset.premiumOffsetRay +
-        asset.realizedPremiumRay);
+    uint256 liquidityGrowth = (uint256(asset.drawnShares) + asset.premiumShares) *
+      drawnIndex -
+      asset.premiumOffsetRay +
+      asset.realizedPremiumRay;
     return
       asset.liquidity +
       asset.swept +
@@ -192,10 +191,14 @@ library AssetLogic {
     uint120 premiumShares = asset.premiumShares;
     uint256 premiumOffsetRay = asset.premiumOffsetRay;
 
-    uint256 liquidityGrowthBefore = (uint256(drawnShares) * previousIndex) +
-      (uint256(premiumShares) * previousIndex - premiumOffsetRay + realizedPremiumRay);
-    uint256 liquidityGrowthAfter = (uint256(drawnShares) * drawnIndex) +
-      (uint256(premiumShares) * drawnIndex - premiumOffsetRay + realizedPremiumRay);
+    uint256 liquidityGrowthBefore = (uint256(drawnShares) + premiumShares) *
+      previousIndex -
+      premiumOffsetRay +
+      realizedPremiumRay;
+    uint256 liquidityGrowthAfter = (uint256(drawnShares) + premiumShares) *
+      drawnIndex -
+      premiumOffsetRay +
+      realizedPremiumRay;
 
     return
       (liquidityGrowthAfter.fromRayUp() - liquidityGrowthBefore.fromRayUp()).percentMulDown(
