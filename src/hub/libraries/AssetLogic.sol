@@ -80,14 +80,21 @@ library AssetLogic {
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 drawnIndex = asset.getDrawnIndex();
-    uint256 liquidityGrowth = (uint256(asset.drawnShares) + asset.premiumShares) *
-      drawnIndex -
-      asset.premiumOffsetRay +
-      asset.realizedPremiumRay;
+
+    uint256 premiumRay = Premium.calculatePremiumRay({
+      premiumShares: asset.premiumShares,
+      drawnIndex: drawnIndex,
+      premiumOffsetRay: asset.premiumOffsetRay,
+      realizedPremiumRay: asset.realizedPremiumRay
+    });
+    uint256 aggregatedOwedRay = (uint256(asset.drawnShares) * drawnIndex) +
+      premiumRay +
+      asset.deficitRay;
+
     return
       asset.liquidity +
       asset.swept +
-      (liquidityGrowth + asset.deficitRay).fromRayUp() -
+      aggregatedOwedRay.fromRayUp() -
       asset.realizedFees -
       asset.getUnrealizedFees(drawnIndex);
   }
@@ -190,18 +197,21 @@ library AssetLogic {
     uint256 realizedPremiumRay = asset.realizedPremiumRay;
     uint120 premiumShares = asset.premiumShares;
     uint256 premiumOffsetRay = asset.premiumOffsetRay;
+    uint256 deficitRay = asset.deficitRay;
 
-    uint256 liquidityGrowthBefore = (uint256(drawnShares) + premiumShares) *
+    uint256 aggregatedOwedRayBefore = (uint256(drawnShares) + premiumShares) *
       previousIndex -
       premiumOffsetRay +
-      realizedPremiumRay;
-    uint256 liquidityGrowthAfter = (uint256(drawnShares) + premiumShares) *
+      realizedPremiumRay +
+      deficitRay;
+    uint256 aggregatedOwedRayAfter = (uint256(drawnShares) + premiumShares) *
       drawnIndex -
       premiumOffsetRay +
-      realizedPremiumRay;
+      realizedPremiumRay +
+      deficitRay;
 
     return
-      (liquidityGrowthAfter.fromRayUp() - liquidityGrowthBefore.fromRayUp()).percentMulDown(
+      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
         liquidityFee
       );
   }
