@@ -2808,12 +2808,14 @@ abstract contract Base is Test {
     uint256 liquidityGrowthBefore = (uint256(asset.drawnShares) + asset.premiumShares) *
       previousIndex -
       asset.premiumOffsetRay +
-      asset.realizedPremiumRay;
+      asset.realizedPremiumRay +
+      asset.deficitRay;
 
     uint256 liquidityGrowthAfter = (uint256(asset.drawnShares) + asset.premiumShares) *
       drawnIndex -
       asset.premiumOffsetRay +
-      asset.realizedPremiumRay;
+      asset.realizedPremiumRay +
+      asset.deficitRay;
 
     return
       (liquidityGrowthAfter.fromRayUp() - liquidityGrowthBefore.fromRayUp()).percentMulDown(
