@@ -138,12 +138,15 @@ library AaveV4TestOrchestration {
     // Set Hub Roles
     AaveV4HubRolesProcedure.setHubRoles(accessManagerAddress, report.hubAddress);
 
+    // Configure Hub Assets
+    configureHubsAssets(paramsList);
+
     return (accessManagerAddress, report);
   }
 
   function configureHubsAssets(
     ConfigData.AddAssetParams[] memory paramsList
-  ) external returns (uint256[] memory) {
+  ) public returns (uint256[] memory) {
     uint256[] memory assetIds = new uint256[](paramsList.length);
     for (uint256 i; i < paramsList.length; ++i) {
       assetIds[i] = AaveV4HubConfigProcedures.addAsset(paramsList[i]);
