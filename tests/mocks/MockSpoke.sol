@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {Spoke, ISpoke, IHubBase, SafeCast, PositionStatusMap} from 'src/spoke/Spoke.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {Test} from 'forge-std/Test.sol';
 
 /// @dev inherit from Test to exclude contract from forge size check
@@ -19,7 +20,7 @@ contract MockSpoke is Spoke, Test {
     uint256[] suppliedAssetsAmounts;
     uint256[] debtReserveIds;
     uint256[] drawnDebtAmounts;
-    uint256[] realizedPremiumAmounts;
+    uint256[] realizedPremiumAmountsRay;
     uint256[] accruedPremiumAmounts;
   }
 
@@ -81,15 +82,17 @@ contract MockSpoke is Spoke, Test {
         .hub
         .previewDrawByAssets(reserve.assetId, info.drawnDebtAmounts[i])
         .toUint120();
-      _userPositions[user][info.debtReserveIds[i]].realizedPremium = info
-        .realizedPremiumAmounts[i]
+      _userPositions[user][info.debtReserveIds[i]].premiumShares = vm
+        .randomUint(
+          reserve.hub.previewRemoveByAssets(reserve.assetId, info.accruedPremiumAmounts[i]),
+          100e18
+        )
         .toUint120();
-      _userPositions[user][info.debtReserveIds[i]].premiumOffset = vm
-        .randomUint(1, 100e18)
-        .toUint120();
-      _userPositions[user][info.debtReserveIds[i]].premiumShares =
-        reserve.hub.previewAddByAssets(reserve.assetId, info.accruedPremiumAmounts[i]).toUint120() +
-        _userPositions[user][info.debtReserveIds[i]].premiumOffset;
+      _userPositions[user][info.debtReserveIds[i]].premiumOffsetRay =
+        (_userPositions[user][info.debtReserveIds[i]].premiumShares *
+          reserve.hub.getAssetDrawnIndex(reserve.assetId)).toInt256().toInt200() -
+        (info.accruedPremiumAmounts[i] * WadRayMath.RAY).toInt256().toInt200() -
+        (info.realizedPremiumAmountsRay[i]).toInt256().toInt200();
     }
   }
 
@@ -101,8 +104,8 @@ contract MockSpoke is Spoke, Test {
     return _processUserAccountData(user, refreshConfig);
   }
 
-  function hasPositiveRiskPremium(address user) external view returns (bool) {
-    return _positionStatus[user].hasPositiveRiskPremium;
+  function getRiskPremium(address user) external view returns (uint24) {
+    return _positionStatus[user].riskPremium;
   }
 
   function setReserveDynamicConfigKey(uint256 reserveId, uint24 configKey) external {
