@@ -52,9 +52,11 @@ The key aspects of the Hub include:
 - Setting liquidity caps to limit Spoke drawing and adding.
 - Providing emergency stop functionality to halt operations, if needed.
 - Enforcing accounting invariants:
-  - Total borrowed assets <= total supplied assets
-  - Total borrowed shares == total minted debt shares
-  - Hub assets <= sum of Spoke assets (converted from shares)
+  1. Total borrowed assets <= total supplied assets
+  2. Total borrowed shares == sum of Spoke debt shares
+  3. Hub added assets <= sum of Spoke added assets (converted from shares)
+  4. Hub added shares == sum of Spoke added shares
+  5. Supply share price and drawn index cannot decrease (remains constant or increases)
 
 ## Spokes
 
