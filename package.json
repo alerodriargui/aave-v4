@@ -1,6 +1,6 @@
 {
   "name": "aave-v4",
-  "version": "0.5.3",
+  "version": "1.0.0",
   "scripts": {
     "lint": "prettier . --check",
     "lint:fix": "prettier . --write",
@@ -11,18 +11,32 @@
   },
   "keywords": [],
   "author": "Aave Labs",
-  "license": "UNLICENSED",
-  "bugs": {
-    "url": "https://github.com/aave/aave-v4/issues"
-  },
-  "homepage": "https://github.com/aave/aave-v4#readme",
   "devDependencies": {
+    "@nomicfoundation/hardhat-ignition": "^3.0.0",
+    "@nomicfoundation/hardhat-ignition-viem": "^3.0.0",
+    "@nomicfoundation/hardhat-keystore": "^3.0.2",
+    "@nomicfoundation/hardhat-network-helpers": "^3.0.1",
+    "@nomicfoundation/hardhat-node-test-runner": "^3.0.4",
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^3.0.4",
+    "@nomicfoundation/hardhat-viem": "^3.0.0",
+    "@nomicfoundation/hardhat-viem-assertions": "^3.0.0",
+    "@nomicfoundation/ignition-core": "^3.0.0",
+    "@tenderly/hardhat-tenderly": "2.5.2",
+    "@types/node": "^22.8.5",
     "husky": "9.1.7",
     "lint-staged": "16.2.3",
     "prettier": "3.6.2",
-    "prettier-plugin-solidity": "2.1.0"
+    "prettier-plugin-solidity": "2.1.0",
+    "typescript": "~5.8.0",
+    "viem": "^2.30.0"
   },
   "lint-staged": {
     "*.{sol,md,py,ts}": "prettier . --write"
-  }
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "hardhat": "^3.0.9"
+  },
+  "type": "module"
 }
