@@ -8,10 +8,12 @@ import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {DeployUtils} from 'src/deployments/utils/DeployUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 
-import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
+import {
+  AaveV4DeployOrchestration
+} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
 contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
-  string internal constant INPUT_PATH = 'scripts/deploy/input/AaveV4DeployInput.json';
+  string internal constant INPUT_PATH = 'src/deployments/inputs/AaveV4DeployInput.json';
   string internal constant OUTPUT_PATH = 'output/reports/deployments/AaveV4DeployBatch.json';
 
   constructor() {}

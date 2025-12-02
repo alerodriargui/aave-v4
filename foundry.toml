@@ -7,7 +7,7 @@ fs_permissions = [
   { access = "read", path = "tests/mocks/JsonBindings.sol" },
   { access = "read", path = "./config" },
   { access = "read-write", path = "./output" },
-  { access = "read-write", path = "./scripts/input" }
+  { access = "read-write", path = "./src/deployments/inputs" }
 ]
 solc_version = "0.8.28"
 evm_version = "cancun"

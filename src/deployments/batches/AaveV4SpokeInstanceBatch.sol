@@ -5,9 +5,15 @@ pragma solidity ^0.8.0;
 import 'forge-std/Vm.sol';
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-import {AaveV4SpokeInstanceDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4SpokeInstanceDeployProcedure.sol';
-import {AaveV4TransparentUpgradeableProxyDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4TransparentUpgradeableProxyDeployProcedure.sol';
-import {AaveV4AaveOracleDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4AaveOracleDeployProcedure.sol';
+import {
+  AaveV4SpokeInstanceDeployProcedure
+} from 'src/deployments/procedures/deploy/AaveV4SpokeInstanceDeployProcedure.sol';
+import {
+  AaveV4TransparentUpgradeableProxyDeployProcedure
+} from 'src/deployments/procedures/deploy/AaveV4TransparentUpgradeableProxyDeployProcedure.sol';
+import {
+  AaveV4AaveOracleDeployProcedure
+} from 'src/deployments/procedures/deploy/AaveV4AaveOracleDeployProcedure.sol';
 
 contract AaveV4SpokeInstanceBatch is
   AaveV4SpokeInstanceDeployProcedure,

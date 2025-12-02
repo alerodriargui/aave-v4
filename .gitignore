@@ -23,3 +23,5 @@ report/
 
 .DS_Store
 .venv/
+
+src/deployments/inputs/AaveV4DeployInput.json

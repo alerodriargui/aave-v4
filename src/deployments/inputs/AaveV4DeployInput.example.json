@@ -1,0 +1,7 @@
+{
+  "admin": "0x0000000000000000000000000000000000000000",
+  "nativeWrapperAddress": "0x0000000000000000000000000000000000000000",
+  "setRoles": false,
+  "hubLabels": ["Hub 1", "Hub 2"],
+  "spokeLabels": ["Spoke 1", "Spoke 2"]
+}

@@ -14,9 +14,15 @@ import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4GatewaysBatch} from 'src/deployments/batches/AaveV4GatewaysBatch.sol';
 
-import {AaveV4AdminRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AdminRolesProcedure.sol';
-import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
-import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {
+  AaveV4AdminRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4AdminRolesProcedure.sol';
+import {
+  AaveV4HubRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {
+  AaveV4SpokeRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 
 library AaveV4DeployOrchestration {
   bool public constant IS_TEST = true;
@@ -51,23 +57,12 @@ library AaveV4DeployOrchestration {
     report.hubBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
     Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](hubCount);
     for (uint256 i; i < hubCount; ++i) {
-      report.hubBatchReports[i].label = hubLabels[i];
-      report.hubBatchReports[i].report = _deployHubBatch(
+      report.hubBatchReports[i] = _deployHub(
+        logger,
         admin,
-        report.accessBatchReport.accessManagerAddress
-      );
-      hubEntries[i] = Logger.AddressEntry({
-        label: hubLabels[i],
-        value: report.hubBatchReports[i].report.hubAddress
-      });
-      logger.log(string.concat(hubLabels[i], ' Hub'), report.hubBatchReports[i].report.hubAddress);
-      logger.log(
-        string.concat(hubLabels[i], ' InterestRateStrategy'),
-        report.hubBatchReports[i].report.irStrategyAddress
-      );
-      logger.log(
-        string.concat(hubLabels[i], ' TreasurySpoke'),
-        report.hubBatchReports[i].report.treasurySpokeAddress
+        report.accessBatchReport.accessManagerAddress,
+        hubLabels[i],
+        setRoles
       );
     }
     logger.writeGroup('Hubs', hubEntries);
@@ -77,28 +72,13 @@ library AaveV4DeployOrchestration {
     report.spokeInstanceBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     Logger.AddressEntry[] memory spokeEntries = new Logger.AddressEntry[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
-      report.spokeInstanceBatchReports[i].label = spokeLabels[i];
-      report.spokeInstanceBatchReports[i].report = _deploySpokeInstanceBatch(
+      report.spokeInstanceBatchReports[i] = _deploySpoke(
+        logger,
         deployer,
         admin,
         report.accessBatchReport.accessManagerAddress,
-        spokeLabels[i]
-      );
-      spokeEntries[i] = Logger.AddressEntry({
-        label: spokeLabels[i],
-        value: report.spokeInstanceBatchReports[i].report.spokeProxyAddress
-      });
-      logger.log(
-        string.concat(spokeLabels[i], ' SpokeInstance Proxy'),
-        report.spokeInstanceBatchReports[i].report.spokeProxyAddress
-      );
-      logger.log(
-        string.concat(spokeLabels[i], ' SpokeInstance Implementation'),
-        report.spokeInstanceBatchReports[i].report.spokeImplementationAddress
-      );
-      logger.log(
-        string.concat(spokeLabels[i], ' AaveOracle'),
-        report.spokeInstanceBatchReports[i].report.aaveOracleAddress
+        spokeLabels[i],
+        setRoles
       );
     }
     logger.writeGroup('SpokeInstances', spokeEntries);
@@ -115,18 +95,6 @@ library AaveV4DeployOrchestration {
         report.configuratorBatchReport.spokeConfiguratorAddress,
         report.configuratorBatchReport.hubConfiguratorAddress
       );
-      for (uint256 i; i < hubCount; ++i) {
-        AaveV4HubRolesProcedure.setHubRoles(
-          report.accessBatchReport.accessManagerAddress,
-          report.hubBatchReports[i].report.hubAddress
-        );
-      }
-      for (uint256 i; i < spokeCount; ++i) {
-        AaveV4SpokeRolesProcedure.setSpokeRoles(
-          report.accessBatchReport.accessManagerAddress,
-          report.spokeInstanceBatchReports[i].report.spokeProxyAddress
-        );
-      }
       AaveV4AdminRolesProcedure.setNewAdminRole(
         report.accessBatchReport.accessManagerAddress,
         admin,
@@ -137,7 +105,7 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  function deployHub(
+  function _deployHub(
     Logger logger,
     address admin,
     address accessManagerAddress,
@@ -158,7 +126,7 @@ library AaveV4DeployOrchestration {
     return hubReport;
   }
 
-  function deploySpoke(
+  function _deploySpoke(
     Logger logger,
     address deployer,
     address admin,
