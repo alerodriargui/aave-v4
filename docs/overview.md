@@ -54,7 +54,7 @@ The key aspects of the Hub include:
 - Enforcing accounting invariants:
   1. Total borrowed assets <= total supplied assets
   2. Total borrowed shares == sum of Spoke debt shares
-  3. Hub added assets <= sum of Spoke added assets (converted from shares)
+  3. Hub added assets >= sum of Spoke added assets (converted from shares)
   4. Hub added shares == sum of Spoke added shares
   5. Supply share price and drawn index cannot decrease (remains constant or increases)
 
