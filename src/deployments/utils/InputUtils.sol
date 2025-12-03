@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'forge-std/stdToml.sol';
+import 'forge-std/StdToml.sol';
 import 'forge-std/Vm.sol';
 
 contract InputUtils {
