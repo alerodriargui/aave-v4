@@ -3,10 +3,14 @@
 pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-import {AaveV4NativeTokenGatewayDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4NativeTokenGatewayDeployProcedure.sol';
-import {AaveV4SignatureGatewayDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4SignatureGatewayDeployProcedure.sol';
+import {
+  AaveV4NativeTokenGatewayDeployProcedure
+} from 'src/deployments/procedures/deploy/AaveV4NativeTokenGatewayDeployProcedure.sol';
+import {
+  AaveV4SignatureGatewayDeployProcedure
+} from 'src/deployments/procedures/deploy/AaveV4SignatureGatewayDeployProcedure.sol';
 
-contract AaveV4GatewaysBatch is
+contract AaveV4GatewayBatch is
   AaveV4NativeTokenGatewayDeployProcedure,
   AaveV4SignatureGatewayDeployProcedure
 {

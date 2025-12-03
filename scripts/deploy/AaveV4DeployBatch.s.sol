@@ -13,14 +13,16 @@ import {
 } from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
 contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
-  string internal constant INPUT_PATH = 'src/deployments/inputs/AaveV4DeployInput.json';
-  string internal constant OUTPUT_PATH = 'output/reports/deployments/AaveV4DeployBatch.json';
+  string internal constant INPUT_PATH = 'src/deployments/inputs/AaveV4DeployInput.toml';
+  string internal constant OUTPUT_DIR = 'output/reports/deployments/';
+  string internal constant OUTPUT_FILE = 'AaveV4DeployBatch.json';
 
   constructor() {}
 
   function run() external {
-    Logger logger = new Logger(OUTPUT_PATH);
-    FullDeployInputs memory inputs = loadFullDeployInputs(INPUT_PATH);
+    vm.createDir(OUTPUT_DIR, true);
+    Logger logger = new Logger(string.concat(OUTPUT_DIR, OUTPUT_FILE));
+    FullDeployInputs memory inputs = loadFullDeployInputs(OUTPUT_FILE);
 
     address deployer = msg.sender;
 

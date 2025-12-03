@@ -2,11 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'forge-std/StdJson.sol';
+import 'forge-std/stdToml.sol';
 import 'forge-std/Vm.sol';
 
 contract InputUtils {
-  using stdJson for string;
+  using stdToml for string;
 
   struct FullDeployInputs {
     address admin;
@@ -32,10 +32,13 @@ contract InputUtils {
 
   function loadFullDeployInputs(
     string memory inputPath
-  ) public view returns (FullDeployInputs memory) {
-    string memory json = vm.readFile(inputPath);
-    bytes memory data = vm.parseJson(json);
-    FullDeployInputs memory inputs = abi.decode(data, (FullDeployInputs));
+  ) public view returns (FullDeployInputs memory inputs) {
+    string memory toml = vm.readFile(inputPath);
+    inputs.admin = toml.readAddress('.admin');
+    inputs.nativeWrapperAddress = toml.readAddress('.nativeWrapperAddress');
+    inputs.setRoles = toml.readBool('.setRoles');
+    inputs.hubLabels = toml.readStringArray('.hubLabels');
+    inputs.spokeLabels = toml.readStringArray('.spokeLabels');
     return inputs;
   }
 
