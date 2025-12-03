@@ -13,8 +13,6 @@ contract SpokeInvestigateOogTest is SpokeBase {
   }
 
   function test_oog() public {
-    console.log('made it out of setup');
-
     uint256 i;
     // Supply x collaterals
     for (i = 0; i < spoke1.getReserveCount(); i++) {
@@ -35,8 +33,6 @@ contract SpokeInvestigateOogTest is SpokeBase {
       console.log('Cost', gasUsed);
     }
 
-    console.log('exited loop');
-
     skip(10000 days);
     // Alice can be liquidated
     assertLe(
@@ -54,6 +50,22 @@ contract SpokeInvestigateOogTest is SpokeBase {
     }
     console.log('Liquidation succeeded with alice at ', i, ' collaterals');
     console.log('Cost', gasUsed);
+  }
+
+  function test_quote_oracles() public {
+    // Check gas price of mock oracle
+    IAaveOracle oracle = IAaveOracle(spoke1.ORACLE());
+    oracle.getReservePrice(0);
+    uint256 gasUsed = vm.snapshotGasLastCall('Spoke.Investigation', 'getReservePrice');
+    console.log('Mock oracle gas cost:', gasUsed);
+
+    // Check gas price of chainlink oracle
+    vm.createSelectFork('mainnet', 23931982);
+    address ethUsdFeed = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+    AggregatorV3Interface priceFeed = AggregatorV3Interface(ethUsdFeed);
+    priceFeed.latestRoundData();
+    gasUsed = vm.snapshotGasLastCall('Spoke.Investigation', 'latestRoundData');
+    console.log('Chainlink oracle gas cost:', gasUsed);
   }
 
   function _addNewAssetsAndReserves(uint256 count) internal {
