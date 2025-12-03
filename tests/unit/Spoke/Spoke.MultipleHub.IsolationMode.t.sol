@@ -49,19 +49,14 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(newHub),
       isolationVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
-      ISpoke.ReserveConfig({
-        paused: false,
-        frozen: false,
-        borrowable: false,
-        collateralRisk: 15_00
-      }),
+      _getDefaultReserveConfig(15_00),
       dynReserveConfig
     );
     isolationVars.reserveBId = newSpoke.addReserve(
       address(newHub),
       isolationVars.assetBId,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      _getDefaultReserveConfig(15_00),
       dynReserveConfig
     );
 
@@ -106,7 +101,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(hub1),
       isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      _getDefaultReserveConfig(15_00),
       dynReserveConfig
     );
 
@@ -126,13 +121,17 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
 
     // Approvals
     vm.startPrank(bob);
-    assetA.approve(address(newHub), type(uint256).max);
-    assetB.approve(address(hub1), type(uint256).max);
+    assetA.approve(address(spoke1), type(uint256).max);
+    assetB.approve(address(spoke1), type(uint256).max);
+    assetA.approve(address(newSpoke), type(uint256).max);
+    assetB.approve(address(newSpoke), type(uint256).max);
     vm.stopPrank();
 
     vm.startPrank(alice);
-    assetB.approve(address(hub1), type(uint256).max);
-    assetB.approve(address(newHub), type(uint256).max);
+    assetA.approve(address(spoke1), type(uint256).max);
+    assetB.approve(address(spoke1), type(uint256).max);
+    assetA.approve(address(newSpoke), type(uint256).max);
+    assetB.approve(address(newSpoke), type(uint256).max);
     vm.stopPrank();
 
     // Deal tokens
@@ -159,7 +158,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       'bob supplied amount of reserve A on new spoke'
     );
     assertTrue(
-      newSpoke.isUsingAsCollateral(isolationVars.reserveAId, bob),
+      _isUsingAsCollateral(newSpoke, isolationVars.reserveAId, bob),
       'bob using reserve A as collateral on new spoke'
     );
     assertEq(
@@ -178,7 +177,7 @@ contract SpokeMultipleHubIsolationModeTest is SpokeMultipleHubBase {
       address(hub1),
       isolationVars.assetBIdMainHub,
       _deployMockPriceFeed(newSpoke, 50_000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      _getDefaultReserveConfig(15_00),
       dynReserveConfig
     );
 

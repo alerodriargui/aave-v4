@@ -3,14 +3,19 @@
 pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
+import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 
 contract LiquidationLogicWrapper {
-  using SafeCast for uint256;
+  using SafeCast for *;
+  using SafeERC20 for IERC20;
   using PositionStatusMap for ISpoke.PositionStatus;
+  using ReserveFlagsMap for ReserveFlags;
 
   mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition))
     internal _userPositions;
@@ -24,9 +29,9 @@ contract LiquidationLogicWrapper {
   ISpoke.LiquidationConfig internal liquidationConfig;
   ISpoke.DynamicReserveConfig internal dynamicCollateralConfig;
 
-  constructor(address borrower, address liquidator) {
-    _borrower = borrower;
-    _liquidator = liquidator;
+  constructor(address borrower_, address liquidator_) {
+    _borrower = borrower_;
+    _liquidator = liquidator_;
   }
 
   function setBorrower(address borrower) public {
@@ -53,6 +58,12 @@ contract LiquidationLogicWrapper {
     _collateralReserveId = reserveId;
   }
 
+  function setCollateralLiquidatable(bool status) public {
+    _reserves[_collateralReserveId].flags = _reserves[_collateralReserveId].flags.setLiquidatable(
+      status
+    );
+  }
+
   function setCollateralPositionSuppliedShares(uint256 suppliedShares) public {
     _userPositions[_borrower][_collateralReserveId].suppliedShares = suppliedShares.toUint120();
   }
@@ -65,8 +76,8 @@ contract LiquidationLogicWrapper {
     return _reserves[_collateralReserveId];
   }
 
-  function getCollateralPosition() public view returns (ISpoke.UserPosition memory) {
-    return _userPositions[_borrower][_collateralReserveId];
+  function getCollateralPosition(address user) public view returns (ISpoke.UserPosition memory) {
+    return _userPositions[user][_collateralReserveId];
   }
 
   function setDebtReserveHub(IHub hub) public {
@@ -85,6 +96,10 @@ contract LiquidationLogicWrapper {
     _debtReserveId = reserveId;
   }
 
+  function setDebtReserveUnderlying(address underlying) public {
+    _reserves[_debtReserveId].underlying = underlying;
+  }
+
   function setDebtPositionDrawnShares(uint256 drawnShares) public {
     _userPositions[_borrower][_debtReserveId].drawnShares = drawnShares.toUint120();
   }
@@ -93,12 +108,8 @@ contract LiquidationLogicWrapper {
     _userPositions[_borrower][_debtReserveId].premiumShares = premiumShares.toUint120();
   }
 
-  function setDebtPositionPremiumOffset(uint256 premiumOffset) public {
-    _userPositions[_borrower][_debtReserveId].premiumOffset = premiumOffset.toUint120();
-  }
-
-  function setDebtPositionRealizedPremium(uint256 realizedPremium) public {
-    _userPositions[_borrower][_debtReserveId].realizedPremium = realizedPremium.toUint120();
+  function setDebtPositionPremiumOffsetRay(int256 premiumOffsetRay) public {
+    _userPositions[_borrower][_debtReserveId].premiumOffsetRay = premiumOffsetRay.toInt200();
   }
 
   function setBorrowerCollateralStatus(uint256 reserveId, bool status) public {
@@ -121,8 +132,8 @@ contract LiquidationLogicWrapper {
     return _reserves[_debtReserveId];
   }
 
-  function getDebtPosition() public view returns (ISpoke.UserPosition memory) {
-    return _userPositions[_borrower][_debtReserveId];
+  function getDebtPosition(address user) public view returns (ISpoke.UserPosition memory) {
+    return _userPositions[user][_debtReserveId];
   }
 
   function getBorrowerCollateralStatus(uint256 reserveId) public view returns (bool) {
@@ -168,8 +179,8 @@ contract LiquidationLogicWrapper {
 
   function validateLiquidationCall(
     LiquidationLogic.ValidateLiquidationCallParams memory params
-  ) public view {
-    LiquidationLogic._validateLiquidationCall(_positionStatuses, params);
+  ) public pure {
+    LiquidationLogic._validateLiquidationCall(params);
   }
 
   function calculateDebtToTargetHealthFactor(
@@ -186,7 +197,7 @@ contract LiquidationLogicWrapper {
 
   function calculateLiquidationAmounts(
     LiquidationLogic.CalculateLiquidationAmountsParams memory params
-  ) public pure returns (uint256, uint256, uint256) {
+  ) public pure returns (LiquidationLogic.LiquidationAmounts memory) {
     return LiquidationLogic._calculateLiquidationAmounts(params);
   }
 
@@ -207,16 +218,19 @@ contract LiquidationLogicWrapper {
 
   function liquidateCollateral(
     LiquidationLogic.LiquidateCollateralParams memory params
-  ) public returns (bool) {
+  ) public returns (uint256, uint256, bool) {
     return
       LiquidationLogic._liquidateCollateral(
         _reserves[_collateralReserveId],
-        _userPositions,
+        _userPositions[_borrower][_collateralReserveId],
+        _userPositions[_liquidator][_collateralReserveId],
         params
       );
   }
 
-  function liquidateDebt(LiquidationLogic.LiquidateDebtParams memory params) public returns (bool) {
+  function liquidateDebt(
+    LiquidationLogic.LiquidateDebtParams memory params
+  ) public returns (uint256, IHubBase.PremiumDelta memory, bool) {
     return
       LiquidationLogic._liquidateDebt(
         _reserves[_debtReserveId],

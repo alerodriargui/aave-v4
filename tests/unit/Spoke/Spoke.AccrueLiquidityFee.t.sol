@@ -19,6 +19,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       0,
       'no debt without action'
     );
+
+    _assertHubLiquidity(hub1, _daiReserveId(spoke1), 'spoke1.accrueLiquidityFee');
   }
 
   /// Supply an asset only, and check no interest accrued.
@@ -46,6 +48,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     // treasury
     assertEq(hub1.getSpokeAddedAssets(daiAssetId, address(treasurySpoke)), 0);
+
+    _assertHubLiquidity(hub1, daiReserveId, 'spoke1.accrueLiquidityFee');
   }
 
   function test_accrueLiquidityFee_fuzz_BorrowAmountAndSkipTime(
@@ -77,10 +81,12 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     {
       uint256 drawnDebt = _calculateExpectedDrawnDebt(borrowAmount, drawnRate, startTime);
       uint256 expectedPremiumShares = bobPosition.drawnShares.percentMulUp(userRp);
-      uint256 expectedPremiumDebt = hub1.previewRestoreByShares(assetId, expectedPremiumShares) -
-        bobPosition.premiumOffset +
-        bobPosition.realizedPremium;
-
+      uint256 expectedPremiumDebt = _calculatePremiumDebt(
+        hub1,
+        assetId,
+        expectedPremiumShares,
+        bobPosition.premiumOffsetRay
+      );
       _assertSingleUserProtocolDebt(
         spoke1,
         reserveId,
@@ -179,6 +185,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       1,
       'treasury shares'
     );
+
+    _assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   function test_accrueLiquidityFee_exact() public {
@@ -288,6 +296,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub1.previewAddByAssets(assetId, expectedTreasuryFees),
       'treasury fees after drawn debt accrual'
     );
+
+    _assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   function test_accrueLiquidityFee() public {
@@ -314,7 +324,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
-    assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
+    assertEq(_getUserRpStored(spoke1, alice), expectedRp);
 
     skip(365 days);
     Utils.mintFeeShares(hub1, assetId, ADMIN);
@@ -338,7 +348,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
 
     vm.prank(alice);
     spoke1.updateUserRiskPremium(alice);
-    assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
+    assertEq(_getUserRpStored(spoke1, alice), expectedRp);
 
     vm.recordLogs();
     // withdraw any treasury fees to reset counter
@@ -401,6 +411,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub1.previewAddByAssets(assetId, expectedTreasuryFees),
       'treasury fees after drawn debt accrual'
     );
+
+    _assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   // disabling an asset as collateral raises the user’s risk premium, but fees use the old value until the action is executed.
@@ -435,7 +447,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     Utils.supplyCollateral(spoke1, reserveId2, alice, supplyAmount2, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
-    assertEq(_getUserRpStored(spoke1, reserveId, alice), expectedRp);
+    assertEq(_getUserRpStored(spoke1, alice), expectedRp);
 
     skip(365 days);
     Utils.mintFeeShares(hub1, assetId, ADMIN);
@@ -456,7 +468,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
     // disable second asset as collateral, which increases risk premium
     vm.prank(alice);
     spoke1.setUsingAsCollateral(reserveId, false, alice);
-    assertEq(_getUserRpStored(spoke1, reserveId, alice), 50_00);
+    assertEq(_getUserRpStored(spoke1, alice), 50_00);
 
     Utils.mintFeeShares(hub1, assetId, ADMIN);
 
@@ -473,6 +485,8 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       hub1.previewAddByAssets(assetId, expectedTreasuryFees),
       'treasury fees after base and premium debt accrual'
     );
+
+    _assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 
   /// 100.00% liquidity fee redirect all liquidity growth to fee receiver and nothing to suppliers
@@ -525,5 +539,7 @@ contract SpokeAccrueLiquidityFeeTest is SpokeBase {
       expectedDrawnDebtAccrual + expectedPremiumDebt,
       'treasury all accumulated interest'
     );
+
+    _assertHubLiquidity(hub1, reserveId, 'spoke1.accrueLiquidityFee');
   }
 }

@@ -147,7 +147,7 @@ contract TreasurySpokeTest is SpokeBase {
     treasurySpoke.transfer(vm.randomAddress(), vm.randomAddress(), 1);
   }
 
-  function test_transfer_revertsWith_InsufficientBalance(uint256 amount) public {
+  function test_transfer_revertsWith_ERC20InsufficientBalance(uint256 amount) public {
     vm.assume(amount > 0);
     address token = address(new MockERC20());
 
@@ -197,7 +197,6 @@ contract TreasurySpokeTest is SpokeBase {
     updateLiquidityFee(hub1, spoke1.getReserve(reserveId).assetId, 100_00);
 
     assertEq(treasurySpoke.getSuppliedShares(reserveId), 0);
-    uint256 lastDrawnIndex = hub1.getAsset(assetId).drawnIndex;
 
     // create debt
     address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);

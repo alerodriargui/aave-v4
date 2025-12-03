@@ -5,12 +5,13 @@ pragma solidity 0.8.28;
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {SafeTransferLib} from 'src/dependencies/solady/SafeTransferLib.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
+import {Premium} from 'src/hub/libraries/Premium.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 
@@ -19,13 +20,13 @@ import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
 /// @notice A liquidity hub that manages assets and spokes.
 contract Hub is IHub, AccessManaged {
   using EnumerableSet for EnumerableSet.AddressSet;
-  using SafeTransferLib for address;
-  using SafeCast for uint256;
-  using WadRayMath for uint256;
-  using SharesMath for uint256;
-  using PercentageMath for *;
-  using AssetLogic for Asset;
+  using SafeCast for *;
+  using SafeERC20 for IERC20;
   using MathUtils for *;
+  using PercentageMath for *;
+  using WadRayMath for uint256;
+  using AssetLogic for Asset;
+  using SharesMath for uint256;
 
   /// @inheritdoc IHub
   uint8 public constant MAX_ALLOWED_UNDERLYING_DECIMALS = 18;
@@ -39,10 +40,20 @@ contract Hub is IHub, AccessManaged {
   /// @inheritdoc IHub
   uint24 public constant MAX_RISK_PREMIUM_THRESHOLD = type(uint24).max;
 
+  /// @dev Number of assets listed in the Hub.
   uint256 internal _assetCount;
+
+  /// @dev Map of asset identifiers to Asset data.
   mapping(uint256 assetId => Asset) internal _assets;
+
+  /// @dev Map of asset identifiers and spoke addresses to Spoke data.
   mapping(uint256 assetId => mapping(address spoke => SpokeData)) internal _spokes;
+
+  /// @dev Map of asset identifiers to set of spoke addresses.
   mapping(uint256 assetId => EnumerableSet.AddressSet) internal _assetToSpokes;
+
+  /// @dev Set of underlying addresses listed as assets in the Hub.
+  EnumerableSet.AddressSet internal _underlyingAssets;
 
   /// @dev Constructor.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
@@ -67,6 +78,7 @@ contract Hub is IHub, AccessManaged {
       MIN_ALLOWED_UNDERLYING_DECIMALS <= decimals && decimals <= MAX_ALLOWED_UNDERLYING_DECIMALS,
       InvalidAssetDecimals()
     );
+    require(!_underlyingAssets.contains(underlying), UnderlyingAlreadyListed());
 
     uint256 assetId = _assetCount++;
     IBasicInterestRateStrategy(irStrategy).setInterestRateData(assetId, irData);
@@ -82,14 +94,13 @@ contract Hub is IHub, AccessManaged {
     uint256 lastUpdateTimestamp = block.timestamp;
     _assets[assetId] = Asset({
       liquidity: 0,
-      deficit: 0,
+      deficitRay: 0,
       swept: 0,
       addedShares: 0,
       drawnShares: 0,
       premiumShares: 0,
-      premiumOffset: 0,
+      premiumOffsetRay: 0,
       drawnIndex: drawnIndex.toUint120(),
-      realizedPremium: 0,
       underlying: underlying,
       lastUpdateTimestamp: lastUpdateTimestamp.toUint40(),
       decimals: decimals,
@@ -100,6 +111,7 @@ contract Hub is IHub, AccessManaged {
       feeReceiver: feeReceiver,
       liquidityFee: 0
     });
+    _underlyingAssets.add(underlying);
     _addFeeReceiver(assetId, feeReceiver);
 
     emit AddAsset(assetId, underlying, decimals);
@@ -202,22 +214,23 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function add(uint256 assetId, uint256 amount, address from) external returns (uint256) {
+  function add(uint256 assetId, uint256 amount) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validateAdd(asset, spoke, amount, from);
+    _validateAdd(asset, spoke, amount);
 
+    uint256 liquidity = asset.liquidity + amount;
+    uint256 balance = IERC20(asset.underlying).balanceOf(address(this));
+    require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
     uint120 shares = asset.toAddedSharesDown(amount).toUint120();
     require(shares > 0, InvalidShares());
     asset.addedShares += shares;
     spoke.addedShares += shares;
-    asset.liquidity += amount.toUint120();
+    asset.liquidity = liquidity.toUint120();
 
     asset.updateDrawnRate(assetId);
-
-    asset.underlying.safeTransferFrom(from, address(this), amount);
 
     emit Add(assetId, msg.sender, shares, amount);
 
@@ -242,7 +255,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    asset.underlying.safeTransfer(to, amount);
+    IERC20(asset.underlying).safeTransfer(to, amount);
 
     emit Remove(assetId, msg.sender, shares, amount);
 
@@ -267,7 +280,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.updateDrawnRate(assetId);
 
-    asset.underlying.safeTransfer(to, amount);
+    IERC20(asset.underlying).safeTransfer(to, amount);
 
     emit Draw(assetId, msg.sender, drawnShares, amount);
 
@@ -278,26 +291,26 @@ contract Hub is IHub, AccessManaged {
   function restore(
     uint256 assetId,
     uint256 drawnAmount,
-    uint256 premiumAmount,
-    PremiumDelta calldata premiumDelta,
-    address from
+    PremiumDelta calldata premiumDelta
   ) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validateRestore(asset, spoke, drawnAmount, premiumAmount, from);
+    _validateRestore(asset, spoke, drawnAmount, premiumDelta.restoredPremiumRay);
 
     uint120 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint120();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
-    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
-    uint256 totalAmount = drawnAmount + premiumAmount;
-    asset.liquidity += totalAmount.toUint120();
+    _applyPremiumDelta(asset, spoke, premiumDelta);
+
+    uint256 premiumAmount = premiumDelta.restoredPremiumRay.fromRayUp();
+    uint256 liquidity = asset.liquidity + drawnAmount + premiumAmount;
+    uint256 balance = IERC20(asset.underlying).balanceOf(address(this));
+    require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
+    asset.liquidity = liquidity.toUint120();
 
     asset.updateDrawnRate(assetId);
-
-    asset.underlying.safeTransferFrom(from, address(this), totalAmount);
 
     emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
@@ -308,26 +321,28 @@ contract Hub is IHub, AccessManaged {
   function reportDeficit(
     uint256 assetId,
     uint256 drawnAmount,
-    uint256 premiumAmount,
     PremiumDelta calldata premiumDelta
   ) external returns (uint256) {
     Asset storage asset = _assets[assetId];
     SpokeData storage spoke = _spokes[assetId][msg.sender];
 
     asset.accrue();
-    _validateReportDeficit(asset, spoke, drawnAmount, premiumAmount);
+    _validateReportDeficit(asset, spoke, drawnAmount, premiumDelta.restoredPremiumRay);
 
     uint120 drawnShares = asset.toDrawnSharesDown(drawnAmount).toUint120();
     asset.drawnShares -= drawnShares;
     spoke.drawnShares -= drawnShares;
-    _applyPremiumDelta(asset, spoke, premiumDelta, premiumAmount);
-    uint120 deficitAmount = (drawnAmount + premiumAmount).toUint120();
-    asset.deficit += deficitAmount;
-    spoke.deficit += deficitAmount;
+    _applyPremiumDelta(asset, spoke, premiumDelta);
+
+    uint256 deficitAmountRay = uint256(drawnShares) *
+      asset.drawnIndex +
+      premiumDelta.restoredPremiumRay;
+    asset.deficitRay += deficitAmountRay.toUint200();
+    spoke.deficitRay += deficitAmountRay.toUint200();
 
     asset.updateDrawnRate(assetId);
 
-    emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
+    emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, deficitAmountRay);
 
     return drawnShares;
   }
@@ -345,18 +360,18 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     _validateEliminateDeficit(callerSpoke, amount);
 
-    uint256 deficit = coveredSpoke.deficit;
-    require(amount <= deficit, InvalidAmount());
+    uint256 deficitRay = coveredSpoke.deficitRay;
+    uint256 deficitAmountRay = (amount < deficitRay.fromRayUp()) ? amount.toRay() : deficitRay;
 
-    uint120 shares = asset.toAddedSharesUp(amount).toUint120();
+    uint120 shares = asset.toAddedSharesUp(deficitAmountRay.fromRayUp()).toUint120();
     asset.addedShares -= shares;
     callerSpoke.addedShares -= shares;
-    asset.deficit -= amount.toUint120();
-    coveredSpoke.deficit = deficit.uncheckedSub(amount).toUint120();
+    asset.deficitRay = asset.deficitRay.uncheckedSub(deficitAmountRay).toUint200();
+    coveredSpoke.deficitRay = deficitRay.uncheckedSub(deficitAmountRay).toUint200();
 
     asset.updateDrawnRate(assetId);
 
-    emit EliminateDeficit(assetId, msg.sender, spoke, shares, amount);
+    emit EliminateDeficit(assetId, msg.sender, spoke, shares, deficitAmountRay);
 
     return shares;
   }
@@ -369,7 +384,8 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     require(spoke.active, SpokeNotActive());
     // no premium change allowed
-    _applyPremiumDelta(asset, spoke, premiumDelta, 0);
+    require(premiumDelta.restoredPremiumRay == 0, InvalidPremiumChange());
+    _applyPremiumDelta(asset, spoke, premiumDelta);
     asset.updateDrawnRate(assetId);
 
     emit RefreshPremium(assetId, msg.sender, premiumDelta);
@@ -419,7 +435,7 @@ contract Hub is IHub, AccessManaged {
     asset.swept += amount.toUint120();
     asset.updateDrawnRate(assetId);
 
-    asset.underlying.safeTransfer(msg.sender, amount);
+    IERC20(asset.underlying).safeTransfer(msg.sender, amount);
 
     emit Sweep(assetId, msg.sender, amount);
   }
@@ -436,9 +452,14 @@ contract Hub is IHub, AccessManaged {
     asset.swept -= amount.toUint120();
     asset.updateDrawnRate(assetId);
 
-    asset.underlying.safeTransferFrom(msg.sender, address(this), amount);
+    IERC20(asset.underlying).safeTransferFrom(msg.sender, address(this), amount);
 
     emit Reclaim(assetId, msg.sender, amount);
+  }
+
+  /// @inheritdoc IHub
+  function isUnderlyingListed(address underlying) external view returns (bool) {
+    return _underlyingAssets.contains(underlying);
   }
 
   /// @inheritdoc IHub
@@ -521,14 +542,25 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
+  function getAssetPremiumRay(uint256 assetId) external view returns (uint256) {
+    Asset storage asset = _assets[assetId];
+    return
+      Premium.calculatePremiumRay({
+        premiumShares: asset.premiumShares,
+        premiumOffsetRay: asset.premiumOffsetRay,
+        drawnIndex: asset.getDrawnIndex()
+      });
+  }
+
+  /// @inheritdoc IHubBase
   function getAssetDrawnShares(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].drawnShares;
   }
 
   /// @inheritdoc IHubBase
-  function getAssetPremiumData(uint256 assetId) external view returns (uint256, uint256, uint256) {
+  function getAssetPremiumData(uint256 assetId) external view returns (uint256, int256) {
     Asset storage asset = _assets[assetId];
-    return (asset.premiumShares, asset.premiumOffset, asset.realizedPremium);
+    return (asset.premiumShares, asset.premiumOffsetRay);
   }
 
   /// @inheritdoc IHubBase
@@ -537,8 +569,8 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
-  function getAssetDeficit(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].deficit;
+  function getAssetDeficitRay(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].deficitRay;
   }
 
   /// @inheritdoc IHub
@@ -604,6 +636,13 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHubBase
+  function getSpokePremiumRay(uint256 assetId, address spoke) external view returns (uint256) {
+    Asset storage asset = _assets[assetId];
+    SpokeData storage spokeData = _spokes[assetId][spoke];
+    return _getSpokePremiumRay(asset, spokeData);
+  }
+
+  /// @inheritdoc IHubBase
   function getSpokeDrawnShares(uint256 assetId, address spoke) external view returns (uint256) {
     return _spokes[assetId][spoke].drawnShares;
   }
@@ -612,14 +651,14 @@ contract Hub is IHub, AccessManaged {
   function getSpokePremiumData(
     uint256 assetId,
     address spoke
-  ) external view returns (uint256, uint256, uint256) {
+  ) external view returns (uint256, int256) {
     SpokeData storage spokeData = _spokes[assetId][spoke];
-    return (spokeData.premiumShares, spokeData.premiumOffset, spokeData.realizedPremium);
+    return (spokeData.premiumShares, spokeData.premiumOffsetRay);
   }
 
   /// @inheritdoc IHubBase
-  function getSpokeDeficit(uint256 assetId, address spoke) external view returns (uint256) {
-    return _spokes[assetId][spoke].deficit;
+  function getSpokeDeficitRay(uint256 assetId, address spoke) external view returns (uint256) {
+    return _spokes[assetId][spoke].deficitRay;
   }
 
   /// @inheritdoc IHub
@@ -697,34 +736,30 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @dev Applies premium deltas on asset & spoke premium owed.
-  /// @dev Checks premium owed does not increase by more than `premiumAmount` + 2 wei (due to opposite rounding on premium shares and offset).
+  /// @dev Checks premium owed decreases by exactly `restoredPremiumRay`.
   /// @dev Checks updated risk premium is within allowed threshold.
+  /// @dev Uses last stored index; asset accrual should have already occurred.
   function _applyPremiumDelta(
     Asset storage asset,
     SpokeData storage spoke,
-    PremiumDelta calldata premium,
-    uint256 premiumAmount
+    PremiumDelta calldata premiumDelta
   ) internal {
-    uint256 drawnIndex = asset.getDrawnIndex();
+    uint256 drawnIndex = asset.drawnIndex;
 
     // asset premium change
-    (asset.premiumShares, asset.premiumOffset, asset.realizedPremium) = _validateApplyPremiumDelta(
+    (asset.premiumShares, asset.premiumOffsetRay) = _validateApplyPremiumDelta(
       drawnIndex,
       asset.premiumShares,
-      asset.premiumOffset,
-      asset.realizedPremium,
-      premium,
-      premiumAmount
+      asset.premiumOffsetRay,
+      premiumDelta
     );
 
     // spoke premium change
-    (spoke.premiumShares, spoke.premiumOffset, spoke.realizedPremium) = _validateApplyPremiumDelta(
+    (spoke.premiumShares, spoke.premiumOffsetRay) = _validateApplyPremiumDelta(
       drawnIndex,
       spoke.premiumShares,
-      spoke.premiumOffset,
-      spoke.realizedPremium,
-      premium,
-      premiumAmount
+      spoke.premiumOffsetRay,
+      premiumDelta
     );
 
     uint24 riskPremiumThreshold = spoke.riskPremiumThreshold;
@@ -767,18 +802,28 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset,
     SpokeData storage spoke
   ) internal view returns (uint256) {
-    uint256 accruedPremium = asset.toDrawnAssetsUp(spoke.premiumShares) - spoke.premiumOffset;
-    return spoke.realizedPremium + accruedPremium;
+    return _getSpokePremiumRay(asset, spoke).fromRayUp();
+  }
+
+  /// @dev Returns the spoke's premium amount with full precision for a specified asset.
+  function _getSpokePremiumRay(
+    Asset storage asset,
+    SpokeData storage spoke
+  ) internal view returns (uint256) {
+    return
+      Premium.calculatePremiumRay({
+        premiumShares: spoke.premiumShares,
+        premiumOffsetRay: spoke.premiumOffsetRay,
+        drawnIndex: asset.getDrawnIndex()
+      });
   }
 
   /// @dev Spoke with maximum cap have unlimited add capacity.
   function _validateAdd(
     Asset storage asset,
     SpokeData storage spoke,
-    uint256 amount,
-    address from
+    uint256 amount
   ) internal view {
-    require(from != address(this), InvalidAddress());
     require(amount > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
@@ -813,7 +858,8 @@ contract Hub is IHub, AccessManaged {
     uint256 owed = _getSpokeDrawn(asset, spoke) + _getSpokePremium(asset, spoke);
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
-        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >= owed + amount + spoke.deficit,
+        drawCap * MathUtils.uncheckedExp(10, asset.decimals) >=
+        owed + amount + uint256(spoke.deficitRay).fromRayUp(),
       DrawCapExceeded(drawCap)
     );
   }
@@ -822,32 +868,30 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset,
     SpokeData storage spoke,
     uint256 drawnAmount,
-    uint256 premiumAmount,
-    address from
+    uint256 premiumAmountRay
   ) internal view {
-    require(from != address(this), InvalidAddress());
-    require(drawnAmount + premiumAmount > 0, InvalidAmount());
+    require(drawnAmount > 0 || premiumAmountRay > 0, InvalidAmount());
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
-    uint256 premium = _getSpokePremium(asset, spoke);
-    require(drawnAmount <= drawn, SurplusAmountRestored(drawn));
-    require(premiumAmount <= premium, SurplusAmountRestored(premium));
+    uint256 premiumRay = _getSpokePremiumRay(asset, spoke);
+    require(drawnAmount <= drawn, SurplusDrawnRestored(drawn));
+    require(premiumAmountRay <= premiumRay, SurplusPremiumRayRestored(premiumRay));
   }
 
   function _validateReportDeficit(
     Asset storage asset,
     SpokeData storage spoke,
     uint256 drawnAmount,
-    uint256 premiumAmount
+    uint256 premiumAmountRay
   ) internal view {
     require(spoke.active, SpokeNotActive());
     require(!spoke.paused, SpokePaused());
-    require(drawnAmount + premiumAmount > 0, InvalidAmount());
+    require(drawnAmount > 0 || premiumAmountRay > 0, InvalidAmount());
     uint256 drawn = _getSpokeDrawn(asset, spoke);
-    uint256 premium = _getSpokePremium(asset, spoke);
-    require(drawnAmount <= drawn, SurplusDeficitReported(drawn));
-    require(premiumAmount <= premium, SurplusDeficitReported(premium));
+    uint256 premiumRay = _getSpokePremiumRay(asset, spoke);
+    require(drawnAmount <= drawn, SurplusDrawnDeficitReported(drawn));
+    require(premiumAmountRay <= premiumRay, SurplusPremiumRayDeficitReported(premiumRay));
   }
 
   function _validateEliminateDeficit(SpokeData storage spoke, uint256 amount) internal view {
@@ -895,22 +939,28 @@ contract Hub is IHub, AccessManaged {
   function _validateApplyPremiumDelta(
     uint256 drawnIndex,
     uint256 premiumShares,
-    uint256 premiumOffset,
-    uint256 realizedPremium,
-    PremiumDelta calldata premium,
-    uint256 premiumAmount
-  ) internal pure returns (uint120, uint120, uint120) {
-    uint256 premiumBefore = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
-    premiumBefore += realizedPremium;
+    int256 premiumOffsetRay,
+    PremiumDelta calldata premiumDelta
+  ) internal pure returns (uint120, int200) {
+    uint256 premiumRayBefore = Premium.calculatePremiumRay({
+      premiumShares: premiumShares,
+      premiumOffsetRay: premiumOffsetRay,
+      drawnIndex: drawnIndex
+    });
 
-    premiumShares = premiumShares.add(premium.sharesDelta);
-    premiumOffset = premiumOffset.add(premium.offsetDelta);
-    realizedPremium = realizedPremium.add(premium.realizedDelta);
+    uint256 newPremiumShares = premiumShares.add(premiumDelta.sharesDelta);
+    int256 newPremiumOffsetRay = premiumOffsetRay + premiumDelta.offsetRayDelta;
 
-    uint256 premiumAfter = premiumShares.rayMulUp(drawnIndex) - premiumOffset;
-    premiumAfter += realizedPremium;
-    // can increase due to precision loss on premium (drawn unchanged)
-    require(premiumAfter + premiumAmount - premiumBefore <= 2, InvalidPremiumChange());
-    return (premiumShares.toUint120(), premiumOffset.toUint120(), realizedPremium.toUint120());
+    uint256 premiumRayAfter = Premium.calculatePremiumRay({
+      premiumShares: newPremiumShares,
+      premiumOffsetRay: newPremiumOffsetRay,
+      drawnIndex: drawnIndex
+    });
+
+    require(
+      premiumRayAfter + premiumDelta.restoredPremiumRay == premiumRayBefore,
+      InvalidPremiumChange()
+    );
+    return (newPremiumShares.toUint120(), newPremiumOffsetRay.toInt200());
   }
 }

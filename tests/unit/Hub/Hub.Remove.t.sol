@@ -51,6 +51,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
+    _assertHubLiquidity(hub1, assetId, 'hub1.remove');
     // spoke
     assertEq(spokeData, assetData);
     // dai
@@ -86,6 +87,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
+    _assertHubLiquidity(hub1, assetId, 'hub1.remove');
     // spoke 1
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount after');
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares after');
@@ -156,6 +158,7 @@ contract HubRemoveTest is HubBase {
       vm.getBlockTimestamp(),
       'asset lastUpdateTimestamp after'
     );
+    _assertHubLiquidity(hub1, assetId, 'hub1.remove');
     // spoke 1
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount after');
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares after');
@@ -164,7 +167,6 @@ contract HubRemoveTest is HubBase {
     // underlying
     assertEq(underlying.balanceOf(address(spoke1)), 0, 'spoke1 token balance after');
     assertEq(underlying.balanceOf(address(spoke2)), 0, 'spoke2 token balance after');
-    assertEq(underlying.balanceOf(address(hub1)), assetData.liquidity, 'hub token balance after');
     assertApproxEqAbs(
       underlying.balanceOf(alice),
       aliceBalanceBefore + spoke1Amount + spoke2Amount,
@@ -232,6 +234,7 @@ contract HubRemoveTest is HubBase {
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.remove');
     // spoke1
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares');
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount');
@@ -253,8 +256,6 @@ contract HubRemoveTest is HubBase {
 
     drawAmount = bound(drawAmount, 1, daiAmount); // within added dai amount
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-
-    uint256 lastUpdateTimestamp = vm.getBlockTimestamp();
 
     // add and draw dai liquidity to accrue interest
     // add from spoke2, draw from spoke1
@@ -327,6 +328,7 @@ contract HubRemoveTest is HubBase {
     assertEq(asset.drawn, 0, 'dai drawn');
     assertEq(asset.premium, 0, 'dai premium');
     assertEq(asset.lastUpdateTimestamp, vm.getBlockTimestamp(), 'dai lastUpdateTimestamp');
+    _assertHubLiquidity(hub1, daiAssetId, 'hub1.remove');
     // spoke1
     assertEq(spokePosition1.addedShares, 0, 'spoke1 addedShares');
     assertEq(spokePosition1.addedAmount, 0, 'spoke1 addedAmount');
