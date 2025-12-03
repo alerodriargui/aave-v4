@@ -41,7 +41,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
     // Alice can be liquidated
     assertLe(
       spoke1.getUserAccountData(alice).healthFactor,
-      spoke1.HEALTH_FACTOR_LIQUIDATION_THRESHOLD()
+      LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     );
 
     console.log('Attempting liquidation with alice at ', i, ' collaterals');
@@ -73,7 +73,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
       MockERC20 newToken = new MockERC20();
       newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
       vm.prank(alice);
-      newToken.approve(address(hub1), UINT256_MAX);
+      newToken.approve(address(spoke1), UINT256_MAX);
 
       IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
         active: true,
@@ -117,7 +117,9 @@ contract SpokeInvestigateOogTest is SpokeBase {
         paused: false,
         frozen: false,
         borrowable: true,
-        collateralRisk: ++collateralRisk // Increasing collateral risk to maintain sorted order (worst case for quicksort)
+        collateralRisk: ++collateralRisk, // Increasing collateral risk to maintain sorted order (worst case for quicksort)
+        liquidatable: true,
+        receiveSharesEnabled: true
       });
       ISpoke.DynamicReserveConfig memory dynamicConfig = ISpoke.DynamicReserveConfig({
         collateralFactor: 80_00,
