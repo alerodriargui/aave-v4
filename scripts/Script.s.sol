@@ -37,6 +37,11 @@ string constant MKR = 'MKR';
 string constant UNI = 'UNI';
 string constant sUSDe = 'sUSDe';
 
+string constant PT_sUSDe = 'PT_sUSDe';
+string constant LDO = 'LDO';
+string constant ONE_INCH = '1INCH';
+string constant USDT = 'USDT';
+
 contract Deploy is Script, StdAssertions {
   using stdJson for string;
   using SafeCast for *;
@@ -62,6 +67,79 @@ contract Deploy is Script, StdAssertions {
     // seed();
   }
 
+  function debug() public {
+    vm.startBroadcast();
+    setUpTokens(); // done for price feed on tokens, use only until it doesn't deploy mock tokens
+    load();
+
+    {
+      Hub targetHub = _hub(CORE_HUB).hub;
+      address spoke = address(_spoke(CORE_SPOKE));
+      uint assetId = _assetId(targetHub, address(_token(AAVE).token));
+      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+      config.active = true;
+      targetHub.updateSpokeConfig(assetId, spoke, config);
+    }
+
+    _process(
+      CORE_SPOKE,
+      ReserveConfig({
+        assetKey: AAVE,
+        hubKey: CORE_HUB,
+        collateral: true,
+        borrowable: true,
+        maxLiquidationBonus: 105_00,
+        collateralRisk: 15_00,
+        collateralFactor: 70_00,
+        liquidationFee: 10_00
+      })
+    );
+
+    // _process(
+    //   FRONTIER_HUB,
+    //   AssetConfig({
+    //     key: MKR,
+    //     liquidityFee: 10_00,
+    //     irData: IAssetInterestRateStrategy.InterestRateData(45_00, 0, 7_00, 300_00)
+    //   })
+    // );
+    // _process(
+    //   FRONTIER_HUB,
+    //   AssetConfig({
+    //     key: AAVE,
+    //     liquidityFee: 10_00,
+    //     irData: IAssetInterestRateStrategy.InterestRateData(45_00, 0, 7_00, 300_00)
+    //   })
+    // );
+
+    // _process(
+    //   FRONTIER_SPOKE,
+    //   ReserveConfig({
+    //     assetKey: MKR,
+    //     hubKey: FRONTIER_HUB,
+    //     collateral: true,
+    //     borrowable: false,
+    //     maxLiquidationBonus: 105_00,
+    //     collateralRisk: 7_00,
+    //     collateralFactor: 78_00,
+    //     liquidationFee: 10_00
+    //   })
+    // );
+    // _process(
+    //   FRONTIER_SPOKE,
+    //   ReserveConfig({
+    //     assetKey: AAVE,
+    //     hubKey: FRONTIER_HUB,
+    //     collateral: true,
+    //     borrowable: false,
+    //     maxLiquidationBonus: 105_00,
+    //     collateralRisk: 5_00,
+    //     collateralFactor: 83_00,
+    //     liquidationFee: 10_00
+    //   })
+    // );
+  }
+
   function setUpTokens() public {
     // move price per reserve listing
     // tokens[WETH] = Token(TestnetERC20(address(new WETH9())), 1922e8);
@@ -75,6 +153,10 @@ contract Deploy is Script, StdAssertions {
     // tokens[MKR] = Token(new TestnetERC20('MKR', 'MKR', 18), 113.21e8);
     // tokens[UNI] = Token(new TestnetERC20('UNI', 'UNI', 8), 9.2323e8);
     // tokens[sUSDe] = Token(new TestnetERC20('sUSDe', 'sUSDe', 18), 1.023213e8);
+
+    // tokens[PT_sUSDe] = Token(new TestnetERC20('PT-sUSDe', 'PT-sUSDe', 18), 1.023213e8);
+    // tokens[LDO] = Token(new TestnetERC20('LDO', 'LDO', 18), 1.023213e8);
+    // tokens[ONE_INCH] = Token(new TestnetERC20('ONE_INCH', 'ONE_INCH', 18), 1.023213e8);
 
     tokens[WETH] = Token(
       0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
@@ -121,6 +203,23 @@ contract Deploy is Script, StdAssertions {
       0x9D39A5DE30e57443BfF2A8307A4256c8797A3497,
       0xFF3BC18cCBd5999CE63E788A1c250a88626aD099
     );
+    tokens[PT_sUSDe] = Token(
+      0x62C6E813b9589C3631Ba0Cdb013acdB8544038B7,
+      0x3E7d1eAB13ad0104d2750B8863b489D65364e32D // fix
+    );
+    tokens[LDO] = Token(
+      0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32,
+      // 0xb01e6C9af83879B8e06a092f0DD94309c0D497E4
+      _deployMockPriceFeed(85721424, 'LDO')
+    );
+    tokens[ONE_INCH] = Token(
+      0x111111111117dC0aa78b770fA6A738034120C302,
+      0xc929ad75B72593967DE83E7F7Cda0493458261D9
+    );
+    tokens[USDT] = Token(
+      0xdAC17F958D2ee523a2206206994597C13D831ec7,
+      0x3E7d1eAB13ad0104d2750B8863b489D65364e32D
+    );
 
     tokenSetup = true;
   }
@@ -134,14 +233,27 @@ contract Deploy is Script, StdAssertions {
   function _token(string memory key) internal view returns (Token storage) {
     Token storage t = tokens[key];
     require(address(t.token) != address(0), 'token unset');
+    require(address(t.priceFeed) != address(0), 'price feed unset');
     return t;
   }
 
   // -------------------
 
+  string internal constant PRIME_HUB = 'PRIME_HUB';
   string internal constant CORE_HUB = 'CORE_HUB';
-  string internal constant ISO_GOV_HUB = 'ISO_GOV_HUB';
-  string internal constant ISO_STABLE_HUB = 'ISO_STABLE_HUB';
+  string internal constant ETHENA_HUB = 'ETHENA_HUB';
+  string internal constant FRONTIER_HUB = 'FRONTIER_HUB';
+
+  string internal constant PRIME_SPOKE = 'PRIME_SPOKE';
+  string internal constant CORE_SPOKE = 'CORE_SPOKE';
+  string internal constant LST_SPOKE = 'LST_SPOKE';
+  string internal constant ETHENA_SPOKE = 'ETHENA_SPOKE';
+  string internal constant FRONTIER_SPOKE = 'FRONTIER_SPOKE';
+
+  struct SpokeGlobalConfig {
+    ISpoke spoke;
+  }
+  mapping(string key => SpokeGlobalConfig spoke) internal spokes;
 
   struct SpokeListConfig {
     string assetKey;
@@ -171,35 +283,31 @@ contract Deploy is Script, StdAssertions {
     ACCESS_MANAGER = new AccessManager(ADMIN);
     deploySpokes();
     {
-      console.log('-----CORE_HUB-----');
-      Hub coreHub = new Hub(address(ACCESS_MANAGER));
-      hubs[CORE_HUB] = HubGlobalConfig(
-        coreHub,
-        new TreasurySpoke(ADMIN, address(coreHub)),
-        new AssetInterestRateStrategy(address(coreHub))
+      console.log('-----PRIME_HUB-----');
+      string memory hubKey = 'PRIME_HUB';
+      Hub hub = new Hub(address(ACCESS_MANAGER));
+      hubs[hubKey] = HubGlobalConfig(
+        hub,
+        new TreasurySpoke(ADMIN, address(hub)),
+        new AssetInterestRateStrategy(address(hub))
       );
-      setUpRoles(CORE_HUB);
+      setUpRoles(hubKey);
 
-      AssetConfig[7] memory assetConfigs = [
+      AssetConfig[5] memory assetConfigs = [
         AssetConfig({
           key: WETH,
           liquidityFee: 10_00,
           irData: IAssetInterestRateStrategy.InterestRateData(90_00, 0, 2_70, 80_00)
         }),
         AssetConfig({
-          key: cbBTC,
-          liquidityFee: 50_00,
-          irData: IAssetInterestRateStrategy.InterestRateData(80_00, 0, 4_00, 60_00)
+          key: wstETH,
+          liquidityFee: 5_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(90_00, 0, 5_50, 85_00)
         }),
         AssetConfig({
-          key: WBTC,
-          liquidityFee: 50_00,
-          irData: IAssetInterestRateStrategy.InterestRateData(80_00, 30, 4_00, 300_00)
-        }),
-        AssetConfig({
-          key: USDS,
+          key: USDT,
           liquidityFee: 10_00,
-          irData: IAssetInterestRateStrategy.InterestRateData(92_00, 4_50, 75, 35_00)
+          irData: IAssetInterestRateStrategy.InterestRateData(92_00, 0, 5_50, 35_00)
         }),
         AssetConfig({
           key: USDC,
@@ -208,28 +316,109 @@ contract Deploy is Script, StdAssertions {
         }),
         AssetConfig({
           key: GHO,
-          liquidityFee: 5_00,
+          liquidityFee: 10_00,
           irData: IAssetInterestRateStrategy.InterestRateData(92_00, 0, 5_50, 35_00)
-        }),
-        AssetConfig({
-          key: wstETH,
-          liquidityFee: 5_00,
-          irData: IAssetInterestRateStrategy.InterestRateData(90_00, 0, 55, 85_00)
         })
       ];
-      SpokeListConfig[12] memory spokeConfigs = [
-        // ---- CORE_SPOKE -----
-        SpokeListConfig({assetKey: WETH, spokeKey: CORE_SPOKE, addCap: 90_000, drawCap: 0}),
-        SpokeListConfig({assetKey: cbBTC, spokeKey: CORE_SPOKE, addCap: 100_000, drawCap: 0}),
-        SpokeListConfig({assetKey: WBTC, spokeKey: CORE_SPOKE, addCap: 100_000, drawCap: 0}),
+      SpokeListConfig[5] memory spokeConfigs = [
+        // ----PRIME_SPOKE-----
+        SpokeListConfig({assetKey: WETH, spokeKey: PRIME_SPOKE, addCap: 225, drawCap: 200}),
+        SpokeListConfig({assetKey: wstETH, spokeKey: PRIME_SPOKE, addCap: 200, drawCap: 75}),
         SpokeListConfig({
-          assetKey: USDS,
-          spokeKey: CORE_SPOKE,
-          addCap: 2_000_000,
-          drawCap: 1_800_000
+          assetKey: USDT,
+          spokeKey: PRIME_SPOKE,
+          addCap: 3_000_000,
+          drawCap: 2_760_000
         }),
         SpokeListConfig({
           assetKey: USDC,
+          spokeKey: PRIME_SPOKE,
+          addCap: 3_000_000,
+          drawCap: 2_760_000
+        }),
+        SpokeListConfig({
+          assetKey: GHO,
+          spokeKey: PRIME_SPOKE,
+          addCap: 17_500_000,
+          drawCap: 15_000_000
+        })
+      ];
+
+      console.log('\nAssetListing');
+      for (uint i; i < assetConfigs.length; ++i) _process(hubKey, assetConfigs[i]);
+      console.log('\nSpokeListing');
+      for (uint i; i < spokeConfigs.length; ++i) _process(hubKey, spokeConfigs[i]);
+      console.log('---------');
+    }
+
+    {
+      console.log('-----CORE_HUB-----');
+      string memory hubKey = 'CORE_HUB';
+      Hub hub = new Hub(address(ACCESS_MANAGER));
+      hubs[hubKey] = HubGlobalConfig(
+        hub,
+        new TreasurySpoke(ADMIN, address(hub)),
+        new AssetInterestRateStrategy(address(hub))
+      );
+      setUpRoles(hubKey);
+
+      AssetConfig[8] memory assetConfigs = [
+        AssetConfig({
+          key: WETH,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(90_00, 0, 2_70, 80_00)
+        }),
+        AssetConfig({
+          key: wstETH,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(90_00, 0, 5_50, 85_00)
+        }),
+        AssetConfig({
+          key: WBTC,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(80_00, 0, 4_00, 60_00) // ! this was incorrect?
+        }),
+        AssetConfig({
+          key: cbBTC,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(80_00, 0, 4_00, 60_00)
+        }),
+        AssetConfig({
+          key: AAVE,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(45_00, 0, 5_50, 300_00)
+        }),
+        AssetConfig({
+          key: USDC,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(92_00, 0, 5_50, 35_00)
+        }),
+        AssetConfig({
+          key: USDT,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(92_00, 0, 5_50, 35_00)
+        }),
+        AssetConfig({
+          key: GHO,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(92_00, 0, 5_50, 35_00)
+        })
+      ];
+      SpokeListConfig[12] memory spokeConfigs = [
+        // ----CORE_SPOKE-----
+        SpokeListConfig({assetKey: WETH, spokeKey: CORE_SPOKE, addCap: 800, drawCap: 725}),
+        SpokeListConfig({assetKey: wstETH, spokeKey: CORE_SPOKE, addCap: 45, drawCap: 15}),
+        SpokeListConfig({assetKey: WBTC, spokeKey: CORE_SPOKE, addCap: 20, drawCap: 7}),
+        SpokeListConfig({assetKey: cbBTC, spokeKey: CORE_SPOKE, addCap: 5, drawCap: 3}),
+        SpokeListConfig({assetKey: AAVE, spokeKey: CORE_SPOKE, addCap: 9_500, drawCap: 5_000}),
+        SpokeListConfig({
+          assetKey: USDC,
+          spokeKey: CORE_SPOKE,
+          addCap: 3_000_000,
+          drawCap: 2_760_000
+        }),
+        SpokeListConfig({
+          assetKey: USDT,
           spokeKey: CORE_SPOKE,
           addCap: 3_000_000,
           drawCap: 2_760_000
@@ -240,57 +429,140 @@ contract Deploy is Script, StdAssertions {
           addCap: 8_000_000,
           drawCap: 5_500_000
         }),
-        SpokeListConfig({assetKey: wstETH, spokeKey: CORE_SPOKE, addCap: 60_000, drawCap: 0}),
-        // ---- E_MODE_SPOKE -----
-        SpokeListConfig({assetKey: WETH, spokeKey: E_MODE_SPOKE, addCap: 90_000, drawCap: 80_000}),
-        SpokeListConfig({assetKey: wstETH, spokeKey: E_MODE_SPOKE, addCap: 80_000, drawCap: 0}),
-        // ---- ISO_GOV_SPOKE -----
-        SpokeListConfig({assetKey: USDC, spokeKey: ISO_GOV_SPOKE, addCap: 0, drawCap: 1_000_000}),
-        SpokeListConfig({assetKey: GHO, spokeKey: ISO_GOV_SPOKE, addCap: 0, drawCap: 2_000_000}),
-        // ---- ISO_STABLE_SPOKE -----
-        SpokeListConfig({assetKey: USDC, spokeKey: ISO_STABLE_SPOKE, addCap: 0, drawCap: 2_000_000})
+        // ----LST_SPOKE-----
+        SpokeListConfig({assetKey: WETH, spokeKey: LST_SPOKE, addCap: 225, drawCap: 0}),
+        SpokeListConfig({assetKey: wstETH, spokeKey: LST_SPOKE, addCap: 200, drawCap: 100}),
+        // ----ETHENA_SPOKE-----
+        SpokeListConfig({
+          assetKey: USDC,
+          spokeKey: ETHENA_SPOKE,
+          addCap: 2_000_000,
+          drawCap: 1_000_000
+        }),
+        // ----FRONTIER_SPOKE-----
+        SpokeListConfig({
+          assetKey: USDC,
+          spokeKey: FRONTIER_SPOKE,
+          addCap: 2_000_000,
+          drawCap: 1_000_000
+        })
       ];
 
       console.log('\nAssetListing');
-      for (uint i; i < assetConfigs.length; ++i) _process(CORE_HUB, assetConfigs[i]);
+      for (uint i; i < assetConfigs.length; ++i) _process(hubKey, assetConfigs[i]);
       console.log('\nSpokeListing');
-      for (uint i; i < spokeConfigs.length; ++i) _process(CORE_HUB, spokeConfigs[i]);
+      for (uint i; i < spokeConfigs.length; ++i) _process(hubKey, spokeConfigs[i]);
       console.log('---------');
     }
 
     {
-      console.log('----- ISO_GOV_HUB -----');
-      Hub isoGovHub = new Hub(address(ACCESS_MANAGER));
-      hubs[ISO_GOV_HUB] = HubGlobalConfig(
-        isoGovHub,
-        new TreasurySpoke(ADMIN, address(isoGovHub)),
-        new AssetInterestRateStrategy(address(isoGovHub))
+      console.log('-----ETHENA_HUB-----');
+      string memory hubKey = 'ETHENA_HUB';
+      Hub hub = new Hub(address(ACCESS_MANAGER));
+      hubs[hubKey] = HubGlobalConfig(
+        hub,
+        new TreasurySpoke(ADMIN, address(hub)),
+        new AssetInterestRateStrategy(address(hub))
       );
-      setUpRoles(ISO_GOV_HUB);
+      setUpRoles(hubKey);
 
-      AssetConfig[6] memory assetConfigs = [
+      AssetConfig[5] memory assetConfigs = [
         AssetConfig({
-          key: AAVE,
+          key: PT_sUSDe,
           liquidityFee: 10_00,
-          irData: IAssetInterestRateStrategy.InterestRateData(45_00, 0, 7_00, 300_00)
+          irData: IAssetInterestRateStrategy.InterestRateData(45_00, 0, 10_00, 300_00)
         }),
         AssetConfig({
-          key: UNI,
-          liquidityFee: 50_00,
-          irData: IAssetInterestRateStrategy.InterestRateData(45_00, 0, 7_00, 300_00)
-        }),
-        AssetConfig({
-          key: MKR,
-          liquidityFee: 20_00,
-          irData: IAssetInterestRateStrategy.InterestRateData(45_00, 0, 7_00, 300_00)
-        }),
-        AssetConfig({
-          key: USDS,
+          key: sUSDe,
           liquidityFee: 10_00,
-          irData: IAssetInterestRateStrategy.InterestRateData(92_00, 4_50, 75, 35_00)
+          irData: IAssetInterestRateStrategy.InterestRateData(90_00, 0, 6_25, 40_00)
         }),
         AssetConfig({
           key: USDC,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(92_00, 0, 5_50, 35_00)
+        }),
+        AssetConfig({
+          key: USDT,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(92_00, 0, 5_50, 35_00)
+        }),
+        AssetConfig({
+          key: GHO,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(92_00, 0, 5_50, 35_00)
+        })
+      ];
+      SpokeListConfig[5] memory spokeConfigs = [
+        // ----ETHENA_SPOKE-----
+        SpokeListConfig({
+          assetKey: PT_sUSDe,
+          spokeKey: ETHENA_SPOKE,
+          addCap: 6_000_000,
+          drawCap: 0
+        }),
+        SpokeListConfig({assetKey: sUSDe, spokeKey: ETHENA_SPOKE, addCap: 5_000_000, drawCap: 0}),
+        SpokeListConfig({
+          assetKey: USDC,
+          spokeKey: ETHENA_SPOKE,
+          addCap: 3_000_000,
+          drawCap: 2_760_000
+        }),
+        SpokeListConfig({
+          assetKey: USDT,
+          spokeKey: ETHENA_SPOKE,
+          addCap: 3_000_000,
+          drawCap: 2_760_000
+        }),
+        SpokeListConfig({
+          assetKey: GHO,
+          spokeKey: ETHENA_SPOKE,
+          addCap: 17_500_000,
+          drawCap: 15_500_000
+        })
+      ];
+
+      console.log('\nAssetListing');
+      for (uint i; i < assetConfigs.length; ++i) _process(hubKey, assetConfigs[i]);
+      console.log('\nSpokeListing');
+      for (uint i; i < spokeConfigs.length; ++i) _process(hubKey, spokeConfigs[i]);
+      console.log('---------');
+    }
+
+    {
+      console.log('-----FRONTIER_HUB-----');
+      string memory hubKey = 'FRONTIER_HUB';
+      Hub hub = new Hub(address(ACCESS_MANAGER));
+      hubs[hubKey] = HubGlobalConfig(
+        hub,
+        new TreasurySpoke(ADMIN, address(hub)),
+        new AssetInterestRateStrategy(address(hub))
+      );
+      setUpRoles(hubKey);
+
+      AssetConfig[6] memory assetConfigs = [
+        AssetConfig({
+          key: UNI,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(45_00, 0, 7_00, 300_00)
+        }),
+        AssetConfig({
+          key: LDO,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(45_00, 0, 7_00, 300_00)
+        }),
+        AssetConfig({
+          key: ONE_INCH,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(45_00, 0, 9_00, 300_00)
+        }),
+        AssetConfig({
+          key: USDC,
+          liquidityFee: 10_00,
+          irData: IAssetInterestRateStrategy.InterestRateData(92_00, 0, 5_50, 35_00)
+        }),
+        AssetConfig({
+          key: USDT,
           liquidityFee: 10_00,
           irData: IAssetInterestRateStrategy.InterestRateData(92_00, 0, 5_50, 35_00)
         }),
@@ -301,82 +573,41 @@ contract Deploy is Script, StdAssertions {
         })
       ];
       SpokeListConfig[6] memory spokeConfigs = [
-        // ---- ISO_GOV_SPOKE -----
-        SpokeListConfig({assetKey: AAVE, spokeKey: ISO_GOV_SPOKE, addCap: 90_000, drawCap: 0}),
-        SpokeListConfig({assetKey: UNI, spokeKey: ISO_GOV_SPOKE, addCap: 20_000_000, drawCap: 0}),
-        SpokeListConfig({assetKey: MKR, spokeKey: ISO_GOV_SPOKE, addCap: 20_000_000, drawCap: 0}),
+        // ----FRONTIER_SPOKE-----
+        SpokeListConfig({assetKey: UNI, spokeKey: FRONTIER_SPOKE, addCap: 600_000, drawCap: 0}),
+        SpokeListConfig({assetKey: LDO, spokeKey: FRONTIER_SPOKE, addCap: 50_000_000, drawCap: 0}),
         SpokeListConfig({
-          assetKey: USDS,
-          spokeKey: ISO_GOV_SPOKE,
-          addCap: 20_000_000,
-          drawCap: 18_000_000
+          assetKey: ONE_INCH,
+          spokeKey: FRONTIER_SPOKE,
+          addCap: 500_000,
+          drawCap: 0
         }),
         SpokeListConfig({
           assetKey: USDC,
-          spokeKey: ISO_GOV_SPOKE,
+          spokeKey: FRONTIER_SPOKE,
+          addCap: 3_000_000,
+          drawCap: 2_760_000
+        }),
+        SpokeListConfig({
+          assetKey: USDT,
+          spokeKey: FRONTIER_SPOKE,
           addCap: 3_000_000,
           drawCap: 2_760_000
         }),
         SpokeListConfig({
           assetKey: GHO,
-          spokeKey: ISO_GOV_SPOKE,
-          addCap: 8_000_000,
-          drawCap: 5_500_000
+          spokeKey: FRONTIER_SPOKE,
+          addCap: 17_500_000,
+          drawCap: 15_500_000
         })
       ];
 
       console.log('\nAssetListing');
-      for (uint i; i < assetConfigs.length; ++i) _process(ISO_GOV_HUB, assetConfigs[i]);
+      for (uint i; i < assetConfigs.length; ++i) _process(hubKey, assetConfigs[i]);
       console.log('\nSpokeListing');
-      for (uint i; i < spokeConfigs.length; ++i) _process(ISO_GOV_HUB, spokeConfigs[i]);
+      for (uint i; i < spokeConfigs.length; ++i) _process(hubKey, spokeConfigs[i]);
       console.log('---------');
     }
-
-    {
-      console.log('----- ISO_STABLE_HUB -----');
-      Hub isoGovHub = new Hub(address(ACCESS_MANAGER));
-      hubs[ISO_STABLE_HUB] = HubGlobalConfig(
-        isoGovHub,
-        new TreasurySpoke(ADMIN, address(isoGovHub)),
-        new AssetInterestRateStrategy(address(isoGovHub))
-      );
-      setUpRoles(ISO_STABLE_HUB);
-
-      AssetConfig[2] memory assetConfigs = [
-        AssetConfig({
-          key: USDC,
-          liquidityFee: 10_00,
-          irData: IAssetInterestRateStrategy.InterestRateData(92_00, 0, 5_50, 35_00)
-        }),
-        AssetConfig({
-          key: sUSDe,
-          liquidityFee: 10_00,
-          irData: IAssetInterestRateStrategy.InterestRateData(90_00, 0, 5_50, 85_00)
-        })
-      ];
-      SpokeListConfig[2] memory spokeConfigs = [
-        // ---- ISO_STABLE_SPOKE -----
-        SpokeListConfig({
-          assetKey: USDC,
-          spokeKey: ISO_STABLE_SPOKE,
-          addCap: 5_000_000,
-          drawCap: 4_760_000
-        }),
-        SpokeListConfig({
-          assetKey: sUSDe,
-          spokeKey: ISO_STABLE_SPOKE,
-          addCap: 5_000_000,
-          drawCap: 0
-        })
-      ];
-
-      console.log('\nAssetListing');
-      for (uint i; i < assetConfigs.length; ++i) _process(ISO_STABLE_HUB, assetConfigs[i]);
-      console.log('\nSpokeListing');
-      for (uint i; i < spokeConfigs.length; ++i) _process(ISO_STABLE_HUB, spokeConfigs[i]);
-      console.log('---------');
-    }
-
     hubSetup = true;
   }
 
@@ -395,31 +626,252 @@ contract Deploy is Script, StdAssertions {
     require(hubSetup, 'hub setup required');
 
     {
+      string memory spokeKey = 'PRIME_SPOKE';
+      console.log('-----PRIME_SPOKE-----');
+      ReserveConfig[5] memory reserveConf = [
+        ReserveConfig({
+          assetKey: WETH,
+          hubKey: PRIME_HUB,
+          collateral: true,
+          borrowable: true,
+          maxLiquidationBonus: 105_00,
+          collateralRisk: 0,
+          collateralFactor: 85_00,
+          liquidationFee: 10_00
+        }),
+        ReserveConfig({
+          assetKey: wstETH,
+          hubKey: PRIME_HUB,
+          collateral: true,
+          borrowable: true,
+          maxLiquidationBonus: 106_00,
+          collateralRisk: 0,
+          collateralFactor: 83_00,
+          liquidationFee: 10_00
+        }),
+        ReserveConfig({
+          assetKey: USDT,
+          hubKey: PRIME_HUB,
+          collateral: true,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 83_00,
+          liquidationFee: 10_00
+        }),
+        ReserveConfig({
+          assetKey: USDC,
+          hubKey: PRIME_HUB,
+          collateral: true,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 83_00,
+          liquidationFee: 10_00
+        }),
+        ReserveConfig({
+          assetKey: GHO,
+          hubKey: PRIME_HUB,
+          collateral: true,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 83_00,
+          liquidationFee: 10_00
+        })
+      ];
+
+      console.log('\nReserveListing');
+      for (uint i; i < reserveConf.length; ++i) _process(spokeKey, reserveConf[i]);
+    }
+
+    {
+      string memory spokeKey = 'CORE_SPOKE';
       console.log('-----CORE_SPOKE-----');
       ReserveConfig[7] memory reserveConf = [
         ReserveConfig({
           assetKey: WETH,
           hubKey: CORE_HUB,
           collateral: true,
-          borrowable: false,
+          borrowable: true,
           maxLiquidationBonus: 105_00,
           collateralRisk: 0,
           collateralFactor: 85_00,
-          liquidationFee: 10_00 //
+          liquidationFee: 10_00
         }),
         ReserveConfig({
-          assetKey: cbBTC,
+          assetKey: wstETH,
           hubKey: CORE_HUB,
           collateral: true,
-          borrowable: false,
-          maxLiquidationBonus: 107_50,
-          collateralRisk: 4_50,
-          collateralFactor: 78_00,
+          borrowable: true,
+          maxLiquidationBonus: 106_00,
+          collateralRisk: 0,
+          collateralFactor: 83_00,
           liquidationFee: 10_00
         }),
         ReserveConfig({
           assetKey: WBTC,
           hubKey: CORE_HUB,
+          collateral: true,
+          borrowable: true,
+          maxLiquidationBonus: 106_00,
+          collateralRisk: 0,
+          collateralFactor: 83_00,
+          liquidationFee: 10_00
+        }),
+        ReserveConfig({
+          assetKey: cbBTC,
+          hubKey: CORE_HUB,
+          collateral: true,
+          borrowable: true,
+          maxLiquidationBonus: 105_00,
+          collateralRisk: 0,
+          collateralFactor: 78_00,
+          liquidationFee: 10_00
+        }),
+        ReserveConfig({
+          assetKey: USDT,
+          hubKey: CORE_HUB,
+          collateral: true,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 83_00,
+          liquidationFee: 10_00
+        }),
+        ReserveConfig({
+          assetKey: USDC,
+          hubKey: CORE_HUB,
+          collateral: true,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 83_00,
+          liquidationFee: 10_00
+        }),
+        ReserveConfig({
+          assetKey: GHO,
+          hubKey: CORE_HUB,
+          collateral: true,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 83_00,
+          liquidationFee: 10_00
+        })
+      ];
+
+      console.log('\nReserveListing');
+      for (uint i; i < reserveConf.length; ++i) _process(spokeKey, reserveConf[i]);
+    }
+
+    {
+      string memory spokeKey = 'LST_SPOKE';
+      console.log('-----LST_SPOKE-----');
+      ReserveConfig[2] memory reserveConf = [
+        ReserveConfig({
+          assetKey: WETH,
+          hubKey: CORE_HUB,
+          collateral: false,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 0,
+          liquidationFee: 0
+        }),
+        ReserveConfig({
+          assetKey: wstETH,
+          hubKey: CORE_HUB,
+          collateral: true,
+          borrowable: false,
+          maxLiquidationBonus: 106_00,
+          collateralRisk: 0,
+          collateralFactor: 93_00,
+          liquidationFee: 15_00
+        })
+      ];
+
+      console.log('\nReserveListing');
+      for (uint i; i < reserveConf.length; ++i) _process(spokeKey, reserveConf[i]);
+    }
+
+    {
+      string memory spokeKey = 'ETHENA_SPOKE';
+      console.log('-----ETHENA_SPOKE-----');
+      ReserveConfig[6] memory reserveConf = [
+        ReserveConfig({
+          assetKey: PT_sUSDe,
+          hubKey: ETHENA_HUB,
+          collateral: true,
+          borrowable: false,
+          maxLiquidationBonus: 105_00,
+          collateralRisk: 8_00,
+          collateralFactor: 78_00,
+          liquidationFee: 10_00
+        }),
+        ReserveConfig({
+          assetKey: sUSDe,
+          hubKey: ETHENA_HUB,
+          collateral: true,
+          borrowable: false,
+          maxLiquidationBonus: 106_00,
+          collateralRisk: 9_00,
+          collateralFactor: 80_00,
+          liquidationFee: 10_00
+        }),
+        ReserveConfig({
+          assetKey: USDT,
+          hubKey: ETHENA_HUB,
+          collateral: false,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 0,
+          liquidationFee: 0
+        }),
+        ReserveConfig({
+          assetKey: USDC,
+          hubKey: ETHENA_HUB,
+          collateral: false,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 0,
+          liquidationFee: 0
+        }),
+        ReserveConfig({
+          assetKey: GHO,
+          hubKey: ETHENA_HUB,
+          collateral: false,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 0,
+          liquidationFee: 0
+        }),
+        ReserveConfig({
+          assetKey: USDC,
+          hubKey: CORE_HUB,
+          collateral: false,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 0,
+          liquidationFee: 0
+        })
+      ];
+
+      console.log('\nReserveListing');
+      for (uint i; i < reserveConf.length; ++i) _process(spokeKey, reserveConf[i]);
+    }
+
+    {
+      string memory spokeKey = 'FRONTIER_SPOKE';
+      console.log('-----FRONTIER_SPOKE-----');
+      ReserveConfig[7] memory reserveConf = [
+        ReserveConfig({
+          assetKey: UNI,
+          hubKey: FRONTIER_HUB,
           collateral: true,
           borrowable: false,
           maxLiquidationBonus: 105_00,
@@ -428,144 +880,55 @@ contract Deploy is Script, StdAssertions {
           liquidationFee: 10_00
         }),
         ReserveConfig({
-          assetKey: USDS,
-          hubKey: CORE_HUB,
-          collateral: true,
-          borrowable: true,
-          maxLiquidationBonus: 100_00,
-          collateralRisk: 0,
-          collateralFactor: 0,
-          liquidationFee: 10_00
-        }),
-        ReserveConfig({
-          assetKey: USDC,
-          hubKey: CORE_HUB,
-          collateral: true,
-          borrowable: true,
-          maxLiquidationBonus: 100_00,
-          collateralRisk: 0,
-          collateralFactor: 0,
-          liquidationFee: 10_00
-        }),
-        ReserveConfig({
-          assetKey: GHO,
-          hubKey: CORE_HUB,
-          collateral: true,
-          borrowable: true,
-          maxLiquidationBonus: 100_00,
-          collateralRisk: 0,
-          collateralFactor: 0,
-          liquidationFee: 10_00
-        }),
-        ReserveConfig({
-          assetKey: wstETH,
-          hubKey: CORE_HUB,
+          assetKey: LDO,
+          hubKey: FRONTIER_HUB,
           collateral: true,
           borrowable: false,
           maxLiquidationBonus: 106_00,
-          collateralRisk: 3_00,
-          collateralFactor: 83_00,
-          liquidationFee: 10_00
-        })
-      ];
-
-      console.log('\nReserveListing');
-      for (uint i; i < reserveConf.length; ++i) _process(CORE_SPOKE, reserveConf[i]);
-    }
-
-    {
-      console.log('-----E_MODE_SPOKE-----');
-      ReserveConfig[2] memory reserveConf = [
-        ReserveConfig({
-          assetKey: WETH,
-          hubKey: CORE_HUB,
-          collateral: true,
-          borrowable: true,
-          maxLiquidationBonus: 100_00,
-          collateralRisk: 0,
-          collateralFactor: 0, // why?
+          collateralRisk: 7_00,
+          collateralFactor: 78_00,
           liquidationFee: 10_00
         }),
         ReserveConfig({
-          assetKey: wstETH,
-          hubKey: CORE_HUB,
-          collateral: true,
-          borrowable: false,
-          maxLiquidationBonus: 106_00,
-          collateralRisk: 3_00,
-          collateralFactor: 93_00,
-          liquidationFee: 10_00
-        })
-      ];
-
-      console.log('\nReserveListing');
-      for (uint i; i < reserveConf.length; ++i) _process(E_MODE_SPOKE, reserveConf[i]);
-    }
-
-    {
-      console.log('-----ISO_GOV_SPOKE-----');
-      ReserveConfig[8] memory reserveConf = [
-        ReserveConfig({
-          assetKey: AAVE,
-          hubKey: ISO_GOV_HUB,
-          collateral: true,
-          borrowable: false,
-          maxLiquidationBonus: 107_50,
-          collateralRisk: 20_00,
-          collateralFactor: 76_00,
-          liquidationFee: 10_00
-        }),
-        ReserveConfig({
-          assetKey: UNI,
-          hubKey: ISO_GOV_HUB,
+          assetKey: ONE_INCH,
+          hubKey: FRONTIER_HUB,
           collateral: true,
           borrowable: false,
           maxLiquidationBonus: 105_00,
-          collateralRisk: 25_00,
-          collateralFactor: 74_00,
-          liquidationFee: 10_00
-        }),
-        ReserveConfig({
-          assetKey: MKR,
-          hubKey: ISO_GOV_HUB,
-          collateral: true,
-          borrowable: false,
-          maxLiquidationBonus: 108_50,
-          collateralRisk: 30_00,
-          collateralFactor: 70_00,
-          liquidationFee: 10_00
-        }),
-        ReserveConfig({
-          assetKey: USDS,
-          hubKey: ISO_GOV_HUB,
-          collateral: true,
-          borrowable: true,
-          maxLiquidationBonus: 100_00,
-          collateralRisk: 0,
-          collateralFactor: 0,
-          liquidationFee: 10_00
-        }),
-        ReserveConfig({
-          assetKey: USDC,
-          hubKey: ISO_GOV_HUB,
-          collateral: true,
-          borrowable: true,
-          maxLiquidationBonus: 100_00,
           collateralRisk: 10_00,
-          collateralFactor: 80_00,
+          collateralFactor: 78_00,
           liquidationFee: 10_00
         }),
         ReserveConfig({
-          assetKey: GHO,
-          hubKey: ISO_GOV_HUB,
-          collateral: true,
+          assetKey: USDT,
+          hubKey: FRONTIER_HUB,
+          collateral: false,
           borrowable: true,
           maxLiquidationBonus: 100_00,
-          collateralRisk: 8_50,
-          collateralFactor: 82_50,
-          liquidationFee: 10_00
+          collateralRisk: 0,
+          collateralFactor: 0,
+          liquidationFee: 0
         }),
-        // core hub
+        ReserveConfig({
+          assetKey: USDC,
+          hubKey: FRONTIER_HUB,
+          collateral: false,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 0,
+          liquidationFee: 0
+        }),
+        ReserveConfig({
+          assetKey: GHO,
+          hubKey: FRONTIER_HUB,
+          collateral: false,
+          borrowable: true,
+          maxLiquidationBonus: 100_00,
+          collateralRisk: 0,
+          collateralFactor: 0,
+          liquidationFee: 0
+        }),
         ReserveConfig({
           assetKey: USDC,
           hubKey: CORE_HUB,
@@ -574,62 +937,12 @@ contract Deploy is Script, StdAssertions {
           maxLiquidationBonus: 100_00,
           collateralRisk: 0,
           collateralFactor: 0,
-          liquidationFee: 10_00
-        }),
-        ReserveConfig({
-          assetKey: GHO,
-          hubKey: CORE_HUB,
-          collateral: false,
-          borrowable: true,
-          maxLiquidationBonus: 100_00,
-          collateralRisk: 0,
-          collateralFactor: 0,
-          liquidationFee: 10_00
+          liquidationFee: 0
         })
       ];
 
       console.log('\nReserveListing');
-      for (uint i; i < reserveConf.length; ++i) _process(ISO_GOV_SPOKE, reserveConf[i]);
-    }
-
-    {
-      console.log('-----ISO_STABLE_SPOKE-----');
-      ReserveConfig[3] memory reserveConf = [
-        ReserveConfig({
-          assetKey: USDC,
-          hubKey: ISO_STABLE_HUB,
-          collateral: true,
-          borrowable: true,
-          maxLiquidationBonus: 100_00,
-          collateralRisk: 10_00, //
-          collateralFactor: 95_00, //
-          liquidationFee: 10_00
-        }),
-        ReserveConfig({
-          assetKey: sUSDe,
-          hubKey: ISO_STABLE_HUB,
-          collateral: true,
-          borrowable: false,
-          maxLiquidationBonus: 108_50,
-          collateralRisk: 8_00, //
-          collateralFactor: 75_00, //
-          liquidationFee: 10_00
-        }),
-        // CORE
-        ReserveConfig({
-          assetKey: USDC,
-          hubKey: CORE_HUB,
-          collateral: false,
-          borrowable: true,
-          maxLiquidationBonus: 100_00,
-          collateralRisk: 0,
-          collateralFactor: 0,
-          liquidationFee: 10_00
-        })
-      ];
-
-      console.log('\nReserveListing');
-      for (uint i; i < reserveConf.length; ++i) _process(ISO_STABLE_SPOKE, reserveConf[i]);
+      for (uint i; i < reserveConf.length; ++i) _process(spokeKey, reserveConf[i]);
     }
   }
 
@@ -643,6 +956,8 @@ contract Deploy is Script, StdAssertions {
     uint assetId = _assetId(hub, address(t.token));
 
     ISpoke.ReserveConfig memory st = ISpoke.ReserveConfig({
+      liquidatable: true,
+      receiveSharesEnabled: true,
       frozen: false,
       paused: false,
       borrowable: conf.borrowable,
@@ -657,7 +972,12 @@ contract Deploy is Script, StdAssertions {
     uint reserveId = spoke.addReserve(address(hub), assetId, t.priceFeed, st, dyn);
 
     assertEq(abi.encode(spoke.getReserveConfig(reserveId)), abi.encode(st));
-    assertEq(abi.encode(spoke.getDynamicReserveConfig(reserveId)), abi.encode(dyn));
+    assertEq(
+      abi.encode(
+        spoke.getDynamicReserveConfig(reserveId, spoke.getReserve(reserveId).dynamicConfigKey)
+      ),
+      abi.encode(dyn)
+    );
 
     console.log('reserveId\t\t\t\t', reserveId);
     console.log('assetId\t\t\t\t', assetId);
@@ -673,9 +993,21 @@ contract Deploy is Script, StdAssertions {
     console.log();
   }
 
-  function _hub(string memory key) internal view returns (HubGlobalConfig storage) {
+  function _hub(string memory key) internal returns (HubGlobalConfig storage) {
     HubGlobalConfig storage ret = hubs[key];
-    require(address(ret.hub) != address(0), 'zero hub');
+    require(address(ret.hub) != address(0), string.concat('zero hub ', key));
+
+    if (address(ret.treasury) == address(0)) {
+      console.log('hub treasury not set, using asset 0s fee receiver');
+      ret.treasury = TreasurySpoke(ret.hub.getAsset(0).feeReceiver);
+      require(address(ret.treasury) != address(0), 'asset(0).feeReceiver == 0');
+    }
+    if (address(ret.irStrategy) == address(0)) {
+      console.log('hub irStrategy not set, using asset 0s irStrategy');
+      ret.irStrategy = AssetInterestRateStrategy(ret.hub.getAsset(0).irStrategy);
+      require(address(ret.irStrategy) != address(0), 'asset(0).irStrategy == 0');
+    }
+
     return ret;
   }
 
@@ -739,7 +1071,7 @@ contract Deploy is Script, StdAssertions {
       IHub.SpokeConfig({
         addCap: conf.addCap,
         drawCap: conf.drawCap,
-        riskPremiumThreshold: spoke.MAX_ALLOWED_COLLATERAL_RISK(),
+        riskPremiumThreshold: 1000_00,
         active: true,
         paused: false
       })
@@ -755,18 +1087,8 @@ contract Deploy is Script, StdAssertions {
     console.log();
   }
 
-  string internal constant CORE_SPOKE = 'CORE_SPOKE';
-  string internal constant E_MODE_SPOKE = 'E_MODE_SPOKE';
-  string internal constant ISO_GOV_SPOKE = 'ISO_GOV_SPOKE';
-  string internal constant ISO_STABLE_SPOKE = 'ISO_STABLE_SPOKE';
-
-  struct SpokeGlobalConfig {
-    ISpoke spoke;
-  }
-  mapping(string key => SpokeGlobalConfig spoke) internal spokes;
-
   function deploySpokes() internal {
-    string[4] memory keys = [CORE_SPOKE, E_MODE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
+    string[5] memory keys = [PRIME_SPOKE, CORE_SPOKE, LST_SPOKE, ETHENA_SPOKE, FRONTIER_SPOKE];
 
     for (uint i; i < keys.length; ++i) {
       (, address deployer, ) = vm.readCallers();
@@ -806,7 +1128,7 @@ contract Deploy is Script, StdAssertions {
 
     Hub hub = _hub(hubKey).hub;
 
-    string[3] memory spokeKeys = [CORE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
+    string[5] memory spokeKeys = [PRIME_SPOKE, CORE_SPOKE, LST_SPOKE, ETHENA_SPOKE, FRONTIER_SPOKE];
     for (uint i; i < spokeKeys.length; ++i) {
       ISpoke spoke = _spoke(spokeKeys[i]);
       {
@@ -835,7 +1157,7 @@ contract Deploy is Script, StdAssertions {
   function logAddy() public {
     string memory root = 'root';
     {
-      string[3] memory keys = [CORE_HUB, ISO_GOV_HUB, ISO_STABLE_HUB];
+      string[4] memory keys = [PRIME_HUB, CORE_HUB, ETHENA_HUB, FRONTIER_HUB];
       string memory HUBS;
       string memory IR_STRATEGIES;
       for (uint i; i < keys.length; ++i) {
@@ -852,7 +1174,7 @@ contract Deploy is Script, StdAssertions {
     }
 
     {
-      string[4] memory keys = [CORE_SPOKE, E_MODE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
+      string[5] memory keys = [PRIME_SPOKE, CORE_SPOKE, LST_SPOKE, ETHENA_SPOKE, FRONTIER_SPOKE];
       string memory SPOKES;
       for (uint i; i < keys.length; ++i) {
         console.log(address(_spoke(keys[i])), keys[i]);
@@ -861,7 +1183,23 @@ contract Deploy is Script, StdAssertions {
       vm.serializeString(root, 'spoke', SPOKES);
     }
     {
-      string[11] memory keys = [WETH, cbBTC, WBTC, wstETH, USDC, GHO, USDS, AAVE, MKR, UNI, sUSDe];
+      string[15] memory keys = [
+        WETH,
+        cbBTC,
+        WBTC,
+        wstETH,
+        USDC,
+        GHO,
+        USDS,
+        AAVE,
+        MKR,
+        UNI,
+        sUSDe,
+        PT_sUSDe,
+        LDO,
+        ONE_INCH,
+        USDT
+      ];
       string memory TOKENS;
       for (uint i; i < keys.length; ++i) {
         console.log(address(_token(keys[i]).token), keys[i]);
@@ -881,24 +1219,43 @@ contract Deploy is Script, StdAssertions {
   function load() public {
     string memory deploy = vm.readFile('./output/deploy.json');
     {
-      string[3] memory keys = [CORE_HUB, ISO_GOV_HUB, ISO_STABLE_HUB];
+      string[4] memory keys = [PRIME_HUB, CORE_HUB, ETHENA_HUB, FRONTIER_HUB];
       for (uint i; i < keys.length; ++i) {
         hubs[keys[i]].hub = Hub(deploy.readAddress(string.concat('.hub.', keys[i])));
         console.log(address(_hub(keys[i]).hub), keys[i]);
+        vm.label(address(_hub(keys[i]).hub), keys[i]);
       }
     }
     {
-      string[4] memory keys = [CORE_SPOKE, E_MODE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
+      string[5] memory keys = [PRIME_SPOKE, CORE_SPOKE, LST_SPOKE, ETHENA_SPOKE, FRONTIER_SPOKE];
       for (uint i; i < keys.length; ++i) {
         spokes[keys[i]].spoke = ISpoke(deploy.readAddress(string.concat('.spoke.', keys[i])));
         console.log(address(_spoke(keys[i])), keys[i]);
+        vm.label(address(_spoke(keys[i])), keys[i]);
       }
     }
     {
-      string[11] memory keys = [WETH, cbBTC, WBTC, wstETH, USDC, GHO, USDS, AAVE, MKR, UNI, sUSDe];
+      string[15] memory keys = [
+        WETH,
+        cbBTC,
+        WBTC,
+        wstETH,
+        USDC,
+        GHO,
+        USDS,
+        AAVE,
+        MKR,
+        UNI,
+        sUSDe,
+        PT_sUSDe,
+        LDO,
+        ONE_INCH,
+        USDT
+      ];
       for (uint i; i < keys.length; ++i) {
         tokens[keys[i]].token = address(deploy.readAddress(string.concat('.token.', keys[i])));
         console.log(address(_token(keys[i]).token), keys[i]);
+        vm.label(address(_token(keys[i]).token), keys[i]);
       }
     }
     signatureGateway = deploy.readAddress('.signatureGateway');
@@ -931,7 +1288,7 @@ contract Deploy is Script, StdAssertions {
     vm.startBroadcast();
     load();
     {
-      string[4] memory keys = [CORE_SPOKE, E_MODE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
+      string[5] memory keys = [PRIME_SPOKE, CORE_SPOKE, LST_SPOKE, ETHENA_SPOKE, FRONTIER_SPOKE];
       for (uint i; i < keys.length; ++i) {
         ISpoke spoke = _spoke(keys[i]);
         console.log(keys[i]);
@@ -946,16 +1303,14 @@ contract Deploy is Script, StdAssertions {
   }
 
   function periphery() public {
-    load();
-    vm.startBroadcast();
     (, address caller, ) = vm.readCallers();
     {
-      // signatureGateway = address(new SignatureGateway(caller));
-      // nativeTokenGateway = address(new NativeTokenGateway(address(tokens[WETH].token), caller));
+      signatureGateway = address(new SignatureGateway(caller));
+      nativeTokenGateway = address(new NativeTokenGateway(address(tokens[WETH].token), caller));
       console.log('signatureGateway', address(signatureGateway));
       console.log('nativeTokenGateway', address(nativeTokenGateway));
 
-      string[4] memory keys = [CORE_SPOKE, E_MODE_SPOKE, ISO_GOV_SPOKE, ISO_STABLE_SPOKE];
+      string[5] memory keys = [PRIME_SPOKE, CORE_SPOKE, LST_SPOKE, ETHENA_SPOKE, FRONTIER_SPOKE];
       for (uint i; i < keys.length; ++i) {
         ISpoke spoke = _spoke(keys[i]);
         console.log('registered for: ', keys[i]);
@@ -982,7 +1337,10 @@ contract Deploy is Script, StdAssertions {
     uint amount = _getAmount(bound(vm.randomUint(), 0.01e8, 100e8), spoke, reserveId, token);
     _mint(token, amount);
 
-    token.approve(address(reserve.hub), amount);
+    console.log('spoke', address(spoke));
+    console.log('reserve', reserveId);
+    token.approve(address(spoke), amount);
+    console.log('approved');
     spoke.supply(reserveId, amount, caller);
     spoke.setUsingAsCollateral(reserveId, true, caller);
   }
@@ -992,7 +1350,8 @@ contract Deploy is Script, StdAssertions {
     uint amount = bound(vm.randomUint(), 0, spoke.getUserSuppliedAssets(reserveId, caller));
     if (amount != 0) spoke.withdraw(reserveId, amount, caller);
 
-    if (spoke.isUsingAsCollateral(reserveId, caller)) {
+    (bool usingAsCollateral, ) = spoke.getUserReserveStatus(reserveId, caller);
+    if (usingAsCollateral) {
       spoke.setUsingAsCollateral(reserveId, false, caller);
       spoke.setUsingAsCollateral(reserveId, true, caller);
     }
@@ -1014,7 +1373,8 @@ contract Deploy is Script, StdAssertions {
     ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
 
     TestnetERC20 token = TestnetERC20(reserve.underlying);
-    token.approve(address(reserve.hub), amount);
+    token.approve(address(spoke), amount);
+    console.log('repay approved');
     _mint(token, amount);
 
     if (amount != 0) spoke.repay(reserveId, amount, caller);
@@ -1037,16 +1397,16 @@ contract Deploy is Script, StdAssertions {
     //   WETH9(payable(address(token))).deposit{value: amount}();
     // } else token.mint(amount);
     (, address caller, ) = vm.readCallers();
-    vm.rpc(
-      'tenderly_setErc20Balance',
-      string.concat(
-        '["',
-        vm.toString(address(token)),
-        '", "',
-        vm.toString(caller),
-        '", "0x13DA329B633647180000000000"]'
-      )
-    );
+    // vm.rpc(
+    //   'tenderly_setErc20Balance',
+    //   string.concat(
+    //     '["',
+    //     vm.toString(address(token)),
+    //     '", "',
+    //     vm.toString(caller),
+    //     '", "0x13DA329B633647180000000000"]'
+    //   )
+    // );
     // assertGe(token.balanceOf(caller), amount);
   }
 
