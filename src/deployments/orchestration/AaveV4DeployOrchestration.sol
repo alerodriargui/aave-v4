@@ -58,15 +58,15 @@ library AaveV4DeployOrchestration {
       setRoles
     );
 
-    // // Deploy Spoke Instance Batches
-    // report.spokeInstanceBatchReports = _deploySpokes(
-    //   logger,
-    //   deployer,
-    //   admin,
-    //   report.accessBatchReport.accessManagerAddress,
-    //   spokeLabels,
-    //   setRoles
-    // );
+    // Deploy Spoke Instance Batches
+    report.spokeInstanceBatchReports = _deploySpokes(
+      logger,
+      deployer,
+      admin,
+      report.accessBatchReport.accessManagerAddress,
+      spokeLabels,
+      setRoles
+    );
 
     // Deploy Gateways Batch
     report.gatewaysBatchReport = _deployGatewayBatch(logger, admin, nativeWrapper);

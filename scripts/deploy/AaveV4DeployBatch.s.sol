@@ -22,11 +22,12 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
   function run() external {
     vm.createDir(OUTPUT_DIR, true);
     Logger logger = new Logger(string.concat(OUTPUT_DIR, OUTPUT_FILE));
-    FullDeployInputs memory inputs = loadFullDeployInputs(OUTPUT_FILE);
+    FullDeployInputs memory inputs = loadFullDeployInputs(INPUT_PATH);
 
     address deployer = msg.sender;
 
     logger.log('Starting Aave V4 Batch Deployment');
+    logger.log('deployer', deployer);
 
     vm.startBroadcast();
     AaveV4DeployOrchestration.deployAaveV4(

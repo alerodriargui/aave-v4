@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Vm.sol';
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {
   AaveV4SpokeInstanceDeployProcedure
@@ -23,16 +25,15 @@ contract AaveV4SpokeInstanceBatch is
   BatchReports.SpokeInstanceBatchReport internal _report;
 
   constructor(
-    Vm vm,
-    address deployer,
+    Vm vm_,
     address admin_,
     address accessManagerAddress_,
     uint8 oracleDecimals_,
     string memory oracleDescription_
   ) {
-    address predictedSpokeInstanceAddress = vm.computeCreateAddress(
-      deployer,
-      vm.getNonce(deployer) + 2
+    address predictedSpokeInstanceAddress = vm_.computeCreateAddress(
+      address(this),
+      vm_.getNonce(address(this)) + 2
     );
 
     address aaveOracleAddress = _deployAaveOracle(
