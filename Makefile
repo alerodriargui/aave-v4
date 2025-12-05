@@ -29,3 +29,12 @@ coverage :
 	make coverage-clean
 	make coverage-report
 	make coverage-badge
+
+# Deploy
+
+# Full deployment, including hubs, spokes, and gateways
+deploy-full :; 
+	FOUNDRY_PROFILE=${CHAIN} forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
+	--rpc-url ${CHAIN} --sender ${SENDER} --account ${ACCOUNT} --slow \
+	--broadcast
+

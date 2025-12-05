@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 
 import {Script} from 'forge-std/Script.sol';
 
+import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {DeployUtils} from 'src/deployments/utils/DeployUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
@@ -20,6 +22,8 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
   constructor() {}
 
   function run() external {
+    OrchestrationReports.FullDeploymentReport memory report;
+
     vm.createDir(OUTPUT_DIR, true);
     Logger logger = new Logger(string.concat(OUTPUT_DIR, OUTPUT_FILE));
     FullDeployInputs memory inputs = loadFullDeployInputs(INPUT_PATH);
@@ -27,11 +31,9 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
     address deployer = msg.sender;
 
     logger.log('Starting Aave V4 Batch Deployment');
-    logger.log('deployer', deployer);
 
     vm.startBroadcast();
-    AaveV4DeployOrchestration.deployAaveV4(
-      logger,
+    report = AaveV4DeployOrchestration.deployAaveV4(
       deployer,
       inputs.admin,
       inputs.nativeWrapperAddress,
@@ -41,8 +43,56 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
     );
     vm.stopBroadcast();
 
+    writeJsonReportMarket(logger, report);
+
     logger.log('Batch Deployment Completed');
     logger.log('Saving Logs');
     logger.save();
+  }
+
+  function writeJsonReportMarket(
+    Logger logger,
+    OrchestrationReports.FullDeploymentReport memory report
+  ) public {
+    logger.write('AccessBatchReport', report.accessBatchReport.accessManagerAddress);
+    logger.write('HubConfigurator', report.configuratorBatchReport.hubConfiguratorAddress);
+    logger.write('SpokeConfigurator', report.configuratorBatchReport.spokeConfiguratorAddress);
+
+    for (uint256 i; i < report.hubBatchReports.length; i++) {
+      Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](3);
+      hubEntries[0] = Logger.AddressEntry({
+        label: 'Hub',
+        value: report.hubBatchReports[i].report.hubAddress
+      });
+      hubEntries[1] = Logger.AddressEntry({
+        label: 'InterestRateStrategy',
+        value: report.hubBatchReports[i].report.hubAddress
+      });
+      hubEntries[2] = Logger.AddressEntry({
+        label: 'TreasurySpoke',
+        value: report.hubBatchReports[i].report.treasurySpokeAddress
+      });
+      logger.writeGroup(report.hubBatchReports[i].label, hubEntries);
+    }
+
+    for (uint256 i; i < report.spokeInstanceBatchReports.length; i++) {
+      Logger.AddressEntry[] memory spokeInstanceEntries = new Logger.AddressEntry[](3);
+      spokeInstanceEntries[0] = Logger.AddressEntry({
+        label: 'SpokeInstance Proxy',
+        value: report.spokeInstanceBatchReports[i].report.spokeProxyAddress
+      });
+      spokeInstanceEntries[1] = Logger.AddressEntry({
+        label: 'SpokeInstance Implementation',
+        value: report.spokeInstanceBatchReports[i].report.spokeImplementationAddress
+      });
+      spokeInstanceEntries[2] = Logger.AddressEntry({
+        label: 'AaveOracle',
+        value: report.spokeInstanceBatchReports[i].report.aaveOracleAddress
+      });
+      logger.writeGroup(report.spokeInstanceBatchReports[i].label, spokeInstanceEntries);
+    }
+
+    logger.write('SignatureGateway', report.gatewaysBatchReport.signatureGatewayAddress);
+    logger.write('NativeTokenGateway', report.gatewaysBatchReport.nativeGatewayAddress);
   }
 }

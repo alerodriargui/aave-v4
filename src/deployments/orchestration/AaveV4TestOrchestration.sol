@@ -14,12 +14,22 @@ import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInsta
 
 import {TestTokensBatch} from 'src/deployments/batches/TestTokensBatch.sol';
 
-import {AaveV4AdminRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AdminRolesProcedure.sol';
-import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
-import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {
+  AaveV4AdminRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4AdminRolesProcedure.sol';
+import {
+  AaveV4HubRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {
+  AaveV4SpokeRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 
-import {AaveV4HubConfigProcedures} from 'src/deployments/procedures/config/AaveV4HubConfigProcedures.sol';
-import {AaveV4SpokeConfigProcedures} from 'src/deployments/procedures/config/AaveV4SpokeConfigProcedures.sol';
+import {
+  AaveV4HubConfigProcedures
+} from 'src/deployments/procedures/config/AaveV4HubConfigProcedures.sol';
+import {
+  AaveV4SpokeConfigProcedures
+} from 'src/deployments/procedures/config/AaveV4SpokeConfigProcedures.sol';
 
 library AaveV4TestOrchestration {
   bool public constant IS_TEST = true;
@@ -202,8 +212,6 @@ library AaveV4TestOrchestration {
     string memory label
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
     AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch(
-      vm,
-      admin,
       admin,
       accessManagerAddress,
       8,
