@@ -15,6 +15,8 @@ import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 
+import {console} from 'forge-std/console.sol';
+
 import {
   AaveV4AdminRolesProcedure
 } from 'src/deployments/procedures/roles/AaveV4AdminRolesProcedure.sol';
@@ -73,18 +75,24 @@ library AaveV4DeployOrchestration {
     // Set Roles if needed
     if (setRoles) {
       logger.log('...Setting Configurator roles...');
+
+      vm.startBroadcast(deployer);
       AaveV4AdminRolesProcedure.setConfiguratorAdminRoles(
         report.accessBatchReport.accessManagerAddress,
         report.configuratorBatchReport.spokeConfiguratorAddress,
         report.configuratorBatchReport.hubConfiguratorAddress
       );
+      vm.stopBroadcast();
 
       logger.log('...Setting AccessManager Root Admin role...');
+
+      vm.startBroadcast(deployer);
       AaveV4AdminRolesProcedure.setAccessManagerRootAdminRole(
         report.accessBatchReport.accessManagerAddress,
         admin,
         deployer
       );
+      vm.stopBroadcast();
     }
 
     return
@@ -104,8 +112,9 @@ library AaveV4DeployOrchestration {
   ) internal returns (BatchReports.AccessBatchReport memory report) {
     logger.log('...Deploying AccessBatch...');
 
-    vm.broadcast(deployer);
+    vm.startBroadcast(deployer);
     report = AaveV4DeployCore.deployAccessBatch(admin);
+    vm.stopBroadcast();
 
     logger.log('AccessManager', report.accessManagerAddress);
     logger.log('');
@@ -119,8 +128,9 @@ library AaveV4DeployOrchestration {
   ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
     logger.log('...Deploying ConfiguratorBatch...');
 
-    vm.broadcast(deployer);
+    vm.startBroadcast(deployer);
     report = AaveV4DeployCore.deployConfiguratorBatch(admin);
+    vm.stopBroadcast();
 
     logger.log('HubConfigurator', report.hubConfiguratorAddress);
     logger.log('SpokeConfigurator', report.spokeConfiguratorAddress);
@@ -184,7 +194,11 @@ library AaveV4DeployOrchestration {
 
     if (setRoles) {
       logger.log('...Setting Hub roles...');
+      console.log('accessManagerAddress', accessManagerAddress);
+
+      vm.startBroadcast(deployer);
       AaveV4HubRolesProcedure.setHubRoles(accessManagerAddress, hubReport.report.hubAddress);
+      vm.stopBroadcast();
     }
 
     return hubReport;
@@ -246,10 +260,13 @@ library AaveV4DeployOrchestration {
 
     if (setRoles) {
       logger.log('...Setting Spoke roles...');
+
+      vm.startBroadcast(deployer);
       AaveV4SpokeRolesProcedure.setSpokeRoles(
         accessManagerAddress,
         spokeReport.report.spokeProxyAddress
       );
+      vm.stopBroadcast();
     }
 
     return spokeReport;
@@ -260,12 +277,14 @@ library AaveV4DeployOrchestration {
     address deployer,
     address admin,
     address accessManagerAddress
-  ) internal returns (BatchReports.HubBatchReport memory) {
+  ) internal returns (BatchReports.HubBatchReport memory report) {
     logger.log('...Deploying HubBatch...');
 
-    vm.broadcast(deployer);
+    vm.startBroadcast(deployer);
+    report = AaveV4DeployCore.deployHubBatch(admin, accessManagerAddress);
+    vm.stopBroadcast();
 
-    return AaveV4DeployCore.deployHubBatch(admin, accessManagerAddress);
+    return report;
   }
 
   function _deploySpokeInstanceBatch(
@@ -277,7 +296,7 @@ library AaveV4DeployOrchestration {
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
     logger.log('...Deploying AaveV4SpokeInstanceBatch...');
 
-    vm.broadcast(deployer);
+    vm.startBroadcast(deployer);
     report = AaveV4DeployCore.deploySpokeInstanceBatch(
       admin,
       accessManagerAddress,
@@ -285,6 +304,7 @@ library AaveV4DeployOrchestration {
       ORACLE_SUFFIX,
       label
     );
+    vm.stopBroadcast();
 
     return report;
   }
@@ -297,9 +317,10 @@ library AaveV4DeployOrchestration {
   ) internal returns (BatchReports.GatewaysBatchReport memory report) {
     logger.log('...Deploying GatewayBatch...');
 
-    vm.broadcast(deployer);
-
+    vm.startBroadcast(deployer);
     report = AaveV4DeployCore.deployGatewaysBatch(admin, nativeWrapper);
+    vm.stopBroadcast();
+
     logger.log('NativeTokenGateway', report.nativeGatewayAddress);
     logger.log('SignatureGateway', report.signatureGatewayAddress);
     return report;

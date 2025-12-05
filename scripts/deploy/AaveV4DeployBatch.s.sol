@@ -13,6 +13,8 @@ import {
   AaveV4DeployOrchestration
 } from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
+import {console} from 'forge-std/console.sol';
+
 contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
   string internal constant INPUT_PATH = 'scripts/deploy/inputs/AaveV4DeployInput.toml';
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
@@ -21,8 +23,6 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
   constructor() {}
 
   function run() external {
-    OrchestrationReports.FullDeploymentReport memory report;
-
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     FullDeployInputs memory inputs = loadFullDeployInputs(INPUT_PATH);
@@ -30,19 +30,17 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
     address deployer = msg.sender;
 
     logger.log('...Starting Aave V4 Batch Deployment...');
-
-    report = AaveV4DeployOrchestration.deployAaveV4(
-      IProgressLogger(address(logger)),
-      deployer,
-      inputs.admin,
-      inputs.nativeWrapperAddress,
-      inputs.hubLabels,
-      inputs.spokeLabels,
-      inputs.setRoles
-    );
-
+    OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
+      .deployAaveV4(
+        IProgressLogger(address(logger)),
+        deployer,
+        inputs.admin,
+        inputs.nativeWrapperAddress,
+        inputs.hubLabels,
+        inputs.spokeLabels,
+        inputs.setRoles
+      );
     logger.writeJsonReportMarket(report);
-
     logger.log('...Batch Deployment Completed...');
     logger.log('...Saving Logs...');
     logger.save({fileName: OUTPUT_FILE, withTimestamp: true});

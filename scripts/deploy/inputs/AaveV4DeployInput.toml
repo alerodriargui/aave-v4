@@ -1,5 +1,5 @@
 admin = "0x0000000000000000000000000000000000000001"
 nativeWrapperAddress = "0x0000000000000000000000000000000000000002"
-setRoles = false
+setRoles = true
 hubLabels = ["Hub 1", "Hub 2", "Hub 3"]
 spokeLabels = ["Spoke 1", "Spoke 2", "Spoke 3"]
