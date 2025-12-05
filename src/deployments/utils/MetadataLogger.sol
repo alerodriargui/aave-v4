@@ -2,16 +2,16 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Logger} from 'src/deployments/utils/Logger.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {Logger} from 'src/deployments/utils/Logger.sol';
 
 contract MetadataLogger is Logger {
   constructor(string memory outputPath_) Logger(outputPath_) {}
 
   function writeJsonReportMarket(OrchestrationReports.FullDeploymentReport memory report) public {
-    write('AccessBatchReport', report.accessBatchReport.accessManagerAddress);
-    write('HubConfigurator', report.configuratorBatchReport.hubConfiguratorAddress);
-    write('SpokeConfigurator', report.configuratorBatchReport.spokeConfiguratorAddress);
+    _write('AccessBatchReport', report.accessBatchReport.accessManagerAddress);
+    _write('HubConfigurator', report.configuratorBatchReport.hubConfiguratorAddress);
+    _write('SpokeConfigurator', report.configuratorBatchReport.spokeConfiguratorAddress);
 
     for (uint256 i; i < report.hubBatchReports.length; i++) {
       Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](3);
@@ -27,7 +27,7 @@ contract MetadataLogger is Logger {
         label: 'TreasurySpoke',
         value: report.hubBatchReports[i].report.treasurySpokeAddress
       });
-      writeGroup(report.hubBatchReports[i].label, hubEntries);
+      _writeGroup(report.hubBatchReports[i].label, hubEntries);
     }
 
     for (uint256 i; i < report.spokeInstanceBatchReports.length; i++) {
@@ -44,10 +44,10 @@ contract MetadataLogger is Logger {
         label: 'AaveOracle',
         value: report.spokeInstanceBatchReports[i].report.aaveOracleAddress
       });
-      writeGroup(report.spokeInstanceBatchReports[i].label, spokeInstanceEntries);
+      _writeGroup(report.spokeInstanceBatchReports[i].label, spokeInstanceEntries);
     }
 
-    write('SignatureGateway', report.gatewaysBatchReport.signatureGatewayAddress);
-    write('NativeTokenGateway', report.gatewaysBatchReport.nativeGatewayAddress);
+    _write('SignatureGateway', report.gatewaysBatchReport.signatureGatewayAddress);
+    _write('NativeTokenGateway', report.gatewaysBatchReport.nativeGatewayAddress);
   }
 }

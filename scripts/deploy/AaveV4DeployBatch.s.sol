@@ -24,7 +24,7 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
     OrchestrationReports.FullDeploymentReport memory report;
 
     vm.createDir(OUTPUT_DIR, true);
-    MetadataLogger logger = new MetadataLogger(string.concat(OUTPUT_DIR, OUTPUT_FILE));
+    MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     FullDeployInputs memory inputs = loadFullDeployInputs(INPUT_PATH);
 
     address deployer = msg.sender;
@@ -45,6 +45,6 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
 
     logger.log('...Batch Deployment Completed...');
     logger.log('...Saving Logs...');
-    logger.save();
+    logger.save({fileName: OUTPUT_FILE, withTimestamp: true});
   }
 }

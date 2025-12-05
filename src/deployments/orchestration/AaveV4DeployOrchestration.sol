@@ -39,9 +39,7 @@ library AaveV4DeployOrchestration {
     string[] memory hubLabels,
     string[] memory spokeLabels,
     bool setRoles
-  ) internal returns (OrchestrationReports.FullDeploymentReport memory) {
-    OrchestrationReports.FullDeploymentReport memory report;
-
+  ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
     // Deploy Access Batch
     address accessManagerAdmin = setRoles ? deployer : admin;
     report.accessBatchReport = _deployAccessBatch(logger, deployer, accessManagerAdmin);
@@ -89,7 +87,14 @@ library AaveV4DeployOrchestration {
       );
     }
 
-    return report;
+    return
+      _generateFullReport(
+        report.accessBatchReport,
+        report.configuratorBatchReport,
+        report.hubBatchReports,
+        report.spokeInstanceBatchReports,
+        report.gatewaysBatchReport
+      );
   }
 
   function _deployAccessBatch(
@@ -297,6 +302,22 @@ library AaveV4DeployOrchestration {
     report = AaveV4DeployCore.deployGatewaysBatch(admin, nativeWrapper);
     logger.log('NativeTokenGateway', report.nativeGatewayAddress);
     logger.log('SignatureGateway', report.signatureGatewayAddress);
+    return report;
+  }
+
+  function _generateFullReport(
+    BatchReports.AccessBatchReport memory accessBatchReport,
+    BatchReports.ConfiguratorBatchReport memory configuratorBatchReport,
+    OrchestrationReports.HubDeploymentReport[] memory hubBatchReports,
+    OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports,
+    BatchReports.GatewaysBatchReport memory gatewaysBatchReport
+  ) internal pure returns (OrchestrationReports.FullDeploymentReport memory report) {
+    report.accessBatchReport = accessBatchReport;
+    report.configuratorBatchReport = configuratorBatchReport;
+    report.hubBatchReports = hubBatchReports;
+    report.spokeInstanceBatchReports = spokeBatchReports;
+    report.gatewaysBatchReport = gatewaysBatchReport;
+
     return report;
   }
 }

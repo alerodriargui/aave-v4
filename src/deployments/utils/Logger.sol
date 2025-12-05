@@ -7,8 +7,9 @@ import 'forge-std/Vm.sol';
 import {console} from 'forge-std/console.sol';
 
 import {IProgressLogger} from 'src/deployments/utils/interfaces/IProgressLogger.sol';
+import {DeployUtils} from 'src/deployments/utils/DeployUtils.sol';
 
-contract Logger is IProgressLogger {
+contract Logger is IProgressLogger, DeployUtils {
   using stdJson for string;
 
   struct AddressEntry {
@@ -65,10 +66,11 @@ contract Logger is IProgressLogger {
     _writeGroup(groupLabel, entries);
   }
 
-  function save() public {
+  function save(string memory fileName, bool withTimestamp) public {
     console.log();
     console.log('Saving log to %s', _outputPath);
-    vm.writeJson(_json, _outputPath);
+    string memory appendedMetadata = withTimestamp ? string.concat(getTimestamp(), '-') : '';
+    vm.writeJson(_json, string.concat(_outputPath, appendedMetadata, fileName));
   }
 
   function _log(string memory label, address value) internal pure {
@@ -118,5 +120,17 @@ contract Logger is IProgressLogger {
     }
     _json = vm.serializeString(_root, groupLabel, group);
     // console.log();
+  }
+
+  function getTimestamp() public returns (string memory result) {
+    string[] memory command = new string[](3);
+
+    command[0] = 'bash';
+    command[1] = '-c';
+    command[2] = 'response="$(date +%s)"; cast abi-encode "response(string)" $response;';
+    bytes memory timestamp = vm.ffi(command);
+    (result) = abi.decode(timestamp, (string));
+
+    return result;
   }
 }
