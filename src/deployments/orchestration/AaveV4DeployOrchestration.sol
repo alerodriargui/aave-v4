@@ -7,6 +7,7 @@ import 'forge-std/Vm.sol';
 import {IProgressLogger} from 'src/deployments/utils/interfaces/IProgressLogger.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {AaveV4DeployCore} from 'src/deployments/orchestration/AaveV4DeployCore.sol';
 
 import {AaveV4AccessBatch} from 'src/deployments/batches/AaveV4AccessBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
@@ -25,7 +26,6 @@ import {
 } from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 
 library AaveV4DeployOrchestration {
-  bool public constant IS_TEST = true;
   Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
 
   uint8 private constant ORACLE_DECIMALS = 8;
@@ -99,10 +99,9 @@ library AaveV4DeployOrchestration {
   ) internal returns (BatchReports.AccessBatchReport memory report) {
     logger.log('...Deploying AccessBatch...');
 
-    if (!IS_TEST) vm.broadcast(deployer);
-    AaveV4AccessBatch accessBatch = new AaveV4AccessBatch(admin);
+    vm.broadcast(deployer);
+    report = AaveV4DeployCore.deployAccessBatch(admin);
 
-    report = accessBatch.getReport();
     logger.log('AccessManager', report.accessManagerAddress);
     logger.log('');
     return report;
@@ -115,10 +114,9 @@ library AaveV4DeployOrchestration {
   ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
     logger.log('...Deploying ConfiguratorBatch...');
 
-    if (!IS_TEST) vm.broadcast(deployer);
-    AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch(admin);
+    vm.broadcast(deployer);
+    report = AaveV4DeployCore.deployConfiguratorBatch(admin);
 
-    report = configuratorBatch.getReport();
     logger.log('HubConfigurator', report.hubConfiguratorAddress);
     logger.log('SpokeConfigurator', report.spokeConfiguratorAddress);
     logger.log('');
@@ -260,10 +258,9 @@ library AaveV4DeployOrchestration {
   ) internal returns (BatchReports.HubBatchReport memory) {
     logger.log('...Deploying HubBatch...');
 
-    if (!IS_TEST) vm.broadcast(deployer);
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch(admin, accessManagerAddress);
+    vm.broadcast(deployer);
 
-    return hubBatch.getReport();
+    return AaveV4DeployCore.deployHubBatch(admin, accessManagerAddress);
   }
 
   function _deploySpokeInstanceBatch(
@@ -272,18 +269,19 @@ library AaveV4DeployOrchestration {
     address admin,
     address accessManagerAddress,
     string memory label
-  ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
+  ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
     logger.log('...Deploying AaveV4SpokeInstanceBatch...');
 
-    if (!IS_TEST) vm.broadcast(deployer);
-    AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch(
+    vm.broadcast(deployer);
+    report = AaveV4DeployCore.deploySpokeInstanceBatch(
       admin,
       accessManagerAddress,
       ORACLE_DECIMALS,
-      string.concat(label, ORACLE_SUFFIX)
+      ORACLE_SUFFIX,
+      label
     );
 
-    return spokeInstanceBatch.getReport();
+    return report;
   }
 
   function _deployGatewayBatch(
@@ -294,10 +292,9 @@ library AaveV4DeployOrchestration {
   ) internal returns (BatchReports.GatewaysBatchReport memory report) {
     logger.log('...Deploying GatewayBatch...');
 
-    if (!IS_TEST) vm.broadcast(deployer);
-    AaveV4GatewayBatch gatewayBatch = new AaveV4GatewayBatch(admin, nativeWrapper);
+    vm.broadcast(deployer);
 
-    report = gatewayBatch.getReport();
+    report = AaveV4DeployCore.deployGatewaysBatch(admin, nativeWrapper);
     logger.log('NativeTokenGateway', report.nativeGatewayAddress);
     logger.log('SignatureGateway', report.signatureGatewayAddress);
     return report;

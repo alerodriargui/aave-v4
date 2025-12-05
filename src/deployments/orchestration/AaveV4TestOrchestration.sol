@@ -31,8 +31,9 @@ import {
   AaveV4SpokeConfigProcedures
 } from 'src/deployments/procedures/config/AaveV4SpokeConfigProcedures.sol';
 
+import {AaveV4DeployCore} from 'src/deployments/orchestration/AaveV4DeployCore.sol';
+
 library AaveV4TestOrchestration {
-  bool public constant IS_TEST = true;
   Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
 
   uint8 private constant ORACLE_DECIMALS = 8;
@@ -50,11 +51,11 @@ library AaveV4TestOrchestration {
     report.spokeReports = new OrchestrationReports.TestSpokeReport[](spokeCount);
 
     // Deploy Access Batch
-    report.accessManagerAddress = _deployAccessBatch(admin).accessManagerAddress;
+    report.accessManagerAddress = AaveV4DeployCore.deployAccessBatch(admin).accessManagerAddress;
 
     // Deploy Hub Batches
     for (uint256 i; i < hubCount; ++i) {
-      BatchReports.HubBatchReport memory hubReport = _deployHubBatch(
+      BatchReports.HubBatchReport memory hubReport = AaveV4DeployCore.deployHubBatch(
         treasuryAdmin,
         report.accessManagerAddress
       );
@@ -65,11 +66,14 @@ library AaveV4TestOrchestration {
 
     // Deploy Spoke Instance Batches
     for (uint256 i; i < spokeCount; ++i) {
-      BatchReports.SpokeInstanceBatchReport memory spokeReport = _deploySpokeInstanceBatch(
-        admin,
-        report.accessManagerAddress,
-        string.concat('Spoke ', string(abi.encode(i)), ' (USD)')
-      );
+      BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployCore
+        .deploySpokeInstanceBatch(
+          admin,
+          report.accessManagerAddress,
+          ORACLE_DECIMALS,
+          ORACLE_SUFFIX,
+          string.concat('Spoke ', string(abi.encode(i)), ' (USD)')
+        );
       report.spokeReports[i].spokeAddress = spokeReport.spokeProxyAddress;
       report.spokeReports[i].aaveOracleAddress = spokeReport.aaveOracleAddress;
     }
@@ -134,10 +138,10 @@ library AaveV4TestOrchestration {
   ) external returns (address, OrchestrationReports.TestHubReport memory) {
     OrchestrationReports.TestHubReport memory report;
 
-    address accessManagerAddress = _deployAccessBatch(admin).accessManagerAddress;
+    address accessManagerAddress = AaveV4DeployCore.deployAccessBatch(admin).accessManagerAddress;
 
     // Deploy Hub Batch
-    BatchReports.HubBatchReport memory hubReport = _deployHubBatch(
+    BatchReports.HubBatchReport memory hubReport = AaveV4DeployCore.deployHubBatch(
       treasuryAdmin,
       accessManagerAddress
     );
@@ -189,34 +193,5 @@ library AaveV4TestOrchestration {
   ) internal returns (BatchReports.TestTokensBatchReport memory) {
     TestTokensBatch tokensBatch = new TestTokensBatch(tokenInputs);
     return tokensBatch.getReport();
-  }
-
-  function _deployAccessBatch(
-    address admin
-  ) internal returns (BatchReports.AccessBatchReport memory) {
-    AaveV4AccessBatch accessBatch = new AaveV4AccessBatch(admin);
-    return accessBatch.getReport();
-  }
-
-  function _deployHubBatch(
-    address admin,
-    address accessManagerAddress
-  ) internal returns (BatchReports.HubBatchReport memory) {
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch(admin, accessManagerAddress);
-    return hubBatch.getReport();
-  }
-
-  function _deploySpokeInstanceBatch(
-    address admin,
-    address accessManagerAddress,
-    string memory label
-  ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
-    AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch(
-      admin,
-      accessManagerAddress,
-      8,
-      label
-    );
-    return spokeInstanceBatch.getReport();
   }
 }

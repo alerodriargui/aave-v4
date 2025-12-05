@@ -12,6 +12,7 @@ import {
 import {
   AaveV4AaveOracleDeployProcedure
 } from 'src/deployments/procedures/deploy/AaveV4AaveOracleDeployProcedure.sol';
+import {Utils} from 'src/deployments/utils/libraries/Utils.sol';
 
 contract AaveV4SpokeInstanceBatch is
   AaveV4SpokeInstanceDeployProcedure,
@@ -20,15 +21,14 @@ contract AaveV4SpokeInstanceBatch is
 {
   BatchReports.SpokeInstanceBatchReport internal _report;
 
-  // Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
-
   constructor(
     address admin_,
     address accessManagerAddress_,
     uint8 oracleDecimals_,
     string memory oracleDescription_
   ) {
-    address predictedSpokeInstanceAddress = _computeCreateAddress(address(this), 3);
+    // additional 3 nonces for AaveOracle, SpokeInstance, and TransparentUpgradeableProxy
+    address predictedSpokeInstanceAddress = Utils.computeCreateAddress(address(this), 3);
 
     address aaveOracleAddress = _deployAaveOracle(
       predictedSpokeInstanceAddress,
@@ -53,11 +53,5 @@ contract AaveV4SpokeInstanceBatch is
 
   function getReport() external view returns (BatchReports.SpokeInstanceBatchReport memory) {
     return _report;
-  }
-
-  function _computeCreateAddress(address deployer, uint8 nonce) internal pure returns (address) {
-    // RLP([deployer, nonce]) for 1 <= nonce <= 0x7f
-    bytes memory rlp = abi.encodePacked(bytes1(0xd6), bytes1(0x94), deployer, nonce);
-    return address(uint160(uint256(keccak256(rlp))));
   }
 }
