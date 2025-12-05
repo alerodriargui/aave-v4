@@ -86,40 +86,31 @@ contract Logger is IProgressLogger, DeployUtils {
   }
 
   function _write(string memory label, address value) internal {
-    // _log(label, value);
     _json = vm.serializeAddress(_root, label, value);
   }
 
   function _write(string memory label, uint256 value) internal {
-    // _log(label, value);
     _json = vm.serializeString(_root, label, vm.toString(value));
   }
 
   function _write(string memory value) internal {
-    // _log(value);
     _json = vm.serializeString(_root, 'message', value);
   }
 
   function _writeGroup(string memory groupLabel, AddressEntry[] memory entries) internal {
     string memory group;
-    // _log(groupLabel);
     for (uint256 i = 0; i < entries.length; i++) {
-      // _log(entries[i].label, entries[i].value);
       group = vm.serializeAddress(groupLabel, entries[i].label, entries[i].value);
     }
     _json = vm.serializeString(_root, groupLabel, group);
-    // console.log();
   }
 
   function _writeGroup(string memory groupLabel, ValueEntry[] memory entries) internal {
     string memory group;
-    // _log(groupLabel);
     for (uint256 i = 0; i < entries.length; i++) {
-      // _log(entries[i].label, entries[i].value);
       group = vm.serializeString(groupLabel, entries[i].label, vm.toString(entries[i].value));
     }
     _json = vm.serializeString(_root, groupLabel, group);
-    // console.log();
   }
 
   function getTimestamp() public returns (string memory result) {

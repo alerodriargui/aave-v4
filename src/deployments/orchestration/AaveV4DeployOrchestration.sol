@@ -15,8 +15,6 @@ import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 
-import {console} from 'forge-std/console.sol';
-
 import {
   AaveV4AdminRolesProcedure
 } from 'src/deployments/procedures/roles/AaveV4AdminRolesProcedure.sol';
@@ -179,22 +177,8 @@ library AaveV4DeployOrchestration {
     logger.log('  InterestRateStrategy', hubReport.report.irStrategyAddress);
     logger.log('  TreasurySpoke', hubReport.report.treasurySpokeAddress);
 
-    // Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](3);
-    // hubEntries[0] = Logger.AddressEntry({label: 'Hub', value: hubReport.report.hubAddress});
-    // hubEntries[1] = Logger.AddressEntry({
-    //   label: 'InterestRateStrategy',
-    //   value: hubReport.report.irStrategyAddress
-    // });
-    // hubEntries[2] = Logger.AddressEntry({
-    //   label: 'TreasurySpoke',
-    //   value: hubReport.report.treasurySpokeAddress
-    // });
-
-    // logger.writeGroup(label, hubEntries);
-
     if (setRoles) {
       logger.log('...Setting Hub roles...');
-      console.log('accessManagerAddress', accessManagerAddress);
 
       vm.startBroadcast(deployer);
       AaveV4HubRolesProcedure.setHubRoles(accessManagerAddress, hubReport.report.hubAddress);
@@ -214,7 +198,6 @@ library AaveV4DeployOrchestration {
   ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
     uint256 spokeCount = spokeLabels.length;
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
-    // Logger.AddressEntry[] memory spokeEntries = new Logger.AddressEntry[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
       spokeBatchReports[i] = _deploySpoke(
         logger,
@@ -224,12 +207,7 @@ library AaveV4DeployOrchestration {
         spokeLabels[i],
         setRoles
       );
-      // spokeEntries[i] = Logger.AddressEntry({
-      //   label: spokeLabels[i],
-      //   value: spokeBatchReports[i].report.spokeProxyAddress
-      // });
     }
-    // logger.writeGroup('SpokeInstances', spokeEntries);
     logger.log('');
     return spokeBatchReports;
   }

@@ -13,8 +13,6 @@ import {
   AaveV4DeployOrchestration
 } from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
-import {console} from 'forge-std/console.sol';
-
 contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
   string internal constant INPUT_PATH = 'scripts/deploy/inputs/AaveV4DeployInput.toml';
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
@@ -27,9 +25,8 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     FullDeployInputs memory inputs = loadFullDeployInputs(INPUT_PATH);
 
-    address deployer = msg.sender;
-
     logger.log('...Starting Aave V4 Batch Deployment...');
+    address deployer = msg.sender;
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
       .deployAaveV4(
         IProgressLogger(address(logger)),
