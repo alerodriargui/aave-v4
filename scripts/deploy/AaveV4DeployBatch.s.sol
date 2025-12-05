@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Script} from 'forge-std/Script.sol';
 
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-
+import {IProgressLogger} from 'src/deployments/utils/interfaces/IProgressLogger.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {DeployUtils} from 'src/deployments/utils/DeployUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
@@ -15,7 +15,7 @@ import {
 } from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
 contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
-  string internal constant INPUT_PATH = 'src/deployments/inputs/AaveV4DeployInput.toml';
+  string internal constant INPUT_PATH = 'scripts/deploy/inputs/AaveV4DeployInput.toml';
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
   string internal constant OUTPUT_FILE = 'AaveV4DeployBatch.json';
 
@@ -30,10 +30,10 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
 
     address deployer = msg.sender;
 
-    logger.log('Starting Aave V4 Batch Deployment');
+    logger.log('...Starting Aave V4 Batch Deployment...');
 
-    vm.startBroadcast();
     report = AaveV4DeployOrchestration.deployAaveV4(
+      IProgressLogger(address(logger)),
       deployer,
       inputs.admin,
       inputs.nativeWrapperAddress,
@@ -41,12 +41,11 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
       inputs.spokeLabels,
       inputs.setRoles
     );
-    vm.stopBroadcast();
 
     writeJsonReportMarket(logger, report);
 
-    logger.log('Batch Deployment Completed');
-    logger.log('Saving Logs');
+    logger.log('...Batch Deployment Completed...');
+    logger.log('...Saving Logs...');
     logger.save();
   }
 

@@ -38,7 +38,7 @@ library AaveV4AdminRolesProcedure {
     );
   }
 
-  function setNewAdminRole(
+  function setAccessManagerRootAdminRole(
     address accessManagerAddress,
     address newAdminAddress,
     address currentAdminAddress

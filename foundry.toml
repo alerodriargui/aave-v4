@@ -7,7 +7,7 @@ fs_permissions = [
   { access = "read", path = "tests/mocks/JsonBindings.sol" },
   { access = "read", path = "./config" },
   { access = "read-write", path = "./output" },
-  { access = "read-write", path = "./src/deployments/inputs" }
+  { access = "read-write", path = "./scripts/deploy/inputs" }
 ]
 solc_version = "0.8.28"
 evm_version = "cancun"
@@ -54,6 +54,7 @@ zkevm = "${RPC_ZKEVM}"
 gnosis = "${RPC_GNOSIS}"
 bnb = "${RPC_BNB}"
 celo = "${RPC_CELO}"
+anvil = "http://127.0.0.1:8545"
 
 [etherscan]
 mainnet = { key = "${ETHERSCAN_API_KEY_MAINNET}", chainId = 1 }

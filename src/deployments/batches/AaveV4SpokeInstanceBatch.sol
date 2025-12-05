@@ -2,10 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'forge-std/Vm.sol';
-
-import {console2 as console} from 'forge-std/console2.sol';
-
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {
   AaveV4SpokeInstanceDeployProcedure
@@ -24,7 +20,7 @@ contract AaveV4SpokeInstanceBatch is
 {
   BatchReports.SpokeInstanceBatchReport internal _report;
 
-  Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
+  // Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
 
   constructor(
     address admin_,
@@ -32,12 +28,7 @@ contract AaveV4SpokeInstanceBatch is
     uint8 oracleDecimals_,
     string memory oracleDescription_
   ) {
-    // address predictedSpokeInstanceAddress = vm.computeCreateAddress(
-    //   address(this),
-    //   vm.getNonce(address(this)) + 2
-    // );
-
-    address predictedSpokeInstanceAddress = address(this); // TODO: FIX
+    address predictedSpokeInstanceAddress = _computeCreateAddress(address(this), 3);
 
     address aaveOracleAddress = _deployAaveOracle(
       predictedSpokeInstanceAddress,
@@ -51,7 +42,7 @@ contract AaveV4SpokeInstanceBatch is
       abi.encodeWithSignature('initialize(address)', accessManagerAddress_)
     );
 
-    // require(spokeProxyAddress == predictedSpokeInstanceAddress_, 'SpokeInstance address mismatch');  // uncomment when fixed
+    require(spokeProxyAddress == predictedSpokeInstanceAddress, 'SpokeInstance address mismatch'); // uncomment when fixed
 
     _report = BatchReports.SpokeInstanceBatchReport({
       aaveOracleAddress: aaveOracleAddress,
@@ -62,5 +53,11 @@ contract AaveV4SpokeInstanceBatch is
 
   function getReport() external view returns (BatchReports.SpokeInstanceBatchReport memory) {
     return _report;
+  }
+
+  function _computeCreateAddress(address deployer, uint8 nonce) internal pure returns (address) {
+    // RLP([deployer, nonce]) for 1 <= nonce <= 0x7f
+    bytes memory rlp = abi.encodePacked(bytes1(0xd6), bytes1(0x94), deployer, nonce);
+    return address(uint160(uint256(keccak256(rlp))));
   }
 }
