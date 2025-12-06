@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import {Script} from 'forge-std/Script.sol';
 
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-import {IProgressLogger} from 'src/deployments/utils/interfaces/IProgressLogger.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {DeployUtils} from 'src/deployments/utils/DeployUtils.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
@@ -30,7 +29,7 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
     vm.startBroadcast(deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
       .deployAaveV4(
-        IProgressLogger(address(logger)),
+        logger,
         deployer,
         inputs.admin,
         inputs.nativeWrapperAddress,

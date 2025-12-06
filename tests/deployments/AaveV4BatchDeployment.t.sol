@@ -6,7 +6,7 @@ import 'tests/utils/BatchTestProcedures.sol';
 
 contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   address public deployer;
-  IProgressLogger public logger;
+  Logger public logger;
   FullDeployInputs public inputs;
   address public weth9;
 
@@ -17,7 +17,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     super.setUp();
 
     deployer = makeAddr('deployer');
-    logger = new MockLogger();
+    logger = new Logger('dummy/path');
     weth9 = _deployWETH();
 
     hubLabels = ['hub1', 'hub2', 'hub3'];

@@ -7,14 +7,13 @@ import {Test} from 'forge-std/Test.sol';
 
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 
-import {IProgressLogger} from 'src/deployments/utils/interfaces/IProgressLogger.sol';
 import {
   AaveV4DeployOrchestration
 } from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
+import {Logger} from 'src/deployments/utils/Logger.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
-import {MockLogger} from 'tests/mocks/MockLogger.sol';
 import {WETHDeployProcedure} from 'src/deployments/procedures/deploy/WETHDeployProcedure.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 
@@ -59,7 +58,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
 
   function deployAaveV4Testnet(
     address deployer,
-    IProgressLogger logger,
+    Logger logger,
     FullDeployInputs memory inputs
   ) public returns (OrchestrationReports.FullDeploymentReport memory) {
     vm.startPrank(deployer);

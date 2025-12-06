@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Vm.sol';
 
-import {IProgressLogger} from 'src/deployments/utils/interfaces/IProgressLogger.sol';
+import {Logger} from 'src/deployments/utils/Logger.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {AaveV4DeployCore} from 'src/deployments/orchestration/AaveV4DeployCore.sol';
@@ -32,7 +32,7 @@ library AaveV4DeployOrchestration {
   string private constant ORACLE_SUFFIX = ' (USD)';
 
   function deployAaveV4(
-    IProgressLogger logger,
+    Logger logger,
     address deployer,
     address admin,
     address nativeWrapper,
@@ -96,7 +96,7 @@ library AaveV4DeployOrchestration {
   }
 
   function _deployAccessBatch(
-    IProgressLogger logger,
+    Logger logger,
     address admin
   ) internal returns (BatchReports.AccessBatchReport memory report) {
     logger.log('...Deploying AccessBatch...');
@@ -109,7 +109,7 @@ library AaveV4DeployOrchestration {
   }
 
   function _deployConfiguratorBatch(
-    IProgressLogger logger,
+    Logger logger,
     address admin
   ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
     logger.log('...Deploying ConfiguratorBatch...');
@@ -123,7 +123,7 @@ library AaveV4DeployOrchestration {
   }
 
   function _deployHubs(
-    IProgressLogger logger,
+    Logger logger,
     address admin,
     address accessManagerAddress,
     string[] memory hubLabels,
@@ -139,7 +139,7 @@ library AaveV4DeployOrchestration {
   }
 
   function _deployHub(
-    IProgressLogger logger,
+    Logger logger,
     address admin,
     address accessManagerAddress,
     string memory label,
@@ -164,7 +164,7 @@ library AaveV4DeployOrchestration {
   }
 
   function _deploySpokes(
-    IProgressLogger logger,
+    Logger logger,
     address admin,
     address accessManagerAddress,
     string[] memory spokeLabels,
@@ -186,7 +186,7 @@ library AaveV4DeployOrchestration {
   }
 
   function _deploySpoke(
-    IProgressLogger logger,
+    Logger logger,
     address admin,
     address accessManagerAddress,
     string memory label,
@@ -219,7 +219,7 @@ library AaveV4DeployOrchestration {
   }
 
   function _deployHubBatch(
-    IProgressLogger logger,
+    Logger logger,
     address admin,
     address accessManagerAddress
   ) internal returns (BatchReports.HubBatchReport memory report) {
@@ -229,7 +229,7 @@ library AaveV4DeployOrchestration {
   }
 
   function _deploySpokeInstanceBatch(
-    IProgressLogger logger,
+    Logger logger,
     address admin,
     address accessManagerAddress,
     string memory label
@@ -246,7 +246,7 @@ library AaveV4DeployOrchestration {
   }
 
   function _deployGatewayBatch(
-    IProgressLogger logger,
+    Logger logger,
     address admin,
     address nativeWrapper
   ) internal returns (BatchReports.GatewaysBatchReport memory report) {

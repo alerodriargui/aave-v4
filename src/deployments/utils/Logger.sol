@@ -5,11 +5,9 @@ pragma solidity ^0.8.0;
 import 'forge-std/StdJson.sol';
 import 'forge-std/Vm.sol';
 import {console} from 'forge-std/console.sol';
-
-import {IProgressLogger} from 'src/deployments/utils/interfaces/IProgressLogger.sol';
 import {DeployUtils} from 'src/deployments/utils/DeployUtils.sol';
 
-contract Logger is IProgressLogger, DeployUtils {
+contract Logger is DeployUtils {
   using stdJson for string;
 
   struct AddressEntry {
