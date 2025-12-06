@@ -1,5 +1,0 @@
-admin = "0x0000000000000000000000000000000000000001"
-hubLabels = ["Hub 1", "Hub 2", "Hub 3"]
-nativeWrapperAddress = "0x0000000000000000000000000000000000000002"
-setRoles = true
-spokeLabels = ["Spoke 1", "Spoke 2", "Spoke 3"]

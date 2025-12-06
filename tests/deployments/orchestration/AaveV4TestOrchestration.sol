@@ -34,6 +34,7 @@ import {
 import {AaveV4DeployCore} from 'src/deployments/orchestration/AaveV4DeployCore.sol';
 
 library AaveV4TestOrchestration {
+  bool public constant IS_TEST = true;
   Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
 
   uint8 private constant ORACLE_DECIMALS = 8;
