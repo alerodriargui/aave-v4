@@ -38,7 +38,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       logger,
       inputs
     );
-    _checkFullReport(report, inputs);
+    _checkDeployment(report, inputs);
     _checkRoles(report, inputs);
   }
 
@@ -50,6 +50,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       logger,
       inputs
     );
-    _checkFullReport(report, inputs);
+    _checkDeployment(report, inputs);
   }
 }

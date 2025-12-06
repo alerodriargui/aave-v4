@@ -2,21 +2,34 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {console2 as console} from 'forge-std/console2.sol';
 import {Test} from 'forge-std/Test.sol';
+
+import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+
 import {IProgressLogger} from 'src/deployments/utils/interfaces/IProgressLogger.sol';
 import {
   AaveV4DeployOrchestration
 } from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
+
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {MockLogger} from 'tests/mocks/MockLogger.sol';
 import {WETHDeployProcedure} from 'src/deployments/procedures/deploy/WETHDeployProcedure.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
+import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 
 contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
+  bytes32 internal constant ERC1967_ADMIN_SLOT =
+    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+  bytes32 internal constant IMPLEMENTATION_SLOT =
+    0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+
   bytes4[] public spokeAdminRoleSelectors;
   bytes4[] public hubAdminRoleSelectors;
   bytes4[] public userPositionUpdaterRoleSelectors;
@@ -63,6 +76,15 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       );
     vm.stopPrank();
     return report;
+  }
+
+  function _checkDeployment(
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    _checkFullReport(report, inputs);
+    _checkSpokeBatchDeployment(report, inputs);
+    _checkHubBatchDeployment(report, inputs);
   }
 
   function _checkFullReport(
@@ -133,7 +155,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     _checkAccessManagerRoles(accessManager, report, inputs);
     _checkSpokeAdminRoles(accessManager, report, inputs);
     _checkHubAdminRoles(accessManager, report, inputs);
-    // _checkUserPositionUpdaterRoles(report, inputs);
   }
 
   function _checkAccessManagerRoles(
@@ -234,5 +255,60 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         );
       }
     }
+  }
+
+  function _checkSpokeBatchDeployment(
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
+      address proxyAdmin = _getProxyAdminAddress(
+        report.spokeInstanceBatchReports[i].report.spokeProxyAddress
+      );
+      assertEq(Ownable(proxyAdmin).owner(), inputs.admin, 'SpokeDeploymentAdmin');
+      assertEq(
+        _getImplementationAddress(report.spokeInstanceBatchReports[i].report.spokeProxyAddress),
+        report.spokeInstanceBatchReports[i].report.spokeImplementationAddress,
+        'SpokeDeploymentImplementation'
+      );
+    }
+  }
+
+  function _checkHubBatchDeployment(
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
+      assertEq(
+        IHub(report.hubBatchReports[i].report.hubAddress).authority(),
+        report.accessBatchReport.accessManagerAddress,
+        'Hub Authority'
+      );
+      assertEq(
+        IAssetInterestRateStrategy(report.hubBatchReports[i].report.irStrategyAddress).HUB(),
+        report.hubBatchReports[i].report.hubAddress,
+        'InterestRateStrategy Hub'
+      );
+      assertEq(
+        Ownable(report.hubBatchReports[i].report.treasurySpokeAddress).owner(),
+        inputs.admin,
+        'TreasurySpoke owner'
+      );
+      assertEq(
+        address(ITreasurySpoke(report.hubBatchReports[i].report.treasurySpokeAddress).HUB()),
+        report.hubBatchReports[i].report.hubAddress,
+        'TreasurySpoke Hub'
+      );
+    }
+  }
+
+  function _getProxyAdminAddress(address proxy) internal view returns (address) {
+    bytes32 slotData = vm.load(proxy, ERC1967_ADMIN_SLOT);
+    return address(uint160(uint256(slotData)));
+  }
+
+  function _getImplementationAddress(address proxy) internal view returns (address) {
+    bytes32 slotData = vm.load(proxy, IMPLEMENTATION_SLOT);
+    return address(uint160(uint256(slotData)));
   }
 }
