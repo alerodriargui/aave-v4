@@ -78,7 +78,9 @@ import {Utils} from 'tests/Utils.sol';
 // orchestration
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
+import {
+  AaveV4TestOrchestration
+} from 'tests/deployments/orchestration/AaveV4TestOrchestration.t.sol';
 
 // mocks
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
