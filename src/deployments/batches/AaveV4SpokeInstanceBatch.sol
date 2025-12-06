@@ -42,7 +42,7 @@ contract AaveV4SpokeInstanceBatch is
       abi.encodeWithSignature('initialize(address)', accessManagerAddress_)
     );
 
-    require(spokeProxyAddress == predictedSpokeInstanceAddress, 'SpokeInstance address mismatch'); // uncomment when fixed
+    require(spokeProxyAddress == predictedSpokeInstanceAddress, 'SpokeInstance address mismatch');
 
     _report = BatchReports.SpokeInstanceBatchReport({
       aaveOracleAddress: aaveOracleAddress,
