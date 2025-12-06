@@ -14,7 +14,7 @@ import {
 } from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
 contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
-  string internal constant INPUT_PATH = 'scripts/deploy/inputs/AaveV4DeployInput.toml';
+  string internal constant INPUT_PATH = 'scripts/deploy/inputs/AaveV4DeployInput.json';
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
   string internal constant OUTPUT_FILE = 'AaveV4DeployBatch.json';
 
@@ -27,7 +27,7 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
 
     logger.log('...Starting Aave V4 Batch Deployment...');
     address deployer = msg.sender;
-    bool broadcast = true;
+    vm.startBroadcast(deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
       .deployAaveV4(
         IProgressLogger(address(logger)),
@@ -36,9 +36,9 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
         inputs.nativeWrapperAddress,
         inputs.hubLabels,
         inputs.spokeLabels,
-        inputs.setRoles,
-        broadcast
+        inputs.setRoles
       );
+    vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
     logger.log('...Batch Deployment Completed...');
     logger.log('...Saving Logs...');

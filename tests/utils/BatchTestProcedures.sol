@@ -71,8 +71,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         inputs.nativeWrapperAddress,
         inputs.hubLabels,
         inputs.spokeLabels,
-        inputs.setRoles,
-        false
+        inputs.setRoles
       );
     vm.stopPrank();
     return report;
