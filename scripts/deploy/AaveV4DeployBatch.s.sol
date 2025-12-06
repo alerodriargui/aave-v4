@@ -27,6 +27,7 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
 
     logger.log('...Starting Aave V4 Batch Deployment...');
     address deployer = msg.sender;
+    bool broadcast = true;
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
       .deployAaveV4(
         IProgressLogger(address(logger)),
@@ -35,7 +36,8 @@ contract AaveV4DeployBatchScript is Script, DeployUtils, InputUtils {
         inputs.nativeWrapperAddress,
         inputs.hubLabels,
         inputs.spokeLabels,
-        inputs.setRoles
+        inputs.setRoles,
+        broadcast
       );
     logger.writeJsonReportMarket(report);
     logger.log('...Batch Deployment Completed...');

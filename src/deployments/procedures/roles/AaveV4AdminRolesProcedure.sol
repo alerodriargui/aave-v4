@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import {Roles} from 'src/libraries/types/Roles.sol';
-
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 
 library AaveV4AdminRolesProcedure {

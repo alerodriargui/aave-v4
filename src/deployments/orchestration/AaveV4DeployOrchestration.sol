@@ -38,14 +38,15 @@ library AaveV4DeployOrchestration {
     address nativeWrapper,
     string[] memory hubLabels,
     string[] memory spokeLabels,
-    bool setRoles
+    bool setRoles,
+    bool broadcast
   ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
     // Deploy Access Batch
     address accessManagerAdmin = setRoles ? deployer : admin;
-    report.accessBatchReport = _deployAccessBatch(logger, deployer, accessManagerAdmin);
+    report.accessBatchReport = _deployAccessBatch(logger, deployer, accessManagerAdmin, broadcast);
 
     // Deploy Configurator Batch
-    report.configuratorBatchReport = _deployConfiguratorBatch(logger, deployer, admin);
+    report.configuratorBatchReport = _deployConfiguratorBatch(logger, deployer, admin, broadcast);
 
     // Deploy Hub Batches
     report.hubBatchReports = _deployHubs(
@@ -54,7 +55,8 @@ library AaveV4DeployOrchestration {
       admin,
       report.accessBatchReport.accessManagerAddress,
       hubLabels,
-      setRoles
+      setRoles,
+      broadcast
     );
 
     // Deploy Spoke Instance Batches
@@ -64,33 +66,40 @@ library AaveV4DeployOrchestration {
       admin,
       report.accessBatchReport.accessManagerAddress,
       spokeLabels,
-      setRoles
+      setRoles,
+      broadcast
     );
 
     // Deploy Gateways Batch
-    report.gatewaysBatchReport = _deployGatewayBatch(logger, deployer, admin, nativeWrapper);
+    report.gatewaysBatchReport = _deployGatewayBatch(
+      logger,
+      deployer,
+      admin,
+      nativeWrapper,
+      broadcast
+    );
 
     // Set Roles if needed
     if (setRoles) {
       logger.log('...Setting Configurator roles...');
 
-      vm.startBroadcast(deployer);
+      _startBroadcastIf(broadcast, deployer);
       AaveV4AdminRolesProcedure.setConfiguratorAdminRoles(
         report.accessBatchReport.accessManagerAddress,
         report.configuratorBatchReport.spokeConfiguratorAddress,
         report.configuratorBatchReport.hubConfiguratorAddress
       );
-      vm.stopBroadcast();
+      _stopBroadcastIf(broadcast);
 
       logger.log('...Setting AccessManager Root Admin role...');
 
-      vm.startBroadcast(deployer);
+      _startBroadcastIf(broadcast, deployer);
       AaveV4AdminRolesProcedure.setAccessManagerRootAdminRole(
         report.accessBatchReport.accessManagerAddress,
         admin,
         deployer
       );
-      vm.stopBroadcast();
+      _stopBroadcastIf(broadcast);
     }
 
     return
@@ -106,13 +115,14 @@ library AaveV4DeployOrchestration {
   function _deployAccessBatch(
     IProgressLogger logger,
     address deployer,
-    address admin
+    address admin,
+    bool broadcast
   ) internal returns (BatchReports.AccessBatchReport memory report) {
     logger.log('...Deploying AccessBatch...');
 
-    vm.startBroadcast(deployer);
+    _startBroadcastIf(broadcast, deployer);
     report = AaveV4DeployCore.deployAccessBatch(admin);
-    vm.stopBroadcast();
+    _stopBroadcastIf(broadcast);
 
     logger.log('AccessManager', report.accessManagerAddress);
     logger.log('');
@@ -122,13 +132,14 @@ library AaveV4DeployOrchestration {
   function _deployConfiguratorBatch(
     IProgressLogger logger,
     address deployer,
-    address admin
+    address admin,
+    bool broadcast
   ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
     logger.log('...Deploying ConfiguratorBatch...');
 
-    vm.startBroadcast(deployer);
+    _startBroadcastIf(broadcast, deployer);
     report = AaveV4DeployCore.deployConfiguratorBatch(admin);
-    vm.stopBroadcast();
+    _stopBroadcastIf(broadcast);
 
     logger.log('HubConfigurator', report.hubConfiguratorAddress);
     logger.log('SpokeConfigurator', report.spokeConfiguratorAddress);
@@ -142,7 +153,8 @@ library AaveV4DeployOrchestration {
     address admin,
     address accessManagerAddress,
     string[] memory hubLabels,
-    bool setRoles
+    bool setRoles,
+    bool broadcast
   ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubBatchReports) {
     uint256 hubCount = hubLabels.length;
     hubBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
@@ -153,7 +165,8 @@ library AaveV4DeployOrchestration {
         admin,
         accessManagerAddress,
         hubLabels[i],
-        setRoles
+        setRoles,
+        broadcast
       );
     }
     logger.log('');
@@ -166,11 +179,12 @@ library AaveV4DeployOrchestration {
     address admin,
     address accessManagerAddress,
     string memory label,
-    bool setRoles
+    bool setRoles,
+    bool broadcast
   ) internal returns (OrchestrationReports.HubDeploymentReport memory) {
     OrchestrationReports.HubDeploymentReport memory hubReport;
     hubReport.label = label;
-    hubReport.report = _deployHubBatch(logger, deployer, admin, accessManagerAddress);
+    hubReport.report = _deployHubBatch(logger, deployer, admin, accessManagerAddress, broadcast);
 
     logger.log(label);
     logger.log('  Hub', hubReport.report.hubAddress);
@@ -180,9 +194,9 @@ library AaveV4DeployOrchestration {
     if (setRoles) {
       logger.log('...Setting Hub roles...');
 
-      vm.startBroadcast(deployer);
+      _startBroadcastIf(broadcast, deployer);
       AaveV4HubRolesProcedure.setHubRoles(accessManagerAddress, hubReport.report.hubAddress);
-      vm.stopBroadcast();
+      _stopBroadcastIf(broadcast);
     }
 
     return hubReport;
@@ -194,7 +208,8 @@ library AaveV4DeployOrchestration {
     address admin,
     address accessManagerAddress,
     string[] memory spokeLabels,
-    bool setRoles
+    bool setRoles,
+    bool broadcast
   ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
     uint256 spokeCount = spokeLabels.length;
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
@@ -205,7 +220,8 @@ library AaveV4DeployOrchestration {
         admin,
         accessManagerAddress,
         spokeLabels[i],
-        setRoles
+        setRoles,
+        broadcast
       );
     }
     logger.log('');
@@ -218,7 +234,8 @@ library AaveV4DeployOrchestration {
     address admin,
     address accessManagerAddress,
     string memory label,
-    bool setRoles
+    bool setRoles,
+    bool broadcast
   ) internal returns (OrchestrationReports.SpokeDeploymentReport memory) {
     OrchestrationReports.SpokeDeploymentReport memory spokeReport;
 
@@ -228,7 +245,8 @@ library AaveV4DeployOrchestration {
       deployer,
       admin,
       accessManagerAddress,
-      label
+      label,
+      broadcast
     );
 
     logger.log(label);
@@ -239,12 +257,16 @@ library AaveV4DeployOrchestration {
     if (setRoles) {
       logger.log('...Setting Spoke roles...');
 
-      vm.startBroadcast(deployer);
+      _startBroadcastIf(broadcast, deployer);
       AaveV4SpokeRolesProcedure.setSpokeRoles(
         accessManagerAddress,
         spokeReport.report.spokeProxyAddress
       );
-      vm.stopBroadcast();
+      AaveV4SpokeRolesProcedure.setSpokeUserPositionAdapterRole(
+        accessManagerAddress,
+        spokeReport.report.spokeProxyAddress
+      );
+      _stopBroadcastIf(broadcast);
     }
 
     return spokeReport;
@@ -254,13 +276,14 @@ library AaveV4DeployOrchestration {
     IProgressLogger logger,
     address deployer,
     address admin,
-    address accessManagerAddress
+    address accessManagerAddress,
+    bool broadcast
   ) internal returns (BatchReports.HubBatchReport memory report) {
     logger.log('...Deploying HubBatch...');
 
-    vm.startBroadcast(deployer);
+    _startBroadcastIf(broadcast, deployer);
     report = AaveV4DeployCore.deployHubBatch(admin, accessManagerAddress);
-    vm.stopBroadcast();
+    _stopBroadcastIf(broadcast);
 
     return report;
   }
@@ -270,11 +293,12 @@ library AaveV4DeployOrchestration {
     address deployer,
     address admin,
     address accessManagerAddress,
-    string memory label
+    string memory label,
+    bool broadcast
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
     logger.log('...Deploying AaveV4SpokeInstanceBatch...');
 
-    vm.startBroadcast(deployer);
+    _startBroadcastIf(broadcast, deployer);
     report = AaveV4DeployCore.deploySpokeInstanceBatch(
       admin,
       accessManagerAddress,
@@ -282,7 +306,7 @@ library AaveV4DeployOrchestration {
       ORACLE_SUFFIX,
       label
     );
-    vm.stopBroadcast();
+    _stopBroadcastIf(broadcast);
 
     return report;
   }
@@ -291,13 +315,14 @@ library AaveV4DeployOrchestration {
     IProgressLogger logger,
     address deployer,
     address admin,
-    address nativeWrapper
+    address nativeWrapper,
+    bool broadcast
   ) internal returns (BatchReports.GatewaysBatchReport memory report) {
     logger.log('...Deploying GatewayBatch...');
 
-    vm.startBroadcast(deployer);
+    _startBroadcastIf(broadcast, deployer);
     report = AaveV4DeployCore.deployGatewaysBatch(admin, nativeWrapper);
-    vm.stopBroadcast();
+    _stopBroadcastIf(broadcast);
 
     logger.log('NativeTokenGateway', report.nativeGatewayAddress);
     logger.log('SignatureGateway', report.signatureGatewayAddress);
@@ -318,5 +343,13 @@ library AaveV4DeployOrchestration {
     report.gatewaysBatchReport = gatewaysBatchReport;
 
     return report;
+  }
+
+  function _startBroadcastIf(bool broadcast, address deployer) private {
+    if (broadcast) vm.startBroadcast(deployer);
+  }
+
+  function _stopBroadcastIf(bool broadcast) private {
+    if (broadcast) vm.stopBroadcast();
   }
 }

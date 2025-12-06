@@ -9,12 +9,13 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 library AaveV4HubRolesProcedure {
   function setHubRoles(address accessManagerAddress, address hubAddress) internal {
-    bytes4[] memory selectors = new bytes4[](5);
+    bytes4[] memory selectors = new bytes4[](6);
     selectors[0] = IHub.addAsset.selector;
     selectors[1] = IHub.updateAssetConfig.selector;
     selectors[2] = IHub.addSpoke.selector;
     selectors[3] = IHub.updateSpokeConfig.selector;
     selectors[4] = IHub.setInterestRateData.selector;
+    selectors[5] = IHub.mintFeeShares.selector;
     IAccessManager(accessManagerAddress).setTargetFunctionRole(
       hubAddress,
       selectors,
