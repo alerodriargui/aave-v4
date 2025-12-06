@@ -12,7 +12,7 @@ import {AaveV4AccessBatch} from 'src/deployments/batches/AaveV4AccessBatch.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 
-import {TestTokensBatch} from 'src/deployments/batches/TestTokensBatch.sol';
+import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 
 import {
   AaveV4AdminRolesProcedure
