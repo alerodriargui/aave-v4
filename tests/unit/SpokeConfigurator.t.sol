@@ -24,14 +24,8 @@ contract SpokeConfiguratorTest is SpokeBase {
     _reserveId = 0;
     invalidReserveId = spoke.getReserveCount();
 
-    // Grant spokeConfigurator spoke admin role with 0 delay
-    vm.startPrank(ADMIN);
-    IAccessManager(spoke1.authority()).grantRole(
-      Roles.SPOKE_ADMIN_ROLE,
-      address(spokeConfigurator),
-      0
-    );
-    vm.stopPrank();
+    // Grant spokeConfigurator spoke admin role
+    _grantSpokeConfiguratorRole(spoke, address(spokeConfigurator));
   }
 
   function test_updateReservePriceSource_revertsWith_OwnableUnauthorizedAccount() public {

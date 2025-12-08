@@ -16,8 +16,8 @@ import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInsta
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 
 import {
-  AaveV4AdminRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4AdminRolesProcedure.sol';
+  AaveV4AccessManagerRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {
   AaveV4HubRolesProcedure
 } from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
@@ -70,15 +70,30 @@ library AaveV4DeployOrchestration {
 
     // Set Roles if needed
     if (setRoles) {
-      logger.log('...Setting Configurator roles...');
-      AaveV4AdminRolesProcedure.setConfiguratorAdminRoles(
+      logger.log('...Granting Hub Admin role...');
+      AaveV4HubRolesProcedure.grantHubAdminRole(
         report.accessBatchReport.accessManagerAddress,
-        report.configuratorBatchReport.spokeConfiguratorAddress,
-        report.configuratorBatchReport.hubConfiguratorAddress
+        admin
       );
 
-      logger.log('...Setting AccessManager Root Admin role...');
-      AaveV4AdminRolesProcedure.setAccessManagerRootAdminRole(
+      logger.log('...Granting Spoke Admin role...');
+      AaveV4SpokeRolesProcedure.grantSpokeAdminRole(
+        report.accessBatchReport.accessManagerAddress,
+        admin
+      );
+
+      logger.log('...Granting Configurator roles...');
+      AaveV4HubRolesProcedure.grantHubConfiguratorRole({
+        accessManagerAddress: report.accessBatchReport.accessManagerAddress,
+        hubConfiguratorAddress: report.configuratorBatchReport.hubConfiguratorAddress
+      });
+      AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole({
+        accessManagerAddress: report.accessBatchReport.accessManagerAddress,
+        spokeConfiguratorAddress: report.configuratorBatchReport.spokeConfiguratorAddress
+      });
+
+      logger.log('...Granting AccessManager Root Admin role...');
+      AaveV4AccessManagerRolesProcedure.grantRootAdminRole(
         report.accessBatchReport.accessManagerAddress,
         admin,
         deployer
@@ -157,7 +172,11 @@ library AaveV4DeployOrchestration {
     if (setRoles) {
       logger.log('...Setting Hub roles...');
 
-      AaveV4HubRolesProcedure.setHubRoles(accessManagerAddress, hubReport.report.hubAddress);
+      AaveV4HubRolesProcedure.setHubAdminRole(accessManagerAddress, hubReport.report.hubAddress);
+      AaveV4HubRolesProcedure.setHubConfiguratorRole(
+        accessManagerAddress,
+        hubReport.report.hubAddress
+      );
     }
 
     return hubReport;
@@ -205,27 +224,17 @@ library AaveV4DeployOrchestration {
     if (setRoles) {
       logger.log('...Setting Spoke roles...');
 
-      AaveV4SpokeRolesProcedure.setSpokeRoles(
+      AaveV4SpokeRolesProcedure.setSpokeConfiguratorRole(
         accessManagerAddress,
         spokeReport.report.spokeProxyAddress
       );
-      AaveV4SpokeRolesProcedure.setSpokeUserPositionAdapterRole(
+      AaveV4SpokeRolesProcedure.setSpokeAdminRole(
         accessManagerAddress,
         spokeReport.report.spokeProxyAddress
       );
     }
 
     return spokeReport;
-  }
-
-  function _deployHubBatch(
-    Logger logger,
-    address admin,
-    address accessManagerAddress
-  ) internal returns (BatchReports.HubBatchReport memory report) {
-    logger.log('...Deploying HubBatch...');
-    report = AaveV4DeployCore.deployHubBatch(admin, accessManagerAddress);
-    return report;
   }
 
   function _deploySpokeInstanceBatch(
@@ -242,6 +251,16 @@ library AaveV4DeployOrchestration {
       ORACLE_SUFFIX,
       label
     );
+    return report;
+  }
+
+  function _deployHubBatch(
+    Logger logger,
+    address admin,
+    address accessManagerAddress
+  ) internal returns (BatchReports.HubBatchReport memory report) {
+    logger.log('...Deploying HubBatch...');
+    report = AaveV4DeployCore.deployHubBatch(admin, accessManagerAddress);
     return report;
   }
 

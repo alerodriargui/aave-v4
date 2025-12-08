@@ -309,11 +309,10 @@ abstract contract Base is Test {
     manager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
     manager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
 
-    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
+    manager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, ADMIN, 0);
+    manager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, SPOKE_ADMIN, 0);
     manager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
-
-    manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
-    manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, USER_POSITION_UPDATER, 0);
+    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, USER_POSITION_UPDATER, 0);
 
     // Grant responsibilities to roles
     {
@@ -325,14 +324,14 @@ abstract contract Base is Test {
       selectors[4] = ISpoke.addDynamicReserveConfig.selector;
       selectors[5] = ISpoke.updatePositionManager.selector;
       selectors[6] = ISpoke.updateReservePriceSource.selector;
-      manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
+      manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_CONFIGURATOR_ROLE);
     }
 
     {
       bytes4[] memory selectors = new bytes4[](2);
       selectors[0] = ISpoke.updateUserDynamicConfig.selector;
       selectors[1] = ISpoke.updateUserRiskPremium.selector;
-      manager.setTargetFunctionRole(address(spoke), selectors, Roles.USER_POSITION_UPDATER_ROLE);
+      manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
     }
 
     {
@@ -345,6 +344,16 @@ abstract contract Base is Test {
       selectors[5] = IHub.mintFeeShares.selector;
       manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
     }
+    vm.stopPrank();
+  }
+
+  function _grantSpokeConfiguratorRole(ISpoke spoke, address spokeConfigurator) internal {
+    vm.startPrank(ADMIN);
+    IAccessManager(spoke.authority()).grantRole(
+      Roles.SPOKE_CONFIGURATOR_ROLE,
+      spokeConfigurator,
+      0
+    );
     vm.stopPrank();
   }
 

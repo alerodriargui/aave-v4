@@ -8,6 +8,7 @@ pragma solidity ^0.8.20;
 library Roles {
   uint64 public constant DEFAULT_ADMIN_ROLE = 0;
   uint64 public constant HUB_ADMIN_ROLE = 1;
-  uint64 public constant SPOKE_ADMIN_ROLE = 2;
-  uint64 public constant USER_POSITION_UPDATER_ROLE = 3;
+  uint64 public constant HUB_CONFIGURATOR_ROLE = 2;
+  uint64 public constant SPOKE_ADMIN_ROLE = 3;
+  uint64 public constant SPOKE_CONFIGURATOR_ROLE = 4;
 }

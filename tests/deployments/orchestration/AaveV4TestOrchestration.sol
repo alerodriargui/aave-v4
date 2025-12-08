@@ -15,8 +15,8 @@ import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInsta
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 
 import {
-  AaveV4AdminRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4AdminRolesProcedure.sol';
+  AaveV4AccessManagerRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {
   AaveV4HubRolesProcedure
 } from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
@@ -103,17 +103,20 @@ library AaveV4TestOrchestration {
     address spokeAdmin,
     OrchestrationReports.TestEnvReport memory report
   ) external {
-    // Set Admin Roles
-    AaveV4AdminRolesProcedure.setConfiguratorAdminRoles(report.accessManagerAddress, admin, admin);
-    AaveV4AdminRolesProcedure.setConfiguratorHubAdminRole(report.accessManagerAddress, hubAdmin);
-    AaveV4AdminRolesProcedure.setConfiguratorSpokeAdminRole(
-      report.accessManagerAddress,
-      spokeAdmin
-    );
+    // Set ConfiguratorAdmin Roles
+    // AaveV4AccessManagerRolesProcedure.grantRootAdminRole({
+    //   accessManagerAddress: report.accessManagerAddress,
+    //   newAdminAddress: admin,
+    //   currentAdminAddress: admin
+    // });
 
     // Set Hub Roles
     for (uint256 i; i < report.hubReports.length; ++i) {
-      AaveV4HubRolesProcedure.setHubRoles(
+      AaveV4HubRolesProcedure.setHubAdminRole(
+        report.accessManagerAddress,
+        report.hubReports[i].hubAddress
+      );
+      AaveV4HubRolesProcedure.setHubConfiguratorRole(
         report.accessManagerAddress,
         report.hubReports[i].hubAddress
       );
@@ -121,11 +124,11 @@ library AaveV4TestOrchestration {
 
     // Set Spoke Roles
     for (uint256 i; i < report.spokeReports.length; ++i) {
-      AaveV4SpokeRolesProcedure.setSpokeRoles(
+      AaveV4SpokeRolesProcedure.setSpokeAdminRole(
         report.accessManagerAddress,
         report.spokeReports[i].spokeAddress
       );
-      AaveV4SpokeRolesProcedure.setSpokeUserPositionAdapterRole(
+      AaveV4SpokeRolesProcedure.setSpokeConfiguratorRole(
         report.accessManagerAddress,
         report.spokeReports[i].spokeAddress
       );
@@ -151,7 +154,7 @@ library AaveV4TestOrchestration {
     report.treasurySpokeAddress = hubReport.treasurySpokeAddress;
 
     // Set Hub Roles
-    AaveV4HubRolesProcedure.setHubRoles(accessManagerAddress, report.hubAddress);
+    AaveV4HubRolesProcedure.setHubAdminRole(accessManagerAddress, report.hubAddress);
 
     // Configure Hub Assets
     configureHubsAssets(paramsList);
