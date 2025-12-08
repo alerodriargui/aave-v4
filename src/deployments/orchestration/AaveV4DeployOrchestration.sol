@@ -82,11 +82,13 @@ library AaveV4DeployOrchestration {
         admin
       );
 
-      logger.log('...Granting Configurator roles...');
+      logger.log('...Granting Hub Configurator roles...');
       AaveV4HubRolesProcedure.grantHubConfiguratorRole({
         accessManagerAddress: report.accessBatchReport.accessManagerAddress,
         hubConfiguratorAddress: report.configuratorBatchReport.hubConfiguratorAddress
       });
+
+      logger.log('...Granting Spoke Configurator roles...');
       AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole({
         accessManagerAddress: report.accessBatchReport.accessManagerAddress,
         spokeConfiguratorAddress: report.configuratorBatchReport.spokeConfiguratorAddress

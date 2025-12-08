@@ -29,8 +29,7 @@ library AaveV4HubRolesProcedure {
   }
 
   function setHubAdminRole(address accessManagerAddress, address hubAddress) internal {
-    bytes4[] memory selectors = new bytes4[](1);
-    selectors[0] = IHub.mintFeeShares.selector;
+    bytes4[] memory selectors = getHubAdminRoleSelectors();
     IAccessManager(accessManagerAddress).setTargetFunctionRole(
       hubAddress,
       selectors,
@@ -39,12 +38,7 @@ library AaveV4HubRolesProcedure {
   }
 
   function setHubConfiguratorRole(address accessManagerAddress, address hubAddress) internal {
-    bytes4[] memory selectors = new bytes4[](5);
-    selectors[0] = IHub.addAsset.selector;
-    selectors[1] = IHub.updateAssetConfig.selector;
-    selectors[2] = IHub.addSpoke.selector;
-    selectors[3] = IHub.updateSpokeConfig.selector;
-    selectors[4] = IHub.setInterestRateData.selector;
+    bytes4[] memory selectors = getHubConfiguratorRoleSelectors();
     IAccessManager(accessManagerAddress).setTargetFunctionRole(
       hubAddress,
       selectors,
@@ -61,5 +55,10 @@ library AaveV4HubRolesProcedure {
   function getHubConfiguratorRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](5);
     selectors[0] = IHub.addAsset.selector;
+    selectors[1] = IHub.updateAssetConfig.selector;
+    selectors[2] = IHub.addSpoke.selector;
+    selectors[3] = IHub.updateSpokeConfig.selector;
+    selectors[4] = IHub.setInterestRateData.selector;
+    return selectors;
   }
 }

@@ -52,4 +52,15 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     );
     _checkDeployment(report, inputs);
   }
+
+  function testAaveV4BatchDeployment_withoutNativeGateway() public {
+    inputs.nativeWrapperAddress = address(0);
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(
+      deployer,
+      logger,
+      inputs
+    );
+    _checkDeployment(report, inputs);
+  }
 }

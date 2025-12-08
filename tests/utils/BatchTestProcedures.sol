@@ -83,6 +83,20 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal pure {
+    if (inputs.nativeWrapperAddress != address(0)) {
+      assertNotEq(
+        report.gatewaysBatchReport.nativeGatewayAddress,
+        address(0),
+        'NativeGatewayAddress'
+      );
+    } else {
+      assertEq(
+        report.gatewaysBatchReport.nativeGatewayAddress,
+        address(0),
+        'Zero NativeGatewayAddress'
+      );
+    }
+
     assertNotEq(report.accessBatchReport.accessManagerAddress, address(0), 'AccessManagerAddress');
     assertNotEq(
       report.configuratorBatchReport.spokeConfiguratorAddress,
@@ -93,11 +107,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       report.configuratorBatchReport.hubConfiguratorAddress,
       address(0),
       'HubConfiguratorAddress'
-    );
-    assertNotEq(
-      report.gatewaysBatchReport.nativeGatewayAddress,
-      address(0),
-      'NativeGatewayAddress'
     );
     assertNotEq(
       report.gatewaysBatchReport.signatureGatewayAddress,
