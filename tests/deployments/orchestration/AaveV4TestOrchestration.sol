@@ -99,16 +99,14 @@ library AaveV4TestOrchestration {
 
   function setRolesTestEnv(
     address admin,
-    address hubAdmin,
-    address spokeAdmin,
     OrchestrationReports.TestEnvReport memory report
   ) external {
     // Set ConfiguratorAdmin Roles
-    // AaveV4AccessManagerRolesProcedure.grantRootAdminRole({
-    //   accessManagerAddress: report.accessManagerAddress,
-    //   newAdminAddress: admin,
-    //   currentAdminAddress: admin
-    // });
+    AaveV4AccessManagerRolesProcedure.grantRootAdminRole({
+      accessManagerAddress: report.accessManagerAddress,
+      newAdminAddress: admin,
+      currentAdminAddress: admin
+    });
 
     // Set Hub Roles
     for (uint256 i; i < report.hubReports.length; ++i) {
