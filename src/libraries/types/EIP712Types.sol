@@ -80,4 +80,22 @@ library EIP712Types {
     uint256 nonce;
     uint256 deadline;
   }
+
+  struct WithdrawPermit {
+    address owner;
+    address spender;
+    uint256 reserveId;
+    uint256 amount;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  struct CreditDelegation {
+    address owner;
+    address spender;
+    uint256 reserveId;
+    uint256 amount;
+    uint256 nonce;
+    uint256 deadline;
+  }
 }

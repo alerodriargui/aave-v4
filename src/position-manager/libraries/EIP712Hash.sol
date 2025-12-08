@@ -36,6 +36,14 @@ library EIP712Hash {
     // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
+  bytes32 public constant WITHDRAW_PERMIT_TYPEHASH =
+    // keccak256('WithdrawPermit(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)')
+    0x3f29b75c8306a30703d0c2bdfdab54af1549fd333e517a54c544808af9c0ccb6;
+
+  bytes32 public constant CREDIT_DELEGATION_TYPEHASH =
+    // keccak256('CreditDelegation(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)')
+    0xb23b18acd40684b2c2f869127cc7c53cd1d41450c747017aa72a57dad6ed5a39;
+
   function hash(EIP712Types.Supply calldata params) internal pure returns (bytes32) {
     return
       keccak256(
@@ -133,6 +141,36 @@ library EIP712Hash {
           UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
           params.spoke,
           params.user,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(EIP712Types.WithdrawPermit calldata params) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          WITHDRAW_PERMIT_TYPEHASH,
+          params.owner,
+          params.spender,
+          params.reserveId,
+          params.amount,
+          params.nonce,
+          params.deadline
+        )
+      );
+  }
+
+  function hash(EIP712Types.CreditDelegation calldata params) internal pure returns (bytes32) {
+    return
+      keccak256(
+        abi.encode(
+          CREDIT_DELEGATION_TYPEHASH,
+          params.owner,
+          params.spender,
+          params.reserveId,
+          params.amount,
           params.nonce,
           params.deadline
         )
