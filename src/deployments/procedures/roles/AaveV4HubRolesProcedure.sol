@@ -28,6 +28,11 @@ library AaveV4HubRolesProcedure {
     });
   }
 
+  function setHubRoles(address accessManagerAddress, address hubAddress) internal {
+    setHubAdminRole(accessManagerAddress, hubAddress);
+    setHubConfiguratorRole(accessManagerAddress, hubAddress);
+  }
+
   function setHubAdminRole(address accessManagerAddress, address hubAddress) internal {
     bytes4[] memory selectors = getHubAdminRoleSelectors();
     IAccessManager(accessManagerAddress).setTargetFunctionRole(

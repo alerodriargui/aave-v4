@@ -110,11 +110,7 @@ library AaveV4TestOrchestration {
 
     // Set Hub Roles
     for (uint256 i; i < report.hubReports.length; ++i) {
-      AaveV4HubRolesProcedure.setHubAdminRole(
-        report.accessManagerAddress,
-        report.hubReports[i].hubAddress
-      );
-      AaveV4HubRolesProcedure.setHubConfiguratorRole(
+      AaveV4HubRolesProcedure.setHubRoles(
         report.accessManagerAddress,
         report.hubReports[i].hubAddress
       );
@@ -122,11 +118,7 @@ library AaveV4TestOrchestration {
 
     // Set Spoke Roles
     for (uint256 i; i < report.spokeReports.length; ++i) {
-      AaveV4SpokeRolesProcedure.setSpokeAdminRole(
-        report.accessManagerAddress,
-        report.spokeReports[i].spokeAddress
-      );
-      AaveV4SpokeRolesProcedure.setSpokeConfiguratorRole(
+      AaveV4SpokeRolesProcedure.setSpokeRoles(
         report.accessManagerAddress,
         report.spokeReports[i].spokeAddress
       );

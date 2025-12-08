@@ -28,6 +28,11 @@ library AaveV4SpokeRolesProcedure {
     grantSpokeConfiguratorRole(accessManagerAddress, spokeAdminAddress);
   }
 
+  function setSpokeRoles(address accessManagerAddress, address spokeAddress) internal {
+    setSpokeAdminRole(accessManagerAddress, spokeAddress);
+    setSpokeConfiguratorRole(accessManagerAddress, spokeAddress);
+  }
+
   function setSpokeAdminRole(address accessManagerAddress, address spokeAddress) internal {
     bytes4[] memory selectors = getSpokeAdminRoleSelectors();
     IAccessManager(accessManagerAddress).setTargetFunctionRole(

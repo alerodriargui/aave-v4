@@ -153,26 +153,37 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
       report.accessBatchReport.accessManagerAddress
     );
-    _checkAccessManagerRoles(accessManager, report, inputs);
+    _checkAccessManagerRoles(accessManager, inputs);
     _checkSpokeRoles(accessManager, report, inputs);
     _checkHubRoles(accessManager, report, inputs);
   }
 
   function _checkAccessManagerRoles(
     IAccessManagerEnumerable accessManager,
-    OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal view {
-    assertEq(
-      accessManager.getRoleMemberCount(Roles.DEFAULT_ADMIN_ROLE),
-      1,
-      'DefaultAdminRoleCount'
-    );
     assertEq(
       accessManager.getRoleMember(Roles.DEFAULT_ADMIN_ROLE, 0),
       inputs.admin,
       'DefaultAdminRoleMember'
     );
+    assertEq(
+      accessManager.getRoleMemberCount(Roles.DEFAULT_ADMIN_ROLE),
+      1,
+      'DefaultAdminRoleCount'
+    );
+    (bool hasRole, ) = accessManager.hasRole(Roles.DEFAULT_ADMIN_ROLE, inputs.admin);
+    if (inputs.setRoles) {
+      assertTrue(hasRole, 'admin has default admin role');
+    } else {
+      assertFalse(hasRole, 'admin does not have default admin role');
+    }
+    (hasRole, ) = accessManager.hasRole(Roles.DEFAULT_ADMIN_ROLE, msg.sender);
+    if (inputs.setRoles) {
+      assertFalse(hasRole, 'deployer does not have default admin role');
+    } else {
+      assertTrue(hasRole, 'deployer has default admin role');
+    }
   }
 
   function _checkSpokeRoles(
@@ -390,7 +401,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     string memory label
   ) internal view {
     _checkSpokeDeployment(report, inputs, accessManagerAddress, label);
-    _checkOracleDeployment(report, inputs, label);
+    _checkOracleDeployment(report, label);
   }
 
   function _checkSpokeDeployment(
@@ -423,7 +434,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
 
   function _checkOracleDeployment(
     OrchestrationReports.SpokeDeploymentReport memory report,
-    FullDeployInputs memory inputs,
     string memory label
   ) internal view {
     assertEq(
@@ -464,14 +474,13 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     FullDeployInputs memory inputs,
     string memory label
   ) internal view {
-    _checkHubDeployment(report, inputs, fullReport.accessBatchReport.accessManagerAddress, label);
-    _checkInterestRateStrategyDeployment(report, inputs, label);
+    _checkHubDeployment(report, fullReport.accessBatchReport.accessManagerAddress, label);
+    _checkInterestRateStrategyDeployment(report, label);
     _checkTreasurySpokeDeployment(report, inputs, label);
   }
 
   function _checkHubDeployment(
     OrchestrationReports.HubDeploymentReport memory report,
-    FullDeployInputs memory inputs,
     address accessManagerAddress,
     string memory label
   ) internal view {
@@ -484,7 +493,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
 
   function _checkInterestRateStrategyDeployment(
     OrchestrationReports.HubDeploymentReport memory report,
-    FullDeployInputs memory inputs,
     string memory label
   ) internal view {
     assertEq(

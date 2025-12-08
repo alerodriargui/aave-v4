@@ -174,11 +174,7 @@ library AaveV4DeployOrchestration {
     if (setRoles) {
       logger.log('...Setting Hub roles...');
 
-      AaveV4HubRolesProcedure.setHubAdminRole(accessManagerAddress, hubReport.report.hubAddress);
-      AaveV4HubRolesProcedure.setHubConfiguratorRole(
-        accessManagerAddress,
-        hubReport.report.hubAddress
-      );
+      AaveV4HubRolesProcedure.setHubRoles(accessManagerAddress, hubReport.report.hubAddress);
     }
 
     return hubReport;
@@ -226,11 +222,7 @@ library AaveV4DeployOrchestration {
     if (setRoles) {
       logger.log('...Setting Spoke roles...');
 
-      AaveV4SpokeRolesProcedure.setSpokeConfiguratorRole(
-        accessManagerAddress,
-        spokeReport.report.spokeProxyAddress
-      );
-      AaveV4SpokeRolesProcedure.setSpokeAdminRole(
+      AaveV4SpokeRolesProcedure.setSpokeRoles(
         accessManagerAddress,
         spokeReport.report.spokeProxyAddress
       );
