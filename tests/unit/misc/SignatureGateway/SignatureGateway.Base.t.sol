@@ -18,11 +18,6 @@ contract SignatureGatewayBaseTest is SpokeBase {
     gateway.registerSpoke(address(spoke1), true);
   }
 
-  function _sign(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
-    return abi.encodePacked(r, s, v);
-  }
-
   function _supplyData(
     ISpoke spoke,
     address who,

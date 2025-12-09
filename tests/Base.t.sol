@@ -63,6 +63,7 @@ import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 import {GatewayBase, IGatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 import {SignatureGateway, ISignatureGateway} from 'src/position-manager/SignatureGateway.sol';
+import {PositionManagerBase, IPositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
 // test
 import {Constants} from 'tests/Constants.sol';
@@ -75,6 +76,7 @@ import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 import {GatewayBaseWrapper} from 'tests/mocks/GatewayBaseWrapper.sol';
+import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
 import {MockNoncesKeyed} from 'tests/mocks/MockNoncesKeyed.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';

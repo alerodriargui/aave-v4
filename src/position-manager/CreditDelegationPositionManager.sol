@@ -5,6 +5,7 @@ pragma solidity 0.8.28;
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
@@ -21,9 +22,11 @@ contract CreditDelegationPositionManager is
 {
   using SafeERC20 for IERC20;
   using EIP712Hash for *;
+  using MathUtils for uint256;
 
-  /// @notice Mapping of credit delegations: owner => spender => reserveId => amount.
-  mapping(address => mapping(address => mapping(uint256 => uint256))) private _creditDelegations;
+  /// @notice Mapping of credit delegations.
+  mapping(address owner => mapping(address spender => mapping(uint256 reserveId => uint256 amount)))
+    private _creditDelegations;
 
   /// @dev Constructor.
   /// @param spoke_ The address of the spoke contract.
@@ -56,11 +59,10 @@ contract CreditDelegationPositionManager is
     uint256 amount,
     address onBehalfOf
   ) external returns (uint256, uint256) {
+    require(amount > 0, InvalidAmount());
     uint256 currentAllowance = _creditDelegations[onBehalfOf][msg.sender][reserveId];
-    if (currentAllowance < amount) {
-      revert InsufficientCreditDelegation();
-    }
-    _creditDelegations[onBehalfOf][msg.sender][reserveId] -= amount;
+    require(currentAllowance >= amount, InsufficientCreditDelegation(currentAllowance, amount));
+    _creditDelegations[onBehalfOf][msg.sender][reserveId] = currentAllowance.uncheckedSub(amount);
 
     IERC20 asset = _getReserveUnderlying(reserveId);
     (uint256 borrowedShares, uint256 borrowedAmount) = SPOKE.borrow(reserveId, amount, onBehalfOf);

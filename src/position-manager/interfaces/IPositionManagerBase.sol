@@ -6,11 +6,16 @@ import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 
+/// @title IPositionManagerBase
+/// @author Aave Labs
+/// @notice Base interface for position managers.
 interface IPositionManagerBase is IMulticall {
   /// @notice Thrown when the specified address is invalid.
   error InvalidAddress();
   /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
   error InvalidSignature();
+  /// @notice Thrown when the specified amount is invalid.
+  error InvalidAmount();
 
   /// @notice Facilitates setting this gateway as user position manager on the `spoke`
   /// with a typed signature from `user`.
@@ -40,5 +45,6 @@ interface IPositionManagerBase is IMulticall {
     bytes32 permitS
   ) external;
 
+  /// @notice The spoke contract associated with this position manager.
   function SPOKE() external view returns (ISpoke);
 }

@@ -50,6 +50,18 @@ contract EIP712HashTest is Test {
         'UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)'
       )
     );
+    assertEq(
+      EIP712Hash.WITHDRAW_PERMIT_TYPEHASH,
+      keccak256(
+        'WithdrawPermit(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)'
+      )
+    );
+    assertEq(
+      EIP712Hash.CREDIT_DELEGATION_TYPEHASH,
+      keccak256(
+        'CreditDelegation(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)'
+      )
+    );
   }
 
   function test_hash_supply_fuzz(EIP712Types.Supply calldata params) public pure {
@@ -158,6 +170,40 @@ contract EIP712HashTest is Test {
         EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
         params.spoke,
         params.user,
+        params.nonce,
+        params.deadline
+      )
+    );
+
+    assertEq(params.hash(), expectedHash);
+  }
+
+  function test_hash_withdrawPermit_fuzz(EIP712Types.WithdrawPermit calldata params) public pure {
+    bytes32 expectedHash = keccak256(
+      abi.encode(
+        EIP712Hash.WITHDRAW_PERMIT_TYPEHASH,
+        params.owner,
+        params.spender,
+        params.reserveId,
+        params.amount,
+        params.nonce,
+        params.deadline
+      )
+    );
+
+    assertEq(params.hash(), expectedHash);
+  }
+
+  function test_hash_creditDelegation_fuzz(
+    EIP712Types.CreditDelegation calldata params
+  ) public pure {
+    bytes32 expectedHash = keccak256(
+      abi.encode(
+        EIP712Hash.CREDIT_DELEGATION_TYPEHASH,
+        params.owner,
+        params.spender,
+        params.reserveId,
+        params.amount,
         params.nonce,
         params.deadline
       )

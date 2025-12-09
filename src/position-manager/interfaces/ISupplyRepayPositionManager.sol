@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
+/// @title ISupplyRepayPositionManager
+/// @author Aave Labs
+/// @notice Interface for position manager handling supply and repay actions on behalf of users.
 interface ISupplyRepayPositionManager is IPositionManagerBase {
   /// @notice Executes a supply on behalf of a user.
   /// @param reserveId The identifier of the reserve.

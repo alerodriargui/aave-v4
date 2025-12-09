@@ -22,6 +22,7 @@ contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionMana
     uint256 amount,
     address onBehalfOf
   ) external returns (uint256, uint256) {
+    require(amount > 0, InvalidAmount());
     IERC20 asset = _getReserveUnderlying(reserveId);
     asset.safeTransferFrom(msg.sender, address(this), amount);
     asset.forceApprove(address(SPOKE), amount);
@@ -34,10 +35,14 @@ contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionMana
     uint256 amount,
     address onBehalfOf
   ) external returns (uint256, uint256) {
-    // TODO : see for limitations on repay amount ?
+    require(amount > 0, InvalidAmount());
     IERC20 asset = _getReserveUnderlying(reserveId);
-    asset.safeTransferFrom(msg.sender, address(this), amount);
-    asset.forceApprove(address(SPOKE), amount);
-    return SPOKE.repay(reserveId, amount, onBehalfOf);
+
+    uint256 userTotalDebt = SPOKE.getUserTotalDebt(reserveId, onBehalfOf);
+    uint256 repayAmount = amount > userTotalDebt ? userTotalDebt : amount;
+
+    asset.safeTransferFrom(msg.sender, address(this), repayAmount);
+    asset.forceApprove(address(SPOKE), repayAmount);
+    return SPOKE.repay(reserveId, repayAmount, onBehalfOf);
   }
 }
