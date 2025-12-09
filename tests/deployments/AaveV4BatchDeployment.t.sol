@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import 'tests/utils/BatchTestProcedures.sol';
 
 contract AaveV4BatchDeploymentTest is BatchTestProcedures {
-  address public deployer;
   Logger public logger;
   FullDeployInputs public inputs;
   address public weth9;
@@ -26,41 +25,63 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     inputs = FullDeployInputs({
       admin: makeAddr('admin'),
       nativeWrapperAddress: weth9,
-      setRoles: true,
+      grantRoles: true,
       hubLabels: hubLabels,
       spokeLabels: spokeLabels
     });
   }
 
-  function testAaveV4BatchDeployment_withRoles() public {
-    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(
-      deployer,
-      logger,
-      inputs
-    );
+  function testAaveV4BatchDeployment() public {
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
     _checkDeployment(report, inputs);
     _checkRoles(report, inputs);
   }
 
   function testAaveV4BatchDeployment_withoutRoles() public {
-    inputs.setRoles = false;
+    inputs.grantRoles = false;
 
-    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(
-      deployer,
-      logger,
-      inputs
-    );
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
     _checkDeployment(report, inputs);
   }
 
   function testAaveV4BatchDeployment_withoutNativeGateway() public {
     inputs.nativeWrapperAddress = address(0);
 
-    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(
-      deployer,
-      logger,
-      inputs
-    );
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
     _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withoutHubs() public {
+    inputs.hubLabels = new string[](0);
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withoutSpokes() public {
+    inputs.spokeLabels = new string[](0);
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withZeroAdminAddress() public {
+    inputs.admin = address(0);
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withZeroAdminAddress_withoutRoles() public {
+    inputs.admin = address(0);
+    inputs.grantRoles = false;
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
   }
 }

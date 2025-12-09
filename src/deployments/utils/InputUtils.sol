@@ -11,20 +11,20 @@ contract InputUtils {
   struct FullDeployInputs {
     address admin;
     address nativeWrapperAddress;
-    bool setRoles;
+    bool grantRoles;
     string[] hubLabels;
     string[] spokeLabels;
   }
 
   struct SpokeDeployInputs {
     address admin;
-    bool setRoles;
+    bool grantRoles;
     string spokeLabel;
   }
 
   struct HubDeployInputs {
     address admin;
-    bool setRoles;
+    bool grantRoles;
     string hubLabel;
   }
 
@@ -36,7 +36,7 @@ contract InputUtils {
     string memory json = vm.readFile(inputPath);
     inputs.admin = json.readAddress('.admin');
     inputs.nativeWrapperAddress = json.readAddress('.nativeWrapperAddress');
-    inputs.setRoles = json.readBool('.setRoles');
+    inputs.grantRoles = json.readBool('.grantRoles');
     inputs.hubLabels = json.readStringArray('.hubLabels');
     inputs.spokeLabels = json.readStringArray('.spokeLabels');
     return inputs;

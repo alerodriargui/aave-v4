@@ -2,13 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'forge-std/Vm.sol';
+// import 'forge-std/Vm.sol';
 
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {AaveV4DeployCore} from 'src/deployments/orchestration/AaveV4DeployCore.sol';
-
 import {AaveV4AccessBatch} from 'src/deployments/batches/AaveV4AccessBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
@@ -26,7 +25,7 @@ import {
 } from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 
 library AaveV4DeployOrchestration {
-  Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
+  // Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
 
   uint8 private constant ORACLE_DECIMALS = 8;
   string private constant ORACLE_SUFFIX = ' (USD)';
@@ -38,68 +37,55 @@ library AaveV4DeployOrchestration {
     address nativeWrapper,
     string[] memory hubLabels,
     string[] memory spokeLabels,
-    bool setRoles
+    bool grantRoles
   ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
     // Deploy Access Batch
-    address accessManagerAdmin = setRoles ? deployer : admin;
+    address accessManagerAdmin = deployer;
     report.accessBatchReport = _deployAccessBatch(logger, accessManagerAdmin);
 
+    // if admin is zero address, use deployer as contract admin
+    // spoke proxyAdmin owner; hubAdmin; spokeAdmin
+    address contractAdmin = admin != address(0) ? admin : deployer;
+
     // Deploy Configurator Batch
-    report.configuratorBatchReport = _deployConfiguratorBatch(logger, admin);
+    report.configuratorBatchReport = _deployConfiguratorBatch(logger, contractAdmin);
 
     // Deploy Hub Batches
     report.hubBatchReports = _deployHubs(
       logger,
-      admin,
+      contractAdmin,
       report.accessBatchReport.accessManagerAddress,
-      hubLabels,
-      setRoles
+      hubLabels
     );
 
     // Deploy Spoke Instance Batches
     report.spokeInstanceBatchReports = _deploySpokes(
       logger,
-      admin,
+      contractAdmin,
       report.accessBatchReport.accessManagerAddress,
-      spokeLabels,
-      setRoles
+      spokeLabels
     );
 
     // Deploy Gateways Batch
-    report.gatewaysBatchReport = _deployGatewayBatch(logger, admin, nativeWrapper);
+    report.gatewaysBatchReport = _deployGatewayBatch(logger, contractAdmin, nativeWrapper);
 
     // Set Roles if needed
-    if (setRoles) {
-      logger.log('...Granting Hub Admin role...');
-      AaveV4HubRolesProcedure.grantHubAdminRole(
-        report.accessBatchReport.accessManagerAddress,
-        admin
-      );
+    if (grantRoles) {
+      if (hubLabels.length > 0) {
+        _grantHubRoles(logger, report, contractAdmin);
+      }
+      if (spokeLabels.length > 0) {
+        _grantSpokeRoles(logger, report, contractAdmin);
+      }
 
-      logger.log('...Granting Spoke Admin role...');
-      AaveV4SpokeRolesProcedure.grantSpokeAdminRole(
-        report.accessBatchReport.accessManagerAddress,
-        admin
-      );
-
-      logger.log('...Granting Hub Configurator roles...');
-      AaveV4HubRolesProcedure.grantHubConfiguratorRole({
-        accessManagerAddress: report.accessBatchReport.accessManagerAddress,
-        hubConfiguratorAddress: report.configuratorBatchReport.hubConfiguratorAddress
-      });
-
-      logger.log('...Granting Spoke Configurator roles...');
-      AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole({
-        accessManagerAddress: report.accessBatchReport.accessManagerAddress,
-        spokeConfiguratorAddress: report.configuratorBatchReport.spokeConfiguratorAddress
-      });
-
-      logger.log('...Granting AccessManager Root Admin role...');
-      AaveV4AccessManagerRolesProcedure.grantRootAdminRole(
-        report.accessBatchReport.accessManagerAddress,
-        admin,
-        deployer
-      );
+      if (contractAdmin != deployer) {
+        logger.log('...Granting AccessManager Root Admin role...');
+        AaveV4AccessManagerRolesProcedure.grantRootAdminRole(
+          report.accessBatchReport.accessManagerAddress,
+          contractAdmin,
+          deployer
+        );
+      }
     }
 
     return
@@ -110,6 +96,39 @@ library AaveV4DeployOrchestration {
         report.spokeInstanceBatchReports,
         report.gatewaysBatchReport
       );
+  }
+
+  function _grantHubRoles(
+    Logger logger,
+    OrchestrationReports.FullDeploymentReport memory report,
+    address admin
+  ) internal {
+    logger.log('...Granting Hub Admin role...');
+    AaveV4HubRolesProcedure.grantHubAdminRole(report.accessBatchReport.accessManagerAddress, admin);
+
+    logger.log('...Granting Hub Configurator roles...');
+    AaveV4HubRolesProcedure.grantHubConfiguratorRole({
+      accessManagerAddress: report.accessBatchReport.accessManagerAddress,
+      hubConfiguratorAddress: report.configuratorBatchReport.hubConfiguratorAddress
+    });
+  }
+
+  function _grantSpokeRoles(
+    Logger logger,
+    OrchestrationReports.FullDeploymentReport memory report,
+    address admin
+  ) internal {
+    logger.log('...Granting Spoke Admin role...');
+    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(
+      report.accessBatchReport.accessManagerAddress,
+      admin
+    );
+
+    logger.log('...Granting Spoke Configurator roles...');
+    AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole({
+      accessManagerAddress: report.accessBatchReport.accessManagerAddress,
+      spokeConfiguratorAddress: report.configuratorBatchReport.spokeConfiguratorAddress
+    });
   }
 
   function _deployAccessBatch(
@@ -143,13 +162,12 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address admin,
     address accessManagerAddress,
-    string[] memory hubLabels,
-    bool setRoles
+    string[] memory hubLabels
   ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubBatchReports) {
     uint256 hubCount = hubLabels.length;
     hubBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
     for (uint256 i; i < hubCount; ++i) {
-      hubBatchReports[i] = _deployHub(logger, admin, accessManagerAddress, hubLabels[i], setRoles);
+      hubBatchReports[i] = _deployHub(logger, admin, accessManagerAddress, hubLabels[i]);
     }
     logger.log('');
     return hubBatchReports;
@@ -159,8 +177,7 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address admin,
     address accessManagerAddress,
-    string memory label,
-    bool setRoles
+    string memory label
   ) internal returns (OrchestrationReports.HubDeploymentReport memory) {
     OrchestrationReports.HubDeploymentReport memory hubReport;
     hubReport.label = label;
@@ -171,11 +188,8 @@ library AaveV4DeployOrchestration {
     logger.log('  InterestRateStrategy', hubReport.report.irStrategyAddress);
     logger.log('  TreasurySpoke', hubReport.report.treasurySpokeAddress);
 
-    if (setRoles) {
-      logger.log('...Setting Hub roles...');
-
-      AaveV4HubRolesProcedure.setHubRoles(accessManagerAddress, hubReport.report.hubAddress);
-    }
+    logger.log('...Setting Hub roles...');
+    AaveV4HubRolesProcedure.setHubRoles(accessManagerAddress, hubReport.report.hubAddress);
 
     return hubReport;
   }
@@ -184,19 +198,12 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address admin,
     address accessManagerAddress,
-    string[] memory spokeLabels,
-    bool setRoles
+    string[] memory spokeLabels
   ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
     uint256 spokeCount = spokeLabels.length;
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
-      spokeBatchReports[i] = _deploySpoke(
-        logger,
-        admin,
-        accessManagerAddress,
-        spokeLabels[i],
-        setRoles
-      );
+      spokeBatchReports[i] = _deploySpoke(logger, admin, accessManagerAddress, spokeLabels[i]);
     }
     logger.log('');
     return spokeBatchReports;
@@ -206,8 +213,7 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address admin,
     address accessManagerAddress,
-    string memory label,
-    bool setRoles
+    string memory label
   ) internal returns (OrchestrationReports.SpokeDeploymentReport memory) {
     OrchestrationReports.SpokeDeploymentReport memory spokeReport;
 
@@ -219,14 +225,11 @@ library AaveV4DeployOrchestration {
     logger.log('  SpokeInstance Implementation', spokeReport.report.spokeImplementationAddress);
     logger.log('  AaveOracle', spokeReport.report.aaveOracleAddress);
 
-    if (setRoles) {
-      logger.log('...Setting Spoke roles...');
-
-      AaveV4SpokeRolesProcedure.setSpokeRoles(
-        accessManagerAddress,
-        spokeReport.report.spokeProxyAddress
-      );
-    }
+    logger.log('...Setting Spoke roles...');
+    AaveV4SpokeRolesProcedure.setSpokeRoles(
+      accessManagerAddress,
+      spokeReport.report.spokeProxyAddress
+    );
 
     return spokeReport;
   }

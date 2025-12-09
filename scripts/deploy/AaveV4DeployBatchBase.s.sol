@@ -35,7 +35,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, DeployUtils, InputUtils
         nativeWrapper: inputs.nativeWrapperAddress,
         hubLabels: inputs.hubLabels,
         spokeLabels: inputs.spokeLabels,
-        setRoles: inputs.setRoles
+        grantRoles: inputs.grantRoles
       });
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
@@ -48,8 +48,11 @@ abstract contract AaveV4DeployBatchBaseScript is Script, DeployUtils, InputUtils
     MetadataLogger logger,
     FullDeployInputs memory inputs
   ) internal pure virtual {
-    if (inputs.setRoles) {
+    if (inputs.grantRoles) {
       logger.log('WARNING: Roles are being set');
+      if (inputs.admin == address(0)) {
+        logger.log('WARNING: Admin is zero address; Roles can not be set');
+      }
     }
     if (inputs.hubLabels.length == 0) {
       logger.log('WARNING: Hub will not be deployed');
