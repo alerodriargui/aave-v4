@@ -20,13 +20,13 @@ interface IWithdrawPermitPositionManager is IPositionManagerBase {
     uint256 amount
   );
 
-  /// @notice Approves a withdraw allowance for a spender.
+  /// @notice Approves a spender to withdraw assets from the specified reserve on the spoke.
   /// @param spender The address of the spender to receive the allowance.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of allowance.
   function approveWithdraw(address spender, uint256 reserveId, uint256 amount) external;
 
-  /// @notice Approves a withdraw allowance for a spender via signature.
+  /// @notice Approves a spender to withdraw assets from the specified reserve on the spoke via signature.
   /// @param params The structured WithdrawPermit parameters.
   /// @param signature The signed bytes for the intent.
   function approveWithdrawWithSig(

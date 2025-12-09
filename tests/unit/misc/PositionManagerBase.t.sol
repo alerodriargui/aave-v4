@@ -25,7 +25,7 @@ contract PositionManagerBaseTest is SpokeBase {
     vm.assume(randomSpoke != address(0));
     PositionManagerBaseWrapper pm = new PositionManagerBaseWrapper(randomSpoke);
 
-    assertEq(address(pm.SPOKE()), randomSpoke);
+    assertEq(pm.SPOKE(), randomSpoke);
   }
 
   function test_constructor_revertsWith_InvalidAddress() public {

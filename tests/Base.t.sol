@@ -64,6 +64,9 @@ import {GatewayBase, IGatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 import {SignatureGateway, ISignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 import {PositionManagerBase, IPositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
+import {SupplyRepayPositionManager, ISupplyRepayPositionManager} from 'src/position-manager/SupplyRepayPositionManager.sol';
+import {WithdrawPermitPositionManager, IWithdrawPermitPositionManager} from 'src/position-manager/WithdrawPermitPositionManager.sol';
+import {CreditDelegationPositionManager, ICreditDelegationPositionManager} from 'src/position-manager/CreditDelegationPositionManager.sol';
 
 // test
 import {Constants} from 'tests/Constants.sol';
