@@ -4,7 +4,9 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract SpokeInvestigateOogTest is SpokeBase {
+contract SpokeMaxReservesTest is SpokeBase {
+  uint256 public constant MAX_TX_GAS = 16_780_000;
+
   function setUp() public override {
     super.setUp();
 
@@ -12,7 +14,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
     _addNewAssetsAndReserves(161);
   }
 
-  function test_oog() public {
+  function test_spokeMaxReserves() public {
     uint256 i;
     // Supply x collaterals
     for (i = 0; i < spoke1.getReserveCount(); i++) {
@@ -24,7 +26,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
       spoke1.borrow(i, 500e18, alice);
       uint256 gasUsed = vm.snapshotGasLastCall('Spoke.Investigation', 'borrow');
 
-      if (gasUsed > 44990000) {
+      if (gasUsed > MAX_TX_GAS) {
         console.log('OOG at', i + 1, 'collaterals');
         break;
       }
@@ -44,7 +46,7 @@ contract SpokeInvestigateOogTest is SpokeBase {
     vm.prank(bob);
     spoke1.liquidationCall(0, 1, alice, 1, false);
     uint256 gasUsed = vm.snapshotGasLastCall('Spoke.Investigation', 'liquidationCall');
-    if (gasUsed > 44990000) {
+    if (gasUsed > MAX_TX_GAS) {
       console.log('Liquidation OOG at ', i, ' collaterals');
       return;
     }
