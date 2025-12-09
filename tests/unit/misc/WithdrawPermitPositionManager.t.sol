@@ -116,8 +116,6 @@ contract WithdrawPermitPositionManagerTest is SpokeBase {
     assertEq(positionManager.withdrawAllowance(alice, spender, reserveId), amount);
   }
 
-  // approve with sig
-
   function test_approveWithdrawWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
     EIP712Types.WithdrawPermit memory p = _withdrawPermitData(
       vm.randomAddress(),
