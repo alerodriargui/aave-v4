@@ -59,6 +59,9 @@ interface ICreditDelegationPositionManager is IPositionManagerBase {
     uint256 reserveId
   ) external view returns (uint256);
 
+  /// @notice Returns the EIP712 domain separator.
+  function DOMAIN_SEPARATOR() external view returns (bytes32);
+
   /// @notice Returns the type hash for the CreditDelegation intent.
   function CREDIT_DELEGATION_TYPEHASH() external view returns (bytes32);
 }

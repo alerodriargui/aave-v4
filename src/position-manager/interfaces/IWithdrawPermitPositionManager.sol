@@ -59,6 +59,9 @@ interface IWithdrawPermitPositionManager is IPositionManagerBase {
     uint256 reserveId
   ) external view returns (uint256);
 
+  /// @notice Returns the EIP712 domain separator.
+  function DOMAIN_SEPARATOR() external view returns (bytes32);
+
   /// @notice Returns the type hash for the WithdrawPermit intent.
   function WITHDRAW_PERMIT_TYPEHASH() external view returns (bytes32);
 }

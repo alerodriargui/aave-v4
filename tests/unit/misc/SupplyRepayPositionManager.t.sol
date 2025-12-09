@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
-contract PositionManagerBaseTest is SpokeBase {
+contract SupplyRepayPositionManagerTest is SpokeBase {
   ISpoke public spoke;
   SupplyRepayPositionManager public positionManager;
   TestReturnValues public returnValues;

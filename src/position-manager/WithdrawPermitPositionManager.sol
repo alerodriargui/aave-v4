@@ -86,8 +86,13 @@ contract WithdrawPermitPositionManager is
   }
 
   /// @inheritdoc IWithdrawPermitPositionManager
+  function DOMAIN_SEPARATOR() external view returns (bytes32) {
+    return _domainSeparator();
+  }
+
+  /// @inheritdoc IWithdrawPermitPositionManager
   function WITHDRAW_PERMIT_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.WITHDRAW_TYPEHASH;
+    return EIP712Hash.WITHDRAW_PERMIT_TYPEHASH;
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

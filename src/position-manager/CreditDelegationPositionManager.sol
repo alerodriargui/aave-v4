@@ -86,6 +86,11 @@ contract CreditDelegationPositionManager is
   }
 
   /// @inheritdoc ICreditDelegationPositionManager
+  function DOMAIN_SEPARATOR() external view returns (bytes32) {
+    return _domainSeparator();
+  }
+
+  /// @inheritdoc ICreditDelegationPositionManager
   function CREDIT_DELEGATION_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.CREDIT_DELEGATION_TYPEHASH;
   }
