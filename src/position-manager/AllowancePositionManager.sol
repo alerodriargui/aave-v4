@@ -80,6 +80,18 @@ contract AllowancePositionManager is
   }
 
   /// @inheritdoc IAllowancePositionManager
+  function renounceWithdrawAllowance(address owner, uint256 reserveId) external {
+    _withdrawAllowances[owner][msg.sender][reserveId] = 0;
+    emit WithdrawApproval(owner, msg.sender, reserveId, 0);
+  }
+
+  /// @inheritdoc IAllowancePositionManager
+  function renounceCreditDelegation(address owner, uint256 reserveId) external {
+    _creditDelegations[owner][msg.sender][reserveId] = 0;
+    emit CreditDelegation(owner, msg.sender, reserveId, 0);
+  }
+
+  /// @inheritdoc IAllowancePositionManager
   function withdrawOnBehalfOf(
     uint256 reserveId,
     uint256 amount,

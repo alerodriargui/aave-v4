@@ -165,6 +165,21 @@ contract AllowancePositionManagerTest is SpokeBase {
     positionManager.approveWithdrawWithSig(p, signature);
   }
 
+  function test_renounceWithdrawAllowance_fuzz(uint256 initialAllowance) public {
+    uint256 reserveId = _randomReserveId(spoke);
+    initialAllowance = bound(initialAllowance, 1, mintAmount_DAI);
+
+    vm.prank(alice);
+    positionManager.approveWithdraw(bob, reserveId, initialAllowance);
+
+    vm.expectEmit(address(positionManager));
+    emit IAllowancePositionManager.WithdrawApproval(alice, bob, reserveId, 0);
+    vm.prank(bob);
+    positionManager.renounceWithdrawAllowance(alice, reserveId);
+
+    assertEq(positionManager.withdrawAllowance(alice, bob, reserveId), 0);
+  }
+
   function test_withdrawOnBehalfOf() public {
     test_withdrawOnBehalfOf_fuzz(100e18);
   }
@@ -505,6 +520,21 @@ contract AllowancePositionManagerTest is SpokeBase {
     );
     vm.prank(vm.randomAddress());
     positionManager.approveCreditDelegationWithSig(p, signature);
+  }
+
+  function test_renounceCreditDelegation_fuzz(uint256 initialAllowance) public {
+    uint256 reserveId = _randomReserveId(spoke);
+    initialAllowance = bound(initialAllowance, 1, mintAmount_DAI);
+
+    vm.prank(alice);
+    positionManager.approveCreditDelegation(bob, reserveId, initialAllowance);
+
+    vm.expectEmit(address(positionManager));
+    emit IAllowancePositionManager.CreditDelegation(alice, bob, reserveId, 0);
+    vm.prank(bob);
+    positionManager.renounceCreditDelegation(alice, reserveId);
+
+    assertEq(positionManager.creditDelegationAllowance(alice, bob, reserveId), 0);
   }
 
   function test_borrowOnBehalfOf() public {

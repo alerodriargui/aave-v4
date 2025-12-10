@@ -58,6 +58,16 @@ interface IAllowancePositionManager is IPositionManagerBase {
     bytes calldata signature
   ) external;
 
+  /// @notice Renounces the withdraw allowance given by the owner.
+  /// @param owner The address of the owner.
+  /// @param reserveId The identifier of the reserve.
+  function renounceWithdrawAllowance(address owner, uint256 reserveId) external;
+
+  /// @notice Renounces the credit delegation allowance given by the owner.
+  /// @param owner The address of the owner.
+  /// @param reserveId The identifier of the reserve.
+  function renounceCreditDelegation(address owner, uint256 reserveId) external;
+
   /// @notice Executes a withdraw on behalf of a user.
   /// @dev The caller must have sufficient withdraw allowance from `onBehalfOf`.
   /// @dev The caller receives the withdrawn assets.
