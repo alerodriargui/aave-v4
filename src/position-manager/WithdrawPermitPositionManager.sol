@@ -8,7 +8,7 @@ import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {IWithdrawPermitPositionManager} from 'src/position-manager/interfaces/IWithdrawPermitPositionManager.sol';
 
@@ -66,7 +66,7 @@ contract WithdrawPermitPositionManager is
     _withdrawAllowances[onBehalfOf][msg.sender][reserveId] = currentAllowance.uncheckedSub(amount);
 
     IERC20 asset = _getReserveUnderlying(reserveId);
-    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(SPOKE).withdraw(
+    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(SPOKE).withdraw(
       reserveId,
       amount,
       onBehalfOf

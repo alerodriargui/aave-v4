@@ -1,0 +1,8 @@
+{
+  "Common - setSelfAsUserPositionManagerWithSig": "72588",
+  "CreditDelegationPositionManager - borrowOnBehalfOf": "306488",
+  "SupplyRepayPositionManager - repayOnBehalfOf": "167131",
+  "SupplyRepayPositionManager - supplyOnBehalfOf": "135803",
+  "WithdrawPermitPositionManager - withdrawOnBehalfOf: full": "121600",
+  "WithdrawPermitPositionManager - withdrawOnBehalfOf: partial": "131799"
+}

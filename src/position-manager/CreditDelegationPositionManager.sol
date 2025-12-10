@@ -8,7 +8,7 @@ import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {ICreditDelegationPositionManager} from 'src/position-manager/interfaces/ICreditDelegationPositionManager.sol';
 
@@ -66,7 +66,7 @@ contract CreditDelegationPositionManager is
     _creditDelegations[onBehalfOf][msg.sender][reserveId] = currentAllowance.uncheckedSub(amount);
 
     IERC20 asset = _getReserveUnderlying(reserveId);
-    (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(SPOKE).borrow(
+    (uint256 borrowedShares, uint256 borrowedAmount) = ISpokeBase(SPOKE).borrow(
       reserveId,
       amount,
       onBehalfOf
