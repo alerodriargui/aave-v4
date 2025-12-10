@@ -10,13 +10,13 @@ import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
-import {ICreditDelegationPositionManager} from 'src/position-manager/interfaces/ICreditDelegationPositionManager.sol';
+import {IAllowancePositionManager} from 'src/position-manager/interfaces/IAllowancePositionManager.sol';
 
-/// @title CreditDelegationPositionManager
+/// @title AllowancePositionManager
 /// @author Aave Labs
-/// @notice Position manager to handle credit delegation and borrow actions on behalf of users.
-contract CreditDelegationPositionManager is
-  ICreditDelegationPositionManager,
+/// @notice Position manager to handle withdraw permit, credit delegation and borrow actions on behalf of users.
+contract AllowancePositionManager is
+  IAllowancePositionManager,
   PositionManagerBase,
   NoncesKeyed,
   EIP712
@@ -24,6 +24,10 @@ contract CreditDelegationPositionManager is
   using SafeERC20 for IERC20;
   using EIP712Hash for *;
   using MathUtils for uint256;
+
+  /// @notice Mapping of withdraw allowances.
+  mapping(address owner => mapping(address spender => mapping(uint256 reserveId => uint256 amount)))
+    private _withdrawAllowances;
 
   /// @notice Mapping of credit delegations.
   mapping(address owner => mapping(address spender => mapping(uint256 reserveId => uint256 amount)))
@@ -33,13 +37,34 @@ contract CreditDelegationPositionManager is
   /// @param spoke_ The address of the spoke contract.
   constructor(address spoke_) PositionManagerBase(spoke_) {}
 
-  /// @inheritdoc ICreditDelegationPositionManager
+  /// @inheritdoc IAllowancePositionManager
+  function approveWithdraw(address spender, uint256 reserveId, uint256 amount) external {
+    _withdrawAllowances[msg.sender][spender][reserveId] = amount;
+    emit WithdrawApproval(msg.sender, spender, reserveId, amount);
+  }
+
+  /// @inheritdoc IAllowancePositionManager
+  function approveWithdrawWithSig(
+    EIP712Types.WithdrawPermit calldata params,
+    bytes calldata signature
+  ) external {
+    require(block.timestamp <= params.deadline, InvalidSignature());
+    address user = params.owner;
+    bytes32 digest = _hashTypedData(params.hash());
+    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
+    _useCheckedNonce(user, params.nonce);
+
+    _withdrawAllowances[user][params.spender][params.reserveId] = params.amount;
+    emit WithdrawApproval(user, params.spender, params.reserveId, params.amount);
+  }
+
+  /// @inheritdoc IAllowancePositionManager
   function approveCreditDelegation(address spender, uint256 reserveId, uint256 amount) external {
     _creditDelegations[msg.sender][spender][reserveId] = amount;
     emit CreditDelegation(msg.sender, spender, reserveId, amount);
   }
 
-  /// @inheritdoc ICreditDelegationPositionManager
+  /// @inheritdoc IAllowancePositionManager
   function approveCreditDelegationWithSig(
     EIP712Types.CreditDelegation calldata params,
     bytes calldata signature
@@ -54,7 +79,29 @@ contract CreditDelegationPositionManager is
     emit CreditDelegation(user, params.spender, params.reserveId, params.amount);
   }
 
-  /// @inheritdoc ICreditDelegationPositionManager
+  /// @inheritdoc IAllowancePositionManager
+  function withdrawOnBehalfOf(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external returns (uint256, uint256) {
+    require(amount > 0, InvalidAmount());
+    uint256 currentAllowance = _withdrawAllowances[onBehalfOf][msg.sender][reserveId];
+    require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
+    _withdrawAllowances[onBehalfOf][msg.sender][reserveId] = currentAllowance.uncheckedSub(amount);
+
+    IERC20 asset = _getReserveUnderlying(reserveId);
+    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(SPOKE).withdraw(
+      reserveId,
+      amount,
+      onBehalfOf
+    );
+    asset.safeTransfer(msg.sender, withdrawnAmount);
+
+    return (withdrawnShares, withdrawnAmount);
+  }
+
+  /// @inheritdoc IAllowancePositionManager
   function borrowOnBehalfOf(
     uint256 reserveId,
     uint256 amount,
@@ -76,7 +123,16 @@ contract CreditDelegationPositionManager is
     return (borrowedShares, borrowedAmount);
   }
 
-  /// @inheritdoc ICreditDelegationPositionManager
+  /// @inheritdoc IAllowancePositionManager
+  function withdrawAllowance(
+    address owner,
+    address spender,
+    uint256 reserveId
+  ) external view returns (uint256) {
+    return _withdrawAllowances[owner][spender][reserveId];
+  }
+
+  /// @inheritdoc IAllowancePositionManager
   function creditDelegationAllowance(
     address owner,
     address spender,
@@ -85,17 +141,22 @@ contract CreditDelegationPositionManager is
     return _creditDelegations[owner][spender][reserveId];
   }
 
-  /// @inheritdoc ICreditDelegationPositionManager
+  /// @inheritdoc IAllowancePositionManager
   function DOMAIN_SEPARATOR() external view returns (bytes32) {
     return _domainSeparator();
   }
 
-  /// @inheritdoc ICreditDelegationPositionManager
+  /// @inheritdoc IAllowancePositionManager
+  function WITHDRAW_PERMIT_TYPEHASH() external pure returns (bytes32) {
+    return EIP712Hash.WITHDRAW_PERMIT_TYPEHASH;
+  }
+
+  /// @inheritdoc IAllowancePositionManager
   function CREDIT_DELEGATION_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.CREDIT_DELEGATION_TYPEHASH;
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
-    return ('CreditDelegationPositionManager', '1');
+    return ('AllowancePositionManager', '1');
   }
 }

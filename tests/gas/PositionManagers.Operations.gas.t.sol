@@ -89,16 +89,16 @@ contract SupplyRepayPositionManager_Gas_Tests is SpokeBase {
 }
 
 /// forge-config: default.isolate = true
-contract WithdrawPermitPositionManager_Gas_Tests is SpokeBase {
+contract AllowancePositionManager_Gas_Tests is SpokeBase {
   string internal NAMESPACE = 'PositionManager.Operations';
 
-  WithdrawPermitPositionManager public positionManager;
+  AllowancePositionManager public positionManager;
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
 
-    positionManager = new WithdrawPermitPositionManager(address(spoke1));
+    positionManager = new AllowancePositionManager(address(spoke1));
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);
     vm.prank(alice);
@@ -116,35 +116,14 @@ contract WithdrawPermitPositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.withdrawOnBehalfOf(_daiReserveId(spoke1), amount, alice);
-    vm.snapshotGasLastCall(
-      NAMESPACE,
-      'WithdrawPermitPositionManager - withdrawOnBehalfOf: partial'
-    );
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager - withdrawOnBehalfOf: partial');
 
     vm.prank(alice);
     positionManager.approveWithdraw(bob, _daiReserveId(spoke1), UINT256_MAX);
 
     vm.prank(bob);
     positionManager.withdrawOnBehalfOf(_daiReserveId(spoke1), UINT256_MAX, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'WithdrawPermitPositionManager - withdrawOnBehalfOf: full');
-  }
-}
-
-/// forge-config: default.isolate = true
-contract CreditDelegationPositionManager_Gas_Tests is SpokeBase {
-  string internal NAMESPACE = 'PositionManager.Operations';
-
-  CreditDelegationPositionManager public positionManager;
-
-  function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
-
-    positionManager = new CreditDelegationPositionManager(address(spoke1));
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updatePositionManager(address(positionManager), true);
-    vm.prank(alice);
-    spoke1.setUserPositionManager(address(positionManager), true);
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager - withdrawOnBehalfOf: full');
   }
 
   function test_borrowOnBehalfOf() public {
@@ -160,6 +139,6 @@ contract CreditDelegationPositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.borrowOnBehalfOf(_daiReserveId(spoke1), borrowAmount, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'CreditDelegationPositionManager - borrowOnBehalfOf');
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager - borrowOnBehalfOf');
   }
 }
