@@ -17,6 +17,7 @@ contract SpokeMaxReservesTest is SpokeBase {
   function test_spokeMaxReserves() public {
     uint256 i;
     uint256 gasUsed;
+    uint256 gasUsedPrev;
     // Supply x collaterals
     for (i = 0; i < spoke1.getReserveCount(); i++) {
       Utils.supplyCollateral(spoke1, i, alice, 1000e18, alice);
@@ -34,6 +35,15 @@ contract SpokeMaxReservesTest is SpokeBase {
 
       console.log('Alice could borrow using', i + 1, 'collaterals');
       console.log('Cost', gasUsed);
+
+      if (i + 1 == 10 || i + 1 == 50 || i + 1 == 100 || i + 1 == 150) {
+        gasUsedPrev = gasUsed;
+      } else if (i + 1 == 11 || i + 1 == 51 || i + 1 == 101 || i + 1 == 151) {
+        uint256 gasDiff = gasUsed - gasUsedPrev;
+        console.log('Gas increase from ', i);
+        console.log(' to ', i + 1);
+        console.log(' collaterals: ', gasDiff);
+      }
     }
 
     skip(10000 days);
