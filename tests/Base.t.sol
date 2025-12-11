@@ -66,6 +66,8 @@ import {SignatureGateway, ISignatureGateway} from 'src/position-manager/Signatur
 import {PositionManagerBase, IPositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {SupplyRepayPositionManager, ISupplyRepayPositionManager} from 'src/position-manager/SupplyRepayPositionManager.sol';
 import {AllowancePositionManager, IAllowancePositionManager} from 'src/position-manager/AllowancePositionManager.sol';
+import {PositionConfigPositionManager, IPositionConfigPositionManager} from 'src/position-manager/PositionConfigPositionManager.sol';
+import {ConfigPermissions, ConfigPermissionsMap} from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
 
 // test
 import {Constants} from 'tests/Constants.sol';
