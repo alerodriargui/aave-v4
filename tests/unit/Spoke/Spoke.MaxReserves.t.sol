@@ -16,6 +16,7 @@ contract SpokeMaxReservesTest is SpokeBase {
 
   function test_spokeMaxReserves() public {
     uint256 i;
+    uint256 gasUsed;
     // Supply x collaterals
     for (i = 0; i < spoke1.getReserveCount(); i++) {
       Utils.supplyCollateral(spoke1, i, alice, 1000e18, alice);
@@ -24,7 +25,7 @@ contract SpokeMaxReservesTest is SpokeBase {
 
       vm.prank(alice);
       spoke1.borrow(i, 500e18, alice);
-      uint256 gasUsed = vm.snapshotGasLastCall('Spoke.Investigation', 'borrow');
+      gasUsed = vm.snapshotGasLastCall('Spoke.Investigation', 'borrow');
 
       if (gasUsed > MAX_TX_GAS) {
         console.log('OOG at', i + 1, 'collaterals');
@@ -45,7 +46,7 @@ contract SpokeMaxReservesTest is SpokeBase {
     console.log('Attempting liquidation with alice at ', i, ' collaterals');
     vm.prank(bob);
     spoke1.liquidationCall(0, 1, alice, 1, false);
-    uint256 gasUsed = vm.snapshotGasLastCall('Spoke.Investigation', 'liquidationCall');
+    gasUsed = vm.snapshotGasLastCall('Spoke.Investigation', 'liquidationCall');
     if (gasUsed > MAX_TX_GAS) {
       console.log('Liquidation OOG at ', i, ' collaterals');
       return;
