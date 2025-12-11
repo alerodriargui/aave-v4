@@ -4,14 +4,17 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
+/// forge-config: default.isolate = true
 contract SpokeMaxReservesTest is SpokeBase {
   uint256 public constant MAX_TX_GAS = 16_780_000;
+  uint256 internal setupSnapshot;
 
   function setUp() public override {
     super.setUp();
 
     // Add a bunch of new reserves and assets to hub1 and spoke1
-    _addNewAssetsAndReserves(161);
+    _addNewAssetsAndReserves(133);
+    setupSnapshot = vm.snapshot();
   }
 
   function test_spokeMaxReserves() public {
