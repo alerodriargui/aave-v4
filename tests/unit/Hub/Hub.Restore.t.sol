@@ -18,10 +18,7 @@ contract HubRestoreTest is HubBase {
 
     // Set up a hub configurator to test freezing and pausing assets
     hubConfigurator = new HubConfigurator(HUB_CONFIGURATOR_ADMIN);
-    IAccessManager accessManager = IAccessManager(hub1.authority());
-    // Grant hubConfigurator hub admin role with 0 delay
-    vm.prank(ADMIN);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
+    _grantHubConfiguratorRole(hub1, address(hubConfigurator));
   }
 
   function test_restore_revertsWith_SurplusDrawnRestored() public {

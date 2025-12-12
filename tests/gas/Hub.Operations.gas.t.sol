@@ -10,8 +10,8 @@ contract HubOperations_Gas_Tests is Base {
   using WadRayMath for uint256;
 
   function setUp() public override {
-    deployFixtures();
-    initEnvironment();
+    _setupFixtures();
+    _initEnvironment();
   }
 
   function test_add() public {

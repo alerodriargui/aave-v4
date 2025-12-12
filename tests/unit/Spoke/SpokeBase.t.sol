@@ -158,7 +158,7 @@ contract SpokeBase is Base {
 
   function setUp() public virtual override {
     super.setUp();
-    initEnvironment();
+    _initEnvironment();
   }
 
   /// @dev Opens a supply position for a random user
@@ -1104,15 +1104,15 @@ contract SpokeBase is Base {
   ) internal {
     address mockSpoke = address(new MockSpoke(spoke.ORACLE()));
 
-    address implementation = _getImplementationAddress(address(spoke));
+    address implementation = ProxyHelper.getImplementation(address(spoke));
 
-    vm.prank(_getProxyAdminAddress(address(spoke)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(address(mockSpoke), '');
 
     vm.prank(user);
     MockSpoke(address(spoke)).borrowWithoutHfCheck(reserveId, debtAmount, user);
 
-    vm.prank(_getProxyAdminAddress(address(spoke)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spoke)));
     ITransparentUpgradeableProxy(address(spoke)).upgradeToAndCall(implementation, '');
   }
 

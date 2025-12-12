@@ -7,8 +7,8 @@ import 'tests/Base.t.sol';
 /// forge-config: default.isolate = true
 contract SpokeGetters_Gas_Tests is Base {
   function setUp() public override {
-    deployFixtures();
-    initEnvironment();
+    _setupFixtures();
+    _initEnvironment();
   }
 
   function test_getUserAccountData() external {

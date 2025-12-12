@@ -5,9 +5,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeUpgradeableTest is SpokeBase {
-  bytes32 internal constant INITIALIZABLE_STORAGE =
-    0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00;
-
   address internal proxyAdminOwner = makeAddr('proxyAdminOwner');
   address internal oracle = makeAddr('AaveOracle');
 
@@ -25,7 +22,7 @@ contract SpokeUpgradeableTest is SpokeBase {
 
     assertEq(address(spokeImpl), spokeImplAddress);
     assertEq(spokeImpl.SPOKE_REVISION(), revision);
-    assertEq(_getProxyInitializedVersion(spokeImplAddress), type(uint64).max);
+    assertEq(ProxyHelper.getProxyInitializedVersion(spokeImplAddress), type(uint64).max);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     spokeImpl.initialize(address(accessManager));
@@ -69,10 +66,10 @@ contract SpokeUpgradeableTest is SpokeBase {
     );
 
     assertEq(address(spokeProxy), spokeProxyAddress);
-    assertEq(_getProxyAdminAddress(address(spokeProxy)), proxyAdminAddress);
-    assertEq(_getImplementationAddress(address(spokeProxy)), address(spokeImpl));
+    assertEq(ProxyHelper.getProxyAdmin(address(spokeProxy)), proxyAdminAddress);
+    assertEq(ProxyHelper.getImplementation(address(spokeProxy)), address(spokeImpl));
 
-    assertEq(_getProxyInitializedVersion(address(spokeProxy)), revision);
+    assertEq(ProxyHelper.getProxyInitializedVersion(address(spokeProxy)), revision);
     assertEq(spokeProxy.getLiquidationConfig(), expectedLiquidationConfig);
   }
 
@@ -89,7 +86,11 @@ contract SpokeUpgradeableTest is SpokeBase {
       )
     );
 
-    setUpRoles(hub1, ISpoke(address(spokeProxy)), accessManager);
+    OrchestrationReports.TestEnvReport memory report;
+    report.spokeReports = new OrchestrationReports.TestSpokeReport[](1);
+    report.spokeReports[0].spokeAddress = address(spokeProxy);
+    _setupFixturesRoles(report);
+
     uint128 targetHealthFactor = 1.05e18;
     _updateTargetHealthFactor(ISpoke(address(spokeProxy)), targetHealthFactor);
 
@@ -99,7 +100,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(address(spokeProxy));
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.recordLogs();
-    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spokeProxy)));
     spokeProxy.upgradeToAndCall(
       address(spokeImpl2),
       _getInitializeCalldata(address(accessManager))
@@ -138,13 +139,13 @@ contract SpokeUpgradeableTest is SpokeBase {
     );
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spokeProxy)));
     spokeProxy.upgradeToAndCall(address(spokeImpl), _getInitializeCalldata(address(accessManager)));
 
     uint64 secondRevision = uint64(vm.randomUint(0, initialRevision - 1));
     SpokeInstance spokeImpl2 = _deployMockSpokeInstance(secondRevision);
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spokeProxy)));
     spokeProxy.upgradeToAndCall(
       address(spokeImpl2),
       _getInitializeCalldata(address(accessManager))
@@ -175,7 +176,7 @@ contract SpokeUpgradeableTest is SpokeBase {
 
     SpokeInstance spokeImpl2 = _deployMockSpokeInstance(2);
     vm.expectRevert(ISpoke.InvalidAddress.selector);
-    vm.prank(_getProxyAdminAddress(address(spokeProxy)));
+    vm.prank(ProxyHelper.getProxyAdmin(address(spokeProxy)));
     spokeProxy.upgradeToAndCall(address(spokeImpl2), _getInitializeCalldata(address(0)));
   }
 
@@ -198,11 +199,6 @@ contract SpokeUpgradeableTest is SpokeBase {
       address(spokeImpl2),
       _getInitializeCalldata(address(accessManager))
     );
-  }
-
-  function _getProxyInitializedVersion(address proxy) internal view returns (uint64) {
-    bytes32 slotData = vm.load(proxy, INITIALIZABLE_STORAGE);
-    return uint64(uint256(slotData) & ((1 << 64) - 1));
   }
 
   function _getInitializeCalldata(address manager) internal pure returns (bytes memory) {

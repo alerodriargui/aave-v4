@@ -22,10 +22,7 @@ contract HubConfiguratorTest is HubBase {
   function setUp() public virtual override {
     super.setUp();
     hubConfigurator = new HubConfigurator(HUB_CONFIGURATOR_ADMIN);
-    IAccessManager accessManager = IAccessManager(hub1.authority());
-    // Grant hubConfigurator hub admin role with 0 delay
-    vm.prank(ADMIN);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
+    _grantHubConfiguratorRole(hub1, address(hubConfigurator));
     _assetId = daiAssetId;
     _encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({

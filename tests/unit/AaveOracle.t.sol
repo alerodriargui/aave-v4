@@ -21,7 +21,7 @@ contract AaveOracleTest is Base {
   uint256 private constant reserveId2 = 1;
 
   function setUp() public override {
-    deployFixtures();
+    _setupFixtures();
     oracle = new AaveOracle(address(spoke1), _oracleDecimals, _description);
   }
 

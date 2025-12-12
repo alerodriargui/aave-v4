@@ -28,7 +28,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   // collateral to liquidator = 6000 - 100 = 5900
   function setUp() public override {
     super.setUp();
-    (hub2, ) = hub2Fixture();
+    (hub2, ) = _hub2Fixture();
 
     _mockInterestRateBps(hub2.getAsset(wethAssetId).irStrategy, 5_00);
 

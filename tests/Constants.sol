@@ -3,6 +3,8 @@
 pragma solidity ^0.8.0;
 
 library Constants {
+  bool public constant IS_TEST = true;
+
   /// @dev Hub Constants
   uint8 public constant MAX_ALLOWED_UNDERLYING_DECIMALS = 18;
   uint8 public constant MIN_ALLOWED_UNDERLYING_DECIMALS = 6;
@@ -10,7 +12,6 @@ library Constants {
   uint24 public constant MAX_RISK_PREMIUM_THRESHOLD = type(uint24).max; // 167772.15%
 
   /// @dev Spoke Constants
-  uint8 public constant ORACLE_DECIMALS = 8;
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
   uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
@@ -21,5 +22,6 @@ library Constants {
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
 
   /// @dev Deployments
+  uint8 public constant ORACLE_DECIMALS = 8;
   string public constant ORACLE_SUFFIX = ' (USD)';
 }

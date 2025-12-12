@@ -33,12 +33,10 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
-contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
-  bytes32 internal constant ERC1967_ADMIN_SLOT =
-    0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
-  bytes32 internal constant IMPLEMENTATION_SLOT =
-    0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
+import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
 
+contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   bytes4[] public spokeAdminRoleSelectors;
   bytes4[] public spokeConfiguratorRoleSelectors;
   bytes4[] public hubAdminRoleSelectors;
@@ -453,7 +451,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     address accessManagerAddress,
     string memory label
   ) internal view {
-    address proxyAdminOwner = Ownable(_getProxyAdminAddress(report.report.spokeProxyAddress))
+    address proxyAdminOwner = Ownable(ProxyHelper.getProxyAdmin(report.report.spokeProxyAddress))
       .owner();
     if (inputs.admin != address(0)) {
       assertEq(proxyAdminOwner, inputs.admin, string.concat(label, ' proxy admin owner'));
@@ -461,7 +459,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       assertEq(proxyAdminOwner, deployer, string.concat(label, ' proxy admin owner'));
     }
     assertEq(
-      _getImplementationAddress(report.report.spokeProxyAddress),
+      ProxyHelper.getImplementation(report.report.spokeProxyAddress),
       report.report.spokeImplementationAddress,
       string.concat(label, ' implementation')
     );
@@ -563,15 +561,5 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     } else {
       assertEq(treasurySpokeOwner, deployer, string.concat(label, ' treasury spoke owner'));
     }
-  }
-
-  function _getProxyAdminAddress(address proxy) internal view returns (address) {
-    bytes32 slotData = vm.load(proxy, ERC1967_ADMIN_SLOT);
-    return address(uint160(uint256(slotData)));
-  }
-
-  function _getImplementationAddress(address proxy) internal view returns (address) {
-    bytes32 slotData = vm.load(proxy, IMPLEMENTATION_SLOT);
-    return address(uint160(uint256(slotData)));
   }
 }

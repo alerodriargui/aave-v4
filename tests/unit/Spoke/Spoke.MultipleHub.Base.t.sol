@@ -30,10 +30,10 @@ contract SpokeMultipleHubBase is SpokeBase {
   bytes internal encodedIrData = abi.encode(irData);
 
   function setUp() public virtual override {
-    deployFixtures();
+    _deployFixtures();
   }
 
-  function deployFixtures() internal virtual override {
+  function _deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     // Canonical hub and spoke

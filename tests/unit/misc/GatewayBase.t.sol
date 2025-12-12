@@ -9,7 +9,7 @@ contract GatewayBaseTest is Base {
 
   function setUp() public virtual override {
     super.setUp();
-    initEnvironment();
+    _initEnvironment();
 
     gateway = new GatewayBaseWrapper(address(ADMIN));
 

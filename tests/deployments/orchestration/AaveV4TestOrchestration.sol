@@ -33,12 +33,31 @@ import {
 
 import {AaveV4DeployCore} from 'src/deployments/orchestration/AaveV4DeployCore.sol';
 
+import {TestTypes} from 'tests/utils/TestTypes.sol';
+import {WETH9} from 'src/dependencies/weth/WETH9.sol';
+
+import {Constants} from 'tests/Constants.sol';
+
+import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
+
 library AaveV4TestOrchestration {
   bool public constant IS_TEST = true;
   Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
 
-  uint8 private constant ORACLE_DECIMALS = 8;
-  string private constant ORACLE_SUFFIX = ' (USD)';
+  function deployTestTokens(
+    ConfigData.TestTokenInput[] memory tokenInputs
+  ) external returns (TestTypes.TokenList memory) {
+    OrchestrationReports.TestTokensReport memory tokensReport = _deployTestTokensBatch(tokenInputs);
+
+    TestTypes.TokenList memory tokenList;
+    tokenList.weth = WETH9(payable(tokensReport.wethAddress));
+    tokenList.usdx = TestnetERC20(tokensReport.testTokenAddresses[0]);
+    tokenList.dai = TestnetERC20(tokensReport.testTokenAddresses[1]);
+    tokenList.wbtc = TestnetERC20(tokensReport.testTokenAddresses[2]);
+    tokenList.usdy = TestnetERC20(tokensReport.testTokenAddresses[3]);
+    tokenList.usdz = TestnetERC20(tokensReport.testTokenAddresses[4]);
+    return tokenList;
+  }
 
   function deployTestEnv(
     address admin,
@@ -71,9 +90,9 @@ library AaveV4TestOrchestration {
         .deploySpokeInstanceBatch(
           admin,
           report.accessManagerAddress,
-          ORACLE_DECIMALS,
-          ORACLE_SUFFIX,
-          string.concat('Spoke ', string(abi.encode(i)), ' (USD)')
+          Constants.ORACLE_DECIMALS,
+          Constants.ORACLE_SUFFIX,
+          string.concat('Spoke ', string(abi.encode(i)), Constants.ORACLE_SUFFIX)
         );
       report.spokeReports[i].spokeAddress = spokeReport.spokeProxyAddress;
       report.spokeReports[i].aaveOracleAddress = spokeReport.aaveOracleAddress;
@@ -82,32 +101,7 @@ library AaveV4TestOrchestration {
     return report;
   }
 
-  function deployTestTokens(
-    ConfigData.TestTokenInput[] memory tokenInputs
-  ) external returns (OrchestrationReports.TestTokensReport memory) {
-    OrchestrationReports.TestTokensReport memory report;
-
-    report.testTokenAddresses = new address[](tokenInputs.length);
-
-    // Deploy Test Tokens Batch
-    BatchReports.TestTokensBatchReport memory tokensReport = _deployTokensBatch(tokenInputs);
-    report.wethAddress = tokensReport.wethAddress;
-    report.testTokenAddresses = tokensReport.tokenAddresses;
-
-    return report;
-  }
-
-  function setRolesTestEnv(
-    address admin,
-    OrchestrationReports.TestEnvReport memory report
-  ) external {
-    // Set ConfiguratorAdmin Roles
-    AaveV4AccessManagerRolesProcedure.grantRootAdminRole({
-      accessManagerAddress: report.accessManagerAddress,
-      newAdminAddress: admin,
-      currentAdminAddress: admin
-    });
-
+  function setRolesTestEnv(OrchestrationReports.TestEnvReport memory report) public {
     // Set Hub Roles
     for (uint256 i; i < report.hubReports.length; ++i) {
       AaveV4HubRolesProcedure.setHubRoles(
@@ -125,32 +119,74 @@ library AaveV4TestOrchestration {
     }
   }
 
-  function deployTestHub(
+  function grantRolesTestEnv(
+    OrchestrationReports.TestEnvReport memory report,
     address admin,
-    address treasuryAdmin,
-    ConfigData.AddAssetParams[] memory paramsList
-  ) external returns (address, OrchestrationReports.TestHubReport memory) {
-    OrchestrationReports.TestHubReport memory report;
-
-    address accessManagerAddress = AaveV4DeployCore.deployAccessBatch(admin).accessManagerAddress;
-
-    // Deploy Hub Batch
-    BatchReports.HubBatchReport memory hubReport = AaveV4DeployCore.deployHubBatch(
-      treasuryAdmin,
-      accessManagerAddress
-    );
-    report.hubAddress = hubReport.hubAddress;
-    report.irStrategyAddress = hubReport.irStrategyAddress;
-    report.treasurySpokeAddress = hubReport.treasurySpokeAddress;
-
-    // Set Hub Roles
-    AaveV4HubRolesProcedure.setHubAdminRole(accessManagerAddress, report.hubAddress);
-
-    // Configure Hub Assets
-    configureHubsAssets(paramsList);
-
-    return (accessManagerAddress, report);
+    address hubAdmin,
+    address spokeAdmin
+  ) public {
+    grantHubRolesTestEnv(report, admin, hubAdmin);
+    grantSpokeRolesTestEnv(report, admin, spokeAdmin);
   }
+
+  // function grantAccessManagerRolesTestEnv(
+  //   OrchestrationReports.TestEnvReport memory report,
+  //   address admin
+  // ) external {
+  //   // grant RootAdmin Role
+  //   AaveV4AccessManagerRolesProcedure.grantRootAdminRole({
+  //     accessManagerAddress: report.accessManagerAddress,
+  //     newAdminAddress: admin,
+  //     currentAdminAddress: admin
+  //   });
+  // }
+
+  function grantHubRolesTestEnv(
+    OrchestrationReports.TestEnvReport memory report,
+    address admin,
+    address hubAdmin
+  ) public {
+    // grant Hub roles
+    AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManagerAddress, admin);
+    AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManagerAddress, hubAdmin);
+  }
+
+  function grantSpokeRolesTestEnv(
+    OrchestrationReports.TestEnvReport memory report,
+    address admin,
+    address spokeAdmin
+  ) public {
+    // grant Spoke roles
+    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManagerAddress, admin);
+    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManagerAddress, spokeAdmin);
+  }
+
+  // function deployTestHub(
+  //   address admin,
+  //   address treasuryAdmin,
+  //   ConfigData.AddAssetParams[] memory paramsList
+  // ) external returns (address, OrchestrationReports.TestHubReport memory) {
+  //   OrchestrationReports.TestHubReport memory report;
+
+  //   address accessManagerAddress = AaveV4DeployCore.deployAccessBatch(admin).accessManagerAddress;
+
+  //   // Deploy Hub Batch
+  //   BatchReports.HubBatchReport memory hubReport = AaveV4DeployCore.deployHubBatch(
+  //     treasuryAdmin,
+  //     accessManagerAddress
+  //   );
+  //   report.hubAddress = hubReport.hubAddress;
+  //   report.irStrategyAddress = hubReport.irStrategyAddress;
+  //   report.treasurySpokeAddress = hubReport.treasurySpokeAddress;
+
+  //   // Set Hub Roles
+  //   AaveV4HubRolesProcedure.setHubAdminRole(accessManagerAddress, report.hubAddress);
+
+  //   // Configure Hub Assets
+  //   configureHubsAssets(paramsList);
+
+  //   return (accessManagerAddress, report);
+  // }
 
   function configureHubsAssets(
     ConfigData.AddAssetParams[] memory paramsList
@@ -171,15 +207,35 @@ library AaveV4TestOrchestration {
   function configureSpokes(
     ConfigData.UpdateLiquidationConfigParams[] memory liquidationParamsList,
     ConfigData.AddReserveParams[] memory reserveParamsList
-  ) external returns (uint256[] memory) {
+  ) external returns (TestTypes.SpokeReserveId[] memory) {
     for (uint256 i; i < liquidationParamsList.length; ++i) {
       AaveV4SpokeConfigProcedures.updateLiquidationConfig(liquidationParamsList[i]);
     }
-    uint256[] memory reserveIds = new uint256[](reserveParamsList.length);
+    TestTypes.SpokeReserveId[] memory spokeReserveIds = new TestTypes.SpokeReserveId[](
+      reserveParamsList.length
+    );
     for (uint256 i; i < reserveParamsList.length; ++i) {
-      reserveIds[i] = AaveV4SpokeConfigProcedures.addReserve(reserveParamsList[i]);
+      spokeReserveIds[i] = TestTypes.SpokeReserveId({
+        spoke: reserveParamsList[i].spoke,
+        reserveId: AaveV4SpokeConfigProcedures.addReserve(reserveParamsList[i])
+      });
     }
-    return reserveIds;
+    return spokeReserveIds;
+  }
+
+  function _deployTestTokensBatch(
+    ConfigData.TestTokenInput[] memory tokenInputs
+  ) internal returns (OrchestrationReports.TestTokensReport memory) {
+    OrchestrationReports.TestTokensReport memory report;
+
+    report.testTokenAddresses = new address[](tokenInputs.length);
+
+    // Deploy Test Tokens Batch
+    BatchReports.TestTokensBatchReport memory tokensReport = _deployTokensBatch(tokenInputs);
+    report.wethAddress = tokensReport.wethAddress;
+    report.testTokenAddresses = tokensReport.tokenAddresses;
+
+    return report;
   }
 
   function _deployTokensBatch(

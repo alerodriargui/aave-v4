@@ -111,7 +111,9 @@ contract SpokeDynamicConfigTest is SpokeBase {
     address caller
   ) public {
     vm.assume(
-      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+      caller != SPOKE_ADMIN &&
+        caller != ADMIN &&
+        caller != ProxyHelper.getProxyAdmin(address(spoke1))
     );
     uint256 reserveId = _randomReserveId(spoke1);
     uint24 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
@@ -219,7 +221,9 @@ contract SpokeDynamicConfigTest is SpokeBase {
     address caller
   ) public {
     vm.assume(
-      caller != SPOKE_ADMIN && caller != ADMIN && caller != _getProxyAdminAddress(address(spoke1))
+      caller != SPOKE_ADMIN &&
+        caller != ADMIN &&
+        caller != ProxyHelper.getProxyAdmin(address(spoke1))
     );
     uint256 reserveId = _randomReserveId(spoke1);
     uint24 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);

@@ -159,12 +159,9 @@ contract HubAccessTest is HubBase {
     );
 
     // Say addresses Alice, Bob, and Carol all have the HUB_ADMIN role, allowing them to set interest rate data.
-    // Grant roles with 0 delay
-    vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, alice, 0);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, bob, 0);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, carol, 0);
-    vm.stopPrank();
+    _grantHubAdminRole(hub1, alice);
+    _grantHubAdminRole(hub1, bob);
+    _grantHubAdminRole(hub1, carol);
 
     vm.prank(alice);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
