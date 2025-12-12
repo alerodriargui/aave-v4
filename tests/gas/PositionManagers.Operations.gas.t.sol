@@ -39,7 +39,7 @@ contract PositionManager_Gas_Tests is SpokeBase {
     spoke1.setUserPositionManager(address(positionManager), false);
 
     positionManager.setSelfAsUserPositionManagerWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'Common - setSelfAsUserPositionManagerWithSig');
+    vm.snapshotGasLastCall(NAMESPACE, 'common: setSelfAsUserPositionManagerWithSig');
   }
 }
 
@@ -68,7 +68,7 @@ contract SupplyRepayPositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.supplyOnBehalfOf(_daiReserveId(spoke1), amount, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'SupplyRepayPositionManager - supplyOnBehalfOf');
+    vm.snapshotGasLastCall(NAMESPACE, 'SupplyRepayPositionManager: supplyOnBehalfOf');
   }
 
   function test_repayOnBehalfOf() public {
@@ -84,7 +84,7 @@ contract SupplyRepayPositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.repayOnBehalfOf(_daiReserveId(spoke1), repayAmount, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'SupplyRepayPositionManager - repayOnBehalfOf');
+    vm.snapshotGasLastCall(NAMESPACE, 'SupplyRepayPositionManager: repayOnBehalfOf');
   }
 }
 
@@ -116,14 +116,14 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.withdrawOnBehalfOf(_daiReserveId(spoke1), amount, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager - withdrawOnBehalfOf: partial');
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: withdrawOnBehalfOf: partial');
 
     vm.prank(alice);
     positionManager.approveWithdraw(bob, _daiReserveId(spoke1), UINT256_MAX);
 
     vm.prank(bob);
     positionManager.withdrawOnBehalfOf(_daiReserveId(spoke1), UINT256_MAX, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager - withdrawOnBehalfOf: full');
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: withdrawOnBehalfOf: full');
   }
 
   function test_borrowOnBehalfOf() public {
@@ -139,6 +139,6 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.borrowOnBehalfOf(_daiReserveId(spoke1), borrowAmount, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager - borrowOnBehalfOf');
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: borrowOnBehalfOf');
   }
 }

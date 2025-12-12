@@ -39,8 +39,7 @@ contract AllowancePositionManager is
 
   /// @inheritdoc IAllowancePositionManager
   function approveWithdraw(address spender, uint256 reserveId, uint256 amount) external {
-    _withdrawAllowances[msg.sender][spender][reserveId] = amount;
-    emit WithdrawApproval(msg.sender, spender, reserveId, amount);
+    _updateWithdrawAllowance(msg.sender, spender, reserveId, amount, true);
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -49,19 +48,19 @@ contract AllowancePositionManager is
     bytes calldata signature
   ) external {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    address user = params.owner;
     bytes32 digest = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
-    _useCheckedNonce(user, params.nonce);
+    require(
+      SignatureChecker.isValidSignatureNow(params.owner, digest, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(params.owner, params.nonce);
 
-    _withdrawAllowances[user][params.spender][params.reserveId] = params.amount;
-    emit WithdrawApproval(user, params.spender, params.reserveId, params.amount);
+    _updateWithdrawAllowance(params.owner, params.spender, params.reserveId, params.amount, true);
   }
 
   /// @inheritdoc IAllowancePositionManager
   function approveCreditDelegation(address spender, uint256 reserveId, uint256 amount) external {
-    _creditDelegations[msg.sender][spender][reserveId] = amount;
-    emit CreditDelegation(msg.sender, spender, reserveId, amount);
+    _updateCreditDelegation(msg.sender, spender, reserveId, amount, true);
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -70,25 +69,36 @@ contract AllowancePositionManager is
     bytes calldata signature
   ) external {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    address user = params.owner;
     bytes32 digest = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
-    _useCheckedNonce(user, params.nonce);
+    require(
+      SignatureChecker.isValidSignatureNow(params.owner, digest, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(params.owner, params.nonce);
 
-    _creditDelegations[user][params.spender][params.reserveId] = params.amount;
-    emit CreditDelegation(user, params.spender, params.reserveId, params.amount);
+    _updateCreditDelegation(params.owner, params.spender, params.reserveId, params.amount, true);
   }
 
   /// @inheritdoc IAllowancePositionManager
   function renounceWithdrawAllowance(address owner, uint256 reserveId) external {
-    _withdrawAllowances[owner][msg.sender][reserveId] = 0;
-    emit WithdrawApproval(owner, msg.sender, reserveId, 0);
+    _updateWithdrawAllowance(
+      owner,
+      msg.sender,
+      reserveId,
+      0,
+      !(_withdrawAllowances[owner][msg.sender][reserveId] == 0)
+    );
   }
 
   /// @inheritdoc IAllowancePositionManager
   function renounceCreditDelegation(address owner, uint256 reserveId) external {
-    _creditDelegations[owner][msg.sender][reserveId] = 0;
-    emit CreditDelegation(owner, msg.sender, reserveId, 0);
+    _updateCreditDelegation(
+      owner,
+      msg.sender,
+      reserveId,
+      0,
+      !(_creditDelegations[owner][msg.sender][reserveId] == 0)
+    );
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -100,7 +110,13 @@ contract AllowancePositionManager is
     require(amount > 0, InvalidAmount());
     uint256 currentAllowance = _withdrawAllowances[onBehalfOf][msg.sender][reserveId];
     require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
-    _withdrawAllowances[onBehalfOf][msg.sender][reserveId] = currentAllowance.uncheckedSub(amount);
+    _updateWithdrawAllowance(
+      onBehalfOf,
+      msg.sender,
+      reserveId,
+      currentAllowance.uncheckedSub(amount),
+      true
+    );
 
     IERC20 asset = _getReserveUnderlying(reserveId);
     (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(SPOKE).withdraw(
@@ -122,7 +138,13 @@ contract AllowancePositionManager is
     require(amount > 0, InvalidAmount());
     uint256 currentAllowance = _creditDelegations[onBehalfOf][msg.sender][reserveId];
     require(currentAllowance >= amount, InsufficientCreditDelegation(currentAllowance, amount));
-    _creditDelegations[onBehalfOf][msg.sender][reserveId] = currentAllowance.uncheckedSub(amount);
+    _updateCreditDelegation(
+      onBehalfOf,
+      msg.sender,
+      reserveId,
+      currentAllowance.uncheckedSub(amount),
+      true
+    );
 
     IERC20 asset = _getReserveUnderlying(reserveId);
     (uint256 borrowedShares, uint256 borrowedAmount) = ISpokeBase(SPOKE).borrow(
@@ -145,7 +167,7 @@ contract AllowancePositionManager is
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function creditDelegationAllowance(
+  function creditDelegation(
     address owner,
     address spender,
     uint256 reserveId
@@ -166,6 +188,32 @@ contract AllowancePositionManager is
   /// @inheritdoc IAllowancePositionManager
   function CREDIT_DELEGATION_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.CREDIT_DELEGATION_TYPEHASH;
+  }
+
+  function _updateWithdrawAllowance(
+    address owner,
+    address spender,
+    uint256 reserveId,
+    uint256 newAllowance,
+    bool emitEvent
+  ) internal {
+    _withdrawAllowances[owner][spender][reserveId] = newAllowance;
+    if (emitEvent) {
+      emit WithdrawApproval(owner, spender, reserveId, newAllowance);
+    }
+  }
+
+  function _updateCreditDelegation(
+    address owner,
+    address spender,
+    uint256 reserveId,
+    uint256 newCreditDelegation,
+    bool emitEvent
+  ) internal {
+    _creditDelegations[owner][spender][reserveId] = newCreditDelegation;
+    if (emitEvent) {
+      emit CreditDelegation(owner, spender, reserveId, newCreditDelegation);
+    }
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

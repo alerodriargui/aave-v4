@@ -29,14 +29,14 @@ abstract contract PositionManagerBase is IPositionManagerBase, Multicall {
     bytes calldata signature
   ) external {
     try
-      ISpoke(SPOKE).setUserPositionManagerWithSig(
-        address(this),
-        params.user,
-        params.approve,
-        params.nonce,
-        params.deadline,
-        signature
-      )
+      ISpoke(SPOKE).setUserPositionManagerWithSig({
+        positionManager: address(this),
+        user: params.user,
+        approve: params.approve,
+        nonce: params.nonce,
+        deadline: params.deadline,
+        signature: signature
+      })
     {} catch {}
   }
 

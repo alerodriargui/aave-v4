@@ -180,6 +180,20 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(positionManager.withdrawAllowance(alice, bob, reserveId), 0);
   }
 
+  function test_renounceWithdrawAllowance_noop_alreadyRenounced() public {
+    uint256 reserveId = _randomReserveId(spoke);
+
+    vm.prank(alice);
+    positionManager.approveWithdraw(bob, reserveId, 100e18);
+    vm.prank(bob);
+    positionManager.renounceWithdrawAllowance(alice, reserveId);
+
+    vm.recordLogs();
+    vm.prank(bob);
+    positionManager.renounceWithdrawAllowance(alice, reserveId);
+    assertEq(vm.getRecordedLogs().length, 0);
+  }
+
   function test_withdrawOnBehalfOf() public {
     test_withdrawOnBehalfOf_fuzz(100e18);
   }
@@ -439,7 +453,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.prank(alice);
     positionManager.approveCreditDelegation(spender, reserveId, amount);
 
-    assertEq(positionManager.creditDelegationAllowance(alice, spender, reserveId), amount);
+    assertEq(positionManager.creditDelegation(alice, spender, reserveId), amount);
   }
 
   function test_approveCreditDelegationWithSig_fuzz(
@@ -466,7 +480,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.prank(vm.randomAddress());
     positionManager.approveCreditDelegationWithSig(p, signature);
 
-    assertEq(positionManager.creditDelegationAllowance(alice, spender, reserveId), amount);
+    assertEq(positionManager.creditDelegation(alice, spender, reserveId), amount);
   }
 
   function test_approveCreditDelegationWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
@@ -534,7 +548,21 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.prank(bob);
     positionManager.renounceCreditDelegation(alice, reserveId);
 
-    assertEq(positionManager.creditDelegationAllowance(alice, bob, reserveId), 0);
+    assertEq(positionManager.creditDelegation(alice, bob, reserveId), 0);
+  }
+
+  function test_renounceCreditDelegation_noop_alreadyRenounced() public {
+    uint256 reserveId = _randomReserveId(spoke);
+
+    vm.prank(alice);
+    positionManager.approveCreditDelegation(bob, reserveId, 100e18);
+    vm.prank(bob);
+    positionManager.renounceCreditDelegation(alice, reserveId);
+
+    vm.recordLogs();
+    vm.prank(bob);
+    positionManager.renounceCreditDelegation(alice, reserveId);
+    assertEq(vm.getRecordedLogs().length, 0);
   }
 
   function test_borrowOnBehalfOf() public {
@@ -590,7 +618,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(address(bob)), prevCallerBalance + borrowAmount);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(
-      positionManager.creditDelegationAllowance(alice, bob, _daiReserveId(spoke)),
+      positionManager.creditDelegation(alice, bob, _daiReserveId(spoke)),
       creditDelegationAmount - borrowAmount
     );
   }

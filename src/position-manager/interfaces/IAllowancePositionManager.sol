@@ -112,7 +112,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @param spender The address of the spender.
   /// @param reserveId The identifier of the reserve.
   /// @return The amount of credit delegation allowance.
-  function creditDelegationAllowance(
+  function creditDelegation(
     address owner,
     address spender,
     uint256 reserveId

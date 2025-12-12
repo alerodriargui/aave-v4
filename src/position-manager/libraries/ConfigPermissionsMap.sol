@@ -17,6 +17,10 @@ library ConfigPermissionsMap {
   /// @dev Mask for the full permissions.
   uint8 internal constant FULL_PERMISSIONS_MASK = 0x7;
 
+  function eq(ConfigPermissions self, ConfigPermissions other) internal pure returns (bool) {
+    return ConfigPermissions.unwrap(self) == ConfigPermissions.unwrap(other);
+  }
+
   /// @notice Sets the new status for all permissions.
   /// @param self The current ConfigPermissions.
   /// @param status The new status for all permissions.
