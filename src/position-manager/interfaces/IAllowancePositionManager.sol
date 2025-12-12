@@ -48,12 +48,12 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @param spender The address of the spender to receive the allowance.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of allowance.
-  function approveCreditDelegation(address spender, uint256 reserveId, uint256 amount) external;
+  function creditDelegation(address spender, uint256 reserveId, uint256 amount) external;
 
   /// @notice Approves a credit delegation allowance for a spender via signature.
   /// @param params The structured CreditDelegation parameters.
   /// @param signature The signed bytes for the intent.
-  function approveCreditDelegationWithSig(
+  function creditDelegationWithSig(
     EIP712Types.CreditDelegation calldata params,
     bytes calldata signature
   ) external;

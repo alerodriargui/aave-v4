@@ -20,7 +20,7 @@ contract PositionConfigPositionManagerTest is SpokeBase {
     spoke = spoke1;
     positionManager = new PositionConfigPositionManager(address(spoke));
 
-    emptyPermissions = emptyPermissions;
+    emptyPermissions = ConfigPermissions.wrap(0);
 
     vm.prank(SPOKE_ADMIN);
     spoke.updatePositionManager(address(positionManager), true);

@@ -59,12 +59,12 @@ contract AllowancePositionManager is
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function approveCreditDelegation(address spender, uint256 reserveId, uint256 amount) external {
+  function creditDelegation(address spender, uint256 reserveId, uint256 amount) external {
     _updateCreditDelegation(msg.sender, spender, reserveId, amount, true);
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function approveCreditDelegationWithSig(
+  function creditDelegationWithSig(
     EIP712Types.CreditDelegation calldata params,
     bytes calldata signature
   ) external {
