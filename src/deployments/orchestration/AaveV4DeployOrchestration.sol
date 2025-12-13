@@ -107,10 +107,10 @@ library AaveV4DeployOrchestration {
     AaveV4HubRolesProcedure.grantHubAdminRole(report.accessBatchReport.accessManagerAddress, admin);
 
     logger.log('...Granting Hub Configurator roles...');
-    AaveV4HubRolesProcedure.grantHubConfiguratorRole({
-      accessManagerAddress: report.accessBatchReport.accessManagerAddress,
-      hubConfiguratorAddress: report.configuratorBatchReport.hubConfiguratorAddress
-    });
+    AaveV4HubRolesProcedure.grantHubConfiguratorRole(
+      report.accessBatchReport.accessManagerAddress,
+      report.configuratorBatchReport.hubConfiguratorAddress
+    );
   }
 
   function _grantSpokeRoles(
@@ -125,10 +125,10 @@ library AaveV4DeployOrchestration {
     );
 
     logger.log('...Granting Spoke Configurator roles...');
-    AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole({
-      accessManagerAddress: report.accessBatchReport.accessManagerAddress,
-      spokeConfiguratorAddress: report.configuratorBatchReport.spokeConfiguratorAddress
-    });
+    AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole(
+      report.accessBatchReport.accessManagerAddress,
+      report.configuratorBatchReport.spokeConfiguratorAddress
+    );
   }
 
   function _deployAccessBatch(

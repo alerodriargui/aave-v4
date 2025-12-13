@@ -60,11 +60,11 @@ contract SpokeMultipleHubBase is SpokeBase {
   function setUpRoles() internal {
     vm.startPrank(ADMIN);
     // Grant roles with 0 delay
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
+    accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
 
     // Grant responsibilities to roles
     // Spoke Admin functionalities
@@ -76,8 +76,16 @@ contract SpokeMultipleHubBase is SpokeBase {
     selectors[4] = ISpoke.addDynamicReserveConfig.selector;
     selectors[5] = ISpoke.updateUserRiskPremium.selector;
 
-    accessManager.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
-    accessManager.setTargetFunctionRole(address(newSpoke), selectors, Roles.SPOKE_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(
+      address(spoke1),
+      selectors,
+      Roles.SPOKE_POSITION_UPDATER_ROLE
+    );
+    accessManager.setTargetFunctionRole(
+      address(newSpoke),
+      selectors,
+      Roles.SPOKE_POSITION_UPDATER_ROLE
+    );
 
     // Hub Admin functionalities
     bytes4[] memory hubSelectors = new bytes4[](4);
@@ -86,8 +94,8 @@ contract SpokeMultipleHubBase is SpokeBase {
     hubSelectors[2] = IHub.addSpoke.selector;
     hubSelectors[3] = IHub.updateSpokeConfig.selector;
 
-    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.HUB_ADMIN_ROLE);
-    accessManager.setTargetFunctionRole(address(newHub), hubSelectors, Roles.HUB_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.HUB_FEE_MINTER_ROLE);
+    accessManager.setTargetFunctionRole(address(newHub), hubSelectors, Roles.HUB_FEE_MINTER_ROLE);
     vm.stopPrank();
   }
 }

@@ -8,37 +8,38 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 library AaveV4HubRolesProcedure {
-  function grantHubAdminRole(address accessManagerAddress, address hubAdminAddress) internal {
-    IAccessManager(accessManagerAddress).grantRole({
-      roleId: Roles.HUB_ADMIN_ROLE,
-      account: hubAdminAddress,
-      executionDelay: 0
-    });
-    grantHubConfiguratorRole(accessManagerAddress, hubAdminAddress);
+  function grantHubAdminRole(address accessManagerAddress, address admin) internal {
+    grantHubFeeMinterRole(accessManagerAddress, admin);
+    grantHubConfiguratorRole(accessManagerAddress, admin);
   }
 
-  function grantHubConfiguratorRole(
-    address accessManagerAddress,
-    address hubConfiguratorAddress
-  ) internal {
+  function grantHubFeeMinterRole(address accessManagerAddress, address admin) internal {
+    IAccessManager(accessManagerAddress).grantRole({
+      roleId: Roles.HUB_FEE_MINTER_ROLE,
+      account: admin,
+      executionDelay: 0
+    });
+  }
+
+  function grantHubConfiguratorRole(address accessManagerAddress, address admin) internal {
     IAccessManager(accessManagerAddress).grantRole({
       roleId: Roles.HUB_CONFIGURATOR_ROLE,
-      account: hubConfiguratorAddress,
+      account: admin,
       executionDelay: 0
     });
   }
 
   function setHubRoles(address accessManagerAddress, address hubAddress) internal {
-    setHubAdminRole(accessManagerAddress, hubAddress);
+    setHubFeeMinterRole(accessManagerAddress, hubAddress);
     setHubConfiguratorRole(accessManagerAddress, hubAddress);
   }
 
-  function setHubAdminRole(address accessManagerAddress, address hubAddress) internal {
-    bytes4[] memory selectors = getHubAdminRoleSelectors();
+  function setHubFeeMinterRole(address accessManagerAddress, address hubAddress) internal {
+    bytes4[] memory selectors = getHubFeeMinterRoleSelectors();
     IAccessManager(accessManagerAddress).setTargetFunctionRole(
       hubAddress,
       selectors,
-      Roles.HUB_ADMIN_ROLE
+      Roles.HUB_FEE_MINTER_ROLE
     );
   }
 
@@ -51,7 +52,7 @@ library AaveV4HubRolesProcedure {
     );
   }
 
-  function getHubAdminRoleSelectors() internal pure returns (bytes4[] memory) {
+  function getHubFeeMinterRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = IHub.mintFeeShares.selector;
     return selectors;

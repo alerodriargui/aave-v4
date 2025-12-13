@@ -7,37 +7,41 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 library AaveV4SpokeRolesProcedure {
-  function grantSpokeConfiguratorRole(
-    address accessManagerAddress,
-    address spokeConfiguratorAddress
-  ) internal {
+  function grantSpokeConfiguratorRole(address accessManagerAddress, address admin) internal {
     IAccessManager(accessManagerAddress).grantRole({
       roleId: Roles.SPOKE_CONFIGURATOR_ROLE,
-      account: spokeConfiguratorAddress,
+      account: admin,
       executionDelay: 0
     });
   }
 
-  function grantSpokeAdminRole(address accessManagerAddress, address spokeAdminAddress) internal {
+  function grantSpokeAdminRole(address accessManagerAddress, address admin) internal {
+    grantSpokePositionUpdaterRole(accessManagerAddress, admin);
+    grantSpokeConfiguratorRole(accessManagerAddress, admin);
+  }
+
+  function grantSpokePositionUpdaterRole(address accessManagerAddress, address admin) internal {
     IAccessManager(accessManagerAddress).grantRole({
-      roleId: Roles.SPOKE_ADMIN_ROLE,
-      account: spokeAdminAddress,
+      roleId: Roles.SPOKE_POSITION_UPDATER_ROLE,
+      account: admin,
       executionDelay: 0
     });
-    grantSpokeConfiguratorRole(accessManagerAddress, spokeAdminAddress);
   }
 
   function setSpokeRoles(address accessManagerAddress, address spokeAddress) internal {
-    setSpokeAdminRole(accessManagerAddress, spokeAddress);
+    setSpokePositionUpdaterRole(accessManagerAddress, spokeAddress);
     setSpokeConfiguratorRole(accessManagerAddress, spokeAddress);
   }
 
-  function setSpokeAdminRole(address accessManagerAddress, address spokeAddress) internal {
-    bytes4[] memory selectors = getSpokeAdminRoleSelectors();
+  function setSpokePositionUpdaterRole(
+    address accessManagerAddress,
+    address spokeAddress
+  ) internal {
+    bytes4[] memory selectors = getSpokePositionUpdaterRoleSelectors();
     IAccessManager(accessManagerAddress).setTargetFunctionRole(
       spokeAddress,
       selectors,
-      Roles.SPOKE_ADMIN_ROLE
+      Roles.SPOKE_POSITION_UPDATER_ROLE
     );
   }
 
@@ -50,7 +54,7 @@ library AaveV4SpokeRolesProcedure {
     );
   }
 
-  function getSpokeAdminRoleSelectors() internal pure returns (bytes4[] memory) {
+  function getSpokePositionUpdaterRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](2);
     selectors[0] = ISpoke.updateUserDynamicConfig.selector;
     selectors[1] = ISpoke.updateUserRiskPremium.selector;

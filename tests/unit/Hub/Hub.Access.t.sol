@@ -209,9 +209,9 @@ contract HubAccessTest is HubBase {
 
     // Alice, Bob, and Carol currently have both HUB_ADMIN and SET_INTEREST_RATE roles.
     IAccessManager accessManager = IAccessManager(hub1.authority());
-    assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, alice));
-    assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
-    assertTrue(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
+    assertTrue(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, alice));
+    assertTrue(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, bob));
+    assertTrue(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, carol));
 
     assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, alice));
     assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, bob));
@@ -219,15 +219,15 @@ contract HubAccessTest is HubBase {
 
     // We can remove HUB_ADMIN role from Alice, Bob, and Carol.
     vm.startPrank(ADMIN);
-    accessManager.revokeRole(Roles.HUB_ADMIN_ROLE, alice);
-    accessManager.revokeRole(Roles.HUB_ADMIN_ROLE, bob);
-    accessManager.revokeRole(Roles.HUB_ADMIN_ROLE, carol);
+    accessManager.revokeRole(Roles.HUB_FEE_MINTER_ROLE, alice);
+    accessManager.revokeRole(Roles.HUB_FEE_MINTER_ROLE, bob);
+    accessManager.revokeRole(Roles.HUB_FEE_MINTER_ROLE, carol);
     vm.stopPrank();
 
     // Alice, Bob, and Carol should no longer have HUB_ADMIN role.
-    assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, alice));
-    assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, bob));
-    assertFalse(_hasRole(accessManager, Roles.HUB_ADMIN_ROLE, carol));
+    assertFalse(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, alice));
+    assertFalse(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, bob));
+    assertFalse(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, carol));
 
     // Can still call setInterestRateData since they have SET_INTEREST_RATE role.
     vm.prank(alice);
@@ -265,10 +265,10 @@ contract HubAccessTest is HubBase {
 
     // Set up the role for hub admin to call update asset config
     vm.startPrank(NEW_ADMIN);
-    newAuthority.grantRole(Roles.HUB_ADMIN_ROLE, HUB_ADMIN, 0);
+    newAuthority.grantRole(Roles.HUB_FEE_MINTER_ROLE, HUB_ADMIN, 0);
     bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = IHub.updateAssetConfig.selector;
-    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_ADMIN_ROLE);
+    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_FEE_MINTER_ROLE);
     vm.stopPrank();
 
     // Only Admin can change the authority contract
@@ -301,7 +301,7 @@ contract HubAccessTest is HubBase {
     // Now we also give the hub admin role capability to update spoke config on new authority
     selectors[0] = IHub.updateSpokeConfig.selector;
     vm.prank(NEW_ADMIN);
-    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_ADMIN_ROLE);
+    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_FEE_MINTER_ROLE);
 
     // Hub admin can now call update spoke config on the hub after authority change
     vm.prank(HUB_ADMIN);

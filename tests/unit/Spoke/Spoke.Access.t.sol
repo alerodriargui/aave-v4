@@ -154,10 +154,14 @@ contract SpokeAccessTest is SpokeBase {
 
     // Set up the role for spoke admin to call update liquidation config
     vm.startPrank(NEW_ADMIN);
-    newAuthority.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
+    newAuthority.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
     bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = ISpoke.updateLiquidationConfig.selector;
-    newAuthority.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
+    newAuthority.setTargetFunctionRole(
+      address(spoke1),
+      selectors,
+      Roles.SPOKE_POSITION_UPDATER_ROLE
+    );
     vm.stopPrank();
 
     // Only Admin can change the authority contract
@@ -207,7 +211,11 @@ contract SpokeAccessTest is SpokeBase {
     // Now we also give the spoke admin role capability to add reserve on new authority
     selectors[0] = ISpoke.addReserve.selector;
     vm.prank(NEW_ADMIN);
-    newAuthority.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
+    newAuthority.setTargetFunctionRole(
+      address(spoke1),
+      selectors,
+      Roles.SPOKE_POSITION_UPDATER_ROLE
+    );
 
     // Spoke admin can now call add reserve on the spoke after authority change
     vm.prank(SPOKE_ADMIN);

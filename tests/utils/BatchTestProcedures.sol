@@ -37,17 +37,18 @@ import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
 
 contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
-  bytes4[] public spokeAdminRoleSelectors;
+  bytes4[] public spokePositionUpdaterRoleSelectors;
   bytes4[] public spokeConfiguratorRoleSelectors;
-  bytes4[] public hubAdminRoleSelectors;
+  bytes4[] public hubFeeMinterRoleSelectors;
   bytes4[] public hubConfiguratorRoleSelectors;
   address public deployer;
 
   function setUp() public virtual {
-    spokeAdminRoleSelectors = AaveV4SpokeRolesProcedure.getSpokeAdminRoleSelectors();
+    spokePositionUpdaterRoleSelectors = AaveV4SpokeRolesProcedure
+      .getSpokePositionUpdaterRoleSelectors();
     spokeConfiguratorRoleSelectors = AaveV4SpokeRolesProcedure.getSpokeConfiguratorRoleSelectors();
 
-    hubAdminRoleSelectors = AaveV4HubRolesProcedure.getHubAdminRoleSelectors();
+    hubFeeMinterRoleSelectors = AaveV4HubRolesProcedure.getHubFeeMinterRoleSelectors();
     hubConfiguratorRoleSelectors = AaveV4HubRolesProcedure.getHubConfiguratorRoleSelectors();
   }
 
@@ -272,25 +273,29 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   ) internal view {
     if (inputs.spokeLabels.length > 0 && inputs.grantRoles) {
       assertEq(
-        accessManager.getRoleMemberCount(Roles.SPOKE_ADMIN_ROLE),
+        accessManager.getRoleMemberCount(Roles.SPOKE_POSITION_UPDATER_ROLE),
         1,
         'SpokeAdminRole member count'
       );
       assertEq(
-        accessManager.getRoleMember(Roles.SPOKE_ADMIN_ROLE, 0),
+        accessManager.getRoleMember(Roles.SPOKE_POSITION_UPDATER_ROLE, 0),
         contractAdmin,
         'SpokeAdminRole member - spoke admin'
       );
     } else {
-      assertEq(accessManager.getRoleMemberCount(Roles.SPOKE_ADMIN_ROLE), 0, 'HubAdminRoleCount');
+      assertEq(
+        accessManager.getRoleMemberCount(Roles.SPOKE_POSITION_UPDATER_ROLE),
+        0,
+        'HubAdminRoleCount'
+      );
     }
 
     for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
-      for (uint256 j = 0; j < spokeAdminRoleSelectors.length; j++) {
+      for (uint256 j = 0; j < spokePositionUpdaterRoleSelectors.length; j++) {
         (bool allowed, uint32 delay) = accessManager.canCall(
           contractAdmin,
           report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
-          spokeAdminRoleSelectors[j]
+          spokePositionUpdaterRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'SpokeAdminRole allowed');
         assertEq(delay, 0, 'SpokeAdminRole delay');
@@ -298,9 +303,9 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         assertEq(
           accessManager.getTargetFunctionRole(
             report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
-            spokeAdminRoleSelectors[j]
+            spokePositionUpdaterRoleSelectors[j]
           ),
-          Roles.SPOKE_ADMIN_ROLE,
+          Roles.SPOKE_POSITION_UPDATER_ROLE,
           'SpokeAdminRole target function'
         );
       }
@@ -324,30 +329,30 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     address contractAdmin
   ) internal view {
     if (inputs.hubLabels.length > 0 && inputs.grantRoles) {
-      assertEq(accessManager.getRoleMemberCount(Roles.HUB_ADMIN_ROLE), 1, 'HubAdminRoleCount');
+      assertEq(accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE), 1, 'HubAdminRoleCount');
       assertEq(
-        accessManager.getRoleMember(Roles.HUB_ADMIN_ROLE, 0),
+        accessManager.getRoleMember(Roles.HUB_FEE_MINTER_ROLE, 0),
         contractAdmin,
         'HubAdminRole member - hub admin'
       );
     } else {
-      assertEq(accessManager.getRoleMemberCount(Roles.HUB_ADMIN_ROLE), 0, 'HubAdminRoleCount');
+      assertEq(accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE), 0, 'HubAdminRoleCount');
     }
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
-      for (uint256 j = 0; j < hubAdminRoleSelectors.length; j++) {
+      for (uint256 j = 0; j < hubFeeMinterRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
             report.hubBatchReports[i].report.hubAddress,
-            hubAdminRoleSelectors[j]
+            hubFeeMinterRoleSelectors[j]
           ),
-          Roles.HUB_ADMIN_ROLE,
+          Roles.HUB_FEE_MINTER_ROLE,
           'HubAdminRole target function'
         );
 
         (bool allowed, uint32 delay) = accessManager.canCall(
           contractAdmin,
           report.hubBatchReports[i].report.hubAddress,
-          hubAdminRoleSelectors[j]
+          hubFeeMinterRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'HubAdminRole allowed');
         assertEq(delay, 0, 'HubAdminRole delay');

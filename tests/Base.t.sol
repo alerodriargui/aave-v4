@@ -343,17 +343,23 @@ abstract contract Base is BatchTestProcedures {
   function _setupFixturesRoles(OrchestrationReports.TestEnvReport memory report) internal virtual {
     if (report.accessManagerAddress == address(0))
       report.accessManagerAddress = address(accessManager);
-    IAccessManager accessManager = IAccessManager(report.accessManagerAddress);
 
     // temporary grant admin role to address(this) to execute setAndGrantRolesTestEnv from its context
     vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.DEFAULT_ADMIN_ROLE, address(this), 0);
+    IAccessManager(report.accessManagerAddress).grantRole(
+      Roles.DEFAULT_ADMIN_ROLE,
+      address(this),
+      0
+    );
     vm.stopPrank();
 
     AaveV4TestOrchestration.setRolesTestEnv(report);
     AaveV4TestOrchestration.grantRolesTestEnv(report, ADMIN, HUB_ADMIN, SPOKE_ADMIN);
 
-    accessManager.renounceRole(Roles.DEFAULT_ADMIN_ROLE, address(this));
+    IAccessManager(report.accessManagerAddress).renounceRole(
+      Roles.DEFAULT_ADMIN_ROLE,
+      address(this)
+    );
   }
 
   function _initEnvironment() internal {
@@ -1060,7 +1066,7 @@ abstract contract Base is BatchTestProcedures {
   function _grantHubAdminRole(IHub hub, address admin) internal {
     vm.startPrank(ADMIN);
     // hub admin consists of hub admin role and hub configurator role
-    IAccessManager(hub.authority()).grantRole(Roles.HUB_ADMIN_ROLE, admin, 0);
+    IAccessManager(hub.authority()).grantRole(Roles.HUB_FEE_MINTER_ROLE, admin, 0);
     IAccessManager(hub.authority()).grantRole(Roles.HUB_CONFIGURATOR_ROLE, admin, 0);
     vm.stopPrank();
   }
