@@ -47,52 +47,93 @@ abstract contract AaveV4DeployBatchBaseScript is Script, DeployUtils, InputUtils
     logger.save({fileName: _outputFileName, withTimestamp: true});
   }
 
-  function _loadWarnings(
-    MetadataLogger logger,
-    FullDeployInputs memory inputs
-  ) internal pure virtual {
+  function _loadWarnings(MetadataLogger logger, FullDeployInputs memory inputs) internal virtual {
+    bool hadWarnings = false;
+    string memory warnings = '';
     if (inputs.grantRoles) {
       logger.log('WARNING: Roles are being set');
+      warnings = string.concat(warnings, 'WARNING: Roles are being set\n');
+      hadWarnings = true;
       if (inputs.accessManagerAdmin == address(0)) {
         logger.log(
-          'WARNING: Access Manager Admin is zero address; admin roles will be granted to deployer by default'
+          'WARNING: Access Manager Admin is zero address; role will be granted to deployer by default'
+        );
+        warnings = string.concat(
+          warnings,
+          'WARNING: Access Manager Admin is zero address; role will be granted to deployer by default\n'
         );
       }
       if (inputs.hubConfiguratorOwner == address(0)) {
         logger.log(
-          'WARNING: Hub Configurator Owner is zero address; configurator roles will be granted to deployer by default'
+          'WARNING: Hub Configurator Owner is zero address; role will be granted to deployer by default'
+        );
+        warnings = string.concat(
+          warnings,
+          'WARNING: Hub Configurator Owner is zero address; role will be granted to deployer by default\n'
         );
       }
       if (inputs.spokeConfiguratorOwner == address(0)) {
         logger.log(
-          'WARNING: Spoke Configurator Owner is zero address; configurator roles will be granted to deployer by default'
+          'WARNING: Spoke Configurator Owner is zero address; role will be granted to deployer by default'
+        );
+        warnings = string.concat(
+          warnings,
+          'WARNING: Spoke Configurator Owner is zero address; role will be granted to deployer by default\n'
         );
       }
       if (inputs.spokeProxyAdminOwner == address(0)) {
         logger.log(
-          'WARNING: Spoke Proxy Admin Owner is zero address; proxy admin roles will be granted to deployer by default'
+          'WARNING: Spoke Proxy Admin Owner is zero address; role will be granted to deployer by default'
+        );
+        warnings = string.concat(
+          warnings,
+          'WARNING: Spoke Proxy Admin Owner is zero address; role will be granted to deployer by default\n'
         );
       }
       if (inputs.treasurySpokeOwner == address(0)) {
         logger.log(
-          'WARNING: Treasury Spoke Owner is zero address; treasury spoke roles will be granted to deployer by default'
+          'WARNING: Treasury Spoke Owner is zero address; role will be granted to deployer by default'
+        );
+        warnings = string.concat(
+          warnings,
+          'WARNING: Treasury Spoke Owner is zero address; role will be granted to deployer by default\n'
         );
       }
       if (inputs.spokeAdmin == address(0)) {
         logger.log(
-          'WARNING: Spoke Admin is zero address; spoke admin roles will be granted to deployer by default'
+          'WARNING: Spoke Admin is zero address; role will be granted to deployer by default'
+        );
+        warnings = string.concat(
+          warnings,
+          'WARNING: Spoke Admin is zero address; spoke admin roles will be granted to deployer by default\n'
         );
       }
     }
     if (inputs.hubLabels.length == 0) {
       logger.log('WARNING: Hub will not be deployed');
+      hadWarnings = true;
+      warnings = string.concat(warnings, 'WARNING: Hub will not be deployed\n');
     }
     if (inputs.spokeLabels.length == 0) {
       logger.log('WARNING: Spoke will not be deployed');
+      hadWarnings = true;
+      warnings = string.concat(warnings, 'WARNING: Spoke will not be deployed\n');
     }
     if (inputs.nativeWrapperAddress == address(0)) {
       logger.log('WARNING: Native wrapper zero address; NativeTokenGateway will not be deployed');
+      hadWarnings = true;
+      warnings = string.concat(
+        warnings,
+        'WARNING: Native wrapper zero address; NativeTokenGateway will not be deployed\n'
+      );
     }
     logger.log('');
+
+    if (hadWarnings) {
+      string memory ack = vm.prompt(string.concat(warnings, "\nEnter 'y' to continue"));
+      if (keccak256(bytes(ack)) != keccak256(bytes('y'))) {
+        revert('User did not acknowledge warnings. Please try again.');
+      }
+    }
   }
 }

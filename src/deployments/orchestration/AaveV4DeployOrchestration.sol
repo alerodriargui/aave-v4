@@ -59,6 +59,9 @@ library AaveV4DeployOrchestration {
     inputs.spokeConfiguratorOwner = deployInputs.spokeConfiguratorOwner != address(0)
       ? deployInputs.spokeConfiguratorOwner
       : deployer;
+    inputs.gatewayOwner = deployInputs.gatewayOwner != address(0)
+      ? deployInputs.gatewayOwner
+      : deployer;
 
     // Deploy Configurator Batch
     report.configuratorBatchReport = _deployConfiguratorBatch({
@@ -86,7 +89,7 @@ library AaveV4DeployOrchestration {
     // Deploy Gateways Batch
     report.gatewaysBatchReport = _deployGatewayBatch({
       logger: logger,
-      owner: inputs.spokeProxyAdminOwner,
+      gatewayOwner: inputs.gatewayOwner,
       nativeWrapper: inputs.nativeWrapperAddress
     });
 
@@ -310,11 +313,14 @@ library AaveV4DeployOrchestration {
 
   function _deployGatewayBatch(
     Logger logger,
-    address owner,
+    address gatewayOwner,
     address nativeWrapper
   ) internal returns (BatchReports.GatewaysBatchReport memory report) {
     logger.log('...Deploying GatewayBatch...');
-    report = AaveV4DeployCore.deployGatewaysBatch({owner: owner, nativeWrapper: nativeWrapper});
+    report = AaveV4DeployCore.deployGatewaysBatch({
+      owner: gatewayOwner,
+      nativeWrapper: nativeWrapper
+    });
     logger.log('NativeTokenGateway', report.nativeGatewayAddress);
     logger.log('SignatureGateway', report.signatureGatewayAddress);
     return report;

@@ -30,6 +30,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       spokeProxyAdminOwner: makeAddr('spokeProxyAdminOwner'),
       spokeConfiguratorOwner: makeAddr('spokeConfiguratorOwner'),
       spokeAdmin: makeAddr('spokeAdmin'),
+      gatewayOwner: makeAddr('gatewayOwner'),
       nativeWrapperAddress: weth9,
       grantRoles: true,
       hubLabels: hubLabels,

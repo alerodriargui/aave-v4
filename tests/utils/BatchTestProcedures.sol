@@ -85,6 +85,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     _checkSpokeRoles(accessManager, report, inputs);
     _checkHubRoles(accessManager, report, inputs);
     _checkConfiguratorBatchRoles(report, inputs);
+    _checkGatewayRoles(report, inputs);
   }
 
   /// @dev Sanitizes the inputs by defaulting to the deployer if the address is zero.
@@ -108,6 +109,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     inputs.spokeConfiguratorOwner = inputs.spokeConfiguratorOwner != address(0)
       ? inputs.spokeConfiguratorOwner
       : deployer;
+    inputs.gatewayOwner = inputs.gatewayOwner != address(0) ? inputs.gatewayOwner : deployer;
 
     return inputs;
   }
@@ -129,6 +131,11 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         'Zero NativeGatewayAddress'
       );
     }
+    assertNotEq(
+      report.gatewaysBatchReport.signatureGatewayAddress,
+      address(0),
+      'SignatureGatewayAddress'
+    );
 
     assertNotEq(report.accessBatchReport.accessManagerAddress, address(0), 'AccessManagerAddress');
     assertNotEq(
@@ -187,7 +194,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
       _checkSpokeBatchDeployment(
         report.spokeInstanceBatchReports[i],
-        inputs,
         report.accessBatchReport.accessManagerAddress,
         string.concat(globalLabel, ', ', inputs.spokeLabels[i])
       );
@@ -196,7 +202,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
 
   function _checkSpokeBatchDeployment(
     OrchestrationReports.SpokeDeploymentReport memory report,
-    FullDeployInputs memory inputs,
     address accessManagerAddress,
     string memory label
   ) internal view {
@@ -258,21 +263,19 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     string memory label = 'HubDeployment';
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
       _checkHubBatchDeployment(
-        report,
         report.hubBatchReports[i],
-        inputs,
+        report.accessBatchReport.accessManagerAddress,
         string.concat(label, ', ', inputs.hubLabels[i])
       );
     }
   }
 
   function _checkHubBatchDeployment(
-    OrchestrationReports.FullDeploymentReport memory fullReport,
     OrchestrationReports.HubDeploymentReport memory report,
-    FullDeployInputs memory inputs,
+    address accessManagerAddress,
     string memory label
   ) internal view {
-    _checkHubDeployment(report, fullReport.accessBatchReport.accessManagerAddress, label);
+    _checkHubDeployment(report, accessManagerAddress, label);
     _checkInterestRateStrategyDeployment(report, label);
     _checkTreasurySpokeDeployment(report, label);
   }
@@ -605,6 +608,24 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       Ownable(report.configuratorBatchReport.spokeConfiguratorAddress).owner(),
       inputs.spokeConfiguratorOwner,
       'SpokeConfigurator owner'
+    );
+  }
+
+  function _checkGatewayRoles(
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    if (inputs.nativeWrapperAddress != address(0)) {
+      assertEq(
+        Ownable(report.gatewaysBatchReport.nativeGatewayAddress).owner(),
+        inputs.gatewayOwner,
+        'NativeGateway owner'
+      );
+    }
+    assertEq(
+      Ownable(report.gatewaysBatchReport.signatureGatewayAddress).owner(),
+      inputs.gatewayOwner,
+      'SignatureGateway owner'
     );
   }
 }

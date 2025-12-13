@@ -15,6 +15,7 @@ contract InputUtils {
   /// @dev spokeAdmin The spoke admin.
   /// @dev spokeProxyAdminOwner The owner of the spoke proxyAdmin.
   /// @dev spokeConfiguratorOwner The admin of the spoke configurator.
+  /// @dev gatewayOwner The owner of the native token and signature gateways.
   /// @dev nativeWrapperAddress The address of the native wrapper.
   /// @dev grantRoles A boolean indicating if roles should be granted.
   /// @dev hubLabels An array of hub labels; the number of hub labels defines the number of hubs to deploy.
@@ -27,6 +28,7 @@ contract InputUtils {
     address spokeAdmin;
     address spokeProxyAdminOwner;
     address spokeConfiguratorOwner;
+    address gatewayOwner;
     address nativeWrapperAddress;
     bool grantRoles;
     string[] hubLabels;
