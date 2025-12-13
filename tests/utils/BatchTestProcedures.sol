@@ -202,7 +202,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   ) internal view {
     _checkSpokeDeployment({
       report: report,
-      inputs: inputs,
       accessManagerAddress: accessManagerAddress,
       label: label
     });
@@ -211,7 +210,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
 
   function _checkSpokeDeployment(
     OrchestrationReports.SpokeDeploymentReport memory report,
-    FullDeployInputs memory inputs,
     address accessManagerAddress,
     string memory label
   ) internal view {
@@ -276,7 +274,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   ) internal view {
     _checkHubDeployment(report, fullReport.accessBatchReport.accessManagerAddress, label);
     _checkInterestRateStrategyDeployment(report, label);
-    _checkTreasurySpokeDeployment(report, inputs, label);
+    _checkTreasurySpokeDeployment(report, label);
   }
 
   function _checkHubDeployment(
@@ -304,7 +302,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
 
   function _checkTreasurySpokeDeployment(
     OrchestrationReports.HubDeploymentReport memory report,
-    FullDeployInputs memory inputs,
     string memory label
   ) internal view {
     assertEq(
@@ -494,7 +491,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     }
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
       _checkTreasurySpokeRoles(
-        accessManager,
         report.hubBatchReports[i].report.treasurySpokeAddress,
         inputs,
         inputs.hubLabels[i]
@@ -521,7 +517,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   }
 
   function _checkTreasurySpokeRoles(
-    IAccessManagerEnumerable accessManager,
     address treasurySpokeAddress,
     FullDeployInputs memory inputs,
     string memory label

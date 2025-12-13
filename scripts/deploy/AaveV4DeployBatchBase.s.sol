@@ -12,15 +12,26 @@ import {
   AaveV4DeployOrchestration
 } from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 abstract contract AaveV4DeployBatchBaseScript is Script, DeployUtils, InputUtils {
-  string internal constant INPUT_PATH = 'scripts/deploy/inputs/AaveV4DeployInput.json';
+  string internal constant INPUT_PATH = 'scripts/deploy/inputs/';
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
-  string internal constant OUTPUT_FILE = 'AaveV4DeployBatch.json';
+
+  string internal _inputFileName;
+  string internal _outputFileName;
+
+  constructor(string memory inputFileName_, string memory outputFileName_) {
+    _inputFileName = inputFileName_;
+    _outputFileName = outputFileName_;
+  }
 
   function run() external {
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
-    FullDeployInputs memory inputs = loadFullDeployInputs(INPUT_PATH);
+    FullDeployInputs memory inputs = loadFullDeployInputs(
+      string.concat(INPUT_PATH, _inputFileName)
+    );
 
     _loadWarnings(logger, inputs);
 
@@ -33,7 +44,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, DeployUtils, InputUtils
     logger.writeJsonReportMarket(report);
     logger.log('...Batch Deployment Completed...');
     logger.log('...Saving Logs...');
-    logger.save({fileName: OUTPUT_FILE, withTimestamp: true});
+    logger.save({fileName: _outputFileName, withTimestamp: true});
   }
 
   function _loadWarnings(
@@ -42,8 +53,35 @@ abstract contract AaveV4DeployBatchBaseScript is Script, DeployUtils, InputUtils
   ) internal pure virtual {
     if (inputs.grantRoles) {
       logger.log('WARNING: Roles are being set');
-      if (inputs.admin == address(0)) {
-        logger.log('WARNING: Admin is zero address; Roles can not be set');
+      if (inputs.accessManagerAdmin == address(0)) {
+        logger.log(
+          'WARNING: Access Manager Admin is zero address; admin roles will be granted to deployer by default'
+        );
+      }
+      if (inputs.hubConfiguratorOwner == address(0)) {
+        logger.log(
+          'WARNING: Hub Configurator Owner is zero address; configurator roles will be granted to deployer by default'
+        );
+      }
+      if (inputs.spokeConfiguratorOwner == address(0)) {
+        logger.log(
+          'WARNING: Spoke Configurator Owner is zero address; configurator roles will be granted to deployer by default'
+        );
+      }
+      if (inputs.spokeProxyAdminOwner == address(0)) {
+        logger.log(
+          'WARNING: Spoke Proxy Admin Owner is zero address; proxy admin roles will be granted to deployer by default'
+        );
+      }
+      if (inputs.treasurySpokeOwner == address(0)) {
+        logger.log(
+          'WARNING: Treasury Spoke Owner is zero address; treasury spoke roles will be granted to deployer by default'
+        );
+      }
+      if (inputs.spokeAdmin == address(0)) {
+        logger.log(
+          'WARNING: Spoke Admin is zero address; spoke admin roles will be granted to deployer by default'
+        );
       }
     }
     if (inputs.hubLabels.length == 0) {
