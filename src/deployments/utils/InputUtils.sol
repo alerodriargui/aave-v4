@@ -8,8 +8,25 @@ import 'forge-std/Vm.sol';
 contract InputUtils {
   using stdJson for string;
 
+  /// @dev accessManagerAdmin The default admin of the access manager.
+  /// @dev hubAdmin The admin of the hub.
+  /// @dev hubConfiguratorOwner The admin of the hub configurator.
+  /// @dev treasurySpokeOwner The owner of the treasury spoke.
+  /// @dev spokeAdmin The spoke admin.
+  /// @dev spokeProxyAdminOwner The owner of the spoke proxyAdmin.
+  /// @dev spokeConfiguratorOwner The admin of the spoke configurator.
+  /// @dev nativeWrapperAddress The address of the native wrapper.
+  /// @dev grantRoles A boolean indicating if roles should be granted.
+  /// @dev hubLabels An array of hub labels; the number of hub labels defines the number of hubs to deploy.
+  /// @dev spokeLabels An array of spoke labels; the number of spoke labels defines the number of spokes to deploy.
   struct FullDeployInputs {
-    address admin;
+    address accessManagerAdmin;
+    address hubAdmin;
+    address hubConfiguratorOwner;
+    address treasurySpokeOwner;
+    address spokeAdmin;
+    address spokeProxyAdminOwner;
+    address spokeConfiguratorOwner;
     address nativeWrapperAddress;
     bool grantRoles;
     string[] hubLabels;
@@ -34,12 +51,17 @@ contract InputUtils {
     string memory inputPath
   ) public view returns (FullDeployInputs memory inputs) {
     string memory json = vm.readFile(inputPath);
-    inputs.admin = json.readAddress('.admin');
+    inputs.accessManagerAdmin = json.readAddress('.accessManagerAdmin');
+    inputs.hubAdmin = json.readAddress('.hubAdmin');
+    inputs.hubConfiguratorOwner = json.readAddress('.hubConfiguratorOwner');
+    inputs.treasurySpokeOwner = json.readAddress('.treasurySpokeOwner');
+    inputs.spokeAdmin = json.readAddress('.spokeAdmin');
+    inputs.spokeProxyAdminOwner = json.readAddress('.spokeProxyAdminOwner');
+    inputs.spokeConfiguratorOwner = json.readAddress('.spokeConfiguratorOwner');
     inputs.nativeWrapperAddress = json.readAddress('.nativeWrapperAddress');
     inputs.grantRoles = json.readBool('.grantRoles');
     inputs.hubLabels = json.readStringArray('.hubLabels');
     inputs.spokeLabels = json.readStringArray('.spokeLabels');
-    return inputs;
   }
 
   function loadSpokeDeployInputs(

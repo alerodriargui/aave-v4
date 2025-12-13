@@ -13,36 +13,40 @@ import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol
 
 library AaveV4DeployCore {
   function deployAccessBatch(
-    address accessManagerAdmin
+    address admin
   ) internal returns (BatchReports.AccessBatchReport memory) {
-    AaveV4AccessBatch accessBatch = new AaveV4AccessBatch(accessManagerAdmin);
+    AaveV4AccessBatch accessBatch = new AaveV4AccessBatch(admin);
     return accessBatch.getReport();
   }
 
   function deployConfiguratorBatch(
-    address admin
+    address hubConfiguratorOwner,
+    address spokeConfiguratorOwner
   ) internal returns (BatchReports.ConfiguratorBatchReport memory) {
-    AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch(admin);
+    AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch(
+      hubConfiguratorOwner,
+      spokeConfiguratorOwner
+    );
     return configuratorBatch.getReport();
   }
 
   function deployHubBatch(
-    address admin,
+    address treasurySpokeOwner,
     address accessManagerAddress
   ) internal returns (BatchReports.HubBatchReport memory) {
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch(admin, accessManagerAddress);
+    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasurySpokeOwner, accessManagerAddress);
     return hubBatch.getReport();
   }
 
   function deploySpokeInstanceBatch(
-    address admin,
+    address spokeProxyAdminOwner,
     address accessManagerAddress,
     uint8 oracleDecimals,
     string memory oracleSuffix,
     string memory label
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
     AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch(
-      admin,
+      spokeProxyAdminOwner,
       accessManagerAddress,
       oracleDecimals,
       string.concat(label, oracleSuffix)
@@ -51,10 +55,13 @@ library AaveV4DeployCore {
   }
 
   function deployGatewaysBatch(
-    address admin,
+    address owner,
     address nativeWrapper
   ) internal returns (BatchReports.GatewaysBatchReport memory) {
-    AaveV4GatewayBatch gatewayBatch = new AaveV4GatewayBatch(admin, nativeWrapper);
+    AaveV4GatewayBatch gatewayBatch = new AaveV4GatewayBatch({
+      owner_: owner,
+      nativeWrapper_: nativeWrapper
+    });
     return gatewayBatch.getReport();
   }
 }

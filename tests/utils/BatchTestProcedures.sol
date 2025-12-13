@@ -58,15 +58,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   ) public returns (OrchestrationReports.FullDeploymentReport memory) {
     vm.startPrank(deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(
-        logger,
-        deployer,
-        inputs.admin,
-        inputs.nativeWrapperAddress,
-        inputs.hubLabels,
-        inputs.spokeLabels,
-        inputs.grantRoles
-      );
+      .deployAaveV4(logger, deployer, inputs);
     vm.stopPrank();
     return report;
   }
@@ -78,6 +70,46 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     _checkFullReport(report, inputs);
     _checkSpokeBatchDeployments(report, inputs);
     _checkHubBatchDeployments(report, inputs);
+  }
+
+  function _checkRoles(
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    inputs = _sanitizeInputs(inputs);
+
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
+      report.accessBatchReport.accessManagerAddress
+    );
+    _checkAccessManagerRoles(accessManager, inputs);
+    _checkSpokeRoles(accessManager, report, inputs);
+    _checkHubRoles(accessManager, report, inputs);
+    _checkConfiguratorBatchRoles(report, inputs);
+  }
+
+  /// @dev Sanitizes the inputs by defaulting to the deployer if the address is zero.
+  function _sanitizeInputs(
+    FullDeployInputs memory inputs
+  ) internal view returns (FullDeployInputs memory) {
+    inputs.accessManagerAdmin = inputs.accessManagerAdmin != address(0)
+      ? inputs.accessManagerAdmin
+      : deployer;
+    inputs.hubAdmin = inputs.hubAdmin != address(0) ? inputs.hubAdmin : deployer;
+    inputs.hubConfiguratorOwner = inputs.hubConfiguratorOwner != address(0)
+      ? inputs.hubConfiguratorOwner
+      : deployer;
+    inputs.treasurySpokeOwner = inputs.treasurySpokeOwner != address(0)
+      ? inputs.treasurySpokeOwner
+      : deployer;
+    inputs.spokeAdmin = inputs.spokeAdmin != address(0) ? inputs.spokeAdmin : deployer;
+    inputs.spokeProxyAdminOwner = inputs.spokeProxyAdminOwner != address(0)
+      ? inputs.spokeProxyAdminOwner
+      : deployer;
+    inputs.spokeConfiguratorOwner = inputs.spokeConfiguratorOwner != address(0)
+      ? inputs.spokeConfiguratorOwner
+      : deployer;
+
+    return inputs;
   }
 
   function _checkFullReport(
@@ -147,284 +179,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     );
   }
 
-  function _checkRoles(
-    OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
-  ) internal view {
-    address contractAdmin = inputs.admin != address(0) ? inputs.admin : deployer;
-
-    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
-      report.accessBatchReport.accessManagerAddress
-    );
-    _checkAccessManagerRoles(accessManager, inputs, contractAdmin);
-    _checkSpokeRoles(accessManager, report, inputs, contractAdmin);
-    _checkHubRoles(accessManager, report, inputs, contractAdmin);
-  }
-
-  function _checkAccessManagerRoles(
-    IAccessManagerEnumerable accessManager,
-    FullDeployInputs memory inputs,
-    address contractAdmin
-  ) internal view {
-    assertEq(
-      accessManager.getRoleMember(Roles.DEFAULT_ADMIN_ROLE, 0),
-      contractAdmin,
-      'DefaultAdminRoleMember'
-    );
-    assertEq(
-      accessManager.getRoleMemberCount(Roles.DEFAULT_ADMIN_ROLE),
-      1,
-      'DefaultAdminRoleCount'
-    );
-
-    (bool adminHasRole, ) = accessManager.hasRole(Roles.DEFAULT_ADMIN_ROLE, contractAdmin);
-    bool expectAdminHasRole = inputs.grantRoles || inputs.admin == address(0);
-    if (expectAdminHasRole) {
-      assertTrue(adminHasRole, 'contract admin has default admin role');
-    } else {
-      assertFalse(adminHasRole, 'contract admin does not have default admin role');
-    }
-  }
-
-  function _checkSpokeRoles(
-    IAccessManagerEnumerable accessManager,
-    OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs,
-    address contractAdmin
-  ) internal view {
-    _checkSpokeAdminRoles(accessManager, report, inputs, contractAdmin);
-    _checkSpokeConfiguratorRoles(accessManager, report, inputs, contractAdmin);
-  }
-
-  function _checkSpokeConfiguratorRoles(
-    IAccessManagerEnumerable accessManager,
-    OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs,
-    address contractAdmin
-  ) internal view {
-    if (inputs.spokeLabels.length > 0 && inputs.grantRoles) {
-      assertEq(
-        accessManager.getRoleMemberCount(Roles.SPOKE_CONFIGURATOR_ROLE),
-        2,
-        'SpokeConfiguratorRole member count'
-      );
-      assertEq(
-        accessManager.getRoleMember(Roles.SPOKE_CONFIGURATOR_ROLE, 0),
-        contractAdmin,
-        'SpokeConfiguratorRole member - spoke admin'
-      );
-      assertEq(
-        accessManager.getRoleMember(Roles.SPOKE_CONFIGURATOR_ROLE, 1),
-        report.configuratorBatchReport.spokeConfiguratorAddress,
-        'SpokeConfiguratorRole member - spoke configurator'
-      );
-    } else {
-      assertEq(
-        accessManager.getRoleMemberCount(Roles.SPOKE_CONFIGURATOR_ROLE),
-        0,
-        'SpokeConfiguratorRole member count'
-      );
-    }
-
-    for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
-      for (uint256 j = 0; j < spokeConfiguratorRoleSelectors.length; j++) {
-        assertEq(
-          accessManager.getTargetFunctionRole(
-            report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
-            spokeConfiguratorRoleSelectors[j]
-          ),
-          Roles.SPOKE_CONFIGURATOR_ROLE,
-          'SpokeConfiguratorRole target function'
-        );
-
-        (bool allowed, uint32 delay) = accessManager.canCall(
-          report.configuratorBatchReport.spokeConfiguratorAddress,
-          report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
-          spokeConfiguratorRoleSelectors[j]
-        );
-        assertEq(
-          allowed,
-          inputs.grantRoles ? true : false,
-          'SpokeConfiguratorRole allowed - configurator'
-        );
-        assertEq(delay, 0, 'SpokeConfiguratorRole delay - configurator');
-
-        // spoke admin role encompasses spoke configurator role
-        (allowed, delay) = accessManager.canCall(
-          contractAdmin,
-          report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
-          spokeConfiguratorRoleSelectors[j]
-        );
-        assertEq(
-          allowed,
-          inputs.grantRoles ? true : false,
-          'SpokeConfiguratorRole allowed - admin'
-        );
-        assertEq(delay, 0, 'SpokeConfiguratorRole delay - admin');
-      }
-    }
-  }
-
-  function _checkSpokeAdminRoles(
-    IAccessManagerEnumerable accessManager,
-    OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs,
-    address contractAdmin
-  ) internal view {
-    if (inputs.spokeLabels.length > 0 && inputs.grantRoles) {
-      assertEq(
-        accessManager.getRoleMemberCount(Roles.SPOKE_POSITION_UPDATER_ROLE),
-        1,
-        'SpokeAdminRole member count'
-      );
-      assertEq(
-        accessManager.getRoleMember(Roles.SPOKE_POSITION_UPDATER_ROLE, 0),
-        contractAdmin,
-        'SpokeAdminRole member - spoke admin'
-      );
-    } else {
-      assertEq(
-        accessManager.getRoleMemberCount(Roles.SPOKE_POSITION_UPDATER_ROLE),
-        0,
-        'HubAdminRoleCount'
-      );
-    }
-
-    for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
-      for (uint256 j = 0; j < spokePositionUpdaterRoleSelectors.length; j++) {
-        (bool allowed, uint32 delay) = accessManager.canCall(
-          contractAdmin,
-          report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
-          spokePositionUpdaterRoleSelectors[j]
-        );
-        assertEq(allowed, inputs.grantRoles ? true : false, 'SpokeAdminRole allowed');
-        assertEq(delay, 0, 'SpokeAdminRole delay');
-
-        assertEq(
-          accessManager.getTargetFunctionRole(
-            report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
-            spokePositionUpdaterRoleSelectors[j]
-          ),
-          Roles.SPOKE_POSITION_UPDATER_ROLE,
-          'SpokeAdminRole target function'
-        );
-      }
-    }
-  }
-
-  function _checkHubRoles(
-    IAccessManagerEnumerable accessManager,
-    OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs,
-    address contractAdmin
-  ) internal view {
-    _checkHubAdminRoles(accessManager, report, inputs, contractAdmin);
-    _checkHubConfiguratorRoles(accessManager, report, inputs, contractAdmin);
-  }
-
-  function _checkHubAdminRoles(
-    IAccessManagerEnumerable accessManager,
-    OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs,
-    address contractAdmin
-  ) internal view {
-    if (inputs.hubLabels.length > 0 && inputs.grantRoles) {
-      assertEq(accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE), 1, 'HubAdminRoleCount');
-      assertEq(
-        accessManager.getRoleMember(Roles.HUB_FEE_MINTER_ROLE, 0),
-        contractAdmin,
-        'HubAdminRole member - hub admin'
-      );
-    } else {
-      assertEq(accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE), 0, 'HubAdminRoleCount');
-    }
-    for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
-      for (uint256 j = 0; j < hubFeeMinterRoleSelectors.length; j++) {
-        assertEq(
-          accessManager.getTargetFunctionRole(
-            report.hubBatchReports[i].report.hubAddress,
-            hubFeeMinterRoleSelectors[j]
-          ),
-          Roles.HUB_FEE_MINTER_ROLE,
-          'HubAdminRole target function'
-        );
-
-        (bool allowed, uint32 delay) = accessManager.canCall(
-          contractAdmin,
-          report.hubBatchReports[i].report.hubAddress,
-          hubFeeMinterRoleSelectors[j]
-        );
-        assertEq(allowed, inputs.grantRoles ? true : false, 'HubAdminRole allowed');
-        assertEq(delay, 0, 'HubAdminRole delay');
-      }
-    }
-  }
-
-  function _checkHubConfiguratorRoles(
-    IAccessManagerEnumerable accessManager,
-    OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs,
-    address contractAdmin
-  ) internal view {
-    if (inputs.hubLabels.length > 0 && inputs.grantRoles) {
-      assertEq(
-        accessManager.getRoleMemberCount(Roles.HUB_CONFIGURATOR_ROLE),
-        2,
-        'HubConfiguratorRole member count'
-      );
-      assertEq(
-        accessManager.getRoleMember(Roles.HUB_CONFIGURATOR_ROLE, 0),
-        contractAdmin,
-        'HubConfiguratorRole member - hub admin'
-      );
-      assertEq(
-        accessManager.getRoleMember(Roles.HUB_CONFIGURATOR_ROLE, 1),
-        report.configuratorBatchReport.hubConfiguratorAddress,
-        'HubConfiguratorRole member - hub configurator'
-      );
-    } else {
-      assertEq(
-        accessManager.getRoleMemberCount(Roles.HUB_CONFIGURATOR_ROLE),
-        0,
-        'HubConfiguratorRole member count'
-      );
-    }
-    for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
-      for (uint256 j = 0; j < hubConfiguratorRoleSelectors.length; j++) {
-        assertEq(
-          accessManager.getTargetFunctionRole(
-            report.hubBatchReports[i].report.hubAddress,
-            hubConfiguratorRoleSelectors[j]
-          ),
-          Roles.HUB_CONFIGURATOR_ROLE,
-          'HubConfiguratorRole target function'
-        );
-        bool allowed;
-        uint32 delay;
-
-        (allowed, delay) = accessManager.canCall(
-          report.configuratorBatchReport.hubConfiguratorAddress,
-          report.hubBatchReports[i].report.hubAddress,
-          hubConfiguratorRoleSelectors[j]
-        );
-        assertEq(
-          allowed,
-          inputs.grantRoles ? true : false,
-          'HubConfiguratorRole allowed - configurator'
-        );
-        assertEq(delay, 0, 'HubConfiguratorRole delay - configurator');
-
-        (allowed, delay) = accessManager.canCall(
-          contractAdmin,
-          report.hubBatchReports[i].report.hubAddress,
-          hubConfiguratorRoleSelectors[j]
-        );
-        assertEq(allowed, inputs.grantRoles ? true : false, 'HubConfiguratorRole allowed - admin');
-        assertEq(delay, 0, 'HubConfiguratorRole delay - admin');
-      }
-    }
-  }
-
   function _checkSpokeBatchDeployments(
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
@@ -446,8 +200,13 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     address accessManagerAddress,
     string memory label
   ) internal view {
-    _checkSpokeDeployment(report, inputs, accessManagerAddress, label);
-    _checkOracleDeployment(report, label);
+    _checkSpokeDeployment({
+      report: report,
+      inputs: inputs,
+      accessManagerAddress: accessManagerAddress,
+      label: label
+    });
+    _checkOracleDeployment({report: report, label: label});
   }
 
   function _checkSpokeDeployment(
@@ -456,13 +215,6 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     address accessManagerAddress,
     string memory label
   ) internal view {
-    address proxyAdminOwner = Ownable(ProxyHelper.getProxyAdmin(report.report.spokeProxyAddress))
-      .owner();
-    if (inputs.admin != address(0)) {
-      assertEq(proxyAdminOwner, inputs.admin, string.concat(label, ' proxy admin owner'));
-    } else {
-      assertEq(proxyAdminOwner, deployer, string.concat(label, ' proxy admin owner'));
-    }
     assertEq(
       ProxyHelper.getImplementation(report.report.spokeProxyAddress),
       report.report.spokeImplementationAddress,
@@ -560,11 +312,304 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       report.report.hubAddress,
       string.concat(label, ' hub on treasury spoke')
     );
-    address treasurySpokeOwner = Ownable(report.report.treasurySpokeAddress).owner();
-    if (inputs.admin != address(0)) {
-      assertEq(treasurySpokeOwner, inputs.admin, string.concat(label, ' treasury spoke owner'));
+  }
+
+  function _checkAccessManagerRoles(
+    IAccessManagerEnumerable accessManager,
+    FullDeployInputs memory inputs
+  ) internal view {
+    address expectedAdmin = (inputs.grantRoles && inputs.accessManagerAdmin != address(0))
+      ? inputs.accessManagerAdmin
+      : deployer;
+    assertEq(
+      accessManager.getRoleMember(Roles.DEFAULT_ADMIN_ROLE, 0),
+      expectedAdmin,
+      'DefaultAdminRoleMember'
+    );
+    assertEq(
+      accessManager.getRoleMemberCount(Roles.DEFAULT_ADMIN_ROLE),
+      1,
+      'DefaultAdminRoleCount'
+    );
+
+    (bool adminHasRole, ) = accessManager.hasRole(Roles.DEFAULT_ADMIN_ROLE, expectedAdmin);
+    assertTrue(adminHasRole, 'access manager admin has default admin role');
+  }
+
+  function _checkSpokeRoles(
+    IAccessManagerEnumerable accessManager,
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    _checkSpokeAdminRoles(accessManager, report, inputs);
+    _checkSpokeConfiguratorRoles(accessManager, report, inputs);
+  }
+
+  function _checkSpokeConfiguratorRoles(
+    IAccessManagerEnumerable accessManager,
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    if (inputs.spokeLabels.length > 0 && inputs.grantRoles) {
+      assertEq(
+        accessManager.getRoleMemberCount(Roles.SPOKE_CONFIGURATOR_ROLE),
+        2,
+        'SpokeConfiguratorRole member count'
+      );
+      assertEq(
+        accessManager.getRoleMember(Roles.SPOKE_CONFIGURATOR_ROLE, 0),
+        inputs.spokeAdmin,
+        'SpokeConfiguratorRole member - spoke admin'
+      );
+      assertEq(
+        accessManager.getRoleMember(Roles.SPOKE_CONFIGURATOR_ROLE, 1),
+        report.configuratorBatchReport.spokeConfiguratorAddress,
+        'SpokeConfiguratorRole member - spoke configurator'
+      );
     } else {
-      assertEq(treasurySpokeOwner, deployer, string.concat(label, ' treasury spoke owner'));
+      assertEq(
+        accessManager.getRoleMemberCount(Roles.SPOKE_CONFIGURATOR_ROLE),
+        0,
+        'SpokeConfiguratorRole member count'
+      );
     }
+
+    for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
+      for (uint256 j = 0; j < spokeConfiguratorRoleSelectors.length; j++) {
+        assertEq(
+          accessManager.getTargetFunctionRole(
+            report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
+            spokeConfiguratorRoleSelectors[j]
+          ),
+          Roles.SPOKE_CONFIGURATOR_ROLE,
+          'SpokeConfiguratorRole target function'
+        );
+
+        (bool allowed, uint32 delay) = accessManager.canCall(
+          report.configuratorBatchReport.spokeConfiguratorAddress,
+          report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
+          spokeConfiguratorRoleSelectors[j]
+        );
+        assertEq(
+          allowed,
+          inputs.grantRoles ? true : false,
+          'SpokeConfiguratorRole allowed - configurator'
+        );
+        assertEq(delay, 0, 'SpokeConfiguratorRole delay - configurator');
+
+        // spoke admin role encompasses spoke configurator role
+        (allowed, delay) = accessManager.canCall(
+          inputs.spokeAdmin,
+          report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
+          spokeConfiguratorRoleSelectors[j]
+        );
+        assertEq(
+          allowed,
+          inputs.grantRoles ? true : false,
+          'SpokeConfiguratorRole allowed - spoke admin'
+        );
+        assertEq(delay, 0, 'SpokeConfiguratorRole delay - spoke admin');
+      }
+    }
+  }
+
+  function _checkSpokeAdminRoles(
+    IAccessManagerEnumerable accessManager,
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    if (inputs.spokeLabels.length > 0 && inputs.grantRoles) {
+      assertEq(
+        accessManager.getRoleMemberCount(Roles.SPOKE_POSITION_UPDATER_ROLE),
+        1,
+        'SpokeAdminRole member count'
+      );
+      assertEq(
+        accessManager.getRoleMember(Roles.SPOKE_POSITION_UPDATER_ROLE, 0),
+        inputs.spokeAdmin,
+        'SpokeAdminRole member - spoke admin'
+      );
+    } else {
+      assertEq(
+        accessManager.getRoleMemberCount(Roles.SPOKE_POSITION_UPDATER_ROLE),
+        0,
+        'HubAdminRoleCount'
+      );
+    }
+
+    for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
+      address proxyAdminOwner = Ownable(
+        ProxyHelper.getProxyAdmin(report.spokeInstanceBatchReports[i].report.spokeProxyAddress)
+      ).owner();
+      assertEq(
+        proxyAdminOwner,
+        inputs.spokeProxyAdminOwner,
+        string.concat(inputs.spokeLabels[i], ' proxy admin owner')
+      );
+
+      for (uint256 j = 0; j < spokePositionUpdaterRoleSelectors.length; j++) {
+        (bool allowed, uint32 delay) = accessManager.canCall(
+          inputs.spokeAdmin,
+          report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
+          spokePositionUpdaterRoleSelectors[j]
+        );
+        assertEq(allowed, inputs.grantRoles ? true : false, 'SpokeAdminRole allowed');
+        assertEq(delay, 0, 'SpokeAdminRole delay');
+
+        assertEq(
+          accessManager.getTargetFunctionRole(
+            report.spokeInstanceBatchReports[i].report.spokeProxyAddress,
+            spokePositionUpdaterRoleSelectors[j]
+          ),
+          Roles.SPOKE_POSITION_UPDATER_ROLE,
+          'SpokeAdminRole target function'
+        );
+      }
+    }
+  }
+
+  function _checkHubRoles(
+    IAccessManagerEnumerable accessManager,
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    _checkHubBatchRoles(accessManager, report, inputs);
+    _checkHubConfiguratorRoles(accessManager, report, inputs);
+  }
+
+  function _checkHubBatchRoles(
+    IAccessManagerEnumerable accessManager,
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    if (inputs.hubLabels.length > 0 && inputs.grantRoles) {
+      assertEq(accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE), 1, 'HubAdminRoleCount');
+      assertEq(
+        accessManager.getRoleMember(Roles.HUB_FEE_MINTER_ROLE, 0),
+        inputs.hubAdmin,
+        'HubAdminRole member - hub admin'
+      );
+    } else {
+      assertEq(accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE), 0, 'HubAdminRoleCount');
+    }
+    for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
+      _checkTreasurySpokeRoles(
+        accessManager,
+        report.hubBatchReports[i].report.treasurySpokeAddress,
+        inputs,
+        inputs.hubLabels[i]
+      );
+      for (uint256 j = 0; j < hubFeeMinterRoleSelectors.length; j++) {
+        assertEq(
+          accessManager.getTargetFunctionRole(
+            report.hubBatchReports[i].report.hubAddress,
+            hubFeeMinterRoleSelectors[j]
+          ),
+          Roles.HUB_FEE_MINTER_ROLE,
+          'HubAdminRole target function'
+        );
+
+        (bool allowed, uint32 delay) = accessManager.canCall(
+          inputs.hubAdmin,
+          report.hubBatchReports[i].report.hubAddress,
+          hubFeeMinterRoleSelectors[j]
+        );
+        assertEq(allowed, inputs.grantRoles ? true : false, 'HubAdminRole allowed');
+        assertEq(delay, 0, 'HubAdminRole delay');
+      }
+    }
+  }
+
+  function _checkTreasurySpokeRoles(
+    IAccessManagerEnumerable accessManager,
+    address treasurySpokeAddress,
+    FullDeployInputs memory inputs,
+    string memory label
+  ) internal view {
+    assertEq(
+      Ownable(treasurySpokeAddress).owner(),
+      inputs.treasurySpokeOwner,
+      string.concat(label, ' treasury spoke owner')
+    );
+  }
+
+  function _checkHubConfiguratorRoles(
+    IAccessManagerEnumerable accessManager,
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    if (inputs.hubLabels.length > 0 && inputs.grantRoles) {
+      assertEq(
+        accessManager.getRoleMemberCount(Roles.HUB_CONFIGURATOR_ROLE),
+        2,
+        'HubConfiguratorRole member count'
+      );
+      assertEq(
+        accessManager.getRoleMember(Roles.HUB_CONFIGURATOR_ROLE, 0),
+        inputs.hubAdmin,
+        'HubConfiguratorRole member - hub admin'
+      );
+      assertEq(
+        accessManager.getRoleMember(Roles.HUB_CONFIGURATOR_ROLE, 1),
+        report.configuratorBatchReport.hubConfiguratorAddress,
+        'HubConfiguratorRole member - hub configurator'
+      );
+    } else {
+      assertEq(
+        accessManager.getRoleMemberCount(Roles.HUB_CONFIGURATOR_ROLE),
+        0,
+        'HubConfiguratorRole member count'
+      );
+    }
+    for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
+      for (uint256 j = 0; j < hubConfiguratorRoleSelectors.length; j++) {
+        assertEq(
+          accessManager.getTargetFunctionRole(
+            report.hubBatchReports[i].report.hubAddress,
+            hubConfiguratorRoleSelectors[j]
+          ),
+          Roles.HUB_CONFIGURATOR_ROLE,
+          'HubConfiguratorRole target function'
+        );
+        bool allowed;
+        uint32 delay;
+
+        (allowed, delay) = accessManager.canCall(
+          report.configuratorBatchReport.hubConfiguratorAddress,
+          report.hubBatchReports[i].report.hubAddress,
+          hubConfiguratorRoleSelectors[j]
+        );
+        assertEq(
+          allowed,
+          inputs.grantRoles ? true : false,
+          'HubConfiguratorRole allowed - configurator'
+        );
+        assertEq(delay, 0, 'HubConfiguratorRole delay - configurator');
+
+        (allowed, delay) = accessManager.canCall(
+          inputs.hubAdmin,
+          report.hubBatchReports[i].report.hubAddress,
+          hubConfiguratorRoleSelectors[j]
+        );
+        assertEq(allowed, inputs.grantRoles ? true : false, 'HubConfiguratorRole allowed - admin');
+        assertEq(delay, 0, 'HubConfiguratorRole delay - admin');
+      }
+    }
+  }
+
+  function _checkConfiguratorBatchRoles(
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    assertEq(
+      Ownable(report.configuratorBatchReport.hubConfiguratorAddress).owner(),
+      inputs.hubConfiguratorOwner,
+      'HubConfigurator owner'
+    );
+    assertEq(
+      Ownable(report.configuratorBatchReport.spokeConfiguratorAddress).owner(),
+      inputs.spokeConfiguratorOwner,
+      'SpokeConfigurator owner'
+    );
   }
 }

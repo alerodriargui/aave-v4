@@ -22,7 +22,7 @@ contract AaveV4SpokeInstanceBatch is
   BatchReports.SpokeInstanceBatchReport internal _report;
 
   constructor(
-    address admin_,
+    address spokeProxyAdminOwner_,
     address accessManagerAddress_,
     uint8 oracleDecimals_,
     string memory oracleDescription_
@@ -38,7 +38,7 @@ contract AaveV4SpokeInstanceBatch is
     address spokeImplementationAddress = _deploySpokeInstance(aaveOracleAddress);
     address spokeProxyAddress = _proxify(
       spokeImplementationAddress,
-      admin_,
+      spokeProxyAdminOwner_,
       abi.encodeWithSignature('initialize(address)', accessManagerAddress_)
     );
 

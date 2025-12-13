@@ -3,8 +3,12 @@
 pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-import {AaveV4HubConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4HubConfiguratorDeployProcedure.sol';
-import {AaveV4SpokeConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/AaveV4SpokeConfiguratorDeployProcedure.sol';
+import {
+  AaveV4HubConfiguratorDeployProcedure
+} from 'src/deployments/procedures/deploy/AaveV4HubConfiguratorDeployProcedure.sol';
+import {
+  AaveV4SpokeConfiguratorDeployProcedure
+} from 'src/deployments/procedures/deploy/AaveV4SpokeConfiguratorDeployProcedure.sol';
 
 contract AaveV4ConfiguratorBatch is
   AaveV4HubConfiguratorDeployProcedure,
@@ -12,9 +16,9 @@ contract AaveV4ConfiguratorBatch is
 {
   BatchReports.ConfiguratorBatchReport internal _report;
 
-  constructor(address admin_) {
-    address hubConfiguratorAddress = _deployHubConfigurator(admin_);
-    address spokeConfiguratorAddress = _deploySpokeConfigurator(admin_);
+  constructor(address hubConfiguratorOwner_, address spokeConfiguratorOwner_) {
+    address hubConfiguratorAddress = _deployHubConfigurator(hubConfiguratorOwner_);
+    address spokeConfiguratorAddress = _deploySpokeConfigurator(spokeConfiguratorOwner_);
 
     _report = BatchReports.ConfiguratorBatchReport({
       hubConfiguratorAddress: hubConfiguratorAddress,

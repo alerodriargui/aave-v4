@@ -23,7 +23,13 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     spokeLabels = ['spoke1', 'spoke2', 'spoke3'];
 
     inputs = FullDeployInputs({
-      admin: makeAddr('admin'),
+      accessManagerAdmin: makeAddr('accessManagerAdmin'),
+      hubConfiguratorOwner: makeAddr('hubConfiguratorOwner'),
+      hubAdmin: makeAddr('hubAdmin'),
+      treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
+      spokeProxyAdminOwner: makeAddr('spokeProxyAdminOwner'),
+      spokeConfiguratorOwner: makeAddr('spokeConfiguratorOwner'),
+      spokeAdmin: makeAddr('spokeAdmin'),
       nativeWrapperAddress: weth9,
       grantRoles: true,
       hubLabels: hubLabels,
@@ -68,16 +74,84 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _checkRoles(report, inputs);
   }
 
-  function testAaveV4BatchDeployment_withZeroAdminAddress() public {
-    inputs.admin = address(0);
+  function testAaveV4BatchDeployment_withZeroAccessManagerAdminAddress() public {
+    inputs.accessManagerAdmin = address(0);
 
     OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
     _checkDeployment(report, inputs);
     _checkRoles(report, inputs);
   }
 
-  function testAaveV4BatchDeployment_withZeroAdminAddress_withoutRoles() public {
-    inputs.admin = address(0);
+  function testAaveV4BatchDeployment_withZeroAccessManagerAdminAddress_withoutRoles() public {
+    inputs.accessManagerAdmin = address(0);
+    inputs.grantRoles = false;
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withZerohubConfiguratorOwnerAddress() public {
+    inputs.hubConfiguratorOwner = address(0);
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withZerohubConfiguratorOwnerAddress_withoutRoles() public {
+    inputs.hubConfiguratorOwner = address(0);
+    inputs.grantRoles = false;
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withZeroTreasurySpokeOwnerAddress() public {
+    inputs.treasurySpokeOwner = address(0);
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withZeroTreasurySpokeOwnerAddress_withoutRoles() public {
+    inputs.treasurySpokeOwner = address(0);
+    inputs.grantRoles = false;
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withZeroSpokeProxyAdminOwnerAddress() public {
+    inputs.spokeProxyAdminOwner = address(0);
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withZeroSpokeProxyAdminOwnerAddress_withoutRoles() public {
+    inputs.spokeProxyAdminOwner = address(0);
+    inputs.grantRoles = false;
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withZerospokeConfiguratorOwnerAddress() public {
+    inputs.spokeConfiguratorOwner = address(0);
+
+    OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);
+    _checkDeployment(report, inputs);
+    _checkRoles(report, inputs);
+  }
+
+  function testAaveV4BatchDeployment_withZerospokeConfiguratorOwnerAddress_withoutRoles() public {
+    inputs.spokeConfiguratorOwner = address(0);
     inputs.grantRoles = false;
 
     OrchestrationReports.FullDeploymentReport memory report = deployAaveV4Testnet(logger, inputs);

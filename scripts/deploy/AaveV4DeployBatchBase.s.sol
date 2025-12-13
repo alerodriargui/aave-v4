@@ -28,15 +28,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, DeployUtils, InputUtils
     address deployer = msg.sender;
     vm.startBroadcast(deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4({
-        logger: logger,
-        deployer: deployer,
-        admin: inputs.admin,
-        nativeWrapper: inputs.nativeWrapperAddress,
-        hubLabels: inputs.hubLabels,
-        spokeLabels: inputs.spokeLabels,
-        grantRoles: inputs.grantRoles
-      });
+      .deployAaveV4({logger: logger, deployer: deployer, deployInputs: inputs});
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
     logger.log('...Batch Deployment Completed...');
