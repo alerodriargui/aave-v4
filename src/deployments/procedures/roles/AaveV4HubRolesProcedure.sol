@@ -2,9 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Roles} from 'src/libraries/types/Roles.sol';
-
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {Roles} from 'src/deployments/procedures/roles/Roles.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 library AaveV4HubRolesProcedure {
@@ -29,12 +28,12 @@ library AaveV4HubRolesProcedure {
     });
   }
 
-  function setHubRoles(address accessManagerAddress, address hubAddress) internal {
-    setHubFeeMinterRole(accessManagerAddress, hubAddress);
-    setHubConfiguratorRole(accessManagerAddress, hubAddress);
+  function setupHubRoles(address accessManagerAddress, address hubAddress) internal {
+    setupHubFeeMinterRole(accessManagerAddress, hubAddress);
+    setupHubConfiguratorRole(accessManagerAddress, hubAddress);
   }
 
-  function setHubFeeMinterRole(address accessManagerAddress, address hubAddress) internal {
+  function setupHubFeeMinterRole(address accessManagerAddress, address hubAddress) internal {
     bytes4[] memory selectors = getHubFeeMinterRoleSelectors();
     IAccessManager(accessManagerAddress).setTargetFunctionRole(
       hubAddress,
@@ -43,7 +42,7 @@ library AaveV4HubRolesProcedure {
     );
   }
 
-  function setHubConfiguratorRole(address accessManagerAddress, address hubAddress) internal {
+  function setupHubConfiguratorRole(address accessManagerAddress, address hubAddress) internal {
     bytes4[] memory selectors = getHubConfiguratorRoleSelectors();
     IAccessManager(accessManagerAddress).setTargetFunctionRole(
       hubAddress,

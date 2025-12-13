@@ -25,7 +25,7 @@ import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {Constants} from 'tests/Constants.sol';
 
-import {Roles} from 'src/libraries/types/Roles.sol';
+import {Roles} from 'src/deployments/procedures/roles/Roles.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';

@@ -2,8 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Roles} from 'src/libraries/types/Roles.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {Roles} from 'src/deployments/procedures/roles/Roles.sol';
 
 library AaveV4AccessManagerRolesProcedure {
   function grantRootAdminRole(

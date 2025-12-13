@@ -4,12 +4,12 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/StdJson.sol';
 import 'forge-std/Vm.sol';
-import {console} from 'forge-std/console.sol';
-import {DeployUtils} from 'src/deployments/utils/DeployUtils.sol';
+import {console2 as console} from 'forge-std/console2.sol';
 
-contract Logger is DeployUtils {
+contract Logger {
   using stdJson for string;
 
+  Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
   struct AddressEntry {
     string label;
     address value;
@@ -19,8 +19,6 @@ contract Logger is DeployUtils {
     string label;
     uint256 value;
   }
-
-  Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
 
   string internal _outputPath;
   string internal _root;

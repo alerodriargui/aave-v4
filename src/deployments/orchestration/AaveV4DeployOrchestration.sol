@@ -2,17 +2,17 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-// import 'forge-std/Vm.sol';
-
-import {Logger} from 'src/deployments/utils/Logger.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+
+import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
+
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {AaveV4AccessBatch} from 'src/deployments/batches/AaveV4AccessBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
-import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
+import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 
 import {
   AaveV4AccessManagerRolesProcedure
@@ -23,7 +23,9 @@ import {
 import {
   AaveV4SpokeRolesProcedure
 } from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {Logger} from 'src/deployments/utils/Logger.sol';
 
 library AaveV4DeployOrchestration {
   uint8 private constant ORACLE_DECIMALS = 8;
@@ -229,7 +231,7 @@ library AaveV4DeployOrchestration {
     logger.log('  TreasurySpoke', hubReport.report.treasurySpokeAddress);
 
     logger.log('...Setting Hub roles...');
-    AaveV4HubRolesProcedure.setHubRoles(accessManagerAddress, hubReport.report.hubAddress);
+    AaveV4HubRolesProcedure.setupHubRoles(accessManagerAddress, hubReport.report.hubAddress);
 
     return hubReport;
   }
@@ -276,7 +278,7 @@ library AaveV4DeployOrchestration {
     logger.log('  AaveOracle', spokeReport.report.aaveOracleAddress);
 
     logger.log('...Setting Spoke roles...');
-    AaveV4SpokeRolesProcedure.setSpokeRoles({
+    AaveV4SpokeRolesProcedure.setupSpokeRoles({
       accessManagerAddress: accessManagerAddress,
       spokeAddress: spokeReport.report.spokeProxyAddress
     });

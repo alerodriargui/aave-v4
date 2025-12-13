@@ -2,19 +2,17 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Script} from 'forge-std/Script.sol';
-
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
-import {DeployUtils} from 'src/deployments/utils/DeployUtils.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {
   AaveV4DeployOrchestration
 } from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
+import {Script} from 'forge-std/Script.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
-abstract contract AaveV4DeployBatchBaseScript is Script, DeployUtils, InputUtils {
+abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   string internal constant INPUT_PATH = 'scripts/deploy/inputs/';
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
 

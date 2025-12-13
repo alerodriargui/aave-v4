@@ -36,7 +36,7 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
-import {Roles} from 'src/libraries/types/Roles.sol';
+import {Roles} from 'src/deployments/procedures/roles/Roles.sol';
 import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
 import {NoncesKeyed, INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';

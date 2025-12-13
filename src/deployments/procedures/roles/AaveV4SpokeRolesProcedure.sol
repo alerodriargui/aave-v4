@@ -2,19 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Roles} from 'src/libraries/types/Roles.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {Roles} from 'src/deployments/procedures/roles/Roles.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 library AaveV4SpokeRolesProcedure {
-  function grantSpokeConfiguratorRole(address accessManagerAddress, address admin) internal {
-    IAccessManager(accessManagerAddress).grantRole({
-      roleId: Roles.SPOKE_CONFIGURATOR_ROLE,
-      account: admin,
-      executionDelay: 0
-    });
-  }
-
   function grantSpokeAdminRole(address accessManagerAddress, address admin) internal {
     grantSpokePositionUpdaterRole(accessManagerAddress, admin);
     grantSpokeConfiguratorRole(accessManagerAddress, admin);
@@ -28,12 +20,20 @@ library AaveV4SpokeRolesProcedure {
     });
   }
 
-  function setSpokeRoles(address accessManagerAddress, address spokeAddress) internal {
-    setSpokePositionUpdaterRole(accessManagerAddress, spokeAddress);
-    setSpokeConfiguratorRole(accessManagerAddress, spokeAddress);
+  function grantSpokeConfiguratorRole(address accessManagerAddress, address admin) internal {
+    IAccessManager(accessManagerAddress).grantRole({
+      roleId: Roles.SPOKE_CONFIGURATOR_ROLE,
+      account: admin,
+      executionDelay: 0
+    });
   }
 
-  function setSpokePositionUpdaterRole(
+  function setupSpokeRoles(address accessManagerAddress, address spokeAddress) internal {
+    setupSpokePositionUpdaterRole(accessManagerAddress, spokeAddress);
+    setupSpokeConfiguratorRole(accessManagerAddress, spokeAddress);
+  }
+
+  function setupSpokePositionUpdaterRole(
     address accessManagerAddress,
     address spokeAddress
   ) internal {
@@ -45,7 +45,7 @@ library AaveV4SpokeRolesProcedure {
     );
   }
 
-  function setSpokeConfiguratorRole(address accessManagerAddress, address spokeAddress) internal {
+  function setupSpokeConfiguratorRole(address accessManagerAddress, address spokeAddress) internal {
     bytes4[] memory selectors = getSpokeConfiguratorRoleSelectors();
     IAccessManager(accessManagerAddress).setTargetFunctionRole(
       spokeAddress,
