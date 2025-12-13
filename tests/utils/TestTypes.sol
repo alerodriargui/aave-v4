@@ -19,4 +19,37 @@ library TestTypes {
     address spoke;
     uint256 reserveId;
   }
+
+  struct TestTokensBatchReport {
+    address wethAddress;
+    address[] tokenAddresses;
+  }
+
+  struct TestTokenInput {
+    string name;
+    string symbol;
+    uint8 decimals;
+  }
+
+  struct TestHubReport {
+    address hubAddress;
+    address irStrategyAddress;
+    address treasurySpokeAddress;
+  }
+
+  struct TestSpokeReport {
+    address spokeAddress;
+    address aaveOracleAddress;
+  }
+
+  struct TestEnvReport {
+    address accessManagerAddress;
+    TestHubReport[] hubReports;
+    TestSpokeReport[] spokeReports;
+  }
+
+  struct TestTokensReport {
+    address wethAddress;
+    address[] testTokenAddresses;
+  }
 }

@@ -27,7 +27,7 @@ contract AaveV4SpokeInstanceBatch is
     uint8 oracleDecimals_,
     string memory oracleDescription_
   ) {
-    // additional 3 nonces for AaveOracle, SpokeInstance, and TransparentUpgradeableProxy
+    // additional 2 nonces for AaveOracle, SpokeInstance, starting from contract nonce of 1
     address predictedSpokeInstanceAddress = Utils.computeCreateAddress(address(this), 3);
 
     address aaveOracleAddress = _deployAaveOracle(
@@ -42,7 +42,7 @@ contract AaveV4SpokeInstanceBatch is
       abi.encodeWithSignature('initialize(address)', accessManagerAddress_)
     );
 
-    require(spokeProxyAddress == predictedSpokeInstanceAddress, 'SpokeInstance address mismatch');
+    assert(spokeProxyAddress == predictedSpokeInstanceAddress);
 
     _report = BatchReports.SpokeInstanceBatchReport({
       aaveOracleAddress: aaveOracleAddress,

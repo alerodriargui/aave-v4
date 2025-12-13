@@ -6,8 +6,6 @@ import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
 
 contract AaveV4HubConfiguratorDeployProcedure {
   function _deployHubConfigurator(address owner_) internal returns (address) {
-    address hubConfigurator = address(new HubConfigurator(owner_));
-
-    return hubConfigurator;
+    return address(new HubConfigurator({owner_: owner_}));
   }
 }

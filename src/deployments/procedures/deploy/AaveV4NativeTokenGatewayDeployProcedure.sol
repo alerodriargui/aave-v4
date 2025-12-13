@@ -9,8 +9,6 @@ contract AaveV4NativeTokenGatewayDeployProcedure {
     address nativeWrapper_,
     address owner_
   ) internal returns (address) {
-    address nativeTokenGateway = address(new NativeTokenGateway(nativeWrapper_, owner_));
-
-    return nativeTokenGateway;
+    return address(new NativeTokenGateway({nativeWrapper_: nativeWrapper_, initialOwner_: owner_}));
   }
 }

@@ -6,8 +6,6 @@ import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 
 contract AaveV4SignatureGatewayDeployProcedure {
   function _deploySignatureGateway(address owner_) internal returns (address) {
-    address signatureGateway = address(new SignatureGateway(owner_));
-
-    return signatureGateway;
+    return address(new SignatureGateway({initialOwner_: owner_}));
   }
 }

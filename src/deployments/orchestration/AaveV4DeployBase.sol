@@ -11,7 +11,7 @@ import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 
-library AaveV4DeployCore {
+library AaveV4DeployBase {
   function deployAccessBatch(
     address admin
   ) internal returns (BatchReports.AccessBatchReport memory) {
@@ -45,12 +45,12 @@ library AaveV4DeployCore {
     string memory oracleSuffix,
     string memory label
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
-    AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch(
-      spokeProxyAdminOwner,
-      accessManagerAddress,
-      oracleDecimals,
-      string.concat(label, oracleSuffix)
-    );
+    AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
+      spokeProxyAdminOwner_: spokeProxyAdminOwner,
+      accessManagerAddress_: accessManagerAddress,
+      oracleDecimals_: oracleDecimals,
+      oracleDescription_: string.concat(label, oracleSuffix)
+    });
     return spokeInstanceBatch.getReport();
   }
 

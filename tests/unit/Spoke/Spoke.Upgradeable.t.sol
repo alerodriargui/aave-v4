@@ -86,8 +86,8 @@ contract SpokeUpgradeableTest is SpokeBase {
       )
     );
 
-    OrchestrationReports.TestEnvReport memory report;
-    report.spokeReports = new OrchestrationReports.TestSpokeReport[](1);
+    TestTypes.TestEnvReport memory report;
+    report.spokeReports = new TestTypes.TestSpokeReport[](1);
     report.spokeReports[0].spokeAddress = address(spokeProxy);
     _setupFixturesRoles(report);
 

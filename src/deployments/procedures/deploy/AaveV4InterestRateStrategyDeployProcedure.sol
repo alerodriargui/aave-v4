@@ -6,8 +6,6 @@ import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 
 contract AaveV4InterestRateStrategyDeployProcedure {
   function _deployInterestRateStrategy(address hub_) internal returns (address) {
-    address interestRateStrategy = address(new AssetInterestRateStrategy(hub_));
-
-    return interestRateStrategy;
+    return address(new AssetInterestRateStrategy({hub_: hub_}));
   }
 }

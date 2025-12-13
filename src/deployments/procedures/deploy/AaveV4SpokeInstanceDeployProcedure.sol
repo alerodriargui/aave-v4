@@ -6,8 +6,6 @@ import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
 
 contract AaveV4SpokeInstanceDeployProcedure {
   function _deploySpokeInstance(address oracle_) internal returns (address) {
-    address spokeInstance = address(new SpokeInstance(oracle_));
-
-    return spokeInstance;
+    return address(new SpokeInstance({oracle_: oracle_}));
   }
 }

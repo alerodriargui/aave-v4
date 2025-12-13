@@ -284,7 +284,7 @@ abstract contract Base is BatchTestProcedures {
   }
 
   function _setupFixtures() internal virtual {
-    OrchestrationReports.TestEnvReport memory report = _deployFixtures({numHubs: 1, numSpokes: 3});
+    TestTypes.TestEnvReport memory report = _deployFixtures({numHubs: 1, numSpokes: 3});
     _setupFixturesRoles(report);
 
     // todo rm when tests adapted to multiple hubs and spokes
@@ -303,7 +303,7 @@ abstract contract Base is BatchTestProcedures {
   function _deployFixtures(
     uint256 numHubs,
     uint256 numSpokes
-  ) internal virtual returns (OrchestrationReports.TestEnvReport memory report) {
+  ) internal virtual returns (TestTypes.TestEnvReport memory report) {
     report = AaveV4TestOrchestration.deployTestEnv({
       admin: ADMIN,
       treasuryAdmin: TREASURY_ADMIN,
@@ -340,7 +340,7 @@ abstract contract Base is BatchTestProcedures {
     return report;
   }
 
-  function _setupFixturesRoles(OrchestrationReports.TestEnvReport memory report) internal virtual {
+  function _setupFixturesRoles(TestTypes.TestEnvReport memory report) internal virtual {
     if (report.accessManagerAddress == address(0))
       report.accessManagerAddress = address(accessManager);
 
@@ -369,28 +369,28 @@ abstract contract Base is BatchTestProcedures {
   }
 
   function _initTokenList() internal {
-    ConfigData.TestTokenInput[] memory tokenInputs = new ConfigData.TestTokenInput[](5);
-    tokenInputs[0] = ConfigData.TestTokenInput({
+    TestTypes.TestTokenInput[] memory tokenInputs = new TestTypes.TestTokenInput[](5);
+    tokenInputs[0] = TestTypes.TestTokenInput({
       name: 'USDX',
       symbol: 'USDX',
       decimals: _decimals.usdx
     });
-    tokenInputs[1] = ConfigData.TestTokenInput({
+    tokenInputs[1] = TestTypes.TestTokenInput({
       name: 'DAI',
       symbol: 'DAI',
       decimals: _decimals.dai
     });
-    tokenInputs[2] = ConfigData.TestTokenInput({
+    tokenInputs[2] = TestTypes.TestTokenInput({
       name: 'WBTC',
       symbol: 'WBTC',
       decimals: _decimals.wbtc
     });
-    tokenInputs[3] = ConfigData.TestTokenInput({
+    tokenInputs[3] = TestTypes.TestTokenInput({
       name: 'USDY',
       symbol: 'USDY',
       decimals: _decimals.usdy
     });
-    tokenInputs[4] = ConfigData.TestTokenInput({
+    tokenInputs[4] = TestTypes.TestTokenInput({
       name: 'USDZ',
       symbol: 'USDZ',
       decimals: _decimals.usdz
@@ -956,7 +956,7 @@ abstract contract Base is BatchTestProcedures {
       irData: abi.encode(_defaultIrData)
     });
 
-    OrchestrationReports.TestEnvReport memory report = _addFixture('2', assetsList);
+    TestTypes.TestEnvReport memory report = _addFixture('2', assetsList);
     return (
       IHub(report.hubReports[0].hubAddress),
       AssetInterestRateStrategy(report.hubReports[0].irStrategyAddress)
@@ -992,7 +992,7 @@ abstract contract Base is BatchTestProcedures {
       irData: abi.encode(_defaultIrData)
     });
 
-    OrchestrationReports.TestEnvReport memory report = _addFixture('3', assetsList);
+    TestTypes.TestEnvReport memory report = _addFixture('3', assetsList);
     return (
       IHub(report.hubReports[0].hubAddress),
       AssetInterestRateStrategy(report.hubReports[0].irStrategyAddress)
@@ -1002,7 +1002,7 @@ abstract contract Base is BatchTestProcedures {
   function _addFixture(
     string memory label,
     FixtureAssetList[] memory assetsList
-  ) internal returns (OrchestrationReports.TestEnvReport memory report) {
+  ) internal returns (TestTypes.TestEnvReport memory report) {
     report = _deployFixtures({numHubs: 1, numSpokes: 0});
     _setupFixturesRoles(report);
 

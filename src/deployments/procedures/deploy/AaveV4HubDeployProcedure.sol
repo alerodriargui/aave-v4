@@ -6,8 +6,6 @@ import {Hub} from 'src/hub/Hub.sol';
 
 contract AaveV4HubDeployProcedure {
   function _deployHub(address accessManager_) internal returns (address) {
-    address hub = address(new Hub(accessManager_));
-
-    return hub;
+    return address(new Hub({authority_: accessManager_}));
   }
 }

@@ -50,10 +50,4 @@ library ConfigData {
     ISpoke.ReserveConfig config;
     ISpoke.DynamicReserveConfig dynamicConfig;
   }
-
-  struct TestTokenInput {
-    string name;
-    string symbol;
-    uint8 decimals;
-  }
 }

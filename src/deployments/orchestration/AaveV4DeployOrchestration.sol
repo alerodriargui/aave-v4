@@ -7,7 +7,7 @@ pragma solidity ^0.8.0;
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-import {AaveV4DeployCore} from 'src/deployments/orchestration/AaveV4DeployCore.sol';
+import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {AaveV4AccessBatch} from 'src/deployments/batches/AaveV4AccessBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
@@ -164,7 +164,7 @@ library AaveV4DeployOrchestration {
   ) internal returns (BatchReports.AccessBatchReport memory report) {
     logger.log('...Deploying AccessBatch...');
 
-    report = AaveV4DeployCore.deployAccessBatch({admin: accessManagerAdmin});
+    report = AaveV4DeployBase.deployAccessBatch({admin: accessManagerAdmin});
 
     logger.log('AccessManager', report.accessManagerAddress);
     logger.log('');
@@ -178,7 +178,7 @@ library AaveV4DeployOrchestration {
   ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
     logger.log('...Deploying ConfiguratorBatch...');
 
-    report = AaveV4DeployCore.deployConfiguratorBatch({
+    report = AaveV4DeployBase.deployConfiguratorBatch({
       hubConfiguratorOwner: hubConfiguratorOwner,
       spokeConfiguratorOwner: spokeConfiguratorOwner
     });
@@ -291,7 +291,7 @@ library AaveV4DeployOrchestration {
     string memory label
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
     logger.log('...Deploying AaveV4SpokeInstanceBatch...');
-    report = AaveV4DeployCore.deploySpokeInstanceBatch(
+    report = AaveV4DeployBase.deploySpokeInstanceBatch(
       spokeProxyAdminOwner,
       accessManagerAddress,
       ORACLE_DECIMALS,
@@ -307,7 +307,7 @@ library AaveV4DeployOrchestration {
     address accessManagerAddress
   ) internal returns (BatchReports.HubBatchReport memory report) {
     logger.log('...Deploying HubBatch...');
-    report = AaveV4DeployCore.deployHubBatch(treasurySpokeOwner, accessManagerAddress);
+    report = AaveV4DeployBase.deployHubBatch(treasurySpokeOwner, accessManagerAddress);
     return report;
   }
 
@@ -317,7 +317,7 @@ library AaveV4DeployOrchestration {
     address nativeWrapper
   ) internal returns (BatchReports.GatewaysBatchReport memory report) {
     logger.log('...Deploying GatewayBatch...');
-    report = AaveV4DeployCore.deployGatewaysBatch({
+    report = AaveV4DeployBase.deployGatewaysBatch({
       owner: gatewayOwner,
       nativeWrapper: nativeWrapper
     });

@@ -10,7 +10,9 @@ contract TestnetERC20DeployProcedure {
     string memory symbol_,
     uint8 decimals_
   ) internal returns (address) {
-    address token = address(new TestnetERC20(name_, symbol_, decimals_));
+    address token = address(
+      new TestnetERC20({name_: name_, symbol_: symbol_, decimals_: decimals_})
+    );
 
     return token;
   }

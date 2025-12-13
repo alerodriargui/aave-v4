@@ -6,23 +6,26 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 
 import {WETHDeployProcedure} from 'src/deployments/procedures/deploy/WETHDeployProcedure.sol';
-import {TestnetERC20DeployProcedure} from 'src/deployments/procedures/deploy/TestnetERC20DeployProcedure.sol';
+import {
+  TestnetERC20DeployProcedure
+} from 'tests/deployments/procedures/TestnetERC20DeployProcedure.sol';
+import {TestTypes} from 'tests/utils/TestTypes.sol';
 
 contract TestTokensBatch is WETHDeployProcedure, TestnetERC20DeployProcedure {
-  BatchReports.TestTokensBatchReport internal _report;
+  TestTypes.TestTokensBatchReport internal _report;
 
-  constructor(ConfigData.TestTokenInput[] memory inputs_) {
+  constructor(TestTypes.TestTokenInput[] memory inputs_) {
     _report.tokenAddresses = new address[](inputs_.length);
     _report.wethAddress = _deployWETH();
 
     for (uint256 i; i < inputs_.length; i++) {
-      ConfigData.TestTokenInput memory input = inputs_[i];
+      TestTypes.TestTokenInput memory input = inputs_[i];
       address tokenAddress = _deployTestnetERC20(input.name, input.symbol, input.decimals);
       _report.tokenAddresses[i] = tokenAddress;
     }
   }
 
-  function getReport() external view returns (BatchReports.TestTokensBatchReport memory) {
+  function getReport() external view returns (TestTypes.TestTokensBatchReport memory) {
     return _report;
   }
 }

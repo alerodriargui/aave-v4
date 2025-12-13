@@ -6,8 +6,6 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 
 contract AaveV4AccessManagerEnumerableDeployProcedure {
   function _deployAccessManagerEnumerable(address admin_) internal returns (address) {
-    address accessManager = address(new AccessManagerEnumerable(admin_));
-
-    return accessManager;
+    return address(new AccessManagerEnumerable({initialAdmin_: admin_}));
   }
 }

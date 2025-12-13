@@ -22,26 +22,4 @@ library OrchestrationReports {
     HubDeploymentReport[] hubBatchReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;
   }
-
-  struct TestHubReport {
-    address hubAddress;
-    address irStrategyAddress;
-    address treasurySpokeAddress;
-  }
-
-  struct TestSpokeReport {
-    address spokeAddress;
-    address aaveOracleAddress;
-  }
-
-  struct TestEnvReport {
-    address accessManagerAddress;
-    TestHubReport[] hubReports;
-    TestSpokeReport[] spokeReports;
-  }
-
-  struct TestTokensReport {
-    address wethAddress;
-    address[] testTokenAddresses;
-  }
 }

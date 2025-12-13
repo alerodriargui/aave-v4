@@ -16,7 +16,7 @@ contract SpokeGettersTest is SpokeBase {
     super.setUp();
 
     // Deploy new spoke without setting the liquidation config
-    OrchestrationReports.TestEnvReport memory report = _deployFixtures({numHubs: 0, numSpokes: 1});
+    TestTypes.TestEnvReport memory report = _deployFixtures({numHubs: 0, numSpokes: 1});
     _setupFixturesRoles(report);
     spoke = ISpoke(report.spokeReports[0].spokeAddress);
 
