@@ -2,13 +2,19 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {AllowancePositionManagerWrapper} from 'tests/mocks/AllowancePositionManagerWrapper.sol';
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract AllowancePositionManagerTest is SpokeBase {
   ISpoke public spoke;
-  AllowancePositionManager public positionManager;
+  AllowancePositionManagerWrapper public positionManager;
   TestReturnValues public returnValues;
   uint256 public alicePk;
+
+  bytes32 private constant _TEMPORARY_WITHDRAW_ALLOWANCES_SLOT =
+    0x1c6a61279a13a86a789311ddf30aee38e2f4a9f6c4aad1ff4a2e75a4018e68c3;
+  bytes32 private constant _TEMPORARY_CREDIT_DELEGATIONS_SLOT =
+    0xcd470af8670f5baa744a0341af8a2e3f5d7ca086178908432a5cfaf39cb9299d;
 
   function setUp() public virtual override {
     deployFixtures();
@@ -16,7 +22,7 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     spoke = spoke1;
     (alice, alicePk) = makeAddrAndKey('alice');
-    positionManager = new AllowancePositionManager(address(spoke));
+    positionManager = new AllowancePositionManagerWrapper(address(spoke));
 
     vm.prank(SPOKE_ADMIN);
     spoke.updatePositionManager(address(positionManager), true);
@@ -79,7 +85,7 @@ contract AllowancePositionManagerTest is SpokeBase {
   function test_approveWithdraw_fuzz(address spender, uint256 reserveId, uint256 amount) public {
     vm.assume(spender != address(0));
     reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
-    amount = bound(amount, 1, mintAmount_DAI);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     vm.expectEmit(address(positionManager));
     emit IAllowancePositionManager.WithdrawApproval(alice, spender, reserveId, amount);
@@ -96,7 +102,7 @@ contract AllowancePositionManagerTest is SpokeBase {
   ) public {
     vm.assume(spender != address(0));
     reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
-    amount = bound(amount, 1, mintAmount_DAI);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     EIP712Types.WithdrawPermit memory p = _withdrawPermitData(
       spender,
@@ -146,7 +152,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     positionManager.approveWithdrawWithSig(p, signature);
   }
 
-  function test_approveWithdrawWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
+  function test_approveWithdrawWithSig_fuzz_revertsWith_InvalidAccountNonce(bytes32) public {
     EIP712Types.WithdrawPermit memory p = _withdrawPermitData(
       vm.randomAddress(),
       alice,
@@ -167,7 +173,7 @@ contract AllowancePositionManagerTest is SpokeBase {
 
   function test_renounceWithdrawAllowance_fuzz(uint256 initialAllowance) public {
     uint256 reserveId = _randomReserveId(spoke);
-    initialAllowance = bound(initialAllowance, 1, mintAmount_DAI);
+    initialAllowance = bound(initialAllowance, 1, MAX_SUPPLY_AMOUNT);
 
     vm.prank(alice);
     positionManager.approveWithdraw(bob, reserveId, initialAllowance);
@@ -180,11 +186,43 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(positionManager.withdrawAllowance(alice, bob, reserveId), 0);
   }
 
-  function test_withdrawOnBehalfOf() public {
-    test_withdrawOnBehalfOf_fuzz(100e18);
+  function test_temporaryApproveWithdraw_fuzz(
+    address spender,
+    uint256 reserveId,
+    uint256 amount
+  ) public {
+    vm.assume(spender != address(0));
+    reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+
+    vm.expectEmit(address(positionManager), 0);
+    vm.prank(alice);
+    positionManager.temporaryApproveWithdraw(spender, reserveId, amount);
+
+    assertEq(positionManager.temporaryWithdrawAllowance(alice, spender, reserveId), amount);
   }
 
-  function test_withdrawOnBehalfOf_fuzz(uint256 amount) public {
+  /// forge-config: default.isolate = true
+  function test_temporaryApproveWithdraw_TransientStorage() public {
+    // make sure transient storage is used for temporary withdraw allowances
+    vm.prank(alice);
+    positionManager.temporaryApproveWithdraw(bob, _daiReserveId(spoke), 100e18);
+    assertEq(positionManager.temporaryWithdrawAllowance(alice, bob, _daiReserveId(spoke)), 0);
+  }
+
+  function test_withdrawOnBehalfOf() public {
+    test_withdrawOnBehalfOf_fuzz(100e18, 0);
+  }
+
+  function test_withdrawOnBehalfOf_TemporaryAllowanceTakesPrecedence() public {
+    uint256 storedAllowance = 300e18;
+    _fuzzyApproveWithdraw(alice, alicePk, bob, _daiReserveId(spoke), storedAllowance, 0);
+    test_withdrawOnBehalfOf_fuzz(100e18, 2);
+    // this check is also performed in test_withdrawOnBehalfOf_fuzz, duplicating in case of future changes
+    assertEq(positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)), storedAllowance);
+  }
+
+  function test_withdrawOnBehalfOf_fuzz(uint256 amount, uint256 approvalType) public {
     amount = bound(amount, 1, mintAmount_DAI);
 
     Utils.supply({
@@ -196,8 +234,12 @@ contract AllowancePositionManagerTest is SpokeBase {
     });
     uint256 expectedSupplyShares = hub1.previewAddByAssets(daiAssetId, mintAmount_DAI);
 
-    vm.prank(alice);
-    positionManager.approveWithdraw(bob, _daiReserveId(spoke), amount);
+    uint256 withdrawAllowanceBefore = positionManager.withdrawAllowance(
+      alice,
+      bob,
+      _daiReserveId(spoke)
+    );
+    _fuzzyApproveWithdraw(alice, alicePk, bob, _daiReserveId(spoke), amount, approvalType);
 
     uint256 prevUserBalance = tokenList.dai.balanceOf(alice);
     uint256 prevCallerBalance = tokenList.dai.balanceOf(bob);
@@ -233,10 +275,16 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(address(hub1)), prevHubBalance - amount);
     assertEq(tokenList.dai.balanceOf(address(positionManager)), 0);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
-    assertEq(positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)), 0);
+    assertEq(
+      positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)),
+      (approvalType < 2) ? 0 : withdrawAllowanceBefore
+    );
   }
 
-  function test_withdrawOnBehalfOf_fuzz_allBalance(uint256 supplyAmount) public {
+  function test_withdrawOnBehalfOf_fuzz_allBalance(
+    uint256 supplyAmount,
+    uint256 approvalType
+  ) public {
     supplyAmount = bound(supplyAmount, 1, mintAmount_DAI);
 
     Utils.supply({
@@ -248,8 +296,14 @@ contract AllowancePositionManagerTest is SpokeBase {
     });
     uint256 expectedSupplyShares = hub1.previewAddByAssets(daiAssetId, supplyAmount);
 
-    vm.prank(alice);
-    positionManager.approveWithdraw(bob, _daiReserveId(spoke), supplyAmount * 10);
+    approvalType = _fuzzyApproveWithdraw(
+      alice,
+      alicePk,
+      bob,
+      _daiReserveId(spoke),
+      supplyAmount * 10,
+      approvalType
+    );
 
     uint256 prevUserBalance = tokenList.dai.balanceOf(alice);
     uint256 prevCallerBalance = tokenList.dai.balanceOf(bob);
@@ -284,13 +338,14 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(
       positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)),
-      prevAllowance - (supplyAmount * 2)
+      (approvalType < 2) ? prevAllowance - (supplyAmount * 2) : 0
     );
   }
 
   function test_withdrawOnBehalfOf_fuzz_allBalanceWithInterest(
     uint256 supplyAmount,
-    uint256 borrowAmount
+    uint256 borrowAmount,
+    uint256 approvalType
   ) public {
     supplyAmount = bound(supplyAmount, 2, mintAmount_DAI / 2);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
@@ -334,8 +389,14 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     uint256 expectedWithdrawAmount = spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice);
 
-    vm.prank(alice);
-    positionManager.approveWithdraw(bob, _daiReserveId(spoke), supplyAmount * 10);
+    _fuzzyApproveWithdraw(
+      alice,
+      alicePk,
+      bob,
+      _daiReserveId(spoke),
+      supplyAmount * 10,
+      approvalType
+    );
 
     uint256 prevUserBalance = tokenList.dai.balanceOf(alice);
     uint256 prevCallerBalance = tokenList.dai.balanceOf(bob);
@@ -370,8 +431,33 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)), 0);
   }
 
-  function test_withdrawOnBehalfOf_revertsWith_InsufficientWithdrawAllowance(
-    uint256 approvalAmount
+  // temporary withdraw allowance takes precedence over stored withdraw allowance, and does not cumulate
+  function test_withdrawOnBehalfOf_revertsWith_InsufficientWithdrawAllowance_TemporaryAllowanceTakesPrecedence()
+    public
+  {
+    uint256 storedAllowance = 300e18;
+    _fuzzyApproveWithdraw(alice, alicePk, bob, _daiReserveId(spoke), storedAllowance, 0);
+
+    uint256 amount = 20e18;
+    uint256 temporaryAllowance = amount - 1;
+    _fuzzyApproveWithdraw(alice, alicePk, bob, _daiReserveId(spoke), temporaryAllowance, 2);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAllowancePositionManager.InsufficientWithdrawAllowance.selector,
+        temporaryAllowance,
+        amount
+      )
+    );
+    vm.prank(bob);
+    positionManager.withdrawOnBehalfOf(_daiReserveId(spoke), amount, alice);
+
+    assertEq(positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)), storedAllowance);
+  }
+
+  function test_withdrawOnBehalfOf_fuzz_revertsWith_InsufficientWithdrawAllowance(
+    uint256 approvalAmount,
+    uint256 approvalType
   ) public {
     uint256 amount = 100e18;
     approvalAmount = bound(approvalAmount, 1, amount - 1);
@@ -384,8 +470,7 @@ contract AllowancePositionManagerTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    vm.prank(alice);
-    positionManager.approveWithdraw(bob, _daiReserveId(spoke), approvalAmount);
+    _fuzzyApproveWithdraw(alice, alicePk, bob, _daiReserveId(spoke), approvalAmount, approvalType);
 
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -432,7 +517,7 @@ contract AllowancePositionManagerTest is SpokeBase {
   ) public {
     vm.assume(spender != address(0));
     reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
-    amount = bound(amount, 1, mintAmount_DAI);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     vm.expectEmit(address(positionManager));
     emit IAllowancePositionManager.CreditDelegation(alice, spender, reserveId, amount);
@@ -449,7 +534,7 @@ contract AllowancePositionManagerTest is SpokeBase {
   ) public {
     vm.assume(spender != address(0));
     reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
-    amount = bound(amount, 1, mintAmount_DAI);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     EIP712Types.CreditDelegation memory p = _creditDelegationData(
       spender,
@@ -503,7 +588,9 @@ contract AllowancePositionManagerTest is SpokeBase {
     positionManager.approveCreditDelegationWithSig(p, signature);
   }
 
-  function test_approveCreditDelegationWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
+  function test_approveCreditDelegationWithSig_fuzz_revertsWith_InvalidAccountNonce(
+    bytes32
+  ) public {
     EIP712Types.CreditDelegation memory p = _creditDelegationData(
       vm.randomAddress(),
       alice,
@@ -522,9 +609,33 @@ contract AllowancePositionManagerTest is SpokeBase {
     positionManager.approveCreditDelegationWithSig(p, signature);
   }
 
+  function test_temporaryApproveCreditDelegation_fuzz(
+    address spender,
+    uint256 reserveId,
+    uint256 amount
+  ) public {
+    vm.assume(spender != address(0));
+    reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
+    amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
+
+    vm.expectEmit(address(positionManager), 0);
+    vm.prank(alice);
+    positionManager.temporaryApproveCreditDelegation(spender, reserveId, amount);
+
+    assertEq(positionManager.temporaryCreditDelegation(alice, spender, reserveId), amount);
+  }
+
+  /// forge-config: default.isolate = true
+  function test_temporaryApproveCreditDelegation_TransientStorage() public {
+    // make sure transient storage is used for temporary credit delegations
+    vm.prank(alice);
+    positionManager.temporaryApproveCreditDelegation(bob, _daiReserveId(spoke), 100e18);
+    assertEq(positionManager.temporaryCreditDelegation(alice, bob, _daiReserveId(spoke)), 0);
+  }
+
   function test_renounceCreditDelegation_fuzz(uint256 initialAllowance) public {
     uint256 reserveId = _randomReserveId(spoke);
-    initialAllowance = bound(initialAllowance, 1, mintAmount_DAI);
+    initialAllowance = bound(initialAllowance, 1, MAX_SUPPLY_AMOUNT);
 
     vm.prank(alice);
     positionManager.approveCreditDelegation(bob, reserveId, initialAllowance);
@@ -538,10 +649,25 @@ contract AllowancePositionManagerTest is SpokeBase {
   }
 
   function test_borrowOnBehalfOf() public {
-    test_borrowOnBehalfOf_fuzz(5e18, 5e18);
+    test_borrowOnBehalfOf_fuzz(5e18, 5e18, 0);
   }
 
-  function test_borrowOnBehalfOf_fuzz(uint256 borrowAmount, uint256 creditDelegationAmount) public {
+  function test_borrowOnBehalfOf_TemporaryCreditDelegationTakesPrecedence() public {
+    uint256 storedAllowance = 300e18;
+    _fuzzyApproveCreditDelegation(alice, alicePk, bob, _daiReserveId(spoke), storedAllowance, 0);
+    test_borrowOnBehalfOf_fuzz(5e18, 5e18, 2);
+    // this check is also performed in test_borrowOnBehalfOf_fuzz, duplicating in case of future changes
+    assertEq(
+      positionManager.creditDelegationAllowance(alice, bob, _daiReserveId(spoke)),
+      storedAllowance
+    );
+  }
+
+  function test_borrowOnBehalfOf_fuzz(
+    uint256 borrowAmount,
+    uint256 creditDelegationAmount,
+    uint256 approvalType
+  ) public {
     uint256 aliceSupplyAmount = 5000e18;
     uint256 bobSupplyAmount = 1000e18;
     borrowAmount = bound(borrowAmount, 1, bobSupplyAmount);
@@ -550,11 +676,18 @@ contract AllowancePositionManagerTest is SpokeBase {
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), alice, aliceSupplyAmount, alice);
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, bobSupplyAmount, bob);
 
-    vm.prank(alice);
-    positionManager.approveCreditDelegation(
-      address(bob),
+    uint256 creditDelegationAllowanceBefore = positionManager.creditDelegationAllowance(
+      alice,
+      bob,
+      _daiReserveId(spoke)
+    );
+    approvalType = _fuzzyApproveCreditDelegation(
+      alice,
+      alicePk,
+      bob,
       _daiReserveId(spoke),
-      creditDelegationAmount
+      creditDelegationAmount,
+      approvalType
     );
 
     uint256 prevUserBalance = tokenList.dai.balanceOf(alice);
@@ -591,23 +724,53 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(
       positionManager.creditDelegationAllowance(alice, bob, _daiReserveId(spoke)),
-      creditDelegationAmount - borrowAmount
+      (approvalType < 2) ? creditDelegationAmount - borrowAmount : creditDelegationAllowanceBefore
     );
   }
 
-  function test_borrowOnBehalfOf_revertsWith_InsufficientCreditDelegation(
-    uint256 creditDelegationAmount
+  // temporary credit delegation takes precedence over stored credit delegation, and does not cumulate
+  function test_borrowOnBehalfOf_revertsWith_InsufficientCreditDelegation_TemporaryCreditDelegationTakesPrecedence()
+    public
+  {
+    uint256 storedAllowance = 300e18;
+    _fuzzyApproveCreditDelegation(alice, alicePk, bob, _daiReserveId(spoke), storedAllowance, 0);
+
+    uint256 amount = 100e18;
+    uint256 temporaryAllowance = amount - 1;
+    _fuzzyApproveCreditDelegation(alice, alicePk, bob, _daiReserveId(spoke), temporaryAllowance, 2);
+
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        IAllowancePositionManager.InsufficientCreditDelegation.selector,
+        temporaryAllowance,
+        amount
+      )
+    );
+    vm.prank(bob);
+    positionManager.borrowOnBehalfOf(_daiReserveId(spoke), amount, alice);
+
+    assertEq(
+      positionManager.creditDelegationAllowance(alice, bob, _daiReserveId(spoke)),
+      storedAllowance
+    );
+  }
+
+  function test_borrowOnBehalfOf_fuzz_revertsWith_InsufficientCreditDelegation(
+    uint256 creditDelegationAmount,
+    uint256 approvalType
   ) public {
     uint256 borrowAmount = 100e18;
     creditDelegationAmount = bound(creditDelegationAmount, 1, borrowAmount - 1);
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), alice, borrowAmount, alice);
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, borrowAmount, bob);
 
-    vm.prank(alice);
-    positionManager.approveCreditDelegation(
-      address(bob),
+    _fuzzyApproveCreditDelegation(
+      alice,
+      alicePk,
+      bob,
       _daiReserveId(spoke),
-      creditDelegationAmount
+      creditDelegationAmount,
+      approvalType
     );
 
     vm.expectRevert(
@@ -636,6 +799,70 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(bob);
     positionManager.borrowOnBehalfOf(reserveId, 100e18, alice);
+  }
+
+  function _fuzzyApproveWithdraw(
+    address onBehalfOf,
+    uint256 onBehalfOfPk,
+    address spender,
+    uint256 reserveId,
+    uint256 amount,
+    uint256 approvalType
+  ) internal returns (uint256) {
+    approvalType = bound(approvalType, 0, 2);
+    if (approvalType == 0) {
+      vm.prank(onBehalfOf);
+      positionManager.approveWithdraw(spender, reserveId, amount);
+    } else if (approvalType == 1) {
+      EIP712Types.WithdrawPermit memory p = _withdrawPermitData(
+        spender,
+        onBehalfOf,
+        type(uint256).max
+      );
+      p.amount = amount;
+      p.reserveId = reserveId;
+      p.nonce = _burnRandomNoncesAtKey(positionManager, onBehalfOf);
+      bytes memory signature = _sign(onBehalfOfPk, _getTypedDataHash(positionManager, p));
+
+      vm.prank(vm.randomAddress());
+      positionManager.approveWithdrawWithSig(p, signature);
+    } else {
+      vm.prank(onBehalfOf);
+      positionManager.temporaryApproveWithdraw(spender, reserveId, amount);
+    }
+    return approvalType;
+  }
+
+  function _fuzzyApproveCreditDelegation(
+    address onBehalfOf,
+    uint256 onBehalfOfPk,
+    address spender,
+    uint256 reserveId,
+    uint256 amount,
+    uint256 approvalType
+  ) internal returns (uint256) {
+    approvalType = bound(approvalType, 0, 2);
+    if (approvalType == 0) {
+      vm.prank(onBehalfOf);
+      positionManager.approveCreditDelegation(spender, reserveId, amount);
+    } else if (approvalType == 1) {
+      EIP712Types.CreditDelegation memory p = _creditDelegationData(
+        spender,
+        onBehalfOf,
+        type(uint256).max
+      );
+      p.amount = amount;
+      p.reserveId = reserveId;
+      p.nonce = _burnRandomNoncesAtKey(positionManager, onBehalfOf);
+      bytes memory signature = _sign(onBehalfOfPk, _getTypedDataHash(positionManager, p));
+
+      vm.prank(vm.randomAddress());
+      positionManager.approveCreditDelegationWithSig(p, signature);
+    } else {
+      vm.prank(onBehalfOf);
+      positionManager.temporaryApproveCreditDelegation(spender, reserveId, amount);
+    }
+    return approvalType;
   }
 
   function _withdrawPermitData(

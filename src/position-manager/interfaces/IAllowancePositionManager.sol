@@ -44,6 +44,13 @@ interface IAllowancePositionManager is IPositionManagerBase {
     bytes calldata signature
   ) external;
 
+  /// @notice Temporarily approves a spender to withdraw assets from the specified reserve on the spoke.
+  /// @dev The allowance is discarded after the transaction.
+  /// @param spender The address of the spender to receive the allowance.
+  /// @param reserveId The identifier of the reserve.
+  /// @param amount The amount of allowance.
+  function temporaryApproveWithdraw(address spender, uint256 reserveId, uint256 amount) external;
+
   /// @notice Approves a credit delegation allowance for a spender.
   /// @param spender The address of the spender to receive the allowance.
   /// @param reserveId The identifier of the reserve.
@@ -56,6 +63,17 @@ interface IAllowancePositionManager is IPositionManagerBase {
   function approveCreditDelegationWithSig(
     EIP712Types.CreditDelegation calldata params,
     bytes calldata signature
+  ) external;
+
+  /// @notice Temporarily approves a credit delegation allowance for a spender.
+  /// @dev The allowance is discarded after the transaction.
+  /// @param spender The address of the spender to receive the allowance.
+  /// @param reserveId The identifier of the reserve.
+  /// @param amount The amount of allowance.
+  function temporaryApproveCreditDelegation(
+    address spender,
+    uint256 reserveId,
+    uint256 amount
   ) external;
 
   /// @notice Renounces the withdraw allowance given by the owner.

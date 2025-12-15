@@ -1,7 +1,7 @@
 {
-  "AllowancePositionManager - borrowOnBehalfOf": "306478",
-  "AllowancePositionManager - withdrawOnBehalfOf: full": "121565",
-  "AllowancePositionManager - withdrawOnBehalfOf: partial": "131756",
+  "AllowancePositionManager - borrowOnBehalfOf": "307050",
+  "AllowancePositionManager - withdrawOnBehalfOf: full": "122024",
+  "AllowancePositionManager - withdrawOnBehalfOf: partial": "132329",
   "Common - setSelfAsUserPositionManagerWithSig": "72588",
   "SupplyRepayPositionManager - repayOnBehalfOf": "167131",
   "SupplyRepayPositionManager - supplyOnBehalfOf": "135803"
