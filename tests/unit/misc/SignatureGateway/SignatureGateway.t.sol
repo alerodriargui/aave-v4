@@ -245,14 +245,14 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     emit ISpoke.SetUserPositionManager(alice, address(gateway), p.approve);
 
     vm.prank(vm.randomAddress());
-    gateway.setSelfAsUserPositionManagerWithSig(
-      address(spoke1),
-      p.user,
-      p.approve,
-      p.nonce,
-      p.deadline,
-      signature
-    );
+    gateway.setSelfAsUserPositionManagerWithSig({
+      spoke: address(spoke1),
+      user: p.user,
+      approve: p.approve,
+      nonce: p.nonce,
+      deadline: p.deadline,
+      signature: signature
+    });
 
     _assertNonceIncrement(ISignatureGateway(address(spoke1)), alice, p.nonce); // note: nonce consumed on spoke
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
