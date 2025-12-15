@@ -95,7 +95,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
-    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
+    _onlyPositionManager({onBehalfOf: onBehalfOf, caller: msg.sender});
     _;
   }
 
@@ -1011,5 +1011,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     assembly ('memory-safe') {
       fnOut := fnIn
     }
+  }
+
+  function _onlyPositionManager(address onBehalfOf, address caller) private {
+    require(_isPositionManager({user: onBehalfOf, manager: caller}), Unauthorized());
   }
 }
