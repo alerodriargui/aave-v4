@@ -18,10 +18,16 @@ interface IPositionManagerBase is IMulticall {
 
   /// @notice Facilitates setting this contract as user position manager on the `spoke`
   /// @dev The given data is passed to the `spoke` for the signature to be verified.
-  /// @param params The structured setSelfAsUserPositionManager parameters.
+  /// @param user The address of the user on whose behalf position manager can act.
+  /// @param approve True to approve the position manager, false to revoke approval.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the signature.
   /// @param signature The signed bytes for the intent.
   function setSelfAsUserPositionManagerWithSig(
-    EIP712Types.SetUserPositionManager calldata params,
+    address user,
+    bool approve,
+    uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external;
 

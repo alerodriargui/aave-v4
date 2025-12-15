@@ -25,16 +25,19 @@ abstract contract PositionManagerBase is IPositionManagerBase, Multicall {
 
   /// @inheritdoc IPositionManagerBase
   function setSelfAsUserPositionManagerWithSig(
-    EIP712Types.SetUserPositionManager calldata params,
+    address user,
+    bool approve,
+    uint256 nonce,
+    uint256 deadline,
     bytes calldata signature
   ) external {
     try
       ISpoke(SPOKE).setUserPositionManagerWithSig({
         positionManager: address(this),
-        user: params.user,
-        approve: params.approve,
-        nonce: params.nonce,
-        deadline: params.deadline,
+        user: user,
+        approve: approve,
+        nonce: nonce,
+        deadline: deadline,
         signature: signature
       })
     {} catch {}
