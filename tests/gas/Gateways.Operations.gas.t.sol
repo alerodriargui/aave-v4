@@ -248,7 +248,14 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), false);
 
-    gateway.setSelfAsUserPositionManagerWithSig(address(spoke1), p, signature);
+    gateway.setSelfAsUserPositionManagerWithSig(
+      address(spoke1),
+      p.user,
+      p.approve,
+      p.nonce,
+      p.deadline,
+      signature
+    );
     vm.snapshotGasLastCall(NAMESPACE, 'setSelfAsUserPositionManagerWithSig');
   }
 }
