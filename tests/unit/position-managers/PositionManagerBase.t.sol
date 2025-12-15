@@ -63,7 +63,13 @@ contract PositionManagerBaseTest is SpokeBase {
     emit ISpoke.SetUserPositionManager(alice, address(positionManager), p.approve);
 
     vm.prank(vm.randomAddress());
-    positionManager.setSelfAsUserPositionManagerWithSig(p, signature);
+    positionManager.setSelfAsUserPositionManagerWithSig(
+      p.user,
+      p.approve,
+      p.nonce,
+      p.deadline,
+      signature
+    );
 
     _assertNonceIncrement(ISignatureGateway(address(spoke)), alice, p.nonce); // note: nonce consumed on spoke
     assertTrue(spoke.isPositionManager(alice, address(positionManager)));

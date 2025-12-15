@@ -38,7 +38,13 @@ contract PositionManager_Gas_Tests is SpokeBase {
     vm.prank(alice);
     spoke1.setUserPositionManager(address(positionManager), false);
 
-    positionManager.setSelfAsUserPositionManagerWithSig(p, signature);
+    positionManager.setSelfAsUserPositionManagerWithSig(
+      p.user,
+      p.approve,
+      p.nonce,
+      p.deadline,
+      signature
+    );
     vm.snapshotGasLastCall(NAMESPACE, 'common: setSelfAsUserPositionManagerWithSig');
   }
 }
