@@ -11,11 +11,6 @@ contract AllowancePositionManagerTest is SpokeBase {
   TestReturnValues public returnValues;
   uint256 public alicePk;
 
-  bytes32 private constant _TEMPORARY_WITHDRAW_ALLOWANCES_SLOT =
-    0x1c6a61279a13a86a789311ddf30aee38e2f4a9f6c4aad1ff4a2e75a4018e68c3;
-  bytes32 private constant _TEMPORARY_CREDIT_DELEGATIONS_SLOT =
-    0xcd470af8670f5baa744a0341af8a2e3f5d7ca086178908432a5cfaf39cb9299d;
-
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
