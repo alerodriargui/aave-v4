@@ -232,17 +232,16 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    _validateSupply(reserve.flags);
+    return _supply(reserveId, amount, onBehalfOf, false);
+  }
 
-    IERC20(reserve.underlying).safeTransferFrom(msg.sender, address(reserve.hub), amount);
-    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
-    userPosition.suppliedShares += suppliedShares.toUint120();
-
-    emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares, amount);
-
-    return (suppliedShares, amount);
+  /// @inheritdoc ISpokeBase
+  function supplySkimmed(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+    return _supply(reserveId, amount, onBehalfOf, true);
   }
 
   /// @inheritdoc ISpokeBase
@@ -307,40 +306,16 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
-    Reserve storage reserve = _getReserve(reserveId);
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    _validateRepay(reserve.flags);
+    return _repay(reserveId, amount, onBehalfOf, false);
+  }
 
-    uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
-    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
-      .calculateRestoreAmount(drawnIndex, amount);
-    uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
-
-    IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
-      drawnSharesTaken: restoredShares,
-      drawnIndex: drawnIndex,
-      riskPremium: _positionStatus[onBehalfOf].riskPremium,
-      restoredPremiumRay: premiumDebtRayRestored
-    });
-
-    uint256 totalDebtRestored = drawnDebtRestored + premiumDebtRayRestored.fromRayUp();
-    IERC20(reserve.underlying).safeTransferFrom(
-      msg.sender,
-      address(reserve.hub),
-      totalDebtRestored
-    );
-    reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
-
-    userPosition.applyPremiumDelta(premiumDelta);
-    userPosition.drawnShares -= restoredShares.toUint120();
-    if (userPosition.drawnShares == 0) {
-      PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-      positionStatus.setBorrowing(reserveId, false);
-    }
-
-    emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, totalDebtRestored, premiumDelta);
-
-    return (restoredShares, totalDebtRestored);
+  /// @inheritdoc ISpokeBase
+  function repaySkimmed(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+    return _repay(reserveId, amount, onBehalfOf, true);
   }
 
   /// @inheritdoc ISpokeBase
@@ -888,6 +863,71 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
       emit ReportDeficit(reserveId, user, deficitShares, premiumDelta);
     }
+  }
+
+  function _supply(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bool skim
+  ) internal returns (uint256, uint256) {
+    Reserve storage reserve = _getReserve(reserveId);
+    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    _validateSupply(reserve.flags);
+
+    if (!skim) {
+      IERC20(reserve.underlying).safeTransferFrom(msg.sender, address(reserve.hub), amount);
+    }
+    uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
+    userPosition.suppliedShares += suppliedShares.toUint120();
+
+    emit Supply(reserveId, msg.sender, onBehalfOf, suppliedShares, amount);
+
+    return (suppliedShares, amount);
+  }
+
+  function _repay(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf,
+    bool skim
+  ) internal returns (uint256, uint256) {
+    Reserve storage reserve = _getReserve(reserveId);
+    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
+    _validateRepay(reserve.flags);
+
+    uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
+    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
+      .calculateRestoreAmount(drawnIndex, amount);
+    uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
+
+    IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+      drawnSharesTaken: restoredShares,
+      drawnIndex: drawnIndex,
+      riskPremium: _positionStatus[onBehalfOf].riskPremium,
+      restoredPremiumRay: premiumDebtRayRestored
+    });
+
+    uint256 totalDebtRestored = drawnDebtRestored + premiumDebtRayRestored.fromRayUp();
+    if (!skim) {
+      IERC20(reserve.underlying).safeTransferFrom(
+        msg.sender,
+        address(reserve.hub),
+        totalDebtRestored
+      );
+    }
+    reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
+
+    userPosition.applyPremiumDelta(premiumDelta);
+    userPosition.drawnShares -= restoredShares.toUint120();
+    if (userPosition.drawnShares == 0) {
+      PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
+      positionStatus.setBorrowing(reserveId, false);
+    }
+
+    emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, totalDebtRestored, premiumDelta);
+
+    return (restoredShares, totalDebtRestored);
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {

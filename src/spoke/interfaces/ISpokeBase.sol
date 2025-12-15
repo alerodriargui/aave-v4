@@ -107,6 +107,12 @@ interface ISpokeBase {
     address onBehalfOf
   ) external returns (uint256, uint256);
 
+  function supplySkimmed(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external returns (uint256, uint256);
+
   /// @notice Withdraws a specified amount of underlying asset from the given reserve.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev Providing an amount greater than the maximum withdrawable value signals a full withdrawal.
@@ -148,6 +154,12 @@ interface ISpokeBase {
   /// @return The amount of shares repaid.
   /// @return The amount of assets repaid.
   function repay(
+    uint256 reserveId,
+    uint256 amount,
+    address onBehalfOf
+  ) external returns (uint256, uint256);
+
+  function repaySkimmed(
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
