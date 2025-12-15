@@ -96,8 +96,8 @@ interface ISignatureGateway is IMulticall, INoncesKeyed, IGatewayBase {
   /// @dev The signature is consumed on the the specified registered `spoke`.
   /// @dev The given data is passed to the `spoke` for the signature to be verified.
   /// @param spoke The address of the registered spoke.
-  /// @param user The address of the user on whose behalf position manager can act.
-  /// @param approve True to approve the position manager, false to revoke approval.
+  /// @param user The address of the user on whose behalf this gateway can act.
+  /// @param approve True to approve the gateway, false to revoke approval.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the signature.
   /// @param signature The signed bytes for the intent.
