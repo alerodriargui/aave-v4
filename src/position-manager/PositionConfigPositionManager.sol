@@ -13,7 +13,7 @@ import {IPositionConfigPositionManager, ConfigPermissions} from 'src/position-ma
 contract PositionConfigPositionManager is IPositionConfigPositionManager, PositionManagerBase {
   using ConfigPermissionsMap for ConfigPermissions;
 
-  mapping(address owner => mapping(address caller => ConfigPermissions)) private _configPermissions;
+  mapping(address owner => mapping(address caller => ConfigPermissions)) private _config;
 
   /// @dev Constructor.
   /// @param spoke_ The address of the spoke contract.
@@ -21,34 +21,90 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
 
   /// @inheritdoc IPositionConfigPositionManager
   function setGlobalPermission(address caller, bool permission) external {
-    _configPermissions[msg.sender][caller] = _configPermissions[msg.sender][caller]
-      .setFullPermissions(permission);
+    ConfigPermissions oldPermissions = _config[msg.sender][caller];
+    ConfigPermissions newPermissions = oldPermissions.setFullPermissions(permission);
+    _config[msg.sender][caller] = newPermissions;
 
-    emit GlobalConfigPermissionUpdated(msg.sender, caller, permission);
+    if (!oldPermissions.eq(newPermissions)) {
+      emit ConfigPermissionsUpdated(msg.sender, caller, newPermissions);
+    }
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function setUsingAsCollateralPermission(address caller, bool permission) external {
-    _configPermissions[msg.sender][caller] = _configPermissions[msg.sender][caller]
-      .setCanSetUsingAsCollateral(permission);
+    ConfigPermissions oldPermissions = _config[msg.sender][caller];
+    ConfigPermissions newPermissions = oldPermissions.setCanSetUsingAsCollateral(permission);
+    _config[msg.sender][caller] = newPermissions;
 
-    emit SetUsingAsCollateralPermissionUpdated(msg.sender, caller, permission);
+    if (!oldPermissions.eq(newPermissions)) {
+      emit ConfigPermissionsUpdated(msg.sender, caller, newPermissions);
+    }
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function setUserRiskPremiumPermission(address caller, bool permission) external {
-    _configPermissions[msg.sender][caller] = _configPermissions[msg.sender][caller]
-      .setCanUpdateUserRiskPremium(permission);
+    ConfigPermissions oldPermissions = _config[msg.sender][caller];
+    ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserRiskPremium(permission);
+    _config[msg.sender][caller] = newPermissions;
 
-    emit UserRiskPremiumPermissionUpdated(msg.sender, caller, permission);
+    if (!oldPermissions.eq(newPermissions)) {
+      emit ConfigPermissionsUpdated(msg.sender, caller, newPermissions);
+    }
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function setUserDynamicConfigPermission(address caller, bool permission) external {
-    _configPermissions[msg.sender][caller] = _configPermissions[msg.sender][caller]
-      .setCanUpdateUserDynamicConfig(permission);
+    ConfigPermissions oldPermissions = _config[msg.sender][caller];
+    ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserDynamicConfig(permission);
+    _config[msg.sender][caller] = newPermissions;
 
-    emit UserDynamicConfigPermissionUpdated(msg.sender, caller, permission);
+    if (!oldPermissions.eq(newPermissions)) {
+      emit ConfigPermissionsUpdated(msg.sender, caller, newPermissions);
+    }
+  }
+
+  /// @inheritdoc IPositionConfigPositionManager
+  function renounceGlobalPermission(address owner) external {
+    ConfigPermissions oldPermissions = _config[owner][msg.sender];
+    ConfigPermissions newPermissions = oldPermissions.setFullPermissions(false);
+    _config[owner][msg.sender] = newPermissions;
+
+    if (!oldPermissions.eq(newPermissions)) {
+      emit ConfigPermissionsUpdated(owner, msg.sender, newPermissions);
+    }
+  }
+
+  /// @inheritdoc IPositionConfigPositionManager
+  function renounceUsingAsCollateralPermission(address owner) external {
+    ConfigPermissions oldPermissions = _config[owner][msg.sender];
+    ConfigPermissions newPermissions = oldPermissions.setCanSetUsingAsCollateral(false);
+    _config[owner][msg.sender] = newPermissions;
+
+    if (!oldPermissions.eq(newPermissions)) {
+      emit ConfigPermissionsUpdated(owner, msg.sender, newPermissions);
+    }
+  }
+
+  /// @inheritdoc IPositionConfigPositionManager
+  function renounceUserRiskPremiumPermission(address owner) external {
+    ConfigPermissions oldPermissions = _config[owner][msg.sender];
+    ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserRiskPremium(false);
+    _config[owner][msg.sender] = newPermissions;
+
+    if (!oldPermissions.eq(newPermissions)) {
+      emit ConfigPermissionsUpdated(owner, msg.sender, newPermissions);
+    }
+  }
+
+  /// @inheritdoc IPositionConfigPositionManager
+  function renounceUserDynamicConfigPermission(address owner) external {
+    ConfigPermissions oldPermissions = _config[owner][msg.sender];
+    ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserDynamicConfig(false);
+    _config[owner][msg.sender] = newPermissions;
+
+    if (!oldPermissions.eq(newPermissions)) {
+      emit ConfigPermissionsUpdated(owner, msg.sender, newPermissions);
+    }
   }
 
   /// @inheritdoc IPositionConfigPositionManager
@@ -57,30 +113,21 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
     uint256 reserveId,
     bool usingAsCollateral
   ) external {
-    require(
-      _configPermissions[onBehalfOf][msg.sender].canSetUsingAsCollateral(),
-      CallerNotAllowed()
-    );
+    require(_config[onBehalfOf][msg.sender].canSetUsingAsCollateral(), CallerNotAllowed());
 
     ISpoke(SPOKE).setUsingAsCollateral(reserveId, usingAsCollateral, onBehalfOf);
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function updateUserRiskPremiumOnBehalfOf(address onBehalfOf) external {
-    require(
-      _configPermissions[onBehalfOf][msg.sender].canUpdateUserRiskPremium(),
-      CallerNotAllowed()
-    );
+    require(_config[onBehalfOf][msg.sender].canUpdateUserRiskPremium(), CallerNotAllowed());
 
     ISpoke(SPOKE).updateUserRiskPremium(onBehalfOf);
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function updateUserDynamicConfigOnBehalfOf(address onBehalfOf) external {
-    require(
-      _configPermissions[onBehalfOf][msg.sender].canUpdateUserDynamicConfig(),
-      CallerNotAllowed()
-    );
+    require(_config[onBehalfOf][msg.sender].canUpdateUserDynamicConfig(), CallerNotAllowed());
 
     ISpoke(SPOKE).updateUserDynamicConfig(onBehalfOf);
   }
@@ -90,7 +137,7 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
     address caller,
     address onBehalfOf
   ) external view returns (ConfigPermissionValues memory) {
-    ConfigPermissions permissions = _configPermissions[onBehalfOf][caller];
+    ConfigPermissions permissions = _config[onBehalfOf][caller];
     return
       ConfigPermissionValues({
         canSetUsingAsCollateral: permissions.canSetUsingAsCollateral(),

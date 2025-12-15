@@ -21,31 +21,10 @@ interface IPositionConfigPositionManager is IPositionManagerBase {
   }
 
   /// @notice Emitted when a global config permission is updated.
-  event GlobalConfigPermissionUpdated(
+  event ConfigPermissionsUpdated(
     address indexed owner,
     address indexed caller,
-    bool permission
-  );
-
-  /// @notice Emitted when a using as collateral permission is updated.
-  event SetUsingAsCollateralPermissionUpdated(
-    address indexed owner,
-    address indexed caller,
-    bool permission
-  );
-
-  /// @notice Emitted when a user risk premium permission is updated.
-  event UserRiskPremiumPermissionUpdated(
-    address indexed owner,
-    address indexed caller,
-    bool permission
-  );
-
-  /// @notice Emitted when a user dynamic config permission is updated.
-  event UserDynamicConfigPermissionUpdated(
-    address indexed owner,
-    address indexed caller,
-    bool permission
+    ConfigPermissions permissions
   );
 
   /// @notice Thrown when the caller of a function was not given persmission by the user.
@@ -70,6 +49,22 @@ interface IPositionConfigPositionManager is IPositionManagerBase {
   /// @param caller The address of the caller.
   /// @param permission The new permission status.
   function setUserDynamicConfigPermission(address caller, bool permission) external;
+
+  /// @notice Renounces the global permission given by the owner.
+  /// @param owner The address of the owner.
+  function renounceGlobalPermission(address owner) external;
+
+  /// @notice Renounces the using as collateral permission given by the owner.
+  /// @param owner The address of the owner.
+  function renounceUsingAsCollateralPermission(address owner) external;
+
+  /// @notice Renounces the user risk premium permission given by the owner.
+  /// @param owner The address of the owner.
+  function renounceUserRiskPremiumPermission(address owner) external;
+
+  /// @notice Renounces the user dynamic config permission given by the owner.
+  /// @param owner The address of the owner.
+  function renounceUserDynamicConfigPermission(address owner) external;
 
   /// @notice Sets the using as collateral status on behalf of a user for a specified reserve.
   /// @dev The Caller must have the permission to perform this action on behalf of the user.

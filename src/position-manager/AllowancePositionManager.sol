@@ -53,8 +53,7 @@ contract AllowancePositionManager is
 
   /// @inheritdoc IAllowancePositionManager
   function approveWithdraw(address spender, uint256 reserveId, uint256 amount) external {
-    _withdrawAllowances[msg.sender][spender][reserveId] = amount;
-    emit WithdrawApproval(msg.sender, spender, reserveId, amount);
+    _updateWithdrawAllowance(msg.sender, spender, reserveId, amount, true);
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -63,13 +62,14 @@ contract AllowancePositionManager is
     bytes calldata signature
   ) external {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    address user = params.owner;
     bytes32 digest = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
-    _useCheckedNonce(user, params.nonce);
+    require(
+      SignatureChecker.isValidSignatureNow(params.owner, digest, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(params.owner, params.nonce);
 
-    _withdrawAllowances[user][params.spender][params.reserveId] = params.amount;
-    emit WithdrawApproval(user, params.spender, params.reserveId, params.amount);
+    _updateWithdrawAllowance(params.owner, params.spender, params.reserveId, params.amount, true);
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -78,45 +78,51 @@ contract AllowancePositionManager is
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function approveCreditDelegation(address spender, uint256 reserveId, uint256 amount) external {
-    _creditDelegations[msg.sender][spender][reserveId] = amount;
-    emit CreditDelegation(msg.sender, spender, reserveId, amount);
+  function creditDelegation(address spender, uint256 reserveId, uint256 amount) external {
+    _updateCreditDelegation(msg.sender, spender, reserveId, amount, true);
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function approveCreditDelegationWithSig(
+  function creditDelegationWithSig(
     EIP712Types.CreditDelegation calldata params,
     bytes calldata signature
   ) external {
     require(block.timestamp <= params.deadline, InvalidSignature());
-    address user = params.owner;
     bytes32 digest = _hashTypedData(params.hash());
-    require(SignatureChecker.isValidSignatureNow(user, digest, signature), InvalidSignature());
-    _useCheckedNonce(user, params.nonce);
+    require(
+      SignatureChecker.isValidSignatureNow(params.owner, digest, signature),
+      InvalidSignature()
+    );
+    _useCheckedNonce(params.owner, params.nonce);
 
-    _creditDelegations[user][params.spender][params.reserveId] = params.amount;
-    emit CreditDelegation(user, params.spender, params.reserveId, params.amount);
+    _updateCreditDelegation(params.owner, params.spender, params.reserveId, params.amount, true);
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function temporaryApproveCreditDelegation(
-    address spender,
-    uint256 reserveId,
-    uint256 amount
-  ) external {
+  function temporaryCreditDelegation(address spender, uint256 reserveId, uint256 amount) external {
     _temporaryCreditDelegationsSlot(msg.sender, spender, reserveId).tstore(amount);
   }
 
   /// @inheritdoc IAllowancePositionManager
   function renounceWithdrawAllowance(address owner, uint256 reserveId) external {
-    _withdrawAllowances[owner][msg.sender][reserveId] = 0;
-    emit WithdrawApproval(owner, msg.sender, reserveId, 0);
+    _updateWithdrawAllowance(
+      owner,
+      msg.sender,
+      reserveId,
+      0,
+      !(_withdrawAllowances[owner][msg.sender][reserveId] == 0)
+    );
   }
 
   /// @inheritdoc IAllowancePositionManager
   function renounceCreditDelegation(address owner, uint256 reserveId) external {
-    _creditDelegations[owner][msg.sender][reserveId] = 0;
-    emit CreditDelegation(owner, msg.sender, reserveId, 0);
+    _updateCreditDelegation(
+      owner,
+      msg.sender,
+      reserveId,
+      0,
+      !(_creditDelegations[owner][msg.sender][reserveId] == 0)
+    );
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -169,7 +175,7 @@ contract AllowancePositionManager is
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function creditDelegationAllowance(
+  function creditDelegation(
     address owner,
     address spender,
     uint256 reserveId
@@ -190,6 +196,32 @@ contract AllowancePositionManager is
   /// @inheritdoc IAllowancePositionManager
   function CREDIT_DELEGATION_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.CREDIT_DELEGATION_TYPEHASH;
+  }
+
+  function _updateWithdrawAllowance(
+    address owner,
+    address spender,
+    uint256 reserveId,
+    uint256 newAllowance,
+    bool emitEvent
+  ) internal {
+    _withdrawAllowances[owner][spender][reserveId] = newAllowance;
+    if (emitEvent) {
+      emit WithdrawApproval(owner, spender, reserveId, newAllowance);
+    }
+  }
+
+  function _updateCreditDelegation(
+    address owner,
+    address spender,
+    uint256 reserveId,
+    uint256 newCreditDelegation,
+    bool emitEvent
+  ) internal {
+    _creditDelegations[owner][spender][reserveId] = newCreditDelegation;
+    if (emitEvent) {
+      emit CreditDelegation(owner, spender, reserveId, newCreditDelegation);
+    }
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
@@ -216,7 +248,13 @@ contract AllowancePositionManager is
     } else {
       uint256 allowance = _withdrawAllowances[onBehalfOf][spender][reserveId];
       require(allowance >= amount, InsufficientWithdrawAllowance(allowance, amount));
-      _withdrawAllowances[onBehalfOf][spender][reserveId] = allowance.uncheckedSub(amount);
+      _updateWithdrawAllowance({
+        owner: onBehalfOf,
+        spender: spender,
+        reserveId: reserveId,
+        newAllowance: allowance.uncheckedSub(amount),
+        emitEvent: true
+      });
     }
   }
 
@@ -240,7 +278,13 @@ contract AllowancePositionManager is
     } else {
       uint256 allowance = _creditDelegations[onBehalfOf][spender][reserveId];
       require(allowance >= amount, InsufficientCreditDelegation(allowance, amount));
-      _creditDelegations[onBehalfOf][spender][reserveId] = allowance.uncheckedSub(amount);
+      _updateCreditDelegation({
+        owner: onBehalfOf,
+        spender: spender,
+        reserveId: reserveId,
+        newCreditDelegation: allowance.uncheckedSub(amount),
+        emitEvent: true
+      });
     }
   }
 

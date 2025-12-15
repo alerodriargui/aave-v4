@@ -39,7 +39,7 @@ contract PositionManager_Gas_Tests is SpokeBase {
     spoke1.setUserPositionManager(address(positionManager), false);
 
     positionManager.setSelfAsUserPositionManagerWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'Common - setSelfAsUserPositionManagerWithSig');
+    vm.snapshotGasLastCall(NAMESPACE, 'common: setSelfAsUserPositionManagerWithSig');
   }
 }
 
@@ -68,7 +68,7 @@ contract SupplyRepayPositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.supplyOnBehalfOf(_daiReserveId(spoke1), amount, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'SupplyRepayPositionManager - supplyOnBehalfOf');
+    vm.snapshotGasLastCall(NAMESPACE, 'SupplyRepayPositionManager: supplyOnBehalfOf');
   }
 
   function test_repayOnBehalfOf() public {
@@ -84,7 +84,7 @@ contract SupplyRepayPositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.repayOnBehalfOf(_daiReserveId(spoke1), repayAmount, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'SupplyRepayPositionManager - repayOnBehalfOf');
+    vm.snapshotGasLastCall(NAMESPACE, 'SupplyRepayPositionManager: repayOnBehalfOf');
   }
 }
 
@@ -93,10 +93,13 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
   string internal NAMESPACE = 'PositionManager.Operations';
 
   AllowancePositionManager public positionManager;
+  uint256 public alicePk;
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
+
+    (alice, alicePk) = makeAddrAndKey('alice');
 
     positionManager = new AllowancePositionManager(address(spoke1));
     vm.prank(SPOKE_ADMIN);
@@ -116,14 +119,14 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.withdrawOnBehalfOf(_daiReserveId(spoke1), amount, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager - withdrawOnBehalfOf: partial');
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: withdrawOnBehalfOf: partial');
 
     vm.prank(alice);
     positionManager.approveWithdraw(bob, _daiReserveId(spoke1), UINT256_MAX);
 
     vm.prank(bob);
     positionManager.withdrawOnBehalfOf(_daiReserveId(spoke1), UINT256_MAX, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager - withdrawOnBehalfOf: full');
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: withdrawOnBehalfOf: full');
   }
 
   function test_borrowOnBehalfOf() public {
@@ -132,13 +135,241 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     uint256 borrowAmount = 750e18;
 
     vm.prank(alice);
-    positionManager.approveCreditDelegation(bob, _daiReserveId(spoke1), borrowAmount);
+    positionManager.creditDelegation(bob, _daiReserveId(spoke1), borrowAmount);
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
 
     vm.prank(bob);
     positionManager.borrowOnBehalfOf(_daiReserveId(spoke1), borrowAmount, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager - borrowOnBehalfOf');
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: borrowOnBehalfOf');
+  }
+
+  function test_approveWithdraw() public {
+    uint256 amount = 100e18;
+
+    vm.prank(alice);
+    positionManager.approveWithdraw(bob, _daiReserveId(spoke1), amount);
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: approveWithdraw');
+  }
+
+  function test_approveWithdrawWithSig() public {
+    uint256 amount = 100e18;
+
+    EIP712Types.WithdrawPermit memory p = EIP712Types.WithdrawPermit({
+      owner: alice,
+      spender: bob,
+      reserveId: _daiReserveId(spoke1),
+      amount: amount,
+      nonce: positionManager.nonces(alice, _randomNonceKey()),
+      deadline: _warpBeforeRandomDeadline()
+    });
+    p.nonce = _burnRandomNoncesAtKey(positionManager, alice);
+    bytes32 digest = _typedDataHash(
+      positionManager,
+      vm.eip712HashStruct('WithdrawPermit', abi.encode(p))
+    );
+    bytes memory signature = _sign(alicePk, digest);
+
+    vm.prank(vm.randomAddress());
+    positionManager.approveWithdrawWithSig(p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: approveWithdrawWithSig');
+  }
+
+  function test_renounceWithdrawAllowance() public {
+    uint256 amount = 100e18;
+
+    vm.prank(alice);
+    positionManager.approveWithdraw(bob, _daiReserveId(spoke1), amount);
+
+    vm.prank(bob);
+    positionManager.renounceWithdrawAllowance(alice, _daiReserveId(spoke1));
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: renounceWithdrawAllowance');
+  }
+
+  function test_creditDelegation() public {
+    uint256 amount = 100e18;
+
+    vm.prank(alice);
+    positionManager.creditDelegation(bob, _daiReserveId(spoke1), amount);
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: creditDelegation');
+  }
+
+  function test_creditDelegationWithSig() public {
+    uint256 amount = 100e18;
+
+    EIP712Types.CreditDelegation memory p = EIP712Types.CreditDelegation({
+      owner: alice,
+      spender: bob,
+      reserveId: _daiReserveId(spoke1),
+      amount: amount,
+      nonce: positionManager.nonces(alice, _randomNonceKey()),
+      deadline: _warpBeforeRandomDeadline()
+    });
+    p.nonce = _burnRandomNoncesAtKey(positionManager, alice);
+    bytes32 digest = _typedDataHash(
+      positionManager,
+      vm.eip712HashStruct('CreditDelegation', abi.encode(p))
+    );
+    bytes memory signature = _sign(alicePk, digest);
+
+    vm.prank(vm.randomAddress());
+    positionManager.creditDelegationWithSig(p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: creditDelegationWithSig');
+  }
+
+  function test_renounceCreditDelegation() public {
+    uint256 amount = 100e18;
+
+    vm.prank(alice);
+    positionManager.creditDelegation(bob, _daiReserveId(spoke1), amount);
+
+    vm.prank(bob);
+    positionManager.renounceCreditDelegation(alice, _daiReserveId(spoke1));
+    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: renounceCreditDelegation');
+  }
+
+  function _typedDataHash(
+    IAllowancePositionManager _positionManager,
+    bytes32 typeHash
+  ) internal view returns (bytes32) {
+    return keccak256(abi.encodePacked('\x19\x01', _positionManager.DOMAIN_SEPARATOR(), typeHash));
+  }
+}
+
+/// forge-config: default.isolate = true
+contract PositionConfigPositionManager_Gas_Tests is SpokeBase {
+  string internal NAMESPACE = 'PositionManager.Operations';
+
+  PositionConfigPositionManager public positionManager;
+
+  function setUp() public virtual override {
+    deployFixtures();
+    initEnvironment();
+
+    positionManager = new PositionConfigPositionManager(address(spoke1));
+
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updatePositionManager(address(positionManager), true);
+
+    vm.prank(alice);
+    spoke1.setUserPositionManager(address(positionManager), true);
+  }
+
+  function test_setGlobalPermission() public {
+    vm.prank(alice);
+    positionManager.setGlobalPermission(bob, true);
+    vm.snapshotGasLastCall(NAMESPACE, 'PositionConfigPositionManager: setGlobalPermission');
+  }
+
+  function test_setUsingAsCollateralPermission() public {
+    vm.prank(alice);
+    positionManager.setUsingAsCollateralPermission(bob, true);
+    vm.snapshotGasLastCall(
+      NAMESPACE,
+      'PositionConfigPositionManager: setUsingAsCollateralPermission'
+    );
+  }
+
+  function test_setUserRiskPremiumPermission() public {
+    vm.prank(alice);
+    positionManager.setUserRiskPremiumPermission(bob, true);
+    vm.snapshotGasLastCall(
+      NAMESPACE,
+      'PositionConfigPositionManager: setUserRiskPremiumPermission'
+    );
+  }
+
+  function test_setUserDynamicConfigPermission() public {
+    vm.prank(alice);
+    positionManager.setUserDynamicConfigPermission(bob, true);
+    vm.snapshotGasLastCall(
+      NAMESPACE,
+      'PositionConfigPositionManager: setUserDynamicConfigPermission'
+    );
+  }
+
+  function test_renounceGlobalPermission() public {
+    vm.prank(alice);
+    positionManager.setGlobalPermission(bob, true);
+
+    vm.prank(bob);
+    positionManager.renounceGlobalPermission(alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'PositionConfigPositionManager: renounceGlobalPermission');
+  }
+
+  function test_renounceUsingAsCollateralPermission() public {
+    vm.prank(alice);
+    positionManager.setUsingAsCollateralPermission(bob, true);
+
+    vm.prank(bob);
+    positionManager.renounceUsingAsCollateralPermission(alice);
+    vm.snapshotGasLastCall(
+      NAMESPACE,
+      'PositionConfigPositionManager: renounceUsingAsCollateralPermission'
+    );
+  }
+
+  function test_renounceUserRiskPremiumPermission() public {
+    vm.prank(alice);
+    positionManager.setUserRiskPremiumPermission(bob, true);
+
+    vm.prank(bob);
+    positionManager.renounceUserRiskPremiumPermission(alice);
+    vm.snapshotGasLastCall(
+      NAMESPACE,
+      'PositionConfigPositionManager: renounceUserRiskPremiumPermission'
+    );
+  }
+
+  function test_renounceUserDynamicConfigPermission() public {
+    vm.prank(alice);
+    positionManager.setUserDynamicConfigPermission(bob, true);
+
+    vm.prank(bob);
+    positionManager.renounceUserDynamicConfigPermission(alice);
+    vm.snapshotGasLastCall(
+      NAMESPACE,
+      'PositionConfigPositionManager: renounceUserDynamicConfigPermission'
+    );
+  }
+
+  function test_setUsingAsCollateralOnBehalfOf_fuzz_withGlobalPermission() public {
+    vm.prank(alice);
+    positionManager.setGlobalPermission(bob, true);
+
+    vm.prank(bob);
+    positionManager.setUsingAsCollateralOnBehalfOf(alice, _daiReserveId(spoke1), true);
+    vm.snapshotGasLastCall(
+      NAMESPACE,
+      'PositionConfigPositionManager: setUsingAsCollateralOnBehalfOf'
+    );
+  }
+
+  function test_updateUserRiskPremiumOnBehalfOf_withGlobalPermission() public {
+    vm.prank(alice);
+    positionManager.setGlobalPermission(bob, true);
+
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 75e18, alice);
+
+    vm.prank(bob);
+    positionManager.updateUserRiskPremiumOnBehalfOf(alice);
+    vm.snapshotGasLastCall(
+      NAMESPACE,
+      'PositionConfigPositionManager: updateUserRiskPremiumOnBehalfOf'
+    );
+  }
+
+  function test_updateUserDynamicConfigOnBehalfOf_withGlobalPermission() public {
+    vm.prank(alice);
+    positionManager.setGlobalPermission(bob, true);
+
+    vm.prank(bob);
+    positionManager.updateUserDynamicConfigOnBehalfOf(alice);
+    vm.snapshotGasLastCall(
+      NAMESPACE,
+      'PositionConfigPositionManager: updateUserDynamicConfigOnBehalfOf'
+    );
   }
 }
