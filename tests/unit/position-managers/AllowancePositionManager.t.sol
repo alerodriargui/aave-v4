@@ -815,6 +815,13 @@ contract AllowancePositionManagerTest is SpokeBase {
     positionManager.borrowOnBehalfOf(reserveId, 100e18, alice);
   }
 
+  function test_temporaryAllowancesInParallel() public {
+    _fuzzyApproveWithdraw(alice, alicePk, bob, _daiReserveId(spoke), 1e18, 2);
+    _fuzzyCreditDelegation(alice, alicePk, bob, _daiReserveId(spoke), 2e18, 2);
+    assertEq(positionManager.temporaryWithdrawAllowance(alice, bob, _daiReserveId(spoke)), 1e18);
+    assertEq(positionManager.temporaryCreditDelegation(alice, bob, _daiReserveId(spoke)), 2e18);
+  }
+
   function _fuzzyApproveWithdraw(
     address onBehalfOf,
     uint256 onBehalfOfPk,
