@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 
 contract AaveV4AccessManagerEnumerableDeployProcedure {
-  function _deployAccessManagerEnumerable(address admin_) internal returns (address) {
-    return address(new AccessManagerEnumerable({initialAdmin_: admin_}));
+  function _deployAccessManagerEnumerable(address admin) internal returns (address) {
+    return address(new AccessManagerEnumerable({initialAdmin_: admin}));
   }
 }

@@ -5,13 +5,13 @@ pragma solidity ^0.8.0;
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {
   AaveV4HubDeployProcedure
-} from 'src/deployments/procedures/deploy/AaveV4HubDeployProcedure.sol';
+} from 'src/deployments/procedures/deploy/hub/AaveV4HubDeployProcedure.sol';
 import {
   AaveV4InterestRateStrategyDeployProcedure
-} from 'src/deployments/procedures/deploy/AaveV4InterestRateStrategyDeployProcedure.sol';
+} from 'src/deployments/procedures/deploy/hub/AaveV4InterestRateStrategyDeployProcedure.sol';
 import {
   AaveV4TreasurySpokeDeployProcedure
-} from 'src/deployments/procedures/deploy/AaveV4TreasurySpokeDeployProcedure.sol';
+} from 'src/deployments/procedures/deploy/spoke/AaveV4TreasurySpokeDeployProcedure.sol';
 
 contract AaveV4HubBatch is
   AaveV4HubDeployProcedure,
@@ -20,15 +20,18 @@ contract AaveV4HubBatch is
 {
   BatchReports.HubBatchReport internal _report;
 
-  constructor(address treasurySpokeOwner_, address accessManagerAddress_) {
-    address hubAddress = _deployHub(accessManagerAddress_);
-    address irStrategyAddress = _deployInterestRateStrategy(hubAddress);
-    address treasurySpokeAddress = _deployTreasurySpoke(treasurySpokeOwner_, hubAddress);
+  constructor(address treasurySpokeOwner_, address accessManager_) {
+    assert(treasurySpokeOwner_ != address(0));
+    assert(accessManager_ != address(0));
+
+    address hub = _deployHub(accessManager_);
+    address irStrategy = _deployInterestRateStrategy(hub);
+    address treasurySpoke = _deployTreasurySpoke(treasurySpokeOwner_, hub);
 
     _report = BatchReports.HubBatchReport({
-      hubAddress: hubAddress,
-      irStrategyAddress: irStrategyAddress,
-      treasurySpokeAddress: treasurySpokeAddress
+      hub: hub,
+      irStrategy: irStrategy,
+      treasurySpoke: treasurySpoke
     });
   }
 

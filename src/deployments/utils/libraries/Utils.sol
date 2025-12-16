@@ -2,6 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {
+  TransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+
 library Utils {
   function computeCreateAddress(address deployer, uint8 nonce) internal pure returns (address) {
     // RLP([deployer, nonce]) for 0 <= nonce <= 0x7f
@@ -10,5 +14,16 @@ library Utils {
     bytes1 nonceRlp = nonce == 0 ? bytes1(0x80) : bytes1(nonce);
     bytes memory rlp = abi.encodePacked(bytes1(0xd6), bytes1(0x94), deployer, nonceRlp);
     return address(uint160(uint256(keccak256(rlp))));
+  }
+
+  function proxify(
+    address logic_,
+    address initialOwner_,
+    bytes memory data_
+  ) internal returns (address) {
+    return
+      address(
+        new TransparentUpgradeableProxy({_logic: logic_, initialOwner: initialOwner_, _data: data_})
+      );
   }
 }

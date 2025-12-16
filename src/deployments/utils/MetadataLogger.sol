@@ -9,23 +9,23 @@ contract MetadataLogger is Logger {
   constructor(string memory outputPath_) Logger(outputPath_) {}
 
   function writeJsonReportMarket(OrchestrationReports.FullDeploymentReport memory report) public {
-    _write('AccessBatchReport', report.accessBatchReport.accessManagerAddress);
-    _write('HubConfigurator', report.configuratorBatchReport.hubConfiguratorAddress);
-    _write('SpokeConfigurator', report.configuratorBatchReport.spokeConfiguratorAddress);
+    _write('AccessBatchReport', report.accessBatchReport.accessManager);
+    _write('HubConfigurator', report.configuratorBatchReport.hubConfigurator);
+    _write('SpokeConfigurator', report.configuratorBatchReport.spokeConfigurator);
 
     for (uint256 i; i < report.hubBatchReports.length; i++) {
       Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](3);
       hubEntries[0] = Logger.AddressEntry({
         label: 'Hub',
-        value: report.hubBatchReports[i].report.hubAddress
+        value: report.hubBatchReports[i].report.hub
       });
       hubEntries[1] = Logger.AddressEntry({
         label: 'InterestRateStrategy',
-        value: report.hubBatchReports[i].report.hubAddress
+        value: report.hubBatchReports[i].report.hub
       });
       hubEntries[2] = Logger.AddressEntry({
         label: 'TreasurySpoke',
-        value: report.hubBatchReports[i].report.treasurySpokeAddress
+        value: report.hubBatchReports[i].report.treasurySpoke
       });
       _writeGroup(report.hubBatchReports[i].label, hubEntries);
     }
@@ -34,20 +34,20 @@ contract MetadataLogger is Logger {
       Logger.AddressEntry[] memory spokeInstanceEntries = new Logger.AddressEntry[](3);
       spokeInstanceEntries[0] = Logger.AddressEntry({
         label: 'SpokeInstance Proxy',
-        value: report.spokeInstanceBatchReports[i].report.spokeProxyAddress
+        value: report.spokeInstanceBatchReports[i].report.spokeProxy
       });
       spokeInstanceEntries[1] = Logger.AddressEntry({
         label: 'SpokeInstance Implementation',
-        value: report.spokeInstanceBatchReports[i].report.spokeImplementationAddress
+        value: report.spokeInstanceBatchReports[i].report.spokeImplementation
       });
       spokeInstanceEntries[2] = Logger.AddressEntry({
         label: 'AaveOracle',
-        value: report.spokeInstanceBatchReports[i].report.aaveOracleAddress
+        value: report.spokeInstanceBatchReports[i].report.aaveOracle
       });
       _writeGroup(report.spokeInstanceBatchReports[i].label, spokeInstanceEntries);
     }
 
-    _write('SignatureGateway', report.gatewaysBatchReport.signatureGatewayAddress);
-    _write('NativeTokenGateway', report.gatewaysBatchReport.nativeGatewayAddress);
+    _write('SignatureGateway', report.gatewaysBatchReport.signatureGateway);
+    _write('NativeTokenGateway', report.gatewaysBatchReport.nativeGateway);
   }
 }

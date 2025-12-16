@@ -5,10 +5,10 @@ pragma solidity ^0.8.0;
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {
   AaveV4HubConfiguratorDeployProcedure
-} from 'src/deployments/procedures/deploy/AaveV4HubConfiguratorDeployProcedure.sol';
+} from 'src/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.sol';
 import {
   AaveV4SpokeConfiguratorDeployProcedure
-} from 'src/deployments/procedures/deploy/AaveV4SpokeConfiguratorDeployProcedure.sol';
+} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.sol';
 
 contract AaveV4ConfiguratorBatch is
   AaveV4HubConfiguratorDeployProcedure,
@@ -17,12 +17,15 @@ contract AaveV4ConfiguratorBatch is
   BatchReports.ConfiguratorBatchReport internal _report;
 
   constructor(address hubConfiguratorOwner_, address spokeConfiguratorOwner_) {
-    address hubConfiguratorAddress = _deployHubConfigurator(hubConfiguratorOwner_);
-    address spokeConfiguratorAddress = _deploySpokeConfigurator(spokeConfiguratorOwner_);
+    assert(hubConfiguratorOwner_ != address(0));
+    assert(spokeConfiguratorOwner_ != address(0));
+
+    address hubConfigurator = _deployHubConfigurator(hubConfiguratorOwner_);
+    address spokeConfigurator = _deploySpokeConfigurator(spokeConfiguratorOwner_);
 
     _report = BatchReports.ConfiguratorBatchReport({
-      hubConfiguratorAddress: hubConfiguratorAddress,
-      spokeConfiguratorAddress: spokeConfiguratorAddress
+      hubConfigurator: hubConfigurator,
+      spokeConfigurator: spokeConfigurator
     });
   }
 

@@ -16,16 +16,16 @@ library AaveV4HubConfigProcedures {
       params.irStrategy,
       params.irData
     );
-    if (params.liquidityFee > 0) {
+    if (params.liquidityFee > 0 || params.reinvestmentController != address(0)) {
       IHub(params.hub).updateAssetConfig(
         assetId,
         IHub.AssetConfig({
           liquidityFee: params.liquidityFee,
           feeReceiver: params.feeReceiver,
           irStrategy: params.irStrategy,
-          reinvestmentController: address(0)
+          reinvestmentController: params.reinvestmentController
         }),
-        new bytes(0)
+        bytes('')
       );
     }
     return assetId;
@@ -67,7 +67,7 @@ library AaveV4HubConfigProcedures {
     );
   }
 
-  function addSpokeToAssets(
+  function addSpokeToAssetsViaConfigurator(
     address configurator,
     ConfigData.AddSpokeToAssetsParams memory params
   ) internal {

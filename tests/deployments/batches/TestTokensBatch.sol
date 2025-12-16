@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 
-import {WETHDeployProcedure} from 'src/deployments/procedures/deploy/WETHDeployProcedure.sol';
+import {WETHDeployProcedure} from 'tests/deployments/procedures/WETHDeployProcedure.sol';
 import {
   TestnetERC20DeployProcedure
 } from 'tests/deployments/procedures/TestnetERC20DeployProcedure.sol';
@@ -15,13 +15,13 @@ contract TestTokensBatch is WETHDeployProcedure, TestnetERC20DeployProcedure {
   TestTypes.TestTokensBatchReport internal _report;
 
   constructor(TestTypes.TestTokenInput[] memory inputs_) {
-    _report.tokenAddresses = new address[](inputs_.length);
-    _report.wethAddress = _deployWETH();
+    _report.tokens = new address[](inputs_.length);
+    _report.weth = _deployWETH();
 
     for (uint256 i; i < inputs_.length; i++) {
       TestTypes.TestTokenInput memory input = inputs_[i];
-      address tokenAddress = _deployTestnetERC20(input.name, input.symbol, input.decimals);
-      _report.tokenAddresses[i] = tokenAddress;
+      address token = _deployTestnetERC20(input.name, input.symbol, input.decimals);
+      _report.tokens[i] = token;
     }
   }
 

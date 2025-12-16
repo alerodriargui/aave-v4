@@ -2,19 +2,17 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/Base.t.sol';
+import 'tests/gas/Base.gas.t.sol';
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 
 /// forge-config: default.isolate = true
-contract NativeTokenGateway_Gas_Tests is Base {
+contract NativeTokenGateway_Gas_Tests is BaseGasTest {
   string internal NAMESPACE = 'NativeTokenGateway.Operations';
 
   NativeTokenGateway public nativeTokenGateway;
 
   function setUp() public virtual override {
     super.setUp();
-    _initEnvironment();
-
     nativeTokenGateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);

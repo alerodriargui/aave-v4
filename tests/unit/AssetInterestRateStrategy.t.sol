@@ -15,7 +15,7 @@ contract AssetInterestRateStrategyTest is Base {
   bytes public encodedRateData;
 
   function setUp() public override {
-    _setupFixtures();
+    super.setUp();
     rateStrategy = new AssetInterestRateStrategy(address(hub1));
 
     rateData = IAssetInterestRateStrategy.InterestRateData({

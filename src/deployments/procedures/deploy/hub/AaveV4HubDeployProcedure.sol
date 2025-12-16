@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {Hub} from 'src/hub/Hub.sol';
 
 contract AaveV4HubDeployProcedure {
-  function _deployHub(address accessManager_) internal returns (address) {
-    return address(new Hub({authority_: accessManager_}));
+  function _deployHub(address accessManager) internal returns (address) {
+    return address(new Hub({authority_: accessManager}));
   }
 }

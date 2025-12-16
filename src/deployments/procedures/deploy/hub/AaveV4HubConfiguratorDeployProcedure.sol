@@ -5,7 +5,7 @@ pragma solidity ^0.8.0;
 import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
 
 contract AaveV4HubConfiguratorDeployProcedure {
-  function _deployHubConfigurator(address owner_) internal returns (address) {
-    return address(new HubConfigurator({owner_: owner_}));
+  function _deployHubConfigurator(address owner) internal returns (address) {
+    return address(new HubConfigurator({owner_: owner}));
   }
 }

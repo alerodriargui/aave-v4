@@ -9,8 +9,7 @@ contract SignatureGatewayBaseTest is SpokeBase {
   uint256 public alicePk;
 
   function setUp() public virtual override {
-    _setupFixtures();
-    _initEnvironment();
+    super.setUp();
     gateway = ISignatureGateway(new SignatureGateway(ADMIN));
     (alice, alicePk) = makeAddrAndKey('alice');
 

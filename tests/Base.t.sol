@@ -36,7 +36,6 @@ import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
-import {Roles} from 'src/deployments/procedures/roles/Roles.sol';
 import {Rescuable, IRescuable} from 'src/utils/Rescuable.sol';
 import {NoncesKeyed, INoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {UnitPriceFeed} from 'src/misc/UnitPriceFeed.sol';
@@ -78,6 +77,7 @@ import {TestTypes} from 'tests/utils/TestTypes.sol';
 // orchestration
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 
 // mocks
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
@@ -129,7 +129,6 @@ abstract contract Base is BatchTestProcedures {
     PercentageMath.PERCENTAGE_FACTOR;
   IHubBase.PremiumDelta internal ZERO_PREMIUM_DELTA = ZERO_PREMIUM_DELTA;
 
-  ///
   IHub[] internal _hubs;
   ISpoke[] internal _spokes;
   IAaveOracle[] internal _oracles;
@@ -213,6 +212,7 @@ abstract contract Base is BatchTestProcedures {
   struct FixtureAssetList {
     IERC20Metadata underlying;
     uint16 liquidityFee;
+    address reinvestmentController;
     bytes irData;
   }
 
@@ -280,6 +280,7 @@ abstract contract Base is BatchTestProcedures {
     });
 
   function setUp() public virtual override {
+    _initTokenList();
     _setupFixtures();
   }
 
@@ -288,84 +289,72 @@ abstract contract Base is BatchTestProcedures {
     _setupFixturesRoles(report);
 
     // todo rm when tests adapted to multiple hubs and spokes
-    hub1 = IHub(report.hubReports[0].hubAddress);
-    irStrategy = AssetInterestRateStrategy(report.hubReports[0].irStrategyAddress);
-    treasurySpoke = ITreasurySpoke(report.hubReports[0].treasurySpokeAddress);
-    spoke1 = ISpoke(report.spokeReports[0].spokeAddress);
-    spoke2 = ISpoke(report.spokeReports[1].spokeAddress);
-    spoke3 = ISpoke(report.spokeReports[2].spokeAddress);
-    oracle1 = IAaveOracle(report.spokeReports[0].aaveOracleAddress);
-    oracle2 = IAaveOracle(report.spokeReports[1].aaveOracleAddress);
-    oracle3 = IAaveOracle(report.spokeReports[2].aaveOracleAddress);
-    accessManager = IAccessManager(report.accessManagerAddress);
+    hub1 = IHub(report.hubReports[0].hub);
+    irStrategy = AssetInterestRateStrategy(report.hubReports[0].irStrategy);
+    treasurySpoke = ITreasurySpoke(report.hubReports[0].treasurySpoke);
+    spoke1 = ISpoke(report.spokeReports[0].spoke);
+    spoke2 = ISpoke(report.spokeReports[1].spoke);
+    spoke3 = ISpoke(report.spokeReports[2].spoke);
+    oracle1 = IAaveOracle(report.spokeReports[0].aaveOracle);
+    oracle2 = IAaveOracle(report.spokeReports[1].aaveOracle);
+    oracle3 = IAaveOracle(report.spokeReports[2].aaveOracle);
+    accessManager = IAccessManager(report.accessManager);
   }
 
   function _deployFixtures(
     uint256 numHubs,
     uint256 numSpokes
   ) internal virtual returns (TestTypes.TestEnvReport memory report) {
+    // console.log('weth', address(tokenList.weth));
+    // revert('testing env');
     report = AaveV4TestOrchestration.deployTestEnv({
       admin: ADMIN,
       treasuryAdmin: TREASURY_ADMIN,
       hubCount: numHubs,
-      spokeCount: numSpokes
+      spokeCount: numSpokes,
+      nativeWrapper: address(tokenList.weth)
     });
     for (uint256 i; i < numHubs; ++i) {
-      _hubs.push(IHub(report.hubReports[i].hubAddress));
-      _irStrategies.push(AssetInterestRateStrategy(report.hubReports[i].irStrategyAddress));
-      _treasurySpokes.push(ITreasurySpoke(report.hubReports[i].treasurySpokeAddress));
+      _hubs.push(IHub(report.hubReports[i].hub));
+      _irStrategies.push(AssetInterestRateStrategy(report.hubReports[i].irStrategy));
+      _treasurySpokes.push(ITreasurySpoke(report.hubReports[i].treasurySpoke));
 
-      vm.label(report.hubReports[i].hubAddress, string.concat('hub', string(abi.encode(i))));
+      vm.label(report.hubReports[i].hub, string.concat('hub', string(abi.encode(i))));
+      vm.label(report.hubReports[i].irStrategy, string.concat('irStrategy', string(abi.encode(i))));
       vm.label(
-        report.hubReports[i].irStrategyAddress,
-        string.concat('irStrategy', string(abi.encode(i)))
-      );
-      vm.label(
-        report.hubReports[i].treasurySpokeAddress,
+        report.hubReports[i].treasurySpoke,
         string.concat('treasurySpoke', string(abi.encode(i)))
       );
     }
 
     for (uint256 i; i < numSpokes; ++i) {
-      _spokes.push(ISpoke(report.spokeReports[i].spokeAddress));
-      _oracles.push(IAaveOracle(report.spokeReports[i].aaveOracleAddress));
+      _spokes.push(ISpoke(report.spokeReports[i].spoke));
+      _oracles.push(IAaveOracle(report.spokeReports[i].aaveOracle));
 
-      vm.label(report.spokeReports[i].spokeAddress, string.concat('spoke', string(abi.encode(i))));
-      vm.label(
-        report.spokeReports[i].aaveOracleAddress,
-        string.concat('oracle', string(abi.encode(i)))
-      );
+      vm.label(report.spokeReports[i].spoke, string.concat('spoke', string(abi.encode(i))));
+      vm.label(report.spokeReports[i].aaveOracle, string.concat('oracle', string(abi.encode(i))));
     }
 
     return report;
   }
 
   function _setupFixturesRoles(TestTypes.TestEnvReport memory report) internal virtual {
-    if (report.accessManagerAddress == address(0))
-      report.accessManagerAddress = address(accessManager);
+    if (report.accessManager == address(0)) report.accessManager = address(accessManager);
 
     // temporary grant admin role to address(this) to execute setAndGrantRolesTestEnv from its context
     vm.startPrank(ADMIN);
-    IAccessManager(report.accessManagerAddress).grantRole(
-      Roles.DEFAULT_ADMIN_ROLE,
-      address(this),
-      0
-    );
+    IAccessManager(report.accessManager).grantRole(Roles.DEFAULT_ADMIN_ROLE, address(this), 0);
     vm.stopPrank();
 
     AaveV4TestOrchestration.setRolesTestEnv(report);
     AaveV4TestOrchestration.grantRolesTestEnv(report, ADMIN, HUB_ADMIN, SPOKE_ADMIN);
 
-    IAccessManager(report.accessManagerAddress).renounceRole(
-      Roles.DEFAULT_ADMIN_ROLE,
-      address(this)
-    );
+    IAccessManager(report.accessManager).renounceRole(Roles.DEFAULT_ADMIN_ROLE, address(this));
   }
 
   function _initEnvironment() internal {
-    _initTokenList();
     _mintAndApproveTokenList();
-    _configureTokenList();
+    _configureHubsAndSpokes();
   }
 
   function _initTokenList() internal {
@@ -482,7 +471,7 @@ abstract contract Base is BatchTestProcedures {
     }
   }
 
-  function _configureTokenList() internal {
+  function _configureHubsAndSpokes() internal {
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this), 0);
@@ -877,6 +866,7 @@ abstract contract Base is BatchTestProcedures {
       feeReceiver: address(treasurySpoke),
       liquidityFee: 10_00,
       irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
       irData: encodedIrData
     });
     assetParams[1] = ConfigData.AddAssetParams({
@@ -886,6 +876,7 @@ abstract contract Base is BatchTestProcedures {
       feeReceiver: address(treasurySpoke),
       liquidityFee: 5_00,
       irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
       irData: encodedIrData
     });
     assetParams[2] = ConfigData.AddAssetParams({
@@ -895,6 +886,7 @@ abstract contract Base is BatchTestProcedures {
       feeReceiver: address(treasurySpoke),
       liquidityFee: 5_00,
       irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
       irData: encodedIrData
     });
     assetParams[3] = ConfigData.AddAssetParams({
@@ -904,6 +896,7 @@ abstract contract Base is BatchTestProcedures {
       feeReceiver: address(treasurySpoke),
       liquidityFee: 10_00,
       irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
       irData: encodedIrData
     });
     assetParams[4] = ConfigData.AddAssetParams({
@@ -913,6 +906,7 @@ abstract contract Base is BatchTestProcedures {
       feeReceiver: address(treasurySpoke),
       liquidityFee: 10_00,
       irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
       irData: encodedIrData
     });
     assetParams[5] = ConfigData.AddAssetParams({
@@ -922,6 +916,7 @@ abstract contract Base is BatchTestProcedures {
       feeReceiver: address(treasurySpoke),
       liquidityFee: 5_00,
       irStrategy: address(irStrategy),
+      reinvestmentController: address(0),
       irData: encodedIrData
     });
     return assetParams;
@@ -938,28 +933,32 @@ abstract contract Base is BatchTestProcedures {
     assetsList[0] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.weth)),
       liquidityFee: 0,
+      reinvestmentController: address(0),
       irData: abi.encode(_defaultIrData)
     });
     assetsList[1] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.usdx)),
       liquidityFee: 0,
+      reinvestmentController: address(0),
       irData: abi.encode(_defaultIrData)
     });
     assetsList[2] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.dai)),
       liquidityFee: 0,
+      reinvestmentController: address(0),
       irData: abi.encode(_defaultIrData)
     });
     assetsList[3] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.wbtc)),
       liquidityFee: 0,
+      reinvestmentController: address(0),
       irData: abi.encode(_defaultIrData)
     });
 
     TestTypes.TestEnvReport memory report = _addFixture('2', assetsList);
     return (
-      IHub(report.hubReports[0].hubAddress),
-      AssetInterestRateStrategy(report.hubReports[0].irStrategyAddress)
+      IHub(report.hubReports[0].hub),
+      AssetInterestRateStrategy(report.hubReports[0].irStrategy)
     );
   }
 
@@ -974,28 +973,32 @@ abstract contract Base is BatchTestProcedures {
     assetsList[0] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.dai)),
       liquidityFee: 0,
+      reinvestmentController: address(0),
       irData: abi.encode(_defaultIrData)
     });
     assetsList[1] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.usdx)),
       liquidityFee: 0,
+      reinvestmentController: address(0),
       irData: abi.encode(_defaultIrData)
     });
     assetsList[2] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.wbtc)),
       liquidityFee: 0,
+      reinvestmentController: address(0),
       irData: abi.encode(_defaultIrData)
     });
     assetsList[3] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.weth)),
       liquidityFee: 0,
+      reinvestmentController: address(0),
       irData: abi.encode(_defaultIrData)
     });
 
     TestTypes.TestEnvReport memory report = _addFixture('3', assetsList);
     return (
-      IHub(report.hubReports[0].hubAddress),
-      AssetInterestRateStrategy(report.hubReports[0].irStrategyAddress)
+      IHub(report.hubReports[0].hub),
+      AssetInterestRateStrategy(report.hubReports[0].irStrategy)
     );
   }
 
@@ -1011,44 +1014,31 @@ abstract contract Base is BatchTestProcedures {
     );
     for (uint256 i; i < assetsList.length; ++i) {
       assetParams[i] = ConfigData.AddAssetParams({
-        hub: report.hubReports[0].hubAddress,
+        hub: report.hubReports[0].hub,
         underlying: address(assetsList[i].underlying),
         decimals: assetsList[i].underlying.decimals(),
-        feeReceiver: report.hubReports[0].treasurySpokeAddress,
+        feeReceiver: report.hubReports[0].treasurySpoke,
         liquidityFee: assetsList[i].liquidityFee,
-        irStrategy: report.hubReports[0].irStrategyAddress,
-        irData: assetsList[i].irData
+        irStrategy: report.hubReports[0].irStrategy,
+        irData: assetsList[i].irData,
+        reinvestmentController: assetsList[i].reinvestmentController
       });
     }
 
     vm.startPrank(ADMIN);
-    IAccessManager(report.accessManagerAddress).grantRole(
-      Roles.HUB_CONFIGURATOR_ROLE,
-      address(this),
-      0
-    );
-    IAccessManager(report.accessManagerAddress).grantRole(
-      Roles.SPOKE_CONFIGURATOR_ROLE,
-      address(this),
-      0
-    );
+    IAccessManager(report.accessManager).grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
+    IAccessManager(report.accessManager).grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this), 0);
     vm.stopPrank();
 
     AaveV4TestOrchestration.configureHubsAssets(assetParams);
 
     // Renounce temporary roles
-    IAccessManager(report.accessManagerAddress).renounceRole(
-      Roles.HUB_CONFIGURATOR_ROLE,
-      address(this)
-    );
-    IAccessManager(report.accessManagerAddress).renounceRole(
-      Roles.SPOKE_CONFIGURATOR_ROLE,
-      address(this)
-    );
+    IAccessManager(report.accessManager).renounceRole(Roles.HUB_CONFIGURATOR_ROLE, address(this));
+    IAccessManager(report.accessManager).renounceRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this));
 
-    vm.label(report.hubReports[0].hubAddress, string.concat('Hub', label));
-    vm.label(report.hubReports[0].irStrategyAddress, string.concat('IrStrategy', label));
-    vm.label(report.hubReports[0].treasurySpokeAddress, string.concat('TreasurySpoke', label));
+    vm.label(report.hubReports[0].hub, string.concat('Hub', label));
+    vm.label(report.hubReports[0].irStrategy, string.concat('IrStrategy', label));
+    vm.label(report.hubReports[0].treasurySpoke, string.concat('TreasurySpoke', label));
 
     return report;
   }

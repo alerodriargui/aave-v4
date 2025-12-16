@@ -3,49 +3,46 @@
 pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
-import {Roles} from 'src/deployments/procedures/roles/Roles.sol';
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 library AaveV4HubRolesProcedure {
-  function grantHubAdminRole(address accessManagerAddress, address admin) internal {
-    grantHubFeeMinterRole(accessManagerAddress, admin);
-    grantHubConfiguratorRole(accessManagerAddress, admin);
+  function grantHubAdminRole(address accessManager, address admin) internal {
+    assert(admin != address(0));
+    grantHubFeeMinterRole(accessManager, admin);
+    grantHubConfiguratorRole(accessManager, admin);
   }
 
-  function grantHubFeeMinterRole(address accessManagerAddress, address admin) internal {
-    IAccessManager(accessManagerAddress).grantRole({
+  function grantHubFeeMinterRole(address accessManager, address admin) internal {
+    IAccessManager(accessManager).grantRole({
       roleId: Roles.HUB_FEE_MINTER_ROLE,
       account: admin,
       executionDelay: 0
     });
   }
 
-  function grantHubConfiguratorRole(address accessManagerAddress, address admin) internal {
-    IAccessManager(accessManagerAddress).grantRole({
+  function grantHubConfiguratorRole(address accessManager, address admin) internal {
+    IAccessManager(accessManager).grantRole({
       roleId: Roles.HUB_CONFIGURATOR_ROLE,
       account: admin,
       executionDelay: 0
     });
   }
 
-  function setupHubRoles(address accessManagerAddress, address hubAddress) internal {
-    setupHubFeeMinterRole(accessManagerAddress, hubAddress);
-    setupHubConfiguratorRole(accessManagerAddress, hubAddress);
+  function setupHubRoles(address accessManager, address hub) internal {
+    setupHubFeeMinterRole(accessManager, hub);
+    setupHubConfiguratorRole(accessManager, hub);
   }
 
-  function setupHubFeeMinterRole(address accessManagerAddress, address hubAddress) internal {
+  function setupHubFeeMinterRole(address accessManager, address hub) internal {
     bytes4[] memory selectors = getHubFeeMinterRoleSelectors();
-    IAccessManager(accessManagerAddress).setTargetFunctionRole(
-      hubAddress,
-      selectors,
-      Roles.HUB_FEE_MINTER_ROLE
-    );
+    IAccessManager(accessManager).setTargetFunctionRole(hub, selectors, Roles.HUB_FEE_MINTER_ROLE);
   }
 
-  function setupHubConfiguratorRole(address accessManagerAddress, address hubAddress) internal {
+  function setupHubConfiguratorRole(address accessManager, address hub) internal {
     bytes4[] memory selectors = getHubConfiguratorRoleSelectors();
-    IAccessManager(accessManagerAddress).setTargetFunctionRole(
-      hubAddress,
+    IAccessManager(accessManager).setTargetFunctionRole(
+      hub,
       selectors,
       Roles.HUB_CONFIGURATOR_ROLE
     );

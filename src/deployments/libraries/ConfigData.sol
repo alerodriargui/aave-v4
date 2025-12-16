@@ -13,6 +13,7 @@ library ConfigData {
     address feeReceiver;
     uint16 liquidityFee;
     address irStrategy;
+    address reinvestmentController;
     bytes irData;
   }
 

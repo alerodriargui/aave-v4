@@ -21,8 +21,8 @@ library TestTypes {
   }
 
   struct TestTokensBatchReport {
-    address wethAddress;
-    address[] tokenAddresses;
+    address weth;
+    address[] tokens;
   }
 
   struct TestTokenInput {
@@ -32,24 +32,30 @@ library TestTypes {
   }
 
   struct TestHubReport {
-    address hubAddress;
-    address irStrategyAddress;
-    address treasurySpokeAddress;
+    address hub;
+    address irStrategy;
+    address treasurySpoke;
   }
 
   struct TestSpokeReport {
-    address spokeAddress;
-    address aaveOracleAddress;
+    address spoke;
+    address aaveOracle;
+  }
+
+  struct TestGatewaysReport {
+    address signatureGateway;
+    address nativeGateway;
   }
 
   struct TestEnvReport {
-    address accessManagerAddress;
+    address accessManager;
     TestHubReport[] hubReports;
     TestSpokeReport[] spokeReports;
+    TestGatewaysReport gatewaysReport;
   }
 
   struct TestTokensReport {
-    address wethAddress;
-    address[] testTokenAddresses;
+    address weth;
+    address[] testTokens;
   }
 }

@@ -16,7 +16,7 @@ contract InputUtils {
   /// @dev spokeProxyAdminOwner The owner of the spoke proxyAdmin.
   /// @dev spokeConfiguratorOwner The admin of the spoke configurator.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
-  /// @dev nativeWrapperAddress The address of the native wrapper.
+  /// @dev nativeWrapper The address of the native wrapper.
   /// @dev grantRoles A boolean indicating if roles should be granted.
   /// @dev hubLabels An array of hub labels; the number of hub labels defines the number of hubs to deploy.
   /// @dev spokeLabels An array of spoke labels; the number of spoke labels defines the number of spokes to deploy.
@@ -29,7 +29,7 @@ contract InputUtils {
     address spokeProxyAdminOwner;
     address spokeConfiguratorOwner;
     address gatewayOwner;
-    address nativeWrapperAddress;
+    address nativeWrapper;
     bool grantRoles;
     string[] hubLabels;
     string[] spokeLabels;
@@ -60,7 +60,7 @@ contract InputUtils {
     inputs.spokeAdmin = json.readAddress('.spokeAdmin');
     inputs.spokeProxyAdminOwner = json.readAddress('.spokeProxyAdminOwner');
     inputs.spokeConfiguratorOwner = json.readAddress('.spokeConfiguratorOwner');
-    inputs.nativeWrapperAddress = json.readAddress('.nativeWrapperAddress');
+    inputs.nativeWrapper = json.readAddress('.nativeWrapper');
     inputs.grantRoles = json.readBool('.grantRoles');
     inputs.hubLabels = json.readStringArray('.hubLabels');
     inputs.spokeLabels = json.readStringArray('.spokeLabels');

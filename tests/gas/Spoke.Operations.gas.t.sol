@@ -11,8 +11,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   ISpoke internal spoke;
 
   function setUp() public virtual override {
-    _setupFixtures();
-    _initEnvironment();
+    super.setUp();
     spoke = spoke1;
     reserveId = _getReserveIds(spoke);
     _seed();

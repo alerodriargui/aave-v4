@@ -30,18 +30,6 @@ contract Logger {
     _json = _root;
   }
 
-  function log(string memory label, address value) public pure {
-    _log(label, value);
-  }
-
-  function log(string memory label, uint256 value) public pure {
-    _log(label, value);
-  }
-
-  function log(string memory value) public pure {
-    _log(value);
-  }
-
   function write(string memory label, address value) public {
     _write(label, value);
   }
@@ -65,20 +53,20 @@ contract Logger {
   function save(string memory fileName, bool withTimestamp) public {
     console.log();
     console.log('Saving log to %s', _outputPath);
-    string memory appendedMetadata = withTimestamp ? string.concat(getTimestamp(), '-') : '';
+    string memory appendedMetadata = withTimestamp ? string.concat(_getTimestamp(), '-') : '';
     vm.writeJson(_json, string.concat(_outputPath, appendedMetadata, fileName));
   }
 
-  function _log(string memory label, address value) internal pure {
-    console.log('%s: %s', label, value);
+  function log(string memory label, address value) public pure {
+    _log(label, value);
   }
 
-  function _log(string memory label, uint256 value) internal pure {
-    console.log('%s: %s', label, value);
+  function log(string memory label, uint256 value) public pure {
+    _log(label, value);
   }
 
-  function _log(string memory value) internal pure {
-    console.log(value);
+  function log(string memory value) public pure {
+    _log(value);
   }
 
   function _write(string memory label, address value) internal {
@@ -86,7 +74,7 @@ contract Logger {
   }
 
   function _write(string memory label, uint256 value) internal {
-    _json = vm.serializeString(_root, label, vm.toString(value));
+    _json = vm.serializeUint(_root, label, value);
   }
 
   function _write(string memory value) internal {
@@ -109,7 +97,7 @@ contract Logger {
     _json = vm.serializeString(_root, groupLabel, group);
   }
 
-  function getTimestamp() public returns (string memory result) {
+  function _getTimestamp() internal returns (string memory result) {
     string[] memory command = new string[](3);
 
     command[0] = 'bash';
@@ -119,5 +107,17 @@ contract Logger {
     (result) = abi.decode(timestamp, (string));
 
     return result;
+  }
+
+  function _log(string memory label, address value) internal pure {
+    console.log('%s: %s', label, value);
+  }
+
+  function _log(string memory label, uint256 value) internal pure {
+    console.log('%s: %s', label, value);
+  }
+
+  function _log(string memory value) internal pure {
+    console.log(value);
   }
 }

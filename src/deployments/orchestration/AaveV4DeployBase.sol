@@ -32,22 +32,22 @@ library AaveV4DeployBase {
 
   function deployHubBatch(
     address treasurySpokeOwner,
-    address accessManagerAddress
+    address accessManager
   ) internal returns (BatchReports.HubBatchReport memory) {
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasurySpokeOwner, accessManagerAddress);
+    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasurySpokeOwner, accessManager);
     return hubBatch.getReport();
   }
 
   function deploySpokeInstanceBatch(
     address spokeProxyAdminOwner,
-    address accessManagerAddress,
+    address accessManager,
     uint8 oracleDecimals,
     string memory oracleSuffix,
     string memory label
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
     AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
       spokeProxyAdminOwner_: spokeProxyAdminOwner,
-      accessManagerAddress_: accessManagerAddress,
+      accessManager_: accessManager,
       oracleDecimals_: oracleDecimals,
       oracleDescription_: string.concat(label, oracleSuffix)
     });

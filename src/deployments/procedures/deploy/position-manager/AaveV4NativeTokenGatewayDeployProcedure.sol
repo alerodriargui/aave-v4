@@ -6,9 +6,9 @@ import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 
 contract AaveV4NativeTokenGatewayDeployProcedure {
   function _deployNativeTokenGateway(
-    address nativeWrapper_,
-    address owner_
+    address nativeWrapper,
+    address owner
   ) internal returns (address) {
-    return address(new NativeTokenGateway({nativeWrapper_: nativeWrapper_, initialOwner_: owner_}));
+    return address(new NativeTokenGateway({nativeWrapper_: nativeWrapper, initialOwner_: owner}));
   }
 }

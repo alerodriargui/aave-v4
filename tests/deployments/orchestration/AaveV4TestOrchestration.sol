@@ -50,12 +50,12 @@ library AaveV4TestOrchestration {
     TestTypes.TestTokensReport memory tokensReport = _deployTestTokensBatch(tokenInputs);
 
     TestTypes.TokenList memory tokenList;
-    tokenList.weth = WETH9(payable(tokensReport.wethAddress));
-    tokenList.usdx = TestnetERC20(tokensReport.testTokenAddresses[0]);
-    tokenList.dai = TestnetERC20(tokensReport.testTokenAddresses[1]);
-    tokenList.wbtc = TestnetERC20(tokensReport.testTokenAddresses[2]);
-    tokenList.usdy = TestnetERC20(tokensReport.testTokenAddresses[3]);
-    tokenList.usdz = TestnetERC20(tokensReport.testTokenAddresses[4]);
+    tokenList.weth = WETH9(payable(tokensReport.weth));
+    tokenList.usdx = TestnetERC20(tokensReport.testTokens[0]);
+    tokenList.dai = TestnetERC20(tokensReport.testTokens[1]);
+    tokenList.wbtc = TestnetERC20(tokensReport.testTokens[2]);
+    tokenList.usdy = TestnetERC20(tokensReport.testTokens[3]);
+    tokenList.usdz = TestnetERC20(tokensReport.testTokens[4]);
     return tokenList;
   }
 
@@ -63,7 +63,8 @@ library AaveV4TestOrchestration {
     address admin,
     address treasuryAdmin,
     uint256 hubCount,
-    uint256 spokeCount
+    uint256 spokeCount,
+    address nativeWrapper
   ) external returns (TestTypes.TestEnvReport memory) {
     TestTypes.TestEnvReport memory report;
 
@@ -71,17 +72,17 @@ library AaveV4TestOrchestration {
     report.spokeReports = new TestTypes.TestSpokeReport[](spokeCount);
 
     // Deploy Access Batch
-    report.accessManagerAddress = AaveV4DeployBase.deployAccessBatch(admin).accessManagerAddress;
+    report.accessManager = AaveV4DeployBase.deployAccessBatch(admin).accessManager;
 
     // Deploy Hub Batches
     for (uint256 i; i < hubCount; ++i) {
       BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch(
         treasuryAdmin,
-        report.accessManagerAddress
+        report.accessManager
       );
-      report.hubReports[i].hubAddress = hubReport.hubAddress;
-      report.hubReports[i].irStrategyAddress = hubReport.irStrategyAddress;
-      report.hubReports[i].treasurySpokeAddress = hubReport.treasurySpokeAddress;
+      report.hubReports[i].hub = hubReport.hub;
+      report.hubReports[i].irStrategy = hubReport.irStrategy;
+      report.hubReports[i].treasurySpoke = hubReport.treasurySpoke;
     }
 
     // Deploy Spoke Instance Batches
@@ -89,86 +90,24 @@ library AaveV4TestOrchestration {
       BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
         .deploySpokeInstanceBatch(
           admin,
-          report.accessManagerAddress,
+          report.accessManager,
           Constants.ORACLE_DECIMALS,
           Constants.ORACLE_SUFFIX,
           string.concat('Spoke ', string(abi.encode(i)), Constants.ORACLE_SUFFIX)
         );
-      report.spokeReports[i].spokeAddress = spokeReport.spokeProxyAddress;
-      report.spokeReports[i].aaveOracleAddress = spokeReport.aaveOracleAddress;
+      report.spokeReports[i].spoke = spokeReport.spokeProxy;
+      report.spokeReports[i].aaveOracle = spokeReport.aaveOracle;
     }
+
+    // Deploy Gateways Batch
+    BatchReports.GatewaysBatchReport memory gatewaysReport = AaveV4DeployBase.deployGatewaysBatch({
+      owner: admin,
+      nativeWrapper: nativeWrapper
+    });
+    report.gatewaysReport.signatureGateway = gatewaysReport.signatureGateway;
+    report.gatewaysReport.nativeGateway = gatewaysReport.nativeGateway;
 
     return report;
-  }
-
-  function setRolesTestEnv(TestTypes.TestEnvReport memory report) public {
-    // Set Hub Roles
-    for (uint256 i; i < report.hubReports.length; ++i) {
-      AaveV4HubRolesProcedure.setupHubRoles(
-        report.accessManagerAddress,
-        report.hubReports[i].hubAddress
-      );
-    }
-
-    // Set Spoke Roles
-    for (uint256 i; i < report.spokeReports.length; ++i) {
-      AaveV4SpokeRolesProcedure.setupSpokeRoles(
-        report.accessManagerAddress,
-        report.spokeReports[i].spokeAddress
-      );
-    }
-  }
-
-  function grantRolesTestEnv(
-    TestTypes.TestEnvReport memory report,
-    address admin,
-    address hubAdmin,
-    address spokeAdmin
-  ) public {
-    grantHubRolesTestEnv(report, admin, hubAdmin);
-    grantSpokeRolesTestEnv(report, admin, spokeAdmin);
-  }
-
-  // function grantAccessManagerRolesTestEnv(
-  //   TestTypes.TestEnvReport memory report,
-  //   address admin
-  // ) external {
-  //   // grant RootAdmin Role
-  //   AaveV4AccessManagerRolesProcedure.grantRootAdminRole({
-  //     accessManagerAddress: report.accessManagerAddress,
-  //     newAdminAddress: admin,
-  //     currentAdminAddress: admin
-  //   });
-  // }
-
-  function grantHubRolesTestEnv(
-    TestTypes.TestEnvReport memory report,
-    address admin,
-    address hubAdmin
-  ) public {
-    // grant Hub roles
-    AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManagerAddress, admin);
-    AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManagerAddress, hubAdmin);
-  }
-
-  function grantSpokeRolesTestEnv(
-    TestTypes.TestEnvReport memory report,
-    address admin,
-    address spokeAdmin
-  ) public {
-    // grant Spoke roles
-    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManagerAddress, admin);
-    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManagerAddress, spokeAdmin);
-  }
-
-  function configureHubsAssets(
-    ConfigData.AddAssetParams[] memory paramsList
-  ) public returns (uint256[] memory) {
-    uint256[] memory assetIds = new uint256[](paramsList.length);
-    for (uint256 i; i < paramsList.length; ++i) {
-      assetIds[i] = AaveV4HubConfigProcedures.addAsset(paramsList[i]);
-    }
-    return assetIds;
   }
 
   function configureHubsSpokes(ConfigData.AddSpokeParams[] memory paramsList) external {
@@ -196,17 +135,69 @@ library AaveV4TestOrchestration {
     return spokeReserveIds;
   }
 
+  function setRolesTestEnv(TestTypes.TestEnvReport memory report) public {
+    // Set Hub Roles
+    for (uint256 i; i < report.hubReports.length; ++i) {
+      AaveV4HubRolesProcedure.setupHubRoles(report.accessManager, report.hubReports[i].hub);
+    }
+
+    // Set Spoke Roles
+    for (uint256 i; i < report.spokeReports.length; ++i) {
+      AaveV4SpokeRolesProcedure.setupSpokeRoles(report.accessManager, report.spokeReports[i].spoke);
+    }
+  }
+
+  function grantRolesTestEnv(
+    TestTypes.TestEnvReport memory report,
+    address admin,
+    address hubAdmin,
+    address spokeAdmin
+  ) public {
+    grantHubRolesTestEnv(report, admin, hubAdmin);
+    grantSpokeRolesTestEnv(report, admin, spokeAdmin);
+  }
+
+  function grantHubRolesTestEnv(
+    TestTypes.TestEnvReport memory report,
+    address admin,
+    address hubAdmin
+  ) public {
+    // grant Hub roles
+    AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManager, admin);
+    AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManager, hubAdmin);
+  }
+
+  function grantSpokeRolesTestEnv(
+    TestTypes.TestEnvReport memory report,
+    address admin,
+    address spokeAdmin
+  ) public {
+    // grant Spoke roles
+    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManager, admin);
+    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManager, spokeAdmin);
+  }
+
+  function configureHubsAssets(
+    ConfigData.AddAssetParams[] memory paramsList
+  ) public returns (uint256[] memory) {
+    uint256[] memory assetIds = new uint256[](paramsList.length);
+    for (uint256 i; i < paramsList.length; ++i) {
+      assetIds[i] = AaveV4HubConfigProcedures.addAsset(paramsList[i]);
+    }
+    return assetIds;
+  }
+
   function _deployTestTokensBatch(
     TestTypes.TestTokenInput[] memory tokenInputs
   ) internal returns (TestTypes.TestTokensReport memory) {
     TestTypes.TestTokensReport memory report;
 
-    report.testTokenAddresses = new address[](tokenInputs.length);
+    report.testTokens = new address[](tokenInputs.length);
 
     // Deploy Test Tokens Batch
     TestTypes.TestTokensBatchReport memory tokensReport = _deployTokensBatch(tokenInputs);
-    report.wethAddress = tokensReport.wethAddress;
-    report.testTokenAddresses = tokensReport.tokenAddresses;
+    report.weth = tokensReport.weth;
+    report.testTokens = tokensReport.tokens;
 
     return report;
   }

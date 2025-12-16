@@ -4,28 +4,28 @@ pragma solidity ^0.8.0;
 
 library BatchReports {
   struct AccessBatchReport {
-    address accessManagerAddress;
+    address accessManager;
   }
 
   struct ConfiguratorBatchReport {
-    address hubConfiguratorAddress;
-    address spokeConfiguratorAddress;
+    address hubConfigurator;
+    address spokeConfigurator;
   }
 
   struct SpokeInstanceBatchReport {
-    address spokeImplementationAddress;
-    address spokeProxyAddress;
-    address aaveOracleAddress;
+    address spokeImplementation;
+    address spokeProxy;
+    address aaveOracle;
   }
 
   struct HubBatchReport {
-    address hubAddress;
-    address irStrategyAddress;
-    address treasurySpokeAddress;
+    address hub;
+    address irStrategy;
+    address treasurySpoke;
   }
 
   struct GatewaysBatchReport {
-    address signatureGatewayAddress;
-    address nativeGatewayAddress;
+    address signatureGateway;
+    address nativeGateway;
   }
 }
