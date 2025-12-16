@@ -1,0 +1,11 @@
+{
+  "approveWithdraw": "46795",
+  "approveWithdrawWithSig": "63006",
+  "borrowOnBehalfOf": "306541",
+  "creditDelegation": "46784",
+  "creditDelegationWithSig": "62994",
+  "renounceCreditDelegation": "24937",
+  "renounceWithdrawAllowance": "24837",
+  "withdrawOnBehalfOf: full": "121598",
+  "withdrawOnBehalfOf: partial": "131797"
+}

@@ -412,12 +412,6 @@ contract AllowancePositionManagerTest is SpokeBase {
     positionManager.withdrawOnBehalfOf(_daiReserveId(spoke), amount, alice);
   }
 
-  function test_withdrawOnBehalfOf_revertsWith_InvalidAmount() public {
-    vm.expectRevert(IPositionManagerBase.InvalidAmount.selector);
-    vm.prank(bob);
-    positionManager.withdrawOnBehalfOf(_daiReserveId(spoke), 0, alice);
-  }
-
   function test_withdrawOnBehalfOf_revertsWith_ReserveNotListed() public {
     uint256 reserveId = _randomInvalidReserveId(spoke);
 
@@ -633,12 +627,6 @@ contract AllowancePositionManagerTest is SpokeBase {
     );
     vm.prank(bob);
     positionManager.borrowOnBehalfOf(_daiReserveId(spoke), borrowAmount, alice);
-  }
-
-  function test_borrowOnBehalfOf_revertsWith_InvalidAmount() public {
-    vm.expectRevert(IPositionManagerBase.InvalidAmount.selector);
-    vm.prank(bob);
-    positionManager.borrowOnBehalfOf(_daiReserveId(spoke), 0, alice);
   }
 
   function test_borrowOnBehalfOf_revertsWith_ReserveNotListed() public {
