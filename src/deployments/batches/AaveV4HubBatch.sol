@@ -21,9 +21,6 @@ contract AaveV4HubBatch is
   BatchReports.HubBatchReport internal _report;
 
   constructor(address treasurySpokeOwner_, address accessManager_) {
-    assert(treasurySpokeOwner_ != address(0));
-    assert(accessManager_ != address(0));
-
     address hub = _deployHub(accessManager_);
     address irStrategy = _deployInterestRateStrategy(hub);
     address treasurySpoke = _deployTreasurySpoke(treasurySpokeOwner_, hub);

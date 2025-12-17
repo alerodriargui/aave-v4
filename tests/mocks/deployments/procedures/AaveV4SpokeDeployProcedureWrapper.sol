@@ -7,6 +7,8 @@ import {
 } from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol';
 
 contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
+  bool public IS_TEST = true;
+
   function deployUpgradableSpokeInstance(
     address spokeProxyAdminOwner,
     address accessManager,

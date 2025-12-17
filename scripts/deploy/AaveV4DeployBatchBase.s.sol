@@ -12,11 +12,15 @@ import {
 import {Script} from 'forge-std/Script.sol';
 
 abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
-  string internal constant INPUT_PATH = 'scripts/deploy/inputs/';
-  string internal constant OUTPUT_DIR = 'output/reports/deployments/';
+  struct Warnings {
+    string[] s;
+  }
 
+  string internal constant INPUT_PATH = 'config/';
+  string internal constant OUTPUT_DIR = 'output/reports/deployments/';
   string internal _inputFileName;
   string internal _outputFileName;
+  Warnings internal _warnings;
 
   constructor(string memory inputFileName_, string memory outputFileName_) {
     _inputFileName = inputFileName_;
@@ -30,8 +34,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
       string.concat(INPUT_PATH, _inputFileName)
     );
     (, address deployer, ) = vm.readCallers();
-    _loadWarnings(logger, inputs);
-    inputs = _sanitizeInputs(inputs, deployer);
+    inputs = _loadWarningsAndSanitizeInputs(logger, inputs, deployer);
 
     logger.log('...Starting Aave V4 Batch Deployment...');
     vm.startBroadcast(deployer);
@@ -44,119 +47,112 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     logger.save({fileName: _outputFileName, withTimestamp: true});
   }
 
-  function _loadWarnings(MetadataLogger logger, FullDeployInputs memory inputs) internal virtual {
+  function _loadWarningsAndSanitizeInputs(
+    MetadataLogger logger,
+    FullDeployInputs memory inputs,
+    address deployer
+  ) internal virtual returns (FullDeployInputs memory) {
+    FullDeployInputs memory sanitizedInputs = inputs;
     bool hadWarnings = false;
-    string memory warnings = '';
     if (inputs.grantRoles) {
-      warnings = _logAndAppend(logger, warnings, 'WARNING: Roles are being set');
+      _logAndAppend(logger, 'WARNING: Roles are being set');
       hadWarnings = true;
       if (inputs.accessManagerAdmin == address(0)) {
-        warnings = _logAndAppend(
+        _logAndAppend(
           logger,
-          warnings,
           'WARNING: Access Manager Admin is zero address; role will be granted to deployer by default'
         );
+        sanitizedInputs.accessManagerAdmin = deployer;
       }
       if (inputs.hubConfiguratorOwner == address(0)) {
-        warnings = _logAndAppend(
+        _logAndAppend(
           logger,
-          warnings,
           'WARNING: Hub Configurator Owner is zero address; role will be granted to deployer by default'
         );
+        sanitizedInputs.hubConfiguratorOwner = deployer;
       }
       if (inputs.spokeConfiguratorOwner == address(0)) {
-        warnings = _logAndAppend(
+        _logAndAppend(
           logger,
-          warnings,
           'WARNING: Spoke Configurator Owner is zero address; role will be granted to deployer by default'
         );
+        sanitizedInputs.spokeConfiguratorOwner = deployer;
       }
       if (inputs.spokeProxyAdminOwner == address(0)) {
-        warnings = _logAndAppend(
+        _logAndAppend(
           logger,
-          warnings,
           'WARNING: Spoke Proxy Admin Owner is zero address; role will be granted to deployer by default'
         );
+        sanitizedInputs.spokeProxyAdminOwner = deployer;
       }
       if (inputs.treasurySpokeOwner == address(0)) {
-        warnings = _logAndAppend(
+        _logAndAppend(
           logger,
-          warnings,
           'WARNING: Treasury Spoke Owner is zero address; role will be granted to deployer by default'
         );
+        sanitizedInputs.treasurySpokeOwner = deployer;
       }
       if (inputs.spokeAdmin == address(0)) {
-        warnings = _logAndAppend(
+        _logAndAppend(
           logger,
-          warnings,
           'WARNING: Spoke Admin is zero address; spoke admin roles will be granted to deployer by default'
         );
+        sanitizedInputs.spokeAdmin = deployer;
       }
     }
     if (inputs.hubLabels.length == 0) {
-      warnings = _logAndAppend(logger, warnings, 'WARNING: Hub will not be deployed');
+      _logAndAppend(logger, 'WARNING: Hub will not be deployed');
       hadWarnings = true;
+      sanitizedInputs.hubLabels = new string[](0);
     }
     if (inputs.spokeLabels.length == 0) {
-      warnings = _logAndAppend(logger, warnings, 'WARNING: Spoke will not be deployed');
+      _logAndAppend(logger, 'WARNING: Spoke will not be deployed');
       hadWarnings = true;
+      sanitizedInputs.spokeLabels = new string[](0);
     }
     if (inputs.nativeWrapper == address(0)) {
-      warnings = _logAndAppend(
+      _logAndAppend(
         logger,
-        warnings,
         'WARNING: Native wrapper zero address; NativeTokenGateway & SignatureGateway will not be deployed'
       );
       hadWarnings = true;
+      sanitizedInputs.nativeWrapper = address(0);
     }
-    logger.log('');
-
+    if (inputs.gatewayOwner == address(0)) {
+      _logAndAppend(
+        logger,
+        'WARNING: Gateway owner zero address; role will be granted to deployer by default'
+      );
+      hadWarnings = true;
+      sanitizedInputs.gatewayOwner = deployer;
+    }
     if (hadWarnings) {
-      _executeUserPrompt(warnings);
+      _executeUserPrompt();
     }
+    return sanitizedInputs;
   }
 
-  function _executeUserPrompt(string memory warnings) internal virtual {
-    string memory ack = vm.prompt(string.concat(warnings, "\nEnter 'y' to continue"));
+  function _executeUserPrompt() internal virtual {
+    string memory ack = vm.prompt(
+      string.concat(_joinWarnings(_warnings), "\nEnter 'y' to continue")
+    );
     if (keccak256(bytes(ack)) != keccak256(bytes('y'))) {
       revert('User did not acknowledge warnings. Please try again.');
     }
   }
 
-  function _sanitizeInputs(
-    FullDeployInputs memory deployInputs,
-    address deployer
-  ) internal view virtual returns (FullDeployInputs memory) {
-    // if any admin is zero address, default to deployer as admin
-    InputUtils.FullDeployInputs memory sanitizedInputs = deployInputs;
-    sanitizedInputs.accessManagerAdmin = deployInputs.accessManagerAdmin != address(0)
-      ? deployInputs.accessManagerAdmin
-      : deployer;
-    sanitizedInputs.hubConfiguratorOwner = deployInputs.hubConfiguratorOwner != address(0)
-      ? deployInputs.hubConfiguratorOwner
-      : deployer;
-    sanitizedInputs.treasurySpokeOwner = deployInputs.treasurySpokeOwner != address(0)
-      ? deployInputs.treasurySpokeOwner
-      : deployer;
-    sanitizedInputs.spokeProxyAdminOwner = deployInputs.spokeProxyAdminOwner != address(0)
-      ? deployInputs.spokeProxyAdminOwner
-      : deployer;
-    sanitizedInputs.spokeConfiguratorOwner = deployInputs.spokeConfiguratorOwner != address(0)
-      ? deployInputs.spokeConfiguratorOwner
-      : deployer;
-    sanitizedInputs.gatewayOwner = deployInputs.gatewayOwner != address(0)
-      ? deployInputs.gatewayOwner
-      : deployer;
-
-    return sanitizedInputs;
+  function _logAndAppend(MetadataLogger logger, string memory warning) internal virtual {
+    logger.log(warning);
+    _warnings.s.push(warning);
   }
 
-  function _logAndAppend(
-    MetadataLogger logger,
-    string memory warnings,
-    string memory warning
-  ) internal virtual returns (string memory) {
-    logger.log(warning);
-    return string.concat(warnings, warning, '\n');
+  function _joinWarnings(Warnings storage warnings) internal view virtual returns (string memory) {
+    uint256 n = warnings.s.length;
+    if (n == 0) return '';
+    string memory out = warnings.s[0];
+    for (uint256 i = 1; i < n; i++) {
+      out = string.concat(out, '\n', warnings.s[i]);
+    }
+    return string.concat(out, '\n');
   }
 }

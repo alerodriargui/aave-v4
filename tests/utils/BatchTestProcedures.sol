@@ -20,12 +20,19 @@ import {
 import {
   AaveV4HubRolesProcedure
 } from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
+import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
+
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {Constants} from 'tests/Constants.sol';
 
+// libraries
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
+import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
+
+// interfaces
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -33,32 +40,40 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
-import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
-import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
-
 contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
-  bytes4[] public spokePositionUpdaterRoleSelectors;
-  bytes4[] public spokeConfiguratorRoleSelectors;
-  bytes4[] public hubFeeMinterRoleSelectors;
-  bytes4[] public hubConfiguratorRoleSelectors;
-  address public deployer;
+  Logger internal _logger;
+  FullDeployInputs internal _inputs;
+  address internal _weth9;
+
+  string[] internal _hubLabels;
+  string[] internal _spokeLabels;
+  bytes4[] internal _spokePositionUpdaterRoleSelectors;
+  bytes4[] internal _spokeConfiguratorRoleSelectors;
+  bytes4[] internal _hubFeeMinterRoleSelectors;
+  bytes4[] internal _hubConfiguratorRoleSelectors;
+  address internal _deployer = makeAddr('deployer');
 
   function setUp() public virtual {
-    spokePositionUpdaterRoleSelectors = AaveV4SpokeRolesProcedure
+    _spokePositionUpdaterRoleSelectors = AaveV4SpokeRolesProcedure
       .getSpokePositionUpdaterRoleSelectors();
-    spokeConfiguratorRoleSelectors = AaveV4SpokeRolesProcedure.getSpokeConfiguratorRoleSelectors();
+    _spokeConfiguratorRoleSelectors = AaveV4SpokeRolesProcedure.getSpokeConfiguratorRoleSelectors();
 
-    hubFeeMinterRoleSelectors = AaveV4HubRolesProcedure.getHubFeeMinterRoleSelectors();
-    hubConfiguratorRoleSelectors = AaveV4HubRolesProcedure.getHubConfiguratorRoleSelectors();
+    _hubFeeMinterRoleSelectors = AaveV4HubRolesProcedure.getHubFeeMinterRoleSelectors();
+    _hubConfiguratorRoleSelectors = AaveV4HubRolesProcedure.getHubConfiguratorRoleSelectors();
+
+    _weth9 = _deployWETH();
+    _logger = new Logger('dummy/path');
+    _hubLabels = ['hub1', 'hub2', 'hub3'];
+    _spokeLabels = ['spoke1', 'spoke2', 'spoke3'];
   }
 
-  function checkedV4Deployment(Logger logger, FullDeployInputs memory inputs) public {
-    vm.startPrank(deployer);
+  function checkedV4Deployment() public {
+    vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(logger, deployer, inputs);
+      .deployAaveV4(_logger, _deployer, _inputs);
     vm.stopPrank();
-    _checkDeployment(report, inputs);
-    _checkRoles(report, inputs);
+    _checkDeployment(report, _inputs);
+    _checkRoles(report, _inputs);
   }
 
   function _checkDeployment(
@@ -90,22 +105,22 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   ) internal view returns (FullDeployInputs memory) {
     inputs.accessManagerAdmin = inputs.accessManagerAdmin != address(0)
       ? inputs.accessManagerAdmin
-      : deployer;
-    inputs.hubAdmin = inputs.hubAdmin != address(0) ? inputs.hubAdmin : deployer;
+      : _deployer;
+    inputs.hubAdmin = inputs.hubAdmin != address(0) ? inputs.hubAdmin : _deployer;
     inputs.hubConfiguratorOwner = inputs.hubConfiguratorOwner != address(0)
       ? inputs.hubConfiguratorOwner
-      : deployer;
+      : _deployer;
     inputs.treasurySpokeOwner = inputs.treasurySpokeOwner != address(0)
       ? inputs.treasurySpokeOwner
-      : deployer;
-    inputs.spokeAdmin = inputs.spokeAdmin != address(0) ? inputs.spokeAdmin : deployer;
+      : _deployer;
+    inputs.spokeAdmin = inputs.spokeAdmin != address(0) ? inputs.spokeAdmin : _deployer;
     inputs.spokeProxyAdminOwner = inputs.spokeProxyAdminOwner != address(0)
       ? inputs.spokeProxyAdminOwner
-      : deployer;
+      : _deployer;
     inputs.spokeConfiguratorOwner = inputs.spokeConfiguratorOwner != address(0)
       ? inputs.spokeConfiguratorOwner
-      : deployer;
-    inputs.gatewayOwner = inputs.gatewayOwner != address(0) ? inputs.gatewayOwner : deployer;
+      : _deployer;
+    inputs.gatewayOwner = inputs.gatewayOwner != address(0) ? inputs.gatewayOwner : _deployer;
 
     return inputs;
   }
@@ -262,7 +277,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   ) internal view {
     address expectedAdmin = (inputs.grantRoles && inputs.accessManagerAdmin != address(0))
       ? inputs.accessManagerAdmin
-      : deployer;
+      : _deployer;
     assertEq(
       accessManager.getRoleMember(Roles.DEFAULT_ADMIN_ROLE, 0),
       expectedAdmin,
@@ -317,11 +332,11 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     }
 
     for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
-      for (uint256 j = 0; j < spokeConfiguratorRoleSelectors.length; j++) {
+      for (uint256 j = 0; j < _spokeConfiguratorRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
             report.spokeInstanceBatchReports[i].report.spokeProxy,
-            spokeConfiguratorRoleSelectors[j]
+            _spokeConfiguratorRoleSelectors[j]
           ),
           Roles.SPOKE_CONFIGURATOR_ROLE,
           'SpokeConfiguratorRole target function'
@@ -330,7 +345,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         (bool allowed, uint32 delay) = accessManager.canCall(
           report.configuratorBatchReport.spokeConfigurator,
           report.spokeInstanceBatchReports[i].report.spokeProxy,
-          spokeConfiguratorRoleSelectors[j]
+          _spokeConfiguratorRoleSelectors[j]
         );
         assertEq(
           allowed,
@@ -343,7 +358,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         (allowed, delay) = accessManager.canCall(
           inputs.spokeAdmin,
           report.spokeInstanceBatchReports[i].report.spokeProxy,
-          spokeConfiguratorRoleSelectors[j]
+          _spokeConfiguratorRoleSelectors[j]
         );
         assertEq(
           allowed,
@@ -389,11 +404,11 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         string.concat(inputs.spokeLabels[i], ' proxy admin owner')
       );
 
-      for (uint256 j = 0; j < spokePositionUpdaterRoleSelectors.length; j++) {
+      for (uint256 j = 0; j < _spokePositionUpdaterRoleSelectors.length; j++) {
         (bool allowed, uint32 delay) = accessManager.canCall(
           inputs.spokeAdmin,
           report.spokeInstanceBatchReports[i].report.spokeProxy,
-          spokePositionUpdaterRoleSelectors[j]
+          _spokePositionUpdaterRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'SpokeAdminRole allowed');
         assertEq(delay, 0, 'SpokeAdminRole delay');
@@ -401,7 +416,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         assertEq(
           accessManager.getTargetFunctionRole(
             report.spokeInstanceBatchReports[i].report.spokeProxy,
-            spokePositionUpdaterRoleSelectors[j]
+            _spokePositionUpdaterRoleSelectors[j]
           ),
           Roles.SPOKE_POSITION_UPDATER_ROLE,
           'SpokeAdminRole target function'
@@ -440,11 +455,11 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         inputs,
         inputs.hubLabels[i]
       );
-      for (uint256 j = 0; j < hubFeeMinterRoleSelectors.length; j++) {
+      for (uint256 j = 0; j < _hubFeeMinterRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
             report.hubBatchReports[i].report.hub,
-            hubFeeMinterRoleSelectors[j]
+            _hubFeeMinterRoleSelectors[j]
           ),
           Roles.HUB_FEE_MINTER_ROLE,
           'HubAdminRole target function'
@@ -453,7 +468,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         (bool allowed, uint32 delay) = accessManager.canCall(
           inputs.hubAdmin,
           report.hubBatchReports[i].report.hub,
-          hubFeeMinterRoleSelectors[j]
+          _hubFeeMinterRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'HubAdminRole allowed');
         assertEq(delay, 0, 'HubAdminRole delay');
@@ -502,11 +517,11 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       );
     }
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
-      for (uint256 j = 0; j < hubConfiguratorRoleSelectors.length; j++) {
+      for (uint256 j = 0; j < _hubConfiguratorRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
             report.hubBatchReports[i].report.hub,
-            hubConfiguratorRoleSelectors[j]
+            _hubConfiguratorRoleSelectors[j]
           ),
           Roles.HUB_CONFIGURATOR_ROLE,
           'HubConfiguratorRole target function'
@@ -517,7 +532,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         (allowed, delay) = accessManager.canCall(
           report.configuratorBatchReport.hubConfigurator,
           report.hubBatchReports[i].report.hub,
-          hubConfiguratorRoleSelectors[j]
+          _hubConfiguratorRoleSelectors[j]
         );
         assertEq(
           allowed,
@@ -529,7 +544,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         (allowed, delay) = accessManager.canCall(
           inputs.hubAdmin,
           report.hubBatchReports[i].report.hub,
-          hubConfiguratorRoleSelectors[j]
+          _hubConfiguratorRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'HubConfiguratorRole allowed - admin');
         assertEq(delay, 0, 'HubConfiguratorRole delay - admin');

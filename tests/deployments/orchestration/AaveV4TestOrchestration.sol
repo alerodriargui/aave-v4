@@ -62,6 +62,8 @@ library AaveV4TestOrchestration {
   function deployTestEnv(
     address admin,
     address treasuryAdmin,
+    address hubConfiguratorAdmin,
+    address spokeConfiguratorAdmin,
     uint256 hubCount,
     uint256 spokeCount,
     address nativeWrapper
@@ -98,6 +100,15 @@ library AaveV4TestOrchestration {
       report.spokeReports[i].spoke = spokeReport.spokeProxy;
       report.spokeReports[i].aaveOracle = spokeReport.aaveOracle;
     }
+
+    // Deploy Configurator Batches
+    BatchReports.ConfiguratorBatchReport memory configuratorReport = AaveV4DeployBase
+      .deployConfiguratorBatch({
+        hubConfiguratorOwner: hubConfiguratorAdmin,
+        spokeConfiguratorOwner: spokeConfiguratorAdmin
+      });
+    report.configuratorReport.hubConfigurator = configuratorReport.hubConfigurator;
+    report.configuratorReport.spokeConfigurator = configuratorReport.spokeConfigurator;
 
     // Deploy Gateways Batch
     BatchReports.GatewaysBatchReport memory gatewaysReport = AaveV4DeployBase.deployGatewaysBatch({
@@ -162,9 +173,15 @@ library AaveV4TestOrchestration {
     address admin,
     address hubAdmin
   ) public {
-    // grant Hub roles
+    // grant Hub Admin roles
     AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManager, admin);
     AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManager, hubAdmin);
+
+    // grant Hub Configurator roles
+    AaveV4HubRolesProcedure.grantHubConfiguratorRole(
+      report.accessManager,
+      report.configuratorReport.hubConfigurator
+    );
   }
 
   function grantSpokeRolesTestEnv(
@@ -175,6 +192,12 @@ library AaveV4TestOrchestration {
     // grant Spoke roles
     AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManager, admin);
     AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManager, spokeAdmin);
+
+    // grant Spoke Configurator roles
+    AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole(
+      report.accessManager,
+      report.configuratorReport.spokeConfigurator
+    );
   }
 
   function configureHubsAssets(
@@ -183,6 +206,20 @@ library AaveV4TestOrchestration {
     uint256[] memory assetIds = new uint256[](paramsList.length);
     for (uint256 i; i < paramsList.length; ++i) {
       assetIds[i] = AaveV4HubConfigProcedures.addAsset(paramsList[i]);
+    }
+    return assetIds;
+  }
+
+  function configureHubsAssetsViaConfigurator(
+    ConfigData.AddAssetParams[] memory paramsList,
+    address hubConfigurator
+  ) public returns (uint256[] memory) {
+    uint256[] memory assetIds = new uint256[](paramsList.length);
+    for (uint256 i; i < paramsList.length; ++i) {
+      assetIds[i] = AaveV4HubConfigProcedures.addAssetViaConfigurator(
+        hubConfigurator,
+        paramsList[i]
+      );
     }
     return assetIds;
   }

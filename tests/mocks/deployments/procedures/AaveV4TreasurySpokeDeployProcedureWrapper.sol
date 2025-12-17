@@ -7,6 +7,8 @@ import {
 } from 'src/deployments/procedures/deploy/spoke/AaveV4TreasurySpokeDeployProcedure.sol';
 
 contract AaveV4TreasurySpokeDeployProcedureWrapper is AaveV4TreasurySpokeDeployProcedure {
+  bool public IS_TEST = true;
+
   function deployTreasurySpoke(address owner, address hub) external returns (address) {
     return _deployTreasurySpoke(owner, hub);
   }

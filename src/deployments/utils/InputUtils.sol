@@ -8,6 +8,8 @@ import 'forge-std/Vm.sol';
 contract InputUtils {
   using stdJson for string;
 
+  Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
+
   /// @dev accessManagerAdmin The default admin of the access manager.
   /// @dev hubAdmin The admin of the hub.
   /// @dev hubConfiguratorOwner The admin of the hub configurator.
@@ -47,8 +49,6 @@ contract InputUtils {
     string hubLabel;
   }
 
-  Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
-
   function loadFullDeployInputs(
     string memory inputPath
   ) public view returns (FullDeployInputs memory inputs) {
@@ -60,6 +60,7 @@ contract InputUtils {
     inputs.spokeAdmin = json.readAddress('.spokeAdmin');
     inputs.spokeProxyAdminOwner = json.readAddress('.spokeProxyAdminOwner');
     inputs.spokeConfiguratorOwner = json.readAddress('.spokeConfiguratorOwner');
+    inputs.gatewayOwner = json.readAddress('.gatewayOwner');
     inputs.nativeWrapper = json.readAddress('.nativeWrapper');
     inputs.grantRoles = json.readBool('.grantRoles');
     inputs.hubLabels = json.readStringArray('.hubLabels');

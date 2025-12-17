@@ -7,6 +7,8 @@ import {
 } from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 
 contract AaveV4HubRolesProcedureWrapper {
+  bool public IS_TEST = true;
+
   function grantHubAdminRole(address accessManager, address admin) external {
     AaveV4HubRolesProcedure.grantHubAdminRole(accessManager, admin);
   }

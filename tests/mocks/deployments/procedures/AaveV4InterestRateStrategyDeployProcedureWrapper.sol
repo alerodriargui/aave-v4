@@ -9,6 +9,8 @@ import {
 contract AaveV4InterestRateStrategyDeployProcedureWrapper is
   AaveV4InterestRateStrategyDeployProcedure
 {
+  bool public IS_TEST = true;
+
   function deployInterestRateStrategy(address hub) external returns (address) {
     return _deployInterestRateStrategy(hub);
   }

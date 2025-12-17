@@ -5,5 +5,7 @@ pragma solidity 0.8.28;
 import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 
 contract GatewayBaseWrapper is GatewayBase {
+  bool public IS_TEST = true;
+
   constructor(address initialOwner_) GatewayBase(initialOwner_) {}
 }

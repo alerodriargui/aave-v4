@@ -47,11 +47,17 @@ library TestTypes {
     address nativeGateway;
   }
 
+  struct TestConfiguratorReport {
+    address hubConfigurator;
+    address spokeConfigurator;
+  }
+
   struct TestEnvReport {
     address accessManager;
     TestHubReport[] hubReports;
     TestSpokeReport[] spokeReports;
     TestGatewaysReport gatewaysReport;
+    TestConfiguratorReport configuratorReport;
   }
 
   struct TestTokensReport {

@@ -7,6 +7,8 @@ import {
 } from 'src/deployments/procedures/deploy/position-manager/AaveV4SignatureGatewayDeployProcedure.sol';
 
 contract AaveV4SignatureGatewayDeployProcedureWrapper is AaveV4SignatureGatewayDeployProcedure {
+  bool public IS_TEST = true;
+
   function deploySignatureGateway(address owner) external returns (address) {
     return _deploySignatureGateway(owner);
   }

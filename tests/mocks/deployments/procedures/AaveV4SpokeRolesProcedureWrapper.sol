@@ -7,11 +7,13 @@ import {
 } from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 
 contract AaveV4SpokeRolesProcedureWrapper {
+  bool public IS_TEST = true;
+
   function grantSpokeAdminRole(address accessManager, address admin) external {
     AaveV4SpokeRolesProcedure.grantSpokeAdminRole(accessManager, admin);
   }
 
-  function grantSpokePositionUpdaterRole(address accessManager, address admin) internal {
+  function grantSpokePositionUpdaterRole(address accessManager, address admin) external {
     AaveV4SpokeRolesProcedure.grantSpokePositionUpdaterRole(accessManager, admin);
   }
 

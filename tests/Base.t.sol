@@ -146,6 +146,8 @@ abstract contract Base is BatchTestProcedures {
   ISpoke internal spoke3;
   AssetInterestRateStrategy internal irStrategy;
   IAccessManager internal accessManager;
+  IHubConfigurator internal hubConfigurator;
+  ISpokeConfigurator internal spokeConfigurator;
 
   address internal alice = makeAddr('alice');
   address internal bob = makeAddr('bob');
@@ -159,6 +161,8 @@ abstract contract Base is BatchTestProcedures {
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
+  address internal HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
+  address internal SPOKE_CONFIGURATOR_ADMIN = makeAddr('SPOKE_CONFIGURATOR_ADMIN');
 
   TestTypes.TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -299,17 +303,19 @@ abstract contract Base is BatchTestProcedures {
     oracle2 = IAaveOracle(report.spokeReports[1].aaveOracle);
     oracle3 = IAaveOracle(report.spokeReports[2].aaveOracle);
     accessManager = IAccessManager(report.accessManager);
+    hubConfigurator = IHubConfigurator(report.configuratorReport.hubConfigurator);
+    spokeConfigurator = ISpokeConfigurator(report.configuratorReport.spokeConfigurator);
   }
 
   function _deployFixtures(
     uint256 numHubs,
     uint256 numSpokes
   ) internal virtual returns (TestTypes.TestEnvReport memory report) {
-    // console.log('weth', address(tokenList.weth));
-    // revert('testing env');
     report = AaveV4TestOrchestration.deployTestEnv({
       admin: ADMIN,
       treasuryAdmin: TREASURY_ADMIN,
+      hubConfiguratorAdmin: HUB_CONFIGURATOR_ADMIN,
+      spokeConfiguratorAdmin: SPOKE_CONFIGURATOR_ADMIN,
       hubCount: numHubs,
       spokeCount: numSpokes,
       nativeWrapper: address(tokenList.weth)
@@ -334,6 +340,9 @@ abstract contract Base is BatchTestProcedures {
       vm.label(report.spokeReports[i].spoke, string.concat('spoke', string(abi.encode(i))));
       vm.label(report.spokeReports[i].aaveOracle, string.concat('oracle', string(abi.encode(i))));
     }
+
+    vm.label(report.configuratorReport.hubConfigurator, 'hubConfigurator');
+    vm.label(report.configuratorReport.spokeConfigurator, 'spokeConfigurator');
 
     return report;
   }
@@ -1043,13 +1052,9 @@ abstract contract Base is BatchTestProcedures {
     return report;
   }
 
-  function _grantSpokeConfiguratorRole(ISpoke spoke, address spokeConfigurator) internal {
+  function _grantSpokeConfiguratorRole(ISpoke spoke, address configurator) internal {
     vm.startPrank(ADMIN);
-    IAccessManager(spoke.authority()).grantRole(
-      Roles.SPOKE_CONFIGURATOR_ROLE,
-      spokeConfigurator,
-      0
-    );
+    IAccessManager(spoke.authority()).grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, configurator, 0);
     vm.stopPrank();
   }
 

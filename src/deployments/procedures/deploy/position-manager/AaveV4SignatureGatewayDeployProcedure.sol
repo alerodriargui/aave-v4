@@ -3,9 +3,10 @@
 pragma solidity ^0.8.0;
 
 import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
-
-contract AaveV4SignatureGatewayDeployProcedure {
+import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
+contract AaveV4SignatureGatewayDeployProcedure is AaveV4DeployProcedureBase {
   function _deploySignatureGateway(address owner) internal returns (address) {
+    _validateAddress(owner, 'owner');
     return address(new SignatureGateway({initialOwner_: owner}));
   }
 }

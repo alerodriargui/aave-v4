@@ -8,7 +8,106 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
   AaveV4HubRolesProcedureWrapper public aaveV4HubRolesProcedureWrapper;
   function setUp() public override {
     super.setUp();
-
     aaveV4HubRolesProcedureWrapper = new AaveV4HubRolesProcedureWrapper();
+  }
+
+  function test_grantHubAdminRole_revertsWithInvalidParam() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
+    );
+    aaveV4HubRolesProcedureWrapper.grantHubAdminRole({accessManager: address(0), admin: admin});
+
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin')
+    );
+    aaveV4HubRolesProcedureWrapper.grantHubAdminRole({
+      accessManager: accessManager,
+      admin: address(0)
+    });
+  }
+
+  function test_grantHubFeeMinterRole_revertsWithInvalidParam() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
+    );
+    aaveV4HubRolesProcedureWrapper.grantHubFeeMinterRole({accessManager: address(0), admin: admin});
+
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin')
+    );
+    aaveV4HubRolesProcedureWrapper.grantHubFeeMinterRole({
+      accessManager: accessManager,
+      admin: address(0)
+    });
+  }
+
+  function test_grantHubConfiguratorRole_revertsWithInvalidParam() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
+    );
+    aaveV4HubRolesProcedureWrapper.grantHubConfiguratorRole({
+      accessManager: address(0),
+      admin: admin
+    });
+
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin')
+    );
+    aaveV4HubRolesProcedureWrapper.grantHubConfiguratorRole({
+      accessManager: accessManager,
+      admin: address(0)
+    });
+  }
+
+  function test_setupHubRoles_revertsWithInvalidParam() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
+    );
+    aaveV4HubRolesProcedureWrapper.setupHubRoles({accessManager: address(0), hub: hub});
+
+    vm.expectRevert(abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'hub'));
+    aaveV4HubRolesProcedureWrapper.setupHubRoles({accessManager: accessManager, hub: address(0)});
+  }
+
+  function test_setupHubFeeMinterRole_revertsWithInvalidParam() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
+    );
+    aaveV4HubRolesProcedureWrapper.setupHubFeeMinterRole({accessManager: address(0), hub: hub});
+
+    vm.expectRevert(abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'hub'));
+    aaveV4HubRolesProcedureWrapper.setupHubFeeMinterRole({
+      accessManager: accessManager,
+      hub: address(0)
+    });
+  }
+
+  function test_setupHubConfiguratorRole_revertsWithInvalidParam() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
+    );
+    aaveV4HubRolesProcedureWrapper.setupHubConfiguratorRole({accessManager: address(0), hub: hub});
+
+    vm.expectRevert(abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'hub'));
+    aaveV4HubRolesProcedureWrapper.setupHubConfiguratorRole({
+      accessManager: accessManager,
+      hub: address(0)
+    });
+  }
+
+  function test_getHubFeeMinterRoleSelectors() public view {
+    bytes4[] memory selectors = aaveV4HubRolesProcedureWrapper.getHubFeeMinterRoleSelectors();
+    assertEq(selectors.length, 1);
+    assertEq(selectors[0], IHub.mintFeeShares.selector);
+  }
+
+  function test_getHubConfiguratorRoleSelectors() public view {
+    bytes4[] memory selectors = aaveV4HubRolesProcedureWrapper.getHubConfiguratorRoleSelectors();
+    assertEq(selectors.length, 5);
+    assertEq(selectors[0], IHub.addAsset.selector);
+    assertEq(selectors[1], IHub.updateAssetConfig.selector);
+    assertEq(selectors[2], IHub.addSpoke.selector);
+    assertEq(selectors[3], IHub.updateSpokeConfig.selector);
+    assertEq(selectors[4], IHub.setInterestRateData.selector);
   }
 }

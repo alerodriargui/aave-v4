@@ -7,6 +7,8 @@ import {
 } from 'src/deployments/procedures/deploy/hub/AaveV4HubDeployProcedure.sol';
 
 contract AaveV4HubDeployProcedureWrapper is AaveV4HubDeployProcedure {
+  bool public IS_TEST = true;
+
   function deployHub(address accessManager) external returns (address) {
     return _deployHub(accessManager);
   }

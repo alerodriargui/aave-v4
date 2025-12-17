@@ -8,7 +8,6 @@ contract AaveV4HubConfiguratorDeployProcedureTest is ProceduresBase {
   AaveV4HubConfiguratorDeployProcedureWrapper public aaveV4HubConfiguratorDeployProcedureWrapper;
   function setUp() public override {
     super.setUp();
-
     aaveV4HubConfiguratorDeployProcedureWrapper = new AaveV4HubConfiguratorDeployProcedureWrapper();
   }
 
@@ -18,5 +17,12 @@ contract AaveV4HubConfiguratorDeployProcedureTest is ProceduresBase {
     );
     assertNotEq(hubConfigurator, address(0));
     assertEq(Ownable(hubConfigurator).owner(), owner);
+  }
+
+  function test_deployHubConfigurator_revertsWithInvalidParam() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
+    );
+    aaveV4HubConfiguratorDeployProcedureWrapper.deployHubConfigurator(address(0));
   }
 }

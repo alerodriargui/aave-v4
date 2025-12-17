@@ -89,6 +89,9 @@ contract SpokeUpgradeableTest is SpokeBase {
     TestTypes.TestEnvReport memory report;
     report.spokeReports = new TestTypes.TestSpokeReport[](1);
     report.spokeReports[0].spoke = address(spokeProxy);
+    report.configuratorReport.hubConfigurator = address(hubConfigurator);
+    report.configuratorReport.spokeConfigurator = address(spokeConfigurator);
+
     _setupFixturesRoles(report);
 
     uint128 targetHealthFactor = 1.05e18;

@@ -11,7 +11,6 @@ contract AaveV4AccessBatch is AaveV4AccessManagerEnumerableDeployProcedure {
   BatchReports.AccessBatchReport internal _report;
 
   constructor(address admin_) {
-    assert(admin_ != address(0));
     address accessManager = _deployAccessManagerEnumerable(admin_);
     _report = BatchReports.AccessBatchReport({accessManager: accessManager});
   }

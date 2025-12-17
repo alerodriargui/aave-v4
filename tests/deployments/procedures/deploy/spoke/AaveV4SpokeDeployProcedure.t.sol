@@ -8,7 +8,6 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
   AaveV4SpokeDeployProcedureWrapper public aaveV4SpokeDeployProcedureWrapper;
   function setUp() public override {
     super.setUp();
-
     aaveV4SpokeDeployProcedureWrapper = new AaveV4SpokeDeployProcedureWrapper();
   }
 
@@ -20,5 +19,37 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
     assertEq(Ownable(ProxyHelper.getProxyAdmin(spokeProxy)).owner(), owner);
     assertEq(ProxyHelper.getImplementation(spokeProxy), spokeImplementation);
     assertEq(ISpoke(spokeProxy).ORACLE(), aaveOracle);
+  }
+
+  function test_deployUpgradableSpokeInstance_revertsWithInvalidParam() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(
+        AaveV4DeployProcedureBase.InvalidParam.selector,
+        'spoke proxy admin owner'
+      )
+    );
+    aaveV4SpokeDeployProcedureWrapper.deployUpgradableSpokeInstance({
+      spokeProxyAdminOwner: address(0),
+      accessManager: accessManager,
+      oracle: aaveOracle
+    });
+
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
+    );
+    aaveV4SpokeDeployProcedureWrapper.deployUpgradableSpokeInstance({
+      spokeProxyAdminOwner: owner,
+      accessManager: address(0),
+      oracle: aaveOracle
+    });
+
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'oracle')
+    );
+    aaveV4SpokeDeployProcedureWrapper.deployUpgradableSpokeInstance({
+      spokeProxyAdminOwner: owner,
+      accessManager: accessManager,
+      oracle: address(0)
+    });
   }
 }

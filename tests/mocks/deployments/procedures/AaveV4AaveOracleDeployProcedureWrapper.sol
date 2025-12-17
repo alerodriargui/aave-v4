@@ -7,6 +7,8 @@ import {
 } from 'src/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.sol';
 
 contract AaveV4AaveOracleDeployProcedureWrapper is AaveV4AaveOracleDeployProcedure {
+  bool public IS_TEST = true;
+
   function deployAaveOracle(
     address spoke,
     uint8 decimals,

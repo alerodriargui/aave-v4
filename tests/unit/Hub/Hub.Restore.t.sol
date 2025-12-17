@@ -10,21 +10,9 @@ contract HubRestoreTest is HubBase {
   using PercentageMath for uint256;
   using SafeCast for *;
 
-  HubConfigurator public hubConfigurator;
-  address public HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
-
-  function setUp() public override {
-    super.setUp();
-
-    // Set up a hub configurator to test freezing and pausing assets
-    hubConfigurator = new HubConfigurator(HUB_CONFIGURATOR_ADMIN);
-    _grantHubConfiguratorRole(hub1, address(hubConfigurator));
-  }
-
   function test_restore_revertsWith_SurplusDrawnRestored() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
-
     uint256 drawAmount = daiAmount / 2;
 
     // spoke1 add weth

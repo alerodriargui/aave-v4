@@ -17,9 +17,6 @@ contract AaveV4ConfiguratorBatch is
   BatchReports.ConfiguratorBatchReport internal _report;
 
   constructor(address hubConfiguratorOwner_, address spokeConfiguratorOwner_) {
-    assert(hubConfiguratorOwner_ != address(0));
-    assert(spokeConfiguratorOwner_ != address(0));
-
     address hubConfigurator = _deployHubConfigurator(hubConfiguratorOwner_);
     address spokeConfigurator = _deploySpokeConfigurator(spokeConfiguratorOwner_);
 

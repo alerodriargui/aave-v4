@@ -9,7 +9,6 @@ contract AaveV4AccessManagerEnumerableDeployProcedureTest is ProceduresBase {
     public aaveV4AccessManagerEnumerableDeployProcedureWrapper;
   function setUp() public override {
     super.setUp();
-
     aaveV4AccessManagerEnumerableDeployProcedureWrapper = new AaveV4AccessManagerEnumerableDeployProcedureWrapper();
   }
 
@@ -24,5 +23,12 @@ contract AaveV4AccessManagerEnumerableDeployProcedureTest is ProceduresBase {
       );
     assertTrue(hasRole);
     assertEq(executionDelay, 0);
+  }
+
+  function test_deployAccessManagerEnumerable_reverts() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin')
+    );
+    aaveV4AccessManagerEnumerableDeployProcedureWrapper.deployAccessManagerEnumerable(address(0));
   }
 }

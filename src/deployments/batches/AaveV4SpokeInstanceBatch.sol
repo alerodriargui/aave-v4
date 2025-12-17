@@ -23,11 +23,6 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
     uint8 oracleDecimals_,
     string memory oracleDescription_
   ) {
-    assert(spokeProxyAdminOwner_ != address(0));
-    assert(accessManager_ != address(0));
-    assert(oracleDecimals_ > 0);
-    assert(bytes(oracleDescription_).length > 0);
-
     // additional 2 nonces for AaveOracle, SpokeInstance, starting from contract nonce of 1
     address predictedSpokeInstance = Utils.computeCreateAddress(address(this), 3);
 
@@ -42,9 +37,9 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
       oracle: aaveOracle
     });
 
-    assert(spokeProxy == predictedSpokeInstance);
-    assert(ISpoke(spokeProxy).ORACLE() == aaveOracle);
-    assert(IAaveOracle(aaveOracle).SPOKE() == spokeProxy);
+    require(spokeProxy == predictedSpokeInstance, InvalidParam('predicted spoke instance'));
+    require(ISpoke(spokeProxy).ORACLE() == aaveOracle, InvalidParam('spoke oracle'));
+    require(IAaveOracle(aaveOracle).SPOKE() == spokeProxy, InvalidParam('aave oracle spoke'));
 
     _report = BatchReports.SpokeInstanceBatchReport({
       aaveOracle: aaveOracle,

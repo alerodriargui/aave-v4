@@ -7,9 +7,6 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeConfiguratorTest is SpokeBase {
   using SafeCast for uint256;
 
-  SpokeConfigurator public spokeConfigurator;
-  address public SPOKE_CONFIGURATOR_ADMIN = makeAddr('SPOKE_CONFIGURATOR_ADMIN');
-
   address public spokeAddr;
   ISpoke public spoke;
   uint256 public _reserveId;
@@ -18,14 +15,10 @@ contract SpokeConfiguratorTest is SpokeBase {
   function setUp() public virtual override {
     super.setUp();
 
-    spokeConfigurator = new SpokeConfigurator(SPOKE_CONFIGURATOR_ADMIN);
     spokeAddr = address(spoke1);
     spoke = ISpoke(spokeAddr);
     _reserveId = 0;
     invalidReserveId = spoke.getReserveCount();
-
-    // Grant spokeConfigurator spoke admin role
-    _grantSpokeConfiguratorRole(spoke, address(spokeConfigurator));
   }
 
   function test_updateReservePriceSource_revertsWith_OwnableUnauthorizedAccount() public {

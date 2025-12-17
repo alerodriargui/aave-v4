@@ -9,7 +9,6 @@ contract AaveV4InterestRateStrategyDeployProcedureTest is ProceduresBase {
     public aaveV4InterestRateStrategyDeployProcedureWrapper;
   function setUp() public override {
     super.setUp();
-
     aaveV4InterestRateStrategyDeployProcedureWrapper = new AaveV4InterestRateStrategyDeployProcedureWrapper();
   }
 
@@ -18,5 +17,10 @@ contract AaveV4InterestRateStrategyDeployProcedureTest is ProceduresBase {
       .deployInterestRateStrategy(hub);
     assertNotEq(interestRateStrategy, address(0));
     assertEq(IAssetInterestRateStrategy(interestRateStrategy).HUB(), hub);
+  }
+
+  function test_deployInterestRateStrategy_revertsWithInvalidParam() public {
+    vm.expectRevert(abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'hub'));
+    aaveV4InterestRateStrategyDeployProcedureWrapper.deployInterestRateStrategy(address(0));
   }
 }

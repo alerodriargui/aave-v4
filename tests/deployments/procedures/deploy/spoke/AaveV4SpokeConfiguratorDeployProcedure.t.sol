@@ -4,12 +4,11 @@ pragma solidity ^0.8.0;
 
 import 'tests/deployments/procedures/ProceduresBase.t.sol';
 
-contract AaveV4SpokeConfiguratorDeployProcedureTestTest is ProceduresBase {
+contract AaveV4SpokeConfiguratorDeployProcedureTest is ProceduresBase {
   AaveV4SpokeConfiguratorDeployProcedureWrapper
     public aaveV4SpokeConfiguratorDeployProcedureWrapper;
   function setUp() public override {
     super.setUp();
-
     aaveV4SpokeConfiguratorDeployProcedureWrapper = new AaveV4SpokeConfiguratorDeployProcedureWrapper();
   }
 
@@ -18,5 +17,12 @@ contract AaveV4SpokeConfiguratorDeployProcedureTestTest is ProceduresBase {
       .deploySpokeConfigurator(owner);
     assertNotEq(spokeConfigurator, address(0));
     assertEq(Ownable(spokeConfigurator).owner(), owner);
+  }
+
+  function test_deploySpokeConfigurator_revertsWithInvalidParam() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
+    );
+    aaveV4SpokeConfiguratorDeployProcedureWrapper.deploySpokeConfigurator(address(0));
   }
 }

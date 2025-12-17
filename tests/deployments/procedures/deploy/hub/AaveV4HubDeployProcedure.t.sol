@@ -8,7 +8,6 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
   AaveV4HubDeployProcedureWrapper public aaveV4HubDeployProcedureWrapper;
   function setUp() public override {
     super.setUp();
-
     aaveV4HubDeployProcedureWrapper = new AaveV4HubDeployProcedureWrapper();
   }
 
@@ -16,5 +15,12 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
     address hub = aaveV4HubDeployProcedureWrapper.deployHub(accessManager);
     assertNotEq(hub, address(0));
     assertEq(IHub(hub).authority(), accessManager);
+  }
+
+  function test_deployHub_revertsWithInvalidParam() public {
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
+    );
+    aaveV4HubDeployProcedureWrapper.deployHub(address(0));
   }
 }

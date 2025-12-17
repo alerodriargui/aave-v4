@@ -87,7 +87,7 @@ library AaveV4DeployOrchestration {
 
       if (deployInputs.accessManagerAdmin != initialAdmin) {
         logger.log('...Granting AccessManager Root Admin role...');
-        AaveV4AccessManagerRolesProcedure.grantRootAdminRole({
+        AaveV4AccessManagerRolesProcedure.replaceDefaultAdminRole({
           accessManager: report.accessBatchReport.accessManager,
           adminToAdd: deployInputs.accessManagerAdmin,
           adminToRemove: initialAdmin

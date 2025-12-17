@@ -7,11 +7,17 @@ import {
 } from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 
 contract AaveV4AccessManagerRolesProcedureWrapper {
+  bool public IS_TEST = true;
+
   function grantRootAdminRole(
     address accessManager,
     address adminToAdd,
     address adminToRemove
   ) external {
-    AaveV4AccessManagerRolesProcedure.grantRootAdminRole(accessManager, adminToAdd, adminToRemove);
+    AaveV4AccessManagerRolesProcedure.replaceDefaultAdminRole(
+      accessManager,
+      adminToAdd,
+      adminToRemove
+    );
   }
 }

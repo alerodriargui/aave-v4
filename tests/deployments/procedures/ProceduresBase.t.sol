@@ -3,48 +3,49 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
-import {stdError} from 'forge-std/Test.sol';
 
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {
   AaveV4HubConfiguratorDeployProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4HubConfiguratorDeployProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4HubConfiguratorDeployProcedureWrapper.sol';
 import {
   AaveV4HubDeployProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4HubDeployProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4HubDeployProcedureWrapper.sol';
 import {
   AaveV4InterestRateStrategyDeployProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4InterestRateStrategyDeployProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4InterestRateStrategyDeployProcedureWrapper.sol';
 import {
   AaveV4NativeTokenGatewayDeployProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4NativeTokenGatewayDeployProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4NativeTokenGatewayDeployProcedureWrapper.sol';
 import {
   AaveV4SignatureGatewayDeployProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4SignatureGatewayDeployProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4SignatureGatewayDeployProcedureWrapper.sol';
 import {
   AaveV4AccessManagerEnumerableDeployProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4AccessManagerEnumerableDeployProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4AccessManagerEnumerableDeployProcedureWrapper.sol';
 import {
   AaveV4AaveOracleDeployProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4AaveOracleDeployProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4AaveOracleDeployProcedureWrapper.sol';
 import {
   AaveV4SpokeDeployProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4SpokeDeployProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol';
 import {
   AaveV4TreasurySpokeDeployProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4TreasurySpokeDeployProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4TreasurySpokeDeployProcedureWrapper.sol';
 import {
   AaveV4SpokeConfiguratorDeployProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4SpokeConfiguratorDeployProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4SpokeConfiguratorDeployProcedureWrapper.sol';
 import {
   AaveV4AccessManagerRolesProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4AccessManagerRolesProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4AccessManagerRolesProcedureWrapper.sol';
 import {
   AaveV4SpokeRolesProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4SpokeRolesProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4SpokeRolesProcedureWrapper.sol';
 import {
   AaveV4HubRolesProcedureWrapper
-} from 'tests/mocks/deployments/AaveV4HubRolesProcedureWrapper.sol';
+} from 'tests/mocks/deployments/procedures/AaveV4HubRolesProcedureWrapper.sol';
+
+import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
@@ -60,27 +61,20 @@ import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnum
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 
 contract ProceduresBase is Test {
-  address public owner;
+  address public owner = makeAddr('owner');
   address public accessManager;
-  address public hub;
-  address public nativeWrapper;
-  address public accessManagerAdmin;
-  uint8 public oracleDecimals;
-  string public oracleDescription;
-  address public spoke;
+  address public hub = makeAddr('hub');
+  address public nativeWrapper = makeAddr('nativeWrapper');
+  address public accessManagerAdmin = makeAddr('accessManagerAdmin');
+  uint8 public oracleDecimals = 8;
+  string public oracleDescription = 'Oracle Description';
+  address public spoke = makeAddr('spoke');
   address public aaveOracle;
-  address public treasurySpoke;
+  address public treasurySpoke = makeAddr('treasurySpoke');
+  address public admin = makeAddr('admin');
 
   function setUp() public virtual {
-    owner = makeAddr('owner');
-    accessManagerAdmin = makeAddr('accessManagerAdmin');
     accessManager = address(new AccessManagerEnumerable(accessManagerAdmin));
-    hub = makeAddr('hub');
-    nativeWrapper = makeAddr('nativeWrapper');
-    oracleDecimals = 8;
-    oracleDescription = 'Oracle Description';
-    spoke = makeAddr('spoke');
     aaveOracle = address(new AaveOracle(spoke, oracleDecimals, oracleDescription));
-    treasurySpoke = makeAddr('treasurySpoke');
   }
 }

@@ -7,6 +7,8 @@ import {
 } from 'src/deployments/procedures/deploy/position-manager/AaveV4NativeTokenGatewayDeployProcedure.sol';
 
 contract AaveV4NativeTokenGatewayDeployProcedureWrapper is AaveV4NativeTokenGatewayDeployProcedure {
+  bool public IS_TEST = true;
+
   function deployNativeTokenGateway(
     address nativeWrapper,
     address owner

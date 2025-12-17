@@ -7,9 +7,6 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubConfiguratorTest is HubBase {
   using SafeCast for uint256;
 
-  HubConfigurator internal hubConfigurator;
-
-  address internal HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
   uint256 internal _assetId;
   bytes internal _encodedIrData;
 
@@ -21,7 +18,6 @@ contract HubConfiguratorTest is HubBase {
 
   function setUp() public virtual override {
     super.setUp();
-    hubConfigurator = new HubConfigurator(HUB_CONFIGURATOR_ADMIN);
     _grantHubConfiguratorRole(hub1, address(hubConfigurator));
     _assetId = daiAssetId;
     _encodedIrData = abi.encode(

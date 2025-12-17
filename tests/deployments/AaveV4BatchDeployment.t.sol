@@ -3,27 +3,12 @@
 pragma solidity ^0.8.0;
 
 import 'tests/utils/BatchTestProcedures.sol';
-import {stdError} from 'forge-std/StdError.sol';
 
 contract AaveV4BatchDeploymentTest is BatchTestProcedures {
-  Logger public logger;
-  FullDeployInputs public inputs;
-  address public weth9;
-
-  string[] public hubLabels;
-  string[] public spokeLabels;
-
   function setUp() public override {
     super.setUp();
 
-    deployer = makeAddr('deployer');
-    logger = new Logger('dummy/path');
-    weth9 = _deployWETH();
-
-    hubLabels = ['hub1', 'hub2', 'hub3'];
-    spokeLabels = ['spoke1', 'spoke2', 'spoke3'];
-
-    inputs = FullDeployInputs({
+    _inputs = FullDeployInputs({
       accessManagerAdmin: makeAddr('accessManagerAdmin'),
       hubConfiguratorOwner: makeAddr('hubConfiguratorOwner'),
       hubAdmin: makeAddr('hubAdmin'),
@@ -32,65 +17,67 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       spokeConfiguratorOwner: makeAddr('spokeConfiguratorOwner'),
       spokeAdmin: makeAddr('spokeAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
-      nativeWrapper: weth9,
+      nativeWrapper: _weth9,
       grantRoles: true,
-      hubLabels: hubLabels,
-      spokeLabels: spokeLabels
+      hubLabels: _hubLabels,
+      spokeLabels: _spokeLabels
     });
   }
 
   function testAaveV4BatchDeployment() public {
-    checkedV4Deployment(logger, inputs);
+    checkedV4Deployment();
   }
 
   function testAaveV4BatchDeployment_withoutRoles() public {
-    inputs.grantRoles = false;
-    checkedV4Deployment(logger, inputs);
+    _inputs.grantRoles = false;
+    checkedV4Deployment();
   }
 
   function testAaveV4BatchDeployment_withoutNativeGateway() public {
-    inputs.nativeWrapper = address(0);
-    checkedV4Deployment(logger, inputs);
+    _inputs.nativeWrapper = address(0);
+    checkedV4Deployment();
   }
 
   function testAaveV4BatchDeployment_withoutHubs() public {
-    inputs.hubLabels = new string[](0);
-    checkedV4Deployment(logger, inputs);
+    _inputs.hubLabels = new string[](0);
+    checkedV4Deployment();
   }
 
   function testAaveV4BatchDeployment_withoutSpokes() public {
-    inputs.spokeLabels = new string[](0);
-    checkedV4Deployment(logger, inputs);
+    _inputs.spokeLabels = new string[](0);
+    checkedV4Deployment();
   }
 
   function testAaveV4BatchDeployment_withZeroAccessManagerAdmin_withRoles_revertsWithAssertionError()
     public
   {
     // only reverts if grantRoles is true, as access manager admin replaces deployer as default admin
-    inputs.accessManagerAdmin = address(0);
-    inputs.grantRoles = true;
+    _inputs.accessManagerAdmin = address(0);
+    _inputs.grantRoles = true;
 
-    // reverts in AaveV4AccessBatch
-    vm.expectRevert(stdError.assertionError);
-    this.checkedV4Deployment(logger, inputs);
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin to add')
+    );
+    this.checkedV4Deployment();
   }
 
   function testAaveV4BatchDeployment_withZeroAccessManagerAdmin_withoutRoles() public {
-    inputs.accessManagerAdmin = address(0);
-    inputs.grantRoles = false;
+    _inputs.accessManagerAdmin = address(0);
+    _inputs.grantRoles = false;
 
-    checkedV4Deployment(logger, inputs);
+    checkedV4Deployment();
   }
 
   /// @dev Reverts as hubConfigurator is always deployed
   /// and owners are needed on initial deployment
   function testAaveV4BatchDeployment_withZeroHubConfiguratorOwner() public {
-    inputs.hubConfiguratorOwner = address(0);
-    inputs.grantRoles = vm.randomBool();
+    _inputs.hubConfiguratorOwner = address(0);
+    _inputs.grantRoles = vm.randomBool();
 
-    // reverts in AaveV4ConfiguratorBatch
-    vm.expectRevert(stdError.assertionError);
-    this.checkedV4Deployment(logger, inputs);
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
+    );
+    this.checkedV4Deployment();
   }
 
   /// @dev Reverts as treasurySpoke is always deployed if hubs are being deployed
@@ -99,19 +86,19 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     bool withoutHubs,
     bool grantRoles
   ) public {
-    inputs.treasurySpokeOwner = address(0);
-    inputs.grantRoles = grantRoles;
+    _inputs.treasurySpokeOwner = address(0);
+    _inputs.grantRoles = grantRoles;
 
     if (withoutHubs) {
-      inputs.hubLabels = new string[](0);
+      _inputs.hubLabels = new string[](0);
     }
 
-    if (_isExpectAssertionError(inputs, deployer)) {
-      // reverts in AaveV4HubBatch
-      vm.expectRevert(stdError.assertionError);
-      this.checkedV4Deployment(logger, inputs);
+    (bool isExpectedError, bytes memory errorSelector) = _getExpectedError();
+    if (isExpectedError) {
+      vm.expectRevert(errorSelector);
+      this.checkedV4Deployment();
     } else {
-      checkedV4Deployment(logger, inputs);
+      checkedV4Deployment();
     }
   }
 
@@ -119,39 +106,41 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     bool withoutSpokes,
     bool grantRoles
   ) public {
-    inputs.spokeProxyAdminOwner = address(0);
-    inputs.grantRoles = grantRoles;
+    _inputs.spokeProxyAdminOwner = address(0);
+    _inputs.grantRoles = grantRoles;
     if (withoutSpokes) {
-      inputs.spokeLabels = new string[](0);
+      _inputs.spokeLabels = new string[](0);
     }
 
-    if (_isExpectAssertionError(inputs, deployer)) {
-      // reverts in AaveV4SpokeInstanceBatch
-      vm.expectRevert(stdError.assertionError);
-      this.checkedV4Deployment(logger, inputs);
+    (bool isExpectedError, bytes memory errorSelector) = _getExpectedError();
+    if (isExpectedError) {
+      vm.expectRevert(errorSelector);
+      this.checkedV4Deployment();
     } else {
-      checkedV4Deployment(logger, inputs);
+      checkedV4Deployment();
     }
   }
 
   function testAaveV4BatchDeployment_withZeroSpokeConfiguratorOwner() public {
-    inputs.spokeConfiguratorOwner = address(0);
-    inputs.grantRoles = vm.randomBool();
+    _inputs.spokeConfiguratorOwner = address(0);
+    _inputs.grantRoles = vm.randomBool();
 
-    // reverts in AaveV4ConfiguratorBatch
-    vm.expectRevert(stdError.assertionError);
-    this.checkedV4Deployment(logger, inputs);
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
+    );
+    this.checkedV4Deployment();
   }
 
   function testAaveV4BatchDeployment_withZeroSpokeConfiguratorOwner_withoutRoles_revertsWithAssertionError()
     public
   {
-    inputs.spokeConfiguratorOwner = address(0);
-    inputs.grantRoles = false;
+    _inputs.spokeConfiguratorOwner = address(0);
+    _inputs.grantRoles = false;
 
-    // reverts in AaveV4ConfiguratorBatch
-    vm.expectRevert(stdError.assertionError);
-    this.checkedV4Deployment(logger, inputs);
+    vm.expectRevert(
+      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
+    );
+    this.checkedV4Deployment();
   }
 
   function testAaveV4BatchDeployment_fuzz_withoutRoles(
@@ -165,24 +154,27 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     if (withoutNativeWrapper) {
       deployInputs.nativeWrapper = address(0);
     } else {
-      deployInputs.nativeWrapper = inputs.nativeWrapper;
+      deployInputs.nativeWrapper = _inputs.nativeWrapper;
     }
     if (withoutHubs) {
       deployInputs.hubLabels = new string[](0);
     } else {
-      deployInputs.hubLabels = inputs.hubLabels;
+      deployInputs.hubLabels = _inputs.hubLabels;
     }
     if (withoutSpokes) {
       deployInputs.spokeLabels = new string[](0);
     } else {
-      deployInputs.spokeLabels = inputs.spokeLabels;
+      deployInputs.spokeLabels = _inputs.spokeLabels;
     }
+    _deployer = deployer;
+    _inputs = deployInputs;
 
-    if (_isExpectAssertionError(deployInputs, deployer)) {
-      vm.expectRevert(stdError.assertionError);
-      this.checkedV4Deployment(logger, deployInputs);
+    (bool isExpectedError, bytes memory errorSelector) = _getExpectedError();
+    if (isExpectedError) {
+      vm.expectRevert(errorSelector);
+      this.checkedV4Deployment();
     } else {
-      checkedV4Deployment(logger, deployInputs);
+      checkedV4Deployment();
     }
   }
 
@@ -197,25 +189,28 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     if (withoutNativeWrapper) {
       deployInputs.nativeWrapper = address(0);
     } else {
-      deployInputs.nativeWrapper = inputs.nativeWrapper;
+      deployInputs.nativeWrapper = _inputs.nativeWrapper;
     }
-    deployInputs.nativeWrapper = inputs.nativeWrapper;
+    deployInputs.nativeWrapper = _inputs.nativeWrapper;
     if (withoutHubs) {
       deployInputs.hubLabels = new string[](0);
     } else {
-      deployInputs.hubLabels = inputs.hubLabels;
+      deployInputs.hubLabels = _inputs.hubLabels;
     }
     if (withoutSpokes) {
       deployInputs.spokeLabels = new string[](0);
     } else {
-      deployInputs.spokeLabels = inputs.spokeLabels;
+      deployInputs.spokeLabels = _inputs.spokeLabels;
     }
+    _deployer = deployer;
+    _inputs = deployInputs;
 
-    if (_isExpectAssertionError(deployInputs, deployer)) {
-      vm.expectRevert(stdError.assertionError);
-      this.checkedV4Deployment(logger, deployInputs);
+    (bool isExpectedError, bytes memory errorSelector) = _getExpectedError();
+    if (isExpectedError) {
+      vm.expectRevert(errorSelector);
+      this.checkedV4Deployment();
     } else {
-      checkedV4Deployment(logger, deployInputs);
+      checkedV4Deployment();
     }
   }
 
@@ -235,39 +230,77 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     assertNotEq(deployInputs.hubAdmin, address(0));
     assertNotEq(deployInputs.spokeAdmin, address(0));
 
-    checkedV4Deployment(logger, deployInputs);
+    checkedV4Deployment();
   }
 
-  function _isExpectAssertionError(
-    FullDeployInputs memory deployInputs,
-    address deployer
-  ) internal pure returns (bool isExpectedError) {
+  function _getExpectedError()
+    internal
+    view
+    returns (bool isExpectedError, bytes memory errorSelector)
+  {
     // deployer is initial admin for access manager
-    if (deployer == address(0)) return true;
+    if (_deployer == address(0)) return (true, abi.encodePacked(''));
 
     // configurators always deployed
-    if (deployInputs.spokeConfiguratorOwner == address(0)) return true;
-    if (deployInputs.hubConfiguratorOwner == address(0)) return true;
+    if (_inputs.spokeConfiguratorOwner == address(0)) {
+      return (
+        true,
+        abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
+      );
+    }
+    if (_inputs.hubConfiguratorOwner == address(0)) {
+      return (
+        true,
+        abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
+      );
+    }
 
     // gateways only when native wrapper is set
-    if (deployInputs.nativeWrapper != address(0) && deployInputs.gatewayOwner == address(0)) {
-      return true;
+    if (_inputs.nativeWrapper != address(0) && _inputs.gatewayOwner == address(0)) {
+      return (
+        true,
+        abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
+      );
     }
 
     // hubs require treasury owner when deployed
-    if (deployInputs.hubLabels.length > 0 && deployInputs.treasurySpokeOwner == address(0)) {
-      return true;
+    if (_inputs.hubLabels.length > 0 && _inputs.treasurySpokeOwner == address(0)) {
+      return (
+        true,
+        abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
+      );
     }
 
     // spokes require proxy admin owner when deployed
-    if (deployInputs.spokeLabels.length > 0 && deployInputs.spokeProxyAdminOwner == address(0)) {
-      return true;
+    if (_inputs.spokeLabels.length > 0 && _inputs.spokeProxyAdminOwner == address(0)) {
+      return (
+        true,
+        abi.encodeWithSelector(
+          AaveV4DeployProcedureBase.InvalidParam.selector,
+          'spoke proxy admin owner'
+        )
+      );
     }
 
-    if (deployInputs.grantRoles) {
-      if (deployInputs.accessManagerAdmin == address(0)) return true;
-      if (deployInputs.hubLabels.length > 0 && deployInputs.hubAdmin == address(0)) return true;
-      if (deployInputs.spokeLabels.length > 0 && deployInputs.spokeAdmin == address(0)) return true;
+    if (_inputs.grantRoles) {
+      if (_inputs.accessManagerAdmin == address(0)) {
+        return (
+          true,
+          abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin')
+        );
+      }
+      if (_inputs.hubLabels.length > 0 && _inputs.hubAdmin == address(0)) {
+        return (
+          true,
+          abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin')
+        );
+      }
+      if (_inputs.spokeLabels.length > 0 && _inputs.spokeAdmin == address(0)) {
+        return (
+          true,
+          abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin')
+        );
+      }
     }
   }
 }
