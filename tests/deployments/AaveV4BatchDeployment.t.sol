@@ -48,7 +48,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     checkedV4Deployment();
   }
 
-  function testAaveV4BatchDeployment_withZeroAccessManagerAdmin_withRoles_revertsWithAssertionError()
+  function testAaveV4BatchDeployment_withZeroAccessManagerAdmin_withRoles_revertsWithInvalidParam()
     public
   {
     // only reverts if grantRoles is true, as access manager admin replaces deployer as default admin
@@ -131,7 +131,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     this.checkedV4Deployment();
   }
 
-  function testAaveV4BatchDeployment_withZeroSpokeConfiguratorOwner_withoutRoles_revertsWithAssertionError()
+  function testAaveV4BatchDeployment_withZeroSpokeConfiguratorOwner_withoutRoles_revertsWithInvalidParam()
     public
   {
     _inputs.spokeConfiguratorOwner = address(0);

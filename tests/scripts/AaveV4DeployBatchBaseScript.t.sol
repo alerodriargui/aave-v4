@@ -3,191 +3,222 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
-import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
+import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
-// contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
-//   string public recordedWarnings;
-//   bool public promptCalled;
+contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
+  constructor() AaveV4DeployBatchBaseScript('in.json', 'out.json') {}
 
-//   constructor() AaveV4DeployBatchBaseScript('in.json', 'out.json') {}
+  function loadWarningsAndSanitizeInputs(
+    MetadataLogger logger,
+    InputUtils.FullDeployInputs memory inputs,
+    address deployer
+  ) public returns (InputUtils.FullDeployInputs memory) {
+    return _loadWarningsAndSanitizeInputs(logger, inputs, deployer);
+  }
 
-//   function exposedSanitize(
-//     InputUtils.FullDeployInputs memory inputs,
-//     address deployer
-//   ) external view returns (InputUtils.FullDeployInputs memory) {
-//     return _sanitizeInputs(inputs, deployer);
-//   }
+  function logAndAppend(MetadataLogger logger, string memory warning) public {
+    _logAndAppend(logger, warning);
+  }
 
-//   function exposedLoadWarnings(
-//     InputUtils.FullDeployInputs memory inputs
-//   ) external returns (string memory warnings, bool promptWasCalled) {
-//     MetadataLogger logger = new MetadataLogger('output/');
-//     recordedWarnings = '';
-//     promptCalled = false;
-//     _loadWarnings(logger, inputs);
-//     return (recordedWarnings, promptCalled);
-//   }
+  function _executeUserPrompt() internal override {}
+}
 
-//   function _logAndAppend(
-//     MetadataLogger,
-//     string memory warnings,
-//     string memory warning
-//   ) internal virtual override returns (string memory) {
-//     recordedWarnings = string.concat(warnings, warning, '\n');
-//     return recordedWarnings;
-//   }
+contract AaveV4DeployBatchBaseScriptTest is Test {
+  AaveV4DeployBatchBaseScriptHarness internal _harness;
+  InputUtils.FullDeployInputs internal _inputs;
+  MetadataLogger internal _logger;
+  address internal _deployer;
 
-//   function _executeUserPrompt(string memory warnings) internal virtual override {
-//     promptCalled = true;
-//     recordedWarnings = warnings;
-//   }
-// }
+  function setUp() public {
+    _harness = new AaveV4DeployBatchBaseScriptHarness();
 
-// contract AaveV4DeployBatchBaseScriptTest is Test {
-//   AaveV4DeployBatchBaseScriptHarness internal harness;
+    _inputs.hubLabels = ['hub1', 'hub2', 'hub3'];
+    _inputs.spokeLabels = ['spoke1', 'spoke2', 'spoke3'];
+    _inputs.accessManagerAdmin = makeAddr('accessManagerAdmin');
+    _inputs.hubAdmin = makeAddr('hubAdmin');
+    _inputs.hubConfiguratorOwner = makeAddr('hubConfiguratorOwner');
+    _inputs.treasurySpokeOwner = makeAddr('treasurySpokeOwner');
+    _inputs.spokeAdmin = makeAddr('spokeAdmin');
+    _inputs.spokeProxyAdminOwner = makeAddr('spokeProxyAdminOwner');
+    _inputs.spokeConfiguratorOwner = makeAddr('spokeConfiguratorOwner');
+    _inputs.gatewayOwner = makeAddr('gatewayOwner');
+    _inputs.nativeWrapper = address(new WETH9());
+    _inputs.grantRoles = true;
 
-//   function setUp() public {
-//     harness = new AaveV4DeployBatchBaseScriptHarness();
-//   }
+    _logger = new MetadataLogger('dummy/path');
+    _deployer = makeAddr('deployer');
+  }
 
-//   function _nonEmptyLabels() internal pure returns (string[] memory hubLabels, string[] memory spokeLabels) {
-//     hubLabels = new string[](1);
-//     hubLabels[0] = 'hub';
-//     spokeLabels = new string[](1);
-//     spokeLabels[0] = 'spoke';
-//   }
+  function test_loadWarningsAndSanitizeInputs() public {
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _logger,
+      _inputs,
+      _deployer
+    );
+    assertEq(sanitized, expected);
+  }
 
-//   function test_sanitize_defaultsZeroAddressesToDeployer() public {
-//     (string[] memory hubLabels, string[] memory spokeLabels) = _nonEmptyLabels();
-//     InputUtils.FullDeployInputs memory inputs = InputUtils.FullDeployInputs({
-//       accessManagerAdmin: address(0),
-//       hubAdmin: address(0),
-//       hubConfiguratorOwner: address(0),
-//       treasurySpokeOwner: address(0),
-//       spokeAdmin: address(0),
-//       spokeProxyAdminOwner: address(0),
-//       spokeConfiguratorOwner: address(0),
-//       gatewayOwner: address(0),
-//       nativeWrapper: address(1),
-//       grantRoles: true,
-//       hubLabels: hubLabels,
-//       spokeLabels: spokeLabels
-//     });
-//     address deployer = address(0xBEEF);
+  function test_loadWarningsAndSanitizeInputs_withZeroAccessManagerAdmin_fuzz(
+    bool grantRoles
+  ) public {
+    _inputs.accessManagerAdmin = address(0);
+    _inputs.grantRoles = grantRoles;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _logger,
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    if (grantRoles) {
+      expected.accessManagerAdmin = _deployer;
+    }
+    assertEq(sanitized, expected);
+  }
 
-//     InputUtils.FullDeployInputs memory sanitized = harness.exposedSanitize(inputs, deployer);
+  function test_loadWarningsAndSanitizeInputs_withZeroHubAdmin_fuzz(bool grantRoles) public {
+    _inputs.hubAdmin = address(0);
+    _inputs.grantRoles = grantRoles;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _logger,
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    if (grantRoles) {
+      expected.hubAdmin = _deployer;
+    }
+    assertEq(sanitized, expected);
+  }
 
-//     assertEq(sanitized.accessManagerAdmin, deployer);
-//     assertEq(sanitized.hubConfiguratorOwner, deployer);
-//     assertEq(sanitized.treasurySpokeOwner, deployer);
-//     assertEq(sanitized.spokeProxyAdminOwner, deployer);
-//     assertEq(sanitized.spokeConfiguratorOwner, deployer);
-//     assertEq(sanitized.gatewayOwner, deployer);
-//     // untouched fields
-//     assertEq(sanitized.nativeWrapper, inputs.nativeWrapper);
-//     assertEq(sanitized.hubAdmin, inputs.hubAdmin);
-//     assertEq(sanitized.spokeAdmin, inputs.spokeAdmin);
-//   }
+  function test_loadWarningsAndSanitizeInputs_withZeroSpokeAdmin_fuzz(bool grantRoles) public {
+    _inputs.spokeAdmin = address(0);
+    _inputs.grantRoles = grantRoles;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _logger,
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    if (grantRoles) {
+      expected.spokeAdmin = _deployer;
+    }
+    assertEq(sanitized, expected);
+  }
 
-//   function test_sanitize_preservesNonZero() public {
-//     (string[] memory hubLabels, string[] memory spokeLabels) = _nonEmptyLabels();
-//     InputUtils.FullDeployInputs memory inputs = InputUtils.FullDeployInputs({
-//       accessManagerAdmin: address(1),
-//       hubAdmin: address(2),
-//       hubConfiguratorOwner: address(3),
-//       treasurySpokeOwner: address(4),
-//       spokeAdmin: address(5),
-//       spokeProxyAdminOwner: address(6),
-//       spokeConfiguratorOwner: address(7),
-//       gatewayOwner: address(8),
-//       nativeWrapper: address(9),
-//       grantRoles: true,
-//       hubLabels: hubLabels,
-//       spokeLabels: spokeLabels
-//     });
+  function test_loadWarningsAndSanitizeInputs_withZeroHubConfiguratorOwner_fuzz(
+    bool grantRoles
+  ) public {
+    _inputs.hubConfiguratorOwner = address(0);
+    _inputs.grantRoles = grantRoles;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _logger,
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    if (grantRoles) {
+      expected.hubConfiguratorOwner = _deployer;
+    }
+    assertEq(sanitized, expected);
+  }
 
-//     InputUtils.FullDeployInputs memory sanitized = harness.exposedSanitize(inputs, address(0xBEEF));
+  function test_loadWarningsAndSanitizeInputs_withZeroSpokeConfiguratorOwner_fuzz(
+    bool grantRoles
+  ) public {
+    _inputs.spokeConfiguratorOwner = address(0);
+    _inputs.grantRoles = grantRoles;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _logger,
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    if (grantRoles) {
+      expected.spokeConfiguratorOwner = _deployer;
+    }
+    assertEq(sanitized, expected);
+  }
 
-//     assertEq(sanitized.accessManagerAdmin, inputs.accessManagerAdmin);
-//     assertEq(sanitized.hubConfiguratorOwner, inputs.hubConfiguratorOwner);
-//     assertEq(sanitized.treasurySpokeOwner, inputs.treasurySpokeOwner);
-//     assertEq(sanitized.spokeProxyAdminOwner, inputs.spokeProxyAdminOwner);
-//     assertEq(sanitized.spokeConfiguratorOwner, inputs.spokeConfiguratorOwner);
-//     assertEq(sanitized.gatewayOwner, inputs.gatewayOwner);
-//     assertEq(sanitized.nativeWrapper, inputs.nativeWrapper);
-//   }
+  function test_loadWarningsAndSanitizeInputs_withZeroSpokeProxyAdminOwner_fuzz(
+    bool grantRoles
+  ) public {
+    _inputs.spokeProxyAdminOwner = address(0);
+    _inputs.grantRoles = grantRoles;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _logger,
+      _inputs,
+      _deployer
+    );
 
-//   function test_loadWarnings_noWarnings_noPrompt() public {
-//     (string[] memory hubLabels, string[] memory spokeLabels) = _nonEmptyLabels();
-//     InputUtils.FullDeployInputs memory inputs = InputUtils.FullDeployInputs({
-//       accessManagerAdmin: address(1),
-//       hubAdmin: address(2),
-//       hubConfiguratorOwner: address(3),
-//       treasurySpokeOwner: address(4),
-//       spokeAdmin: address(5),
-//       spokeProxyAdminOwner: address(6),
-//       spokeConfiguratorOwner: address(7),
-//       gatewayOwner: address(8),
-//       nativeWrapper: address(9),
-//       grantRoles: false,
-//       hubLabels: hubLabels,
-//       spokeLabels: spokeLabels
-//     });
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    if (grantRoles) {
+      expected.spokeProxyAdminOwner = _deployer;
+    }
+    assertEq(sanitized, expected);
+  }
 
-//     (string memory warnings, bool promptCalled) = harness.exposedLoadWarnings(inputs);
+  function test_loadWarningsAndSanitizeInputs_withZeroTreasurySpokeOwner_fuzz(
+    bool grantRoles
+  ) public {
+    _inputs.treasurySpokeOwner = address(0);
+    _inputs.grantRoles = grantRoles;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _logger,
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    if (grantRoles) {
+      expected.treasurySpokeOwner = _deployer;
+    }
+    assertEq(sanitized, expected);
+  }
 
-//     assertEq(bytes(warnings).length, 0);
-//     assertFalse(promptCalled);
-//   }
+  function test_loadWarningsAndSanitizeInputs_withZeroGatewayOwner_fuzz(bool grantRoles) public {
+    _inputs.gatewayOwner = address(0);
+    _inputs.grantRoles = grantRoles;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _logger,
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    expected.gatewayOwner = _deployer;
+    assertEq(sanitized, expected);
+  }
 
-//   function test_loadWarnings_withWarnings_triggersPrompt() public {
-//     string[] memory empty;
-//     InputUtils.FullDeployInputs memory inputs = InputUtils.FullDeployInputs({
-//       accessManagerAdmin: address(0),
-//       hubAdmin: address(0),
-//       hubConfiguratorOwner: address(0),
-//       treasurySpokeOwner: address(0),
-//       spokeAdmin: address(0),
-//       spokeProxyAdminOwner: address(0),
-//       spokeConfiguratorOwner: address(0),
-//       gatewayOwner: address(0),
-//       nativeWrapper: address(0),
-//       grantRoles: true,
-//       hubLabels: empty,
-//       spokeLabels: empty
-//     });
+  function test_loadWarningsAndSanitizeInputs_withZeroNativeWrapper_fuzz(bool grantRoles) public {
+    _inputs.nativeWrapper = address(0);
+    _inputs.grantRoles = grantRoles;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _logger,
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    expected.nativeWrapper = address(0);
+    assertEq(sanitized, expected);
+  }
 
-//     (string memory warnings, bool promptCalled) = harness.exposedLoadWarnings(inputs);
-
-//     assertTrue(promptCalled);
-//     assertTrue(bytes(warnings).length > 0);
-//     // Should include at least one known warning
-//     assertTrue(_contains(warnings, 'Roles are being set'));
-//     assertTrue(_contains(warnings, 'Spoke will not be deployed'));
-//   }
-
-//   function _contains(string memory haystack, string memory needle) internal pure returns (bool) {
-//     return bytes(haystack).length >= bytes(needle).length &&
-//       bytes(haystack).length != 0 &&
-//       bytes(needle).length != 0 &&
-//       _indexOf(haystack, needle) != type(uint256).max;
-//   }
-
-//   function _indexOf(string memory haystack, string memory needle) internal pure returns (uint256) {
-//     bytes memory h = bytes(haystack);
-//     bytes memory n = bytes(needle);
-//     if (n.length == 0 || n.length > h.length) return type(uint256).max;
-//     for (uint256 i; i <= h.length - n.length; ++i) {
-//       bool match = true;
-//       for (uint256 j; j < n.length; ++j) {
-//         if (h[i + j] != n[j]) {
-//           match = false;
-//           break;
-//         }
-//       }
-//       if (match) return i;
-//     }
-//     return type(uint256).max;
-//   }
-// }
+  function assertEq(
+    InputUtils.FullDeployInputs memory a,
+    InputUtils.FullDeployInputs memory b
+  ) public {
+    assertEq(a.accessManagerAdmin, b.accessManagerAdmin, 'access manager admin');
+    assertEq(a.hubAdmin, b.hubAdmin, 'hub admin');
+    assertEq(a.hubConfiguratorOwner, b.hubConfiguratorOwner, 'hub configurator owner');
+    assertEq(a.treasurySpokeOwner, b.treasurySpokeOwner, 'treasury spoke owner');
+    assertEq(a.spokeProxyAdminOwner, b.spokeProxyAdminOwner, 'spoke proxy admin owner');
+    assertEq(a.spokeConfiguratorOwner, b.spokeConfiguratorOwner, 'spoke configurator owner');
+    assertEq(a.spokeAdmin, b.spokeAdmin, 'spoke admin');
+    assertEq(a.gatewayOwner, b.gatewayOwner, 'gateway owner');
+    assertEq(a.nativeWrapper, b.nativeWrapper, 'native wrapper');
+    assertEq(a.grantRoles, b.grantRoles, 'grant roles');
+    assertEq(a.hubLabels, b.hubLabels, 'hub labels');
+    assertEq(a.spokeLabels, b.spokeLabels, 'spoke labels');
+    assertEq(abi.encode(a), abi.encode(b));
+  }
+}

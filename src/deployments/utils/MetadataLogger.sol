@@ -9,7 +9,7 @@ contract MetadataLogger is Logger {
   constructor(string memory outputPath_) Logger(outputPath_) {}
 
   function writeJsonReportMarket(OrchestrationReports.FullDeploymentReport memory report) public {
-    _write('AccessBatchReport', report.accessBatchReport.accessManager);
+    _write('AccessManager', report.accessBatchReport.accessManager);
     _write('HubConfigurator', report.configuratorBatchReport.hubConfigurator);
     _write('SpokeConfigurator', report.configuratorBatchReport.spokeConfigurator);
 

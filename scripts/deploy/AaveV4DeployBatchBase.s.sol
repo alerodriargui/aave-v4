@@ -99,6 +99,13 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
         );
         sanitizedInputs.spokeAdmin = deployer;
       }
+      if (inputs.hubAdmin == address(0)) {
+        _logAndAppend(
+          logger,
+          'WARNING: Hub Admin is zero address; hub admin roles will be granted to deployer by default'
+        );
+        sanitizedInputs.hubAdmin = deployer;
+      }
     }
     if (inputs.hubLabels.length == 0) {
       _logAndAppend(logger, 'WARNING: Hub will not be deployed');
