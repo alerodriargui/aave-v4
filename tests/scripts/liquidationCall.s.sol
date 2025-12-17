@@ -12,11 +12,8 @@ import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
-// Order:
-// 1. Supply and borrow; Deploy mock price feed
-// 2. Update storage via tenderly_setStorageAt to the mock price feed
-// 3. Liquidate
-// 4. Revert storage to the original price feed
+/// @dev Scripts to create a liquidatable position and then execute a liquidation call
+/// hardcoded values are for specific config on vtestnet
 contract SupplyAndBorrowScript is Script {
   using PercentageMath for uint256;
 
@@ -42,6 +39,11 @@ contract SupplyAndBorrowScript is Script {
     vm.stopBroadcast();
   }
 
+  // Order:
+  // 1. Supply and borrow; Deploy mock price feed
+  // 2. Update storage via tenderly_setStorageAt to the mock price feed
+  // 3. Liquidate
+  // 4. Revert storage to the original price feed
   function _execute() internal virtual {
     _supplyAndBorrow();
     _deployMockPriceFeed();
