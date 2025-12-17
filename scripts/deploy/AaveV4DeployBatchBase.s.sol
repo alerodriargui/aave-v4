@@ -36,7 +36,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     (, address deployer, ) = vm.readCallers();
     inputs = _loadWarningsAndSanitizeInputs(logger, inputs, deployer);
 
-    logger.log('CHAIN ID = ', block.chainid);
+    logger.log('CHAIN ID', block.chainid);
     logger.log('...Starting Aave V4 Batch Deployment...');
     vm.startBroadcast(deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
@@ -53,51 +53,50 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     FullDeployInputs memory inputs,
     address deployer
   ) internal virtual returns (FullDeployInputs memory) {
-    string memory header = 'WARNING: ';
     string memory message = ' is zero address';
     string memory outcome = '; defaulting to deployer';
 
     FullDeployInputs memory sanitizedInputs = inputs;
     bool hadWarnings = false;
     if (inputs.grantRoles) {
-      _logAndAppend(logger, string.concat(header, 'Roles are being set'));
+      _logAndAppend(logger, string.concat('Roles are being set'));
       hadWarnings = true;
       if (inputs.accessManagerAdmin == address(0)) {
-        _logAndAppend(logger, string.concat(header, 'Access Manager Admin', message, outcome));
+        _logAndAppend(logger, string.concat('Access Manager Admin', message, outcome));
         sanitizedInputs.accessManagerAdmin = deployer;
       }
       if (inputs.hubConfiguratorOwner == address(0)) {
-        _logAndAppend(logger, string.concat(header, 'Hub Configurator Owner', message, outcome));
+        _logAndAppend(logger, string.concat('Hub Configurator Owner', message, outcome));
         sanitizedInputs.hubConfiguratorOwner = deployer;
       }
       if (inputs.spokeConfiguratorOwner == address(0)) {
-        _logAndAppend(logger, string.concat(header, 'Spoke Configurator Owner', message, outcome));
+        _logAndAppend(logger, string.concat('Spoke Configurator Owner', message, outcome));
         sanitizedInputs.spokeConfiguratorOwner = deployer;
       }
       if (inputs.spokeProxyAdminOwner == address(0)) {
-        _logAndAppend(logger, string.concat(header, 'Spoke Proxy Admin Owner', message, outcome));
+        _logAndAppend(logger, string.concat('Spoke Proxy Admin Owner', message, outcome));
         sanitizedInputs.spokeProxyAdminOwner = deployer;
       }
       if (inputs.treasurySpokeOwner == address(0)) {
-        _logAndAppend(logger, string.concat(header, 'Treasury Spoke Owner', message, outcome));
+        _logAndAppend(logger, string.concat('Treasury Spoke Owner', message, outcome));
         sanitizedInputs.treasurySpokeOwner = deployer;
       }
       if (inputs.spokeAdmin == address(0)) {
-        _logAndAppend(logger, string.concat(header, 'Spoke Admin', message, outcome));
+        _logAndAppend(logger, string.concat('Spoke Admin', message, outcome));
         sanitizedInputs.spokeAdmin = deployer;
       }
       if (inputs.hubAdmin == address(0)) {
-        _logAndAppend(logger, string.concat(header, 'Hub Admin', message, outcome));
+        _logAndAppend(logger, string.concat('Hub Admin', message, outcome));
         sanitizedInputs.hubAdmin = deployer;
       }
     }
     if (inputs.hubLabels.length == 0) {
-      _logAndAppend(logger, string.concat(header, 'Hub will not be deployed'));
+      _logAndAppend(logger, string.concat('Hub will not be deployed'));
       hadWarnings = true;
       sanitizedInputs.hubLabels = new string[](0);
     }
     if (inputs.spokeLabels.length == 0) {
-      _logAndAppend(logger, string.concat(header, 'Spoke will not be deployed'));
+      _logAndAppend(logger, string.concat('Spoke will not be deployed'));
       hadWarnings = true;
       sanitizedInputs.spokeLabels = new string[](0);
     }
@@ -105,7 +104,6 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
       _logAndAppend(
         logger,
         string.concat(
-          header,
           'Native wrapper',
           message,
           "; NativeTokenGateway & SignatureGateway will not be deployed'"
@@ -115,7 +113,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
       sanitizedInputs.nativeWrapper = address(0);
     }
     if (inputs.gatewayOwner == address(0)) {
-      _logAndAppend(logger, string.concat(header, 'Gateway owner', message, outcome));
+      _logAndAppend(logger, string.concat('Gateway owner', message, outcome));
       hadWarnings = true;
       sanitizedInputs.gatewayOwner = deployer;
     }
@@ -135,6 +133,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   }
 
   function _logAndAppend(MetadataLogger logger, string memory warning) internal virtual {
+    warning = string.concat('WARNING: ', warning);
     logger.log(warning);
     _warnings.s.push(warning);
   }
