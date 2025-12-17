@@ -490,7 +490,7 @@ abstract contract Base is BatchTestProcedures {
       ConfigData.UpdateLiquidationConfigParams[] memory liquidationParams,
       ConfigData.AddReserveParams[] memory reserveParams
     ) = _getSpokeReserveParams();
-    AaveV4TestOrchestration.configureHubsAssets(_getTestAssetParams());
+    AaveV4TestOrchestration.configureHubsAssets(_getAddAssetParams());
     AaveV4TestOrchestration.configureHubsSpokes(_getAddSpokeParams());
     TestTypes.SpokeReserveId[] memory spokeReserveIds = AaveV4TestOrchestration.configureSpokes(
       liquidationParams,
@@ -864,7 +864,7 @@ abstract contract Base is BatchTestProcedures {
     return (liquidationParams, reserveParams);
   }
 
-  function _getTestAssetParams() internal view returns (ConfigData.AddAssetParams[] memory) {
+  function _getAddAssetParams() internal view returns (ConfigData.AddAssetParams[] memory) {
     bytes memory encodedIrData = abi.encode(_defaultIrData);
 
     ConfigData.AddAssetParams[] memory assetParams = new ConfigData.AddAssetParams[](6);
