@@ -141,7 +141,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     uint256 borrowAmount = 750e18;
 
     vm.prank(alice);
-    positionManager.creditDelegation(bob, _daiReserveId(spoke1), borrowAmount);
+    positionManager.delegateCredit(bob, _daiReserveId(spoke1), borrowAmount);
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
@@ -197,8 +197,8 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     uint256 amount = 100e18;
 
     vm.prank(alice);
-    positionManager.creditDelegation(bob, _daiReserveId(spoke1), amount);
-    vm.snapshotGasLastCall(NAMESPACE, 'creditDelegation');
+    positionManager.delegateCredit(bob, _daiReserveId(spoke1), amount);
+    vm.snapshotGasLastCall(NAMESPACE, 'delegateCredit');
   }
 
   function test_creditDelegationWithSig() public {
@@ -220,15 +220,15 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     bytes memory signature = _sign(alicePk, digest);
 
     vm.prank(vm.randomAddress());
-    positionManager.creditDelegationWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'creditDelegationWithSig');
+    positionManager.delegateCreditWithSig(p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'delegateCreditWithSig');
   }
 
   function test_renounceCreditDelegation() public {
     uint256 amount = 100e18;
 
     vm.prank(alice);
-    positionManager.creditDelegation(bob, _daiReserveId(spoke1), amount);
+    positionManager.delegateCredit(bob, _daiReserveId(spoke1), amount);
 
     vm.prank(bob);
     positionManager.renounceCreditDelegation(alice, _daiReserveId(spoke1));

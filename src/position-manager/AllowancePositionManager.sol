@@ -60,11 +60,16 @@ contract AllowancePositionManager is
     );
     _useCheckedNonce(params.owner, params.nonce);
 
-    _updateWithdrawAllowance({owner: params.owner, spender: params.spender, reserveId: params.reserveId, newAllowance: params.amount});
+    _updateWithdrawAllowance({
+      owner: params.owner,
+      spender: params.spender,
+      reserveId: params.reserveId,
+      newAllowance: params.amount
+    });
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function creditDelegation(address spender, uint256 reserveId, uint256 amount) external {
+  function delegateCredit(address spender, uint256 reserveId, uint256 amount) external {
     _updateCreditDelegation({
       owner: msg.sender,
       spender: spender,
@@ -74,7 +79,7 @@ contract AllowancePositionManager is
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function creditDelegationWithSig(
+  function delegateCreditWithSig(
     EIP712Types.CreditDelegation calldata params,
     bytes calldata signature
   ) external {
@@ -86,7 +91,12 @@ contract AllowancePositionManager is
     );
     _useCheckedNonce(params.owner, params.nonce);
 
-    _updateCreditDelegation({owner: params.owner, spender: params.spender, reserveId: params.reserveId, newCreditDelegation: params.amount});
+    _updateCreditDelegation({
+      owner: params.owner,
+      spender: params.spender,
+      reserveId: params.reserveId,
+      newCreditDelegation: params.amount
+    });
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -94,7 +104,12 @@ contract AllowancePositionManager is
     if (_withdrawAllowances[owner][msg.sender][reserveId] == 0) {
       return;
     }
-    _updateWithdrawAllowance({owner: owner, spender: msg.sender, reserveId: reserveId, newAllowance: 0});
+    _updateWithdrawAllowance({
+      owner: owner,
+      spender: msg.sender,
+      reserveId: reserveId,
+      newAllowance: 0
+    });
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -102,7 +117,12 @@ contract AllowancePositionManager is
     if (_creditDelegations[owner][msg.sender][reserveId] == 0) {
       return;
     }
-    _updateCreditDelegation({owner: owner, spender: msg.sender, reserveId: reserveId, newCreditDelegation: 0});
+    _updateCreditDelegation({
+      owner: owner,
+      spender: msg.sender,
+      reserveId: reserveId,
+      newCreditDelegation: 0
+    });
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -112,7 +132,10 @@ contract AllowancePositionManager is
     address onBehalfOf
   ) external returns (uint256, uint256) {
     _spendWithdrawAllowance({
-      owner: onBehalfOf, spender: msg.sender, reserveId: reserveId, amount: amount
+      owner: onBehalfOf,
+      spender: msg.sender,
+      reserveId: reserveId,
+      amount: amount
     });
 
     IERC20 asset = _getReserveUnderlying(reserveId);
@@ -133,7 +156,10 @@ contract AllowancePositionManager is
     address onBehalfOf
   ) external returns (uint256, uint256) {
     _spendCreditDelegation({
-      owner: onBehalfOf, spender: msg.sender, reserveId: reserveId, amount: amount
+      owner: onBehalfOf,
+      spender: msg.sender,
+      reserveId: reserveId,
+      amount: amount
     });
 
     IERC20 asset = _getReserveUnderlying(reserveId);

@@ -441,7 +441,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.expectEmit(address(positionManager));
     emit IAllowancePositionManager.CreditDelegation(alice, spender, reserveId, amount);
     vm.prank(alice);
-    positionManager.creditDelegation(spender, reserveId, amount);
+    positionManager.delegateCredit(spender, reserveId, amount);
 
     assertEq(positionManager.creditDelegation(alice, spender, reserveId), amount);
   }
@@ -468,7 +468,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.expectEmit(address(positionManager));
     emit IAllowancePositionManager.CreditDelegation(alice, spender, reserveId, amount);
     vm.prank(vm.randomAddress());
-    positionManager.creditDelegationWithSig(p, signature);
+    positionManager.delegateCreditWithSig(p, signature);
 
     assertEq(positionManager.creditDelegation(alice, spender, reserveId), amount);
   }
@@ -485,7 +485,7 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    positionManager.creditDelegationWithSig(p, signature);
+    positionManager.delegateCreditWithSig(p, signature);
   }
 
   function test_creditDelegationWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
@@ -502,7 +502,7 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    positionManager.creditDelegationWithSig(p, signature);
+    positionManager.delegateCreditWithSig(p, signature);
   }
 
   function test_creditDelegationWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
@@ -521,7 +521,7 @@ contract AllowancePositionManagerTest is SpokeBase {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.owner, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    positionManager.creditDelegationWithSig(p, signature);
+    positionManager.delegateCreditWithSig(p, signature);
   }
 
   function test_renounceCreditDelegation_fuzz(uint256 initialAllowance) public {
@@ -529,7 +529,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     initialAllowance = bound(initialAllowance, 1, mintAmount_DAI);
 
     vm.prank(alice);
-    positionManager.creditDelegation(bob, reserveId, initialAllowance);
+    positionManager.delegateCredit(bob, reserveId, initialAllowance);
 
     vm.expectEmit(address(positionManager));
     emit IAllowancePositionManager.CreditDelegation(alice, bob, reserveId, 0);
@@ -543,7 +543,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     uint256 reserveId = _randomReserveId(spoke);
 
     vm.prank(alice);
-    positionManager.creditDelegation(bob, reserveId, 100e18);
+    positionManager.delegateCredit(bob, reserveId, 100e18);
     vm.prank(bob);
     positionManager.renounceCreditDelegation(alice, reserveId);
 
@@ -567,7 +567,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, bobSupplyAmount, bob);
 
     vm.prank(alice);
-    positionManager.creditDelegation(address(bob), _daiReserveId(spoke), creditDelegationAmount);
+    positionManager.delegateCredit(address(bob), _daiReserveId(spoke), creditDelegationAmount);
 
     uint256 prevUserBalance = tokenList.dai.balanceOf(alice);
     uint256 prevCallerBalance = tokenList.dai.balanceOf(bob);
@@ -616,7 +616,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, borrowAmount, bob);
 
     vm.prank(alice);
-    positionManager.creditDelegation(address(bob), _daiReserveId(spoke), creditDelegationAmount);
+    positionManager.delegateCredit(address(bob), _daiReserveId(spoke), creditDelegationAmount);
 
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -633,7 +633,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     uint256 reserveId = _randomInvalidReserveId(spoke);
 
     vm.prank(alice);
-    positionManager.creditDelegation(bob, reserveId, 100e18);
+    positionManager.delegateCredit(bob, reserveId, 100e18);
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(bob);
