@@ -206,7 +206,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
   function assertEq(
     InputUtils.FullDeployInputs memory a,
     InputUtils.FullDeployInputs memory b
-  ) public {
+  ) public pure {
     assertEq(a.accessManagerAdmin, b.accessManagerAdmin, 'access manager admin');
     assertEq(a.hubAdmin, b.hubAdmin, 'hub admin');
     assertEq(a.hubConfiguratorOwner, b.hubConfiguratorOwner, 'hub configurator owner');

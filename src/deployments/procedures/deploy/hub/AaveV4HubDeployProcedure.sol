@@ -3,10 +3,17 @@
 pragma solidity ^0.8.0;
 
 import {Hub} from 'src/hub/Hub.sol';
-import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
+import {
+  Create2Utils,
+  AaveV4DeployProcedureBase
+} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 contract AaveV4HubDeployProcedure is AaveV4DeployProcedureBase {
   function _deployHub(address accessManager) internal returns (address) {
     _validateZeroAddress(accessManager, 'access manager');
-    return address(new Hub({authority_: accessManager}));
+    return
+      Create2Utils.create2Deploy(
+        SALT,
+        abi.encodePacked(type(Hub).creationCode, abi.encode(accessManager))
+      );
   }
 }

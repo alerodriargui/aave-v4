@@ -3,13 +3,13 @@
 pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-import {Utils} from 'src/deployments/utils/libraries/Utils.sol';
 import {
   AaveV4AaveOracleDeployProcedure
 } from 'src/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.sol';
 import {
   AaveV4SpokeDeployProcedure
 } from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
@@ -23,11 +23,16 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
     uint8 oracleDecimals_,
     string memory oracleDescription_
   ) {
-    // additional 2 nonces for AaveOracle, SpokeInstance, starting from contract nonce of 1
-    address predictedSpokeInstance = Utils.computeCreateAddress(address(this), 3);
-
+    // starting from contract nonce of 1
+    address predictedOracle = Create2Utils.computeCreateAddress(address(this), 1);
+    address predictedSpokeProxy = _computeSpokeInstanceAddress(
+      SALT,
+      predictedOracle,
+      spokeProxyAdminOwner_,
+      accessManager_
+    );
     address aaveOracle = _deployAaveOracle(
-      predictedSpokeInstance,
+      predictedSpokeProxy,
       oracleDecimals_,
       oracleDescription_
     );
@@ -37,7 +42,8 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
       oracle: aaveOracle
     });
 
-    require(spokeProxy == predictedSpokeInstance, InvalidParam('predicted spoke instance'));
+    require(aaveOracle == predictedOracle, InvalidParam('predicted oracle'));
+    require(spokeProxy == predictedSpokeProxy, InvalidParam('predicted spoke instance'));
     require(ISpoke(spokeProxy).ORACLE() == aaveOracle, InvalidParam('spoke oracle'));
     require(IAaveOracle(aaveOracle).SPOKE() == spokeProxy, InvalidParam('aave oracle spoke'));
 

@@ -54,7 +54,10 @@ contract Logger {
     console.log();
     console.log('Saving log to %s', _outputPath);
     string memory appendedMetadata = withTimestamp ? string.concat(_getTimestamp(), '-') : '';
-    vm.writeJson(_json, string.concat(_outputPath, appendedMetadata, fileName));
+    vm.writeJson(
+      _json,
+      string.concat(_outputPath, appendedMetadata, vm.toString(block.chainid), '-', fileName)
+    );
   }
 
   function log(string memory label, address value) public pure {

@@ -59,8 +59,9 @@ import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 
-contract ProceduresBase is Test {
+contract ProceduresBase is Test, InputUtils {
   address public owner = makeAddr('owner');
   address public accessManager;
   address public hub = makeAddr('hub');
@@ -74,6 +75,8 @@ contract ProceduresBase is Test {
   address public admin = makeAddr('admin');
 
   function setUp() public virtual {
+    _etchCreate2Factory();
+
     accessManager = address(new AccessManagerEnumerable(accessManagerAdmin));
     aaveOracle = address(new AaveOracle(spoke, oracleDecimals, oracleDescription));
   }

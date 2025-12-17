@@ -3,7 +3,10 @@
 pragma solidity ^0.8.0;
 
 import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
-import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
+import {
+  Create2Utils,
+  AaveV4DeployProcedureBase
+} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 contract AaveV4NativeTokenGatewayDeployProcedure is AaveV4DeployProcedureBase {
   function _deployNativeTokenGateway(
     address nativeWrapper,
@@ -11,6 +14,10 @@ contract AaveV4NativeTokenGatewayDeployProcedure is AaveV4DeployProcedureBase {
   ) internal returns (address) {
     _validateZeroAddress(nativeWrapper, 'native wrapper');
     _validateZeroAddress(owner, 'owner');
-    return address(new NativeTokenGateway({nativeWrapper_: nativeWrapper, initialOwner_: owner}));
+    return
+      Create2Utils.create2Deploy(
+        SALT,
+        abi.encodePacked(type(NativeTokenGateway).creationCode, abi.encode(nativeWrapper, owner))
+      );
   }
 }

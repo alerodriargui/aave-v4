@@ -65,6 +65,8 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     _logger = new Logger('dummy/path');
     _hubLabels = ['hub1', 'hub2', 'hub3'];
     _spokeLabels = ['spoke1', 'spoke2', 'spoke3'];
+
+    _etchCreate2Factory();
   }
 
   function checkedV4Deployment() public {

@@ -36,6 +36,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     (, address deployer, ) = vm.readCallers();
     inputs = _loadWarningsAndSanitizeInputs(logger, inputs, deployer);
 
+    logger.log('CHAIN ID = ', block.chainid);
     logger.log('...Starting Aave V4 Batch Deployment...');
     vm.startBroadcast(deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
@@ -52,84 +53,69 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     FullDeployInputs memory inputs,
     address deployer
   ) internal virtual returns (FullDeployInputs memory) {
+    string memory header = 'WARNING: ';
+    string memory message = ' is zero address';
+    string memory outcome = '; defaulting to deployer';
+
     FullDeployInputs memory sanitizedInputs = inputs;
     bool hadWarnings = false;
     if (inputs.grantRoles) {
-      _logAndAppend(logger, 'WARNING: Roles are being set');
+      _logAndAppend(logger, string.concat(header, 'Roles are being set'));
       hadWarnings = true;
       if (inputs.accessManagerAdmin == address(0)) {
-        _logAndAppend(
-          logger,
-          'WARNING: Access Manager Admin is zero address; role will be granted to deployer by default'
-        );
+        _logAndAppend(logger, string.concat(header, 'Access Manager Admin', message, outcome));
         sanitizedInputs.accessManagerAdmin = deployer;
       }
       if (inputs.hubConfiguratorOwner == address(0)) {
-        _logAndAppend(
-          logger,
-          'WARNING: Hub Configurator Owner is zero address; role will be granted to deployer by default'
-        );
+        _logAndAppend(logger, string.concat(header, 'Hub Configurator Owner', message, outcome));
         sanitizedInputs.hubConfiguratorOwner = deployer;
       }
       if (inputs.spokeConfiguratorOwner == address(0)) {
-        _logAndAppend(
-          logger,
-          'WARNING: Spoke Configurator Owner is zero address; role will be granted to deployer by default'
-        );
+        _logAndAppend(logger, string.concat(header, 'Spoke Configurator Owner', message, outcome));
         sanitizedInputs.spokeConfiguratorOwner = deployer;
       }
       if (inputs.spokeProxyAdminOwner == address(0)) {
-        _logAndAppend(
-          logger,
-          'WARNING: Spoke Proxy Admin Owner is zero address; role will be granted to deployer by default'
-        );
+        _logAndAppend(logger, string.concat(header, 'Spoke Proxy Admin Owner', message, outcome));
         sanitizedInputs.spokeProxyAdminOwner = deployer;
       }
       if (inputs.treasurySpokeOwner == address(0)) {
-        _logAndAppend(
-          logger,
-          'WARNING: Treasury Spoke Owner is zero address; role will be granted to deployer by default'
-        );
+        _logAndAppend(logger, string.concat(header, 'Treasury Spoke Owner', message, outcome));
         sanitizedInputs.treasurySpokeOwner = deployer;
       }
       if (inputs.spokeAdmin == address(0)) {
-        _logAndAppend(
-          logger,
-          'WARNING: Spoke Admin is zero address; spoke admin roles will be granted to deployer by default'
-        );
+        _logAndAppend(logger, string.concat(header, 'Spoke Admin', message, outcome));
         sanitizedInputs.spokeAdmin = deployer;
       }
       if (inputs.hubAdmin == address(0)) {
-        _logAndAppend(
-          logger,
-          'WARNING: Hub Admin is zero address; hub admin roles will be granted to deployer by default'
-        );
+        _logAndAppend(logger, string.concat(header, 'Hub Admin', message, outcome));
         sanitizedInputs.hubAdmin = deployer;
       }
     }
     if (inputs.hubLabels.length == 0) {
-      _logAndAppend(logger, 'WARNING: Hub will not be deployed');
+      _logAndAppend(logger, string.concat(header, 'Hub will not be deployed'));
       hadWarnings = true;
       sanitizedInputs.hubLabels = new string[](0);
     }
     if (inputs.spokeLabels.length == 0) {
-      _logAndAppend(logger, 'WARNING: Spoke will not be deployed');
+      _logAndAppend(logger, string.concat(header, 'Spoke will not be deployed'));
       hadWarnings = true;
       sanitizedInputs.spokeLabels = new string[](0);
     }
     if (inputs.nativeWrapper == address(0)) {
       _logAndAppend(
         logger,
-        'WARNING: Native wrapper zero address; NativeTokenGateway & SignatureGateway will not be deployed'
+        string.concat(
+          header,
+          'Native wrapper',
+          message,
+          "; NativeTokenGateway & SignatureGateway will not be deployed'"
+        )
       );
       hadWarnings = true;
       sanitizedInputs.nativeWrapper = address(0);
     }
     if (inputs.gatewayOwner == address(0)) {
-      _logAndAppend(
-        logger,
-        'WARNING: Gateway owner zero address; role will be granted to deployer by default'
-      );
+      _logAndAppend(logger, string.concat(header, 'Gateway owner', message, outcome));
       hadWarnings = true;
       sanitizedInputs.gatewayOwner = deployer;
     }

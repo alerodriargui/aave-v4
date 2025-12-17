@@ -3,11 +3,18 @@
 pragma solidity ^0.8.0;
 
 import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
-import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
+import {
+  Create2Utils,
+  AaveV4DeployProcedureBase
+} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 
 contract AaveV4SpokeConfiguratorDeployProcedure is AaveV4DeployProcedureBase {
   function _deploySpokeConfigurator(address owner) internal returns (address) {
     _validateZeroAddress(owner, 'owner');
-    return address(new SpokeConfigurator({owner_: owner}));
+    return
+      Create2Utils.create2Deploy(
+        SALT,
+        abi.encodePacked(type(SpokeConfigurator).creationCode, abi.encode(owner))
+      );
   }
 }

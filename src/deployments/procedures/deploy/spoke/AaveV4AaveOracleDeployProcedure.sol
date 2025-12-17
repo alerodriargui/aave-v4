@@ -13,6 +13,7 @@ contract AaveV4AaveOracleDeployProcedure is AaveV4DeployProcedureBase {
     _validateZeroAddress(spoke_, 'spoke');
     require(decimals_ > 0, InvalidParam('oracle decimals'));
     require(bytes(description_).length > 0, InvalidParam('oracle description'));
+    // AaveOracle must be deployed via create to compute the predicted address via without inputs
     return
       address(new AaveOracle({spoke_: spoke_, decimals_: decimals_, description_: description_}));
   }
