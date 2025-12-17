@@ -12,9 +12,9 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
     address accessManager,
     address oracle
   ) internal returns (address spokeProxy, address spokeImplementation) {
-    _validateAddress(spokeProxyAdminOwner, 'spoke proxy admin owner');
-    _validateAddress(accessManager, 'access manager');
-    _validateAddress(oracle, 'oracle');
+    _validateZeroAddress(spokeProxyAdminOwner, 'spoke proxy admin owner');
+    _validateZeroAddress(accessManager, 'access manager');
+    _validateZeroAddress(oracle, 'oracle');
     spokeImplementation = address(new SpokeInstance({oracle_: oracle}));
     spokeProxy = Utils.proxify(
       spokeImplementation,

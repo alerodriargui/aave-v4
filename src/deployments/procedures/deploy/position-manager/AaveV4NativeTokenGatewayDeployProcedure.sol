@@ -9,8 +9,8 @@ contract AaveV4NativeTokenGatewayDeployProcedure is AaveV4DeployProcedureBase {
     address nativeWrapper,
     address owner
   ) internal returns (address) {
-    _validateAddress(nativeWrapper, 'native wrapper');
-    _validateAddress(owner, 'owner');
+    _validateZeroAddress(nativeWrapper, 'native wrapper');
+    _validateZeroAddress(owner, 'owner');
     return address(new NativeTokenGateway({nativeWrapper_: nativeWrapper, initialOwner_: owner}));
   }
 }

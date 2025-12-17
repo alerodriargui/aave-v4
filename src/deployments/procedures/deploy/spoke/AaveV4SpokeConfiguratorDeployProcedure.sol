@@ -7,7 +7,7 @@ import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4Deploy
 
 contract AaveV4SpokeConfiguratorDeployProcedure is AaveV4DeployProcedureBase {
   function _deploySpokeConfigurator(address owner) internal returns (address) {
-    _validateAddress(owner, 'owner');
+    _validateZeroAddress(owner, 'owner');
     return address(new SpokeConfigurator({owner_: owner}));
   }
 }

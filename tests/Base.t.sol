@@ -288,6 +288,11 @@ abstract contract Base is BatchTestProcedures {
     _setupFixtures();
   }
 
+  function _initEnvironment() internal {
+    _mintAndApproveTokenList();
+    _configureHubsAndSpokes();
+  }
+
   function _setupFixtures() internal virtual {
     TestTypes.TestEnvReport memory report = _deployFixtures({numHubs: 1, numSpokes: 3});
     _setupFixturesRoles(report);
@@ -359,11 +364,6 @@ abstract contract Base is BatchTestProcedures {
     AaveV4TestOrchestration.grantRolesTestEnv(report, ADMIN, HUB_ADMIN, SPOKE_ADMIN);
 
     IAccessManager(report.accessManager).renounceRole(Roles.DEFAULT_ADMIN_ROLE, address(this));
-  }
-
-  function _initEnvironment() internal {
-    _mintAndApproveTokenList();
-    _configureHubsAndSpokes();
   }
 
   function _initTokenList() internal {

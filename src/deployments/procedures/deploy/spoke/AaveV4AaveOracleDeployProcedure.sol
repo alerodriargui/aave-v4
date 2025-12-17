@@ -10,7 +10,7 @@ contract AaveV4AaveOracleDeployProcedure is AaveV4DeployProcedureBase {
     uint8 decimals_,
     string memory description_
   ) internal returns (address) {
-    _validateAddress(spoke_, 'spoke');
+    _validateZeroAddress(spoke_, 'spoke');
     require(decimals_ > 0, InvalidParam('oracle decimals'));
     require(bytes(description_).length > 0, InvalidParam('oracle description'));
     return

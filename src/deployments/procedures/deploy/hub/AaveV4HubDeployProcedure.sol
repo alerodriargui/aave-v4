@@ -6,7 +6,7 @@ import {Hub} from 'src/hub/Hub.sol';
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 contract AaveV4HubDeployProcedure is AaveV4DeployProcedureBase {
   function _deployHub(address accessManager) internal returns (address) {
-    _validateAddress(accessManager, 'access manager');
+    _validateZeroAddress(accessManager, 'access manager');
     return address(new Hub({authority_: accessManager}));
   }
 }
