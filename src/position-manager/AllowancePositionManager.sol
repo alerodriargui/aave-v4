@@ -29,23 +29,23 @@ contract AllowancePositionManager is
   using SlotDerivation for bytes32;
   using TransientSlot for *;
 
+  /// @notice Slot for the temporary withdraw allowances.
+  /// @dev keccak256(abi.encode(uint256(keccak256("aave.transient.WITHDRAW_ALLOWANCES")) - 1)) & ~bytes32(uint256(0xff))
+  bytes32 private constant _TEMPORARY_WITHDRAW_ALLOWANCES_SLOT =
+    0x4b5553e643854b1bacc0d454fec49da235a0faac2caff4f059541ccf9f154700;
+
+  /// @notice Slot for the temporary credit delegations.
+  /// @dev keccak256(abi.encode(uint256(keccak256("aave.transient.CREDIT_DELEGATIONS")) - 1)) & ~bytes32(uint256(0xff))
+  bytes32 private constant _TEMPORARY_CREDIT_DELEGATIONS_SLOT =
+    0x5aa827cbd079fec1557555542f5232f82e413903ea6ea8e935f719e23b7c4a00;
+
   /// @notice Mapping of withdraw allowances.
   mapping(address owner => mapping(address spender => mapping(uint256 reserveId => uint256 amount)))
     private _withdrawAllowances;
 
-  /// @notice Slot for the temporary withdraw allowances.
-  /// @dev keccak256('temporary.withdrawAllowances')
-  bytes32 private constant _TEMPORARY_WITHDRAW_ALLOWANCES_SLOT =
-    0x1c6a61279a13a86a789311ddf30aee38e2f4a9f6c4aad1ff4a2e75a4018e68c3;
-
   /// @notice Mapping of credit delegations.
   mapping(address owner => mapping(address spender => mapping(uint256 reserveId => uint256 amount)))
     private _creditDelegations;
-
-  /// @notice Slot for the temporary credit delegations.
-  /// @dev keccak256('temporary.creditDelegations')
-  bytes32 private constant _TEMPORARY_CREDIT_DELEGATIONS_SLOT =
-    0xcd470af8670f5baa744a0341af8a2e3f5d7ca086178908432a5cfaf39cb9299d;
 
   /// @dev Constructor.
   /// @param spoke_ The address of the spoke contract.
