@@ -11,7 +11,7 @@
   "repay: full": "126094",
   "repay: partial": "130983",
   "setUserPositionManagerWithSig: disable": "44846",
-  "setUserPositionManagerWithSig: enable": "68863",
+  "setUserPositionManagerWithSig: enable": "68875",
   "supply + enable collateral (multicall)": "140624",
   "supply: 0 borrows, collateral disabled": "123679",
   "supply: 0 borrows, collateral enabled": "106601",

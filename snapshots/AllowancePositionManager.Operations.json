@@ -1,7 +1,8 @@
 {
   "approveWithdraw": "46795",
   "approveWithdrawWithSig": "63006",
-  "borrowOnBehalfOf": "247328",
+  "borrowOnBehalfOf": "307050",
+  "borrowOnBehalfOf (with temporary allowance)": "247328",
   "delegateCredit": "46784",
   "delegateCreditWithSig": "63081",
   "renounceCreditDelegation": "24937",

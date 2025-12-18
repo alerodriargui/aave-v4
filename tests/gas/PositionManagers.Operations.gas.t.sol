@@ -174,7 +174,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
   }
 
   /// forge-config: default.isolate = false
-  function test_borrowOnBehalfOf_WithtemporaryDelegateCredit() public {
+  function test_borrowOnBehalfOf_WithTemporaryDelegateCredit() public {
     uint256 aliceSupplyAmount = 5000e18;
     uint256 bobSupplyAmount = 1000e18;
     uint256 borrowAmount = 750e18;
@@ -187,7 +187,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.borrowOnBehalfOf(_daiReserveId(spoke1), borrowAmount, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'borrowOnBehalfOf');
+    vm.snapshotGasLastCall(NAMESPACE, 'borrowOnBehalfOf (with temporary allowance)');
   }
 
   function test_approveWithdraw() public {
