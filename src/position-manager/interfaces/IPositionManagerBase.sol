@@ -13,8 +13,6 @@ interface IPositionManagerBase is IMulticall {
   error InvalidAddress();
   /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
   error InvalidSignature();
-  /// @notice Thrown when the specified amount is invalid.
-  error InvalidAmount();
 
   /// @notice Facilitates setting this contract as user position manager on the `spoke`
   /// @dev The given data is passed to the `spoke` for the signature to be verified.

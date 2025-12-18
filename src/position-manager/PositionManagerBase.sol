@@ -67,7 +67,7 @@ abstract contract PositionManagerBase is IPositionManagerBase, Multicall {
     {} catch {}
   }
 
-  /// @return The underlying asset for `reserveId` on the Spoke.
+  /// @return The underlying asset corresponding to the `reserveId` on the Spoke.
   function _getReserveUnderlying(uint256 reserveId) internal view returns (IERC20) {
     return IERC20(ISpoke(SPOKE).getReserve(reserveId).underlying);
   }

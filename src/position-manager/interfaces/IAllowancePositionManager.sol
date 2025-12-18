@@ -14,7 +14,11 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @notice Thrown when the credit delegation allowance is insufficient.
   error InsufficientCreditDelegation(uint256 allowance, uint256 required);
 
-  /// @notice Emitted when a withdraw permit allowance is given.
+  /// @notice Emitted when `owner` approves `spender` to withdraw `amount` for `reserveId` on their behalf.
+  /// @param owner The address of the owner.
+  /// @param spender The address of the spender.
+  /// @param reserveId The identifier of the reserve on the connected `spoke`.
+  /// @param amount The amount of allowance.
   event WithdrawApproval(
     address indexed owner,
     address indexed spender,
@@ -22,7 +26,11 @@ interface IAllowancePositionManager is IPositionManagerBase {
     uint256 amount
   );
 
-  /// @notice Emitted when a credit delegation is given.
+  /// @notice Emitted when `owner` approves `spender` to borrow `amount` from `reserveId` on their behalf.
+  /// @param owner The address of the owner.
+  /// @param spender The address of the spender.
+  /// @param reserveId The identifier of the reserve on the connected `spoke`.
+  /// @param amount The amount of credit delegation.
   event CreditDelegation(
     address indexed owner,
     address indexed spender,
@@ -30,13 +38,13 @@ interface IAllowancePositionManager is IPositionManagerBase {
     uint256 amount
   );
 
-  /// @notice Approves a spender to withdraw assets from the specified reserve on the spoke.
+  /// @notice Approves a spender to withdraw assets from the specified reserve on the connected `spoke`.
   /// @param spender The address of the spender to receive the allowance.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of allowance.
   function approveWithdraw(address spender, uint256 reserveId, uint256 amount) external;
 
-  /// @notice Approves a spender to withdraw assets from the specified reserve on the spoke via signature.
+  /// @notice Approves a spender to withdraw assets from the specified reserve on the connected `spoke` via signature.
   /// @param params The structured WithdrawPermit parameters.
   /// @param signature The signed bytes for the intent.
   function approveWithdrawWithSig(
@@ -55,12 +63,12 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @param spender The address of the spender to receive the allowance.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of allowance.
-  function creditDelegation(address spender, uint256 reserveId, uint256 amount) external;
+  function delegateCredit(address spender, uint256 reserveId, uint256 amount) external;
 
   /// @notice Approves a credit delegation allowance for a spender via signature.
   /// @param params The structured CreditDelegation parameters.
   /// @param signature The signed bytes for the intent.
-  function creditDelegationWithSig(
+  function delegateCreditWithSig(
     EIP712Types.CreditDelegation calldata params,
     bytes calldata signature
   ) external;
@@ -70,7 +78,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @param spender The address of the spender to receive the allowance.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of allowance.
-  function temporaryCreditDelegation(address spender, uint256 reserveId, uint256 amount) external;
+  function temporaryDelegateCredit(address spender, uint256 reserveId, uint256 amount) external;
 
   /// @notice Renounces the withdraw allowance given by the owner.
   /// @param owner The address of the owner.

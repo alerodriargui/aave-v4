@@ -10,8 +10,7 @@ contract SupplyRepayPositionManagerTest is SpokeBase {
   TestReturnValues public returnValues;
 
   function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
 
     spoke = spoke1;
     positionManager = new SupplyRepayPositionManager(address(spoke));
@@ -67,12 +66,6 @@ contract SupplyRepayPositionManagerTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(address(hub1)), prevHubBalance + amount);
     assertEq(tokenList.dai.balanceOf(address(positionManager)), 0);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
-  }
-
-  function test_supplyOnBehalfOf_revertsWith_InvalidAmount() public {
-    vm.expectRevert(IPositionManagerBase.InvalidAmount.selector);
-    vm.prank(bob);
-    positionManager.supplyOnBehalfOf(_daiReserveId(spoke), 0, alice);
   }
 
   function test_supplyOnBehalfOf_revertsWith_ReserveNotListed() public {
@@ -296,12 +289,6 @@ contract SupplyRepayPositionManagerTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(bob), prevCallerBalance - totalRepaid);
     assertEq(tokenList.dai.balanceOf(address(positionManager)), 0);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
-  }
-
-  function test_repayOnBehalfOfrevertsWith_InvalidAmount() public {
-    vm.expectRevert(IPositionManagerBase.InvalidAmount.selector);
-    vm.prank(bob);
-    positionManager.repayOnBehalfOf(_daiReserveId(spoke), 0, alice);
   }
 
   function test_repayOnBehalfOfrevertsWith_ReserveNotListed() public {

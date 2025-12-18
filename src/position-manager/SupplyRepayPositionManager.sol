@@ -3,8 +3,8 @@
 pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
+import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {ISupplyRepayPositionManager} from 'src/position-manager/interfaces/ISupplyRepayPositionManager.sol';
 
 /// @title SupplyRepayPositionManager
@@ -23,7 +23,6 @@ contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionMana
     uint256 amount,
     address onBehalfOf
   ) external returns (uint256, uint256) {
-    require(amount > 0, InvalidAmount());
     IERC20 asset = _getReserveUnderlying(reserveId);
     asset.safeTransferFrom(msg.sender, address(this), amount);
     asset.forceApprove(SPOKE, amount);
@@ -36,7 +35,6 @@ contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionMana
     uint256 amount,
     address onBehalfOf
   ) external returns (uint256, uint256) {
-    require(amount > 0, InvalidAmount());
     IERC20 asset = _getReserveUnderlying(reserveId);
 
     uint256 userTotalDebt = ISpokeBase(SPOKE).getUserTotalDebt(reserveId, onBehalfOf);

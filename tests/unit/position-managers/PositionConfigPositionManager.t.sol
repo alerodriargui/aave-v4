@@ -14,8 +14,7 @@ contract PositionConfigPositionManagerTest is SpokeBase {
   ConfigPermissions emptyPermissions;
 
   function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
 
     spoke = spoke1;
     positionManager = new PositionConfigPositionManager(address(spoke));

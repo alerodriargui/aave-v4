@@ -12,8 +12,7 @@ contract AllowancePositionManagerTest is SpokeBase {
   uint256 public alicePk;
 
   function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
 
     spoke = spoke1;
     (alice, alicePk) = makeAddrAndKey('alice');
@@ -492,12 +491,6 @@ contract AllowancePositionManagerTest is SpokeBase {
     positionManager.withdrawOnBehalfOf(_daiReserveId(spoke), amount, alice);
   }
 
-  function test_withdrawOnBehalfOf_revertsWith_InvalidAmount() public {
-    vm.expectRevert(IPositionManagerBase.InvalidAmount.selector);
-    vm.prank(bob);
-    positionManager.withdrawOnBehalfOf(_daiReserveId(spoke), 0, alice);
-  }
-
   function test_withdrawOnBehalfOf_revertsWith_ReserveNotListed() public {
     uint256 reserveId = _randomInvalidReserveId(spoke);
 
@@ -527,7 +520,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.expectEmit(address(positionManager));
     emit IAllowancePositionManager.CreditDelegation(alice, spender, reserveId, amount);
     vm.prank(alice);
-    positionManager.creditDelegation(spender, reserveId, amount);
+    positionManager.delegateCredit(spender, reserveId, amount);
 
     assertEq(positionManager.creditDelegation(alice, spender, reserveId), amount);
   }
@@ -554,7 +547,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.expectEmit(address(positionManager));
     emit IAllowancePositionManager.CreditDelegation(alice, spender, reserveId, amount);
     vm.prank(vm.randomAddress());
-    positionManager.creditDelegationWithSig(p, signature);
+    positionManager.delegateCreditWithSig(p, signature);
 
     assertEq(positionManager.creditDelegation(alice, spender, reserveId), amount);
   }
@@ -571,7 +564,7 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    positionManager.creditDelegationWithSig(p, signature);
+    positionManager.delegateCreditWithSig(p, signature);
   }
 
   function test_creditDelegationWithSig_revertsWith_InvalidSignature_dueTo_InvalidSigner() public {
@@ -588,7 +581,7 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     vm.expectRevert(ISpoke.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
-    positionManager.creditDelegationWithSig(p, signature);
+    positionManager.delegateCreditWithSig(p, signature);
   }
 
   function test_creditDelegationWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
@@ -607,10 +600,10 @@ contract AllowancePositionManagerTest is SpokeBase {
       abi.encodeWithSelector(INoncesKeyed.InvalidAccountNonce.selector, p.owner, currentNonce)
     );
     vm.prank(vm.randomAddress());
-    positionManager.creditDelegationWithSig(p, signature);
+    positionManager.delegateCreditWithSig(p, signature);
   }
 
-  function test_temporaryCreditDelegation_fuzz(
+  function test_temporaryDelegateCredit_fuzz(
     address spender,
     uint256 reserveId,
     uint256 amount
@@ -621,17 +614,17 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     vm.expectEmit(address(positionManager), 0);
     vm.prank(alice);
-    positionManager.temporaryCreditDelegation(spender, reserveId, amount);
+    positionManager.temporaryDelegateCredit(spender, reserveId, amount);
 
-    assertEq(positionManager.temporaryCreditDelegation(alice, spender, reserveId), amount);
+    assertEq(positionManager.temporaryDelegateCredit(alice, spender, reserveId), amount);
   }
 
   /// forge-config: default.isolate = true
-  function test_temporaryCreditDelegation_TransientStorage() public {
+  function test_temporaryDelegateCredit_TransientStorage() public {
     // make sure transient storage is used for temporary credit delegations
     vm.prank(alice);
-    positionManager.temporaryCreditDelegation(bob, _daiReserveId(spoke), 100e18);
-    assertEq(positionManager.temporaryCreditDelegation(alice, bob, _daiReserveId(spoke)), 0);
+    positionManager.temporaryDelegateCredit(bob, _daiReserveId(spoke), 100e18);
+    assertEq(positionManager.temporaryDelegateCredit(alice, bob, _daiReserveId(spoke)), 0);
   }
 
   function test_renounceCreditDelegation_fuzz(uint256 initialAllowance) public {
@@ -639,7 +632,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     initialAllowance = bound(initialAllowance, 1, MAX_SUPPLY_AMOUNT);
 
     vm.prank(alice);
-    positionManager.creditDelegation(bob, reserveId, initialAllowance);
+    positionManager.delegateCredit(bob, reserveId, initialAllowance);
 
     vm.expectEmit(address(positionManager));
     emit IAllowancePositionManager.CreditDelegation(alice, bob, reserveId, 0);
@@ -653,7 +646,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     uint256 reserveId = _randomReserveId(spoke);
 
     vm.prank(alice);
-    positionManager.creditDelegation(bob, reserveId, 100e18);
+    positionManager.delegateCredit(bob, reserveId, 100e18);
     vm.prank(bob);
     positionManager.renounceCreditDelegation(alice, reserveId);
 
@@ -667,9 +660,9 @@ contract AllowancePositionManagerTest is SpokeBase {
     test_borrowOnBehalfOf_fuzz(5e18, 5e18, 0);
   }
 
-  function test_borrowOnBehalfOf_TemporaryCreditDelegationTakesPrecedence() public {
+  function test_borrowOnBehalfOf_temporaryDelegateCreditTakesPrecedence() public {
     uint256 storedAllowance = 300e18;
-    _fuzzyCreditDelegation(alice, alicePk, bob, _daiReserveId(spoke), storedAllowance, 0);
+    _fuzzyDelegateCredit(alice, alicePk, bob, _daiReserveId(spoke), storedAllowance, 0);
     test_borrowOnBehalfOf_fuzz(5e18, 5e18, 2);
     // this check is also performed in test_borrowOnBehalfOf_fuzz, duplicating in case of future changes
     assertEq(positionManager.creditDelegation(alice, bob, _daiReserveId(spoke)), storedAllowance);
@@ -693,7 +686,7 @@ contract AllowancePositionManagerTest is SpokeBase {
       bob,
       _daiReserveId(spoke)
     );
-    approvalType = _fuzzyCreditDelegation(
+    approvalType = _fuzzyDelegateCredit(
       alice,
       alicePk,
       bob,
@@ -741,15 +734,15 @@ contract AllowancePositionManagerTest is SpokeBase {
   }
 
   // temporary credit delegation takes precedence over stored credit delegation, and does not cumulate
-  function test_borrowOnBehalfOf_revertsWith_InsufficientCreditDelegation_TemporaryCreditDelegationTakesPrecedence()
+  function test_borrowOnBehalfOf_revertsWith_InsufficientCreditDelegation_temporaryDelegateCreditTakesPrecedence()
     public
   {
     uint256 storedAllowance = 300e18;
-    _fuzzyCreditDelegation(alice, alicePk, bob, _daiReserveId(spoke), storedAllowance, 0);
+    _fuzzyDelegateCredit(alice, alicePk, bob, _daiReserveId(spoke), storedAllowance, 0);
 
     uint256 amount = 100e18;
     uint256 temporaryAllowance = amount - 1;
-    _fuzzyCreditDelegation(alice, alicePk, bob, _daiReserveId(spoke), temporaryAllowance, 2);
+    _fuzzyDelegateCredit(alice, alicePk, bob, _daiReserveId(spoke), temporaryAllowance, 2);
 
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -773,7 +766,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), alice, borrowAmount, alice);
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, borrowAmount, bob);
 
-    _fuzzyCreditDelegation(
+    _fuzzyDelegateCredit(
       alice,
       alicePk,
       bob,
@@ -793,17 +786,11 @@ contract AllowancePositionManagerTest is SpokeBase {
     positionManager.borrowOnBehalfOf(_daiReserveId(spoke), borrowAmount, alice);
   }
 
-  function test_borrowOnBehalfOf_revertsWith_InvalidAmount() public {
-    vm.expectRevert(IPositionManagerBase.InvalidAmount.selector);
-    vm.prank(bob);
-    positionManager.borrowOnBehalfOf(_daiReserveId(spoke), 0, alice);
-  }
-
   function test_borrowOnBehalfOf_revertsWith_ReserveNotListed() public {
     uint256 reserveId = _randomInvalidReserveId(spoke);
 
     vm.prank(alice);
-    positionManager.creditDelegation(bob, reserveId, 100e18);
+    positionManager.delegateCredit(bob, reserveId, 100e18);
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(bob);
@@ -812,9 +799,9 @@ contract AllowancePositionManagerTest is SpokeBase {
 
   function test_temporaryAllowancesInParallel() public {
     _fuzzyApproveWithdraw(alice, alicePk, bob, _daiReserveId(spoke), 1e18, 2);
-    _fuzzyCreditDelegation(alice, alicePk, bob, _daiReserveId(spoke), 2e18, 2);
+    _fuzzyDelegateCredit(alice, alicePk, bob, _daiReserveId(spoke), 2e18, 2);
     assertEq(positionManager.temporaryWithdrawAllowance(alice, bob, _daiReserveId(spoke)), 1e18);
-    assertEq(positionManager.temporaryCreditDelegation(alice, bob, _daiReserveId(spoke)), 2e18);
+    assertEq(positionManager.temporaryDelegateCredit(alice, bob, _daiReserveId(spoke)), 2e18);
   }
 
   function _fuzzyApproveWithdraw(
@@ -849,7 +836,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     return approvalType;
   }
 
-  function _fuzzyCreditDelegation(
+  function _fuzzyDelegateCredit(
     address onBehalfOf,
     uint256 onBehalfOfPk,
     address spender,
@@ -860,7 +847,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     approvalType = bound(approvalType, 0, 2);
     if (approvalType == 0) {
       vm.prank(onBehalfOf);
-      positionManager.creditDelegation(spender, reserveId, amount);
+      positionManager.delegateCredit(spender, reserveId, amount);
     } else if (approvalType == 1) {
       EIP712Types.CreditDelegation memory p = _creditDelegationData(
         spender,
@@ -873,10 +860,10 @@ contract AllowancePositionManagerTest is SpokeBase {
       bytes memory signature = _sign(onBehalfOfPk, _getTypedDataHash(positionManager, p));
 
       vm.prank(vm.randomAddress());
-      positionManager.creditDelegationWithSig(p, signature);
+      positionManager.delegateCreditWithSig(p, signature);
     } else {
       vm.prank(onBehalfOf);
-      positionManager.temporaryCreditDelegation(spender, reserveId, amount);
+      positionManager.temporaryDelegateCredit(spender, reserveId, amount);
     }
     return approvalType;
   }

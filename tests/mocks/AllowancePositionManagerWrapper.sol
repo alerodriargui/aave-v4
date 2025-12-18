@@ -18,11 +18,11 @@ contract AllowancePositionManagerWrapper is AllowancePositionManager {
     return _temporaryWithdrawAllowancesSlot(owner, spender, reserveId).tload();
   }
 
-  function temporaryCreditDelegation(
+  function temporaryDelegateCredit(
     address owner,
     address spender,
     uint256 reserveId
   ) external view returns (uint256) {
-    return _temporaryCreditDelegationsSlot(owner, spender, reserveId).tload();
+    return _temporaryDelegateCreditsSlot(owner, spender, reserveId).tload();
   }
 }
