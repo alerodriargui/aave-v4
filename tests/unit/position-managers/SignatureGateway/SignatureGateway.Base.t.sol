@@ -20,7 +20,7 @@ contract SignatureGatewayBaseTest is SpokeBase {
 
   function _supplyData(
     ISpoke spoke,
-    address who,
+    address user,
     uint256 deadline
   ) internal returns (EIP712Types.Supply memory) {
     return
@@ -28,15 +28,15 @@ contract SignatureGatewayBaseTest is SpokeBase {
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
-        onBehalfOf: who,
-        nonce: gateway.nonces(who, _randomNonceKey()),
+        onBehalfOf: user,
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }
 
   function _withdrawData(
     ISpoke spoke,
-    address who,
+    address user,
     uint256 deadline
   ) internal returns (EIP712Types.Withdraw memory) {
     return
@@ -44,15 +44,15 @@ contract SignatureGatewayBaseTest is SpokeBase {
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
-        onBehalfOf: who,
-        nonce: gateway.nonces(who, _randomNonceKey()),
+        onBehalfOf: user,
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }
 
   function _borrowData(
     ISpoke spoke,
-    address who,
+    address user,
     uint256 deadline
   ) internal returns (EIP712Types.Borrow memory) {
     return
@@ -60,15 +60,15 @@ contract SignatureGatewayBaseTest is SpokeBase {
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
-        onBehalfOf: who,
-        nonce: gateway.nonces(who, _randomNonceKey()),
+        onBehalfOf: user,
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }
 
   function _repayData(
     ISpoke spoke,
-    address who,
+    address user,
     uint256 deadline
   ) internal returns (EIP712Types.Repay memory) {
     return
@@ -76,15 +76,15 @@ contract SignatureGatewayBaseTest is SpokeBase {
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
-        onBehalfOf: who,
-        nonce: gateway.nonces(who, _randomNonceKey()),
+        onBehalfOf: user,
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }
 
   function _setAsCollateralData(
     ISpoke spoke,
-    address who,
+    address user,
     uint256 deadline
   ) internal returns (EIP712Types.SetUsingAsCollateral memory) {
     return
@@ -92,8 +92,8 @@ contract SignatureGatewayBaseTest is SpokeBase {
         spoke: address(spoke),
         reserveId: _randomReserveId(spoke),
         useAsCollateral: vm.randomBool(),
-        onBehalfOf: who,
-        nonce: gateway.nonces(who, _randomNonceKey()),
+        onBehalfOf: user,
+        nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
   }
@@ -188,12 +188,12 @@ contract SignatureGatewayBaseTest is SpokeBase {
   function _assertGatewayHasNoBalanceOrAllowance(
     ISpoke spoke,
     ISignatureGateway _gateway,
-    address who
+    address user
   ) internal view {
     for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
       IERC20 underlying = _underlying(spoke, reserveId);
       assertEq(underlying.balanceOf(address(_gateway)), 0);
-      assertEq(underlying.allowance({owner: who, spender: address(_gateway)}), 0);
+      assertEq(underlying.allowance({owner: user, spender: address(_gateway)}), 0);
     }
   }
 

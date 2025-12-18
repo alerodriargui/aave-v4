@@ -15,6 +15,10 @@ interface IAllowancePositionManager is IPositionManagerBase {
   error InsufficientCreditDelegation(uint256 allowance, uint256 required);
 
   /// @notice Emitted when `owner` approves `spender` to withdraw `amount` for `reserveId` on their behalf.
+  /// @param owner The address of the owner.
+  /// @param spender The address of the spender.
+  /// @param reserveId The identifier of the reserve on the connected `spoke`.
+  /// @param amount The amount of allowance.
   event WithdrawApproval(
     address indexed owner,
     address indexed spender,
@@ -23,6 +27,10 @@ interface IAllowancePositionManager is IPositionManagerBase {
   );
 
   /// @notice Emitted when `owner` approves `spender` to borrow `amount` from `reserveId` on their behalf.
+  /// @param owner The address of the owner.
+  /// @param spender The address of the spender.
+  /// @param reserveId The identifier of the reserve on the connected `spoke`.
+  /// @param amount The amount of credit delegation.
   event CreditDelegation(
     address indexed owner,
     address indexed spender,

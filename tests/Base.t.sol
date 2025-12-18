@@ -2817,13 +2817,13 @@ abstract contract Base is Test {
 
   function _assertNonceIncrement(
     INoncesKeyed verifier,
-    address who,
+    address user,
     uint256 prevKeyNonce
   ) internal view {
     (uint192 nonceKey, uint64 nonce) = _unpackNonce(prevKeyNonce);
     // prettier-ignore
     unchecked { ++nonce; }
-    assertEq(verifier.nonces(who, nonceKey), _packNonce(nonceKey, nonce));
+    assertEq(verifier.nonces(user, nonceKey), _packNonce(nonceKey, nonce));
   }
 
   /// @dev Pack key and nonce into a keyNonce

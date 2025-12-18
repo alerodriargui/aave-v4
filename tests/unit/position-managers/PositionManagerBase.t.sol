@@ -10,8 +10,7 @@ contract PositionManagerBaseTest is SpokeBase {
   uint256 public alicePk;
 
   function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
 
     spoke = spoke1;
     (alice, alicePk) = makeAddrAndKey('alice');

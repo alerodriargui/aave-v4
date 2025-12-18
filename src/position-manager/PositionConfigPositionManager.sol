@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ConfigPermissionsMap} from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IPositionConfigPositionManager, ConfigPermissions} from 'src/position-manager/interfaces/IPositionConfigPositionManager.sol';
 
 /// @title PositionConfigPositionManager

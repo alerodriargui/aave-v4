@@ -43,10 +43,10 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_renouncePositionManagerRole() public {
-    address who = vm.randomAddress();
-    vm.expectCall(address(spoke1), abi.encodeCall(ISpoke.renouncePositionManagerRole, (who)));
+    address user = vm.randomAddress();
+    vm.expectCall(address(spoke1), abi.encodeCall(ISpoke.renouncePositionManagerRole, (user)));
     vm.prank(ADMIN);
-    gateway.renouncePositionManagerRole(address(spoke1), who);
+    gateway.renouncePositionManagerRole(address(spoke1), user);
   }
 
   function test_supplyWithSig() public {

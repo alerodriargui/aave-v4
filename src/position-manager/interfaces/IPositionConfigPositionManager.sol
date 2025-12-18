@@ -21,6 +21,9 @@ interface IPositionConfigPositionManager is IPositionManagerBase {
   }
 
   /// @notice Emitted when a global config permission is updated.
+  /// @param owner The address of the owner.
+  /// @param caller The address of the caller.
+  /// @param permissions The new config permissions.
   event ConfigPermissionsUpdated(
     address indexed owner,
     address indexed caller,

@@ -10,8 +10,7 @@ contract SupplyRepayPositionManagerTest is SpokeBase {
   TestReturnValues public returnValues;
 
   function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
 
     spoke = spoke1;
     positionManager = new SupplyRepayPositionManager(address(spoke));

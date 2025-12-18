@@ -3,8 +3,8 @@
 pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
+import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {ISupplyRepayPositionManager} from 'src/position-manager/interfaces/ISupplyRepayPositionManager.sol';
 
 /// @title SupplyRepayPositionManager

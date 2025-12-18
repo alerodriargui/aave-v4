@@ -328,8 +328,8 @@ contract SpokePositionManagerTest is SpokeBase {
     spoke1.updateUserDynamicConfig(alice);
   }
 
-  function _approvePositionManager(address who) internal {
-    assertFalse(spoke1.isPositionManager(who, POSITION_MANAGER));
+  function _approvePositionManager(address user) internal {
+    assertFalse(spoke1.isPositionManager(user, POSITION_MANAGER));
     assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
 
     vm.expectEmit(address(spoke1));
@@ -338,11 +338,11 @@ contract SpokePositionManagerTest is SpokeBase {
     spoke1.updatePositionManager(POSITION_MANAGER, true);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(who, POSITION_MANAGER, true);
-    vm.prank(who);
+    emit ISpoke.SetUserPositionManager(user, POSITION_MANAGER, true);
+    vm.prank(user);
     spoke1.setUserPositionManager(POSITION_MANAGER, true);
 
-    assertTrue(spoke1.isPositionManager(who, POSITION_MANAGER));
+    assertTrue(spoke1.isPositionManager(user, POSITION_MANAGER));
     assertTrue(spoke1.isPositionManagerActive(POSITION_MANAGER));
   }
 
@@ -355,8 +355,8 @@ contract SpokePositionManagerTest is SpokeBase {
     assertFalse(spoke1.isPositionManagerActive(POSITION_MANAGER));
   }
 
-  function _resetTokenAllowance(address who) internal {
-    vm.prank(who);
+  function _resetTokenAllowance(address user) internal {
+    vm.prank(user);
     tokenList.usdx.approve(address(hub1), 0);
   }
 }
