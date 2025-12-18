@@ -26,27 +26,32 @@ certora/
 The formal verification focuses on the following critical safety properties:
 
 ### Solvency & Share Rate
+
 - **Share Rate Monotonicity** - The exchange rate between shares and assets never decreases, protecting LP token holders
 - **Total Assets ≥ Total Shares** - Ensures the protocol remains solvent
 - **External Solvency** - Hub underlying balance always covers total added assets
 
 ### Position Safety
+
 - **No Collateral → No Debt** - Users without collateral cannot accumulate debt
 - **Borrowing Flag Consistency** - Borrowing status accurately reflects drawn shares
 - **Health Factor Maintenance** - User health stays above liquidation threshold after operations
 
 ### State Consistency
+
 - **Spoke Isolation** - Operations on one spoke don't affect other spokes
 - **Sum Invariants** - Sum of spoke supplies/drawn shares equals totals
 - **Reserve ID Validity** - Reserve mappings remain consistent
 
 ### Accrue Integrity
+
 - **Idempotency** - Calling accrue twice is equivalent to calling once
 - **Index Monotonicity** - Interest indices only increase
 
 ## Prerequisites
 
 1. Install the Certora Prover CLI:
+
    ```bash
    pip install certora-cli
    ```
@@ -59,22 +64,27 @@ The formal verification focuses on the following critical safety properties:
 ## Running the Prover
 
 ### Run All Configurations
+
 ```bash
 ./certora/runAll.sh
 ```
 
 ### Run a Single Configuration
+
 ```bash
 certoraRun certora/conf/<config_file>.conf
 ```
 
 ### Run a Specific Rule
+
 ```bash
 certoraRun certora/conf/<config_file>.conf --rule <rule_name> --msg "<description>"
 ```
 
 ### Documentation
+
 For more information on the Certora Prover and CVL specification language, see:
+
 - [Certora Documentation](https://docs.certora.com/)
 - [CVL Language Reference](https://docs.certora.com/en/latest/docs/cvl/index.html)
 - [Certora Prover CLI](https://docs.certora.com/en/latest/docs/prover/cli/index.html)
@@ -84,6 +94,7 @@ For more information on the Certora Prover and CVL specification language, see:
 ## Hub Specifications
 
 ### `HubBase.spec`
+
 **Base definitions for Hub specifications.**
 
 - **Imports:** `ERC20s_CVL.spec`, `Math_CVL.spec`, `common.spec`
@@ -93,6 +104,7 @@ For more information on the Certora Prover and CVL specification language, see:
   - `Premium.calculatePremiumRay` → CVL implementation
 
 ### `Hub.spec`
+
 **Main Hub verification rules.**
 
 - **Config:** `certora/conf/Hub.conf`
@@ -105,8 +117,8 @@ For more information on the Certora Prover and CVL specification language, see:
   - `totalAssetsCompareToSuppliedAmount` - Total assets always >= total shares (solvency)
   - `accrueWasCalled` - Ensures accrue is called before state-changing operations
 
-
 ### `HubValidState.spec`
+
 **Hub valid state properties and invariants.**
 
 - **Config:** `certora/conf/HubValidState.conf`, `certora/conf/HubValidState_totalAssets.conf`
@@ -122,9 +134,10 @@ For more information on the Certora Prover and CVL specification language, see:
   - `sumOfSpokeSupply` - Sum of all spoke supplies equals total supply
   - `sumOfSpokeDrawnShares` - Sum of all spoke drawn shares equals total drawn
   - `premiumOffset_Integrity` - Premium offset tracking consistency
-- **Additional Config:** `HubValidState_totalAssets.conf` runs `totalAssetsVsShares` with parallel splitting 
+- **Additional Config:** `HubValidState_totalAssets.conf` runs `totalAssetsVsShares` with parallel splitting
 
 ### `HubIntegrityRules.spec`
+
 **Hub integrity verification rules.**
 
 - **Config:** `certora/conf/HubIntegrity.conf`
@@ -134,8 +147,8 @@ For more information on the Certora Prover and CVL specification language, see:
   - `nothingForZero_add` - Add operation increases balances
   - `nothingForZero_remove` - Remove operation decreases balances
 
-
 ### `HubAccrueIntegrity.spec`
+
 **Accrue function integrity proofs.**
 
 - **Config:** `certora/conf/HubAccrueIntegrity.conf`
@@ -147,18 +160,21 @@ For more information on the Certora Prover and CVL specification language, see:
   - Interest rate calculation rules
 
 ### `HubAccrueSupplyRate.spec`
+
 **Supply rate verification.**
 
 - **Config:** `certora/conf/HubAccrueSupplyRate.conf`
 - **Purpose:** Verifies supply rate calculations
 
 ### `HubAccrueUnrealizedFee.spec`
+
 **Unrealized fee verification.**
 
 - **Config:** `certora/conf/HubAccrueUnrealizedFee.conf`
 - **Purpose:** Verifies unrealized fee calculations
 
 ### `HubAdditivity.spec`
+
 **Additivity properties of Hub operations.**
 
 - **Config:** `certora/conf/HubAdditivity.conf`
@@ -166,12 +182,12 @@ For more information on the Certora Prover and CVL specification language, see:
 - **Purpose:** Verifies that splitting operations is less beneficial than single operations
 - **Key Rules:** Additivity proofs for `add`, `remove`, `draw`, `restore`, `reportDeficit`, `eliminateDeficit`
 
-
 ---
 
 ## Spoke Specifications
 
 ### `SpokeBase.spec`
+
 **Base definitions for Spoke specifications.**
 
 - **Imports:** `Math_CVL.spec`, `SymbolicPositionStatus.spec`, `ERC20s_CVL.spec`
@@ -182,6 +198,7 @@ For more information on the Certora Prover and CVL specification language, see:
   - Authority checks → NONDET
 
 ### `Spoke.spec`
+
 **Main Spoke verification rules.**
 
 - **Config:** `certora/conf/Spoke.conf`, `certora/conf/Spoke_noCollateralNoDebt.conf`
@@ -202,6 +219,7 @@ For more information on the Certora Prover and CVL specification language, see:
 - **Additional Config:** `Spoke_noCollateralNoDebt.conf` runs `noCollateralNoDebt` with parallel splitting prover args
 
 ### `SpokeHealthCheck.spec`
+
 **Health factor verification.**
 
 - **Config:** `certora/conf/SpokeHealthCheck.conf`
@@ -211,12 +229,14 @@ For more information on the Certora Prover and CVL specification language, see:
   - `userHealthStaysAboveThreshold` - Health factor maintained after operations
 
 ### `SpokeUserIntegrity.spec`
+
 **User position integrity.**
 
 - **Config:** `certora/conf/SpokeUserIntegrity.conf`
 - **Purpose:** Verifies that only one user's account is updated at a time
 
 ### `SpokeHubIntegrity.spec`
+
 **Spoke-Hub integration verification.**
 
 - **Config:** `certora/conf/SpokeWithHub.conf`
@@ -233,6 +253,7 @@ For more information on the Certora Prover and CVL specification language, see:
 ## Library Specifications
 
 ### `libs/Math.spec`
+
 **Mathematical function verification.**
 
 - **Config:** `certora/conf/libs/Math.conf`
@@ -245,6 +266,7 @@ For more information on the Certora Prover and CVL specification language, see:
   - `fromRayUp`, `toRay`
 
 ### `libs/SharesMath.spec`
+
 **Shares math library verification.**
 
 - **Config:** `certora/conf/libs/SharesMath.conf`
@@ -255,16 +277,19 @@ For more information on the Certora Prover and CVL specification language, see:
   - Inverse relationships
 
 ### `libs/LibBit.spec`
+
 **Bit manipulation library verification.**
 
 - **Config:** `certora/conf/libs/LibBit.conf`
 
 ### `libs/PositionStatus.spec`
+
 **Position status verification.**
 
 - **Config:** `certora/conf/libs/PositionStatus.conf`
 
 ### `libs/Premium.spec`
+
 **Premium calculation verification.**
 
 - **Config:** `certora/conf/libs/Premium.conf`
@@ -278,22 +303,26 @@ For more information on the Certora Prover and CVL specification language, see:
 ## Symbolic Representations
 
 ### `symbolicRepresentation/Math_CVL.spec`
+
 **CVL implementations of math functions.**
 
 - **Purpose:** Provides CVL equivalents of Solidity math functions for use in summaries
 - **Functions:** `mulDivDownCVL`, `mulDivUpCVL`, `mulDivRayDownCVL`, `mulDivRayUpCVL`, `divRayUpCVL`, `mulRayCVL`
 
 ### `symbolicRepresentation/ERC20s_CVL.spec`
+
 **ERC20 symbolic representations.**
 
 - **Purpose:** Symbolic handling of ERC20 token interactions
 
 ### `symbolicRepresentation/SymbolicHub.spec`
+
 **Symbolic Hub for Spoke verification.**
 
 - **Purpose:** Allows verifying Spoke independently of Hub implementation
 
 ### `symbolicRepresentation/SymbolicPositionStatus.spec`
+
 **Symbolic position status handling.**
 
 ---
@@ -301,6 +330,7 @@ For more information on the Certora Prover and CVL specification language, see:
 ## Common Specifications
 
 ### `common.spec`
+
 **Shared method summaries.**
 
 - **Purpose:** Common summaries used in both Hub and Spoke specifications
@@ -348,20 +378,27 @@ symbolicRepresentation/
 ## Harness Contracts
 
 ### `HubHarness.sol`
+
 Exposes internal Hub functions for verification:
+
 - `accrueInterest()` - Exposes `AssetLogic.accrue()`
 
 ### `MathWrapper.sol`
+
 Wraps math library functions for direct verification:
+
 - Exposes `WadRayMath` functions: `rayMulDown`, `rayMulUp`, `rayDivDown`, `rayDivUp`, `wadDivDown`, `wadDivUp`
 - Exposes `MathUtils` functions: `mulDivDown`, `mulDivUp`
 - Exposes `PercentageMath` functions: `percentMulDown`, `percentMulUp`
 
 ### `LibBitHarness.sol`
+
 Wraps LibBit library for verification.
 
 ### `PremiumWrapper.sol`
+
 Wraps Premium library for verification:
+
 - Exposes `Premium.calculatePremiumRay()` for CVL equivalence testing
 
 ---
@@ -371,14 +408,15 @@ Wraps Premium library for verification:
 1. **Use Build Cache:** Most conf files have `"build_cache": true` to speed up repeated runs.
 
 2. **Split Long-Running Rules:** Use `--split_rules` for rules that may timeout:
+
    ```bash
    certoraRun certora/conf/Spoke.conf --split_rules drawnSharesZero noCollateralNoDebt
    ```
 
 3. **Run Specific Rules:** Use `--rule` to run individual rules:
+
    ```bash
    certoraRun certora/conf/Hub.conf --rule totalAssetsCompareToSuppliedAmount --msg "Hub totalAssets"
    ```
 
-5. **View Results:** Check the Certora Prover dashboard at https://prover.certora.com
-
+4. **View Results:** Check the Certora Prover dashboard at https://prover.certora.com

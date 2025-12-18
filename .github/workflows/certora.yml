@@ -37,7 +37,7 @@ env:
     #certora/conf/HubAdditivity.conf --rule reportDeficitAdditivity
     #certora/conf/HubAccrueSupplyRate.conf --rule previewRemoveByShares_withoutAccrue_time_monotonic previewAddByShares_withoutAccrue_time_monotonic
     #### rules that are failing and waiting for fix
-    #certora/conf/Spoke.conf --rule increaseCollateralOrReduceDebtFunctions 
+    #certora/conf/Spoke.conf --rule increaseCollateralOrReduceDebtFunctions
 
 on:
   pull_request:
