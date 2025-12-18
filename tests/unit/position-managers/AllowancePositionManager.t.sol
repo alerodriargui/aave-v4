@@ -440,9 +440,7 @@ contract AllowancePositionManagerTest is SpokeBase {
   }
 
   // temporary withdraw allowance takes precedence over stored withdraw allowance, and does not cumulate
-  function test_withdrawOnBehalfOf_revertsWith_InsufficientWithdrawAllowance_TemporaryAllowanceTakesPrecedence()
-    public
-  {
+  function test_withdrawOnBehalfOf_revertsWith_InsufficientTemporaryWithdrawAllowance() public {
     uint256 storedAllowance = 300e18;
     _fuzzyApproveWithdraw(alice, alicePk, bob, _daiReserveId(spoke), storedAllowance, 0);
 
@@ -452,7 +450,7 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IAllowancePositionManager.InsufficientWithdrawAllowance.selector,
+        IAllowancePositionManager.InsufficientTemporaryWithdrawAllowance.selector,
         temporaryAllowance,
         amount
       )
@@ -463,7 +461,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)), storedAllowance);
   }
 
-  function test_withdrawOnBehalfOf_fuzz_revertsWith_InsufficientWithdrawAllowance(
+  function test_withdrawOnBehalfOf_fuzz_revertsWith_InsufficientAllowance(
     uint256 approvalAmount,
     uint256 approvalType
   ) public {
@@ -478,11 +476,20 @@ contract AllowancePositionManagerTest is SpokeBase {
       onBehalfOf: alice
     });
 
-    _fuzzyApproveWithdraw(alice, alicePk, bob, _daiReserveId(spoke), approvalAmount, approvalType);
+    approvalType = _fuzzyApproveWithdraw(
+      alice,
+      alicePk,
+      bob,
+      _daiReserveId(spoke),
+      approvalAmount,
+      approvalType
+    );
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IAllowancePositionManager.InsufficientWithdrawAllowance.selector,
+        (approvalType == 2)
+          ? IAllowancePositionManager.InsufficientTemporaryWithdrawAllowance.selector
+          : IAllowancePositionManager.InsufficientWithdrawAllowance.selector,
         approvalAmount,
         amount
       )
@@ -734,9 +741,7 @@ contract AllowancePositionManagerTest is SpokeBase {
   }
 
   // temporary credit delegation takes precedence over stored credit delegation, and does not cumulate
-  function test_borrowOnBehalfOf_revertsWith_InsufficientCreditDelegation_temporaryDelegateCreditTakesPrecedence()
-    public
-  {
+  function test_borrowOnBehalfOf_revertsWith_InsufficientTemporaryCreditDelegation() public {
     uint256 storedAllowance = 300e18;
     _fuzzyDelegateCredit(alice, alicePk, bob, _daiReserveId(spoke), storedAllowance, 0);
 
@@ -746,7 +751,7 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IAllowancePositionManager.InsufficientCreditDelegation.selector,
+        IAllowancePositionManager.InsufficientTemporaryCreditDelegation.selector,
         temporaryAllowance,
         amount
       )
@@ -757,7 +762,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(positionManager.creditDelegation(alice, bob, _daiReserveId(spoke)), storedAllowance);
   }
 
-  function test_borrowOnBehalfOf_fuzz_revertsWith_InsufficientCreditDelegation(
+  function test_borrowOnBehalfOf_fuzz_revertsWith_InsufficientAllowance(
     uint256 creditDelegationAmount,
     uint256 approvalType
   ) public {
@@ -766,7 +771,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), alice, borrowAmount, alice);
     Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, borrowAmount, bob);
 
-    _fuzzyDelegateCredit(
+    approvalType = _fuzzyDelegateCredit(
       alice,
       alicePk,
       bob,
@@ -777,7 +782,9 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     vm.expectRevert(
       abi.encodeWithSelector(
-        IAllowancePositionManager.InsufficientCreditDelegation.selector,
+        (approvalType == 2)
+          ? IAllowancePositionManager.InsufficientTemporaryCreditDelegation.selector
+          : IAllowancePositionManager.InsufficientCreditDelegation.selector,
         creditDelegationAmount,
         borrowAmount
       )

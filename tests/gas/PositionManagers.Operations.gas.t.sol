@@ -147,20 +147,14 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.withdrawOnBehalfOf(_daiReserveId(spoke1), amount, alice);
-    vm.snapshotGasLastCall(
-      NAMESPACE,
-      'AllowancePositionManager: withdrawOnBehalfOf: partial (with temporary allowance)'
-    );
+    vm.snapshotGasLastCall(NAMESPACE, 'withdrawOnBehalfOf: partial (with temporary allowance)');
 
     vm.prank(alice);
     positionManager.temporaryApproveWithdraw(bob, _daiReserveId(spoke1), UINT256_MAX);
 
     vm.prank(bob);
     positionManager.withdrawOnBehalfOf(_daiReserveId(spoke1), UINT256_MAX, alice);
-    vm.snapshotGasLastCall(
-      NAMESPACE,
-      'AllowancePositionManager: withdrawOnBehalfOf: full (with temporary allowance)'
-    );
+    vm.snapshotGasLastCall(NAMESPACE, 'withdrawOnBehalfOf: full (with temporary allowance)');
   }
 
   function test_borrowOnBehalfOf() public {
@@ -193,7 +187,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(bob);
     positionManager.borrowOnBehalfOf(_daiReserveId(spoke1), borrowAmount, alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: borrowOnBehalfOf');
+    vm.snapshotGasLastCall(NAMESPACE, 'borrowOnBehalfOf');
   }
 
   function test_approveWithdraw() public {
@@ -232,7 +226,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(alice);
     positionManager.temporaryApproveWithdraw(bob, _daiReserveId(spoke1), amount);
-    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: temporaryApproveWithdraw');
+    vm.snapshotGasLastCall(NAMESPACE, 'temporaryApproveWithdraw');
   }
 
   function test_renounceWithdrawAllowance() public {
@@ -282,7 +276,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
 
     vm.prank(alice);
     positionManager.temporaryDelegateCredit(bob, _daiReserveId(spoke1), amount);
-    vm.snapshotGasLastCall(NAMESPACE, 'AllowancePositionManager: temporaryDelegateCredit');
+    vm.snapshotGasLastCall(NAMESPACE, 'temporaryDelegateCredit');
   }
 
   function test_renounceCreditDelegation() public {

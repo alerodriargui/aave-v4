@@ -84,7 +84,8 @@ contract AllowancePositionManager is
 
   /// @inheritdoc IAllowancePositionManager
   function temporaryApproveWithdraw(address spender, uint256 reserveId, uint256 amount) external {
-    _temporaryWithdrawAllowancesSlot(msg.sender, spender, reserveId).tstore(amount);
+    _temporaryWithdrawAllowancesSlot({owner: msg.sender, spender: spender, reserveId: reserveId})
+      .tstore(amount);
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -120,7 +121,8 @@ contract AllowancePositionManager is
 
   /// @inheritdoc IAllowancePositionManager
   function temporaryDelegateCredit(address spender, uint256 reserveId, uint256 amount) external {
-    _temporaryDelegateCreditsSlot(msg.sender, spender, reserveId).tstore(amount);
+    _temporaryDelegateCreditsSlot({owner: msg.sender, spender: spender, reserveId: reserveId})
+      .tstore(amount);
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -237,16 +239,18 @@ contract AllowancePositionManager is
     uint256 reserveId,
     uint256 amount
   ) internal {
-    uint256 temporaryAllowance = _temporaryWithdrawAllowancesSlot(owner, spender, reserveId)
-      .tload();
+    uint256 temporaryAllowance = _temporaryWithdrawAllowancesSlot({
+      owner: owner,
+      spender: spender,
+      reserveId: reserveId
+    }).tload();
     if (temporaryAllowance > 0) {
       require(
         temporaryAllowance >= amount,
-        InsufficientWithdrawAllowance(temporaryAllowance, amount)
+        InsufficientTemporaryWithdrawAllowance(temporaryAllowance, amount)
       );
-      _temporaryWithdrawAllowancesSlot(owner, spender, reserveId).tstore(
-        temporaryAllowance.uncheckedSub(amount)
-      );
+      _temporaryWithdrawAllowancesSlot({owner: owner, spender: spender, reserveId: reserveId})
+        .tstore(temporaryAllowance.uncheckedSub(amount));
     } else {
       uint256 allowance = _withdrawAllowances[owner][spender][reserveId];
       require(allowance >= amount, InsufficientWithdrawAllowance(allowance, amount));
@@ -261,13 +265,17 @@ contract AllowancePositionManager is
     uint256 reserveId,
     uint256 amount
   ) internal {
-    uint256 temporaryAllowance = _temporaryDelegateCreditsSlot(owner, spender, reserveId).tload();
+    uint256 temporaryAllowance = _temporaryDelegateCreditsSlot({
+      owner: owner,
+      spender: spender,
+      reserveId: reserveId
+    }).tload();
     if (temporaryAllowance > 0) {
       require(
         temporaryAllowance >= amount,
-        InsufficientCreditDelegation(temporaryAllowance, amount)
+        InsufficientTemporaryCreditDelegation(temporaryAllowance, amount)
       );
-      _temporaryDelegateCreditsSlot(owner, spender, reserveId).tstore(
+      _temporaryDelegateCreditsSlot({owner: owner, spender: spender, reserveId: reserveId}).tstore(
         temporaryAllowance.uncheckedSub(amount)
       );
     } else {
