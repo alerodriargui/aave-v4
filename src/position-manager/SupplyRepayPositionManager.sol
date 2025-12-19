@@ -14,34 +14,36 @@ contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionMana
   using SafeERC20 for IERC20;
 
   /// @dev Constructor.
-  /// @param spoke_ The address of the spoke contract.
-  constructor(address spoke_) PositionManagerBase(spoke_) {}
+  /// @param initialOwner_ The address of the initial owner.
+  constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
 
   /// @inheritdoc ISupplyRepayPositionManager
   function supplyOnBehalfOf(
+    address spoke,
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external returns (uint256, uint256) {
-    IERC20 asset = _getReserveUnderlying(reserveId);
+  ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
+    IERC20 asset = IERC20(_getReserveUnderlying(spoke, reserveId));
     asset.safeTransferFrom(msg.sender, address(this), amount);
-    asset.forceApprove(SPOKE, amount);
-    return ISpokeBase(SPOKE).supply(reserveId, amount, onBehalfOf);
+    asset.forceApprove(spoke, amount);
+    return ISpokeBase(spoke).supply(reserveId, amount, onBehalfOf);
   }
 
   /// @inheritdoc ISupplyRepayPositionManager
   function repayOnBehalfOf(
+    address spoke,
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external returns (uint256, uint256) {
-    IERC20 asset = _getReserveUnderlying(reserveId);
+  ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
+    IERC20 asset = IERC20(_getReserveUnderlying(spoke, reserveId));
 
-    uint256 userTotalDebt = ISpokeBase(SPOKE).getUserTotalDebt(reserveId, onBehalfOf);
+    uint256 userTotalDebt = ISpokeBase(spoke).getUserTotalDebt(reserveId, onBehalfOf);
     uint256 repayAmount = amount > userTotalDebt ? userTotalDebt : amount;
 
     asset.safeTransferFrom(msg.sender, address(this), repayAmount);
-    asset.forceApprove(SPOKE, repayAmount);
-    return ISpokeBase(SPOKE).repay(reserveId, repayAmount, onBehalfOf);
+    asset.forceApprove(spoke, repayAmount);
+    return ISpokeBase(spoke).repay(reserveId, repayAmount, onBehalfOf);
   }
 }

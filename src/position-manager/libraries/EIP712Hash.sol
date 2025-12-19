@@ -37,12 +37,12 @@ library EIP712Hash {
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
   bytes32 public constant WITHDRAW_PERMIT_TYPEHASH =
-    // keccak256('WithdrawPermit(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)')
-    0x3f29b75c8306a30703d0c2bdfdab54af1549fd333e517a54c544808af9c0ccb6;
+    // keccak256('WithdrawPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
+    0x9e6642fd4c06a4c1a5e201f1e41c6b7892fcf06859c796b054c510b80e2a0a3f;
 
   bytes32 public constant CREDIT_DELEGATION_TYPEHASH =
-    // keccak256('CreditDelegation(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)')
-    0xb23b18acd40684b2c2f869127cc7c53cd1d41450c747017aa72a57dad6ed5a39;
+    // keccak256('CreditDelegation(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
+    0x606e68c0d0b1a1e82ef01e76f35ecd8c76dba1c94679e6dc977b87d7bde1bb28;
 
   function hash(EIP712Types.Supply calldata params) internal pure returns (bytes32) {
     return
@@ -152,9 +152,10 @@ library EIP712Hash {
       keccak256(
         abi.encode(
           WITHDRAW_PERMIT_TYPEHASH,
+          params.spoke,
+          params.reserveId,
           params.owner,
           params.spender,
-          params.reserveId,
           params.amount,
           params.nonce,
           params.deadline
@@ -167,9 +168,10 @@ library EIP712Hash {
       keccak256(
         abi.encode(
           CREDIT_DELEGATION_TYPEHASH,
+          params.spoke,
+          params.reserveId,
           params.owner,
           params.spender,
-          params.reserveId,
           params.amount,
           params.nonce,
           params.deadline

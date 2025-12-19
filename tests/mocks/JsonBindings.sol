@@ -57,9 +57,9 @@ library JsonBindings {
   // prettier-ignore
   string constant schema_UpdateUserDynamicConfig = "UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_WithdrawPermit = "WithdrawPermit(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)";
+  string constant schema_WithdrawPermit = "WithdrawPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_CreditDelegation = "CreditDelegation(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)";
+  string constant schema_CreditDelegation = "CreditDelegation(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)";
 
   function serialize(
     EIP712Types.SetUserPositionManager memory value

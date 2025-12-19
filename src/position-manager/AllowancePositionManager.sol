@@ -25,22 +25,28 @@ contract AllowancePositionManager is
   using MathUtils for uint256;
   using EIP712Hash for *;
 
-  mapping(address owner => mapping(address spender => mapping(uint256 reserveId => uint256 amount)))
+  mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
     private _withdrawAllowances;
 
-  mapping(address owner => mapping(address spender => mapping(uint256 reserveId => uint256 amount)))
+  mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
     private _creditDelegations;
 
   /// @dev Constructor.
-  /// @param spoke_ The address of the spoke contract.
-  constructor(address spoke_) PositionManagerBase(spoke_) {}
+  /// @param initialOwner_ The address of the initial owner.
+  constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
 
   /// @inheritdoc IAllowancePositionManager
-  function approveWithdraw(address spender, uint256 reserveId, uint256 amount) external {
+  function approveWithdraw(
+    address spoke,
+    uint256 reserveId,
+    address spender,
+    uint256 amount
+  ) external onlyRegisteredSpoke(spoke) {
     _updateWithdrawAllowance({
+      spoke: spoke,
+      reserveId: reserveId,
       owner: msg.sender,
       spender: spender,
-      reserveId: reserveId,
       newAllowance: amount
     });
   }
@@ -49,7 +55,7 @@ contract AllowancePositionManager is
   function approveWithdrawWithSig(
     EIP712Types.WithdrawPermit calldata params,
     bytes calldata signature
-  ) external {
+  ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 digest = _hashTypedData(params.hash());
     require(
@@ -59,19 +65,26 @@ contract AllowancePositionManager is
     _useCheckedNonce(params.owner, params.nonce);
 
     _updateWithdrawAllowance({
+      spoke: params.spoke,
+      reserveId: params.reserveId,
       owner: params.owner,
       spender: params.spender,
-      reserveId: params.reserveId,
       newAllowance: params.amount
     });
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function delegateCredit(address spender, uint256 reserveId, uint256 amount) external {
+  function delegateCredit(
+    address spoke,
+    uint256 reserveId,
+    address spender,
+    uint256 amount
+  ) external onlyRegisteredSpoke(spoke) {
     _updateCreditDelegation({
+      spoke: spoke,
+      reserveId: reserveId,
       owner: msg.sender,
       spender: spender,
-      reserveId: reserveId,
       newCreditDelegation: amount
     });
   }
@@ -80,7 +93,7 @@ contract AllowancePositionManager is
   function delegateCreditWithSig(
     EIP712Types.CreditDelegation calldata params,
     bytes calldata signature
-  ) external {
+  ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     bytes32 digest = _hashTypedData(params.hash());
     require(
@@ -90,54 +103,67 @@ contract AllowancePositionManager is
     _useCheckedNonce(params.owner, params.nonce);
 
     _updateCreditDelegation({
+      spoke: params.spoke,
+      reserveId: params.reserveId,
       owner: params.owner,
       spender: params.spender,
-      reserveId: params.reserveId,
       newCreditDelegation: params.amount
     });
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function renounceWithdrawAllowance(address owner, uint256 reserveId) external {
-    if (_withdrawAllowances[owner][msg.sender][reserveId] == 0) {
+  function renounceWithdrawAllowance(
+    address spoke,
+    uint256 reserveId,
+    address owner
+  ) external onlyRegisteredSpoke(spoke) {
+    if (_withdrawAllowances[spoke][reserveId][owner][msg.sender] == 0) {
       return;
     }
     _updateWithdrawAllowance({
+      spoke: spoke,
+      reserveId: reserveId,
       owner: owner,
       spender: msg.sender,
-      reserveId: reserveId,
       newAllowance: 0
     });
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function renounceCreditDelegation(address owner, uint256 reserveId) external {
-    if (_creditDelegations[owner][msg.sender][reserveId] == 0) {
+  function renounceCreditDelegation(
+    address spoke,
+    uint256 reserveId,
+    address owner
+  ) external onlyRegisteredSpoke(spoke) {
+    if (_creditDelegations[spoke][reserveId][owner][msg.sender] == 0) {
       return;
     }
     _updateCreditDelegation({
+      spoke: spoke,
+      reserveId: reserveId,
       owner: owner,
       spender: msg.sender,
-      reserveId: reserveId,
       newCreditDelegation: 0
     });
   }
 
   /// @inheritdoc IAllowancePositionManager
   function withdrawOnBehalfOf(
+    address spoke,
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external returns (uint256, uint256) {
-    IERC20 asset = _getReserveUnderlying(reserveId);
+  ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
+    IERC20 asset = IERC20(_getReserveUnderlying(spoke, reserveId));
     _spendWithdrawAllowance({
+      spoke: spoke,
+      reserveId: reserveId,
       owner: onBehalfOf,
       spender: msg.sender,
-      reserveId: reserveId,
       amount: amount
     });
 
-    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(SPOKE).withdraw(
+    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(spoke).withdraw(
       reserveId,
       amount,
       onBehalfOf
@@ -149,19 +175,21 @@ contract AllowancePositionManager is
 
   /// @inheritdoc IAllowancePositionManager
   function borrowOnBehalfOf(
+    address spoke,
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external returns (uint256, uint256) {
-    IERC20 asset = _getReserveUnderlying(reserveId);
+  ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
+    IERC20 asset = IERC20(_getReserveUnderlying(spoke, reserveId));
     _spendCreditDelegation({
+      spoke: spoke,
+      reserveId: reserveId,
       owner: onBehalfOf,
       spender: msg.sender,
-      reserveId: reserveId,
       amount: amount
     });
 
-    (uint256 borrowedShares, uint256 borrowedAmount) = ISpokeBase(SPOKE).borrow(
+    (uint256 borrowedShares, uint256 borrowedAmount) = ISpokeBase(spoke).borrow(
       reserveId,
       amount,
       onBehalfOf
@@ -173,20 +201,22 @@ contract AllowancePositionManager is
 
   /// @inheritdoc IAllowancePositionManager
   function withdrawAllowance(
+    address spoke,
+    uint256 reserveId,
     address owner,
-    address spender,
-    uint256 reserveId
+    address spender
   ) external view returns (uint256) {
-    return _withdrawAllowances[owner][spender][reserveId];
+    return _withdrawAllowances[spoke][reserveId][owner][spender];
   }
 
   /// @inheritdoc IAllowancePositionManager
   function creditDelegation(
+    address spoke,
+    uint256 reserveId,
     address owner,
-    address spender,
-    uint256 reserveId
+    address spender
   ) external view returns (uint256) {
-    return _creditDelegations[owner][spender][reserveId];
+    return _creditDelegations[spoke][reserveId][owner][spender];
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -205,45 +235,49 @@ contract AllowancePositionManager is
   }
 
   function _updateWithdrawAllowance(
+    address spoke,
+    uint256 reserveId,
     address owner,
     address spender,
-    uint256 reserveId,
     uint256 newAllowance
   ) internal {
-    _withdrawAllowances[owner][spender][reserveId] = newAllowance;
-    emit WithdrawApproval(owner, spender, reserveId, newAllowance);
+    _withdrawAllowances[spoke][reserveId][owner][spender] = newAllowance;
+    emit WithdrawApproval(spoke, reserveId, owner, spender, newAllowance);
   }
 
   function _updateCreditDelegation(
+    address spoke,
+    uint256 reserveId,
     address owner,
     address spender,
-    uint256 reserveId,
     uint256 newCreditDelegation
   ) internal {
-    _creditDelegations[owner][spender][reserveId] = newCreditDelegation;
-    emit CreditDelegation(owner, spender, reserveId, newCreditDelegation);
+    _creditDelegations[spoke][reserveId][owner][spender] = newCreditDelegation;
+    emit CreditDelegation(spoke, reserveId, owner, spender, newCreditDelegation);
   }
 
   function _spendWithdrawAllowance(
+    address spoke,
+    uint256 reserveId,
     address owner,
     address spender,
-    uint256 reserveId,
     uint256 amount
   ) internal {
-    uint256 currentAllowance = _withdrawAllowances[owner][spender][reserveId];
+    uint256 currentAllowance = _withdrawAllowances[spoke][reserveId][owner][spender];
     require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
-    _withdrawAllowances[owner][spender][reserveId] = currentAllowance.uncheckedSub(amount);
+    _withdrawAllowances[spoke][reserveId][owner][spender] = currentAllowance.uncheckedSub(amount);
   }
 
   function _spendCreditDelegation(
+    address spoke,
+    uint256 reserveId,
     address owner,
     address spender,
-    uint256 reserveId,
     uint256 amount
   ) internal {
-    uint256 currentAllowance = _creditDelegations[owner][spender][reserveId];
+    uint256 currentAllowance = _creditDelegations[spoke][reserveId][owner][spender];
     require(currentAllowance >= amount, InsufficientCreditDelegation(currentAllowance, amount));
-    _creditDelegations[owner][spender][reserveId] = currentAllowance.uncheckedSub(amount);
+    _creditDelegations[spoke][reserveId][owner][spender] = currentAllowance.uncheckedSub(amount);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

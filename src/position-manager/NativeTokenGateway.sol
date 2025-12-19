@@ -5,7 +5,8 @@ pragma solidity 0.8.28;
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
+import {IMulticall, Multicall} from 'src/utils/Multicall.sol';
+import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
@@ -14,7 +15,7 @@ import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenG
 /// @author Aave Labs
 /// @notice Gateway to interact with a spoke using the native coin of a chain.
 /// @dev Contract must be an active & approved user position manager in order to execute spoke actions on a user's behalf.
-contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuardTransient {
+contract NativeTokenGateway is INativeTokenGateway, PositionManagerBase, ReentrancyGuardTransient {
   using SafeERC20 for *;
 
   INativeWrapper internal immutable _nativeWrapper;
@@ -22,7 +23,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
   /// @dev Constructor.
   /// @param nativeWrapper_ The address of the native wrapper contract.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address nativeWrapper_, address initialOwner_) GatewayBase(initialOwner_) {
+  constructor(address nativeWrapper_, address initialOwner_) PositionManagerBase(initialOwner_) {
     require(nativeWrapper_ != address(0), InvalidAddress());
     _nativeWrapper = INativeWrapper(payable(nativeWrapper_));
   }
@@ -34,6 +35,13 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
 
   /// @dev Unsupported fallback function.
   fallback() external payable {
+    revert UnsupportedAction();
+  }
+
+  /// @dev Unsupported multicall function.
+  function multicall(
+    bytes[] calldata data
+  ) external override(IMulticall, Multicall) returns (bytes[] memory) {
     revert UnsupportedAction();
   }
 

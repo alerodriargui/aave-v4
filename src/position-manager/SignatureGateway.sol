@@ -10,7 +10,7 @@ import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
-import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
+import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
 
@@ -20,13 +20,13 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 /// @dev Contract must be an active & approved user position manager to execute spoke actions on user's behalf.
 /// @dev Uses keyed-nonces where each key's namespace nonce is consumed sequentially. Intents bundled through
 /// multicall can be executed independently in order of signed nonce & deadline; does not guarantee batch atomicity.
-contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multicall, EIP712 {
+contract SignatureGateway is ISignatureGateway, PositionManagerBase, NoncesKeyed, EIP712 {
   using SafeERC20 for IERC20;
   using EIP712Hash for *;
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address initialOwner_) GatewayBase(initialOwner_) {}
+  constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
 
   /// @inheritdoc ISignatureGateway
   function supplyWithSig(
@@ -165,52 +165,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, NoncesKeyed, Multic
     _useCheckedNonce(params.user, params.nonce);
 
     ISpoke(params.spoke).updateUserDynamicConfig(params.user);
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function setSelfAsUserPositionManagerWithSig(
-    address spoke,
-    address user,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
-    bytes calldata signature
-  ) external onlyRegisteredSpoke(spoke) {
-    try
-      ISpoke(spoke).setUserPositionManagerWithSig({
-        positionManager: address(this),
-        user: user,
-        approve: approve,
-        nonce: nonce,
-        deadline: deadline,
-        signature: signature
-      })
-    {} catch {}
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function permitReserve(
-    address spoke,
-    uint256 reserveId,
-    address onBehalfOf,
-    uint256 value,
-    uint256 deadline,
-    uint8 permitV,
-    bytes32 permitR,
-    bytes32 permitS
-  ) external onlyRegisteredSpoke(spoke) {
-    address underlying = _getReserveUnderlying(spoke, reserveId);
-    try
-      IERC20Permit(underlying).permit({
-        owner: onBehalfOf,
-        spender: address(this),
-        value: value,
-        deadline: deadline,
-        v: permitV,
-        r: permitR,
-        s: permitS
-      })
-    {} catch {}
   }
 
   /// @inheritdoc ISignatureGateway

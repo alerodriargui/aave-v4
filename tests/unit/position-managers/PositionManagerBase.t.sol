@@ -5,45 +5,38 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract PositionManagerBaseTest is SpokeBase {
-  ISpoke public spoke;
   PositionManagerBaseWrapper public positionManager;
   uint256 public alicePk;
 
   function setUp() public virtual override {
     super.setUp();
 
-    spoke = spoke1;
     (alice, alicePk) = makeAddrAndKey('alice');
-    positionManager = new PositionManagerBaseWrapper(address(spoke));
+    positionManager = new PositionManagerBaseWrapper(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updatePositionManager(address(positionManager), true);
+    spoke1.updatePositionManager(address(positionManager), true);
   }
 
-  function test_constructor_fuzz(address randomSpoke) public {
-    vm.assume(randomSpoke != address(0));
-    PositionManagerBaseWrapper pm = new PositionManagerBaseWrapper(randomSpoke);
+  function test_constructor() public {
+    assertEq(positionManager.owner(), address(ADMIN));
+    assertEq(positionManager.pendingOwner(), address(0));
 
-    assertEq(pm.SPOKE(), randomSpoke);
-  }
-
-  function test_constructor_revertsWith_InvalidAddress() public {
-    vm.expectRevert(abi.encodeWithSelector(IPositionManagerBase.InvalidAddress.selector));
-    new PositionManagerBaseWrapper(address(0));
+    assertEq(positionManager.rescueGuardian(), address(ADMIN));
   }
 
   function test_getReserveUnderlying_fuzz(uint256 reserveId) public view {
-    reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
-    address expectedUnderlying = address(_underlying(spoke, reserveId));
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    address expectedUnderlying = address(_underlying(spoke1, reserveId));
 
-    assertEq(positionManager.getReserveUnderlying(reserveId), expectedUnderlying);
+    assertEq(positionManager.getReserveUnderlying(address(spoke1), reserveId), expectedUnderlying);
   }
 
   function test_getReserveUnderlying_revertsWith_ReserveNotListed() public {
-    uint256 reserveId = _randomInvalidReserveId(spoke);
+    uint256 reserveId = _randomInvalidReserveId(spoke1);
 
     vm.expectRevert(abi.encodeWithSelector(ISpoke.ReserveNotListed.selector));
-    positionManager.getReserveUnderlying(reserveId);
+    positionManager.getReserveUnderlying(address(spoke1), reserveId);
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
@@ -51,18 +44,22 @@ contract PositionManagerBaseTest is SpokeBase {
       positionManager: address(positionManager),
       user: alice,
       approve: true,
-      nonce: spoke.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke
+      nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke1
       deadline: _warpBeforeRandomDeadline()
     });
-    bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke, p));
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
-    assertFalse(spoke.isPositionManager(alice, address(positionManager)));
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(spoke1), true);
 
-    vm.expectEmit(address(spoke));
+    assertFalse(spoke1.isPositionManager(alice, address(positionManager)));
+
+    vm.expectEmit(address(spoke1));
     emit ISpoke.SetUserPositionManager(alice, address(positionManager), p.approve);
 
     vm.prank(vm.randomAddress());
     positionManager.setSelfAsUserPositionManagerWithSig(
+      address(spoke1),
       p.user,
       p.approve,
       p.nonce,
@@ -70,15 +67,18 @@ contract PositionManagerBaseTest is SpokeBase {
       signature
     );
 
-    _assertNonceIncrement(ISignatureGateway(address(spoke)), alice, p.nonce); // note: nonce consumed on spoke
-    assertTrue(spoke.isPositionManager(alice, address(positionManager)));
+    _assertNonceIncrement(ISignatureGateway(address(spoke1)), alice, p.nonce); // note: nonce consumed on spoke1
+    assertTrue(spoke1.isPositionManager(alice, address(positionManager)));
   }
 
   function test_permitReserveUnderlying_revertsWith_ReserveNotListed() public {
-    uint256 unlistedReserveId = vm.randomUint(spoke.getReserveCount() + 1, UINT256_MAX);
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(spoke1), true);
+    uint256 unlistedReserveId = vm.randomUint(spoke1.getReserveCount() + 1, UINT256_MAX);
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(vm.randomAddress());
     positionManager.permitReserveUnderlying(
+      address(spoke1),
       unlistedReserveId,
       vm.randomAddress(),
       vm.randomUint(),
@@ -90,7 +90,7 @@ contract PositionManagerBaseTest is SpokeBase {
   }
 
   function test_permitReserveUnderlying_forwards_correct_call() public {
-    uint256 reserveId = _randomReserveId(spoke);
+    uint256 reserveId = _randomReserveId(spoke1);
     address owner = vm.randomAddress();
     address spender = address(positionManager);
     uint256 value = vm.randomUint();
@@ -99,23 +99,39 @@ contract PositionManagerBaseTest is SpokeBase {
     bytes32 r = bytes32(vm.randomUint());
     bytes32 s = bytes32(vm.randomUint());
 
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(spoke1), true);
+
     vm.expectCall(
-      address(_underlying(spoke, reserveId)),
+      address(_underlying(spoke1, reserveId)),
       abi.encodeCall(TestnetERC20.permit, (owner, spender, value, deadline, v, r, s)),
       1
     );
     vm.prank(vm.randomAddress());
-    positionManager.permitReserveUnderlying(reserveId, owner, value, deadline, v, r, s);
+    positionManager.permitReserveUnderlying(
+      address(spoke1),
+      reserveId,
+      owner,
+      value,
+      deadline,
+      v,
+      r,
+      s
+    );
   }
 
   function test_permitReserveUnderlying_ignores_permit_reverts() public {
-    uint256 reserveId = _randomReserveId(spoke);
-    address token = address(_underlying(spoke, reserveId));
+    uint256 reserveId = _randomReserveId(spoke1);
+    address token = address(_underlying(spoke1, reserveId));
+
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(spoke1), true);
 
     vm.mockCallRevert(token, TestnetERC20.permit.selector, vm.randomBytes(64));
 
     vm.prank(vm.randomAddress());
     positionManager.permitReserveUnderlying(
+      address(spoke1),
       reserveId,
       vm.randomAddress(),
       vm.randomUint(),
@@ -128,8 +144,11 @@ contract PositionManagerBaseTest is SpokeBase {
 
   function test_permitReserveUnderlying() public {
     (address user, uint256 userPk) = makeAddrAndKey('user');
-    uint256 reserveId = _randomReserveId(spoke);
-    TestnetERC20 token = TestnetERC20(address(_underlying(spoke, reserveId)));
+    uint256 reserveId = _randomReserveId(spoke1);
+    TestnetERC20 token = TestnetERC20(address(_underlying(spoke1, reserveId)));
+
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(spoke1), true);
 
     assertEq(token.allowance(user, address(positionManager)), 0);
 
@@ -147,6 +166,7 @@ contract PositionManagerBaseTest is SpokeBase {
     emit IERC20.Approval(user, address(positionManager), params.value);
     vm.prank(vm.randomAddress());
     positionManager.permitReserveUnderlying(
+      address(spoke1),
       reserveId,
       user,
       params.value,
@@ -157,5 +177,90 @@ contract PositionManagerBaseTest is SpokeBase {
     );
 
     assertEq(token.allowance(user, address(positionManager)), params.value);
+  }
+
+  function test_registerSpoke_fuzz(address newSpoke) public {
+    vm.assume(newSpoke != address(0));
+    assertFalse(positionManager.isSpokeRegistered(newSpoke));
+
+    vm.expectEmit(address(positionManager));
+    emit IPositionManagerBase.SpokeRegistered(newSpoke, true);
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(newSpoke, true);
+
+    assertTrue(positionManager.isSpokeRegistered(newSpoke));
+  }
+
+  function test_registerSpoke_unregister() public {
+    assertFalse(positionManager.isSpokeRegistered(address(spoke1)));
+
+    vm.expectEmit(address(positionManager));
+    emit IPositionManagerBase.SpokeRegistered(address(spoke1), true);
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(spoke1), true);
+
+    assertTrue(positionManager.isSpokeRegistered(address(spoke1)));
+
+    vm.expectEmit(address(positionManager));
+    emit IPositionManagerBase.SpokeRegistered(address(spoke1), false);
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(spoke1), false);
+
+    assertFalse(positionManager.isSpokeRegistered(address(spoke1)));
+  }
+
+  function test_registerSpoke_revertsWith_OwnableUnauthorizedAccount() public {
+    address user = vm.randomAddress();
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
+    vm.prank(user);
+    positionManager.registerSpoke(address(spoke1), true);
+  }
+
+  function test_registerSpoke_revertsWith_InvalidAddress() public {
+    vm.expectRevert(IPositionManagerBase.InvalidAddress.selector);
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(0), true);
+  }
+
+  function test_renouncePositionManagerRole() public {
+    address user = vm.randomAddress();
+
+    vm.prank(user);
+    spoke1.setUserPositionManager(address(positionManager), true);
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(spoke1), true);
+
+    assertTrue(spoke1.isPositionManager(user, address(positionManager)));
+
+    vm.prank(ADMIN);
+    positionManager.renouncePositionManagerRole(address(spoke1), user);
+
+    assertFalse(spoke1.isPositionManager(user, address(positionManager)));
+  }
+
+  function test_renouncePositionManagerRole_revertsWith_OwnableUnauthorizedAccount() public {
+    address user = vm.randomAddress();
+
+    vm.prank(user);
+    spoke1.setUserPositionManager(address(positionManager), true);
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(spoke1), true);
+
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
+    vm.prank(user);
+    positionManager.renouncePositionManagerRole(address(spoke1), user);
+  }
+
+  function test_renouncePositionManagerRole_revertsWith_InvalidAddress() public {
+    address user = vm.randomAddress();
+
+    vm.prank(user);
+    spoke1.setUserPositionManager(address(positionManager), true);
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(spoke1), true);
+
+    vm.expectRevert(IPositionManagerBase.InvalidAddress.selector);
+    vm.prank(ADMIN);
+    positionManager.renouncePositionManagerRole(address(spoke1), address(0));
   }
 }

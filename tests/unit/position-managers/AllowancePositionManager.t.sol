@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract AllowancePositionManagerTest is SpokeBase {
-  ISpoke public spoke;
   AllowancePositionManager public positionManager;
   TestReturnValues public returnValues;
   uint256 public alicePk;
@@ -13,15 +12,17 @@ contract AllowancePositionManagerTest is SpokeBase {
   function setUp() public virtual override {
     super.setUp();
 
-    spoke = spoke1;
     (alice, alicePk) = makeAddrAndKey('alice');
-    positionManager = new AllowancePositionManager(address(spoke));
+    positionManager = new AllowancePositionManager(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updatePositionManager(address(positionManager), true);
+    spoke1.updatePositionManager(address(positionManager), true);
 
     vm.prank(alice);
-    spoke.setUserPositionManager(address(positionManager), true);
+    spoke1.setUserPositionManager(address(positionManager), true);
+
+    vm.prank(ADMIN);
+    positionManager.registerSpoke(address(spoke1), true);
   }
 
   function test_eip712Domain() public {
@@ -70,22 +71,28 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(
       positionManager.WITHDRAW_PERMIT_TYPEHASH(),
       keccak256(
-        'WithdrawPermit(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)'
+        'WithdrawPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)'
       )
     );
   }
 
   function test_approveWithdraw_fuzz(address spender, uint256 reserveId, uint256 amount) public {
     vm.assume(spender != address(0));
-    reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, mintAmount_DAI);
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.WithdrawApproval(alice, spender, reserveId, amount);
+    emit IAllowancePositionManager.WithdrawApproval(
+      address(spoke1),
+      reserveId,
+      alice,
+      spender,
+      amount
+    );
     vm.prank(alice);
-    positionManager.approveWithdraw(spender, reserveId, amount);
+    positionManager.approveWithdraw(address(spoke1), reserveId, spender, amount);
 
-    assertEq(positionManager.withdrawAllowance(alice, spender, reserveId), amount);
+    assertEq(positionManager.withdrawAllowance(address(spoke1), reserveId, alice, spender), amount);
   }
 
   function test_approveWithdrawWithSig_fuzz(
@@ -94,7 +101,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     uint256 amount
   ) public {
     vm.assume(spender != address(0));
-    reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, mintAmount_DAI);
 
     EIP712Types.WithdrawPermit memory p = _withdrawPermitData(
@@ -108,11 +115,17 @@ contract AllowancePositionManagerTest is SpokeBase {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.WithdrawApproval(alice, spender, reserveId, amount);
+    emit IAllowancePositionManager.WithdrawApproval(
+      address(spoke1),
+      reserveId,
+      alice,
+      spender,
+      amount
+    );
     vm.prank(vm.randomAddress());
     positionManager.approveWithdrawWithSig(p, signature);
 
-    assertEq(positionManager.withdrawAllowance(alice, spender, reserveId), amount);
+    assertEq(positionManager.withdrawAllowance(address(spoke1), reserveId, alice, spender), amount);
   }
 
   function test_approveWithdrawWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
@@ -164,33 +177,60 @@ contract AllowancePositionManagerTest is SpokeBase {
     positionManager.approveWithdrawWithSig(p, signature);
   }
 
+  function test_approveWithdraw_revertsWith_SpokeNotRegistered() public {
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
+    vm.prank(alice);
+    positionManager.approveWithdraw(address(spoke2), 1, bob, 100e18);
+  }
+
+  function test_approveWithdrawWithSig_revertsWith_SpokeNotRegistered() public {
+    EIP712Types.WithdrawPermit memory p = _withdrawPermitData(
+      bob,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
+    p.spoke = address(spoke2);
+    p.nonce = _burnRandomNoncesAtKey(positionManager, alice);
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
+
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
+    vm.prank(alice);
+    positionManager.approveWithdrawWithSig(p, signature);
+  }
+
   function test_renounceWithdrawAllowance_fuzz(uint256 initialAllowance) public {
-    uint256 reserveId = _randomReserveId(spoke);
+    uint256 reserveId = _randomReserveId(spoke1);
     initialAllowance = bound(initialAllowance, 1, mintAmount_DAI);
 
     vm.prank(alice);
-    positionManager.approveWithdraw(bob, reserveId, initialAllowance);
+    positionManager.approveWithdraw(address(spoke1), reserveId, bob, initialAllowance);
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.WithdrawApproval(alice, bob, reserveId, 0);
+    emit IAllowancePositionManager.WithdrawApproval(address(spoke1), reserveId, alice, bob, 0);
     vm.prank(bob);
-    positionManager.renounceWithdrawAllowance(alice, reserveId);
+    positionManager.renounceWithdrawAllowance(address(spoke1), reserveId, alice);
 
-    assertEq(positionManager.withdrawAllowance(alice, bob, reserveId), 0);
+    assertEq(positionManager.withdrawAllowance(address(spoke1), reserveId, alice, bob), 0);
   }
 
   function test_renounceWithdrawAllowance_noop_alreadyRenounced() public {
-    uint256 reserveId = _randomReserveId(spoke);
+    uint256 reserveId = _randomReserveId(spoke1);
 
     vm.prank(alice);
-    positionManager.approveWithdraw(bob, reserveId, 100e18);
+    positionManager.approveWithdraw(address(spoke1), reserveId, bob, 100e18);
     vm.prank(bob);
-    positionManager.renounceWithdrawAllowance(alice, reserveId);
+    positionManager.renounceWithdrawAllowance(address(spoke1), reserveId, alice);
 
     vm.recordLogs();
     vm.prank(bob);
-    positionManager.renounceWithdrawAllowance(alice, reserveId);
+    positionManager.renounceWithdrawAllowance(address(spoke1), reserveId, alice);
     assertEq(vm.getRecordedLogs().length, 0);
+  }
+
+  function test_renounceWithdrawAllowance_revertsWith_SpokeNotRegistered() public {
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
+    vm.prank(bob);
+    positionManager.renounceWithdrawAllowance(address(spoke2), 1, alice);
   }
 
   function test_withdrawOnBehalfOf() public {
@@ -201,8 +241,8 @@ contract AllowancePositionManagerTest is SpokeBase {
     amount = bound(amount, 1, mintAmount_DAI);
 
     Utils.supply({
-      spoke: spoke,
-      reserveId: _daiReserveId(spoke),
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
       caller: alice,
       amount: mintAmount_DAI,
       onBehalfOf: alice
@@ -210,18 +250,18 @@ contract AllowancePositionManagerTest is SpokeBase {
     uint256 expectedSupplyShares = hub1.previewAddByAssets(daiAssetId, mintAmount_DAI);
 
     vm.prank(alice);
-    positionManager.approveWithdraw(bob, _daiReserveId(spoke), amount);
+    positionManager.approveWithdraw(address(spoke1), _daiReserveId(spoke1), bob, amount);
 
     uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
     uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
-    uint256 userSuppliedAmountBefore = spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice);
+    uint256 userSuppliedAmountBefore = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice);
 
-    assertEq(spoke.getUserSuppliedShares(_daiReserveId(spoke), alice), expectedSupplyShares);
+    assertEq(spoke1.getUserSuppliedShares(_daiReserveId(spoke1), alice), expectedSupplyShares);
 
-    vm.expectEmit(address(spoke));
+    vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(
-      _daiReserveId(spoke),
+      _daiReserveId(spoke1),
       address(positionManager),
       alice,
       hub1.previewRemoveByAssets(daiAssetId, amount),
@@ -229,7 +269,8 @@ contract AllowancePositionManagerTest is SpokeBase {
     );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = positionManager.withdrawOnBehalfOf(
-      _daiReserveId(spoke),
+      address(spoke1),
+      _daiReserveId(spoke1),
       amount,
       alice
     );
@@ -240,21 +281,24 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(alice), userBalanceBefore);
     assertEq(tokenList.dai.balanceOf(bob), callerBalanceBefore + amount);
     assertEq(
-      spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice),
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice),
       userSuppliedAmountBefore - amount
     );
     assertEq(tokenList.dai.balanceOf(address(hub1)), hubBalanceBefore - amount);
     assertEq(tokenList.dai.balanceOf(address(positionManager)), 0);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
-    assertEq(positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)), 0);
+    assertEq(
+      positionManager.withdrawAllowance(address(spoke1), _daiReserveId(spoke1), alice, bob),
+      0
+    );
   }
 
   function test_withdrawOnBehalfOf_fuzz_allBalance(uint256 supplyAmount) public {
     supplyAmount = bound(supplyAmount, 1, mintAmount_DAI);
 
     Utils.supply({
-      spoke: spoke,
-      reserveId: _daiReserveId(spoke),
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
       caller: alice,
       amount: supplyAmount,
       onBehalfOf: alice
@@ -262,18 +306,23 @@ contract AllowancePositionManagerTest is SpokeBase {
     uint256 expectedSupplyShares = hub1.previewAddByAssets(daiAssetId, supplyAmount);
 
     vm.prank(alice);
-    positionManager.approveWithdraw(bob, _daiReserveId(spoke), supplyAmount * 10);
+    positionManager.approveWithdraw(address(spoke1), _daiReserveId(spoke1), bob, supplyAmount * 10);
 
     uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
     uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
-    uint256 allowanceBefore = positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke));
+    uint256 allowanceBefore = positionManager.withdrawAllowance(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      alice,
+      bob
+    );
 
-    assertEq(spoke.getUserSuppliedShares(_daiReserveId(spoke), alice), expectedSupplyShares);
+    assertEq(spoke1.getUserSuppliedShares(_daiReserveId(spoke1), alice), expectedSupplyShares);
 
-    vm.expectEmit(address(spoke));
+    vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(
-      _daiReserveId(spoke),
+      _daiReserveId(spoke1),
       address(positionManager),
       alice,
       expectedSupplyShares,
@@ -281,7 +330,8 @@ contract AllowancePositionManagerTest is SpokeBase {
     );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = positionManager.withdrawOnBehalfOf(
-      _daiReserveId(spoke),
+      address(spoke1),
+      _daiReserveId(spoke1),
       supplyAmount * 2,
       alice
     );
@@ -291,12 +341,12 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     assertEq(tokenList.dai.balanceOf(alice), userBalanceBefore);
     assertEq(tokenList.dai.balanceOf(bob), callerBalanceBefore + supplyAmount);
-    assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
+    assertEq(spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice), 0);
     assertEq(tokenList.dai.balanceOf(address(hub1)), hubBalanceBefore - supplyAmount);
     assertEq(tokenList.dai.balanceOf(address(positionManager)), 0);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(
-      positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)),
+      positionManager.withdrawAllowance(address(spoke1), _daiReserveId(spoke1), alice, bob),
       allowanceBefore - (supplyAmount * 2)
     );
   }
@@ -309,15 +359,15 @@ contract AllowancePositionManagerTest is SpokeBase {
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
 
     Utils.supplyCollateral({
-      spoke: spoke,
-      reserveId: _daiReserveId(spoke),
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
       caller: alice,
       amount: supplyAmount,
       onBehalfOf: alice
     });
     Utils.supplyCollateral({
-      spoke: spoke,
-      reserveId: _daiReserveId(spoke),
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
       caller: bob,
       amount: supplyAmount,
       onBehalfOf: bob
@@ -325,8 +375,8 @@ contract AllowancePositionManagerTest is SpokeBase {
     uint256 expectedSupplyShares = hub1.previewAddByAssets(daiAssetId, supplyAmount);
 
     Utils.borrow({
-      spoke: spoke,
-      reserveId: _daiReserveId(spoke),
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
       caller: bob,
       amount: borrowAmount,
       onBehalfOf: bob
@@ -334,31 +384,31 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     skip(322 days);
     vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
-    uint256 repayAmount = spoke.getReserveTotalDebt(_daiReserveId(spoke));
+    uint256 repayAmount = spoke1.getReserveTotalDebt(_daiReserveId(spoke1));
     deal(address(tokenList.dai), bob, repayAmount);
 
     Utils.repay({
-      spoke: spoke,
-      reserveId: _daiReserveId(spoke),
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
       caller: bob,
       amount: UINT256_MAX,
       onBehalfOf: bob
     });
 
-    uint256 expectedWithdrawAmount = spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice);
+    uint256 expectedWithdrawAmount = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice);
 
     vm.prank(alice);
-    positionManager.approveWithdraw(bob, _daiReserveId(spoke), supplyAmount * 10);
+    positionManager.approveWithdraw(address(spoke1), _daiReserveId(spoke1), bob, supplyAmount * 10);
 
     uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
     uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
 
-    assertEq(spoke.getUserSuppliedShares(_daiReserveId(spoke), alice), expectedSupplyShares);
+    assertEq(spoke1.getUserSuppliedShares(_daiReserveId(spoke1), alice), expectedSupplyShares);
 
-    vm.expectEmit(address(spoke));
+    vm.expectEmit(address(spoke1));
     emit ISpokeBase.Withdraw(
-      _daiReserveId(spoke),
+      _daiReserveId(spoke1),
       address(positionManager),
       alice,
       expectedSupplyShares,
@@ -366,7 +416,8 @@ contract AllowancePositionManagerTest is SpokeBase {
     );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = positionManager.withdrawOnBehalfOf(
-      _daiReserveId(spoke),
+      address(spoke1),
+      _daiReserveId(spoke1),
       supplyAmount * 10,
       alice
     );
@@ -376,11 +427,14 @@ contract AllowancePositionManagerTest is SpokeBase {
 
     assertEq(tokenList.dai.balanceOf(alice), userBalanceBefore);
     assertEq(tokenList.dai.balanceOf(bob), callerBalanceBefore + expectedWithdrawAmount);
-    assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
+    assertEq(spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice), 0);
     assertEq(tokenList.dai.balanceOf(address(hub1)), hubBalanceBefore - expectedWithdrawAmount);
     assertEq(tokenList.dai.balanceOf(address(positionManager)), 0);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
-    assertEq(positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)), 0);
+    assertEq(
+      positionManager.withdrawAllowance(address(spoke1), _daiReserveId(spoke1), alice, bob),
+      0
+    );
   }
 
   function test_withdrawOnBehalfOf_revertsWith_InsufficientWithdrawAllowance(
@@ -390,15 +444,15 @@ contract AllowancePositionManagerTest is SpokeBase {
     approvalAmount = bound(approvalAmount, 1, amount - 1);
 
     Utils.supply({
-      spoke: spoke,
-      reserveId: _daiReserveId(spoke),
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
       caller: alice,
       amount: mintAmount_DAI,
       onBehalfOf: alice
     });
 
     vm.prank(alice);
-    positionManager.approveWithdraw(bob, _daiReserveId(spoke), approvalAmount);
+    positionManager.approveWithdraw(address(spoke1), _daiReserveId(spoke1), bob, approvalAmount);
 
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -408,18 +462,24 @@ contract AllowancePositionManagerTest is SpokeBase {
       )
     );
     vm.prank(bob);
-    positionManager.withdrawOnBehalfOf(_daiReserveId(spoke), amount, alice);
+    positionManager.withdrawOnBehalfOf(address(spoke1), _daiReserveId(spoke1), amount, alice);
   }
 
   function test_withdrawOnBehalfOf_revertsWith_ReserveNotListed() public {
-    uint256 reserveId = _randomInvalidReserveId(spoke);
+    uint256 reserveId = _randomInvalidReserveId(spoke1);
 
     vm.prank(alice);
-    positionManager.approveWithdraw(bob, reserveId, 100e18);
+    positionManager.approveWithdraw(address(spoke1), reserveId, bob, 100e18);
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(bob);
-    positionManager.withdrawOnBehalfOf(reserveId, 100e18, alice);
+    positionManager.withdrawOnBehalfOf(address(spoke1), reserveId, 100e18, alice);
+  }
+
+  function test_withdrawOnBehalfOf_revertsWith_SpokeNotRegistered() public {
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
+    vm.prank(bob);
+    positionManager.withdrawOnBehalfOf(address(spoke2), 1, 100e18, alice);
   }
 
   function test_creditDelegation_typeHash() public view {
@@ -427,22 +487,28 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(
       positionManager.CREDIT_DELEGATION_TYPEHASH(),
       keccak256(
-        'CreditDelegation(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)'
+        'CreditDelegation(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)'
       )
     );
   }
 
   function test_creditDelegation_fuzz(address spender, uint256 reserveId, uint256 amount) public {
     vm.assume(spender != address(0));
-    reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, mintAmount_DAI);
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.CreditDelegation(alice, spender, reserveId, amount);
+    emit IAllowancePositionManager.CreditDelegation(
+      address(spoke1),
+      reserveId,
+      alice,
+      spender,
+      amount
+    );
     vm.prank(alice);
-    positionManager.delegateCredit(spender, reserveId, amount);
+    positionManager.delegateCredit(address(spoke1), reserveId, spender, amount);
 
-    assertEq(positionManager.creditDelegation(alice, spender, reserveId), amount);
+    assertEq(positionManager.creditDelegation(address(spoke1), reserveId, alice, spender), amount);
   }
 
   function test_creditDelegationWithSig_fuzz(
@@ -451,7 +517,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     uint256 amount
   ) public {
     vm.assume(spender != address(0));
-    reserveId = bound(reserveId, 0, spoke.getReserveCount() - 1);
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, mintAmount_DAI);
 
     EIP712Types.CreditDelegation memory p = _creditDelegationData(
@@ -465,11 +531,17 @@ contract AllowancePositionManagerTest is SpokeBase {
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.CreditDelegation(alice, spender, reserveId, amount);
+    emit IAllowancePositionManager.CreditDelegation(
+      address(spoke1),
+      reserveId,
+      alice,
+      spender,
+      amount
+    );
     vm.prank(vm.randomAddress());
     positionManager.delegateCreditWithSig(p, signature);
 
-    assertEq(positionManager.creditDelegation(alice, spender, reserveId), amount);
+    assertEq(positionManager.creditDelegation(address(spoke1), reserveId, alice, spender), amount);
   }
 
   function test_creditDelegationWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
@@ -523,33 +595,60 @@ contract AllowancePositionManagerTest is SpokeBase {
     positionManager.delegateCreditWithSig(p, signature);
   }
 
+  function test_creditDelegation_revertsWith_SpokeNotRegistered() public {
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
+    vm.prank(alice);
+    positionManager.delegateCredit(address(spoke2), 1, bob, 100e18);
+  }
+
+  function test_creditDelegationWithSig_revertsWith_SpokeNotRegistered() public {
+    EIP712Types.CreditDelegation memory p = _creditDelegationData(
+      bob,
+      alice,
+      _warpBeforeRandomDeadline()
+    );
+    p.spoke = address(spoke2);
+    p.nonce = _burnRandomNoncesAtKey(positionManager, alice);
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
+
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
+    vm.prank(alice);
+    positionManager.delegateCreditWithSig(p, signature);
+  }
+
   function test_renounceCreditDelegation_fuzz(uint256 initialAllowance) public {
-    uint256 reserveId = _randomReserveId(spoke);
+    uint256 reserveId = _randomReserveId(spoke1);
     initialAllowance = bound(initialAllowance, 1, mintAmount_DAI);
 
     vm.prank(alice);
-    positionManager.delegateCredit(bob, reserveId, initialAllowance);
+    positionManager.delegateCredit(address(spoke1), reserveId, bob, initialAllowance);
 
     vm.expectEmit(address(positionManager));
-    emit IAllowancePositionManager.CreditDelegation(alice, bob, reserveId, 0);
+    emit IAllowancePositionManager.CreditDelegation(address(spoke1), reserveId, alice, bob, 0);
     vm.prank(bob);
-    positionManager.renounceCreditDelegation(alice, reserveId);
+    positionManager.renounceCreditDelegation(address(spoke1), reserveId, alice);
 
-    assertEq(positionManager.creditDelegation(alice, bob, reserveId), 0);
+    assertEq(positionManager.creditDelegation(address(spoke1), reserveId, alice, bob), 0);
   }
 
   function test_renounceCreditDelegation_noop_alreadyRenounced() public {
-    uint256 reserveId = _randomReserveId(spoke);
+    uint256 reserveId = _randomReserveId(spoke1);
 
     vm.prank(alice);
-    positionManager.delegateCredit(bob, reserveId, 100e18);
+    positionManager.delegateCredit(address(spoke1), reserveId, bob, 100e18);
     vm.prank(bob);
-    positionManager.renounceCreditDelegation(alice, reserveId);
+    positionManager.renounceCreditDelegation(address(spoke1), reserveId, alice);
 
     vm.recordLogs();
     vm.prank(bob);
-    positionManager.renounceCreditDelegation(alice, reserveId);
+    positionManager.renounceCreditDelegation(address(spoke1), reserveId, alice);
     assertEq(vm.getRecordedLogs().length, 0);
+  }
+
+  function test_renounceCreditDelegation_revertsWith_SpokeNotRegistered() public {
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
+    vm.prank(bob);
+    positionManager.renounceCreditDelegation(address(spoke2), 1, alice);
   }
 
   function test_borrowOnBehalfOf() public {
@@ -562,19 +661,24 @@ contract AllowancePositionManagerTest is SpokeBase {
     borrowAmount = bound(borrowAmount, 1, bobSupplyAmount);
     creditDelegationAmount = bound(creditDelegationAmount, borrowAmount, borrowAmount * 10);
 
-    Utils.supplyCollateral(spoke, _daiReserveId(spoke), alice, aliceSupplyAmount, alice);
-    Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, bobSupplyAmount, bob);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
 
     vm.prank(alice);
-    positionManager.delegateCredit(address(bob), _daiReserveId(spoke), creditDelegationAmount);
+    positionManager.delegateCredit(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      bob,
+      creditDelegationAmount
+    );
 
     uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
     uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
     uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
 
-    vm.expectEmit(address(spoke));
+    vm.expectEmit(address(spoke1));
     emit ISpokeBase.Borrow(
-      _daiReserveId(spoke),
+      _daiReserveId(spoke1),
       address(positionManager),
       alice,
       hub1.previewRestoreByAssets(daiAssetId, borrowAmount),
@@ -582,13 +686,14 @@ contract AllowancePositionManagerTest is SpokeBase {
     );
     vm.prank(bob);
     (returnValues.shares, returnValues.amount) = positionManager.borrowOnBehalfOf(
-      _daiReserveId(spoke),
+      address(spoke1),
+      _daiReserveId(spoke1),
       borrowAmount,
       alice
     );
 
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke.getUserDebt(
-      _daiReserveId(spoke),
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
       alice
     );
 
@@ -601,7 +706,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(tokenList.dai.balanceOf(address(bob)), callerBalanceBefore + borrowAmount);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(
-      positionManager.creditDelegation(alice, bob, _daiReserveId(spoke)),
+      positionManager.creditDelegation(address(spoke1), _daiReserveId(spoke1), alice, bob),
       creditDelegationAmount - borrowAmount
     );
   }
@@ -611,11 +716,16 @@ contract AllowancePositionManagerTest is SpokeBase {
   ) public {
     uint256 borrowAmount = 100e18;
     creditDelegationAmount = bound(creditDelegationAmount, 1, borrowAmount - 1);
-    Utils.supplyCollateral(spoke, _daiReserveId(spoke), alice, borrowAmount, alice);
-    Utils.supplyCollateral(spoke, _daiReserveId(spoke), bob, borrowAmount, bob);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
 
     vm.prank(alice);
-    positionManager.delegateCredit(address(bob), _daiReserveId(spoke), creditDelegationAmount);
+    positionManager.delegateCredit(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      bob,
+      creditDelegationAmount
+    );
 
     vm.expectRevert(
       abi.encodeWithSelector(
@@ -625,18 +735,24 @@ contract AllowancePositionManagerTest is SpokeBase {
       )
     );
     vm.prank(bob);
-    positionManager.borrowOnBehalfOf(_daiReserveId(spoke), borrowAmount, alice);
+    positionManager.borrowOnBehalfOf(address(spoke1), _daiReserveId(spoke1), borrowAmount, alice);
   }
 
   function test_borrowOnBehalfOf_revertsWith_ReserveNotListed() public {
-    uint256 reserveId = _randomInvalidReserveId(spoke);
+    uint256 reserveId = _randomInvalidReserveId(spoke1);
 
     vm.prank(alice);
-    positionManager.delegateCredit(bob, reserveId, 100e18);
+    positionManager.delegateCredit(address(spoke1), reserveId, bob, 100e18);
 
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(bob);
-    positionManager.borrowOnBehalfOf(reserveId, 100e18, alice);
+    positionManager.borrowOnBehalfOf(address(spoke1), reserveId, 100e18, alice);
+  }
+
+  function test_borrowOnBehalfOf_revertsWith_SpokeNotRegistered() public {
+    vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
+    vm.prank(bob);
+    positionManager.borrowOnBehalfOf(address(spoke2), 1, 100e18, alice);
   }
 
   function _withdrawPermitData(
@@ -646,9 +762,10 @@ contract AllowancePositionManagerTest is SpokeBase {
   ) internal returns (EIP712Types.WithdrawPermit memory) {
     return
       EIP712Types.WithdrawPermit({
+        spoke: address(spoke1),
+        reserveId: _randomReserveId(spoke1),
         owner: onBehalfOf,
         spender: spender,
-        reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         nonce: positionManager.nonces(onBehalfOf, _randomNonceKey()),
         deadline: deadline
@@ -662,9 +779,10 @@ contract AllowancePositionManagerTest is SpokeBase {
   ) internal returns (EIP712Types.CreditDelegation memory) {
     return
       EIP712Types.CreditDelegation({
+        spoke: address(spoke1),
+        reserveId: _randomReserveId(spoke1),
         owner: onBehalfOf,
         spender: spender,
-        reserveId: _randomReserveId(spoke),
         amount: vm.randomUint(1, MAX_SUPPLY_AMOUNT),
         nonce: positionManager.nonces(onBehalfOf, _randomNonceKey()),
         deadline: deadline

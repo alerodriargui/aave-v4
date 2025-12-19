@@ -1,11 +1,11 @@
 {
-  "approveWithdraw": "46773",
-  "approveWithdrawWithSig": "63006",
-  "borrowOnBehalfOf": "306510",
-  "delegateCredit": "46762",
-  "delegateCreditWithSig": "63059",
-  "renounceCreditDelegation": "24915",
-  "renounceWithdrawAllowance": "24926",
-  "withdrawOnBehalfOf: full": "121662",
-  "withdrawOnBehalfOf: partial": "131877"
+  "approveWithdraw": "49895",
+  "approveWithdrawWithSig": "66560",
+  "borrowOnBehalfOf": "309423",
+  "delegateCredit": "49864",
+  "delegateCreditWithSig": "66505",
+  "renounceCreditDelegation": "28020",
+  "renounceWithdrawAllowance": "28007",
+  "withdrawOnBehalfOf: full": "123885",
+  "withdrawOnBehalfOf: partial": "134656"
 }

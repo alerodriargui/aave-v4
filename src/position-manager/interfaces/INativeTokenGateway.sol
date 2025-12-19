@@ -2,13 +2,13 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
+import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
 /// @title INativeTokenGateway
 /// @author Aave Labs
 /// @notice Abstracts actions to the protocol involving the native token.
 /// @dev Must be set as `PositionManager` on the spoke for the user.
-interface INativeTokenGateway is IGatewayBase {
+interface INativeTokenGateway is IPositionManagerBase {
   /// @notice Thrown when the underlying asset is not the wrapped native asset.
   error NotNativeWrappedAsset();
 
