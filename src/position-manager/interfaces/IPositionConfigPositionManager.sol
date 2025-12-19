@@ -70,23 +70,23 @@ interface IPositionConfigPositionManager is IPositionManagerBase {
   function renounceUserDynamicConfigPermission(address owner) external;
 
   /// @notice Sets the using as collateral status on behalf of a user for a specified reserve.
-  /// @dev The Caller must have the permission to perform this action on behalf of the user.
-  /// @param onBehalfOf The address of the user.
+  /// @dev The `msg.sender` must have the permission to perform this action on behalf of the user.
   /// @param reserveId The id of the reserve.
   /// @param usingAsCollateral The new using as collateral status.
+  /// @param onBehalfOf The address of the user.
   function setUsingAsCollateralOnBehalfOf(
-    address onBehalfOf,
     uint256 reserveId,
-    bool usingAsCollateral
+    bool usingAsCollateral,
+    address onBehalfOf
   ) external;
 
   /// @notice Updates the user risk premium on behalf of a user.
-  /// @dev The Caller must have the permission to perform this action on behalf of the user.
+  /// @dev The `msg.sender` must have the permission to perform this action on behalf of the user.
   /// @param onBehalfOf The address of the user.
   function updateUserRiskPremiumOnBehalfOf(address onBehalfOf) external;
 
   /// @notice Updates the user dynamic config on behalf of a user.
-  /// @dev The Caller must have the permission to perform this action on behalf of the user.
+  /// @dev The `msg.sender` must have the permission to perform this action on behalf of the user.
   /// @param onBehalfOf The address of the user.
   function updateUserDynamicConfigOnBehalfOf(address onBehalfOf) external;
 

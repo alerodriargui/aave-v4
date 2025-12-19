@@ -327,7 +327,7 @@ contract PositionConfigPositionManager_Gas_Tests is SpokeBase {
     positionManager.setGlobalPermission(bob, true);
 
     vm.prank(bob);
-    positionManager.setUsingAsCollateralOnBehalfOf(alice, _daiReserveId(spoke1), true);
+    positionManager.setUsingAsCollateralOnBehalfOf(_daiReserveId(spoke1), true, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'setUsingAsCollateralOnBehalfOf');
   }
 

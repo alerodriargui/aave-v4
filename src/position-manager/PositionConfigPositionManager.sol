@@ -109,9 +109,9 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
 
   /// @inheritdoc IPositionConfigPositionManager
   function setUsingAsCollateralOnBehalfOf(
-    address onBehalfOf,
     uint256 reserveId,
-    bool usingAsCollateral
+    bool usingAsCollateral,
+    address onBehalfOf
   ) external {
     require(_config[onBehalfOf][msg.sender].canSetUsingAsCollateral(), CallerNotAllowed());
 

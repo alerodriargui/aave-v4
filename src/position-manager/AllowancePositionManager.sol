@@ -25,11 +25,9 @@ contract AllowancePositionManager is
   using MathUtils for uint256;
   using EIP712Hash for *;
 
-  /// @notice Mapping of withdraw allowances.
   mapping(address owner => mapping(address spender => mapping(uint256 reserveId => uint256 amount)))
     private _withdrawAllowances;
 
-  /// @notice Mapping of credit delegations.
   mapping(address owner => mapping(address spender => mapping(uint256 reserveId => uint256 amount)))
     private _creditDelegations;
 

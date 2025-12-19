@@ -212,10 +212,10 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.prank(alice);
     positionManager.approveWithdraw(bob, _daiReserveId(spoke), amount);
 
-    uint256 prevUserBalance = tokenList.dai.balanceOf(alice);
-    uint256 prevCallerBalance = tokenList.dai.balanceOf(bob);
-    uint256 prevHubBalance = tokenList.dai.balanceOf(address(hub1));
-    uint256 prevUserSuppliedAmount = spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice);
+    uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
+    uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
+    uint256 userSuppliedAmountBefore = spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice);
 
     assertEq(spoke.getUserSuppliedShares(_daiReserveId(spoke), alice), expectedSupplyShares);
 
@@ -237,13 +237,13 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(returnValues.amount, amount);
     assertEq(returnValues.shares, hub1.previewRemoveByAssets(daiAssetId, amount));
 
-    assertEq(tokenList.dai.balanceOf(alice), prevUserBalance);
-    assertEq(tokenList.dai.balanceOf(bob), prevCallerBalance + amount);
+    assertEq(tokenList.dai.balanceOf(alice), userBalanceBefore);
+    assertEq(tokenList.dai.balanceOf(bob), callerBalanceBefore + amount);
     assertEq(
       spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice),
-      prevUserSuppliedAmount - amount
+      userSuppliedAmountBefore - amount
     );
-    assertEq(tokenList.dai.balanceOf(address(hub1)), prevHubBalance - amount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), hubBalanceBefore - amount);
     assertEq(tokenList.dai.balanceOf(address(positionManager)), 0);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)), 0);
@@ -264,10 +264,10 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.prank(alice);
     positionManager.approveWithdraw(bob, _daiReserveId(spoke), supplyAmount * 10);
 
-    uint256 prevUserBalance = tokenList.dai.balanceOf(alice);
-    uint256 prevCallerBalance = tokenList.dai.balanceOf(bob);
-    uint256 prevHubBalance = tokenList.dai.balanceOf(address(hub1));
-    uint256 prevAllowance = positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke));
+    uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
+    uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
+    uint256 allowanceBefore = positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke));
 
     assertEq(spoke.getUserSuppliedShares(_daiReserveId(spoke), alice), expectedSupplyShares);
 
@@ -289,15 +289,15 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(returnValues.amount, supplyAmount);
     assertEq(returnValues.shares, expectedSupplyShares);
 
-    assertEq(tokenList.dai.balanceOf(alice), prevUserBalance);
-    assertEq(tokenList.dai.balanceOf(bob), prevCallerBalance + supplyAmount);
+    assertEq(tokenList.dai.balanceOf(alice), userBalanceBefore);
+    assertEq(tokenList.dai.balanceOf(bob), callerBalanceBefore + supplyAmount);
     assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
-    assertEq(tokenList.dai.balanceOf(address(hub1)), prevHubBalance - supplyAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), hubBalanceBefore - supplyAmount);
     assertEq(tokenList.dai.balanceOf(address(positionManager)), 0);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(
       positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)),
-      prevAllowance - (supplyAmount * 2)
+      allowanceBefore - (supplyAmount * 2)
     );
   }
 
@@ -350,9 +350,9 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.prank(alice);
     positionManager.approveWithdraw(bob, _daiReserveId(spoke), supplyAmount * 10);
 
-    uint256 prevUserBalance = tokenList.dai.balanceOf(alice);
-    uint256 prevCallerBalance = tokenList.dai.balanceOf(bob);
-    uint256 prevHubBalance = tokenList.dai.balanceOf(address(hub1));
+    uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
+    uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
 
     assertEq(spoke.getUserSuppliedShares(_daiReserveId(spoke), alice), expectedSupplyShares);
 
@@ -374,10 +374,10 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(returnValues.amount, expectedWithdrawAmount);
     assertEq(returnValues.shares, expectedSupplyShares);
 
-    assertEq(tokenList.dai.balanceOf(alice), prevUserBalance);
-    assertEq(tokenList.dai.balanceOf(bob), prevCallerBalance + expectedWithdrawAmount);
+    assertEq(tokenList.dai.balanceOf(alice), userBalanceBefore);
+    assertEq(tokenList.dai.balanceOf(bob), callerBalanceBefore + expectedWithdrawAmount);
     assertEq(spoke.getUserSuppliedAssets(_daiReserveId(spoke), alice), 0);
-    assertEq(tokenList.dai.balanceOf(address(hub1)), prevHubBalance - expectedWithdrawAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), hubBalanceBefore - expectedWithdrawAmount);
     assertEq(tokenList.dai.balanceOf(address(positionManager)), 0);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(positionManager.withdrawAllowance(alice, bob, _daiReserveId(spoke)), 0);
@@ -568,9 +568,9 @@ contract AllowancePositionManagerTest is SpokeBase {
     vm.prank(alice);
     positionManager.delegateCredit(address(bob), _daiReserveId(spoke), creditDelegationAmount);
 
-    uint256 prevUserBalance = tokenList.dai.balanceOf(alice);
-    uint256 prevCallerBalance = tokenList.dai.balanceOf(bob);
-    uint256 prevHubBalance = tokenList.dai.balanceOf(address(hub1));
+    uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
+    uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
 
     vm.expectEmit(address(spoke));
     emit ISpokeBase.Borrow(
@@ -596,9 +596,9 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(returnValues.shares, hub1.previewDrawByAssets(daiAssetId, borrowAmount));
 
     assertEq(userDrawnDebt + userPremiumDebt, borrowAmount);
-    assertEq(tokenList.dai.balanceOf(address(hub1)), prevHubBalance - borrowAmount);
-    assertEq(tokenList.dai.balanceOf(address(alice)), prevUserBalance);
-    assertEq(tokenList.dai.balanceOf(address(bob)), prevCallerBalance + borrowAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), hubBalanceBefore - borrowAmount);
+    assertEq(tokenList.dai.balanceOf(address(alice)), userBalanceBefore);
+    assertEq(tokenList.dai.balanceOf(address(bob)), callerBalanceBefore + borrowAmount);
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
     assertEq(
       positionManager.creditDelegation(alice, bob, _daiReserveId(spoke)),
