@@ -76,12 +76,12 @@ library AaveV4SpokeRolesProcedure {
   }
 
   function _validateAccessManagerAndSpoke(address accessManager, address spoke) private pure {
-    require(accessManager != address(0), AaveV4DeployProcedureBase.InvalidParam('access manager'));
-    require(spoke != address(0), AaveV4DeployProcedureBase.InvalidParam('spoke'));
+    require(accessManager != address(0), 'invalid access manager');
+    require(spoke != address(0), 'invalid spoke');
   }
 
   function _validateAccessManagerAndAdmin(address accessManager, address admin) private pure {
-    require(accessManager != address(0), AaveV4DeployProcedureBase.InvalidParam('access manager'));
-    require(admin != address(0), AaveV4DeployProcedureBase.InvalidParam('admin'));
+    require(accessManager != address(0), 'invalid access manager');
+    require(admin != address(0), 'invalid admin');
   }
 }

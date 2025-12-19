@@ -19,15 +19,11 @@ contract AaveV4NativeTokenGatewayDeployProcedureTest is ProceduresBase {
     assertEq(Ownable(nativeTokenGateway).owner(), owner);
   }
 
-  function test_deployNativeTokenGateway_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'native wrapper')
-    );
+  function test_deployNativeTokenGateway_reverts() public {
+    vm.expectRevert('invalid native wrapper');
     aaveV4NativeTokenGatewayDeployProcedureWrapper.deployNativeTokenGateway(address(0), owner);
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
-    );
+    vm.expectRevert('invalid owner');
     aaveV4NativeTokenGatewayDeployProcedureWrapper.deployNativeTokenGateway(
       nativeWrapper,
       address(0)

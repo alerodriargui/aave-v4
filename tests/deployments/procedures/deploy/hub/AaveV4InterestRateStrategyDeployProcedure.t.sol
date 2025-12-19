@@ -19,8 +19,8 @@ contract AaveV4InterestRateStrategyDeployProcedureTest is ProceduresBase {
     assertEq(IAssetInterestRateStrategy(interestRateStrategy).HUB(), hub);
   }
 
-  function test_deployInterestRateStrategy_revertsWithInvalidParam() public {
-    vm.expectRevert(abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'hub'));
+  function test_deployInterestRateStrategy_reverts() public {
+    vm.expectRevert('invalid hub');
     aaveV4InterestRateStrategyDeployProcedureWrapper.deployInterestRateStrategy(address(0));
   }
 }

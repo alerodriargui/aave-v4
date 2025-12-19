@@ -21,13 +21,11 @@ contract AaveV4TreasurySpokeDeployProcedureTest is ProceduresBase {
     assertEq(address(ITreasurySpoke(treasurySpoke).HUB()), hub);
   }
 
-  function test_deployTreasurySpoke_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
-    );
+  function test_deployTreasurySpoke_reverts() public {
+    vm.expectRevert('invalid owner');
     aaveV4TreasurySpokeDeployProcedureWrapper.deployTreasurySpoke({owner: address(0), hub: hub});
 
-    vm.expectRevert(abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'hub'));
+    vm.expectRevert('invalid hub');
     aaveV4TreasurySpokeDeployProcedureWrapper.deployTreasurySpoke({owner: owner, hub: address(0)});
   }
 }

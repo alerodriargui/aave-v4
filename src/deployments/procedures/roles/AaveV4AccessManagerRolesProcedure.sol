@@ -12,9 +12,9 @@ library AaveV4AccessManagerRolesProcedure {
     address adminToAdd,
     address adminToRemove
   ) internal {
-    require(accessManager != address(0), AaveV4DeployProcedureBase.InvalidParam('access manager'));
-    require(adminToAdd != address(0), AaveV4DeployProcedureBase.InvalidParam('admin to add'));
-    require(adminToRemove != address(0), AaveV4DeployProcedureBase.InvalidParam('admin to remove'));
+    require(accessManager != address(0), 'invalid access manager');
+    require(adminToAdd != address(0), 'invalid admin to add');
+    require(adminToRemove != address(0), 'invalid admin to remove');
     IAccessManager(accessManager).grantRole({
       roleId: Roles.DEFAULT_ADMIN_ROLE,
       account: adminToAdd,

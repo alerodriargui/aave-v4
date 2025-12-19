@@ -23,29 +23,23 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
     assertEq(executionDelay, 0);
   }
 
-  function test_grantRootAdminRole_revertsWithInvalidParam() public {
+  function test_grantRootAdminRole_reverts() public {
     address newAdmin = makeAddr('newAdmin');
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
-    );
+    vm.expectRevert('invalid access manager');
     aaveV4AccessManagerRolesProcedureWrapper.grantRootAdminRole({
       accessManager: address(0),
       adminToAdd: newAdmin,
       adminToRemove: address(0)
     });
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin to add')
-    );
+    vm.expectRevert('invalid admin to add');
     aaveV4AccessManagerRolesProcedureWrapper.grantRootAdminRole({
       accessManager: accessManager,
       adminToAdd: address(0),
       adminToRemove: newAdmin
     });
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin to remove')
-    );
+    vm.expectRevert('invalid admin to remove');
     aaveV4AccessManagerRolesProcedureWrapper.grantRootAdminRole({
       accessManager: accessManager,
       adminToAdd: newAdmin,

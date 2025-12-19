@@ -20,10 +20,8 @@ contract AaveV4SignatureGatewayDeployProcedureTest is ProceduresBase {
     assertEq(Ownable(signatureGateway).owner(), owner);
   }
 
-  function test_deploySignatureGateway_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
-    );
+  function test_deploySignatureGateway_reverts() public {
+    vm.expectRevert('invalid owner');
     aaveV4SignatureGatewayDeployProcedureWrapper.deploySignatureGateway(address(0));
   }
 }

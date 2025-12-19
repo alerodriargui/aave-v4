@@ -42,10 +42,10 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
       oracle: aaveOracle
     });
 
-    require(aaveOracle == predictedOracle, InvalidParam('predicted oracle'));
-    require(spokeProxy == predictedSpokeProxy, InvalidParam('predicted spoke instance'));
-    require(ISpoke(spokeProxy).ORACLE() == aaveOracle, InvalidParam('spoke oracle'));
-    require(IAaveOracle(aaveOracle).SPOKE() == spokeProxy, InvalidParam('aave oracle spoke'));
+    assert(aaveOracle == predictedOracle);
+    assert(spokeProxy == predictedSpokeProxy);
+    assert(ISpoke(spokeProxy).ORACLE() == aaveOracle);
+    assert(IAaveOracle(aaveOracle).SPOKE() == spokeProxy);
 
     _report = BatchReports.SpokeInstanceBatchReport({
       aaveOracle: aaveOracle,

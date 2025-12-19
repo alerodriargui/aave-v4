@@ -84,7 +84,7 @@ contract Create2UtilsTest is Test, InputUtils {
     );
   }
 
-  function testIsContractDeployed_fuzz(address addr) public {
+  function testIsContractDeployed_fuzz(address addr) public view {
     vm.assume(addr != address(0));
     assumeUnusedAddress(addr);
     assertFalse(_harness.isContractDeployed(addr));
@@ -112,14 +112,14 @@ contract Create2UtilsTest is Test, InputUtils {
     assertEq(_harness.computeCreateAddress(deployer, nonce), expected);
   }
 
-  function testComputeCreate2Address_fuzz(bytes32 salt, bytes32 initcode) public {
+  function testComputeCreate2Address_fuzz(bytes32 salt, bytes32 initcode) public view {
     vm.assume(salt != bytes32(0));
     vm.assume(initcode != bytes32(0));
     address expected = _harness.computeCreate2Address(salt, initcode);
     assertEq(_harness.computeCreate2Address(salt, initcode), expected);
   }
 
-  function testComputeCreate2Address_fuzz(bytes32 salt, bytes memory bytecode) public {
+  function testComputeCreate2Address_fuzz(bytes32 salt, bytes memory bytecode) public view {
     vm.assume(salt != bytes32(0));
     vm.assume(bytecode.length > 0);
     address expected = _harness.computeCreate2Address(salt, keccak256(abi.encodePacked(bytecode)));

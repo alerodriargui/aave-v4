@@ -19,10 +19,8 @@ contract AaveV4HubConfiguratorDeployProcedureTest is ProceduresBase {
     assertEq(Ownable(hubConfigurator).owner(), owner);
   }
 
-  function test_deployHubConfigurator_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
-    );
+  function test_deployHubConfigurator_reverts() public {
+    vm.expectRevert('invalid owner');
     aaveV4HubConfiguratorDeployProcedureWrapper.deployHubConfigurator(address(0));
   }
 }

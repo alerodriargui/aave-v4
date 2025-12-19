@@ -9,7 +9,7 @@ import {
 } from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 contract AaveV4InterestRateStrategyDeployProcedure is AaveV4DeployProcedureBase {
   function _deployInterestRateStrategy(address hub) internal returns (address) {
-    require(hub != address(0), InvalidParam('hub'));
+    require(hub != address(0), 'invalid hub');
     return
       Create2Utils.create2Deploy(
         SALT,

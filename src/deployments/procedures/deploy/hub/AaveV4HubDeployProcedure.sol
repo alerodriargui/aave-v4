@@ -9,7 +9,7 @@ import {
 } from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 contract AaveV4HubDeployProcedure is AaveV4DeployProcedureBase {
   function _deployHub(address accessManager) internal returns (address) {
-    _validateZeroAddress(accessManager, 'access manager');
+    require(accessManager != address(0), 'invalid access manager');
     return
       Create2Utils.create2Deploy(
         SALT,

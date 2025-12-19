@@ -7,7 +7,7 @@ import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4Deploy
 
 contract AaveV4AccessManagerEnumerableDeployProcedure is AaveV4DeployProcedureBase {
   function _deployAccessManagerEnumerable(address admin) internal returns (address) {
-    _validateZeroAddress(admin, 'admin');
+    require(admin != address(0), 'invalid admin');
     return address(new AccessManagerEnumerable({initialAdmin_: admin}));
   }
 }

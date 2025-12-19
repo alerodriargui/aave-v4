@@ -69,12 +69,12 @@ library AaveV4HubRolesProcedure {
   }
 
   function _validateAccessManagerAndHub(address accessManager, address hub) private pure {
-    require(accessManager != address(0), AaveV4DeployProcedureBase.InvalidParam('access manager'));
-    require(hub != address(0), AaveV4DeployProcedureBase.InvalidParam('hub'));
+    require(accessManager != address(0), 'invalid access manager');
+    require(hub != address(0), 'invalid hub');
   }
 
   function _validateAccessManagerAndAdmin(address accessManager, address admin) private pure {
-    require(accessManager != address(0), AaveV4DeployProcedureBase.InvalidParam('access manager'));
-    require(admin != address(0), AaveV4DeployProcedureBase.InvalidParam('admin'));
+    require(accessManager != address(0), 'invalid access manager');
+    require(admin != address(0), 'invalid admin');
   }
 }

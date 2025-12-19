@@ -9,7 +9,7 @@ import {
 } from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 contract AaveV4SignatureGatewayDeployProcedure is AaveV4DeployProcedureBase {
   function _deploySignatureGateway(address owner) internal returns (address) {
-    _validateZeroAddress(owner, 'owner');
+    require(owner != address(0), 'invalid owner');
     return
       Create2Utils.create2Deploy(
         SALT,

@@ -26,9 +26,7 @@ contract AaveV4AccessManagerEnumerableDeployProcedureTest is ProceduresBase {
   }
 
   function test_deployAccessManagerEnumerable_reverts() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin')
-    );
+    vm.expectRevert('invalid admin');
     aaveV4AccessManagerEnumerableDeployProcedureWrapper.deployAccessManagerEnumerable(address(0));
   }
 }

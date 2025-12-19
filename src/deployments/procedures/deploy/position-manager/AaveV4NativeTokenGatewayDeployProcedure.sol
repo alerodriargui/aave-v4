@@ -12,8 +12,8 @@ contract AaveV4NativeTokenGatewayDeployProcedure is AaveV4DeployProcedureBase {
     address nativeWrapper,
     address owner
   ) internal returns (address) {
-    _validateZeroAddress(nativeWrapper, 'native wrapper');
-    _validateZeroAddress(owner, 'owner');
+    require(nativeWrapper != address(0), 'invalid native wrapper');
+    require(owner != address(0), 'invalid owner');
     return
       Create2Utils.create2Deploy(
         SALT,

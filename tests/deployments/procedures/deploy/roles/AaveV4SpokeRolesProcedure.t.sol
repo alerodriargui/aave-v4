@@ -11,102 +11,78 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
     aaveV4SpokeRolesProcedureWrapper = new AaveV4SpokeRolesProcedureWrapper();
   }
 
-  function test_grantSpokeAdminRole_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
-    );
+  function test_grantSpokeAdminRole_reverts() public {
+    vm.expectRevert('invalid access manager');
     aaveV4SpokeRolesProcedureWrapper.grantSpokeAdminRole({accessManager: address(0), admin: admin});
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin')
-    );
+    vm.expectRevert('invalid admin');
     aaveV4SpokeRolesProcedureWrapper.grantSpokeAdminRole({
       accessManager: accessManager,
       admin: address(0)
     });
   }
 
-  function test_grantSpokePositionUpdaterRole_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
-    );
+  function test_grantSpokePositionUpdaterRole_reverts() public {
+    vm.expectRevert('invalid access manager');
     aaveV4SpokeRolesProcedureWrapper.grantSpokePositionUpdaterRole({
       accessManager: address(0),
       admin: admin
     });
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin')
-    );
+    vm.expectRevert('invalid admin');
     aaveV4SpokeRolesProcedureWrapper.grantSpokePositionUpdaterRole({
       accessManager: accessManager,
       admin: address(0)
     });
   }
 
-  function test_grantSpokeConfiguratorRole_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
-    );
+  function test_grantSpokeConfiguratorRole_reverts() public {
+    vm.expectRevert('invalid access manager');
     aaveV4SpokeRolesProcedureWrapper.grantSpokeConfiguratorRole({
       accessManager: address(0),
       admin: admin
     });
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'admin')
-    );
+    vm.expectRevert('invalid admin');
     aaveV4SpokeRolesProcedureWrapper.grantSpokeConfiguratorRole({
       accessManager: accessManager,
       admin: address(0)
     });
   }
 
-  function test_setupSpokeRoles_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
-    );
+  function test_setupSpokeRoles_reverts() public {
+    vm.expectRevert('invalid access manager');
     aaveV4SpokeRolesProcedureWrapper.setupSpokeRoles({accessManager: address(0), spoke: spoke});
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'spoke')
-    );
+    vm.expectRevert('invalid spoke');
     aaveV4SpokeRolesProcedureWrapper.setupSpokeRoles({
       accessManager: accessManager,
       spoke: address(0)
     });
   }
 
-  function test_setupSpokePositionUpdaterRole_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
-    );
+  function test_setupSpokePositionUpdaterRole_reverts() public {
+    vm.expectRevert('invalid access manager');
     aaveV4SpokeRolesProcedureWrapper.setupSpokePositionUpdaterRole({
       accessManager: address(0),
       spoke: spoke
     });
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'spoke')
-    );
+    vm.expectRevert('invalid spoke');
     aaveV4SpokeRolesProcedureWrapper.setupSpokePositionUpdaterRole({
       accessManager: accessManager,
       spoke: address(0)
     });
   }
 
-  function test_setupSpokeConfiguratorRole_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
-    );
+  function test_setupSpokeConfiguratorRole_reverts() public {
+    vm.expectRevert('invalid access manager');
     aaveV4SpokeRolesProcedureWrapper.setupSpokeConfiguratorRole({
       accessManager: address(0),
       spoke: spoke
     });
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'spoke')
-    );
+    vm.expectRevert('invalid spoke');
     aaveV4SpokeRolesProcedureWrapper.setupSpokeConfiguratorRole({
       accessManager: accessManager,
       spoke: address(0)

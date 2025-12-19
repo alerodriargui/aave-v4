@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.0;
 
 /// @title Roles library
 /// @author Aave Labs

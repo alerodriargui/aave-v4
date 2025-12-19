@@ -22,28 +22,22 @@ contract AaveV4AaveOracleDeployProcedureTest is ProceduresBase {
     assertEq(IAaveOracle(aaveOracle).DESCRIPTION(), oracleDescription);
   }
 
-  function test_deployAaveOracle_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'spoke')
-    );
+  function test_deployAaveOracle_reverts() public {
+    vm.expectRevert('invalid spoke');
     aaveV4AaveOracleDeployProcedureWrapper.deployAaveOracle({
       spoke: address(0),
       decimals: oracleDecimals,
       description: oracleDescription
     });
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'oracle decimals')
-    );
+    vm.expectRevert('invalid oracle decimals');
     aaveV4AaveOracleDeployProcedureWrapper.deployAaveOracle({
       spoke: spoke,
       decimals: 0,
       description: oracleDescription
     });
 
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'oracle description')
-    );
+    vm.expectRevert('invalid oracle description');
     aaveV4AaveOracleDeployProcedureWrapper.deployAaveOracle({
       spoke: spoke,
       decimals: oracleDecimals,

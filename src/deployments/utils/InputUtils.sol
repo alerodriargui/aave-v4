@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/StdJson.sol';
 import 'forge-std/Vm.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 contract InputUtils {
   using stdJson for string;
@@ -87,7 +88,7 @@ contract InputUtils {
 
   function _etchCreate2Factory() internal virtual {
     vm.etch(
-      0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7,
+      Create2Utils.CREATE2_FACTORY,
       hex'7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3'
     );
   }

@@ -17,10 +17,8 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
     assertEq(IHub(hub).authority(), accessManager);
   }
 
-  function test_deployHub_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'access manager')
-    );
+  function test_deployHub_reverts() public {
+    vm.expectRevert('invalid access manager');
     aaveV4HubDeployProcedureWrapper.deployHub(address(0));
   }
 }

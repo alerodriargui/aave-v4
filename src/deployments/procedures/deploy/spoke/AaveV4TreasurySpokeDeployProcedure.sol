@@ -7,8 +7,8 @@ import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4Deploy
 
 contract AaveV4TreasurySpokeDeployProcedure is AaveV4DeployProcedureBase {
   function _deployTreasurySpoke(address owner, address hub) internal returns (address) {
-    _validateZeroAddress(owner, 'owner');
-    _validateZeroAddress(hub, 'hub');
+    require(owner != address(0), 'invalid owner');
+    require(hub != address(0), 'invalid hub');
     return address(new TreasurySpoke({owner_: owner, hub_: hub}));
   }
 }

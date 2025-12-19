@@ -19,10 +19,8 @@ contract AaveV4SpokeConfiguratorDeployProcedureTest is ProceduresBase {
     assertEq(Ownable(spokeConfigurator).owner(), owner);
   }
 
-  function test_deploySpokeConfigurator_revertsWithInvalidParam() public {
-    vm.expectRevert(
-      abi.encodeWithSelector(AaveV4DeployProcedureBase.InvalidParam.selector, 'owner')
-    );
+  function test_deploySpokeConfigurator_reverts() public {
+    vm.expectRevert('invalid owner');
     aaveV4SpokeConfiguratorDeployProcedureWrapper.deploySpokeConfigurator(address(0));
   }
 }
