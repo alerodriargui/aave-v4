@@ -11,18 +11,32 @@ contract AllowancePositionManagerWrapper is AllowancePositionManager {
   constructor(address spoke_) AllowancePositionManager(spoke_) {}
 
   function temporaryWithdrawAllowance(
+    address spoke,
+    uint256 reserveId,
     address owner,
-    address spender,
-    uint256 reserveId
+    address spender
   ) external view returns (uint256) {
-    return _temporaryWithdrawAllowancesSlot(owner, spender, reserveId).tload();
+    return
+      _temporaryWithdrawAllowancesSlot({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: owner,
+        spender: spender
+      }).tload();
   }
 
-  function temporaryDelegateCredit(
+  function temporaryCreditDelegation(
+    address spoke,
+    uint256 reserveId,
     address owner,
-    address spender,
-    uint256 reserveId
+    address spender
   ) external view returns (uint256) {
-    return _temporaryDelegateCreditsSlot(owner, spender, reserveId).tload();
+    return
+      _temporaryDelegateCreditsSlot({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: owner,
+        spender: spender
+      }).tload();
   }
 }

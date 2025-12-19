@@ -5,9 +5,9 @@ pragma solidity 0.8.28;
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
 contract PositionManagerBaseWrapper is PositionManagerBase {
-  constructor(address spoke_) PositionManagerBase(spoke_) {}
+  constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
 
-  function getReserveUnderlying(uint256 reserveId) external view returns (address) {
-    return address(_getReserveUnderlying(reserveId));
+  function getReserveUnderlying(address spoke, uint256 reserveId) external view returns (address) {
+    return address(_getReserveUnderlying(spoke, reserveId));
   }
 }

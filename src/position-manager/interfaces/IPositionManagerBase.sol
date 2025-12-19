@@ -4,24 +4,39 @@ pragma solidity ^0.8.0;
 
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
+import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
 /// @title IPositionManagerBase
 /// @author Aave Labs
 /// @notice Base interface for position managers.
-interface IPositionManagerBase is IMulticall {
+interface IPositionManagerBase is IMulticall, IRescuable {
+  /// @notice Emitted when a spoke is registered or deregistered.
+  event SpokeRegistered(address indexed spoke, bool active);
+
   /// @notice Thrown when the specified address is invalid.
   error InvalidAddress();
-  /// @notice Thrown when signature deadline has passed or signer is not `onBehalfOf`.
+
+  /// @notice Thrown when the specified amount is invalid.
+  error InvalidAmount();
+
+  /// @notice Thrown when the specified spoke is not registered.
+  error SpokeNotRegistered();
+
+  /// @notice Thrown when signature deadline has passed or signer is not onBehalfOf.
   error InvalidSignature();
 
-  /// @notice Facilitates setting this contract as user position manager on the `spoke`
+  /// @notice Facilitates setting this position manager as user position manager on the specified registered `spoke`
+  /// with a typed signature from `user`.
+  /// @dev The signature is consumed on the the specified registered `spoke`.
   /// @dev The given data is passed to the `spoke` for the signature to be verified.
-  /// @param user The address of the user on whose behalf position manager can act.
+  /// @param spoke The address of the registered spoke.
+  /// @param user The address of the user on whose behalf this position manager can act.
   /// @param approve True to approve the position manager, false to revoke approval.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the signature.
   /// @param signature The signed bytes for the intent.
   function setSelfAsUserPositionManagerWithSig(
+    address spoke,
     address user,
     bool approve,
     uint256 nonce,
@@ -29,14 +44,16 @@ interface IPositionManagerBase is IMulticall {
     bytes calldata signature
   ) external;
 
-  /// @notice Facilitates consuming a permit for the given reserve's underlying asset on the `spoke`.
+  /// @notice Facilitates consuming a permit for the given reserve's underlying asset on the specified registered `spoke`.
   /// @dev The given data is passed to the underlying asset for the signature to be verified.
   /// @dev Spender is this position manager contract.
+  /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
   /// @param deadline The deadline for the permit.
-  function permitReserve(
+  function permitReserveUnderlying(
+    address spoke,
     uint256 reserveId,
     address onBehalfOf,
     uint256 value,
@@ -46,6 +63,20 @@ interface IPositionManagerBase is IMulticall {
     bytes32 permitS
   ) external;
 
-  /// @notice The spoke contract associated with this position manager.
-  function SPOKE() external view returns (address);
+  /// @notice Allows contract to renounce its position manager role for `user`.
+  /// @dev Only authorized caller to invoke this method.
+  /// @param spoke The address of the registered `spoke`.
+  /// @param user The address of the user to renounce the position manager role for.
+  function renouncePositionManagerRole(address spoke, address user) external;
+
+  /// @notice Permissioned operation to register or deregister a spoke.
+  /// @dev Only owner to invoke this method.
+  /// @param spoke The address of the `spoke`.
+  /// @param active `true` to register, `false` to deregister.
+  function registerSpoke(address spoke, bool active) external;
+
+  /// @notice Returns whether the specified spoke is registered.
+  /// @param spoke The address of the `spoke`.
+  /// @return `true` if the spoke is registered, `false` otherwise.
+  function isSpokeRegistered(address spoke) external view returns (bool);
 }

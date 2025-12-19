@@ -82,18 +82,20 @@ library EIP712Types {
   }
 
   struct WithdrawPermit {
+    address spoke;
+    uint256 reserveId;
     address owner;
     address spender;
-    uint256 reserveId;
     uint256 amount;
     uint256 nonce;
     uint256 deadline;
   }
 
   struct CreditDelegation {
+    address spoke;
+    uint256 reserveId;
     address owner;
     address spender;
-    uint256 reserveId;
     uint256 amount;
     uint256 nonce;
     uint256 deadline;

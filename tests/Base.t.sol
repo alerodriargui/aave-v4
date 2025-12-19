@@ -60,10 +60,9 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 
 // position manager
-import {GatewayBase, IGatewayBase} from 'src/position-manager/GatewayBase.sol';
+import {PositionManagerBase, IPositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 import {SignatureGateway, ISignatureGateway} from 'src/position-manager/SignatureGateway.sol';
-import {PositionManagerBase, IPositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {SupplyRepayPositionManager, ISupplyRepayPositionManager} from 'src/position-manager/SupplyRepayPositionManager.sol';
 import {AllowancePositionManager, IAllowancePositionManager} from 'src/position-manager/AllowancePositionManager.sol';
 import {PositionConfigPositionManager, IPositionConfigPositionManager} from 'src/position-manager/PositionConfigPositionManager.sol';
@@ -79,7 +78,6 @@ import {MockERC20} from 'tests/mocks/MockERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
-import {GatewayBaseWrapper} from 'tests/mocks/GatewayBaseWrapper.sol';
 import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
 import {MockNoncesKeyed} from 'tests/mocks/MockNoncesKeyed.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';

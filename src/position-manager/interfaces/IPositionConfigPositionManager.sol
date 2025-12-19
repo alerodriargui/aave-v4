@@ -21,10 +21,12 @@ interface IPositionConfigPositionManager is IPositionManagerBase {
   }
 
   /// @notice Emitted when a global config permission is updated.
+  /// @param spoke The address of the spoke.
   /// @param owner The address of the owner.
   /// @param caller The address of the caller.
   /// @param permissions The new config permissions.
   event ConfigPermissionsUpdated(
+    address indexed spoke,
     address indexed owner,
     address indexed caller,
     ConfigPermissions permissions
@@ -34,67 +36,81 @@ interface IPositionConfigPositionManager is IPositionManagerBase {
   error CallerNotAllowed();
 
   /// @notice Sets the global permission for a caller.
+  /// @param spoke The address of the spoke.
   /// @param caller The address of the caller.
   /// @param permission The new permission status.
-  function setGlobalPermission(address caller, bool permission) external;
+  function setGlobalPermission(address spoke, address caller, bool permission) external;
 
   /// @notice Sets the using as collateral permission for a caller.
+  /// @param spoke The address of the spoke.
   /// @param caller The address of the caller.
   /// @param permission The new permission status.
-  function setUsingAsCollateralPermission(address caller, bool permission) external;
+  function setUsingAsCollateralPermission(address spoke, address caller, bool permission) external;
 
   /// @notice Sets the user risk premium permission for a caller.
+  /// @param spoke The address of the spoke.
   /// @param caller The address of the caller.
   /// @param permission The new permission status.
-  function setUserRiskPremiumPermission(address caller, bool permission) external;
+  function setUserRiskPremiumPermission(address spoke, address caller, bool permission) external;
 
   /// @notice Sets the user dynamic config permission for a caller.
+  /// @param spoke The address of the spoke.
   /// @param caller The address of the caller.
   /// @param permission The new permission status.
-  function setUserDynamicConfigPermission(address caller, bool permission) external;
+  function setUserDynamicConfigPermission(address spoke, address caller, bool permission) external;
 
   /// @notice Renounces the global permission given by the owner.
+  /// @param spoke The address of the spoke.
   /// @param owner The address of the owner.
-  function renounceGlobalPermission(address owner) external;
+  function renounceGlobalPermission(address spoke, address owner) external;
 
   /// @notice Renounces the using as collateral permission given by the owner.
+  /// @param spoke The address of the spoke.
   /// @param owner The address of the owner.
-  function renounceUsingAsCollateralPermission(address owner) external;
+  function renounceUsingAsCollateralPermission(address spoke, address owner) external;
 
   /// @notice Renounces the user risk premium permission given by the owner.
+  /// @param spoke The address of the spoke.
   /// @param owner The address of the owner.
-  function renounceUserRiskPremiumPermission(address owner) external;
+  function renounceUserRiskPremiumPermission(address spoke, address owner) external;
 
   /// @notice Renounces the user dynamic config permission given by the owner.
+  /// @param spoke The address of the spoke.
   /// @param owner The address of the owner.
-  function renounceUserDynamicConfigPermission(address owner) external;
+  function renounceUserDynamicConfigPermission(address spoke, address owner) external;
 
   /// @notice Sets the using as collateral status on behalf of a user for a specified reserve.
-  /// @dev The Caller must have the permission to perform this action on behalf of the user.
-  /// @param onBehalfOf The address of the user.
+  /// @dev The `msg.sender` must have the permission to perform this action on behalf of the user.
+  /// @param spoke The address of the spoke.
   /// @param reserveId The id of the reserve.
   /// @param usingAsCollateral The new using as collateral status.
+  /// @param onBehalfOf The address of the user.
   function setUsingAsCollateralOnBehalfOf(
-    address onBehalfOf,
+    address spoke,
     uint256 reserveId,
-    bool usingAsCollateral
+    bool usingAsCollateral,
+    address onBehalfOf
   ) external;
 
   /// @notice Updates the user risk premium on behalf of a user.
-  /// @dev The Caller must have the permission to perform this action on behalf of the user.
+  /// @dev The `msg.sender` must have the permission to perform this action on behalf of the user.
+  /// @param spoke The address of the spoke.
   /// @param onBehalfOf The address of the user.
-  function updateUserRiskPremiumOnBehalfOf(address onBehalfOf) external;
+  function updateUserRiskPremiumOnBehalfOf(address spoke, address onBehalfOf) external;
 
   /// @notice Updates the user dynamic config on behalf of a user.
-  /// @dev The Caller must have the permission to perform this action on behalf of the user.
+  /// @dev The `msg.sender` must have the permission to perform this action on behalf of the user.
+  /// @param spoke The address of the spoke.
   /// @param onBehalfOf The address of the user.
-  function updateUserDynamicConfigOnBehalfOf(address onBehalfOf) external;
+  function updateUserDynamicConfigOnBehalfOf(address spoke, address onBehalfOf) external;
 
   /// @notice Returns the config permissions for a caller on behalf of a user.
+  /// @param spoke The address of the spoke.
   /// @param caller The address of the caller.
   /// @param onBehalfOf The address of the user.
   /// @return The ConfigPermissionValues for the caller on behalf of the user.
   function getConfigPermissions(
+    address spoke,
     address caller,
     address onBehalfOf
   ) external view returns (ConfigPermissionValues memory);

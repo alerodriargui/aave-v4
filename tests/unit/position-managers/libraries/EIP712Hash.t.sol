@@ -53,13 +53,13 @@ contract EIP712HashTest is Test {
     assertEq(
       EIP712Hash.WITHDRAW_PERMIT_TYPEHASH,
       keccak256(
-        'WithdrawPermit(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)'
+        'WithdrawPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)'
       )
     );
     assertEq(
       EIP712Hash.CREDIT_DELEGATION_TYPEHASH,
       keccak256(
-        'CreditDelegation(address owner,address spender,uint256 reserveId,uint256 amount,uint256 nonce,uint256 deadline)'
+        'CreditDelegation(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)'
       )
     );
   }
@@ -182,9 +182,10 @@ contract EIP712HashTest is Test {
     bytes32 expectedHash = keccak256(
       abi.encode(
         EIP712Hash.WITHDRAW_PERMIT_TYPEHASH,
+        params.spoke,
+        params.reserveId,
         params.owner,
         params.spender,
-        params.reserveId,
         params.amount,
         params.nonce,
         params.deadline
@@ -200,9 +201,10 @@ contract EIP712HashTest is Test {
     bytes32 expectedHash = keccak256(
       abi.encode(
         EIP712Hash.CREDIT_DELEGATION_TYPEHASH,
+        params.spoke,
+        params.reserveId,
         params.owner,
         params.spender,
-        params.reserveId,
         params.amount,
         params.nonce,
         params.deadline

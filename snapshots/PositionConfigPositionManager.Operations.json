@@ -1,13 +1,13 @@
 {
-  "renounceGlobalPermission": "24445",
-  "renounceUserDynamicConfigPermission": "24490",
-  "renounceUserRiskPremiumPermission": "24489",
-  "renounceUsingAsCollateralPermission": "24423",
-  "setGlobalPermission": "46541",
-  "setUserDynamicConfigPermission": "46585",
-  "setUserRiskPremiumPermission": "46564",
-  "setUsingAsCollateralOnBehalfOf": "69074",
-  "setUsingAsCollateralPermission": "46540",
-  "updateUserDynamicConfigOnBehalfOf": "46787",
-  "updateUserRiskPremiumOnBehalfOf": "127859"
+  "renounceGlobalPermission": "27699",
+  "renounceUserDynamicConfigPermission": "27763",
+  "renounceUserRiskPremiumPermission": "27720",
+  "renounceUsingAsCollateralPermission": "27698",
+  "setGlobalPermission": "49868",
+  "setUserDynamicConfigPermission": "49845",
+  "setUserRiskPremiumPermission": "49891",
+  "setUsingAsCollateralOnBehalfOf": "71916",
+  "setUsingAsCollateralPermission": "49847",
+  "updateUserDynamicConfigOnBehalfOf": "49577",
+  "updateUserRiskPremiumOnBehalfOf": "130652"
 }

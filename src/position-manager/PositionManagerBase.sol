@@ -4,35 +4,47 @@ pragma solidity 0.8.28;
 
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
-import {Multicall} from 'src/utils/Multicall.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {Multicall} from 'src/utils/Multicall.sol';
+import {Rescuable} from 'src/utils/Rescuable.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
 /// @title PositionManagerBase
 /// @author Aave Labs
 /// @notice Base implementation for position manager common functionalities.
-abstract contract PositionManagerBase is IPositionManagerBase, Multicall {
-  /// @inheritdoc IPositionManagerBase
-  address public immutable override SPOKE;
+abstract contract PositionManagerBase is IPositionManagerBase, Multicall, Rescuable, Ownable2Step {
+  mapping(address => bool) internal _registeredSpokes;
+
+  /// @notice Modifier that checks if the specified spoke is registered.
+  modifier onlyRegisteredSpoke(address spoke) {
+    _isSpokeValid(spoke);
+    _;
+  }
 
   /// @dev Constructor.
-  /// @param spoke_ The address of the spoke contract.
-  constructor(address spoke_) {
-    require(spoke_ != address(0), InvalidAddress());
-    SPOKE = spoke_;
+  /// @param initialOwner_ The address of the initial owner.
+  constructor(address initialOwner_) Ownable(initialOwner_) {}
+
+  /// @inheritdoc IPositionManagerBase
+  function registerSpoke(address spoke, bool active) external onlyOwner {
+    require(spoke != address(0), InvalidAddress());
+    _registeredSpokes[spoke] = active;
+    emit SpokeRegistered(spoke, active);
   }
 
   /// @inheritdoc IPositionManagerBase
   function setSelfAsUserPositionManagerWithSig(
+    address spoke,
     address user,
     bool approve,
     uint256 nonce,
     uint256 deadline,
     bytes calldata signature
-  ) external {
+  ) external onlyRegisteredSpoke(spoke) {
     try
-      ISpoke(SPOKE).setUserPositionManagerWithSig({
+      ISpoke(spoke).setUserPositionManagerWithSig({
         positionManager: address(this),
         user: user,
         approve: approve,
@@ -44,7 +56,8 @@ abstract contract PositionManagerBase is IPositionManagerBase, Multicall {
   }
 
   /// @inheritdoc IPositionManagerBase
-  function permitReserve(
+  function permitReserveUnderlying(
+    address spoke,
     uint256 reserveId,
     address onBehalfOf,
     uint256 value,
@@ -52,8 +65,8 @@ abstract contract PositionManagerBase is IPositionManagerBase, Multicall {
     uint8 permitV,
     bytes32 permitR,
     bytes32 permitS
-  ) external {
-    address underlying = address(_getReserveUnderlying(reserveId));
+  ) external onlyRegisteredSpoke(spoke) {
+    address underlying = _getReserveUnderlying(spoke, reserveId);
     try
       IERC20Permit(underlying).permit({
         owner: onBehalfOf,
@@ -67,8 +80,29 @@ abstract contract PositionManagerBase is IPositionManagerBase, Multicall {
     {} catch {}
   }
 
-  /// @return The underlying asset corresponding to the `reserveId` on the Spoke.
-  function _getReserveUnderlying(uint256 reserveId) internal view returns (IERC20) {
-    return IERC20(ISpoke(SPOKE).getReserve(reserveId).underlying);
+  /// @inheritdoc IPositionManagerBase
+  function renouncePositionManagerRole(address spoke, address user) external onlyOwner {
+    require(user != address(0), InvalidAddress());
+    ISpoke(spoke).renouncePositionManagerRole(user);
+  }
+
+  /// @inheritdoc IPositionManagerBase
+  function isSpokeRegistered(address spoke) external view returns (bool) {
+    return _registeredSpokes[spoke];
+  }
+
+  /// @dev Verifies the specified spoke is registered.
+  function _isSpokeValid(address spoke) internal view {
+    require(_registeredSpokes[spoke], SpokeNotRegistered());
+  }
+
+  /// @return The underlying asset for `reserveId` on the specified spoke.
+  function _getReserveUnderlying(address spoke, uint256 reserveId) internal view returns (address) {
+    return ISpoke(spoke).getReserve(reserveId).underlying;
+  }
+
+  /// @dev The `owner()` is the allowed caller for Rescuable methods.
+  function _rescueGuardian() internal view override returns (address) {
+    return owner();
   }
 }

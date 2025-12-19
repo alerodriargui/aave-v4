@@ -17,10 +17,6 @@ library ConfigPermissionsMap {
   /// @dev Mask for the full permissions.
   uint8 internal constant FULL_PERMISSIONS_MASK = 0x7;
 
-  function eq(ConfigPermissions self, ConfigPermissions other) internal pure returns (bool) {
-    return ConfigPermissions.unwrap(self) == ConfigPermissions.unwrap(other);
-  }
-
   /// @notice Sets the new status for all permissions.
   /// @param self The current ConfigPermissions.
   /// @param status The new status for all permissions.
@@ -96,6 +92,14 @@ library ConfigPermissionsMap {
   /// @return Whether the `canUpdateUserDynamicConfig` permission or global permissions are enabled
   function canUpdateUserDynamicConfig(ConfigPermissions self) internal pure returns (bool) {
     return _getStatus(self, CAN_UPDATE_USER_DYNAMIC_CONFIG_MASK);
+  }
+
+  /// @notice Compares two ConfigPermissions for equality.
+  /// @param self The first ConfigPermissions.
+  /// @param other The second ConfigPermissions.
+  /// @return True if both ConfigPermissions are equal, false otherwise.
+  function eq(ConfigPermissions self, ConfigPermissions other) internal pure returns (bool) {
+    return ConfigPermissions.unwrap(self) == ConfigPermissions.unwrap(other);
   }
 
   /// @notice Sets the new status for the given permission.
