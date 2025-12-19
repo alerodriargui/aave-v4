@@ -22,8 +22,8 @@ contract AllowancePositionManager is
   EIP712
 {
   using SafeERC20 for IERC20;
-  using EIP712Hash for *;
   using MathUtils for uint256;
+  using EIP712Hash for *;
 
   /// @notice Mapping of withdraw allowances.
   mapping(address owner => mapping(address spender => mapping(uint256 reserveId => uint256 amount)))
@@ -131,6 +131,7 @@ contract AllowancePositionManager is
     uint256 amount,
     address onBehalfOf
   ) external returns (uint256, uint256) {
+    IERC20 asset = _getReserveUnderlying(reserveId);
     _spendWithdrawAllowance({
       owner: onBehalfOf,
       spender: msg.sender,
@@ -138,7 +139,6 @@ contract AllowancePositionManager is
       amount: amount
     });
 
-    IERC20 asset = _getReserveUnderlying(reserveId);
     (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpokeBase(SPOKE).withdraw(
       reserveId,
       amount,
@@ -155,6 +155,7 @@ contract AllowancePositionManager is
     uint256 amount,
     address onBehalfOf
   ) external returns (uint256, uint256) {
+    IERC20 asset = _getReserveUnderlying(reserveId);
     _spendCreditDelegation({
       owner: onBehalfOf,
       spender: msg.sender,
@@ -162,7 +163,6 @@ contract AllowancePositionManager is
       amount: amount
     });
 
-    IERC20 asset = _getReserveUnderlying(reserveId);
     (uint256 borrowedShares, uint256 borrowedAmount) = ISpokeBase(SPOKE).borrow(
       reserveId,
       amount,
@@ -206,6 +206,26 @@ contract AllowancePositionManager is
     return EIP712Hash.CREDIT_DELEGATION_TYPEHASH;
   }
 
+  function _updateWithdrawAllowance(
+    address owner,
+    address spender,
+    uint256 reserveId,
+    uint256 newAllowance
+  ) internal {
+    _withdrawAllowances[owner][spender][reserveId] = newAllowance;
+    emit WithdrawApproval(owner, spender, reserveId, newAllowance);
+  }
+
+  function _updateCreditDelegation(
+    address owner,
+    address spender,
+    uint256 reserveId,
+    uint256 newCreditDelegation
+  ) internal {
+    _creditDelegations[owner][spender][reserveId] = newCreditDelegation;
+    emit CreditDelegation(owner, spender, reserveId, newCreditDelegation);
+  }
+
   function _spendWithdrawAllowance(
     address owner,
     address spender,
@@ -226,26 +246,6 @@ contract AllowancePositionManager is
     uint256 currentAllowance = _creditDelegations[owner][spender][reserveId];
     require(currentAllowance >= amount, InsufficientCreditDelegation(currentAllowance, amount));
     _creditDelegations[owner][spender][reserveId] = currentAllowance.uncheckedSub(amount);
-  }
-
-  function _updateWithdrawAllowance(
-    address owner,
-    address spender,
-    uint256 reserveId,
-    uint256 newAllowance
-  ) internal {
-    _withdrawAllowances[owner][spender][reserveId] = newAllowance;
-    emit WithdrawApproval(owner, spender, reserveId, newAllowance);
-  }
-
-  function _updateCreditDelegation(
-    address owner,
-    address spender,
-    uint256 reserveId,
-    uint256 newCreditDelegation
-  ) internal {
-    _creditDelegations[owner][spender][reserveId] = newCreditDelegation;
-    emit CreditDelegation(owner, spender, reserveId, newCreditDelegation);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

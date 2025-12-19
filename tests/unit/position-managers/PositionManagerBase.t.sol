@@ -74,11 +74,11 @@ contract PositionManagerBaseTest is SpokeBase {
     assertTrue(spoke.isPositionManager(alice, address(positionManager)));
   }
 
-  function test_permitReserve_revertsWith_ReserveNotListed() public {
+  function test_permitReserveUnderlying_revertsWith_ReserveNotListed() public {
     uint256 unlistedReserveId = vm.randomUint(spoke.getReserveCount() + 1, UINT256_MAX);
     vm.expectRevert(ISpoke.ReserveNotListed.selector);
     vm.prank(vm.randomAddress());
-    positionManager.permitReserve(
+    positionManager.permitReserveUnderlying(
       unlistedReserveId,
       vm.randomAddress(),
       vm.randomUint(),
@@ -89,7 +89,7 @@ contract PositionManagerBaseTest is SpokeBase {
     );
   }
 
-  function test_permitReserve_forwards_correct_call() public {
+  function test_permitReserveUnderlying_forwards_correct_call() public {
     uint256 reserveId = _randomReserveId(spoke);
     address owner = vm.randomAddress();
     address spender = address(positionManager);
@@ -105,17 +105,17 @@ contract PositionManagerBaseTest is SpokeBase {
       1
     );
     vm.prank(vm.randomAddress());
-    positionManager.permitReserve(reserveId, owner, value, deadline, v, r, s);
+    positionManager.permitReserveUnderlying(reserveId, owner, value, deadline, v, r, s);
   }
 
-  function test_permitReserve_ignores_permit_reverts() public {
+  function test_permitReserveUnderlying_ignores_permit_reverts() public {
     uint256 reserveId = _randomReserveId(spoke);
     address token = address(_underlying(spoke, reserveId));
 
     vm.mockCallRevert(token, TestnetERC20.permit.selector, vm.randomBytes(64));
 
     vm.prank(vm.randomAddress());
-    positionManager.permitReserve(
+    positionManager.permitReserveUnderlying(
       reserveId,
       vm.randomAddress(),
       vm.randomUint(),
@@ -126,7 +126,7 @@ contract PositionManagerBaseTest is SpokeBase {
     );
   }
 
-  function test_permitReserve() public {
+  function test_permitReserveUnderlying() public {
     (address user, uint256 userPk) = makeAddrAndKey('user');
     uint256 reserveId = _randomReserveId(spoke);
     TestnetERC20 token = TestnetERC20(address(_underlying(spoke, reserveId)));
@@ -146,7 +146,15 @@ contract PositionManagerBaseTest is SpokeBase {
     vm.expectEmit(address(token));
     emit IERC20.Approval(user, address(positionManager), params.value);
     vm.prank(vm.randomAddress());
-    positionManager.permitReserve(reserveId, user, params.value, params.deadline, v, r, s);
+    positionManager.permitReserveUnderlying(
+      reserveId,
+      user,
+      params.value,
+      params.deadline,
+      v,
+      r,
+      s
+    );
 
     assertEq(token.allowance(user, address(positionManager)), params.value);
   }

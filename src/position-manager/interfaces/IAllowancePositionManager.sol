@@ -14,10 +14,10 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @notice Thrown when the credit delegation allowance is insufficient.
   error InsufficientCreditDelegation(uint256 allowance, uint256 required);
 
-  /// @notice Emitted when `owner` approves `spender` to withdraw `amount` for `reserveId` on their behalf.
+  /// @notice Emitted when owner approves spender to withdraw amount for reserveId on their behalf.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
-  /// @param reserveId The identifier of the reserve on the connected `spoke`.
+  /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of allowance.
   event WithdrawApproval(
     address indexed owner,
@@ -26,10 +26,10 @@ interface IAllowancePositionManager is IPositionManagerBase {
     uint256 amount
   );
 
-  /// @notice Emitted when `owner` approves `spender` to borrow `amount` from `reserveId` on their behalf.
+  /// @notice Emitted when owner approves spender to borrow amount from reserveId on their behalf.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
-  /// @param reserveId The identifier of the reserve on the connected `spoke`.
+  /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of credit delegation.
   event CreditDelegation(
     address indexed owner,
@@ -38,15 +38,15 @@ interface IAllowancePositionManager is IPositionManagerBase {
     uint256 amount
   );
 
-  /// @notice Approves a spender to withdraw assets from the specified reserve on the connected `spoke`.
+  /// @notice Approves a spender to withdraw assets from the specified reserve.
   /// @param spender The address of the spender to receive the allowance.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of allowance.
   function approveWithdraw(address spender, uint256 reserveId, uint256 amount) external;
 
-  /// @notice Approves a spender to withdraw assets from the specified reserve on the connected `spoke` via signature.
+  /// @notice Approves a spender to withdraw assets from the specified reserve on the connected Spoke using an EIP712-typed intent
   /// @param params The structured WithdrawPermit parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-compliant signature bytes.
   function approveWithdrawWithSig(
     EIP712Types.WithdrawPermit calldata params,
     bytes calldata signature
@@ -58,9 +58,9 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @param amount The amount of allowance.
   function delegateCredit(address spender, uint256 reserveId, uint256 amount) external;
 
-  /// @notice Approves a credit delegation allowance for a spender via signature.
+  /// @notice Approves a credit delegation allowance for a spender using an EIP712-typed intent.
   /// @param params The structured CreditDelegation parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-compliant signature bytes.
   function delegateCreditWithSig(
     EIP712Types.CreditDelegation calldata params,
     bytes calldata signature
@@ -77,7 +77,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   function renounceCreditDelegation(address owner, uint256 reserveId) external;
 
   /// @notice Executes a withdraw on behalf of a user.
-  /// @dev The caller must have sufficient withdraw allowance from `onBehalfOf`.
+  /// @dev The caller must have sufficient withdraw allowance from onBehalfOf.
   /// @dev The caller receives the withdrawn assets.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to withdraw.
@@ -91,7 +91,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   ) external returns (uint256, uint256);
 
   /// @notice Executes a borrow on behalf of a user.
-  /// @dev The caller must have sufficient credit delegation allowance from `onBehalfOf`.
+  /// @dev The caller must have sufficient credit delegation allowance from onBehalfOf.
   /// @dev The caller receives the borrowed assets.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to borrow.

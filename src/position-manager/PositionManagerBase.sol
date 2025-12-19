@@ -14,7 +14,7 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @notice Base implementation for position manager common functionalities.
 abstract contract PositionManagerBase is IPositionManagerBase, Multicall {
   /// @inheritdoc IPositionManagerBase
-  address public immutable override SPOKE;
+  address public immutable SPOKE;
 
   /// @dev Constructor.
   /// @param spoke_ The address of the spoke contract.
@@ -44,7 +44,7 @@ abstract contract PositionManagerBase is IPositionManagerBase, Multicall {
   }
 
   /// @inheritdoc IPositionManagerBase
-  function permitReserve(
+  function permitReserveUnderlying(
     uint256 reserveId,
     address onBehalfOf,
     uint256 value,
