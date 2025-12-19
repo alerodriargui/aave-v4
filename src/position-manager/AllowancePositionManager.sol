@@ -303,9 +303,9 @@ contract AllowancePositionManager is
   /// @dev Temporary allowance takes precedence over stored allowance, and does not cumulate.
   function _spendWithdrawAllowance(
     address spoke,
+    uint256 reserveId,
     address owner,
     address spender,
-    uint256 reserveId,
     uint256 amount
   ) internal {
     uint256 temporaryAllowance = _temporaryWithdrawAllowancesSlot({
@@ -339,9 +339,9 @@ contract AllowancePositionManager is
   /// @dev Temporary allowance takes precedence over stored allowance, and does not cumulate.
   function _spendCreditDelegation(
     address spoke,
+    uint256 reserveId,
     address owner,
     address spender,
-    uint256 reserveId,
     uint256 amount
   ) internal {
     uint256 temporaryAllowance = _temporaryDelegateCreditsSlot({
