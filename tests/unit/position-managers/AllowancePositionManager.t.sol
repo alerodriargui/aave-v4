@@ -351,6 +351,60 @@ contract AllowancePositionManagerTest is SpokeBase {
     );
   }
 
+  function test_withdrawOnBehalfOf_fuzz_allBalance_noAllowanceDecreased(
+    uint256 supplyAmount
+  ) public {
+    supplyAmount = bound(supplyAmount, 1, mintAmount_DAI);
+
+    Utils.supply({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: alice,
+      amount: supplyAmount,
+      onBehalfOf: alice
+    });
+    uint256 expectedSupplyShares = hub1.previewAddByAssets(daiAssetId, supplyAmount);
+
+    vm.prank(alice);
+    positionManager.approveWithdraw(address(spoke1), _daiReserveId(spoke1), bob, type(uint256).max);
+
+    uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
+    uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
+
+    assertEq(spoke1.getUserSuppliedShares(_daiReserveId(spoke1), alice), expectedSupplyShares);
+
+    vm.expectEmit(address(spoke1));
+    emit ISpokeBase.Withdraw(
+      _daiReserveId(spoke1),
+      address(positionManager),
+      alice,
+      expectedSupplyShares,
+      supplyAmount
+    );
+    vm.prank(bob);
+    (returnValues.shares, returnValues.amount) = positionManager.withdrawOnBehalfOf(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      type(uint256).max,
+      alice
+    );
+
+    assertEq(returnValues.amount, supplyAmount);
+    assertEq(returnValues.shares, expectedSupplyShares);
+
+    assertEq(tokenList.dai.balanceOf(alice), userBalanceBefore);
+    assertEq(tokenList.dai.balanceOf(bob), callerBalanceBefore + supplyAmount);
+    assertEq(spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice), 0);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), hubBalanceBefore - supplyAmount);
+    assertEq(tokenList.dai.balanceOf(address(positionManager)), 0);
+    assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
+    assertEq(
+      positionManager.withdrawAllowance(address(spoke1), _daiReserveId(spoke1), alice, bob),
+      type(uint256).max
+    );
+  }
+
   function test_withdrawOnBehalfOf_fuzz_allBalanceWithInterest(
     uint256 supplyAmount,
     uint256 borrowAmount
@@ -708,6 +762,56 @@ contract AllowancePositionManagerTest is SpokeBase {
     assertEq(
       positionManager.creditDelegation(address(spoke1), _daiReserveId(spoke1), alice, bob),
       creditDelegationAmount - borrowAmount
+    );
+  }
+
+  function test_borrowOnBehalfOf_fuzz_noAllowanceDecrease(uint256 borrowAmount) public {
+    uint256 aliceSupplyAmount = 5000e18;
+    uint256 bobSupplyAmount = 1000e18;
+    borrowAmount = bound(borrowAmount, 1, bobSupplyAmount);
+
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
+
+    vm.prank(alice);
+    positionManager.delegateCredit(address(spoke1), _daiReserveId(spoke1), bob, type(uint256).max);
+
+    uint256 userBalanceBefore = tokenList.dai.balanceOf(alice);
+    uint256 callerBalanceBefore = tokenList.dai.balanceOf(bob);
+    uint256 hubBalanceBefore = tokenList.dai.balanceOf(address(hub1));
+
+    vm.expectEmit(address(spoke1));
+    emit ISpokeBase.Borrow(
+      _daiReserveId(spoke1),
+      address(positionManager),
+      alice,
+      hub1.previewRestoreByAssets(daiAssetId, borrowAmount),
+      borrowAmount
+    );
+    vm.prank(bob);
+    (returnValues.shares, returnValues.amount) = positionManager.borrowOnBehalfOf(
+      address(spoke1),
+      _daiReserveId(spoke1),
+      borrowAmount,
+      alice
+    );
+
+    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(
+      _daiReserveId(spoke1),
+      alice
+    );
+
+    assertEq(returnValues.amount, borrowAmount);
+    assertEq(returnValues.shares, hub1.previewDrawByAssets(daiAssetId, borrowAmount));
+
+    assertEq(userDrawnDebt + userPremiumDebt, borrowAmount);
+    assertEq(tokenList.dai.balanceOf(address(hub1)), hubBalanceBefore - borrowAmount);
+    assertEq(tokenList.dai.balanceOf(address(alice)), userBalanceBefore);
+    assertEq(tokenList.dai.balanceOf(address(bob)), callerBalanceBefore + borrowAmount);
+    assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
+    assertEq(
+      positionManager.creditDelegation(address(spoke1), _daiReserveId(spoke1), alice, bob),
+      type(uint256).max
     );
   }
 

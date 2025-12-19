@@ -40,8 +40,8 @@ contract NativeTokenGateway is INativeTokenGateway, PositionManagerBase, Reentra
 
   /// @dev Unsupported multicall function.
   function multicall(
-    bytes[] calldata data
-  ) external override(IMulticall, Multicall) returns (bytes[] memory) {
+    bytes[] calldata
+  ) external pure override(IMulticall, Multicall) returns (bytes[] memory) {
     revert UnsupportedAction();
   }
 

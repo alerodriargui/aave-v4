@@ -265,7 +265,9 @@ contract AllowancePositionManager is
   ) internal {
     uint256 currentAllowance = _withdrawAllowances[spoke][reserveId][owner][spender];
     require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
-    _withdrawAllowances[spoke][reserveId][owner][spender] = currentAllowance.uncheckedSub(amount);
+    if (currentAllowance != type(uint256).max) {
+      _withdrawAllowances[spoke][reserveId][owner][spender] = currentAllowance.uncheckedSub(amount);
+    }
   }
 
   function _spendCreditDelegation(
@@ -277,7 +279,9 @@ contract AllowancePositionManager is
   ) internal {
     uint256 currentAllowance = _creditDelegations[spoke][reserveId][owner][spender];
     require(currentAllowance >= amount, InsufficientCreditDelegation(currentAllowance, amount));
-    _creditDelegations[spoke][reserveId][owner][spender] = currentAllowance.uncheckedSub(amount);
+    if (currentAllowance != type(uint256).max) {
+      _creditDelegations[spoke][reserveId][owner][spender] = currentAllowance.uncheckedSub(amount);
+    }
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
