@@ -9,7 +9,7 @@ import {
 contract AaveV4HubDeployProcedureWrapper is AaveV4HubDeployProcedure {
   bool public IS_TEST = true;
 
-  function deployHub(address accessManager) external returns (address) {
-    return _deployHub(accessManager);
+  function deployHub(address accessManager, bytes32 salt) external returns (address) {
+    return _deployHub(accessManager, salt);
   }
 }

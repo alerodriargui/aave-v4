@@ -21,25 +21,29 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
     address spokeProxyAdminOwner_,
     address accessManager_,
     uint8 oracleDecimals_,
-    string memory oracleDescription_
+    string memory oracleDescription_,
+    bytes32 salt_
   ) {
+    bytes32 spokeInstanceSalt = keccak256(abi.encodePacked(SALT, salt_, 'spokeInstance'));
     // starting from contract nonce of 1
     address predictedOracle = Create2Utils.computeCreateAddress(address(this), 1);
-    address predictedSpokeProxy = _computeSpokeInstanceAddress(
-      SALT,
-      predictedOracle,
-      spokeProxyAdminOwner_,
-      accessManager_
-    );
+    address predictedSpokeProxy = _computeSpokeInstanceAddress({
+      spokeProxyAdminOwner: spokeProxyAdminOwner_,
+      accessManager: accessManager_,
+      oracle: predictedOracle,
+      salt: spokeInstanceSalt
+    });
     address aaveOracle = _deployAaveOracle(
       predictedSpokeProxy,
       oracleDecimals_,
-      oracleDescription_
+      oracleDescription_,
+      keccak256(abi.encodePacked(SALT, salt_, 'aaveOracle'))
     );
     (address spokeProxy, address spokeImplementation) = _deployUpgradableSpokeInstance({
       spokeProxyAdminOwner: spokeProxyAdminOwner_,
       accessManager: accessManager_,
-      oracle: aaveOracle
+      oracle: aaveOracle,
+      salt: spokeInstanceSalt
     });
 
     assert(aaveOracle == predictedOracle);

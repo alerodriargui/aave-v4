@@ -73,11 +73,12 @@ contract ProceduresBase is Test, InputUtils {
   address public aaveOracle;
   address public treasurySpoke = makeAddr('treasurySpoke');
   address public admin = makeAddr('admin');
-
+  bytes32 public salt;
   function setUp() public virtual {
     _etchCreate2Factory();
 
     accessManager = address(new AccessManagerEnumerable(accessManagerAdmin));
     aaveOracle = address(new AaveOracle(spoke, oracleDecimals, oracleDescription));
+    salt = keccak256('testSalt');
   }
 }

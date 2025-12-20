@@ -324,7 +324,8 @@ abstract contract Base is BatchTestProcedures {
       spokeConfiguratorAdmin: SPOKE_CONFIGURATOR_ADMIN,
       hubCount: numHubs,
       spokeCount: numSpokes,
-      nativeWrapper: address(tokenList.weth)
+      nativeWrapper: address(tokenList.weth),
+      salt: keccak256(abi.encodePacked(vm.randomBytes(32)))
     });
     for (uint256 i; i < numHubs; ++i) {
       _hubs.push(IHub(report.hubReports[i].hub));
@@ -2334,6 +2335,10 @@ abstract contract Base is BatchTestProcedures {
 
   function _randomBps() internal returns (uint16) {
     return vm.randomUint(0, PercentageMath.PERCENTAGE_FACTOR).toUint16();
+  }
+
+  function _randomBps(uint256 maxBps) internal returns (uint16) {
+    return vm.randomUint(0, maxBps).toUint16();
   }
 
   function _hub(ISpoke spoke, uint256 reserveId) internal view returns (IHub) {

@@ -8,7 +8,8 @@ contract AaveV4AaveOracleDeployProcedure is AaveV4DeployProcedureBase {
   function _deployAaveOracle(
     address spoke_,
     uint8 decimals_,
-    string memory description_
+    string memory description_,
+    bytes32 salt_
   ) internal returns (address) {
     require(spoke_ != address(0), 'invalid spoke');
     require(decimals_ > 0, 'invalid oracle decimals');

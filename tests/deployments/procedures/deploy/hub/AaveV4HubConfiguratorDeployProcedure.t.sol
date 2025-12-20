@@ -13,7 +13,8 @@ contract AaveV4HubConfiguratorDeployProcedureTest is ProceduresBase {
 
   function test_deployHubConfigurator() public {
     address hubConfigurator = aaveV4HubConfiguratorDeployProcedureWrapper.deployHubConfigurator(
-      owner
+      owner,
+      salt
     );
     assertNotEq(hubConfigurator, address(0));
     assertEq(Ownable(hubConfigurator).owner(), owner);
@@ -21,6 +22,9 @@ contract AaveV4HubConfiguratorDeployProcedureTest is ProceduresBase {
 
   function test_deployHubConfigurator_reverts() public {
     vm.expectRevert('invalid owner');
-    aaveV4HubConfiguratorDeployProcedureWrapper.deployHubConfigurator(address(0));
+    aaveV4HubConfiguratorDeployProcedureWrapper.deployHubConfigurator({
+      owner: address(0),
+      salt: salt
+    });
   }
 }

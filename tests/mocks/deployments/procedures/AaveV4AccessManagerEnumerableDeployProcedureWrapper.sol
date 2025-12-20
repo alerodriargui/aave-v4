@@ -10,7 +10,7 @@ contract AaveV4AccessManagerEnumerableDeployProcedureWrapper is
   AaveV4AccessManagerEnumerableDeployProcedure
 {
   bool public IS_TEST = true;
-  function deployAccessManagerEnumerable(address admin) external returns (address) {
-    return _deployAccessManagerEnumerable(admin);
+  function deployAccessManagerEnumerable(address admin, bytes32 salt) external returns (address) {
+    return _deployAccessManagerEnumerable(admin, salt);
   }
 }

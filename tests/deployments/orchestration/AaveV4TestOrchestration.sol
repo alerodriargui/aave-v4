@@ -66,7 +66,8 @@ library AaveV4TestOrchestration {
     address spokeConfiguratorAdmin,
     uint256 hubCount,
     uint256 spokeCount,
-    address nativeWrapper
+    address nativeWrapper,
+    bytes32 salt
   ) external returns (TestTypes.TestEnvReport memory) {
     TestTypes.TestEnvReport memory report;
 
@@ -74,14 +75,15 @@ library AaveV4TestOrchestration {
     report.spokeReports = new TestTypes.TestSpokeReport[](spokeCount);
 
     // Deploy Access Batch
-    report.accessManager = AaveV4DeployBase.deployAccessBatch(admin).accessManager;
+    report.accessManager = AaveV4DeployBase.deployAccessBatch(admin, salt).accessManager;
 
     // Deploy Hub Batches
     for (uint256 i; i < hubCount; ++i) {
-      BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch(
-        treasuryAdmin,
-        report.accessManager
-      );
+      BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
+        treasurySpokeOwner: treasuryAdmin,
+        accessManager: report.accessManager,
+        salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i))))
+      });
       report.hubReports[i].hub = hubReport.hub;
       report.hubReports[i].irStrategy = hubReport.irStrategy;
       report.hubReports[i].treasurySpoke = hubReport.treasurySpoke;
@@ -90,13 +92,14 @@ library AaveV4TestOrchestration {
     // Deploy Spoke Instance Batches
     for (uint256 i; i < spokeCount; ++i) {
       BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
-        .deploySpokeInstanceBatch(
-          admin,
-          report.accessManager,
-          Constants.ORACLE_DECIMALS,
-          Constants.ORACLE_SUFFIX,
-          string.concat('Spoke ', string(abi.encode(i)), Constants.ORACLE_SUFFIX)
-        );
+        .deploySpokeInstanceBatch({
+          spokeProxyAdminOwner: admin,
+          accessManager: report.accessManager,
+          oracleDecimals: Constants.ORACLE_DECIMALS,
+          oracleSuffix: Constants.ORACLE_SUFFIX,
+          label: string.concat('Spoke ', string(abi.encode(i)), Constants.ORACLE_SUFFIX),
+          salt: keccak256(abi.encodePacked(salt, 'spoke-', string(abi.encode(i))))
+        });
       report.spokeReports[i].spoke = spokeReport.spokeProxy;
       report.spokeReports[i].aaveOracle = spokeReport.aaveOracle;
     }
@@ -105,7 +108,8 @@ library AaveV4TestOrchestration {
     BatchReports.ConfiguratorBatchReport memory configuratorReport = AaveV4DeployBase
       .deployConfiguratorBatch({
         hubConfiguratorOwner: hubConfiguratorAdmin,
-        spokeConfiguratorOwner: spokeConfiguratorAdmin
+        spokeConfiguratorOwner: spokeConfiguratorAdmin,
+        salt: keccak256(abi.encodePacked(salt, 'configurator'))
       });
     report.configuratorReport.hubConfigurator = configuratorReport.hubConfigurator;
     report.configuratorReport.spokeConfigurator = configuratorReport.spokeConfigurator;
@@ -113,7 +117,8 @@ library AaveV4TestOrchestration {
     // Deploy Gateways Batch
     BatchReports.GatewaysBatchReport memory gatewaysReport = AaveV4DeployBase.deployGatewaysBatch({
       owner: admin,
-      nativeWrapper: nativeWrapper
+      nativeWrapper: nativeWrapper,
+      salt: keccak256(abi.encodePacked(salt, 'gateways'))
     });
     report.gatewaysReport.signatureGateway = gatewaysReport.signatureGateway;
     report.gatewaysReport.nativeGateway = gatewaysReport.nativeGateway;

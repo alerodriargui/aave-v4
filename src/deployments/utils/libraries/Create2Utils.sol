@@ -15,20 +15,18 @@ library Create2Utils {
   error create2AddressDerivationFailure();
   error nonceNotSupported();
   error failedCreate2FactoryCall();
+  error contractAlreadyDeployed();
 
   function create2Deploy(bytes32 salt, bytes memory bytecode) internal returns (address) {
     require(isContractDeployed(CREATE2_FACTORY), missingCreate2Factory());
     address computed = computeCreate2Address(salt, bytecode);
-    if (isContractDeployed(computed)) {
-      return computed;
-    } else {
-      bytes memory creationBytecode = abi.encodePacked(salt, bytecode);
-      (bool success, bytes memory returnData) = CREATE2_FACTORY.call(creationBytecode);
-      require(success, failedCreate2FactoryCall());
-      address deployedAt = address(uint160(bytes20(returnData)));
-      require(deployedAt == computed, create2AddressDerivationFailure());
-      return deployedAt;
-    }
+    require(!isContractDeployed(computed), contractAlreadyDeployed());
+    bytes memory creationBytecode = abi.encodePacked(salt, bytecode);
+    (bool success, bytes memory returnData) = CREATE2_FACTORY.call(creationBytecode);
+    require(success, failedCreate2FactoryCall());
+    address deployedAt = address(uint160(bytes20(returnData)));
+    require(deployedAt == computed, create2AddressDerivationFailure());
+    return deployedAt;
   }
 
   function proxify(

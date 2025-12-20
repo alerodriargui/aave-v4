@@ -20,7 +20,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       nativeWrapper: _weth9,
       grantRoles: true,
       hubLabels: _hubLabels,
-      spokeLabels: _spokeLabels
+      spokeLabels: _spokeLabels,
+      salt: bytes32(0)
     });
   }
 

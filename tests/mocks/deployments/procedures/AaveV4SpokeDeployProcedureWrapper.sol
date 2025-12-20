@@ -12,8 +12,9 @@ contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
   function deployUpgradableSpokeInstance(
     address spokeProxyAdminOwner,
     address accessManager,
-    address oracle
+    address oracle,
+    bytes32 salt
   ) external returns (address spokeProxy, address spokeImplementation) {
-    return _deployUpgradableSpokeInstance(spokeProxyAdminOwner, accessManager, oracle);
+    return _deployUpgradableSpokeInstance(spokeProxyAdminOwner, accessManager, oracle, salt);
   }
 }

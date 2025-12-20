@@ -11,7 +11,7 @@ contract AaveV4InterestRateStrategyDeployProcedureWrapper is
 {
   bool public IS_TEST = true;
 
-  function deployInterestRateStrategy(address hub) external returns (address) {
-    return _deployInterestRateStrategy(hub);
+  function deployInterestRateStrategy(address hub, bytes32 salt) external returns (address) {
+    return _deployInterestRateStrategy(hub, salt);
   }
 }

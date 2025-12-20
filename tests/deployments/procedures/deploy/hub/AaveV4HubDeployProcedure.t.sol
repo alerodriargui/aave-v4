@@ -12,13 +12,13 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
   }
 
   function test_deployHub() public {
-    address hub = aaveV4HubDeployProcedureWrapper.deployHub(accessManager);
+    address hub = aaveV4HubDeployProcedureWrapper.deployHub(accessManager, salt);
     assertNotEq(hub, address(0));
     assertEq(IHub(hub).authority(), accessManager);
   }
 
   function test_deployHub_reverts() public {
     vm.expectRevert('invalid access manager');
-    aaveV4HubDeployProcedureWrapper.deployHub(address(0));
+    aaveV4HubDeployProcedureWrapper.deployHub({accessManager: address(0), salt: salt});
   }
 }

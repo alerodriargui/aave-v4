@@ -9,7 +9,7 @@ import {
 contract AaveV4SignatureGatewayDeployProcedureWrapper is AaveV4SignatureGatewayDeployProcedure {
   bool public IS_TEST = true;
 
-  function deploySignatureGateway(address owner) external returns (address) {
-    return _deploySignatureGateway(owner);
+  function deploySignatureGateway(address owner, bytes32 salt) external returns (address) {
+    return _deploySignatureGateway(owner, salt);
   }
 }

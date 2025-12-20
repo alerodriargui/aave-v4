@@ -14,13 +14,13 @@ contract AaveV4SpokeConfiguratorDeployProcedureTest is ProceduresBase {
 
   function test_deploySpokeConfigurator() public {
     address spokeConfigurator = aaveV4SpokeConfiguratorDeployProcedureWrapper
-      .deploySpokeConfigurator(owner);
+      .deploySpokeConfigurator(owner, salt);
     assertNotEq(spokeConfigurator, address(0));
     assertEq(Ownable(spokeConfigurator).owner(), owner);
   }
 
   function test_deploySpokeConfigurator_reverts() public {
     vm.expectRevert('invalid owner');
-    aaveV4SpokeConfiguratorDeployProcedureWrapper.deploySpokeConfigurator(address(0));
+    aaveV4SpokeConfiguratorDeployProcedureWrapper.deploySpokeConfigurator(address(0), salt);
   }
 }

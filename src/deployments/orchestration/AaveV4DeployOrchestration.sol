@@ -36,19 +36,23 @@ library AaveV4DeployOrchestration {
     address deployer,
     InputUtils.FullDeployInputs memory deployInputs
   ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
+    bytes32 rootSalt = keccak256(abi.encode(deployInputs.salt));
+
     // Deploy Access Batch
     // initialize with deployer as access manager admin
     address initialAdmin = deployer;
     report.accessBatchReport = _deployAccessBatch({
       logger: logger,
-      accessManagerAdmin: initialAdmin
+      accessManagerAdmin: initialAdmin,
+      salt: rootSalt
     });
 
     // Deploy Configurator Batch
     report.configuratorBatchReport = _deployConfiguratorBatch({
       logger: logger,
       hubConfiguratorOwner: deployInputs.hubConfiguratorOwner,
-      spokeConfiguratorOwner: deployInputs.spokeConfiguratorOwner
+      spokeConfiguratorOwner: deployInputs.spokeConfiguratorOwner,
+      salt: keccak256(abi.encode(rootSalt, 'config'))
     });
 
     // Deploy Hub Batches
@@ -56,7 +60,8 @@ library AaveV4DeployOrchestration {
       logger: logger,
       treasurySpokeOwner: deployInputs.treasurySpokeOwner,
       accessManager: report.accessBatchReport.accessManager,
-      hubLabels: deployInputs.hubLabels
+      hubLabels: deployInputs.hubLabels,
+      rootSalt: rootSalt
     });
 
     // Deploy Spoke Instance Batches
@@ -64,7 +69,8 @@ library AaveV4DeployOrchestration {
       logger: logger,
       spokeProxyAdminOwner: deployInputs.spokeProxyAdminOwner,
       accessManager: report.accessBatchReport.accessManager,
-      spokeLabels: deployInputs.spokeLabels
+      spokeLabels: deployInputs.spokeLabels,
+      rootSalt: rootSalt
     });
 
     // Deploy Gateways Batch if native wrapper is not zero address
@@ -72,7 +78,8 @@ library AaveV4DeployOrchestration {
       report.gatewaysBatchReport = _deployGatewayBatch({
         logger: logger,
         gatewayOwner: deployInputs.gatewayOwner,
-        nativeWrapper: deployInputs.nativeWrapper
+        nativeWrapper: deployInputs.nativeWrapper,
+        salt: keccak256(abi.encode(rootSalt, 'gateways'))
       });
     }
 
@@ -143,11 +150,12 @@ library AaveV4DeployOrchestration {
 
   function _deployAccessBatch(
     Logger logger,
-    address accessManagerAdmin
+    address accessManagerAdmin,
+    bytes32 salt
   ) internal returns (BatchReports.AccessBatchReport memory report) {
     logger.log('...Deploying AccessBatch...');
 
-    report = AaveV4DeployBase.deployAccessBatch({admin: accessManagerAdmin});
+    report = AaveV4DeployBase.deployAccessBatch({admin: accessManagerAdmin, salt: salt});
 
     logger.log('AccessManager', report.accessManager);
     logger.log('');
@@ -157,13 +165,15 @@ library AaveV4DeployOrchestration {
   function _deployConfiguratorBatch(
     Logger logger,
     address hubConfiguratorOwner,
-    address spokeConfiguratorOwner
+    address spokeConfiguratorOwner,
+    bytes32 salt
   ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
     logger.log('...Deploying ConfiguratorBatch...');
 
     report = AaveV4DeployBase.deployConfiguratorBatch({
       hubConfiguratorOwner: hubConfiguratorOwner,
-      spokeConfiguratorOwner: spokeConfiguratorOwner
+      spokeConfiguratorOwner: spokeConfiguratorOwner,
+      salt: salt
     });
 
     logger.log('HubConfigurator', report.hubConfigurator);
@@ -176,12 +186,19 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address treasurySpokeOwner,
     address accessManager,
-    string[] memory hubLabels
+    string[] memory hubLabels,
+    bytes32 rootSalt
   ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubBatchReports) {
     uint256 hubCount = hubLabels.length;
     hubBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
     for (uint256 i; i < hubCount; ++i) {
-      hubBatchReports[i] = _deployHub(logger, treasurySpokeOwner, accessManager, hubLabels[i]);
+      hubBatchReports[i] = _deployHub({
+        logger: logger,
+        treasurySpokeOwner: treasurySpokeOwner,
+        accessManager: accessManager,
+        label: hubLabels[i],
+        salt: keccak256(abi.encode(rootSalt, 'hub', hubLabels[i]))
+      });
     }
     logger.log('');
     return hubBatchReports;
@@ -191,14 +208,16 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address treasurySpokeOwner,
     address accessManager,
-    string memory label
+    string memory label,
+    bytes32 salt
   ) internal returns (OrchestrationReports.HubDeploymentReport memory) {
     OrchestrationReports.HubDeploymentReport memory hubReport;
     hubReport.label = label;
     hubReport.report = _deployHubBatch({
       logger: logger,
       treasurySpokeOwner: treasurySpokeOwner,
-      accessManager: accessManager
+      accessManager: accessManager,
+      salt: salt
     });
 
     logger.log(label);
@@ -216,7 +235,8 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address spokeProxyAdminOwner,
     address accessManager,
-    string[] memory spokeLabels
+    string[] memory spokeLabels,
+    bytes32 rootSalt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
     uint256 spokeCount = spokeLabels.length;
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
@@ -225,7 +245,8 @@ library AaveV4DeployOrchestration {
         logger: logger,
         spokeProxyAdminOwner: spokeProxyAdminOwner,
         accessManager: accessManager,
-        label: spokeLabels[i]
+        label: spokeLabels[i],
+        salt: keccak256(abi.encode(rootSalt, 'spoke', spokeLabels[i]))
       });
     }
     logger.log('');
@@ -236,7 +257,8 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address spokeProxyAdminOwner,
     address accessManager,
-    string memory label
+    string memory label,
+    bytes32 salt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport memory) {
     OrchestrationReports.SpokeDeploymentReport memory spokeReport;
 
@@ -245,7 +267,8 @@ library AaveV4DeployOrchestration {
       logger: logger,
       spokeProxyAdminOwner: spokeProxyAdminOwner,
       accessManager: accessManager,
-      label: label
+      label: label,
+      salt: salt
     });
 
     logger.log(label);
@@ -266,38 +289,47 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address spokeProxyAdminOwner,
     address accessManager,
-    string memory label
+    string memory label,
+    bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
     logger.log('...Deploying AaveV4SpokeInstanceBatch...');
-    report = AaveV4DeployBase.deploySpokeInstanceBatch(
-      spokeProxyAdminOwner,
-      accessManager,
-      ORACLE_DECIMALS,
-      ORACLE_SUFFIX,
-      label
-    );
+    report = AaveV4DeployBase.deploySpokeInstanceBatch({
+      spokeProxyAdminOwner: spokeProxyAdminOwner,
+      accessManager: accessManager,
+      oracleDecimals: ORACLE_DECIMALS,
+      oracleSuffix: ORACLE_SUFFIX,
+      label: label,
+      salt: salt
+    });
     return report;
   }
 
   function _deployHubBatch(
     Logger logger,
     address treasurySpokeOwner,
-    address accessManager
+    address accessManager,
+    bytes32 salt
   ) internal returns (BatchReports.HubBatchReport memory report) {
     logger.log('...Deploying HubBatch...');
-    report = AaveV4DeployBase.deployHubBatch(treasurySpokeOwner, accessManager);
+    report = AaveV4DeployBase.deployHubBatch({
+      treasurySpokeOwner: treasurySpokeOwner,
+      accessManager: accessManager,
+      salt: salt
+    });
     return report;
   }
 
   function _deployGatewayBatch(
     Logger logger,
     address gatewayOwner,
-    address nativeWrapper
+    address nativeWrapper,
+    bytes32 salt
   ) internal returns (BatchReports.GatewaysBatchReport memory report) {
     logger.log('...Deploying GatewayBatch...');
     report = AaveV4DeployBase.deployGatewaysBatch({
       owner: gatewayOwner,
-      nativeWrapper: nativeWrapper
+      nativeWrapper: nativeWrapper,
+      salt: salt
     });
     logger.log('NativeTokenGateway', report.nativeGateway);
     logger.log('SignatureGateway', report.signatureGateway);

@@ -55,11 +55,11 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
       address(aaveV4AccessManagerRolesProcedureWrapper),
       0
     );
-    aaveV4AccessManagerRolesProcedureWrapper.grantRootAdminRole(
-      accessManager,
-      newAdmin,
-      address(aaveV4AccessManagerRolesProcedureWrapper)
-    );
+    aaveV4AccessManagerRolesProcedureWrapper.grantRootAdminRole({
+      accessManager: accessManager,
+      adminToAdd: newAdmin,
+      adminToRemove: address(aaveV4AccessManagerRolesProcedureWrapper)
+    });
     vm.stopPrank();
   }
 }

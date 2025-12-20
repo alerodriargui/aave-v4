@@ -14,13 +14,16 @@ contract AaveV4InterestRateStrategyDeployProcedureTest is ProceduresBase {
 
   function test_deployInterestRateStrategy() public {
     address interestRateStrategy = aaveV4InterestRateStrategyDeployProcedureWrapper
-      .deployInterestRateStrategy(hub);
+      .deployInterestRateStrategy(hub, salt);
     assertNotEq(interestRateStrategy, address(0));
     assertEq(IAssetInterestRateStrategy(interestRateStrategy).HUB(), hub);
   }
 
   function test_deployInterestRateStrategy_reverts() public {
     vm.expectRevert('invalid hub');
-    aaveV4InterestRateStrategyDeployProcedureWrapper.deployInterestRateStrategy(address(0));
+    aaveV4InterestRateStrategyDeployProcedureWrapper.deployInterestRateStrategy({
+      hub: address(0),
+      salt: salt
+    });
   }
 }

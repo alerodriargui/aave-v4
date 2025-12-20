@@ -45,12 +45,15 @@ contract Create2UtilsTest is Test, InputUtils {
     _harness.create2Deploy(salt, bytecode);
   }
 
-  function testCreate2Deploy_returnsDeployedAddress(bytes32 salt) public {
+  function testCreate2Deploy_revertsWith_contractAlreadyDeployed(bytes32 salt) public {
     vm.assume(salt != bytes32(0));
     _etchCreate2Factory();
     bytes memory bytecode = type(Dummy).creationCode;
-    address deployed = _harness.create2Deploy(salt, bytecode);
-    assertEq(_harness.create2Deploy(salt, bytecode), deployed);
+    _harness.create2Deploy(salt, bytecode);
+
+    // after already deployed, it should now revert
+    vm.expectRevert(Create2Utils.contractAlreadyDeployed.selector);
+    _harness.create2Deploy(salt, bytecode);
   }
 
   function testCreate2Deploy_fuzz(bytes32 salt) public {

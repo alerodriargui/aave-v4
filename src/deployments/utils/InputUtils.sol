@@ -23,6 +23,7 @@ contract InputUtils {
   /// @dev grantRoles A boolean indicating if roles should be granted.
   /// @dev hubLabels An array of hub labels; the number of hub labels defines the number of hubs to deploy.
   /// @dev spokeLabels An array of spoke labels; the number of spoke labels defines the number of spokes to deploy.
+  /// @dev salt The root salt to use for the deployment.
   struct FullDeployInputs {
     address accessManagerAdmin;
     address hubAdmin;
@@ -36,6 +37,7 @@ contract InputUtils {
     bool grantRoles;
     string[] hubLabels;
     string[] spokeLabels;
+    bytes32 salt;
   }
 
   struct SpokeDeployInputs {

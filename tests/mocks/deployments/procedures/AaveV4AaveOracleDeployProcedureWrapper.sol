@@ -12,8 +12,9 @@ contract AaveV4AaveOracleDeployProcedureWrapper is AaveV4AaveOracleDeployProcedu
   function deployAaveOracle(
     address spoke,
     uint8 decimals,
-    string memory description
+    string memory description,
+    bytes32 salt
   ) external returns (address) {
-    return _deployAaveOracle(spoke, decimals, description);
+    return _deployAaveOracle(spoke, decimals, description, salt);
   }
 }

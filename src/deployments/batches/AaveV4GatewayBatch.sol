@@ -16,12 +16,16 @@ contract AaveV4GatewayBatch is
 {
   BatchReports.GatewaysBatchReport internal _report;
 
-  constructor(address owner_, address nativeWrapper_) {
+  constructor(address owner_, address nativeWrapper_, bytes32 salt_) {
     address nativeGateway = _deployNativeTokenGateway({
       nativeWrapper: nativeWrapper_,
-      owner: owner_
+      owner: owner_,
+      salt: keccak256(abi.encodePacked(SALT, salt_, 'nativeGateway'))
     });
-    address signatureGateway = _deploySignatureGateway(owner_);
+    address signatureGateway = _deploySignatureGateway(
+      owner_,
+      keccak256(abi.encodePacked(SALT, salt_, 'signatureGateway'))
+    );
 
     _report = BatchReports.GatewaysBatchReport({
       nativeGateway: nativeGateway,

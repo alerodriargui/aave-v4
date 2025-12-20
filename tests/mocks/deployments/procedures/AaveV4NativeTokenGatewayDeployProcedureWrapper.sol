@@ -11,8 +11,9 @@ contract AaveV4NativeTokenGatewayDeployProcedureWrapper is AaveV4NativeTokenGate
 
   function deployNativeTokenGateway(
     address nativeWrapper,
-    address owner
+    address owner,
+    bytes32 salt
   ) external returns (address) {
-    return _deployNativeTokenGateway(nativeWrapper, owner);
+    return _deployNativeTokenGateway(nativeWrapper, owner, salt);
   }
 }

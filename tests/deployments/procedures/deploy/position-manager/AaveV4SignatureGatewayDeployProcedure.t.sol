@@ -14,7 +14,8 @@ contract AaveV4SignatureGatewayDeployProcedureTest is ProceduresBase {
 
   function test_deploySignatureGateway() public {
     address signatureGateway = aaveV4SignatureGatewayDeployProcedureWrapper.deploySignatureGateway(
-      owner
+      owner,
+      salt
     );
     assertNotEq(signatureGateway, address(0));
     assertEq(Ownable(signatureGateway).owner(), owner);
@@ -22,6 +23,6 @@ contract AaveV4SignatureGatewayDeployProcedureTest is ProceduresBase {
 
   function test_deploySignatureGateway_reverts() public {
     vm.expectRevert('invalid owner');
-    aaveV4SignatureGatewayDeployProcedureWrapper.deploySignatureGateway(address(0));
+    aaveV4SignatureGatewayDeployProcedureWrapper.deploySignatureGateway(address(0), salt);
   }
 }

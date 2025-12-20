@@ -4,14 +4,17 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 
+import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4AccessBatch} from 'src/deployments/batches/AaveV4AccessBatch.sol';
-
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 
-contract BatchBaseTest is Test {
+contract BatchBaseTest is Test, InputUtils {
   address public admin = makeAddr('admin');
-
-  function setUp() public virtual {}
+  bytes32 public salt;
+  function setUp() public virtual {
+    salt = keccak256('testSalt');
+    _etchCreate2Factory();
+  }
 }

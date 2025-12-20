@@ -332,7 +332,9 @@ contract SpokeDynamicConfigTest is SpokeBase {
         spoke1,
         reserveId
       );
-      dynConf.collateralFactor = _randomBps();
+      dynConf.collateralFactor = _randomBps(
+        PercentageMath.PERCENTAGE_FACTOR.percentDivDown(dynConf.maxLiquidationBonus)
+      );
 
       vm.expectEmit(address(spoke1));
       emit ISpoke.AddDynamicReserveConfig(reserveId, dynamicConfigKey, dynConf);

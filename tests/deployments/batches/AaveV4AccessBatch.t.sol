@@ -8,7 +8,7 @@ contract AaveV4AccessBatchTest is BatchBaseTest {
   AaveV4AccessBatch public aaveV4AccessBatch;
   function setUp() public override {
     super.setUp();
-    aaveV4AccessBatch = new AaveV4AccessBatch(admin);
+    aaveV4AccessBatch = new AaveV4AccessBatch(admin, salt);
   }
 
   function test_getReport() public view {

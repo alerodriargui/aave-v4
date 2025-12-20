@@ -10,8 +10,11 @@ import {
 contract AaveV4AccessBatch is AaveV4AccessManagerEnumerableDeployProcedure {
   BatchReports.AccessBatchReport internal _report;
 
-  constructor(address admin_) {
-    address accessManager = _deployAccessManagerEnumerable(admin_);
+  constructor(address admin_, bytes32 salt_) {
+    address accessManager = _deployAccessManagerEnumerable(
+      admin_,
+      keccak256(abi.encodePacked(SALT, salt_, 'accessManager'))
+    );
     _report = BatchReports.AccessBatchReport({accessManager: accessManager});
   }
 

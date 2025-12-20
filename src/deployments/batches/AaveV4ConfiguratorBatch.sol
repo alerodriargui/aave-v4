@@ -16,9 +16,15 @@ contract AaveV4ConfiguratorBatch is
 {
   BatchReports.ConfiguratorBatchReport internal _report;
 
-  constructor(address hubConfiguratorOwner_, address spokeConfiguratorOwner_) {
-    address hubConfigurator = _deployHubConfigurator(hubConfiguratorOwner_);
-    address spokeConfigurator = _deploySpokeConfigurator(spokeConfiguratorOwner_);
+  constructor(address hubConfiguratorOwner_, address spokeConfiguratorOwner_, bytes32 salt_) {
+    address hubConfigurator = _deployHubConfigurator(
+      hubConfiguratorOwner_,
+      keccak256(abi.encodePacked(SALT, salt_, 'hubConfigurator'))
+    );
+    address spokeConfigurator = _deploySpokeConfigurator(
+      spokeConfiguratorOwner_,
+      keccak256(abi.encodePacked(SALT, salt_, 'spokeConfigurator'))
+    );
 
     _report = BatchReports.ConfiguratorBatchReport({
       hubConfigurator: hubConfigurator,

@@ -13,28 +13,32 @@ import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInsta
 
 library AaveV4DeployBase {
   function deployAccessBatch(
-    address admin
+    address admin,
+    bytes32 salt
   ) internal returns (BatchReports.AccessBatchReport memory) {
-    AaveV4AccessBatch accessBatch = new AaveV4AccessBatch(admin);
+    AaveV4AccessBatch accessBatch = new AaveV4AccessBatch(admin, salt);
     return accessBatch.getReport();
   }
 
   function deployConfiguratorBatch(
     address hubConfiguratorOwner,
-    address spokeConfiguratorOwner
+    address spokeConfiguratorOwner,
+    bytes32 salt
   ) internal returns (BatchReports.ConfiguratorBatchReport memory) {
     AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch(
       hubConfiguratorOwner,
-      spokeConfiguratorOwner
+      spokeConfiguratorOwner,
+      salt
     );
     return configuratorBatch.getReport();
   }
 
   function deployHubBatch(
     address treasurySpokeOwner,
-    address accessManager
+    address accessManager,
+    bytes32 salt
   ) internal returns (BatchReports.HubBatchReport memory) {
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasurySpokeOwner, accessManager);
+    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasurySpokeOwner, accessManager, salt);
     return hubBatch.getReport();
   }
 
@@ -43,24 +47,28 @@ library AaveV4DeployBase {
     address accessManager,
     uint8 oracleDecimals,
     string memory oracleSuffix,
-    string memory label
+    string memory label,
+    bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
     AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
       spokeProxyAdminOwner_: spokeProxyAdminOwner,
       accessManager_: accessManager,
       oracleDecimals_: oracleDecimals,
-      oracleDescription_: string.concat(label, oracleSuffix)
+      oracleDescription_: string.concat(label, oracleSuffix),
+      salt_: salt
     });
     return spokeInstanceBatch.getReport();
   }
 
   function deployGatewaysBatch(
     address owner,
-    address nativeWrapper
+    address nativeWrapper,
+    bytes32 salt
   ) internal returns (BatchReports.GatewaysBatchReport memory) {
     AaveV4GatewayBatch gatewayBatch = new AaveV4GatewayBatch({
       owner_: owner,
-      nativeWrapper_: nativeWrapper
+      nativeWrapper_: nativeWrapper,
+      salt_: salt
     });
     return gatewayBatch.getReport();
   }

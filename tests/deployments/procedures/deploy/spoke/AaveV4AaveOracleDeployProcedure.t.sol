@@ -15,7 +15,8 @@ contract AaveV4AaveOracleDeployProcedureTest is ProceduresBase {
     address aaveOracle = aaveV4AaveOracleDeployProcedureWrapper.deployAaveOracle(
       spoke,
       oracleDecimals,
-      oracleDescription
+      oracleDescription,
+      salt
     );
     assertNotEq(aaveOracle, address(0));
     assertEq(IAaveOracle(aaveOracle).DECIMALS(), oracleDecimals);
@@ -27,21 +28,24 @@ contract AaveV4AaveOracleDeployProcedureTest is ProceduresBase {
     aaveV4AaveOracleDeployProcedureWrapper.deployAaveOracle({
       spoke: address(0),
       decimals: oracleDecimals,
-      description: oracleDescription
+      description: oracleDescription,
+      salt: salt
     });
 
     vm.expectRevert('invalid oracle decimals');
     aaveV4AaveOracleDeployProcedureWrapper.deployAaveOracle({
       spoke: spoke,
       decimals: 0,
-      description: oracleDescription
+      description: oracleDescription,
+      salt: salt
     });
 
     vm.expectRevert('invalid oracle description');
     aaveV4AaveOracleDeployProcedureWrapper.deployAaveOracle({
       spoke: spoke,
       decimals: oracleDecimals,
-      description: ''
+      description: '',
+      salt: salt
     });
   }
 }

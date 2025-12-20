@@ -14,7 +14,7 @@ contract AaveV4AccessManagerEnumerableDeployProcedureTest is ProceduresBase {
 
   function test_deployAccessManagerEnumerable() public {
     address accessManagerEnumerable = aaveV4AccessManagerEnumerableDeployProcedureWrapper
-      .deployAccessManagerEnumerable(accessManagerAdmin);
+      .deployAccessManagerEnumerable(accessManagerAdmin, salt);
     assertNotEq(accessManagerEnumerable, address(0));
     (bool hasRole, uint32 executionDelay) = IAccessManagerEnumerable(accessManagerEnumerable)
       .hasRole(
@@ -27,6 +27,9 @@ contract AaveV4AccessManagerEnumerableDeployProcedureTest is ProceduresBase {
 
   function test_deployAccessManagerEnumerable_reverts() public {
     vm.expectRevert('invalid admin');
-    aaveV4AccessManagerEnumerableDeployProcedureWrapper.deployAccessManagerEnumerable(address(0));
+    aaveV4AccessManagerEnumerableDeployProcedureWrapper.deployAccessManagerEnumerable(
+      address(0),
+      salt
+    );
   }
 }

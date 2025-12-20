@@ -2,17 +2,16 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
+import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
-import {
-  Create2Utils,
-  AaveV4DeployProcedureBase
-} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
+
 contract AaveV4HubConfiguratorDeployProcedure is AaveV4DeployProcedureBase {
-  function _deployHubConfigurator(address owner) internal returns (address) {
+  function _deployHubConfigurator(address owner, bytes32 salt) internal returns (address) {
     require(owner != address(0), 'invalid owner');
     return
       Create2Utils.create2Deploy(
-        SALT,
+        salt,
         abi.encodePacked(type(HubConfigurator).creationCode, abi.encode(owner))
       );
   }
