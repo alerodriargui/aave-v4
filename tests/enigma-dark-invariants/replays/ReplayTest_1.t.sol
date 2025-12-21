@@ -66,6 +66,7 @@ contract ReplayTest1 is Invariants, Setup {
         // Invalid: 8608>=8608 failed, reason: HSPOST_SP_C: User liability should decrease after repayment
         // Should this be >= or >?
         // Changed to >= and passing
+        // TODO add tolerance 2 wei
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

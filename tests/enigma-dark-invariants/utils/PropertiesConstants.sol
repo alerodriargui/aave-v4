@@ -16,6 +16,7 @@ abstract contract PropertiesConstants {
 
     // Protocol constants
     uint256 constant SPOKE_COUNT = 3;
+    uint40 constant MAX_ALLOWED_SPOKE_CAP = type(uint40).max;
 
     // Interest rate 1 data
     uint16 constant OPTIMAL_USAGE_RATIO_IR1 = 85_00; // 85.00%

@@ -20,9 +20,6 @@ abstract contract InvariantsSpec {
     //                                         HUB                                               //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    string constant INV_HUB_A =
-        "INV_HUB_A: Sum of spoke added assets on a single asset must be greater or equal than the total amount of added assets of the asset"; // TODO this overlaps with INV_HUB_G
-
     string constant INV_HUB_A2 = "INV_HUB_A2: If hub assets = 0 => shares 0";
 
     string constant INV_HUB_B =
@@ -38,14 +35,14 @@ abstract contract InvariantsSpec {
         "INV_HUB_E2: hub.getTotalSuppliedAssets = totalAssets() = availableLiquidity + totalDebt + deficit + swept";
 
     string constant INV_HUB_G =
-        "INV_HUB_G: totalAddedAssets = sum of addedAssets of all registered spokes (including present & past treasury spoke)";
+        "INV_HUB_G: totalAddedAssets = sum of addedAssets of all registered spokes (including present & past treasury spoke)";// TODO should this be greater or equal?
 
     string constant INV_HUB_H = "INV_HUB_H: totalAddedShares = sum of addedShares of all registered spokes";
 
     string constant INV_HUB_I = "INV_HUB_I: asset.underlying.balanceOf(hub) + asset.swept >= asset.liquidity";
 
     string constant INV_HUB_J =
-        "INV_HUB_J: totalDrawn{Shares,Assets} >= any spoke totalDrawn{Shares,Assets} (same for premium debt)"; // TODO
+        "INV_HUB_J: totalDrawn{Shares,Assets} >= any spoke totalDrawn{Shares,Assets} (same for premium debt)"; // TODO implement strict equality on all total == sum type invariants
 
     string constant INV_HUB_K =
         "INV_HUB_K: Asset.irStrategy should never be address(0) for any (currently/previously) registered asset";
@@ -71,7 +68,7 @@ abstract contract InvariantsSpec {
         "INV_SP_B: User/Reserve cannot have non-zero assets and zero shares in supply or debt sides.";
 
     string constant INV_SP_C =
-        "INV_SP_C: Sum of spoke debts on a single asset must be greater or equal than the total debt of the asset";
+        "INV_SP_C: Sum of spoke debts on a single asset must be greater or equal than the total debt of the reserve";
 
     string constant INV_SP_D = "INV_SP_D: Users without collateral also have no debt.";
 
@@ -80,5 +77,4 @@ abstract contract InvariantsSpec {
     // TODO
     // - Spoke/Asset cannot have non-zero assets and zero shares in add or draw sides.";
     // - 4626 roundtrip on preview methods
-    // - Asset.feeReceiver should always
 }

@@ -34,6 +34,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
         uint256 totalShares;
         uint256 drawn;
         uint256 premium;
+        uint256 lastUpdateTimestamp;
     }
 
     struct UserVars {
@@ -105,6 +106,8 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                 _defaultVars.assetVars[hubAddress][j].totalShares = IHub(hubAddress).getAddedShares(j);
                 (_defaultVars.assetVars[hubAddress][j].drawn, _defaultVars.assetVars[hubAddress][j].premium) =
                     IHub(hubAddress).getAssetOwed(j);
+                _defaultVars.assetVars[hubAddress][j].lastUpdateTimestamp =
+                IHub(hubAddress).getAsset(j).lastUpdateTimestamp;
             }
         }
     }
@@ -119,10 +122,10 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                 // Iterate through all reserves of the spoke
                 for (uint256 j; j < spokeReserveIds[userInfo.spoke].length; j++) {
                     (
-                            ,
-                            _defaultVars.userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
+                        ,
+                        _defaultVars.userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
                             .premiumDebt
-                        ) = ISpoke(userInfo.spoke).getUserDebt(spokeReserveIds[userInfo.spoke][j], userInfo.user);
+                    ) = ISpoke(userInfo.spoke).getUserDebt(spokeReserveIds[userInfo.spoke][j], userInfo.user);
                     _defaultVars.userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user].totalDebt =
                         ISpoke(userInfo.spoke).getUserTotalDebt(spokeReserveIds[userInfo.spoke][j], userInfo.user);
                 }
@@ -179,6 +182,52 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                 GPOST_HUB_C
             );
         }
+    }
+
+    function assert_GPOST_HUB_D(address hubAddress, uint256 assetId) internal {
+        assertLe(defaultVarsAfter.assetVars[hubAddress][assetId].lastUpdateTimestamp, block.timestamp, GPOST_HUB_D);
+    }
+
+    function assert_GPOST_HUB_EF(address hubAddress, uint256 assetId) internal {
+        /*         // Get the spoke config
+                IHub.SpokeConfig memory spokeConfig = IHub(hubAddress).getSpokeConfig(assetId, spoke);// TODO pass spoke as parameter
+                (, uint8 decimals) = IHub(hubAddress).getAssetUnderlyingAndDecimals(assetId);
+
+                // GPOST_HUB_E
+                if (
+                    defaultVarsAfter.assetVars[hubAddress][assetId].totalAssets
+                        > defaultVarsBefore.assetVars[hubAddress][assetId].totalAssets
+                ) {
+                    if (spokeConfig.addCap != MAX_ALLOWED_SPOKE_CAP) {
+                        assertLe(
+                            defaultVarsAfter.assetVars[hubAddress][assetId].totalAssets,
+                            spokeConfig.addCap * MathUtils.uncheckedExp(10, decimals),
+                            GPOST_HUB_E
+                        );
+                    }
+                }
+
+                // GPOST_HUB_F
+                if (
+                    defaultVarsAfter.assetVars[hubAddress][assetId].drawn
+                        > defaultVarsBefore.assetVars[hubAddress][assetId].drawn
+                ) {
+                    if (spokeConfig.drawCap != MAX_ALLOWED_SPOKE_CAP) {
+                        assertLe(
+                            defaultVarsAfter.assetVars[hubAddress][assetId].drawn,
+                            spokeConfig.drawCap * MathUtils.uncheckedExp(10, decimals),
+                            GPOST_HUB_F
+                        );
+                    }
+                } */
+    }
+
+    function assert_GPOST_HUB_G(address hubAddress, uint256 assetId) internal {
+        assertGe(
+            defaultVarsAfter.assetVars[hubAddress][assetId].lastUpdateTimestamp,
+            defaultVarsBefore.assetVars[hubAddress][assetId].lastUpdateTimestamp,
+            GPOST_HUB_G
+        );
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

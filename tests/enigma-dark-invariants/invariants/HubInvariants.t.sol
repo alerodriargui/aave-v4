@@ -86,6 +86,7 @@ abstract contract HubInvariants is HandlerAggregator {
             IHub(hubAddress).previewRemoveByShares(assetId, 1),
             INV_HUB_E
         );
+
         assertEq(totalSuppliedAssets, asset.liquidity + totalDebt + asset.deficit + asset.swept, INV_HUB_F);
     }
 
@@ -99,6 +100,8 @@ abstract contract HubInvariants is HandlerAggregator {
             totalAddedAssets += IHub(hubAddress).getSpokeAddedAssets(assetId, allSpokes[i]);
             totalAddedShares += IHub(hubAddress).getSpokeAddedShares(assetId, allSpokes[i]);
         }
+
+        // TODO take into account the burned interest from virtual shared -> _calculateBurntInterest from Base.t.sol
         // Checks
         assertApproxEqAbs(totalAddedAssets, IHub(hubAddress).getAddedAssets(assetId), SPOKE_COUNT, INV_HUB_G);
         assertEq(totalAddedShares, IHub(hubAddress).getAddedShares(assetId), INV_HUB_H);
@@ -118,7 +121,7 @@ abstract contract HubInvariants is HandlerAggregator {
     }
 
     function assert_INV_HUB_K(address hubAddress, uint256 assetId) internal {
-        /// @dev for this check to be meaningful, strategy configuration operations have to be integrated
+        /// @dev TODO for this check to be meaningful, strategy configuration operations have to be integrated
         IHub.AssetConfig memory assetConfig = IHub(hubAddress).getAssetConfig(assetId);
 
         // Checks

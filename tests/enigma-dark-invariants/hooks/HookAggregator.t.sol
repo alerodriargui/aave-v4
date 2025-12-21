@@ -77,6 +77,9 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
                 assert_GPOST_HUB_A(hubAddress, assetId);
                 assert_GPOST_HUB_B(hubAddress, assetId);
                 assert_GPOST_HUB_C(hubAddress, assetId);
+                assert_GPOST_HUB_D(hubAddress, assetId);
+                assert_GPOST_HUB_EF(hubAddress, assetId);
+                assert_GPOST_HUB_G(hubAddress, assetId);
             }
         }
     }
