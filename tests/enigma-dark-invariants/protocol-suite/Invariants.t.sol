@@ -18,9 +18,11 @@ abstract contract Invariants is HubInvariants, SpokeInvariants {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     function invariant_INV_HUB() public returns (bool) {
+        // Applied per hub
         for (uint256 i; i < hubAddresses.length; i++) {
             address hubAddress = hubAddresses[i];
 
+            // Applied per asset of the hub
             uint256 assetCount = IHub(hubAddress).getAssetCount();
             for (uint256 j; j < assetCount; j++) {
                 assert_INV_HUB_A(hubAddress, j);
@@ -42,14 +44,14 @@ abstract contract Invariants is HubInvariants, SpokeInvariants {
         for (uint256 i; i < spokesAddresses.length; i++) {
             address spoke = spokesAddresses[i];
 
-            // Applied per actor per spoke
+            // Applied per actor on the spoke
             for (uint256 j; j < actorAddresses.length; j++) {
                 assert_INV_SP_D(spoke, actorAddresses[j]);
             }
 
             // Applied per reserve of the spoke
             for (uint256 j; j < spokeReserveIds[spoke].length; j++) {
-                uint256 reserveId = _getReserveId(spoke, j);
+                uint256 reserveId = spokeReserveIds[spoke][j];
                 assert_INV_SP_A(spoke, reserveId);
                 assert_INV_SP_C(spoke, reserveId);
 
