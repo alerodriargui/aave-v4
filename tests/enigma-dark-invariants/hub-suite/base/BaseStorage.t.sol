@@ -95,6 +95,8 @@ abstract contract BaseStorage {
     uint256 internal usdcAssetId;
     uint256 internal wbtcAssetId;
     uint256[] internal hubAssetIds;
+    mapping(uint256 => address) internal assetIdToUnderlying;
+    mapping(address => uint256) internal underlyingToAssetId;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                       SPOKE CONFIG                                        //

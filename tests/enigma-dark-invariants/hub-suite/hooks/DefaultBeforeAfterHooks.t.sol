@@ -33,7 +33,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
         uint256 drawn;
         uint256 premium;
         uint256 liquidity;
-        uint256 deficit;
+        uint256 deficitRay;
         uint256 swept;
         uint256 lastUpdateTimestamp;
         uint256 drawnRate;
@@ -43,9 +43,8 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
         uint256 addedShares;
         uint256 drawnShares;
         uint256 premiumShares;
-        uint256 premiumOffset;
-        uint256 realizedPremium;
-        uint256 deficit;
+        int256 premiumOffsetRay;
+        uint256 deficitRay;
         uint256 drawn;
         uint256 premium;
     }
@@ -105,7 +104,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
             _defaultVars.assetVars[j].lastUpdateTimestamp = hub.getAsset(j).lastUpdateTimestamp;
             _defaultVars.assetVars[j].drawnRate = hub.getAssetDrawnRate(j);
             _defaultVars.assetVars[j].liquidity = hub.getAssetLiquidity(j);
-            _defaultVars.assetVars[j].deficit = hub.getAssetDeficit(j);
+            _defaultVars.assetVars[j].deficitRay = hub.getAssetDeficitRay(j);
             _defaultVars.assetVars[j].swept = hub.getAssetSwept(j);
         }
     }
@@ -121,10 +120,9 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                 _defaultVars.spokeDataVars[i][spoke].drawnShares = hub.getSpokeDrawnShares(i, spoke);
                 (
                     _defaultVars.spokeDataVars[i][spoke].premiumShares,
-                    _defaultVars.spokeDataVars[i][spoke].premiumOffset,
-                    _defaultVars.spokeDataVars[i][spoke].realizedPremium
+                    _defaultVars.spokeDataVars[i][spoke].premiumOffsetRay
                 ) = hub.getSpokePremiumData(i, spoke);
-                _defaultVars.spokeDataVars[i][spoke].deficit = hub.getSpokeDeficit(i, spoke);
+                _defaultVars.spokeDataVars[i][spoke].deficitRay = hub.getSpokeDeficitRay(i, spoke);
                 (_defaultVars.spokeDataVars[i][spoke].drawn, _defaultVars.spokeDataVars[i][spoke].premium) =
                     hub.getSpokeOwed(i, spoke);
             }
@@ -163,7 +161,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                         assetId,
                         hub.getAssetLiquidity(assetId),
                         defaultVarsAfter.assetVars[assetId].drawn,
-                        hub.getAssetDeficit(assetId),
+                        0, // Unused in the interest rate calculation
                         hub.getAssetSwept(assetId)
                     ),
                 GPOST_HUB_C

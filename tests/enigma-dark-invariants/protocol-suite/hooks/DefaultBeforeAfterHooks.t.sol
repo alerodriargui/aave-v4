@@ -176,7 +176,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                         assetId,
                         IHub(hubAddress).getAssetLiquidity(assetId),
                         defaultVarsAfter.assetVars[hubAddress][assetId].drawn,
-                        IHub(hubAddress).getAssetDeficit(assetId),
+                        0,// Unused in the interest rate calculation
                         IHub(hubAddress).getAssetSwept(assetId)
                     ),
                 GPOST_HUB_C
@@ -257,9 +257,9 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
 
     function assert_GPOST_SP_E(address spoke, uint256 reserveId, address user) internal {
         // latest reserve key
-        uint16 latestKey = ISpoke(spoke).getReserve(reserveId).dynamicConfigKey;
+        uint24 latestKey = ISpoke(spoke).getReserve(reserveId).dynamicConfigKey;
         // user-stored key
-        uint16 userKey = ISpoke(spoke).getUserPosition(reserveId, user).dynamicConfigKey;
+        uint24 userKey = ISpoke(spoke).getUserPosition(reserveId, user).dynamicConfigKey;
 
         // Read the cached signature of the current action
         bytes4 signature = currentActionSignature;

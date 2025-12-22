@@ -47,17 +47,14 @@ abstract contract HubInvariants is HandlerAggregator {
 
         uint256 sumDrawnShares;
         uint256 sumPremDrawnShares;
-        uint256 sumPremOffset;
-        uint256 sumPremRealized;
+        int256 sumPremOffsetRay;
 
         for (uint256 i; i < spokeCount; i++) {
             address spoke = spokesAddresses[i];
             sumDrawnShares += IHub(hubAddress).getSpokeDrawnShares(assetId, spoke);
-            (uint256 premiumDrawnShares, uint256 premiumOffset, uint256 realizedPremium) =
-                IHub(hubAddress).getSpokePremiumData(assetId, spoke);
+            (uint256 premiumDrawnShares, int256 premiumOffsetRay) = IHub(hubAddress).getSpokePremiumData(assetId, spoke);
             sumPremDrawnShares += premiumDrawnShares;
-            sumPremOffset += premiumOffset;
-            sumPremRealized += realizedPremium;
+            sumPremOffsetRay += premiumOffsetRay;
         }
 
         // Asset totals
@@ -66,8 +63,7 @@ abstract contract HubInvariants is HandlerAggregator {
         // Checks
         assertEq(sumDrawnShares, a.drawnShares, INV_HUB_C);
         assertEq(sumPremDrawnShares, a.premiumShares, INV_HUB_C);
-        assertEq(sumPremOffset, a.premiumOffset, INV_HUB_C);
-        assertEq(sumPremRealized, a.realizedPremium, INV_HUB_C);
+        assertEq(sumPremOffsetRay, a.premiumOffsetRay, INV_HUB_C);
     }
 
     function assert_INV_HUB_EF(address hubAddress, uint256 assetId) internal {
@@ -87,7 +83,11 @@ abstract contract HubInvariants is HandlerAggregator {
             INV_HUB_E
         );
 
-        assertEq(totalSuppliedAssets, asset.liquidity + totalDebt + asset.deficit + asset.swept, INV_HUB_F);
+        assertEq(
+            totalSuppliedAssets * 1e9,
+            asset.liquidity * 1e9 + totalDebt * 1e9 + asset.deficitRay + asset.swept * 1e9,
+            INV_HUB_F
+        );
     }
 
     function assert_INV_HUB_GH(address hubAddress, uint256 assetId) internal {
@@ -129,8 +129,12 @@ abstract contract HubInvariants is HandlerAggregator {
     }
 
     function assert_INV_HUB_L(address hubAddress, uint256 assetId) internal {
-        (uint256 premiumShares, uint256 premiumOffset,) = IHub(hubAddress).getAssetPremiumData(assetId);
+        (uint256 premiumShares, int256 premiumOffsetRay) = IHub(hubAddress).getAssetPremiumData(assetId);
 
-        assertGe(IHub(hubAddress).previewRestoreByShares(assetId, premiumShares), premiumOffset, INV_HUB_L);
+        assertGe(
+            int256(IHub(hubAddress).previewRestoreByShares(assetId, premiumShares) * 1e9),
+            premiumOffsetRay * 1e9,
+            INV_HUB_L
+        );
     }
 }

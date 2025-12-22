@@ -6,6 +6,7 @@ import {ISpoke} from "src/spoke/interfaces/ISpoke.sol";
 import {ISpokeHandler} from "../interfaces/ISpokeHandler.sol";
 
 // Libraries
+import {Constants} from "tests/Constants.sol";
 import "forge-std/console.sol";
 
 // Test Contracts
@@ -193,7 +194,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
                 HSPOST_SP_LIQ_A
             );
 
-            if (totalDebtValueBefore < ISpoke(spoke).DUST_LIQUIDATION_THRESHOLD()) {
+            if (totalDebtValueBefore < Constants.DUST_LIQUIDATION_THRESHOLD) {
                 assertEq(
                     defaultVarsAfter.userVars[spoke][debtReserveId][_getRandomActor(i)].totalDebt, 0, HSPOST_SP_LIQ_C
                 );

@@ -5,6 +5,7 @@ pragma solidity ^0.8.19;
 import {Vm} from "forge-std/Base.sol";
 import {StdUtils} from "forge-std/StdUtils.sol";
 import "forge-std/console.sol";
+import {Constants} from "tests/Constants.sol";
 
 // Interfaces
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
@@ -127,7 +128,7 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
 
     function _isHealthy(address spoke, address user) internal view returns (bool) {
         return
-            ISpoke(spoke).getUserAccountData(user).healthFactor >= ISpoke(spoke).HEALTH_FACTOR_LIQUIDATION_THRESHOLD();
+            ISpoke(spoke).getUserAccountData(user).healthFactor >= Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -263,24 +263,48 @@ contract Setup is BaseTest {
         spokeConfigurator.updateLiquidationTargetHealthFactor(address(spoke2), TARGET_HEALTH_FACTOR_SPOKE2);
 
         // Spoke 1 reserve configs
-        spokeInfo[spoke1].usdc.reserveConfig =
-            ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 30_00});
+        spokeInfo[spoke1].usdc.reserveConfig = ISpoke.ReserveConfig({
+            paused: false,
+            frozen: false,
+            borrowable: true,
+            liquidatable: true,
+            receiveSharesEnabled: true,
+            collateralRisk: 30_00
+        });
         spokeInfo[spoke1].usdc.dynReserveConfig =
             ISpoke.DynamicReserveConfig({collateralFactor: 90_00, maxLiquidationBonus: 100_00, liquidationFee: 0});
 
-        spokeInfo[spoke1].weth.reserveConfig =
-            ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 20_00});
+        spokeInfo[spoke1].weth.reserveConfig = ISpoke.ReserveConfig({
+            paused: false,
+            frozen: false,
+            borrowable: true,
+            liquidatable: true,
+            receiveSharesEnabled: true,
+            collateralRisk: 20_00
+        });
         spokeInfo[spoke1].weth.dynReserveConfig =
             ISpoke.DynamicReserveConfig({collateralFactor: 80_00, maxLiquidationBonus: 105_00, liquidationFee: 0});
 
         // Spoke 2 reserve configs
-        spokeInfo[spoke2].weth.reserveConfig =
-            ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 10_00});
+        spokeInfo[spoke2].weth.reserveConfig = ISpoke.ReserveConfig({
+            paused: false,
+            frozen: false,
+            borrowable: true,
+            liquidatable: true,
+            receiveSharesEnabled: true,
+            collateralRisk: 10_00
+        });
         spokeInfo[spoke2].weth.dynReserveConfig =
             ISpoke.DynamicReserveConfig({collateralFactor: 70_00, maxLiquidationBonus: 105_00, liquidationFee: 0});
 
-        spokeInfo[spoke2].usdc.reserveConfig =
-            ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00});
+        spokeInfo[spoke2].usdc.reserveConfig = ISpoke.ReserveConfig({
+            paused: false,
+            frozen: false,
+            borrowable: true,
+            liquidatable: true,
+            receiveSharesEnabled: true,
+            collateralRisk: 15_00
+        });
         spokeInfo[spoke2].usdc.dynReserveConfig =
             ISpoke.DynamicReserveConfig({collateralFactor: 80_00, maxLiquidationBonus: 100_00, liquidationFee: 0});
 
@@ -399,7 +423,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -410,7 +434,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -421,7 +445,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -432,7 +456,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -445,7 +469,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -456,7 +480,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -467,7 +491,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -478,7 +502,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })

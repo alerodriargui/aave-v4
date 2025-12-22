@@ -9,7 +9,6 @@ import {Actor} from "../shared/utils/Actor.sol";
 import "forge-std/console.sol";
 
 // Interfaces
-import {ISpoke} from "src/spoke/Spoke.sol";
 import {IHub} from "src/hub/Hub.sol";
 
 // Test Contracts
@@ -21,10 +20,8 @@ import {AssetInterestRateStrategy} from "src/hub/AssetInterestRateStrategy.sol";
 import {IAssetInterestRateStrategy} from "src/hub/interfaces/IAssetInterestRateStrategy.sol";
 import {AccessManager} from "src/dependencies/openzeppelin/AccessManager.sol";
 import {Hub} from "src/hub/Hub.sol";
-import {TreasurySpoke} from "src/spoke/TreasurySpoke.sol";
 import {Spoke} from "src/spoke/Spoke.sol";
 import {HubConfigurator} from "src/hub/HubConfigurator.sol";
-import {SpokeConfigurator} from "src/spoke/SpokeConfigurator.sol";
 
 /// @notice Setup contract for the invariant test Suite, inherited by Tester
 contract Setup is BaseTest {
@@ -122,6 +119,8 @@ contract Setup is BaseTest {
             new bytes(0)
         );
         hubAssetIds.push(usdcAssetId);
+        assetIdToUnderlying[usdcAssetId] = address(usdc);
+        underlyingToAssetId[address(usdc)] = usdcAssetId;
 
         // Add WETH
         wethAssetId = hub.addAsset(address(weth), weth.decimals(), address(this), address(irStrategy), encodedIrData);
@@ -136,6 +135,8 @@ contract Setup is BaseTest {
             new bytes(0)
         );
         hubAssetIds.push(wethAssetId);
+        assetIdToUnderlying[wethAssetId] = address(weth);
+        underlyingToAssetId[address(weth)] = wethAssetId;
 
         // Add WBTC
         wbtcAssetId = hub.addAsset(address(wbtc), wbtc.decimals(), address(this), address(irStrategy), encodedIrData);
@@ -150,6 +151,8 @@ contract Setup is BaseTest {
             new bytes(0)
         );
         hubAssetIds.push(wbtcAssetId);
+        assetIdToUnderlying[wbtcAssetId] = address(wbtc);
+        underlyingToAssetId[address(wbtc)] = wbtcAssetId;
     }
 
     function _configureSpokes() internal {
@@ -164,7 +167,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -175,7 +178,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 3,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -186,7 +189,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -199,7 +202,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -210,7 +213,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -223,7 +226,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -234,7 +237,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP / 10 * 2,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })
@@ -245,7 +248,7 @@ contract Setup is BaseTest {
             IHub.SpokeConfig({
                 addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
                 drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-                riskPremiumCap: Constants.MAX_ALLOWED_RISK_PREMIUM_CAP,
+                riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
                 active: true,
                 paused: false
             })

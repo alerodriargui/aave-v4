@@ -24,10 +24,12 @@ contract HubHandler is BaseHandler, IHubHandler {
         bool success;
         bytes memory returnData;
         uint256 assetId = _getRandomBaseAssetId(i);
+        address underlying = assetIdToUnderlying[assetId];
 
         _before();
-        (success, returnData) =
-            actor.proxy(address(hub), abi.encodeCall(IHubBase.add, (assetId, amount, address(actor))));
+        vm.prank(address(actor));
+        IERC20(underlying).transfer(address(hub), amount);
+        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHubBase.add, (assetId, amount)));
 
         if (success) {
             _after();
@@ -58,7 +60,8 @@ contract HubHandler is BaseHandler, IHubHandler {
         uint256 assetId = _getRandomBaseAssetId(i);
 
         _before();
-        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHubBase.draw, (assetId, amount, address(actor))));
+        (success, returnData) =
+            actor.proxy(address(hub), abi.encodeCall(IHubBase.draw, (assetId, amount, address(actor))));
 
         if (success) {
             _after();
@@ -74,12 +77,13 @@ contract HubHandler is BaseHandler, IHubHandler {
         bool success;
         bytes memory returnData;
         uint256 assetId = _getRandomBaseAssetId(i);
+        address underlying = assetIdToUnderlying[assetId];
 
         _before();
-        (success, returnData) = actor.proxy(
-            address(hub),
-            abi.encodeCall(IHubBase.restore, (assetId, drawnAmount, premiumAmount, premiumDelta, address(actor)))
-        );
+        vm.prank(address(actor));
+        IERC20(underlying).transfer(address(hub), drawnAmount + premiumAmount);
+        (success, returnData) =
+            actor.proxy(address(hub), abi.encodeCall(IHubBase.restore, (assetId, drawnAmount, premiumDelta)));
 
         if (success) {
             _after();
@@ -88,20 +92,14 @@ contract HubHandler is BaseHandler, IHubHandler {
         }
     }
 
-    function reportDeficit(
-        uint256 drawnAmount,
-        uint256 premiumAmount,
-        IHubBase.PremiumDelta calldata premiumDelta,
-        uint8 i
-    ) external setup {
+    function reportDeficit(uint256 drawnAmount, IHubBase.PremiumDelta calldata premiumDelta, uint8 i) external setup {
         bool success;
         bytes memory returnData;
         uint256 assetId = _getRandomBaseAssetId(i);
 
         _before();
-        (success, returnData) = actor.proxy(
-            address(hub), abi.encodeCall(IHubBase.reportDeficit, (assetId, drawnAmount, premiumAmount, premiumDelta))
-        );
+        (success, returnData) =
+            actor.proxy(address(hub), abi.encodeCall(IHubBase.reportDeficit, (assetId, drawnAmount, premiumDelta)));
 
         if (success) {
             _after();
@@ -133,7 +131,8 @@ contract HubHandler is BaseHandler, IHubHandler {
         uint256 assetId = _getRandomBaseAssetId(i);
 
         _before();
-        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta)));
+        (success, returnData) =
+            actor.proxy(address(hub), abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta)));
 
         if (success) {
             _after();

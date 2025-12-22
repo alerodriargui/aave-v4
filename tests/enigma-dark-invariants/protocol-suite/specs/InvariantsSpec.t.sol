@@ -26,7 +26,7 @@ abstract contract InvariantsSpec {
         "INV_HUB_A: Sum of spoke debts on a single asset must be greater or equal than the total debt of the asset";
 
     string constant INV_HUB_C =
-        "INV_HUB_C: Sum of [baseDrawnShares/premiumDrawnShares/premiumOffset/realized] of individual (spoke/user) should match the corresponding value of the asset on the Hub";
+        "INV_HUB_C: Sum of [baseDrawnShares/premiumDrawnShares/premiumOffsetRay] of individual (spoke/user) should match the corresponding value of the asset on the Hub";
 
     string constant INV_HUB_E =
         "INV_HUB_E: hub.getTotalSuppliedAssets and hub.getAssetSuppliedAmount should match at any time, should not be off by more than 1 share worth of assets due to division precision loss";
@@ -35,7 +35,7 @@ abstract contract InvariantsSpec {
         "INV_HUB_E2: hub.getTotalSuppliedAssets = totalAssets() = availableLiquidity + totalDebt + deficit + swept";
 
     string constant INV_HUB_G =
-        "INV_HUB_G: totalAddedAssets = sum of addedAssets of all registered spokes (including present & past treasury spoke)";// TODO should this be greater or equal?
+        "INV_HUB_G: totalAddedAssets = sum of addedAssets of all registered spokes (including present & past treasury spoke)"; // TODO should this be greater or equal?
 
     string constant INV_HUB_H = "INV_HUB_H: totalAddedShares = sum of addedShares of all registered spokes";
 
@@ -47,7 +47,8 @@ abstract contract InvariantsSpec {
     string constant INV_HUB_K =
         "INV_HUB_K: Asset.irStrategy should never be address(0) for any (currently/previously) registered asset";
 
-    string constant INV_HUB_L = "INV_HUB_L: Asset.premiumShares.toDrawnAssetsUp() >= Asset.premiumOffset";
+    string constant INV_HUB_L =
+        "INV_HUB_L: Asset.premiumShares.toDrawnAssetsUp() * 1e9 >= Asset.premiumOffsetRay * 1e9";
 
     string constant INV_HUB_M =
         "INV_HUB_M: Liquidity growth (ie accrued interest) >= AccruedFees (even with 100.00% liquidity fee)"; // TODO
@@ -55,7 +56,7 @@ abstract contract InvariantsSpec {
     string constant INV_HUB_N =
         "INV_HUB_N: Liquidity growth (ie accrued interest) = AccruedFees + sum of Accrued for all spokes with non zero addedShares"; // TODO
 
-    string constant INV_HUB_O = "INV_HUB_O: sum of deficit across spokes for a given asset == total asset deficit"; // TODO explore how to track deficit for each spoke
+    string constant INV_HUB_O = "INV_HUB_O: sum of deficitRay across spokes for a given asset == total asset deficitRay"; // TODO explore how to track deficitRay for each spoke
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                        SPOKE                                              //
