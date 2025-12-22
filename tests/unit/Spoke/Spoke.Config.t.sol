@@ -75,6 +75,8 @@ contract SpokeConfigTest is SpokeBase {
       paused: !config.paused,
       frozen: !config.frozen,
       borrowable: !config.borrowable,
+      liquidatable: !config.liquidatable,
+      receiveSharesEnabled: !config.receiveSharesEnabled,
       collateralRisk: config.collateralRisk + 1
     });
     vm.expectEmit(address(spoke1));
@@ -125,12 +127,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_addReserve() public {
     uint256 reserveId = spoke1.getReserveCount();
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -140,7 +137,7 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.AddReserve(reserveId, dai2AssetId, address(hub1));
+    emit ISpoke.AddReserve(reserveId, usdzAssetId, address(hub1));
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateReserveConfig(reserveId, newReserveConfig);
     vm.expectEmit(address(spoke1));
@@ -153,25 +150,20 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
     );
 
     assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
-    assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
+    assertEq(_getLatestDynamicReserveConfig(spoke1, reserveId), newDynReserveConfig);
   }
 
   function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
     uint256 assetId = vm.randomUint(hub1.getAssetCount(), Constants.MAX_ALLOWED_ASSET_ID); // non-existing asset id
 
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -204,12 +196,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {
     (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
 
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -228,12 +215,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_ReserveExists() public {
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -245,7 +227,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
@@ -255,7 +237,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
@@ -263,12 +245,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAssetId() public {
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,

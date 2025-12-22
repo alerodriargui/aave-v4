@@ -11,12 +11,12 @@ library MathUtils {
 
   /// @notice Calculates the interest accumulated using a linear interest rate formula.
   /// @dev Reverts if `lastUpdateTimestamp` is greater than `block.timestamp`.
-  /// @param rate The interest rate in Ray units.
+  /// @param rate The interest rate in RAY units.
   /// @param lastUpdateTimestamp The timestamp to calculate interest rate from.
-  /// @return result The interest rate linearly accumulated during the time delta in Ray units.
+  /// @return result The interest rate linearly accumulated during the time delta in RAY units.
   function calculateLinearInterest(
     uint96 rate,
-    uint32 lastUpdateTimestamp
+    uint40 lastUpdateTimestamp
   ) internal view returns (uint256 result) {
     assembly ('memory-safe') {
       if gt(lastUpdateTimestamp, timestamp()) {

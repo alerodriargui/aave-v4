@@ -3,8 +3,7 @@
 pragma solidity 0.8.28;
 
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.sol';
@@ -36,7 +35,9 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
     uint256 amount,
     address
   ) external onlyOwner returns (uint256, uint256) {
-    uint256 shares = HUB.add(reserveId, amount, msg.sender);
+    (address underlying, ) = HUB.getAssetUnderlyingAndDecimals(reserveId);
+    IERC20(underlying).safeTransferFrom(msg.sender, address(HUB), amount);
+    uint256 shares = HUB.add(reserveId, amount);
 
     return (shares, amount);
   }
@@ -92,6 +93,9 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
 
   /// @inheritdoc ISpokeBase
   function getUserTotalDebt(uint256, address) external pure returns (uint256) {}
+
+  /// @inheritdoc ISpokeBase
+  function getUserPremiumDebtRay(uint256, address) external pure returns (uint256) {}
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {

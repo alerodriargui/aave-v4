@@ -27,3 +27,5 @@ report/
 _corpus/
 crytic-export/
 slither_results.json
+
+.venv/
