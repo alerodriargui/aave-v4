@@ -390,13 +390,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       params
     );
 
-    uint256 newRiskPremium = 0;
     if (isUserInDeficit) {
       _reportDeficit(user);
     } else {
-      newRiskPremium = _calculateUserAccountData(user).riskPremium;
+      uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
+      _notifyRiskPremiumUpdate(user, newRiskPremium);
     }
-    _notifyRiskPremiumUpdate(user, newRiskPremium);
   }
 
   /// @inheritdoc ISpoke
@@ -862,6 +861,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev It clears the user position, setting drawn debt, premium debt, and risk premium to zero.
   function _reportDeficit(address user) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
+    positionStatus.riskPremium = 0;
 
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
@@ -888,6 +888,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
       emit ReportDeficit(reserveId, user, deficitShares, premiumDelta);
     }
+    emit UpdateUserRiskPremium(user, 0);
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
