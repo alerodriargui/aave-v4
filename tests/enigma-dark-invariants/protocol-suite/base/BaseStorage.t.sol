@@ -32,7 +32,6 @@ abstract contract BaseStorage {
     uint256 constant ONE_YEAR = 365 days;
 
     uint256 internal constant NUMBER_OF_ACTORS = 3;
-    uint256 internal constant INITIAL_ETH_BALANCE = 1e26;
     uint256 internal constant INITIAL_COLL_BALANCE = 1e21;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

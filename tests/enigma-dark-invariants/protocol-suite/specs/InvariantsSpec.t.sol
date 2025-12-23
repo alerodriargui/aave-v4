@@ -48,7 +48,7 @@ abstract contract InvariantsSpec {
         "INV_HUB_K: Asset.irStrategy should never be address(0) for any (currently/previously) registered asset";
 
     string constant INV_HUB_L =
-        "INV_HUB_L: Asset.premiumShares.toDrawnAssetsUp() * 1e9 >= Asset.premiumOffsetRay * 1e9";
+        "INV_HUB_L: Asset.premiumShares.toDrawnAssetsUp() * WadRayMath.RAY >= Asset.premiumOffsetRay * WadRayMath.RAY";
 
     string constant INV_HUB_M =
         "INV_HUB_M: Liquidity growth (ie accrued interest) >= AccruedFees (even with 100.00% liquidity fee)"; // TODO
@@ -56,7 +56,8 @@ abstract contract InvariantsSpec {
     string constant INV_HUB_N =
         "INV_HUB_N: Liquidity growth (ie accrued interest) = AccruedFees + sum of Accrued for all spokes with non zero addedShares"; // TODO
 
-    string constant INV_HUB_O = "INV_HUB_O: sum of deficitRay across spokes for a given asset == total asset deficitRay"; // TODO explore how to track deficitRay for each spoke
+    string constant INV_HUB_O =
+        "INV_HUB_O: sum of deficitRay across spokes for a given asset == total asset deficitRay"; // TODO explore how to track deficitRay for each spoke
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                        SPOKE                                              //

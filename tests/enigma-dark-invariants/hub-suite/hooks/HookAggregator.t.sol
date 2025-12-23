@@ -57,11 +57,16 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
 
     /// @dev postconditions checks entrypoint, should be self-called
     function checkPostConditions() external {
+        // Target asset postconditions
+        if (targetAssetId != 0) {
+            assert_GPOST_HUB_C(targetAssetId);
+        }
+
+        // Protocol-wide postconditions
         uint256 assetCount = hub.getAssetCount();
         for (uint256 i; i < assetCount; i++) {
             assert_GPOST_HUB_A(i);
             assert_GPOST_HUB_B(i);
-            assert_GPOST_HUB_C(i);
             assert_GPOST_HUB_D(i);
             assert_GPOST_HUB_G(i);
 
@@ -79,5 +84,6 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
     /// @notice Resets the state of the handlers
     function _resetState() internal {
         delete currentActionSignature;
+        delete targetAssetId;
     }
 }

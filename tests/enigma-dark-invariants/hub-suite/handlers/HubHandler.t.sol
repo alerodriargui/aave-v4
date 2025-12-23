@@ -7,6 +7,7 @@ import {IHub, IHubBase} from "src/hub/Hub.sol";
 import {IHubHandler} from "./interfaces/IHubHandler.sol";
 
 // Libraries
+import {WadRayMath} from "src/libraries/math/WadRayMath.sol";
 import "forge-std/console.sol";
 
 // Test Contracts
@@ -23,13 +24,13 @@ contract HubHandler is BaseHandler, IHubHandler {
     function add(uint256 amount, uint8 i) external setup {
         bool success;
         bytes memory returnData;
-        uint256 assetId = _getRandomBaseAssetId(i);
-        address underlying = assetIdToUnderlying[assetId];
+        targetAssetId = _getRandomBaseAssetId(i);
+        address underlying = assetIdToUnderlying[targetAssetId];
 
         _before();
         vm.prank(address(actor));
         IERC20(underlying).transfer(address(hub), amount);
-        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHubBase.add, (assetId, amount)));
+        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHubBase.add, (targetAssetId, amount)));
 
         if (success) {
             _after();
@@ -41,11 +42,11 @@ contract HubHandler is BaseHandler, IHubHandler {
     function remove(uint256 amount, uint8 i) external setup {
         bool success;
         bytes memory returnData;
-        uint256 assetId = _getRandomBaseAssetId(i);
+        targetAssetId = _getRandomBaseAssetId(i);
 
         _before();
         (success, returnData) =
-            actor.proxy(address(hub), abi.encodeCall(IHubBase.remove, (assetId, amount, address(actor))));
+            actor.proxy(address(hub), abi.encodeCall(IHubBase.remove, (targetAssetId, amount, address(actor))));
 
         if (success) {
             _after();
@@ -57,11 +58,11 @@ contract HubHandler is BaseHandler, IHubHandler {
     function draw(uint256 amount, uint8 i) external setup {
         bool success;
         bytes memory returnData;
-        uint256 assetId = _getRandomBaseAssetId(i);
+        targetAssetId = _getRandomBaseAssetId(i);
 
         _before();
         (success, returnData) =
-            actor.proxy(address(hub), abi.encodeCall(IHubBase.draw, (assetId, amount, address(actor))));
+            actor.proxy(address(hub), abi.encodeCall(IHubBase.draw, (targetAssetId, amount, address(actor))));
 
         if (success) {
             _after();
@@ -70,20 +71,19 @@ contract HubHandler is BaseHandler, IHubHandler {
         }
     }
 
-    function restore(uint256 drawnAmount, uint256 premiumAmount, IHubBase.PremiumDelta calldata premiumDelta, uint8 i)
-        external
-        setup
-    {
+    function restore(uint256 drawnAmount, uint256 premiumAmount, int256 sharesDelta, uint8 i) external setup {
         bool success;
         bytes memory returnData;
-        uint256 assetId = _getRandomBaseAssetId(i);
-        address underlying = assetIdToUnderlying[assetId];
+        targetAssetId = _getRandomBaseAssetId(i);
+        address underlying = assetIdToUnderlying[targetAssetId];
+
+        IHubBase.PremiumDelta memory premiumDelta = _calculatePremiumDelta(sharesDelta, premiumAmount, targetAssetId);
 
         _before();
         vm.prank(address(actor));
         IERC20(underlying).transfer(address(hub), drawnAmount + premiumAmount);
         (success, returnData) =
-            actor.proxy(address(hub), abi.encodeCall(IHubBase.restore, (assetId, drawnAmount, premiumDelta)));
+            actor.proxy(address(hub), abi.encodeCall(IHubBase.restore, (targetAssetId, drawnAmount, premiumDelta)));
 
         if (success) {
             _after();
@@ -92,14 +92,17 @@ contract HubHandler is BaseHandler, IHubHandler {
         }
     }
 
-    function reportDeficit(uint256 drawnAmount, IHubBase.PremiumDelta calldata premiumDelta, uint8 i) external setup {
+    function reportDeficit(uint256 drawnAmount, uint256 premiumAmount, int256 sharesDelta, uint8 i) external setup {
         bool success;
         bytes memory returnData;
-        uint256 assetId = _getRandomBaseAssetId(i);
+        targetAssetId = _getRandomBaseAssetId(i);
+
+        IHubBase.PremiumDelta memory premiumDelta = _calculatePremiumDelta(sharesDelta, premiumAmount, targetAssetId);
 
         _before();
-        (success, returnData) =
-            actor.proxy(address(hub), abi.encodeCall(IHubBase.reportDeficit, (assetId, drawnAmount, premiumDelta)));
+        (success, returnData) = actor.proxy(
+            address(hub), abi.encodeCall(IHubBase.reportDeficit, (targetAssetId, drawnAmount, premiumDelta))
+        );
 
         if (success) {
             _after();
@@ -111,12 +114,12 @@ contract HubHandler is BaseHandler, IHubHandler {
     function eliminateDeficit(uint256 amount, uint8 i, uint8 j) external setup {
         bool success;
         bytes memory returnData;
-        uint256 assetId = _getRandomBaseAssetId(i);
+        targetAssetId = _getRandomBaseAssetId(i);
         address spoke = _getRandomActor(j);
 
         _before();
         (success, returnData) =
-            actor.proxy(address(hub), abi.encodeCall(IHub.eliminateDeficit, (assetId, amount, spoke)));
+            actor.proxy(address(hub), abi.encodeCall(IHub.eliminateDeficit, (targetAssetId, amount, spoke)));
 
         if (success) {
             _after();
@@ -125,14 +128,18 @@ contract HubHandler is BaseHandler, IHubHandler {
         }
     }
 
-    function refreshPremium(IHubBase.PremiumDelta calldata premiumDelta, uint8 i) external setup {
+    function refreshPremium(int256 sharesDelta, uint8 i) external setup {
         bool success;
         bytes memory returnData;
-        uint256 assetId = _getRandomBaseAssetId(i);
+        targetAssetId = _getRandomBaseAssetId(i);
+
+        int256 offsetRayDelta = sharesDelta * int256(hub.getAssetDrawnIndex(targetAssetId));
+        IHubBase.PremiumDelta memory premiumDelta =
+            IHubBase.PremiumDelta({sharesDelta: sharesDelta, offsetRayDelta: offsetRayDelta, restoredPremiumRay: 0});
 
         _before();
         (success, returnData) =
-            actor.proxy(address(hub), abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta)));
+            actor.proxy(address(hub), abi.encodeCall(IHubBase.refreshPremium, (targetAssetId, premiumDelta)));
 
         if (success) {
             _after();
@@ -144,10 +151,11 @@ contract HubHandler is BaseHandler, IHubHandler {
     function payFeeShares(uint256 shares, uint8 i) external setup {
         bool success;
         bytes memory returnData;
-        uint256 assetId = _getRandomBaseAssetId(i);
+        targetAssetId = _getRandomBaseAssetId(i);
 
         _before();
-        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHubBase.payFeeShares, (assetId, shares)));
+        (success, returnData) =
+            actor.proxy(address(hub), abi.encodeCall(IHubBase.payFeeShares, (targetAssetId, shares)));
         if (success) {
             _after();
         } else {
@@ -158,12 +166,12 @@ contract HubHandler is BaseHandler, IHubHandler {
     function transferShares(uint256 shares, uint8 i, uint8 j) external setup {
         bool success;
         bytes memory returnData;
-        uint256 assetId = _getRandomBaseAssetId(i);
+        targetAssetId = _getRandomBaseAssetId(i);
         address toSpoke = _getRandomActor(j);
 
         _before();
         (success, returnData) =
-            actor.proxy(address(hub), abi.encodeCall(IHub.transferShares, (assetId, shares, toSpoke)));
+            actor.proxy(address(hub), abi.encodeCall(IHub.transferShares, (targetAssetId, shares, toSpoke)));
 
         if (success) {
             _after();
@@ -173,12 +181,14 @@ contract HubHandler is BaseHandler, IHubHandler {
     }
 
     function sweep(uint256 amount, uint8 i) external setup {
+        // TODO enable executor
         bool success;
         bytes memory returnData;
-        uint256 assetId = _getRandomBaseAssetId(i);
+        targetAssetId = _getRandomBaseAssetId(i);
 
         _before();
-        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHub.sweep, (assetId, amount)));
+        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHub.sweep, (targetAssetId, amount)));
+
         if (success) {
             _after();
         } else {
@@ -189,9 +199,11 @@ contract HubHandler is BaseHandler, IHubHandler {
     function reclaim(uint256 amount, uint8 i) external setup {
         bool success;
         bytes memory returnData;
-        uint256 assetId = _getRandomBaseAssetId(i);
+        targetAssetId = _getRandomBaseAssetId(i);
+
         _before();
-        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHub.reclaim, (assetId, amount)));
+        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHub.reclaim, (targetAssetId, amount)));
+
         if (success) {
             _after();
         } else {
@@ -202,4 +214,23 @@ contract HubHandler is BaseHandler, IHubHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                           HELPERS                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function _calculatePremiumDelta(int256 sharesDelta, uint256 premiumAmount, uint256 assetId)
+        internal
+        view
+        returns (IHubBase.PremiumDelta memory)
+    {
+        uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+
+        // Calculate restoredPremiumRay from premiumAmount
+        uint256 restoredPremiumRay = premiumAmount * WadRayMath.RAY;
+
+        // Calculate offsetRayDelta to satisfy: (sharesDelta * drawnIndex) - offsetRayDelta + restoredPremiumRay == 0
+        // Therefore: offsetRayDelta = (sharesDelta * drawnIndex) + restoredPremiumRay
+        int256 offsetRayDelta = (sharesDelta * int256(drawnIndex)) + int256(restoredPremiumRay);
+
+        return IHubBase.PremiumDelta({
+            sharesDelta: sharesDelta, offsetRayDelta: offsetRayDelta, restoredPremiumRay: restoredPremiumRay
+        });
+    }
 }

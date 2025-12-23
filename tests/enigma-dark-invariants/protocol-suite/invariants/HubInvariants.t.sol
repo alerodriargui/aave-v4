@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 // Libraries
+import {WadRayMath} from "src/libraries/math/WadRayMath.sol";
 import "forge-std/console.sol";
 
 // Interfaces
@@ -84,8 +85,9 @@ abstract contract HubInvariants is HandlerAggregator {
         );
 
         assertEq(
-            totalSuppliedAssets * 1e9,
-            asset.liquidity * 1e9 + totalDebt * 1e9 + asset.deficitRay + asset.swept * 1e9,
+            totalSuppliedAssets * WadRayMath.RAY,
+            asset.liquidity * WadRayMath.RAY + totalDebt * WadRayMath.RAY + asset.deficitRay + asset.swept
+                * WadRayMath.RAY,
             INV_HUB_F
         );
     }
@@ -132,8 +134,8 @@ abstract contract HubInvariants is HandlerAggregator {
         (uint256 premiumShares, int256 premiumOffsetRay) = IHub(hubAddress).getAssetPremiumData(assetId);
 
         assertGe(
-            int256(IHub(hubAddress).previewRestoreByShares(assetId, premiumShares) * 1e9),
-            premiumOffsetRay * 1e9,
+            int256(IHub(hubAddress).previewRestoreByShares(assetId, premiumShares) * WadRayMath.RAY),
+            premiumOffsetRay,
             INV_HUB_L
         );
     }

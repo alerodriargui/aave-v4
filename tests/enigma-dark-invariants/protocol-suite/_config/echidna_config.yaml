@@ -42,7 +42,7 @@ coverage: true
 coverageFormats: [ "html" ]
 
 #directory to save the corpus; by default is disabled
-corpusDir: "tests/enigma-dark-invariants/_corpus/echidna/default/_data/corpus"
+corpusDir: "tests/enigma-dark-invariants/protocol-suite/_corpus/echidna/default/_data/corpus"
 # constants for corpus mutations (for experimentation only)
 #mutConsts: [100, 1, 1]
 
@@ -56,6 +56,8 @@ maxValue: 1e+30 # 100000000000 eth
 
 #quiet produces (much) less verbose output
 quiet: false
+
+format: "text"
 
 # concurrent workers
 workers: 10
