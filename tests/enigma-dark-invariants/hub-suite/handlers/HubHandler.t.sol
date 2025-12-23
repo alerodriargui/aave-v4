@@ -180,33 +180,24 @@ contract HubHandler is BaseHandler, IHubHandler {
         }
     }
 
-    function sweep(uint256 amount, uint8 i) external setup {
-        // TODO enable executor
-        bool success;
-        bytes memory returnData;
+    function sweep(uint256 amount, uint8 i) external {
         targetAssetId = _getRandomBaseAssetId(i);
 
         _before();
-        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHub.sweep, (targetAssetId, amount)));
-
-        if (success) {
+        try hub.sweep(targetAssetId, amount) {
             _after();
-        } else {
+        } catch {
             revert("HubHandler: sweep failed");
         }
     }
 
     function reclaim(uint256 amount, uint8 i) external setup {
-        bool success;
-        bytes memory returnData;
         targetAssetId = _getRandomBaseAssetId(i);
 
         _before();
-        (success, returnData) = actor.proxy(address(hub), abi.encodeCall(IHub.reclaim, (targetAssetId, amount)));
-
-        if (success) {
+        try hub.reclaim(targetAssetId, amount) {
             _after();
-        } else {
+        } catch {
             revert("HubHandler: reclaim failed");
         }
     }

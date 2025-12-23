@@ -253,18 +253,28 @@ contract Setup is BaseTest {
                 paused: false
             })
         );
+
+        // Set reinvestment controller
+        hubConfigurator.updateReinvestmentController(address(hub), usdcAssetId, address(this));
+        hubConfigurator.updateReinvestmentController(address(hub), wethAssetId, address(this));
+        hubConfigurator.updateReinvestmentController(address(hub), wbtcAssetId, address(this));
+
+        usdc.approve(address(hub), type(uint256).max);
+        weth.approve(address(hub), type(uint256).max);
+        wbtc.approve(address(hub), type(uint256).max);
     }
 
     /// @notice Set up roles for the configurators
     function _setUpConfiguratorRoles() internal virtual {
         // Grant roles to configurators
         accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
-
-        // Grant responsibilities to hubs
+        accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(this), 0);
+        // Grant responsibilities on hubs
         {
-            bytes4[] memory selectors = new bytes4[](2);
+            bytes4[] memory selectors = new bytes4[](3);
             selectors[0] = IHub.updateSpokeConfig.selector;
             selectors[1] = IHub.setInterestRateData.selector;
+            selectors[2] = IHub.updateAssetConfig.selector;
             accessManager.setTargetFunctionRole(address(hub), selectors, Roles.HUB_ADMIN_ROLE);
         }
     }
