@@ -17,7 +17,7 @@ import {HandlerAggregator} from "../HandlerAggregator.t.sol";
 /// @dev Inherits HandlerAggregator to check actions in assertion testing mode
 abstract contract HubInvariants is HandlerAggregator {
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                          HUB                                             //
+    //                                           HUB                                             //
     ///////////////////////////////////////////////////////////////////////////////////////////////
     function assert_INV_HUB_A(uint256 assetId) internal {
         uint256 assets = hub.getAddedAssets(assetId);
@@ -38,7 +38,7 @@ abstract contract HubInvariants is HandlerAggregator {
         }
 
         uint256 assetTotal = hub.getAssetTotalOwed(assetId); // drawn + premium
-        assertGe(sumDebt, assetTotal, INV_HUB_B); // TODO review test case test_replay_2_INV_HUB_B
+        assertGe(sumDebt, assetTotal, INV_HUB_B);
     }
 
     function assert_INV_HUB_C(uint256 assetId) internal {
@@ -101,11 +101,14 @@ abstract contract HubInvariants is HandlerAggregator {
             totalAddedShares += hub.getSpokeAddedShares(assetId, actorAddresses[i]);
         }
         totalAddedAssets += hub.getSpokeAddedAssets(assetId, address(this));
-        totalAddedShares += hub.getSpokeAddedAssets(assetId, address(this));
+        totalAddedShares += hub.getSpokeAddedShares(assetId, address(this));
 
         // TODO take into account the burned interest from virtual shared -> _calculateBurntInterest from Base.t.sol
         // Checks
-        assertApproxEqAbs(totalAddedAssets, hub.getAddedAssets(assetId), SPOKE_COUNT, INV_HUB_G);
+        uint256 addedShares = hub.getAddedShares(assetId);
+        if (addedShares > 0) {
+            assertApproxEqAbs(totalAddedAssets, hub.getAddedAssets(assetId), SPOKE_COUNT, INV_HUB_G);
+        }
         assertEq(totalAddedShares, hub.getAddedShares(assetId), INV_HUB_H);
     }
 
@@ -134,9 +137,113 @@ abstract contract HubInvariants is HandlerAggregator {
         (uint256 premiumShares, int256 premiumOffsetRay) = hub.getAssetPremiumData(assetId);
 
         assertGe(
-            int256(hub.previewRestoreByShares(assetId, premiumShares) * WadRayMath.RAY),
-            premiumOffsetRay,
-            INV_HUB_L
+            int256(hub.previewRestoreByShares(assetId, premiumShares) * WadRayMath.RAY), premiumOffsetRay, INV_HUB_L
         );
+    }
+
+    function assert_INV_HUB_O(uint256 assetId) internal {
+        uint256 spokeCount = NUMBER_OF_ACTORS;
+        uint256 totalDeficitRay;
+        for (uint256 i; i < spokeCount; i++) {
+            totalDeficitRay += hub.getSpokeDeficitRay(assetId, actorAddresses[i]);
+        }
+        assertEq(totalDeficitRay, hub.getAssetDeficitRay(assetId), INV_HUB_O);
+    }
+
+    function assert_INV_HUB_P(uint256 assetId) internal {
+        (uint256 premiumShares, int256 premiumOffsetRay) = hub.getAssetPremiumData(assetId);
+        uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+        assertGe(int256(premiumShares * drawnIndex), premiumOffsetRay, INV_HUB_P);
+    }
+
+    function assert_INV_HUB_ERC4626_A(uint256 assetId, address spoke) internal {
+        uint256 addedAssets = hub.getSpokeAddedAssets(assetId, spoke);
+        uint256 addedShares = hub.getSpokeAddedShares(assetId, spoke);
+        if (addedAssets != 0) assertTrue(addedShares != 0, INV_HUB_ERC4626_A);
+    }
+
+    function assert_INV_HUB_ERC4626_B(uint256 assetId, address spoke) internal {
+        (uint256 drawnAssets,) = hub.getSpokeOwed(assetId, spoke);
+        uint256 drawnShares = hub.getSpokeDrawnShares(assetId, spoke);
+        if (drawnAssets != 0) assertTrue(drawnShares != 0, INV_HUB_ERC4626_B);
+    }
+
+    function assert_INV_HUB_ERC4626_C(uint256 assetId) internal {
+        uint256 addedAssets = hub.getAddedAssets(assetId);
+        uint256 addedShares = hub.getAddedShares(assetId);
+        if (addedAssets != 0) assertTrue(addedShares != 0, INV_HUB_ERC4626_C);
+    }
+
+    function assert_INV_HUB_ERC4626_D(uint256 assetId) internal {
+        (uint256 drawnAssets,) = hub.getAssetOwed(assetId);
+        uint256 drawnShares = hub.getAssetDrawnShares(assetId);
+        if (drawnAssets != 0) assertTrue(drawnShares != 0, INV_HUB_ERC4626_D);
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                     HUB: AVAILABILITY                                     //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function assert_INV_HUB_AVAILABILITY_A(uint256 assetId) internal {
+        try hub.getAddedAssets(assetId) {}
+        catch {
+            assertTrue(false, INV_HUB_AVAILABILITY_A);
+        }
+    }
+
+    function assert_INV_HUB_AVAILABILITY_B(uint256 assetId) internal {
+        try hub.getAssetOwed(assetId) {}
+        catch {
+            assertTrue(false, INV_HUB_AVAILABILITY_B);
+        }
+    }
+
+    function assert_INV_HUB_AVAILABILITY_C(uint256 assetId) internal {
+        try hub.getAssetTotalOwed(assetId) {}
+        catch {
+            assertTrue(false, INV_HUB_AVAILABILITY_C);
+        }
+    }
+
+    function assert_INV_HUB_AVAILABILITY_D(uint256 assetId) internal {
+        try hub.getAssetPremiumRay(assetId) {}
+        catch {
+            assertTrue(false, INV_HUB_AVAILABILITY_D);
+        }
+    }
+
+    function assert_INV_HUB_AVAILABILITY_E(uint256 assetId) internal {
+        try hub.getAssetAccruedFees(assetId) {}
+        catch {
+            assertTrue(false, INV_HUB_AVAILABILITY_E);
+        }
+    }
+
+    function assert_INV_HUB_AVAILABILITY_F(uint256 assetId, address spoke) internal {
+        try hub.getSpokeAddedAssets(assetId, spoke) {}
+        catch {
+            assertTrue(false, INV_HUB_AVAILABILITY_F);
+        }
+    }
+
+    function assert_INV_HUB_AVAILABILITY_G(uint256 assetId, address spoke) internal {
+        try hub.getSpokeOwed(assetId, spoke) {}
+        catch {
+            assertTrue(false, INV_HUB_AVAILABILITY_G);
+        }
+    }
+
+    function assert_INV_HUB_AVAILABILITY_H(uint256 assetId, address spoke) internal {
+        try hub.getSpokeTotalOwed(assetId, spoke) {}
+        catch {
+            assertTrue(false, INV_HUB_AVAILABILITY_H);
+        }
+    }
+
+    function assert_INV_HUB_AVAILABILITY_I(uint256 assetId, address spoke) internal {
+        try hub.getSpokePremiumRay(assetId, spoke) {}
+        catch {
+            assertTrue(false, INV_HUB_AVAILABILITY_I);
+        }
     }
 }

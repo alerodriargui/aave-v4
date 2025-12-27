@@ -76,4 +76,20 @@ abstract contract SpokeInvariants is HandlerAggregator {
             assertEq(d.totalDebtValue, 0, INV_SP_D);
         }
     }
+
+    function assert_INV_SP_E(address spoke, uint256 reserveId) internal {
+        uint256 sumUserShares;
+        for (uint256 i; i < actorAddresses.length; i++) {
+            sumUserShares += ISpokeBase(spoke).getUserSuppliedShares(reserveId, actorAddresses[i]);
+        }
+        assertEq(sumUserShares, ISpokeBase(spoke).getReserveSuppliedShares(reserveId), INV_SP_E);
+    }
+
+    function assert_INV_SP_F(address spoke, uint256 reserveId) internal {
+        uint256 sumUserAssets;
+        for (uint256 i; i < actorAddresses.length; i++) {
+            sumUserAssets += ISpokeBase(spoke).getUserSuppliedAssets(reserveId, actorAddresses[i]);
+        }
+        assertEq(sumUserAssets, ISpokeBase(spoke).getReserveSuppliedAssets(reserveId), INV_SP_F);
+    }
 }

@@ -139,4 +139,19 @@ abstract contract HubInvariants is HandlerAggregator {
             INV_HUB_L
         );
     }
+
+    function assert_INV_HUB_O(address hubAddress, uint256 assetId) internal {
+        uint256 spokeCount = allSpokes.length;
+        uint256 totalDeficitRay;
+        for (uint256 i; i < spokeCount; i++) {
+            totalDeficitRay += IHub(hubAddress).getSpokeDeficitRay(assetId, allSpokes[i]);
+        }
+        assertEq(totalDeficitRay, IHub(hubAddress).getAssetDeficitRay(assetId), INV_HUB_O);
+    }
+
+    function assert_INV_HUB_P(address hubAddress, uint256 assetId) internal {
+        (uint256 premiumShares, int256 premiumOffsetRay) = IHub(hubAddress).getAssetPremiumData(assetId);
+        uint256 drawnIndex = IHub(hubAddress).getAssetDrawnIndex(assetId);
+        assertGe(int256(premiumShares * drawnIndex), premiumOffsetRay, INV_HUB_P);
+    }
 }

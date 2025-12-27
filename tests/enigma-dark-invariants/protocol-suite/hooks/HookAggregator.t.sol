@@ -88,13 +88,16 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
             address spoke = usersToCheck[i].spoke;
             address user = usersToCheck[i].user;
 
+            // Check properties for the spoke
+            assert_GPOST_LIQ_G(spoke, user);
+
             // Check properties for all reserves of the spoke, used after actions: updateUserRiskPremium, updateUserDynamicConfig
             if (reserveId == CHECK_ALL_RESERVES) {
                 // Iterate through all reserves of the spoke
                 for (uint256 j; j < spokeReserveIds[spoke].length; j++) {
-                    assert_GPOST_SP_A(spoke, spokeReserveIds[spoke][i], user);
-                    assert_GPOST_SP_B(spoke, spokeReserveIds[spoke][i], user);
-                    assert_GPOST_SP_E(spoke, spokeReserveIds[spoke][i], user);
+                    assert_GPOST_SP_A(spoke, spokeReserveIds[spoke][j], user);
+                    assert_GPOST_SP_B(spoke, spokeReserveIds[spoke][j], user);
+                    assert_GPOST_SP_E(spoke, spokeReserveIds[spoke][j], user);
                 }
             } else {
                 // Check properties for a specific reserve of the spoke, used after actions: supply, withdraw, borrow, repay, setUsingAsCollateral

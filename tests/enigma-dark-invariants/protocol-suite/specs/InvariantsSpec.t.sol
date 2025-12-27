@@ -23,7 +23,7 @@ abstract contract InvariantsSpec {
     string constant INV_HUB_A2 = "INV_HUB_A2: If hub assets = 0 => shares 0";
 
     string constant INV_HUB_B =
-        "INV_HUB_A: Sum of spoke debts on a single asset must be greater or equal than the total debt of the asset";
+        "INV_HUB_B: Sum of spoke debts on a single asset must be greater or equal than the total debt of the asset";
 
     string constant INV_HUB_C =
         "INV_HUB_C: Sum of [baseDrawnShares/premiumDrawnShares/premiumOffsetRay] of individual (spoke/user) should match the corresponding value of the asset on the Hub";
@@ -32,7 +32,7 @@ abstract contract InvariantsSpec {
         "INV_HUB_E: hub.getTotalSuppliedAssets and hub.getAssetSuppliedAmount should match at any time, should not be off by more than 1 share worth of assets due to division precision loss";
 
     string constant INV_HUB_F =
-        "INV_HUB_E2: hub.getTotalSuppliedAssets = totalAssets() = availableLiquidity + totalDebt + deficit + swept";
+        "INV_HUB_F: hub.getTotalSuppliedAssets = totalAssets() = availableLiquidity + totalDebt + deficit + swept";
 
     string constant INV_HUB_G =
         "INV_HUB_G: totalAddedAssets = sum of addedAssets of all registered spokes (including present & past treasury spoke)"; // TODO should this be greater or equal?
@@ -57,7 +57,9 @@ abstract contract InvariantsSpec {
         "INV_HUB_N: Liquidity growth (ie accrued interest) = AccruedFees + sum of Accrued for all spokes with non zero addedShares"; // TODO
 
     string constant INV_HUB_O =
-        "INV_HUB_O: sum of deficitRay across spokes for a given asset == total asset deficitRay"; // TODO explore how to track deficitRay for each spoke
+        "INV_HUB_O: sum of deficitRay across spokes for a given asset == total asset deficitRay";
+
+    string constant INV_HUB_P = "INV_HUB_P: Premium offset should not exceed premium shares * drawnIndex";
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                        SPOKE                                              //
@@ -74,9 +76,9 @@ abstract contract InvariantsSpec {
 
     string constant INV_SP_D = "INV_SP_D: Users without collateral also have no debt.";
 
-    ////
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    // TODO
-    // - Spoke/Asset cannot have non-zero assets and zero shares in add or draw sides.";
-    // - 4626 roundtrip on preview methods
+    string constant INV_SP_E =
+        "INV_SP_E: Sum of user supplied shares on a spoke for a given asset == spoke supplied shares == hub spoke added shares";
+
+    string constant INV_SP_F =
+        "INV_SP_F: Sum of user supplied assets on a spoke for a given asset == spoke supplied assets == hub spoke added assets";
 }

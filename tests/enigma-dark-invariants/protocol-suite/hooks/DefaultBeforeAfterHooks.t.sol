@@ -7,9 +7,7 @@ import {PercentageMath} from "src/libraries/math/PercentageMath.sol";
 import "forge-std/console.sol";
 
 // Utils
-import {Actor} from "../../shared/utils/Actor.sol";
-import {PropertiesConstants} from "../../shared/utils/PropertiesConstants.sol";
-import {StdAsserts} from "../../shared/utils/StdAsserts.sol";
+import {Constants} from "tests/Constants.sol";
 
 // Interfaces
 import {ISpokeHandler} from "../handlers/interfaces/ISpokeHandler.sol";
@@ -38,13 +36,19 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     }
 
     struct UserVars {
+        uint256 drawnDebt;
         uint256 premiumDebt;
         uint256 totalDebt;
+    }
+
+    struct UserAccountDataVars {
+        uint256 healthFactor;
     }
 
     struct DefaultVars {
         mapping(address hub => mapping(uint256 assetId => AssetVars)) assetVars;
         mapping(address spoke => mapping(uint256 reserveId => mapping(address user => UserVars))) userVars;
+        mapping(address spoke => mapping(address user => UserAccountDataVars)) userAccountDataVars;
     }
 
     struct UserInfo {
@@ -117,12 +121,16 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
         for (uint256 i; i < usersToCheck.length; i++) {
             UserInfo memory userInfo = usersToCheck[i];
 
+            // Cache values for the user's account data
+            ISpoke.UserAccountData memory userAccountData = ISpoke(userInfo.spoke).getUserAccountData(userInfo.user);
+            _defaultVars.userAccountDataVars[userInfo.spoke][userInfo.user].healthFactor = userAccountData.healthFactor;
+
             // Cache values for all reserves of the spoke, used after actions: updateUserRiskPremium, updateUserDynamicConfig
             if (userInfo.reserveId == CHECK_ALL_RESERVES) {
                 // Iterate through all reserves of the spoke
                 for (uint256 j; j < spokeReserveIds[userInfo.spoke].length; j++) {
                     (
-                        ,
+                        _defaultVars.userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user].drawnDebt,
                         _defaultVars.userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
                             .premiumDebt
                     ) = ISpoke(userInfo.spoke).getUserDebt(spokeReserveIds[userInfo.spoke][j], userInfo.user);
@@ -176,7 +184,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                         assetId,
                         IHub(hubAddress).getAssetLiquidity(assetId),
                         defaultVarsAfter.assetVars[hubAddress][assetId].drawn,
-                        0,// Unused in the interest rate calculation
+                        0, // Unused in the interest rate calculation
                         IHub(hubAddress).getAssetSwept(assetId)
                     ),
                 GPOST_HUB_C
@@ -190,7 +198,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
 
     function assert_GPOST_HUB_EF(address hubAddress, uint256 assetId, address spoke) internal {
         // Get the spoke config
-        IHub.SpokeConfig memory spokeConfig = IHub(hubAddress).getSpokeConfig(assetId, spoke); // TODO pass spoke as parameter
+        IHub.SpokeConfig memory spokeConfig = IHub(hubAddress).getSpokeConfig(assetId, spoke);
         (, uint8 decimals) = IHub(hubAddress).getAssetUnderlyingAndDecimals(assetId);
 
         // GPOST_HUB_E
@@ -253,6 +261,18 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                 GPOST_SP_B
             );
         }
+
+        if (
+            defaultVarsAfter.userVars[spoke][reserveId][user].drawnDebt
+                < defaultVarsBefore.userVars[spoke][reserveId][user].drawnDebt
+        ) {
+            assertTrue(
+                currentActionSignature == ISpokeHandler.repay.selector
+                    || currentActionSignature == ISpokeHandler.liquidationCall.selector,
+                GPOST_SP_B2
+            );
+            assertEq(defaultVarsAfter.userVars[spoke][reserveId][user].premiumDebt, 0, GPOST_SP_B2);
+        }
     }
 
     function assert_GPOST_SP_E(address spoke, uint256 reserveId, address user) internal {
@@ -270,6 +290,21 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                 || signature == ISpokeHandler.updateUserDynamicConfig.selector
         ) {
             assertEq(latestKey, userKey, GPOST_SP_E);
+        }
+    }
+
+    function assert_GPOST_LIQ_G(address spoke, address user) internal {
+        // Read the cached values of the user's health factor
+        uint256 healthFactorBefore = defaultVarsBefore.userAccountDataVars[spoke][user].healthFactor;
+        uint256 healthFactorAfter = defaultVarsAfter.userAccountDataVars[spoke][user].healthFactor;
+
+        // Read the cached signature of the current action
+        bytes4 signature = currentActionSignature;
+
+        if (
+            healthFactorBefore < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD && healthFactorAfter < healthFactorBefore
+        ) {
+            assertTrue(signature == ISpokeHandler.liquidationCall.selector, GPOST_SP_LIQ_G);
         }
     }
 

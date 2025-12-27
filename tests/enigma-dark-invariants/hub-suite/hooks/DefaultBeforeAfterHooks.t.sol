@@ -166,7 +166,6 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                 || signature == IHubHandler.refreshPremium.selector || signature == IHubHandler.payFeeShares.selector
                 || signature == IHubHandler.transferShares.selector
         ) {
-            // TODO check which signatures need to be checked
             assertEq(
                 hub.getAssetDrawnRate(assetId),
                 IAssetInterestRateStrategy(irStrategy)

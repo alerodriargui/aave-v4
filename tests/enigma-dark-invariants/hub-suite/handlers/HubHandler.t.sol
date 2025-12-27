@@ -21,11 +21,16 @@ contract HubHandler is BaseHandler, IHubHandler {
     //                                      ACTIONS                                              //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function add(uint256 amount, uint8 i) external setup {
+    function add(uint256 amount, uint8 i) public setup returns (uint256 addedShares) {
         bool success;
         bytes memory returnData;
         targetAssetId = _getRandomBaseAssetId(i);
         address underlying = assetIdToUnderlying[targetAssetId];
+
+        uint256 previewAddedShares = hub.previewAddByAssets(targetAssetId, amount);
+
+        uint256 assetsBefore = hub.getSpokeAddedAssets(targetAssetId, address(actor));
+        uint256 sharesBefore = hub.getSpokeAddedShares(targetAssetId, address(actor));
 
         _before();
         vm.prank(address(actor));
@@ -34,15 +39,33 @@ contract HubHandler is BaseHandler, IHubHandler {
 
         if (success) {
             _after();
+
+            addedShares = uint256(abi.decode(returnData, (uint256)));
+
+            assertEq(
+                assetsBefore + amount, hub.getSpokeAddedAssets(targetAssetId, address(actor)), HSPOST_HUB_ERC4626_ADD_A
+            );
+            assertEq(
+                sharesBefore + addedShares,
+                hub.getSpokeAddedShares(targetAssetId, address(actor)),
+                HSPOST_HUB_ERC4626_ADD_B
+            );
+
+            assertLe(previewAddedShares, addedShares, HSPOST_HUB_ERC4626_ADD_C);
         } else {
             revert("HubHandler: add failed");
         }
     }
 
-    function remove(uint256 amount, uint8 i) external setup {
+    function remove(uint256 amount, uint8 i) public setup returns (uint256 removedShares) {
         bool success;
         bytes memory returnData;
         targetAssetId = _getRandomBaseAssetId(i);
+
+        uint256 previewRemovedShares = hub.previewRemoveByAssets(targetAssetId, amount);
+
+        uint256 assetsBefore = hub.getSpokeAddedAssets(targetAssetId, address(actor));
+        uint256 sharesBefore = hub.getSpokeAddedShares(targetAssetId, address(actor));
 
         _before();
         (success, returnData) =
@@ -50,15 +73,35 @@ contract HubHandler is BaseHandler, IHubHandler {
 
         if (success) {
             _after();
+
+            removedShares = uint256(abi.decode(returnData, (uint256)));
+
+            assertEq(
+                assetsBefore,
+                hub.getSpokeAddedAssets(targetAssetId, address(actor)) + amount,
+                HSPOST_HUB_ERC4626_REMOVE_A
+            );
+            assertEq(
+                sharesBefore,
+                hub.getSpokeAddedShares(targetAssetId, address(actor)) + removedShares,
+                HSPOST_HUB_ERC4626_REMOVE_B
+            );
+
+            assertGe(previewRemovedShares, removedShares, HSPOST_HUB_ERC4626_REMOVE_C);
         } else {
             revert("HubHandler: remove failed");
         }
     }
 
-    function draw(uint256 amount, uint8 i) external setup {
+    function draw(uint256 amount, uint8 i) public setup returns (uint256 drawnShares) {
         bool success;
         bytes memory returnData;
         targetAssetId = _getRandomBaseAssetId(i);
+
+        uint256 previewDrawnShares = hub.previewDrawByAssets(targetAssetId, amount);
+
+        (uint256 drawnBefore,) = hub.getSpokeOwed(targetAssetId, address(actor));
+        uint256 sharesBefore = hub.getSpokeDrawnShares(targetAssetId, address(actor));
 
         _before();
         (success, returnData) =
@@ -66,16 +109,38 @@ contract HubHandler is BaseHandler, IHubHandler {
 
         if (success) {
             _after();
+
+            drawnShares = uint256(abi.decode(returnData, (uint256)));
+
+            (uint256 drawnAfter,) = hub.getSpokeOwed(targetAssetId, address(actor));
+
+            assertEq(drawnBefore + amount, drawnAfter, HSPOST_HUB_ERC4626_DRAW_A);
+            assertEq(
+                sharesBefore + drawnShares,
+                hub.getSpokeDrawnShares(targetAssetId, address(actor)),
+                HSPOST_HUB_ERC4626_DRAW_B
+            );
+
+            assertGe(previewDrawnShares, drawnShares, HSPOST_HUB_ERC4626_DRAW_C);
         } else {
             revert("HubHandler: draw failed");
         }
     }
 
-    function restore(uint256 drawnAmount, uint256 premiumAmount, int256 sharesDelta, uint8 i) external setup {
+    function restore(uint256 drawnAmount, uint256 premiumAmount, int256 sharesDelta, uint8 i)
+        public
+        setup
+        returns (uint256 restoredDrawnShares)
+    {
         bool success;
         bytes memory returnData;
         targetAssetId = _getRandomBaseAssetId(i);
         address underlying = assetIdToUnderlying[targetAssetId];
+
+        uint256 previewRestoredShares = hub.previewRestoreByAssets(targetAssetId, drawnAmount + premiumAmount);
+
+        (uint256 drawnBefore,) = hub.getSpokeOwed(targetAssetId, address(actor));
+        uint256 drawnSharesBefore = hub.getSpokeDrawnShares(targetAssetId, address(actor));
 
         IHubBase.PremiumDelta memory premiumDelta = _calculatePremiumDelta(sharesDelta, premiumAmount, targetAssetId);
 
@@ -87,6 +152,19 @@ contract HubHandler is BaseHandler, IHubHandler {
 
         if (success) {
             _after();
+
+            restoredDrawnShares = uint256(abi.decode(returnData, (uint256)));
+
+            (uint256 drawnAfter,) = hub.getSpokeOwed(targetAssetId, address(actor));
+
+            assertEq(drawnBefore, drawnAfter + drawnAmount, HSPOST_HUB_ERC4626_RESTORE_A);
+            assertEq(
+                drawnSharesBefore,
+                hub.getSpokeDrawnShares(targetAssetId, address(actor)) + restoredDrawnShares,
+                HSPOST_HUB_ERC4626_RESTORE_B
+            );
+
+            assertLe(previewRestoredShares, restoredDrawnShares, HSPOST_HUB_ERC4626_RESTORE_C);
         } else {
             revert("HubHandler: restore failed");
         }
@@ -191,7 +269,7 @@ contract HubHandler is BaseHandler, IHubHandler {
         }
     }
 
-    function reclaim(uint256 amount, uint8 i) external setup {
+    function reclaim(uint256 amount, uint8 i) external {
         targetAssetId = _getRandomBaseAssetId(i);
 
         _before();
@@ -200,6 +278,44 @@ contract HubHandler is BaseHandler, IHubHandler {
         } catch {
             revert("HubHandler: reclaim failed");
         }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                           ROUNDTRIP                                       //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function roundtrip_ERC4626_RT_A(uint256 amount, uint8 i) external {
+        uint256 assetId = _getRandomBaseAssetId(i);
+
+        uint256 previewSharesToAdd = hub.previewAddByAssets(assetId, amount);
+        uint256 previewAssetsToRemove = hub.previewRemoveByShares(assetId, previewSharesToAdd);
+
+        assertLe(previewAssetsToRemove, amount, HSPOST_HUB_ERC4626_RT_A);
+    }
+
+    function roundtrip_ERC4626_RT_B(uint256 amount, uint8 i) external {
+        uint256 sharesAdded = add(amount, i);
+        uint256 previewAssetsToRemove = hub.previewRemoveByShares(_getRandomBaseAssetId(i), sharesAdded);
+        uint256 sharesRemoved = remove(previewAssetsToRemove, i);
+
+        assertGe(sharesRemoved, sharesAdded, HSPOST_HUB_ERC4626_RT_B);
+    }
+
+    function roundtrip_ERC4626_RT_C(uint256 shares, uint8 i) external {
+        uint256 assetId = _getRandomBaseAssetId(i);
+
+        uint256 previewAssetsToRemove = hub.previewRemoveByShares(assetId, shares);
+        uint256 previewShares = hub.previewAddByAssets(assetId, previewAssetsToRemove);
+
+        assertGe(previewShares, shares, HSPOST_HUB_ERC4626_RT_C);
+    }
+
+    function roundtrip_ERC4626_RT_D(uint256 amount, uint8 i) external {
+        uint256 sharesRemoved = remove(amount, i);
+        uint256 previewAssetsToAdd = hub.previewAddByShares(_getRandomBaseAssetId(i), sharesRemoved);
+        uint256 sharesAdded = add(previewAssetsToAdd, i);
+
+        assertLe(sharesAdded, sharesRemoved, HSPOST_HUB_ERC4626_RT_D);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

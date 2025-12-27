@@ -53,9 +53,6 @@ make medusa-hub
 
 # Run with Echidna in assertion mode
 make echidna-hub-assert
-
-# Run with Foundry's invariant testing
-make foundry-hub-invariants
 ```
 
 ## Key Features

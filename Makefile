@@ -39,9 +39,9 @@ echidna-explore:
 	echidna tests/enigma-dark-invariants/protocol-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./tests/enigma-dark-invariants/protocol-suite/_config/echidna_config.yaml
 
 echidna-hub:
-	echidna tests/enigma-dark-invariants/hub-suite/Tester.t.sol --contract Tester --config ./tests/enigma-dark-invariants/hub-suite/_config/echidna_config.yaml --server 3000
+	echidna tests/enigma-dark-invariants/hub-suite/Tester.t.sol --contract Tester --config ./tests/enigma-dark-invariants/hub-suite/_config/echidna_config.yaml
 echidna-hub-assert:
-	echidna tests/enigma-dark-invariants/hub-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./tests/enigma-dark-invariants/hub-suite/_config/echidna_config.yaml --server 3000
+	echidna tests/enigma-dark-invariants/hub-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./tests/enigma-dark-invariants/hub-suite/_config/echidna_config.yaml
 echidna-hub-explore:
 	echidna tests/enigma-dark-invariants/hub-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./tests/enigma-dark-invariants/hub-suite/_config/echidna_config.yaml
 

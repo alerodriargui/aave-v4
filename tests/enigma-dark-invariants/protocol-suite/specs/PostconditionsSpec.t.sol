@@ -42,13 +42,13 @@ abstract contract PostconditionsSpec {
         "GPOST_HUB_E: if addedAssets for a spoke & assetId increase, addedAssets <= addCap * precision (when cap != MAX)";
 
     string constant GPOST_HUB_F =
-        "GPOST_HUB_F: if drawnAssets for a spoke & assetId increase, drawnAssets <= drawCap * precision (when cap != MAX)";// TODO take into account the deficit, use Owed instead of drawn
+        "GPOST_HUB_F: if owed for a spoke & assetId increase, owed <= drawCap * precision (when cap != MAX)"; // TODO-ok take into account the deficit, use Owed instead of drawn -> review fix
 
     string constant GPOST_HUB_G =
         "GPOST_HUB_G: lastUpdateTimestamp is monotonic non-decreasing across actions (time does not go backwards)";
 
-    string constant GPOST_HUB_H =
-        "GPOST_HUB_H: If userRiskPremium increases, userRiskPremium <= riskPremiumCap (when cap != MAX)"; // TODO
+    string constant HSPOST_HUB_M =
+        "HSPOST_HUB_M: refreshPremium cannot change total premium debt (only redistribution)"; // TODO
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                        SPOKE                                              //
@@ -60,9 +60,10 @@ abstract contract PostconditionsSpec {
     string constant GPOST_SP_B =
         "GPOST_SP_B: Premium debt of an individual user can only decrease by calling repay or liquidationCall when premium debt is not zero";
 
-    // TODO drawn debt debt of an individual user can only decrease by calling repay or liquidationCall and if premium debt is zero after the action
+    string constant GPOST_SP_B2 =
+        "GPOST_SP_B2: Drawn debt of an individual user can only decrease by calling repay or liquidationCall and if premium debt is zero after the action";
 
-    string constant HSPOST_SP_C = "HSPOST_SP_C: User liability should decrease after repayment";//@audit should this be strict?
+    string constant HSPOST_SP_C = "HSPOST_SP_C: User liability should decrease after repayment"; //@audit should this be strict?
 
     string constant HSPOST_SP_D = "HSPOST_SP_D: Unhealthy users cannot borrow more";
 
@@ -76,7 +77,7 @@ abstract contract PostconditionsSpec {
     string constant HSPOST_SP_F = "HSPOST_SP_F: Total debt of a user should not change after updateUserRiskPremium";
 
     string constant GPOST_SP_H =
-        "GPOST_SP_H: if user totalDebt == 0 and withdraw is called, user can withdraw all supplied"; // TODO
+        "GPOST_SP_H: if user totalDebt == 0 and withdraw is called, user can withdraw all supplied";
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                  SPOKE: LIQUIDATION                                       //
@@ -93,11 +94,15 @@ abstract contract PostconditionsSpec {
 
     string constant HSPOST_SP_LIQ_D =
         "HSPOST_SP_LIQ_D: Liquidation cannot result in an amount of liquidated debt > debtToCover";
-    
-    string constant HSPOST_SP_LIQ_E =
-        "HSPOST_SP_LIQ_E: Only unhealthy users can be liquidated"; // TODO
-    
-    string constant HSPOST_SP_LIQ_F = "HSPOST_SP_LIQ_F: Post-liquidation transfers match close factor/bonus (amounts to violator and liquidator)"; // TODO
-    
-    string constant GPOST_SP_LIQ_G = "GPOST_SP_LIQ_G: Only liquidations can worsen an already unhealthy account's health"; // TODO
+
+    string constant HSPOST_SP_LIQ_E = "HSPOST_SP_LIQ_E: Only unhealthy users can be liquidated";
+
+    string constant HSPOST_SP_LIQ_F =
+        "HSPOST_SP_LIQ_F: Post-liquidation transfers match close factor/bonus (amounts to violator and liquidator)"; // TODO
+
+    string constant GPOST_SP_LIQ_G =
+        "GPOST_SP_LIQ_G: Only liquidations can worsen an already unhealthy account's health";
+
+    string constant HSPOST_SP_LIQ_G =
+        "HSPOST_SP_LIQ_G: After liquidation, if debt remains, HF should improve toward target";
 }

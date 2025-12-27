@@ -33,6 +33,8 @@ abstract contract Invariants is HubInvariants, SpokeInvariants {
                 assert_INV_HUB_I(hubAddress, j);
                 assert_INV_HUB_K(hubAddress, j);
                 assert_INV_HUB_L(hubAddress, j);
+                assert_INV_HUB_O(hubAddress, j);
+                assert_INV_HUB_P(hubAddress, j);
             }
         }
 
@@ -54,6 +56,8 @@ abstract contract Invariants is HubInvariants, SpokeInvariants {
                 uint256 reserveId = spokeReserveIds[spoke][j];
                 assert_INV_SP_A(spoke, reserveId);
                 assert_INV_SP_C(spoke, reserveId);
+                assert_INV_SP_E(spoke, reserveId);
+                assert_INV_SP_F(spoke, reserveId);
 
                 // Applied per actor per reserve of the spoke
                 for (uint256 k; k < actorAddresses.length; k++) {

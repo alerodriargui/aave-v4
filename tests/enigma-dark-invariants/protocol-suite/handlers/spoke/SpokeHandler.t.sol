@@ -76,6 +76,11 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         _before();
         (success, returnData) = actor.proxy(spoke, abi.encodeCall(Spoke.withdraw, (reserveId, amount, onBehalfOf)));
 
+        // Implemented outside the success check to assert success
+        if (defaultVarsBefore.userVars[spoke][reserveId][onBehalfOf].totalDebt == 0) {
+            assertTrue(success, GPOST_SP_H);
+        }
+
         if (success) {
             _after();
         } else {
@@ -201,6 +206,20 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
             }
 
             assertGe(debtToCover, debtLiquidated, HSPOST_SP_LIQ_D);
+
+            assertLt(
+                defaultVarsBefore.userAccountDataVars[spoke][_getRandomActor(i)].healthFactor,
+                Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+                HSPOST_SP_LIQ_E
+            );
+
+            if (defaultVarsAfter.userVars[spoke][debtReserveId][_getRandomActor(i)].totalDebt > 0) {
+                assertGt(
+                    defaultVarsAfter.userAccountDataVars[spoke][_getRandomActor(i)].healthFactor,
+                    defaultVarsBefore.userAccountDataVars[spoke][_getRandomActor(i)].healthFactor,
+                    HSPOST_SP_LIQ_G
+                );
+            }
         } else {
             revert("DefaultHandler: liquidationCall failed");
         }
