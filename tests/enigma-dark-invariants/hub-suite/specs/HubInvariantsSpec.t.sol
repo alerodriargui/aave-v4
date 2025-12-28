@@ -15,40 +15,40 @@ abstract contract HubInvariantsSpec is InvariantsSpec {
 
     // Add
     string constant HSPOST_HUB_ERC4626_ADD_A =
-        "HSPOST_HUB_ERC4626_ADD_A: After add, spoke addedAssets must increase by addedAssets";
+        "HSPOST_HUB_ERC4626_ADD_A: After add, spoke addedAssets must increase by at at most addedAmount";
 
     string constant HSPOST_HUB_ERC4626_ADD_B =
-        "HSPOST_HUB_ERC4626_ADD_B: After add, spoke addedShares must increase by addedShares";
+        "HSPOST_HUB_ERC4626_ADD_B: After add, spoke addedShares must increase by addedSharesAmount";
 
     string constant HSPOST_HUB_ERC4626_ADD_C =
         "HSPOST_HUB_ERC4626_ADD_C: previewAddedShares must be less than or equal to the added shares after the action";
 
     // Remove
     string constant HSPOST_HUB_ERC4626_REMOVE_A =
-        "HSPOST_HUB_ERC4626_REMOVE_A: After remove, spoke addedAssets must decrease by removedAssets";
+        "HSPOST_HUB_ERC4626_REMOVE_A: After remove, spoke addedAssets must decrease by at least removedAmount";
 
     string constant HSPOST_HUB_ERC4626_REMOVE_B =
-        "HSPOST_HUB_ERC4626_REMOVE_B: After remove, spoke addedShares must decrease by removedShares";
+        "HSPOST_HUB_ERC4626_REMOVE_B: After remove, spoke addedShares must decrease by removedSharesAmount";
 
     string constant HSPOST_HUB_ERC4626_REMOVE_C =
         "HSPOST_HUB_ERC4626_REMOVE_C: previewRemovedShares must be greater than or equal to the removed shares after the action";
 
     // Draw
     string constant HSPOST_HUB_ERC4626_DRAW_A =
-        "HSPOST_HUB_ERC4626_DRAW_B: After draw, spoke drawnShares must increase by drawnShares";
+        "HSPOST_HUB_ERC4626_DRAW_A: After draw, spoke drawnAssets must increase by at least drawnAmount";
 
     string constant HSPOST_HUB_ERC4626_DRAW_B =
-        "HSPOST_HUB_ERC4626_DRAW_C: After draw, spoke drawnAssets must increase by drawnAssets";
+        "HSPOST_HUB_ERC4626_DRAW_B: After draw, spoke drawnShares must increase by drawnSharesAmount";
 
     string constant HSPOST_HUB_ERC4626_DRAW_C =
         "HSPOST_HUB_ERC4626_DRAW_C: previewDrawnShares must be greater than or equal to the drawn shares after the action";
 
     // Restore
     string constant HSPOST_HUB_ERC4626_RESTORE_A =
-        "HSPOST_HUB_ERC4626_RESTORE_A: After restore, spoke drawnAssets must increase by drawnAssets";
+        "HSPOST_HUB_ERC4626_RESTORE_A: After restore, spoke drawnAssets must increase by at most drawnAmount";
 
     string constant HSPOST_HUB_ERC4626_RESTORE_B =
-        "HSPOST_HUB_ERC4626_RESTORE_B: After restore, spoke drawnShares must decrease by restoredShares";
+        "HSPOST_HUB_ERC4626_RESTORE_B: After restore, spoke drawnShares must decrease by restoredSharesAmount";
 
     string constant HSPOST_HUB_ERC4626_RESTORE_C =
         "HSPOST_HUB_SP_RESTORE_C: previewRestoredShares must be less than or equal to the restored shares after the action";

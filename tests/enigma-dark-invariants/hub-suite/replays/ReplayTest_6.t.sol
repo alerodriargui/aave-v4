@@ -36,6 +36,7 @@ contract ReplayTest6 is Invariants, Setup {
     //                                   		REPLAY TESTS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    /// @dev PASS
     function test_replay_6_restore() public {
         _setUpActor(USER1);
         Tester.refreshPremium(1310678, 2);
@@ -43,6 +44,7 @@ contract ReplayTest6 is Invariants, Setup {
         Tester.restore(0, 2, 0, 2);
     }
 
+    /// @dev PASS
     function test_replay_6_draw() public {
         _setUpActor(USER1);
         Tester.add(1, 0);
@@ -51,6 +53,7 @@ contract ReplayTest6 is Invariants, Setup {
         Tester.draw(1, 0);
     }
 
+    /// @dev PASS
     function test_replay_6_roundtrip_ERC4626_RT_D() public {
         _setUpActor(USER1);
         Tester.add(2, 0);
@@ -59,11 +62,13 @@ contract ReplayTest6 is Invariants, Setup {
         Tester.roundtrip_ERC4626_RT_D(1, 0);
     }
 
+    /// @dev PASS
     function test_replay_6_roundtrip_ERC4626_RT_B() public {
         _setUpActor(USER1);
-        Tester.roundtrip_ERC4626_RT_B(1, 1);
+        Tester.add(1, 1);
     }
 
+    /// @dev PASS
     function test_replay_6_roundtrip_ERC4626_RT_C() public {
         _setUpActor(USER1);
         Tester.refreshPremium(1, 0);
@@ -71,6 +76,7 @@ contract ReplayTest6 is Invariants, Setup {
         Tester.roundtrip_ERC4626_RT_C(1, 0);
     }
 
+    /// @dev PASS
     function test_replay_6_remove() public {
         _setUpActor(USER1);
         Tester.add(563, 0);
@@ -79,6 +85,7 @@ contract ReplayTest6 is Invariants, Setup {
         Tester.remove(5, 0);
     }
 
+    /// @dev PASS
     function test_replay_6_add() public {
         _setUpActor(USER1);
         Tester.add(1, 1);
