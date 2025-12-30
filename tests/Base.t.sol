@@ -11,7 +11,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy,
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -23,6 +26,7 @@ import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {AuthorityUtils} from 'src/dependencies/openzeppelin/AuthorityUtils.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
+import {SlotDerivation} from 'src/dependencies/openzeppelin/SlotDerivation.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';
 
@@ -44,7 +48,11 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
@@ -109,6 +117,9 @@ abstract contract Base is Test {
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
   uint24 internal constant MIN_COLLATERAL_RISK_BPS = 1;
   uint24 internal constant MAX_COLLATERAL_RISK_BPS = 1000_00;
+  uint256 internal constant MAX_SUPPLY_PRICE = 100;
+  uint256 internal constant MIN_DRAWN_INDEX = WadRayMath.RAY;
+  uint256 internal constant MAX_DRAWN_INDEX = 100 * WadRayMath.RAY;
   uint256 internal constant MAX_BORROW_RATE = 1000_00; // matches AssetInterestRateStrategy
   uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS, matches AssetInterestRateStrategy
   uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS, matches AssetInterestRateStrategy
@@ -212,6 +223,7 @@ abstract contract Base is Test {
   struct Debts {
     uint256 drawnDebt;
     uint256 premiumDebt;
+    uint256 premiumDebtRay;
     uint256 totalDebt;
   }
 
@@ -1262,6 +1274,7 @@ abstract contract Base is Test {
     uint256 reserveId
   ) internal view returns (Debts memory data) {
     (data.drawnDebt, data.premiumDebt) = spoke.getUserDebt(reserveId, user);
+    data.premiumDebtRay = spoke.getUserPremiumDebtRay(reserveId, user);
     data.totalDebt = data.drawnDebt + data.premiumDebt;
   }
 
@@ -1918,6 +1931,21 @@ abstract contract Base is Test {
     return ((valueAmount * assetUnit) / assetPrice).fromWadDown();
   }
 
+  function _changeDecimals(
+    uint256 amount,
+    uint256 fromDecimals,
+    uint256 toDecimals,
+    bool roundUp
+  ) internal pure returns (uint256) {
+    return
+      Math.mulDiv(
+        amount,
+        10 ** toDecimals,
+        10 ** fromDecimals,
+        (roundUp) ? Math.Rounding.Ceil : Math.Rounding.Floor
+      );
+  }
+
   /**
    * @notice Returns the required debt amount to ensure user position is ~ a certain health factor.
    * @param desiredHf The desired health factor to be at.
@@ -1945,8 +1973,7 @@ abstract contract Base is Test {
     requiredDebtValue =
       userAccountData.totalCollateralValue.wadMulUp(userAccountData.avgCollateralFactor).wadDivUp(
         desiredHf
-      ) -
-      userAccountData.totalDebtValue;
+      ) - userAccountData.totalDebtValue;
   }
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
@@ -2117,6 +2144,14 @@ abstract contract Base is Test {
     return premiumShares * drawnIndex;
   }
 
+  function _calculateDebtAssetsToRestore(
+    uint256 drawnSharesToLiquidate,
+    uint256 premiumDebtRayToLiquidate,
+    uint256 drawnIndex
+  ) internal pure returns (uint256) {
+    return drawnSharesToLiquidate.rayMulUp(drawnIndex) + premiumDebtRayToLiquidate.fromRayUp();
+  }
+
   function _calculatePremiumAssetsRay(
     IHub hub,
     uint256 assetId,
@@ -2220,6 +2255,10 @@ abstract contract Base is Test {
       vm.prank(owner);
       underlying.approve(spender, UINT256_MAX);
     }
+  }
+
+  function _spokeDrawnIndex(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    return _hub(spoke, reserveId).getAssetDrawnIndex(_spokeAssetId(spoke, reserveId));
   }
 
   function _deploySpokeWithOracle(
@@ -2413,6 +2452,53 @@ abstract contract Base is Test {
       abi.encodeWithSelector(IERC20Metadata.decimals.selector),
       abi.encode(decimals)
     );
+  }
+
+  // @dev Requires no previously added assets
+  // @dev Update _assetsSlot below if it changes
+  //   Run: forge inspect Hub storage-layout
+  // @dev Update _addedSharesOffset below if it changes
+  //   Have a look at IHub.Asset struct
+  function _mockSupplySharePrice(
+    IHub hub,
+    uint256 assetId,
+    uint256 totalAddedAssets,
+    uint256 addedShares
+  ) internal {
+    if (!hub.isSpokeListed(assetId, address(spoke1))) {
+      vm.prank(ADMIN);
+      hub.addSpoke(
+        assetId,
+        address(spoke1),
+        IHub.SpokeConfig({
+          active: true,
+          paused: false,
+          addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+          drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+          riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+        })
+      );
+    }
+    Utils.add({
+      hub: hub,
+      assetId: assetId,
+      caller: address(spoke1),
+      amount: totalAddedAssets,
+      user: alice
+    });
+    assertEq(hub.getAddedAssets(assetId), totalAddedAssets, '_mockSupplySharePrice: addedAssets');
+
+    uint256 _assetsSlot = 2;
+    uint256 _addedSharesOffset = 1;
+    vm.store(
+      address(hub),
+      bytes32(
+        uint256(SlotDerivation.deriveMapping({slot: bytes32(_assetsSlot), key: assetId})) +
+          _addedSharesOffset
+      ),
+      bytes32(addedShares)
+    );
+    assertEq(hub.getAddedShares(assetId), addedShares, '_mockSupplySharePrice: addedShares');
   }
 
   function _mockInterestRateBps(uint256 interestRateBps) internal {

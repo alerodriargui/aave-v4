@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/Liquidations/Spoke.LiquidationCall.Base.t.sol';
 
 contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
+  using SafeCast for *;
+
   address user = makeAddr('user');
   address liquidator = makeAddr('liquidator');
 
@@ -254,12 +256,12 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     assertApproxEqAbs(userAccountData.riskPremium, 13_89, 1, 'post liquidation: risk premium');
   }
 
-  // Liquidated collateral is between 0 and 1 wei. It is rounded up to prevent reverting.
+  // Liquidated collateral is between 0 and 1 wei. It is rounded down and hub.remove is skipped
   function test_scenario3() public {
     // Liquidation bonus: 0
     _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 100_00);
 
-    // The collateral has a price 10 times higher than the debt
+    // The collateral has a price 100 times higher than the debt
     _mockReservePrice(spoke, _wethReserveId(spoke), 100e8);
     _mockReservePrice(spoke, _daiReserveId(spoke), 1e8);
 
@@ -302,6 +304,106 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
       ),
       0,
       'Deficit should be 0'
+    );
+  }
+
+  // When liquidation bonus is 0, effective collateral liquidated must be less than effective debt liquidated.
+  // Full debt is liquidated, and amount of collateral liquidated must be computed based on the effective debt liquidated.
+  function test_scenario4() public {
+    // Liquidation bonus: 0
+    _updateMaxLiquidationBonus(spoke, _wethReserveId(spoke), 100_00);
+
+    // Supply share price: 1.25
+    _mockSupplySharePrice(hub1, wethAssetId, 12_500.25e6, 10_000e6);
+
+    // The collateral and debt have the same price
+    _mockReservePrice(spoke, _wethReserveId(spoke), 1e8);
+    _mockReservePrice(spoke, _daiReserveId(spoke), 1e8);
+
+    // Update WETH collateral factor to 80%
+    _updateCollateralFactor(spoke, _wethReserveId(spoke), 80_00);
+
+    // Collateral: 3 wei of USDX -> 2 share = 2.5 USDX
+    _increaseCollateralSupply(spoke, _wethReserveId(spoke), 3, user);
+
+    // Mock interest rate to 10%
+    _mockInterestRateBps(10_00);
+
+    // Borrow: 1 wei of DAI
+    _increaseReserveDebt(spoke, _daiReserveId(spoke), 1, user);
+
+    // Skip 1 year to increase drawn index
+    skip(365 days);
+    assertEq(hub1.getAssetDrawnIndex(daiAssetId), 1.1e27);
+
+    // Increase DAI price by 101%
+    _mockReservePriceByPercent(spoke, _daiReserveId(spoke), 201_00);
+
+    // User is fully liquidatable
+    ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
+    assertLe(userAccountData.healthFactor, 1e18, 'User should be unhealthy');
+
+    // User position before liquidation
+    ISpoke.UserPosition memory userCollateralPositionBefore = spoke.getUserPosition(
+      _wethReserveId(spoke),
+      user
+    );
+    assertEq(userCollateralPositionBefore.suppliedShares, 2, 'User should have 2 shares of WETH');
+    ISpoke.UserPosition memory userDebtPositionBefore = spoke.getUserPosition(
+      _daiReserveId(spoke),
+      user
+    );
+    assertEq(userDebtPositionBefore.drawnShares, 1, 'User should have 1 drawn share of DAI');
+    assertEq(
+      userDebtPositionBefore.premiumShares * 1.1e27 -
+        userDebtPositionBefore.premiumOffsetRay.toUint256(),
+      0.1e27,
+      'User should have 0.1 premium'
+    );
+
+    // Perform liquidation
+    // 1 drawn share of DAI is liquidated = 1.1 wei of DAI = 2.211 wei of USD = 2.211 wei of WETH = 1.7688 wei of WETH shares
+    _checkedLiquidationCall(
+      CheckedLiquidationCallParams({
+        spoke: spoke,
+        collateralReserveId: _wethReserveId(spoke),
+        debtReserveId: _daiReserveId(spoke),
+        user: user,
+        debtToCover: type(uint256).max,
+        liquidator: liquidator,
+        isSolvent: true,
+        receiveShares: false
+      })
+    );
+
+    // User position after liquidation
+    ISpoke.UserPosition memory userCollateralPositionAfter = spoke.getUserPosition(
+      _wethReserveId(spoke),
+      user
+    );
+    assertEq(
+      userCollateralPositionAfter.suppliedShares,
+      1,
+      'User should have 1 share of WETH after liquidation'
+    );
+    ISpoke.UserPosition memory userDebtPositionAfter = spoke.getUserPosition(
+      _daiReserveId(spoke),
+      user
+    );
+    assertEq(
+      userDebtPositionAfter.drawnShares,
+      0,
+      'User should have 0 drawn share of DAI after liquidation'
+    );
+    assertEq(
+      userDebtPositionAfter.premiumShares,
+      0,
+      'User should have 0 premium share of DAI after liquidation'
+    );
+    assertEq(
+      userDebtPositionAfter.premiumOffsetRay,
+      0,
+      'User should have 0 premium offset after liquidation'
     );
   }
 

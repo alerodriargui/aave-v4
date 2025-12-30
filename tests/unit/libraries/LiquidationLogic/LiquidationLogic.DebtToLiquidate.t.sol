@@ -15,23 +15,51 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
   ) public {
     params = _bound(params);
 
-    uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(params);
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );
-    uint256 rawDebtToLiquidate = params.debtReserveBalance.min(params.debtToCover).min(
-      debtToTarget
+    uint256 rawPremiumDebtRayToLiquidate = params.debtToCover.min(debtToTarget).toRay().min(
+      params.premiumDebtRay
+    );
+    uint256 drawnSharesToTarget = (debtToTarget.toRay() - rawPremiumDebtRayToLiquidate).divUp(
+      params.drawnIndex
+    );
+    uint256 drawnSharesToCover = Math.mulDiv(
+      params.debtToCover - rawPremiumDebtRayToLiquidate.fromRayUp(),
+      WadRayMath.RAY,
+      params.drawnIndex,
+      Math.Rounding.Floor
+    );
+    uint256 rawDrawnSharesToLiquidate = drawnSharesToTarget.min(drawnSharesToCover).min(
+      params.drawnShares
     );
 
+    uint256 assetsRequired = _calculateDebtAssetsToRestore({
+      drawnSharesToLiquidate: rawDrawnSharesToLiquidate,
+      premiumDebtRayToLiquidate: rawPremiumDebtRayToLiquidate,
+      drawnIndex: params.drawnIndex
+    });
+    assertLe(assetsRequired, params.debtToCover, 'assets required');
+
+    uint256 debtRayRemaining = (params.drawnShares - rawDrawnSharesToLiquidate) *
+      params.drawnIndex +
+      params.premiumDebtRay -
+      rawPremiumDebtRayToLiquidate;
+
     bool leavesDebtDust = _convertAmountToValue(
-      params.debtReserveBalance - rawDebtToLiquidate,
+      debtRayRemaining.fromRayDown(),
       params.debtAssetPrice,
       params.debtAssetUnit
     ) < LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
+
+    (uint256 drawnSharesToLiquidate, uint256 premiumDebtRayToLiquidate) = liquidationLogicWrapper
+      .calculateDebtToLiquidate(params);
     if (leavesDebtDust) {
-      assertEq(debtToLiquidate, params.debtReserveBalance);
+      assertEq(drawnSharesToLiquidate, params.drawnShares);
+      assertEq(premiumDebtRayToLiquidate, params.premiumDebtRay);
     } else {
-      assertEq(debtToLiquidate, rawDebtToLiquidate);
+      assertEq(drawnSharesToLiquidate, rawDrawnSharesToLiquidate);
+      assertEq(premiumDebtRayToLiquidate, rawPremiumDebtRayToLiquidate);
     }
   }
 
@@ -40,7 +68,8 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
     LiquidationLogic.CalculateDebtToLiquidateParams memory params
   ) public {
     params = _bound(params);
-    params.debtAssetUnit = 10 ** bound(params.debtAssetUnit, 1, 5);
+    params.debtAssetDecimals = bound(params.debtAssetDecimals, 1, 5);
+    params.debtAssetUnit = 10 ** params.debtAssetDecimals;
     params.debtAssetPrice = bound(
       params.debtAssetPrice,
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD.fromWadDown() * params.debtAssetUnit,
@@ -49,14 +78,31 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );
-    params.debtReserveBalance = bound(
-      params.debtReserveBalance,
-      debtToTarget.min(params.debtToCover),
+
+    uint256 rawPremiumDebtRayToLiquidate = params.debtToCover.min(debtToTarget).toRay().min(
+      params.premiumDebtRay
+    );
+
+    uint256 drawnSharesToTarget = (debtToTarget.toRay() - rawPremiumDebtRayToLiquidate).divUp(
+      params.drawnIndex
+    );
+    uint256 drawnSharesToCover = Math.mulDiv(
+      params.debtToCover - rawPremiumDebtRayToLiquidate.fromRayUp(),
+      WadRayMath.RAY,
+      params.drawnIndex,
+      Math.Rounding.Floor
+    );
+
+    params.drawnShares = bound(
+      params.drawnShares,
+      drawnSharesToTarget.min(drawnSharesToCover),
       MAX_SUPPLY_AMOUNT
     );
 
-    uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(params);
-    assertEq(debtToLiquidate, debtToTarget.min(params.debtToCover));
+    (uint256 drawnSharesToLiquidate, uint256 premiumDebtRayToLiquidate) = liquidationLogicWrapper
+      .calculateDebtToLiquidate(params);
+    assertEq(drawnSharesToLiquidate, drawnSharesToTarget.min(drawnSharesToCover));
+    assertEq(premiumDebtRayToLiquidate, rawPremiumDebtRayToLiquidate);
   }
 
   /// function returns total reserve debt if dust is left
@@ -64,7 +110,9 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
     LiquidationLogic.CalculateDebtToLiquidateParams memory params
   ) public {
     params = _boundWithDustAdjustment(params);
-    uint256 debtToLiquidate = liquidationLogicWrapper.calculateDebtToLiquidate(params);
-    assertEq(debtToLiquidate, params.debtReserveBalance);
+    (uint256 drawnSharesToLiquidate, uint256 premiumDebtRayToLiquidate) = liquidationLogicWrapper
+      .calculateDebtToLiquidate(params);
+    assertEq(drawnSharesToLiquidate, params.drawnShares);
+    assertEq(premiumDebtRayToLiquidate, params.premiumDebtRay);
   }
 }

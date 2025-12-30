@@ -351,28 +351,16 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 debtToCover,
     bool receiveShares
   ) external {
-    Reserve storage collateralReserve = _getReserve(collateralReserveId);
-    Reserve storage debtReserve = _getReserve(debtReserveId);
-    DynamicReserveConfig storage collateralDynConfig = _dynamicConfig[collateralReserveId][
-      _userPositions[user][collateralReserveId].dynamicConfigKey
-    ];
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
-
-    uint256 drawnIndex = debtReserve.hub.getAssetDrawnIndex(debtReserve.assetId);
-    (uint256 drawnDebt, uint256 premiumDebtRay) = _userPositions[user][debtReserveId].getDebt(
-      drawnIndex
-    );
 
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
       debtReserveId: debtReserveId,
+      liquidationConfig: _liquidationConfig,
       oracle: ORACLE,
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
-      drawnDebt: drawnDebt,
-      premiumDebtRay: premiumDebtRay,
-      drawnIndex: drawnIndex,
       totalDebtValue: userAccountData.totalDebtValue,
       activeCollateralCount: userAccountData.activeCollateralCount,
       borrowedCount: userAccountData.borrowedCount,
@@ -380,15 +368,14 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       receiveShares: receiveShares
     });
 
-    bool isUserInDeficit = LiquidationLogic.liquidateUser(
-      collateralReserve,
-      debtReserve,
-      _userPositions,
-      _positionStatus,
-      _liquidationConfig,
-      collateralDynConfig,
-      params
-    );
+    bool isUserInDeficit = LiquidationLogic.liquidateUser({
+      collateralReserve: _getReserve(collateralReserveId),
+      debtReserve: _getReserve(debtReserveId),
+      positions: _userPositions,
+      positionStatus: _positionStatus,
+      dynamicConfig: _dynamicConfig,
+      params: params
+    });
 
     uint256 newRiskPremium = 0;
     if (isUserInDeficit) {
@@ -739,7 +726,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       Reserve storage reserve = _reserves[reserveId];
 
       uint256 assetPrice = IAaveOracle(ORACLE).getReservePrice(reserveId);
-      uint256 assetUnit = MathUtils.uncheckedExp(10, reserve.decimals);
+      uint256 assetDecimals = reserve.decimals;
 
       if (collateral) {
         uint256 collateralFactor = _dynamicConfig[reserveId][
@@ -751,10 +738,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
           uint256 suppliedShares = userPosition.suppliedShares;
           if (suppliedShares > 0) {
             // cannot round down to zero
-            uint256 userCollateralValue = (reserve.hub.previewRemoveByShares(
-              reserve.assetId,
-              suppliedShares
-            ) * assetPrice).wadDivDown(assetUnit);
+            uint256 userCollateralValue = reserve
+              .hub
+              .previewRemoveByShares(reserve.assetId, suppliedShares)
+              .toValue({decimals: assetDecimals, price: assetPrice});
             accountData.totalCollateralValue += userCollateralValue;
             collateralInfo.add(
               accountData.activeCollateralCount,
@@ -773,8 +760,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
           reserve.assetId
         );
         // we can simplify since there is no precision loss due to the division here
-        accountData.totalDebtValue += ((drawnDebt + premiumDebtRay.fromRayUp()) * assetPrice)
-          .wadDivUp(assetUnit);
+        accountData.totalDebtValue += (
+          (drawnDebt + premiumDebtRay.fromRayUp()).toValue({
+            decimals: assetDecimals,
+            price: assetPrice
+          })
+        );
         accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
       }
     }
@@ -951,7 +942,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
-        PercentageMath.PERCENTAGE_FACTOR,
+          PercentageMath.PERCENTAGE_FACTOR,
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());

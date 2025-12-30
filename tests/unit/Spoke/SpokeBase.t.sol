@@ -731,6 +731,20 @@ contract SpokeBase is Base {
     assertEq(abi.encode(a), abi.encode(b)); // sanity check
   }
 
+  function assertEq(
+    ISpoke.UserAccountData memory a,
+    ISpoke.UserAccountData memory b
+  ) internal pure {
+    assertEq(a.riskPremium, b.riskPremium, 'riskPremium');
+    assertEq(a.avgCollateralFactor, b.avgCollateralFactor, 'avgCollateralFactor');
+    assertEq(a.totalCollateralValue, b.totalCollateralValue, 'totalCollateralValue');
+    assertEq(a.totalDebtValue, b.totalDebtValue, 'totalDebtValue');
+    assertEq(a.healthFactor, b.healthFactor, 'healthFactor');
+    assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
+    assertEq(a.borrowedCount, b.borrowedCount, 'borrowedCount');
+    assertEq(abi.encode(a), abi.encode(b)); // sanity check
+  }
+
   function _assertUserRpUnchanged(ISpoke spoke, address user) internal view {
     uint256 riskPremiumPreview = spoke.getUserAccountData(user).riskPremium;
     uint256 riskPremiumStored = _getUserRpStored(spoke, user);
