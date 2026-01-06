@@ -18,7 +18,7 @@ contract PositionManagerBaseTest is SpokeBase {
     spoke1.updatePositionManager(address(positionManager), true);
   }
 
-  function test_constructor() public {
+  function test_constructor() public view {
     assertEq(positionManager.owner(), address(ADMIN));
     assertEq(positionManager.pendingOwner(), address(0));
 
