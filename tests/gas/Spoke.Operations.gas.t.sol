@@ -34,6 +34,25 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.stopPrank();
   }
 
+  function test_supplySkimmed() public {
+    vm.startPrank(alice);
+    tokenList.usdx.transfer(address(_hub(spoke, reserveId.usdx)), 1000e6);
+    spoke.supplySkimmed(reserveId.usdx, 1000e6, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'supplySkimmed: 0 borrows, collateral disabled');
+
+    tokenList.usdx.transfer(address(_hub(spoke, reserveId.usdx)), 1000e6);
+    spoke.supplySkimmed(reserveId.usdx, 1000e6, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'supplySkimmed: second action, same reserve');
+
+    spoke.supply(reserveId.weth, 1000e18, alice);
+
+    tokenList.weth.transfer(address(_hub(spoke, reserveId.weth)), 1e18);
+    spoke.setUsingAsCollateral(reserveId.weth, true, alice);
+    spoke.supplySkimmed(reserveId.weth, 1e18, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'supplySkimmed: 0 borrows, collateral enabled');
+    vm.stopPrank();
+  }
+
   function test_usingAsCollateral() public {
     vm.prank(bob);
     spoke.supply(reserveId.dai, 1000e18, bob);
@@ -132,6 +151,28 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     spoke.repay(reserveId.dai, type(uint256).max, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'repay: full');
+    vm.stopPrank();
+  }
+
+  function test_repaySkimmed() public {
+    vm.prank(bob);
+    spoke.supply(reserveId.dai, 1000e18, bob);
+
+    vm.startPrank(alice);
+    spoke.supply(reserveId.usdx, 1000e6, alice);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
+    spoke.borrow(reserveId.dai, 500e18, alice);
+
+    tokenList.dai.transfer(address(_hub(spoke, reserveId.dai)), 200e18);
+    spoke.repaySkimmed(reserveId.dai, 200e18, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'repaySkimmed: partial');
+
+    tokenList.dai.transfer(
+      address(_hub(spoke, reserveId.dai)),
+      spoke.getUserTotalDebt(reserveId.dai, alice)
+    );
+    spoke.repaySkimmed(reserveId.dai, type(uint256).max, alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'repaySkimmed: full');
     vm.stopPrank();
   }
 
