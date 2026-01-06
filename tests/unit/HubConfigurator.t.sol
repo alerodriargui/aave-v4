@@ -22,10 +22,10 @@ contract HubConfiguratorTest is HubBase {
   function setUp() public virtual override {
     super.setUp();
     hubConfigurator = new HubConfigurator(HUB_CONFIGURATOR_ADMIN);
-    IAccessManager accessManager = IAccessManager(hub1.authority());
     // Grant hubConfigurator hub admin role with 0 delay
-    vm.prank(ADMIN);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
+    vm.startPrank(ADMIN);
+    IAccessManager(hub1.authority()).grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
+    vm.stopPrank();
     _assetId = daiAssetId;
     _encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
@@ -319,7 +319,6 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateFeeReceiver_revertsWith_SpokeAlreadyListed() public {
-    _assetId = vm.randomUint(0, hub1.getAssetCount() - 1);
     assertTrue(hub1.isSpokeListed(_assetId, address(spoke1)));
 
     // set feeReceiver as an existing spoke

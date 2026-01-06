@@ -289,13 +289,13 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_setUserPositionManagerWithSig() public {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
+    (address user, uint256 userPk) = makeAddrAndKey('user');
     vm.label(user, 'user');
-    address positionManager = vm.randomAddress();
+    address positionManager = makeAddr('positionManager');
     vm.prank(SPOKE_ADMIN);
     spoke.updatePositionManager(positionManager, true);
 
-    uint192 nonceKey = _randomNonceKey();
+    uint192 nonceKey = 100;
     vm.prank(user);
     spoke.useNonce(nonceKey);
 
@@ -304,7 +304,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       user: user,
       approve: true,
       nonce: spoke.nonces(user, nonceKey),
-      deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
+      deadline: vm.getBlockTimestamp() + 1
     });
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
     bytes memory signature = abi.encodePacked(r, s, v);

@@ -1009,9 +1009,18 @@ contract SpokeBase is Base {
     uint256 reserveId
   ) internal view returns (uint32) {
     return
-      (PercentageMath.PERCENTAGE_FACTOR - 1)
-        .percentDivDown(_getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor)
-        .toUint32();
+      _maxLiquidationBonusUpperBound(
+        _getLatestDynamicReserveConfig(spoke, reserveId).collateralFactor
+      ).toUint32();
+  }
+
+  function _maxLiquidationBonusUpperBound(
+    uint256 collateralFactor
+  ) internal pure returns (uint256) {
+    return
+      collateralFactor == 0
+        ? MIN_LIQUIDATION_BONUS
+        : (PercentageMath.PERCENTAGE_FACTOR - 1).percentDivDown(collateralFactor).toUint32();
   }
 
   function _randomMaxLiquidationBonus(ISpoke spoke, uint256 reserveId) internal returns (uint32) {
