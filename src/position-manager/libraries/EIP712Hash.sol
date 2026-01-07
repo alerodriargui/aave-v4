@@ -36,106 +36,100 @@ library EIP712Hash {
     // keccak256('UpdateUserDynamicConfig(address spoke,address user,uint256 nonce,uint256 deadline)')
     0xba177b1f5b5e1e709f62c19f03c97988c57752ba561de58f383ebee4e8d0a71c;
 
-  function hash(EIP712Types.Supply calldata params) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          SUPPLY_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.amount,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      );
+  function hash(EIP712Types.Supply calldata params) internal pure returns (bytes32 result) {
+    assembly ('memory-safe') {
+      // retrieve fmp; note: memory will be left dirtied
+      let m := mload(0x40)
+
+      mstore(m, SUPPLY_TYPEHASH)
+      // subsequent data directly copied from calldata
+      calldatacopy(add(m, 0x20), params, 0xc0)
+
+      result := keccak256(m, 0xe0)
+    }
   }
 
-  function hash(EIP712Types.Withdraw calldata params) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          WITHDRAW_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.amount,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      );
+  function hash(EIP712Types.Withdraw calldata params) internal pure returns (bytes32 result) {
+    assembly ('memory-safe') {
+      // retrieve fmp; note: memory will be left dirtied
+      let m := mload(0x40)
+
+      mstore(m, WITHDRAW_TYPEHASH)
+      // subsequent data directly copied from calldata
+      calldatacopy(add(m, 0x20), params, 0xc0)
+
+      result := keccak256(m, 0xe0)
+    }
   }
 
-  function hash(EIP712Types.Borrow calldata params) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          BORROW_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.amount,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      );
+  function hash(EIP712Types.Borrow calldata params) internal pure returns (bytes32 result) {
+    assembly ('memory-safe') {
+      // retrieve fmp; note: memory will be left dirtied
+      let m := mload(0x40)
+
+      mstore(m, BORROW_TYPEHASH)
+      // subsequent data directly copied from calldata
+      calldatacopy(add(m, 0x20), params, 0xc0)
+
+      result := keccak256(m, 0xe0)
+    }
   }
 
-  function hash(EIP712Types.Repay calldata params) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          REPAY_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.amount,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      );
+  function hash(EIP712Types.Repay calldata params) internal pure returns (bytes32 result) {
+    assembly ('memory-safe') {
+      // retrieve fmp; note: memory will be left dirtied
+      let m := mload(0x40)
+
+      mstore(m, REPAY_TYPEHASH)
+      // subsequent data directly copied from calldata
+      calldatacopy(add(m, 0x20), params, 0xc0)
+
+      result := keccak256(m, 0xe0)
+    }
   }
 
-  function hash(EIP712Types.SetUsingAsCollateral calldata params) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          SET_USING_AS_COLLATERAL_TYPEHASH,
-          params.spoke,
-          params.reserveId,
-          params.useAsCollateral,
-          params.onBehalfOf,
-          params.nonce,
-          params.deadline
-        )
-      );
+  function hash(
+    EIP712Types.SetUsingAsCollateral calldata params
+  ) internal pure returns (bytes32 result) {
+    assembly ('memory-safe') {
+      // retrieve fmp; note: memory will be left dirtied
+      let m := mload(0x40)
+
+      mstore(m, SET_USING_AS_COLLATERAL_TYPEHASH)
+      // subsequent data directly copied from calldata
+      calldatacopy(add(m, 0x20), params, 0xc0)
+
+      result := keccak256(m, 0xe0)
+    }
   }
 
-  function hash(EIP712Types.UpdateUserRiskPremium calldata params) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          UPDATE_USER_RISK_PREMIUM_TYPEHASH,
-          params.spoke,
-          params.user,
-          params.nonce,
-          params.deadline
-        )
-      );
+  function hash(
+    EIP712Types.UpdateUserRiskPremium calldata params
+  ) internal pure returns (bytes32 result) {
+    assembly ('memory-safe') {
+      // retrieve fmp; note: memory will be left dirtied
+      let m := mload(0x40)
+
+      mstore(m, UPDATE_USER_RISK_PREMIUM_TYPEHASH)
+      // subsequent data directly copied from calldata
+      calldatacopy(add(m, 0x20), params, 0x80)
+
+      result := keccak256(m, 0xa0)
+    }
   }
 
   function hash(
     EIP712Types.UpdateUserDynamicConfig calldata params
-  ) internal pure returns (bytes32) {
-    return
-      keccak256(
-        abi.encode(
-          UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
-          params.spoke,
-          params.user,
-          params.nonce,
-          params.deadline
-        )
-      );
+  ) internal pure returns (bytes32 result) {
+    assembly ('memory-safe') {
+      // retrieve fmp; note: memory will be left dirtied
+      let m := mload(0x40)
+
+      mstore(m, UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH)
+      // subsequent data directly copied from calldata
+      calldatacopy(add(m, 0x20), params, 0x80)
+
+      result := keccak256(m, 0xa0)
+    }
   }
 }
