@@ -1,4 +1,4 @@
-# Make sure debtToLiquidate does not exceed params.debtReserveBalance in liquidation logic
+# Highlights the fact that debtToLiquidate cannot exceed debtReserveBalance in liquidation logic.
 from z3 import *
 
 WAD = IntVal(10**18)

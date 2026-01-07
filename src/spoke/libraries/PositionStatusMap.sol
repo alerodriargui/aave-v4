@@ -51,6 +51,16 @@ library PositionStatusMap {
     }
   }
 
+  /// @notice Returns if a user is using the specified reserve for borrowing or as collateral.
+  function isUsingAsCollateralOrBorrowing(
+    uint256 map,
+    uint256 reserveId
+  ) internal pure returns (bool) {
+    unchecked {
+      return (map >> ((reserveId % 128) << 1)) & 3 != 0;
+    }
+  }
+
   /// @notice Returns if a user is using the specified reserve for borrowing.
   function isBorrowing(uint256 map, uint256 reserveId) internal pure returns (bool) {
     unchecked {
@@ -76,7 +86,7 @@ library PositionStatusMap {
   /// @notice Finds the previous borrowing or collateralized reserve strictly before `fromReserveId`.
   /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
   /// @dev Returns `NOT_FOUND` if no borrowing or collateralized reserve exists before the bound.
-  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
+  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the last bucket.
   /// @param fromReserveId The identifier of the reserve to start searching from.
   /// @return reserveId The reserve identifier for the next reserve that is borrowed or used as collateral.
   /// @return borrowing True if the next reserveId is borrowed, false otherwise.
@@ -96,7 +106,7 @@ library PositionStatusMap {
   /// @notice Finds the previous borrowed reserve strictly before `fromReserveId`.
   /// @dev The search starts at `fromReserveId` (exclusive) and scans backward across buckets.
   /// @dev Returns `NOT_FOUND` if no borrowed reserve exists before the bound.
-  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the current bucket.
+  /// @dev Ignores dirty bits beyond the configured `reserveCount` within the last bucket.
   /// @param fromReserveId The exclusive upper bound to start from (this reserveId is not considered).
   /// @return The previous borrowed reserveId, or `NOT_FOUND` if none is found.
   function nextBorrowing(uint256 map, uint256 fromReserveId) internal pure returns (uint256) {

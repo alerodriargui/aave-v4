@@ -8,8 +8,8 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
   struct SiloedLocalVars {
     uint256 assetAId;
     uint256 assetBId;
-    uint56 assetAAddCap;
-    uint56 assetBDrawCap;
+    uint40 assetAAddCap;
+    uint40 assetBDrawCap;
     uint256 reserveAId;
     uint256 reserveBId;
     uint256 reserveAIdNewSpoke;
@@ -49,7 +49,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(newHub),
       siloedVars.assetBId,
       _deployMockPriceFeed(newSpoke, 2000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      _getDefaultReserveConfig(15_00),
       dynReserveConfig
     );
 
@@ -58,9 +58,11 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       siloedVars.assetBId,
       address(newSpoke),
       IHub.SpokeConfig({
+        paused: false,
         active: true,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: siloedVars.assetBDrawCap
+        drawCap: siloedVars.assetBDrawCap,
+        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
 
@@ -79,7 +81,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(hub1),
       siloedVars.assetAId,
       _deployMockPriceFeed(spoke1, 50_000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      _getDefaultReserveConfig(15_00),
       dynReserveConfig
     );
 
@@ -89,8 +91,10 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(spoke1),
       IHub.SpokeConfig({
         active: true,
+        paused: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
-        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP
+        drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
+        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
       })
     );
 
@@ -99,7 +103,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       address(hub1),
       siloedVars.assetAId,
       _deployMockPriceFeed(newSpoke, 2000e8),
-      ISpoke.ReserveConfig({paused: false, frozen: false, borrowable: true, collateralRisk: 15_00}),
+      _getDefaultReserveConfig(15_00),
       dynReserveConfig
     );
 
@@ -107,16 +111,30 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
     hub1.addSpoke(
       siloedVars.assetAId,
       address(newSpoke),
-      IHub.SpokeConfig({active: true, addCap: siloedVars.assetAAddCap, drawCap: 0})
+      IHub.SpokeConfig({
+        active: true,
+        paused: false,
+        addCap: siloedVars.assetAAddCap,
+        drawCap: 0,
+        riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
+      })
     );
     vm.stopPrank();
 
     // Approvals
-    vm.prank(bob);
-    assetA.approve(address(hub1), type(uint256).max);
+    vm.startPrank(bob);
+    assetA.approve(address(spoke1), type(uint256).max);
+    assetB.approve(address(spoke1), type(uint256).max);
+    assetA.approve(address(newSpoke), type(uint256).max);
+    assetB.approve(address(newSpoke), type(uint256).max);
+    vm.stopPrank();
 
-    vm.prank(alice);
-    assetB.approve(address(newHub), type(uint256).max);
+    vm.startPrank(alice);
+    assetA.approve(address(spoke1), type(uint256).max);
+    assetB.approve(address(spoke1), type(uint256).max);
+    assetA.approve(address(newSpoke), type(uint256).max);
+    assetB.approve(address(newSpoke), type(uint256).max);
+    vm.stopPrank();
 
     // Deal tokens
     deal(address(assetA), bob, MAX_SUPPLY_AMOUNT);
@@ -139,7 +157,7 @@ contract SpokeMultipleHubSiloedBorrowingTest is SpokeMultipleHubBase {
       'bob supplied amount of asset A on new spoke'
     );
     assertTrue(
-      newSpoke.isUsingAsCollateral(siloedVars.reserveAIdNewSpoke, bob),
+      _isUsingAsCollateral(newSpoke, siloedVars.reserveAIdNewSpoke, bob),
       'bob using asset A as collateral on new spoke'
     );
     assertEq(

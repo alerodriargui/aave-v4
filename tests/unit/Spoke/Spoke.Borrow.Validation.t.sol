@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowValidationTest is SpokeBase {
   using SafeCast for uint256;
+  using ReserveFlagsMap for ReserveFlags;
 
   function test_borrow_revertsWith_ReserveNotBorrowable() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
@@ -22,7 +23,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
 
     // set reserve not borrowable
     updateReserveBorrowableFlag(spoke1, reserveId, false);
-    assertFalse(spoke1.getReserve(reserveId).borrowable);
+    assertFalse(spoke1.getReserve(reserveId).flags.borrowable());
 
     // Bob tries to draw
     vm.expectRevert(ISpoke.ReserveNotBorrowable.selector);
@@ -56,8 +57,8 @@ contract SpokeBorrowValidationTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
-    updateReservePausedFlag(spoke1, reserveId, true);
-    assertTrue(spoke1.getReserve(reserveId).paused);
+    _updateReservePausedFlag(spoke1, reserveId, true);
+    assertTrue(spoke1.getReserve(reserveId).flags.paused());
 
     // Bob try to draw
     vm.expectRevert(ISpoke.ReservePaused.selector);
@@ -76,7 +77,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT);
 
     updateReserveFrozenFlag(spoke1, reserveId, true);
-    assertTrue(spoke1.getReserve(reserveId).frozen);
+    assertTrue(spoke1.getReserve(reserveId).flags.frozen());
 
     // Bob try to draw
     vm.expectRevert(ISpoke.ReserveFrozen.selector);
@@ -85,24 +86,19 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_revertsWith_InsufficientLiquidity() public {
-    test_borrow_fuzz_revertsWith_InsufficientLiquidity({
-      daiAmount: 100e18,
-      wethAmount: 10e18,
-      borrowAmount: 100e18 + 1
-    });
+    test_borrow_fuzz_revertsWith_InsufficientLiquidity({daiAmount: 100e18, wethAmount: 10e18});
   }
 
   function test_borrow_fuzz_revertsWith_InsufficientLiquidity(
     uint256 daiAmount,
-    uint256 wethAmount,
-    uint256 borrowAmount
+    uint256 wethAmount
   ) public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
 
     wethAmount = bound(wethAmount, 10, MAX_SUPPLY_AMOUNT);
     daiAmount = wethAmount / 10;
-    vm.assume(borrowAmount > daiAmount);
+    uint256 borrowAmount = vm.randomUint(daiAmount + 1, MAX_SUPPLY_AMOUNT);
 
     // Bob supply weth
     Utils.supply(spoke1, wethReserveId, bob, wethAmount, bob);
@@ -130,9 +126,9 @@ contract SpokeBorrowValidationTest is SpokeBase {
     spoke1.borrow(reserveId, 0, bob);
   }
 
-  function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint56 drawCap) public {
+  function test_borrow_fuzz_revertsWith_DrawCapExceeded(uint256 reserveId, uint40 drawCap) public {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint56();
+    drawCap = bound(drawCap, 1, MAX_SUPPLY_AMOUNT / 10 ** tokenList.dai.decimals()).toUint40();
 
     uint256 drawAmount = drawCap * 10 ** tokenList.dai.decimals() + 1;
 
@@ -152,7 +148,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
 
-    uint56 drawCap = 100;
+    uint40 drawCap = 100;
     uint256 daiAmount = drawCap * 10 ** tokenList.dai.decimals();
     uint256 wethSupplyAmount = 10e18;
     uint256 drawAmount = daiAmount - 1;

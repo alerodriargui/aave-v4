@@ -23,6 +23,8 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 aliceDrawnDebt;
     uint256 alicePremiumDebt;
     uint256 borrowReserveSupplyAmount;
+    uint256 addExRate;
+    uint256 expectedFeeAmount;
   }
 
   struct TestWithInterestFuzzParams {
@@ -40,7 +42,7 @@ contract SpokeWithdrawTest is SpokeBase {
     TestUserData[2] memory bobData;
     TokenData[2] memory tokenData;
 
-    uint256 expectedSupplyShares = hub1.convertToAddedShares(daiAssetId, amount);
+    uint256 expectedSupplyShares = hub1.previewAddByAssets(daiAssetId, amount);
 
     // Bob supplies DAI
     Utils.supply({
@@ -83,15 +85,23 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Bob withdraws immediately in the same block
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Withdraw(_daiReserveId(spoke1), bob, bob, amount);
+    emit ISpokeBase.Withdraw(_daiReserveId(spoke1), bob, bob, expectedSupplyShares, amount);
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), amount, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      amount,
+      bob
+    );
 
     stage = 1;
     daiData[stage] = loadReserveInfo(spoke1, _daiReserveId(spoke1));
     bobData[stage] = loadUserInfo(spoke1, _daiReserveId(spoke1), bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
+
+    assertEq(returnValues.amount, amount);
+    assertEq(returnValues.shares, expectedSupplyShares);
 
     // Reserve assertions after withdrawal
     assertEq(daiData[stage].addedAmount, 0, 'reserve addedAmount post-withdraw');
@@ -108,6 +118,8 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // Check supply rate monotonically increases after withdrawal
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_all_liquidity() public {
@@ -131,12 +143,23 @@ contract SpokeWithdrawTest is SpokeBase {
 
     uint256 addExRate = getAddExRate(daiAssetId);
 
+    uint256 expectedShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
+
     // Withdraw all supplied assets
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      UINT256_MAX,
+      bob
+    );
+
+    assertEq(returnValues.amount, supplyAmount);
+    assertEq(returnValues.shares, expectedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_fuzz_suppliedAmount(uint256 supplyAmount) public {
@@ -160,12 +183,23 @@ contract SpokeWithdrawTest is SpokeBase {
 
     uint256 addExRate = getAddExRate(daiAssetId);
 
+    uint256 expectedShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
+
     // Withdraw all supplied assets
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      UINT256_MAX,
+      bob
+    );
+
+    assertEq(returnValues.amount, supplyAmount);
+    assertEq(returnValues.shares, expectedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_fuzz_all_greater_than_supplied(uint256 supplyAmount) public {
@@ -189,12 +223,23 @@ contract SpokeWithdrawTest is SpokeBase {
 
     uint256 addExRate = getAddExRate(daiAssetId);
 
+    uint256 expectedShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
+
     // Withdraw all supplied assets
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), supplyAmount + 1, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      supplyAmount + 1,
+      bob
+    );
+
+    assertEq(returnValues.amount, supplyAmount);
+    assertEq(returnValues.shares, expectedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_fuzz_all_with_interest(uint256 supplyAmount, uint256 borrowAmount) public {
@@ -230,6 +275,8 @@ contract SpokeWithdrawTest is SpokeBase {
     // Wait a year to accrue interest
     skip(365 days);
 
+    uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
+
     // Ensure interest has accrued
     vm.assume(hub1.getAddedAssets(daiAssetId) > supplyAmount);
 
@@ -245,27 +292,38 @@ contract SpokeWithdrawTest is SpokeBase {
       onBehalfOf: bob
     });
 
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, expectedFeeAmount, 'realized fees');
+
     uint256 addExRate = getAddExRate(daiAssetId);
 
-    // bob withdraws all
-    vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
+    uint256 expectedAssets = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob);
+    uint256 expectedShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
 
-    // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, UINT256_MAX);
+    // bob withdraws all
+    TestReturnValues memory returnValues;
+    vm.prank(bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      UINT256_MAX,
+      bob
+    );
+
+    assertEq(returnValues.amount, expectedAssets);
+    assertEq(returnValues.shares, expectedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_fuzz_all_elapsed_with_interest(
     uint256 supplyAmount,
     uint256 borrowAmount,
-    uint32 elapsed
+    uint40 elapsed
   ) public {
     supplyAmount = bound(supplyAmount, 2, MAX_SUPPLY_AMOUNT);
     borrowAmount = bound(borrowAmount, 1, supplyAmount / 2);
-    elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint32();
+    elapsed = bound(elapsed, 0, MAX_SKIP_TIME).toUint40();
 
     Utils.supplyCollateral({
       spoke: spoke1,
@@ -313,14 +371,24 @@ contract SpokeWithdrawTest is SpokeBase {
 
     uint256 addExRate = getAddExRate(daiAssetId);
 
-    vm.prank(bob);
-    spoke1.withdraw(_daiReserveId(spoke1), UINT256_MAX, bob);
+    uint256 expectedAssets = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob);
+    uint256 expectedShares = spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob);
 
-    // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, type(uint256).max);
+    TestReturnValues memory returnValues;
+
+    vm.prank(bob);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      _daiReserveId(spoke1),
+      UINT256_MAX,
+      bob
+    );
+
+    assertEq(returnValues.amount, expectedAssets);
+    assertEq(returnValues.shares, expectedShares);
 
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 
   function test_withdraw_all_liquidity_with_interest_no_premium() public {
@@ -337,6 +405,8 @@ contract SpokeWithdrawTest is SpokeBase {
       state.supplyShares,
       state.borrowReserveSupplyAmount
     ) = _increaseReserveIndex(spoke1, state.reserveId);
+
+    state.expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
 
     (state.aliceDrawnDebt, state.alicePremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
     assertEq(state.alicePremiumDebt, 0, 'alice has no premium contribution to exchange rate');
@@ -371,14 +441,19 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
-    uint256 addExRate = getAddExRate(daiAssetId);
+    state.addExRate = getAddExRate(daiAssetId);
 
     // withdraw all available liquidity
     // bc debt is fully repaid, bob can withdraw all supplied
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, onBehalfOf: bob});
-    // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, type(uint256).max);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
+      reserveId: state.reserveId,
+      amount: state.withdrawAmount,
+      onBehalfOf: bob
+    });
+
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -386,11 +461,15 @@ contract SpokeWithdrawTest is SpokeBase {
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
 
+    assertEq(returnValues.amount, state.withdrawAmount);
+    assertEq(returnValues.shares, state.withdrawnShares);
+
     // reserve
     (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(state.reserveId);
     assertEq(reserveDrawnDebt, 0, 'reserveData drawn debt');
     assertEq(reservePremiumDebt, 0, 'reserveData premium debt');
     assertEq(reserveData[stage].data.addedShares, 0, 'reserveData added shares');
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
 
     // alice
     (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
@@ -408,7 +487,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, daiAssetId),
+      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFees,
       'tokenData hub balance'
     );
     assertEq(
@@ -423,7 +502,7 @@ contract SpokeWithdrawTest is SpokeBase {
     );
 
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    _checkSupplyRateIncreasing(state.addExRate, getAddExRate(daiAssetId), 'after withdraw');
   }
 
   function test_withdraw_fuzz_all_liquidity_with_interest_no_premium(
@@ -483,6 +562,8 @@ contract SpokeWithdrawTest is SpokeBase {
       skipTime: params.skipTime
     });
 
+    state.expectedFeeAmount = _calcUnrealizedFees(hub1, wbtcAssetId);
+
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
     // deal because repayAmount may exceed default supplied amount due to interest
     deal(address(underlying), alice, repayAmount);
@@ -493,6 +574,8 @@ contract SpokeWithdrawTest is SpokeBase {
 
     // alice repays all with interest
     Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
+
+    assertEq(hub1.getAsset(wbtcAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -523,17 +606,22 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 addExRateBefore = getAddExRate(assetId);
 
     // bob withdraws all
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, onBehalfOf: bob});
-
-    // treasury spoke withdraw fees
-    withdrawLiquidityFees(assetId, type(uint256).max);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
+      reserveId: state.reserveId,
+      amount: state.withdrawAmount,
+      onBehalfOf: bob
+    });
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
+
+    assertEq(returnValues.shares, state.withdrawnShares);
+    assertEq(returnValues.amount, state.withdrawAmount);
 
     // reserve
     {
@@ -546,26 +634,28 @@ contract SpokeWithdrawTest is SpokeBase {
     }
 
     // alice
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
-    assertEq(userDrawnDebt, 0, 'aliceData drawn debt');
-    assertEq(userPremiumDebt, 0, 'aliceData premium debt');
-    assertEq(aliceData[stage].data.suppliedShares, 0, 'aliceData supplied shares');
+    {
+      (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
+      assertEq(userDrawnDebt, 0, 'aliceData drawn debt');
+      assertEq(userPremiumDebt, 0, 'aliceData premium debt');
+      assertEq(aliceData[stage].data.suppliedShares, 0, 'aliceData supplied shares');
 
-    // bob
-    (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(state.reserveId, bob);
-    assertEq(userDrawnDebt, 0, 'bobData drawn debt');
-    assertEq(userPremiumDebt, 0, 'bobData premium debt');
-    assertEq(
-      bobData[stage].data.suppliedShares,
-      state.supplyShares - state.withdrawnShares,
-      'bobData supplied shares'
-    );
+      // bob
+      (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(state.reserveId, bob);
+      assertEq(userDrawnDebt, 0, 'bobData drawn debt');
+      assertEq(userPremiumDebt, 0, 'bobData premium debt');
+      assertEq(
+        bobData[stage].data.suppliedShares,
+        state.supplyShares - state.withdrawnShares,
+        'bobData supplied shares'
+      );
+    }
 
     // token
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, assetId),
+      _calculateBurntInterest(hub1, assetId) + hub1.getAsset(assetId).realizedFees,
       'tokenData hub balance'
     );
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');
@@ -574,6 +664,8 @@ contract SpokeWithdrawTest is SpokeBase {
       MAX_SUPPLY_AMOUNT - state.borrowReserveSupplyAmount + state.withdrawAmount,
       'bob balance'
     );
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
 
     // Check supply rate monotonically increasing after withdraw
     uint256 addExRateAfter = getAddExRate(assetId); // caching to avoid stack too deep
@@ -598,6 +690,8 @@ contract SpokeWithdrawTest is SpokeBase {
       state.borrowReserveSupplyAmount
     ) = _increaseReserveIndex(spoke1, state.reserveId);
 
+    state.expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
+
     (, state.alicePremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
 
     assertGt(state.alicePremiumDebt, 0, 'alice has premium contribution to exchange rate');
@@ -605,6 +699,8 @@ contract SpokeWithdrawTest is SpokeBase {
     // repay all debt with interest
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
     Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
+
+    assertEq(hub1.getAsset(daiAssetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
     uint256 stage = 0;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
@@ -626,19 +722,25 @@ contract SpokeWithdrawTest is SpokeBase {
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
-    uint256 addExRate = getAddExRate(daiAssetId);
+    state.addExRate = getAddExRate(daiAssetId);
 
     // debt is fully repaid, so bob can withdraw all supplied
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, onBehalfOf: bob});
-    // treasury spoke withdraw fees
-    withdrawLiquidityFees(daiAssetId, type(uint256).max);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
+      reserveId: state.reserveId,
+      amount: state.withdrawAmount,
+      onBehalfOf: bob
+    });
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(tokenList.dai, address(spoke1));
+
+    assertEq(returnValues.shares, state.withdrawnShares);
+    assertEq(returnValues.amount, state.withdrawAmount);
 
     // reserve
     (uint256 reserveDrawnDebt, uint256 reservePremiumDebt) = spoke1.getReserveDebt(state.reserveId);
@@ -666,7 +768,7 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, daiAssetId),
+      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFees,
       'tokenData hub balance'
     );
     assertEq(
@@ -680,8 +782,10 @@ contract SpokeWithdrawTest is SpokeBase {
       'bob balance'
     );
 
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
+
     // Check supply rate monotonically increasing after withdraw
-    _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
+    _checkSupplyRateIncreasing(state.addExRate, getAddExRate(daiAssetId), 'after withdraw');
   }
 
   function test_withdraw_fuzz_all_liquidity_with_interest_with_premium(
@@ -733,6 +837,8 @@ contract SpokeWithdrawTest is SpokeBase {
       skipTime: params.skipTime
     });
 
+    state.expectedFeeAmount = _calcUnrealizedFees(hub1, assetId);
+
     // repay all debt with interest
     uint256 repayAmount = spoke1.getUserTotalDebt(state.reserveId, alice);
     deal(address(underlying), alice, repayAmount);
@@ -741,6 +847,8 @@ contract SpokeWithdrawTest is SpokeBase {
     vm.assume(repayAmount > state.borrowAmount);
 
     Utils.repay(spoke1, state.reserveId, alice, repayAmount, alice);
+
+    assertEq(hub1.getAsset(assetId).realizedFees, state.expectedFeeAmount, 'realized fees');
 
     // number of test stages
     TestData[3] memory reserveData;
@@ -773,17 +881,22 @@ contract SpokeWithdrawTest is SpokeBase {
     uint256 addExRateBefore = getAddExRate(assetId);
 
     // bob withdraws all
+    TestReturnValues memory returnValues;
     vm.prank(bob);
-    spoke1.withdraw({reserveId: state.reserveId, amount: state.withdrawAmount, onBehalfOf: bob});
-
-    // treasury spoke withdraw fees
-    withdrawLiquidityFees(assetId, type(uint256).max);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw({
+      reserveId: state.reserveId,
+      amount: state.withdrawAmount,
+      onBehalfOf: bob
+    });
 
     stage = 2;
     reserveData[stage] = loadReserveInfo(spoke1, state.reserveId);
     aliceData[stage] = loadUserInfo(spoke1, state.reserveId, alice);
     bobData[stage] = loadUserInfo(spoke1, state.reserveId, bob);
     tokenData[stage] = getTokenBalances(underlying, address(spoke1));
+
+    assertEq(returnValues.shares, state.withdrawnShares);
+    assertEq(returnValues.amount, state.withdrawAmount);
 
     // reserve
     {
@@ -796,26 +909,28 @@ contract SpokeWithdrawTest is SpokeBase {
     }
 
     // alice
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
-    assertEq(userDrawnDebt, 0, 'aliceData drawn debt');
-    assertEq(userPremiumDebt, 0, 'aliceData premium debt');
-    assertEq(aliceData[stage].data.suppliedShares, 0, 'aliceData supplied shares');
+    {
+      (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke1.getUserDebt(state.reserveId, alice);
+      assertEq(userDrawnDebt, 0, 'aliceData drawn debt');
+      assertEq(userPremiumDebt, 0, 'aliceData premium debt');
+      assertEq(aliceData[stage].data.suppliedShares, 0, 'aliceData supplied shares');
 
-    // bob
-    (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(state.reserveId, bob);
-    assertEq(userDrawnDebt, 0, 'bobData drawn debt');
-    assertEq(userPremiumDebt, 0, 'bobData premium debt');
-    assertEq(
-      bobData[stage].data.suppliedShares,
-      state.supplyShares - state.withdrawnShares,
-      'bobData supplied shares'
-    );
+      // bob
+      (userDrawnDebt, userPremiumDebt) = spoke1.getUserDebt(state.reserveId, bob);
+      assertEq(userDrawnDebt, 0, 'bobData drawn debt');
+      assertEq(userPremiumDebt, 0, 'bobData premium debt');
+      assertEq(
+        bobData[stage].data.suppliedShares,
+        state.supplyShares - state.withdrawnShares,
+        'bobData supplied shares'
+      );
+    }
 
     // token
     assertEq(tokenData[stage].spokeBalance, 0, 'tokenData spoke balance');
     assertEq(
       tokenData[stage].hubBalance,
-      _calculateBurntInterest(hub1, assetId),
+      _calculateBurntInterest(hub1, assetId) + hub1.getAsset(assetId).realizedFees,
       'tokenData hub balance'
     );
     assertEq(underlying.balanceOf(alice), 0, 'alice balance');
@@ -824,6 +939,8 @@ contract SpokeWithdrawTest is SpokeBase {
       MAX_SUPPLY_AMOUNT - state.borrowReserveSupplyAmount + state.withdrawAmount,
       'bob balance'
     );
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
 
     // Check supply rate monotonically increasing after withdraw
     uint256 addExRateAfter = getAddExRate(assetId); // caching to avoid stack too deep
@@ -846,26 +963,26 @@ contract SpokeWithdrawTest is SpokeBase {
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, amount / 2, bob); // introduce debt
     Utils.supply(spoke1, _daiReserveId(spoke1), alice, amount, alice); // alice supply
 
-    uint256 supplyExchangeRatio = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    uint256 debtExchangeRatio = hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
+    uint256 debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
 
-    assertGe(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
     skip(delay); // with interest accrual, both ex rates should strictly
 
-    assertGt(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGt(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGt(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGt(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
 
-    supplyExchangeRatio = hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
-    debtExchangeRatio = hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT);
+    supplyExchangeRatio = hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
+    debtExchangeRatio = hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT);
 
     Utils.withdraw(spoke1, _daiReserveId(spoke1), alice, amount / 2, alice);
 
-    assertGe(hub1.convertToAddedAssets(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
-    assertGe(hub1.convertToDrawnAssets(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
+    assertGe(hub1.previewRemoveByShares(daiAssetId, MAX_SUPPLY_AMOUNT), supplyExchangeRatio);
+    assertGe(hub1.previewRestoreByShares(daiAssetId, MAX_SUPPLY_AMOUNT), debtExchangeRatio);
   }
 
   /// @dev Withdraw exceeding supplied amount withdraws everything
@@ -887,18 +1004,30 @@ contract SpokeWithdrawTest is SpokeBase {
 
     uint256 addExRateBefore = getAddExRate(daiAssetId);
 
+    uint256 expectedShares = spoke1.getUserSuppliedShares(reserveId, alice);
+
     // skip time but no index increase with no borrow
     skip(365 days);
     // withdrawable remains constant
     assertEq(withdrawable, getTotalWithdrawable(spoke1, reserveId, alice));
 
+    TestReturnValues memory returnValues;
     vm.prank(alice);
-    spoke1.withdraw(reserveId, withdrawable + 1, alice);
+    (returnValues.shares, returnValues.amount) = spoke1.withdraw(
+      reserveId,
+      withdrawable + 1,
+      alice
+    );
+
+    assertEq(returnValues.shares, expectedShares);
+    assertEq(returnValues.amount, withdrawable);
 
     assertEq(getTotalWithdrawable(spoke1, reserveId, alice), 0);
     _checkSuppliedAmounts(daiAssetId, reserveId, spoke1, alice, 0, 'after withdraw');
 
     // Check supply rate monotonically increasing after withdraw
     _checkSupplyRateIncreasing(addExRateBefore, getAddExRate(daiAssetId), 'after withdraw');
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');
   }
 }

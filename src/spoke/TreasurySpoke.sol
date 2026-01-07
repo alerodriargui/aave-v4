@@ -3,8 +3,7 @@
 pragma solidity 0.8.28;
 
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {SafeERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ITreasurySpoke, ISpokeBase} from 'src/spoke/interfaces/ITreasurySpoke.sol';
@@ -31,15 +30,32 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   }
 
   /// @inheritdoc ITreasurySpoke
-  function supply(uint256 reserveId, uint256 amount, address) external onlyOwner {
-    HUB.add(reserveId, amount, msg.sender);
+  function supply(
+    uint256 reserveId,
+    uint256 amount,
+    address
+  ) external onlyOwner returns (uint256, uint256) {
+    (address underlying, ) = HUB.getAssetUnderlyingAndDecimals(reserveId);
+    IERC20(underlying).safeTransferFrom(msg.sender, address(HUB), amount);
+    uint256 shares = HUB.add(reserveId, amount);
+
+    return (shares, amount);
   }
 
   /// @inheritdoc ITreasurySpoke
-  function withdraw(uint256 reserveId, uint256 amount, address) external onlyOwner {
-    // If amount to withdraw is greater than total supplied, withdraw all supplied assets
-    amount = MathUtils.min(amount, HUB.getSpokeAddedAssets(reserveId, address(this)));
-    HUB.remove(reserveId, amount, msg.sender);
+  function withdraw(
+    uint256 reserveId,
+    uint256 amount,
+    address
+  ) external onlyOwner returns (uint256, uint256) {
+    // if amount to withdraw is greater than total supplied, withdraw all supplied assets
+    uint256 withdrawnAmount = MathUtils.min(
+      amount,
+      HUB.getSpokeAddedAssets(reserveId, address(this))
+    );
+    uint256 withdrawnShares = HUB.remove(reserveId, withdrawnAmount, msg.sender);
+
+    return (withdrawnShares, withdrawnAmount);
   }
 
   /// @inheritdoc ITreasurySpoke
@@ -58,17 +74,17 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
   }
 
   /// @inheritdoc ISpokeBase
-  function borrow(uint256, uint256, address) external pure {
+  function borrow(uint256, uint256, address) external pure returns (uint256, uint256) {
     revert UnsupportedAction();
   }
 
   /// @inheritdoc ISpokeBase
-  function repay(uint256, uint256, address) external pure {
+  function repay(uint256, uint256, address) external pure returns (uint256, uint256) {
     revert UnsupportedAction();
   }
 
   /// @inheritdoc ISpokeBase
-  function liquidationCall(uint256, uint256, address, uint256) external pure {
+  function liquidationCall(uint256, uint256, address, uint256, bool) external pure {
     revert UnsupportedAction();
   }
 
@@ -77,6 +93,9 @@ contract TreasurySpoke is ITreasurySpoke, Ownable2Step {
 
   /// @inheritdoc ISpokeBase
   function getUserTotalDebt(uint256, address) external pure returns (uint256) {}
+
+  /// @inheritdoc ISpokeBase
+  function getUserPremiumDebtRay(uint256, address) external pure returns (uint256) {}
 
   /// @inheritdoc ISpokeBase
   function getReserveSuppliedAssets(uint256 reserveId) external view returns (uint256) {

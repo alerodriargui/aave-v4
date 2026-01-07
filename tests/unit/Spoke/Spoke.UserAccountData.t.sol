@@ -43,10 +43,10 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
@@ -77,10 +77,10 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.collateralDynamicConfigKeys.push(configKeyBefore);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
@@ -111,10 +111,10 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.collateralDynamicConfigKeys.push(configKeyBefore);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       true,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
@@ -153,10 +153,10 @@ contract SpokeUserAccountDataTest is SpokeBase {
     accountDataInfo.suppliedAssetsAmounts.push(1e18);
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.3e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.15e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.15e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.05e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       true,
       ISpoke.UserAccountData({
         totalCollateralValue: 5100e26,
@@ -191,14 +191,14 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
     accountDataInfo.debtReserveIds.push(_wbtcReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.001e8);
-    accountDataInfo.realizedPremiumAmounts.push(0);
+    accountDataInfo.realizedPremiumAmountsRay.push(0 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
@@ -235,10 +235,10 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
     accountDataInfo.debtReserveIds.push(_wethReserveId(spoke));
     accountDataInfo.drawnDebtAmounts.push(0.025e18);
-    accountDataInfo.realizedPremiumAmounts.push(0.005e18);
+    accountDataInfo.realizedPremiumAmountsRay.push(0.005e18 * WadRayMath.RAY);
     accountDataInfo.accruedPremiumAmounts.push(0.0075e18);
 
-    _checkedUserAccounData(
+    _checkedUserAccountData(
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
@@ -252,18 +252,20 @@ contract SpokeUserAccountDataTest is SpokeBase {
     );
   }
 
-  function _checkedUserAccounData(
+  function _checkedUserAccountData(
     bool refreshConfig,
     ISpoke.UserAccountData memory expectedUserAccountData
   ) internal {
     spoke.mockStorage(user, accountDataInfo);
 
-    ISpoke.UserAccountData memory userAccountData = spoke
-      .calculateAndPotentiallyRefreshUserAccountData(user, refreshConfig);
+    ISpoke.UserAccountData memory userAccountData = spoke.calculateUserAccountData(
+      user,
+      refreshConfig
+    );
     assertApproxEq(userAccountData, expectedUserAccountData);
   }
 
-  function _getLastReserveConfigKey(uint256 reserveId) internal view returns (uint16) {
+  function _getLastReserveConfigKey(uint256 reserveId) internal view returns (uint24) {
     return spoke.getReserve(reserveId).dynamicConfigKey;
   }
 

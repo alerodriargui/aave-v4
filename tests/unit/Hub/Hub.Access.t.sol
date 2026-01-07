@@ -16,8 +16,10 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: 1000,
-      drawCap: 1000
+      drawCap: 1000,
+      riskPremiumThreshold: 1000_00
     });
 
     bytes memory encodedIrData = abi.encode(
@@ -99,7 +101,7 @@ contract HubAccessTest is HubBase {
     vm.prank(HUB_ADMIN);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    assertBorrowRateSynced(hub1, daiAssetId, 'setInterestRateData');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'setInterestRateData');
   }
 
   /// @dev Test showcasing ability to change role responsibility for a function selector.
@@ -135,7 +137,13 @@ contract HubAccessTest is HubBase {
     hub1.updateSpokeConfig(
       daiAssetId,
       address(spoke1),
-      IHub.SpokeConfig({active: true, addCap: 1000, drawCap: 1000})
+      IHub.SpokeConfig({
+        active: true,
+        paused: false,
+        addCap: 1000,
+        drawCap: 1000,
+        riskPremiumThreshold: 1000_00
+      })
     );
   }
 
@@ -248,8 +256,10 @@ contract HubAccessTest is HubBase {
     });
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
+      paused: false,
       addCap: 1000,
-      drawCap: 1000
+      drawCap: 1000,
+      riskPremiumThreshold: 1000_00
     });
 
     IAccessManager authority = IAccessManager(hub1.authority());

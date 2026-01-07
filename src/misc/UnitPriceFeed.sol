@@ -17,9 +17,6 @@ contract UnitPriceFeed is AggregatorV3Interface {
 
   int256 private immutable _units;
 
-  /// @notice Thrown when the operation is not supported.
-  error OperationNotSupported();
-
   /// @dev Constructor.
   /// @param decimals_ The number of decimals used to represent the unit price.
   /// @param description_ The description of the unit price feed.
@@ -48,11 +45,13 @@ contract UnitPriceFeed is AggregatorV3Interface {
       uint80 answeredInRound
     )
   {
-    roundId = _roundId;
-    answer = _units;
-    startedAt = _roundId;
-    updatedAt = _roundId;
-    answeredInRound = _roundId;
+    if (_roundId <= uint80(block.timestamp)) {
+      roundId = _roundId;
+      answer = _units;
+      startedAt = _roundId;
+      updatedAt = _roundId;
+      answeredInRound = _roundId;
+    }
   }
 
   /// @inheritdoc AggregatorV3Interface

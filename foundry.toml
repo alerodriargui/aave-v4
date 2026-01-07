@@ -1,7 +1,6 @@
 [profile.default]
 src = 'src'
 test = 'tests'
-script = 'scripts'
 out = 'out'
 libs = ['lib']
 fs_permissions = [{ access = "read", path = "tests/mocks/JsonBindings.sol" }]
@@ -34,6 +33,7 @@ runs = 10000
 [profile.gas]
 gas_snapshot_check = true
 test = 'tests/gas'
+isolate = true
 
 [rpc_endpoints]
 mainnet = "${RPC_MAINNET}"

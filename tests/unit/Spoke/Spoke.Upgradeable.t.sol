@@ -47,6 +47,8 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(spokeProxyAddress);
     emit IERC1967.Upgraded(address(spokeImpl));
     vm.expectEmit(spokeProxyAddress);
+    emit ISpoke.UpdateOracle(oracle);
+    vm.expectEmit(spokeProxyAddress);
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.expectEmit(spokeProxyAddress);
     emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
@@ -200,7 +202,6 @@ contract SpokeUpgradeableTest is SpokeBase {
 
   function _getProxyInitializedVersion(address proxy) internal view returns (uint64) {
     bytes32 slotData = vm.load(proxy, INITIALIZABLE_STORAGE);
-    console.log(uint256(slotData));
     return uint64(uint256(slotData) & ((1 << 64) - 1));
   }
 

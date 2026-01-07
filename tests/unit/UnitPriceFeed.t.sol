@@ -9,16 +9,16 @@ contract UnitPriceFeedTest is Base {
 
   UnitPriceFeed public unitPriceFeed;
 
-  uint8 private constant _decimals = 8;
+  uint8 private constant DECIMALS = 8;
   string private constant _description = 'Unit Price Feed (8 decimals)';
 
   function setUp() public override {
     super.setUp();
-    unitPriceFeed = new UnitPriceFeed(_decimals, _description);
+    unitPriceFeed = new UnitPriceFeed(DECIMALS, _description);
   }
 
-  function test_decimals() public view {
-    assertEq(unitPriceFeed.decimals(), _decimals);
+  function testDECIMALS() public view {
+    assertEq(unitPriceFeed.decimals(), DECIMALS);
   }
 
   function test_description() public view {
@@ -30,7 +30,9 @@ contract UnitPriceFeedTest is Base {
   }
 
   function test_getRoundData() public {
-    uint80 _roundId = uint80(vm.randomUint());
+    uint80 skipTime = vm.randomUint(80).toUint80();
+    skip(skipTime);
+    uint80 _roundId = uint80(vm.randomUint(0, skipTime));
     (
       uint80 roundId,
       int256 answer,
@@ -39,10 +41,28 @@ contract UnitPriceFeedTest is Base {
       uint80 answeredInRound
     ) = unitPriceFeed.getRoundData(_roundId);
     assertEq(roundId, _roundId);
-    assertEq(answer, int256(10 ** _decimals));
+    assertEq(answer, int256(10 ** DECIMALS));
     assertEq(startedAt, roundId);
     assertEq(updatedAt, roundId);
     assertEq(answeredInRound, roundId);
+  }
+
+  function test_getRoundData_futureRound() public {
+    uint80 skipTime = vm.randomUint(0, type(uint80).max - 1).toUint80();
+    skip(skipTime);
+    uint80 _roundId = vm.randomUint(skipTime + 1, type(uint80).max).toUint80();
+    (
+      uint80 roundId,
+      int256 answer,
+      uint256 startedAt,
+      uint256 updatedAt,
+      uint80 answeredInRound
+    ) = unitPriceFeed.getRoundData(_roundId);
+    assertEq(roundId, 0);
+    assertEq(answer, 0);
+    assertEq(startedAt, 0);
+    assertEq(updatedAt, 0);
+    assertEq(answeredInRound, 0);
   }
 
   function test_fuzz_latestRoundData(uint80 blockTimestamp) public {
@@ -55,7 +75,7 @@ contract UnitPriceFeedTest is Base {
       uint80 answeredInRound
     ) = unitPriceFeed.latestRoundData();
     assertEq(roundId, blockTimestamp);
-    assertEq(answer, int256(10 ** _decimals));
+    assertEq(answer, int256(10 ** DECIMALS));
     assertEq(startedAt, blockTimestamp);
     assertEq(updatedAt, blockTimestamp);
     assertEq(answeredInRound, blockTimestamp);

@@ -36,18 +36,18 @@ contract HubReclaimTest is HubBase {
     hub1.reclaim(daiAssetId, 0);
   }
 
-  function test_reclaim_revertsWith_InvalidAmount_exceedsSwept() public {
+  function test_reclaim_revertsWith_underflow_exceedsSwept() public {
     address reinvestmentController = makeAddr('reinvestmentController');
     updateAssetReinvestmentController(hub1, daiAssetId, reinvestmentController);
 
     assertEq(hub1.getAssetSwept(daiAssetId), 0);
 
     vm.prank(reinvestmentController);
-    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.expectRevert(stdError.arithmeticError);
     hub1.reclaim(daiAssetId, 1);
   }
 
-  function test_reclaim_revertsWith_InvalidAmount_exceedsSwept_afterSweep() public {
+  function test_reclaim_revertsWith_underflow_exceedsSwept_afterSweep() public {
     uint256 supplyAmount = 1000e18;
     uint256 sweepAmount = 500e18;
 
@@ -62,7 +62,7 @@ contract HubReclaimTest is HubBase {
     assertEq(hub1.getAssetSwept(daiAssetId), sweepAmount);
 
     vm.prank(reinvestmentController);
-    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.expectRevert(stdError.arithmeticError);
     hub1.reclaim(daiAssetId, sweepAmount + 1);
   }
 
@@ -110,7 +110,8 @@ contract HubReclaimTest is HubBase {
 
     assertEq(hub1.getAssetSwept(daiAssetId), sweptAfterSweep - reclaimAmount);
     assertEq(hub1.getAssetLiquidity(daiAssetId), liquidityAfterSweep + reclaimAmount);
-    assertBorrowRateSynced(hub1, daiAssetId, 'reclaim');
+    _assertBorrowRateSynced(hub1, daiAssetId, 'reclaim');
+    _assertHubLiquidity(hub1, daiAssetId, 'reclaim');
   }
 
   function test_reclaim_fullAmount() public {
@@ -136,6 +137,7 @@ contract HubReclaimTest is HubBase {
 
     assertEq(hub1.getAssetSwept(daiAssetId), 0);
     assertEq(hub1.getAssetLiquidity(daiAssetId), liquidityAfterSweep + sweepAmount);
+    _assertHubLiquidity(hub1, daiAssetId, 'reclaim');
   }
 
   function test_reclaim_multipleSweepsAndReclaims() public {
@@ -186,5 +188,7 @@ contract HubReclaimTest is HubBase {
       hub1.getAssetLiquidity(daiAssetId),
       initialLiquidity - totalSwept + firstReclaim + secondReclaim
     );
+
+    _assertHubLiquidity(hub1, daiAssetId, 'reclaim');
   }
 }
