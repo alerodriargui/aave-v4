@@ -152,7 +152,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    ISpokeInstance spokeImpl = ISpokeInstance(address(Deploy.deploySpokeInstance(oracle)));
+    ISpokeInstance spokeImpl = ISpokeInstance(address(DeployUtils.deploySpokeInstance(oracle)));
     vm.expectRevert(ISpoke.InvalidAddress.selector);
     new TransparentUpgradeableProxy(
       address(spokeImpl),
@@ -162,7 +162,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_InvalidAddress() public {
-    ISpokeInstance spokeImpl = ISpokeInstance(address(Deploy.deploySpokeInstance(oracle)));
+    ISpokeInstance spokeImpl = ISpokeInstance(address(DeployUtils.deploySpokeInstance(oracle)));
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
@@ -180,7 +180,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
-    ISpokeInstance spokeImpl = ISpokeInstance(address(Deploy.deploySpokeInstance(oracle)));
+    ISpokeInstance spokeImpl = ISpokeInstance(address(DeployUtils.deploySpokeInstance(oracle)));
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(

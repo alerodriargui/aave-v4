@@ -65,7 +65,7 @@ import {SignatureGateway, ISignatureGateway} from 'src/position-manager/Signatur
 
 // test
 import {Constants} from 'tests/Constants.sol';
-import {Deploy} from 'tests/Deploy.sol';
+import {DeployUtils} from 'tests/DeployUtils.sol';
 import {Utils} from 'tests/Utils.sol';
 
 // mocks
@@ -274,7 +274,7 @@ abstract contract Base is Test {
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    hub1 = Deploy.deployHub(address(accessManager));
+    hub1 = DeployUtils.deployHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 1 (USD)');
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'Spoke 2 (USD)');
@@ -815,7 +815,7 @@ abstract contract Base is Test {
    */
   function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager2 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub2 = Deploy.deployHub(address(accessManager2));
+    IHub hub2 = DeployUtils.deployHub(address(accessManager2));
     vm.label(address(hub2), 'Hub2');
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
@@ -882,7 +882,7 @@ abstract contract Base is Test {
    */
   function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager3 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub3 = Deploy.deployHub(address(accessManager3));
+    IHub hub3 = DeployUtils.deployHub(address(accessManager3));
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     // Configure IR Strategy for hub 3
@@ -2230,14 +2230,11 @@ abstract contract Base is Test {
     address deployer = makeAddr('deployer');
     address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
     IAaveOracle oracle = new AaveOracle(predictedSpoke, 8, _oracleDesc);
-    address spokeImpl = address(Deploy.deploySpokeInstance(address(oracle)));
-    ISpoke spoke = ISpoke(
-      _proxify(
-        deployer,
-        spokeImpl,
-        proxyAdminOwner,
-        abi.encodeCall(ISpoke.initialize, (_accessManager))
-      )
+    ISpoke spoke = DeployUtils.deployProxifiedSpokeInstance(
+      address(oracle),
+      deployer,
+      proxyAdminOwner,
+      abi.encodeCall(ISpoke.initialize, (_accessManager))
     );
     assertEq(address(spoke), predictedSpoke, 'predictedSpoke');
     assertEq(spoke.ORACLE(), address(oracle));
@@ -2257,21 +2254,6 @@ abstract contract Base is Test {
         receiveSharesEnabled: true,
         collateralRisk: collateralRisk
       });
-  }
-
-  function _proxify(
-    address deployer,
-    address impl,
-    address proxyAdminOwner,
-    bytes memory initData
-  ) internal returns (address) {
-    vm.prank(deployer);
-    TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-      impl,
-      proxyAdminOwner,
-      initData
-    );
-    return address(proxy);
   }
 
   function assertEq(IHubBase.PremiumDelta memory a, IHubBase.PremiumDelta memory b) internal pure {

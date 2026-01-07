@@ -5,8 +5,9 @@ pragma solidity ^0.8.0;
 import {Vm} from 'forge-std/Vm.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 
-library Deploy {
+library DeployUtils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
   function deploySpokeInstance(address oracle) internal returns (ISpoke) {
@@ -21,6 +22,16 @@ library Deploy {
     assembly {
       spoke := create2(0, add(initCode, 0x20), mload(initCode), salt)
     }
+  }
+
+  function deployProxifiedSpokeInstance(
+    address oracle,
+    address deployer,
+    address proxyAdminOwner,
+    bytes memory initData
+  ) internal returns (ISpoke) {
+    return
+      ISpoke(_proxify(deployer, address(deploySpokeInstance(oracle)), proxyAdminOwner, initData));
   }
 
   function getDeterministicSpokeInstanceAddress(address oracle) internal view returns (address) {
@@ -44,7 +55,6 @@ library Deploy {
     bytes32 bytecodeHash,
     address deployer
   ) internal pure returns (address addr) {
-    /// @solidity memory-safe-assembly
     assembly {
       let ptr := mload(0x40)
       mstore(add(ptr, 0x40), bytecodeHash)
@@ -68,5 +78,20 @@ library Deploy {
     assembly {
       hub := create2(0, add(initCode, 0x20), mload(initCode), salt)
     }
+  }
+
+  function _proxify(
+    address deployer,
+    address impl,
+    address proxyAdminOwner,
+    bytes memory initData
+  ) internal returns (address) {
+    vm.prank(deployer);
+    TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
+      impl,
+      proxyAdminOwner,
+      initData
+    );
+    return address(proxy);
   }
 }
