@@ -381,7 +381,6 @@ contract HubRefreshPremiumTest is HubBase {
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, MAX_SUPPLY_AMOUNT, bob);
     Utils.borrow(spoke1, _daiReserveId(spoke1), bob, borrowAmount, bob);
     skip(skipTime);
-    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, 1e18, bob);
 
     IHub.Asset memory asset = hub1.getAsset(assetId);
     PremiumDataLocal memory premiumDataBefore = _loadAssetPremiumData(hub1, assetId);
