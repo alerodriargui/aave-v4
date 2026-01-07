@@ -78,6 +78,7 @@ contract SignatureGatewayPermitReserveTest is SignatureGatewayBaseTest {
   function test_permitReserve() public {
     (address user, uint256 userPk) = makeAddrAndKey('user');
     uint256 reserveId = _randomReserveId(spoke1);
+    while (reserveId == _wethReserveId(spoke1)) reserveId = _randomReserveId(spoke1); // weth does not implement permit/nonces
     TestnetERC20 token = TestnetERC20(address(_underlying(spoke1, reserveId)));
 
     assertEq(token.allowance(user, address(gateway)), 0);
