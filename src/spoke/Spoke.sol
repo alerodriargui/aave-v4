@@ -68,6 +68,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @dev The number of decimals used by the oracle.
   uint8 internal constant ORACLE_DECIMALS = 8;
 
+  /// @dev The maximum allowed number of collateral reserves per user.
+  uint256 internal constant MAX_ALLOWED_COLLATERAL_RESERVES = 128;
+
+  /// @dev The maximum allowed number of borrowed reserves per user.
+  uint256 internal constant MAX_ALLOWED_BORROW_RESERVES = 128;
+
   /// @dev Number of reserves listed in the Spoke.
   uint256 internal _reserveCount;
 
@@ -284,7 +290,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    _validateBorrow(reserve.flags);
+    _validateBorrow(reserve.flags, positionStatus);
     IHubBase hub = reserve.hub;
 
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
@@ -405,8 +411,8 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     bool usingAsCollateral,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    _validateSetUsingAsCollateral(_getReserve(reserveId).flags, usingAsCollateral);
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
+    _validateSetUsingAsCollateral(_getReserve(reserveId).flags, usingAsCollateral, positionStatus);
 
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
@@ -916,10 +922,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateBorrow(ReserveFlags flags) internal pure {
+  function _validateBorrow(ReserveFlags flags, PositionStatus storage positionStatus) internal view {
     require(!flags.paused(), ReservePaused());
     require(!flags.frozen(), ReserveFrozen());
     require(flags.borrowable(), ReserveNotBorrowable());
+    require(positionStatus.borrowedCount(_reserveCount) < MAX_ALLOWED_BORROW_RESERVES, MaximumBorrowedReservesExceeded());
     // health factor is checked at the end of borrow action
   }
 
@@ -927,10 +934,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateSetUsingAsCollateral(ReserveFlags flags, bool usingAsCollateral) internal pure {
+  function _validateSetUsingAsCollateral(ReserveFlags flags, bool usingAsCollateral, PositionStatus storage positionStatus) internal view {
     require(!flags.paused(), ReservePaused());
     // can disable as collateral if the reserve is frozen
     require(!usingAsCollateral || !flags.frozen(), ReserveFrozen());
+    // max collateral reserves check, account for the new reserve being enabled by using strict inequality
+    require(!usingAsCollateral || positionStatus.collateralCount(_reserveCount) < MAX_ALLOWED_COLLATERAL_RESERVES, MaximumCollateralReservesExceeded());
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.

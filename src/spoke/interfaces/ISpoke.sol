@@ -312,6 +312,12 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when the maximum number of dynamic config keys is reached.
   error MaximumDynamicConfigKeyReached();
 
+  /// @notice Thrown when user attempts to exceed the maximum allowed collateral reserves.
+  error MaximumCollateralReservesExceeded();
+
+  /// @notice Thrown when user attempts to exceed the maximum allowed borrowed reserves.
+  error MaximumBorrowedReservesExceeded();
+
   /// @notice Updates the liquidation config.
   /// @param config The liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
