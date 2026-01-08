@@ -188,9 +188,12 @@ contract SpokeBorrowValidationTest is SpokeBase {
       Utils.borrow(spoke1, i, bob, 1e18, bob);
     }
 
+    // Ensure last reserve has supply
+    Utils.supply(spoke1, maxBorrowedReserves, bob, MAX_SUPPLY_AMOUNT, bob);
+
     // Bob tries to borrow from one more reserve
-    vm.expectRevert(ISpoke.MaximumBorrowedReservesExceeded.selector, address(spoke1));
+    vm.expectRevert(ISpoke.MaximumBorrowedReservesExceeded.selector);
     vm.prank(bob);
     spoke1.borrow(maxBorrowedReserves, 1e18, bob);
-  }
+  } 
 }

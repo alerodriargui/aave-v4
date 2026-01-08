@@ -290,12 +290,13 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    _validateBorrow(reserve.flags, positionStatus);
+    _validateBorrow(reserve.flags);
     IHubBase hub = reserve.hub;
 
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
+      require(positionStatus.borrowedCount(_reserveCount) < MAX_ALLOWED_BORROWED_RESERVES, MaximumBorrowedReservesExceeded());
       positionStatus.setBorrowing(reserveId, true);
     }
 
@@ -922,11 +923,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateBorrow(ReserveFlags flags, PositionStatus storage positionStatus) internal view {
+  function _validateBorrow(ReserveFlags flags) internal pure {
     require(!flags.paused(), ReservePaused());
     require(!flags.frozen(), ReserveFrozen());
     require(flags.borrowable(), ReserveNotBorrowable());
-    require(positionStatus.borrowedCount(_reserveCount) < MAX_ALLOWED_BORROWED_RESERVES, MaximumBorrowedReservesExceeded());
     // health factor is checked at the end of borrow action
   }
 
