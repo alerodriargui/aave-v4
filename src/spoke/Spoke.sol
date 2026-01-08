@@ -44,6 +44,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
 
   /// @inheritdoc ISpoke
+  uint256 public constant MAX_ALLOWED_COLLATERAL_RESERVES = 128;
+
+  /// @inheritdoc ISpoke
+  uint256 public constant MAX_ALLOWED_BORROWED_RESERVES = 128;
+
+  /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
   /// @dev The maximum allowed value for an asset identifier (inclusive).
@@ -67,12 +73,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @dev The number of decimals used by the oracle.
   uint8 internal constant ORACLE_DECIMALS = 8;
-
-  /// @dev The maximum allowed number of collateral reserves per user.
-  uint256 internal constant MAX_ALLOWED_COLLATERAL_RESERVES = 128;
-
-  /// @dev The maximum allowed number of borrowed reserves per user.
-  uint256 internal constant MAX_ALLOWED_BORROW_RESERVES = 128;
 
   /// @dev Number of reserves listed in the Spoke.
   uint256 internal _reserveCount;
@@ -926,7 +926,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(!flags.paused(), ReservePaused());
     require(!flags.frozen(), ReserveFrozen());
     require(flags.borrowable(), ReserveNotBorrowable());
-    require(positionStatus.borrowedCount(_reserveCount) < MAX_ALLOWED_BORROW_RESERVES, MaximumBorrowedReservesExceeded());
+    require(positionStatus.borrowedCount(_reserveCount) < MAX_ALLOWED_BORROWED_RESERVES, MaximumBorrowedReservesExceeded());
     // health factor is checked at the end of borrow action
   }
 

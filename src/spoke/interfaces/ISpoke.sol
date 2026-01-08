@@ -542,4 +542,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);
+
+/// @notice The maximum allowed number of collateral reserves per user.
+  function MAX_ALLOWED_COLLATERAL_RESERVES() external view returns (uint256);
+  
+  /// @notice The maximum allowed number of borrowed reserves per user.
+  function MAX_ALLOWED_BORROWED_RESERVES() external view returns (uint256);
 }

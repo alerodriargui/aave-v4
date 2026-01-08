@@ -177,4 +177,20 @@ contract SpokeBorrowValidationTest is SpokeBase {
     vm.expectRevert(abi.encodeWithSelector(IHub.DrawCapExceeded.selector, drawCap));
     Utils.borrow(spoke1, daiReserveId, bob, 1, bob);
   }
+
+  function test_borrow_revertsWith_MaximumBorrowedReservesExceeded() public {
+    uint256 maxBorrowedReserves = spoke1.MAX_ALLOWED_BORROWED_RESERVES();
+    _addNewAssetsAndReserves(maxBorrowedReserves + 1);
+    
+    // Bob borrows reserves up to max allowed
+    for(uint256 i = 0; i < maxBorrowedReserves; ++i) {
+      Utils.supplyCollateral(spoke1, i, bob, MAX_SUPPLY_AMOUNT, bob);
+      Utils.borrow(spoke1, i, bob, 1e18, bob);
+    }
+
+    // Bob tries to borrow from one more reserve
+    vm.expectRevert(ISpoke.MaximumBorrowedReservesExceeded.selector, address(spoke1));
+    vm.prank(bob);
+    spoke1.borrow(maxBorrowedReserves, 1e18, bob);
+  }
 }

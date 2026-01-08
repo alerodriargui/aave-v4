@@ -131,4 +131,19 @@ contract SpokeConfigTest is SpokeBase {
       'wrong usingAsCollateral'
     );
   }
+
+    function test_setUsingAsCollateral_revertsWith_MaximumCollateralReservesExceeded() public {
+    uint256 maxCollateralReserves = spoke1.MAX_ALLOWED_COLLATERAL_RESERVES();
+    _addNewAssetsAndReserves(maxCollateralReserves + 1);
+    
+    // Bob supplies and enables maximum allowed collateral reserves
+    for(uint256 i = 0; i < maxCollateralReserves; ++i) {
+      Utils.supplyCollateral(spoke1, i, bob, 1e18, bob);
+    }
+
+    // Bob tries to set one more reserve as collateral
+    vm.expectRevert(ISpoke.MaximumCollateralReservesExceeded.selector, address(spoke1));
+    vm.prank(bob);
+    spoke1.setUsingAsCollateral(maxCollateralReserves, true, bob);
+  }
 }
