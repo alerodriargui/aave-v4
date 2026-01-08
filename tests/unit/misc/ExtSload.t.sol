@@ -23,12 +23,13 @@ contract ExtSloadTest is Test {
     vm.setArbitraryStorage(address(w));
 
     bytes32[] memory slots = new bytes32[](count);
-    for (uint256 i; i < slots.length; ++i) {
+    for (uint256 i; i < count; ++i) {
       slots[i] = bytes32(vm.randomUint());
     }
 
     bytes32[] memory values = w.extSloads(slots);
-    for (uint256 i; i < slots.length; ++i) {
+    assertEq(values.length, count);
+    for (uint256 i; i < count; ++i) {
       assertEq(values[i], vm.load(address(w), slots[i]));
     }
   }
