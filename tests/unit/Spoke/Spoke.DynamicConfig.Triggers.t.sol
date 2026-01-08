@@ -6,6 +6,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeDynamicConfigTriggersTest is SpokeBase {
   using PercentageMath for uint256;
+  using SafeCast for uint256;
+
   function test_supply_does_not_trigger_dynamicConfigUpdate() public {
     DynamicConfig[] memory configs = _getUserDynConfigKeys(spoke1, alice);
 
@@ -14,9 +16,9 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     uint256 supplyAmount = 1000e6;
     uint256 collateralReserveId = _usdxReserveId(spoke1);
     uint256 debtReserveId = _daiReserveId(spoke1);
-    uint256 collateralFactor = _randomBps(
-      PercentageMath.PERCENTAGE_FACTOR.percentDivDown(maxLiquidationBonus)
-    );
+    uint256 collateralFactor = vm
+      .randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus))
+      .toUint16();
 
     Utils.supplyCollateral(spoke1, collateralReserveId, alice, supplyAmount, alice);
     _updateCollateralFactor(spoke1, collateralReserveId, collateralFactor);
@@ -37,7 +39,7 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     _updateCollateralFactor(
       spoke1,
       collateralReserveId,
-      _randomBps(PercentageMath.PERCENTAGE_FACTOR.percentDivDown(maxLiquidationBonus))
+      vm.randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus)).toUint16()
     );
 
     assertEq(_getUserDynConfigKeys(spoke1, alice), configs);

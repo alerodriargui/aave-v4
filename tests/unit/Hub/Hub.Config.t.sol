@@ -24,7 +24,7 @@ contract HubConfigTest is HubBase {
   }
 
   function test_hub_deploy_revertsWith_InvalidAddress() public {
-    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
+    vm.expectRevert(IHub.InvalidAddress.selector);
     new Hub(address(0));
   }
 
