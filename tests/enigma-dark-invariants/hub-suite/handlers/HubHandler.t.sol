@@ -116,7 +116,7 @@ contract HubHandler is BaseHandler, IHubHandler {
 
             (uint256 drawnAfter,) = hub.getSpokeOwed(cachedTargetAssetId, address(actor));
 
-            assertGe(drawnBefore + amount, drawnAfter, HSPOST_HUB_ERC4626_DRAW_A);
+            assertLe(drawnBefore + amount, drawnAfter, HSPOST_HUB_ERC4626_DRAW_A);
             assertEq(
                 sharesBefore + drawnShares,
                 hub.getSpokeDrawnShares(cachedTargetAssetId, address(actor)),

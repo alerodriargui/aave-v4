@@ -12,11 +12,11 @@ import {Setup} from "../Setup.t.sol";
 // Utils
 import {Actor} from "../../shared/utils/Actor.sol";
 
-contract ReplayTest5Hub is Invariants, Setup {
+contract ReplayTest7 is Invariants, Setup {
     // Generated from Echidna reproducers
 
     // Target contract instance (you may need to adjust this)
-    ReplayTest5Hub Tester = this;
+    ReplayTest7 Tester = this;
 
     modifier setup() override {
         _;
@@ -36,17 +36,12 @@ contract ReplayTest5Hub is Invariants, Setup {
     //                                   		REPLAY TESTS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /// @notice BUG: refreshPremium can be called without drawnShares, creating phantom premium
-    /// that accrues over time and breaks INV_HUB_ERC4626_C (assets > 0 with shares == 0)
-    function test_replay_5_donateUnderlyingToHub() public {
-        console.log("invariant_INV_HUB() before");
-        console.log(hub.getAddedAssets(0));
+    function test_replay_7_draw() public {
         _setUpActor(USER1);
-        Tester.refreshPremium(9472849991, 0);
-        console.log("invariant_INV_HUB() before");
-        console.log(hub.getAddedAssets(0));
+        Tester.add(1, 0);
+        Tester.refreshPremium(1, 0);
         _delay(1);
-        invariant_INV_HUB();
+        Tester.draw(1, 0);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
