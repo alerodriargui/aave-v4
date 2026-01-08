@@ -36,53 +36,14 @@ contract ReplayTest2Hub is Invariants, Setup {
     //                                   		REPLAY TESTS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /// @dev Replays a low-liquidity / negative-yield style scenario where virtual assets
-    ///      and virtual shares (similar to ERC-4626-style virtual liquidity) skew the
-    ///      effective exchange rate. In such conditions, early redeemers can appear to get
-    ///      more assets per share than late redeemers. This behavior is acknowledged and
-    ///      accepted by the protocol design and is not treated as an invariant violation.
+    /// @dev Replays a low-liquidity scenario where virtual assets/shares skew exchange rate.
+    /// Early redeemers get more assets per share than late redeemers - accepted by design.
     function test_replay_2_add() public {
         _setUpActor(USER1);
-        console.log("--------------------------------");
         Tester.add(1, 0);
-        console.log("defaultVarsAfter.assetVars[0].totalAssets", defaultVarsAfter.assetVars[0].totalAssets);
-        console.log("defaultVarsBefore.assetVars[0].totalShares", defaultVarsBefore.assetVars[0].totalShares);
-        console.log("defaultVarsBefore.assetVars[0].totalAssets", defaultVarsBefore.assetVars[0].totalAssets);
-        console.log("defaultVarsAfter.assetVars[0].totalShares", defaultVarsAfter.assetVars[0].totalShares);
-        console.log("--------------------------------");
         Tester.draw(1, 0);
-        console.log("defaultVarsAfter.assetVars[0].totalAssets", defaultVarsAfter.assetVars[0].totalAssets);
-        console.log("defaultVarsBefore.assetVars[0].totalShares", defaultVarsBefore.assetVars[0].totalShares);
-        console.log("defaultVarsBefore.assetVars[0].totalAssets", defaultVarsBefore.assetVars[0].totalAssets);
-        console.log("defaultVarsAfter.assetVars[0].totalShares", defaultVarsAfter.assetVars[0].totalShares);
         _delay(1);
-        console.log("--------------------------------");
         Tester.add(3, 0);
-        console.log("defaultVarsAfter.assetVars[0].totalAssets", defaultVarsAfter.assetVars[0].totalAssets);
-        console.log("defaultVarsBefore.assetVars[0].totalShares", defaultVarsBefore.assetVars[0].totalShares);
-        console.log("defaultVarsBefore.assetVars[0].totalAssets", defaultVarsBefore.assetVars[0].totalAssets);
-        console.log("defaultVarsAfter.assetVars[0].totalShares", defaultVarsAfter.assetVars[0].totalShares);
-        console.log("asset", hub.getAddedAssets(0));
-        console.log("shares", hub.getAddedShares(0));
-
-        // Logs:
-        /*   --------------------------------
-        defaultVarsAfter.assetVars[0].totalAssets 1
-        defaultVarsBefore.assetVars[0].totalShares 0
-        defaultVarsBefore.assetVars[0].totalAssets 0
-        defaultVarsAfter.assetVars[0].totalShares 1
-        --------------------------------
-        defaultVarsAfter.assetVars[0].totalAssets 1
-        defaultVarsBefore.assetVars[0].totalShares 1
-        defaultVarsBefore.assetVars[0].totalAssets 1
-        defaultVarsAfter.assetVars[0].totalShares 1
-        --------------------------------
-        defaultVarsAfter.assetVars[0].totalAssets 5
-        defaultVarsBefore.assetVars[0].totalShares 1
-        defaultVarsBefore.assetVars[0].totalAssets 2
-        defaultVarsAfter.assetVars[0].totalShares 3
-        asset 5
-        shares 3 */
     }
 
     /// @dev PASS

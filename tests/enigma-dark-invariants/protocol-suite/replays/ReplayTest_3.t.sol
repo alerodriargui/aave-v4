@@ -38,7 +38,6 @@ contract ReplayTest3 is Invariants, Setup {
     
     
     function test_replay_3_setUsingAsCollateral() public {
-        // TODO review test case
         _setUpActor(USER3);
         Tester.supply(790, 128, 71, 201);
         Tester.setUsingAsCollateral(true, 111, 253);
@@ -47,8 +46,6 @@ contract ReplayTest3 is Invariants, Setup {
         _delay(689004);
         Tester.setUsingAsCollateral(false, 15, 13);
         invariant_INV_HUB();
-        // INV_HUB_E: hub.getTotalSuppliedAssets and hub.getAssetSuppliedAmount should match at any time, should not be off by more than 1 share worth of assets due to division precision loss
-        // getAddedAssets: 793, convertedAssets: 790
     }
     
 

@@ -37,7 +37,6 @@ contract ReplayTest2 is Invariants, Setup {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     function test_replay_2_INV_HUB_B() public {
-        // TODO review test case
         _setUpActor(USER3);
         _delay(140400);
         Tester.supply(16, 176, 48, 0);
@@ -50,8 +49,6 @@ contract ReplayTest2 is Invariants, Setup {
         _delay(52383);
         Tester.updateUserRiskPremium(102);
         invariant_INV_HUB();
-        // INV_HUB_B: Sum of spoke debts on a single asset must be greater or equal than the total debt of the asset
-        // sum hub.getSpokeOwed: 16,  hub.getAssetTotalOwed(assetId): 20
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

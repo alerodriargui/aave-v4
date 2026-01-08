@@ -39,7 +39,7 @@ abstract contract HubInvariants is HandlerAggregator {
         }
 
         uint256 assetTotal = IHub(hubAddress).getAssetTotalOwed(assetId); // drawn + premium
-        assertGe(sumDebt, assetTotal, INV_HUB_B); // TODO review test case test_replay_2_INV_HUB_B
+        assertGe(sumDebt, assetTotal, INV_HUB_B);
     }
 
     function assert_INV_HUB_C(address hubAddress, uint256 assetId) internal {

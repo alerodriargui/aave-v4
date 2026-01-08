@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 // Libraries
 import "forge-std/Test.sol";
-import "forge-std/console.sol";
 
 // Contracts
 import {Invariants} from "../Invariants.t.sol";
@@ -39,12 +38,8 @@ contract ReplayTest5Hub is Invariants, Setup {
     /// @notice BUG: refreshPremium can be called without drawnShares, creating phantom premium
     /// that accrues over time and breaks INV_HUB_ERC4626_C (assets > 0 with shares == 0)
     function test_replay_5_donateUnderlyingToHub() public {
-        console.log("invariant_INV_HUB() before");
-        console.log(hub.getAddedAssets(0));
         _setUpActor(USER1);
         Tester.refreshPremium(9472849991, 0);
-        console.log("invariant_INV_HUB() before");
-        console.log(hub.getAddedAssets(0));
         _delay(1);
         invariant_INV_HUB();
     }

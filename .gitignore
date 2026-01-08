@@ -29,3 +29,4 @@ crytic-export/
 slither_results.json
 
 .venv/
+.mcp.json
