@@ -71,6 +71,11 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
+  function updateGracePeriod(address spoke, uint40 gracePeriod) external onlyOwner {
+    ISpoke(spoke).updateGracePeriod(gracePeriod);
+  }
+
+  /// @inheritdoc ISpokeConfigurator
   function updateMaxReserves(address spoke, uint256 maxReserves) external onlyOwner {
     _maxReserves[spoke] = maxReserves;
     emit UpdateMaxReserves(spoke, maxReserves);
@@ -113,18 +118,6 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
     reserveConfig.borrowable = borrowable;
-    targetSpoke.updateReserveConfig(reserveId, reserveConfig);
-  }
-
-  /// @inheritdoc ISpokeConfigurator
-  function updateLiquidatable(
-    address spoke,
-    uint256 reserveId,
-    bool liquidatable
-  ) external onlyOwner {
-    ISpoke targetSpoke = ISpoke(spoke);
-    ISpoke.ReserveConfig memory reserveConfig = targetSpoke.getReserveConfig(reserveId);
-    reserveConfig.liquidatable = liquidatable;
     targetSpoke.updateReserveConfig(reserveId, reserveConfig);
   }
 

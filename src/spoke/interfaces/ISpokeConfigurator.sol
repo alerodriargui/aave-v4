@@ -48,6 +48,11 @@ interface ISpokeConfigurator {
     ISpoke.LiquidationConfig calldata liquidationConfig
   ) external;
 
+  /// @notice Updates the grace period duration on a spoke.
+  /// @param spoke The address of the spoke.
+  /// @param gracePeriod The new grace period in seconds.
+  function updateGracePeriod(address spoke, uint40 gracePeriod) external;
+
   /// @notice Updates the maximum number of reserves allowed to exist on a spoke.
   /// @dev It allows setting the maximum below the amount of reserves that currently exist.
   /// @param spoke The address of the spoke.
@@ -90,12 +95,6 @@ interface ISpokeConfigurator {
   /// @param reserveId The identifier of the reserve.
   /// @param borrowable The new borrowable flag.
   function updateBorrowable(address spoke, uint256 reserveId, bool borrowable) external;
-
-  /// @notice Updates the liquidatable flag of a reserve.
-  /// @param spoke The address of the spoke.
-  /// @param reserveId The identifier of the reserve.
-  /// @param liquidatable The new liquidatable flag.
-  function updateLiquidatable(address spoke, uint256 reserveId, bool liquidatable) external;
 
   /// @notice Updates whether receiving shares on liquidation is enabled.
   /// @param spoke The address of the spoke.

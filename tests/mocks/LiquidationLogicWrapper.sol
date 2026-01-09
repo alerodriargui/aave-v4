@@ -58,10 +58,12 @@ contract LiquidationLogicWrapper {
     _collateralReserveId = reserveId;
   }
 
-  function setCollateralLiquidatable(bool status) public {
-    _reserves[_collateralReserveId].flags = _reserves[_collateralReserveId].flags.setLiquidatable(
-      status
-    );
+  function setCollateralGracePeriodEnd(uint40 gracePeriodEnd) public {
+    _reserves[_collateralReserveId].gracePeriodEnd = gracePeriodEnd;
+  }
+
+  function setDebtGracePeriodEnd(uint40 gracePeriodEnd) public {
+    _reserves[_debtReserveId].gracePeriodEnd = gracePeriodEnd;
   }
 
   function setCollateralPositionSuppliedShares(uint256 suppliedShares) public {
@@ -179,7 +181,7 @@ contract LiquidationLogicWrapper {
 
   function validateLiquidationCall(
     LiquidationLogic.ValidateLiquidationCallParams memory params
-  ) public pure {
+  ) public view {
     LiquidationLogic._validateLiquidationCall(params);
   }
 

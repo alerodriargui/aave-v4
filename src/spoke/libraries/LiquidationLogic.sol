@@ -64,6 +64,8 @@ library LiquidationLogic {
     address liquidator;
     ReserveFlags collateralReserveFlags;
     ReserveFlags debtReserveFlags;
+    uint40 collateralGracePeriodEnd;
+    uint40 debtGracePeriodEnd;
     uint256 collateralReserveBalance;
     uint256 debtReserveBalance;
     uint256 debtToCover;
@@ -153,6 +155,8 @@ library LiquidationLogic {
         liquidator: params.liquidator,
         collateralReserveFlags: collateralReserve.flags,
         debtReserveFlags: debtReserve.flags,
+        collateralGracePeriodEnd: collateralReserve.gracePeriodEnd,
+        debtGracePeriodEnd: debtReserve.gracePeriodEnd,
         collateralReserveBalance: collateralReserveBalance,
         debtReserveBalance: params.drawnDebt + params.premiumDebtRay.fromRayUp(),
         debtToCover: params.debtToCover,
@@ -350,7 +354,7 @@ library LiquidationLogic {
 
   /// @notice Validates the liquidation call.
   /// @param params The validate liquidation call params.
-  function _validateLiquidationCall(ValidateLiquidationCallParams memory params) internal pure {
+  function _validateLiquidationCall(ValidateLiquidationCallParams memory params) internal view {
     require(params.user != params.liquidator, ISpoke.SelfLiquidation());
     require(params.debtToCover > 0, ISpoke.InvalidDebtToCover());
     require(
@@ -359,7 +363,11 @@ library LiquidationLogic {
     );
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
-    require(params.collateralReserveFlags.liquidatable(), ISpoke.CollateralCannotBeLiquidated());
+    require(
+      block.timestamp > params.collateralGracePeriodEnd,
+      ISpoke.CollateralCannotBeLiquidated()
+    );
+    require(block.timestamp > params.debtGracePeriodEnd, ISpoke.DebtCannotBeLiquidated());
     require(
       params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       ISpoke.HealthFactorNotBelowThreshold()

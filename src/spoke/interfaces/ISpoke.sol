@@ -22,6 +22,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev dynamicConfigKey The key of the last reserve dynamic config.
   /// @dev collateralRisk The risk associated with a collateral asset, expressed in BPS.
   /// @dev flags The packed boolean flags of the reserve (a wrapped uint8).
+  /// @dev gracePeriodEnd The timestamp marking the end of the grace period for liquidations.
   struct Reserve {
     address underlying;
     //
@@ -31,6 +32,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     uint24 dynamicConfigKey;
     uint24 collateralRisk;
     ReserveFlags flags;
+    //
+    uint40 gracePeriodEnd;
   }
 
   /// @notice Reserve configuration. Subset of the `Reserve` struct.
@@ -38,14 +41,12 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev paused True if all actions are prevented for the reserve.
   /// @dev frozen True if new activity is prevented for the reserve.
   /// @dev borrowable True if the reserve is borrowable.
-  /// @dev liquidatable True if the reserve can be liquidated when used as collateral.
   /// @dev receiveSharesEnabled True if the liquidator can receive collateral shares during liquidation.
   struct ReserveConfig {
     uint24 collateralRisk;
     bool paused;
     bool frozen;
     bool borrowable;
-    bool liquidatable;
     bool receiveSharesEnabled;
   }
 
@@ -196,6 +197,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param riskPremium The new risk premium (BPS) value of user.
   event UpdateUserRiskPremium(address indexed user, uint256 riskPremium);
 
+  /// @notice Emitted on updateGracePeriod action.
+  /// @param gracePeriod The new grace period in seconds.
+  event UpdateGracePeriod(uint40 gracePeriod);
+
   /// @notice Emitted on setUserPositionManager or renouncePositionManagerRole action.
   /// @param user The address of the user on whose behalf position manager can act.
   /// @param positionManager The address of the position manager.
@@ -246,8 +251,11 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @dev Can only occur during an attempted `supply`, `borrow`, or `setUsingAsCollateral` action.
   error ReserveFrozen();
 
-  /// @notice Thrown when the collateral reserve is not enabled to be liquidated.
+  /// @notice Thrown when the collateral reserve cannot be liquidated due to the grace period.
   error CollateralCannotBeLiquidated();
+
+  /// @notice Thrown when the debt reserve cannot be liquidated due to its configuration.
+  error DebtCannotBeLiquidated();
 
   /// @notice Thrown when an action causes a user's health factor to fall below the liquidation threshold.
   error HealthFactorBelowThreshold();
@@ -373,6 +381,10 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param positionManager The address of the position manager.
   /// @param active True if positionManager is to be set as active.
   function updatePositionManager(address positionManager, bool active) external;
+
+  /// @notice Updates the grace period for which a collateral cannot be liquidated after being set as collateral.
+  /// @param gracePeriod The new grace period in seconds.
+  function updateGracePeriod(uint40 gracePeriod) external;
 
   /// @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
