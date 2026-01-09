@@ -441,11 +441,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    _validateSetUsingAsCollateral(_getReserve(reserveId).flags, usingAsCollateral, positionStatus);
-
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
     }
+    _validateSetUsingAsCollateral(_getReserve(reserveId).flags, usingAsCollateral, positionStatus);
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
@@ -974,10 +973,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   function _validateSetUsingAsCollateral(ReserveFlags flags, bool usingAsCollateral, PositionStatus storage positionStatus) internal view {
     require(!flags.paused(), ReservePaused());
-    // can disable as collateral if the reserve is frozen
-    require(!usingAsCollateral || !flags.frozen(), ReserveFrozen());
-    // max collateral reserves check, account for the new reserve being enabled by using strict inequality
-    require(!usingAsCollateral || positionStatus.collateralCount(_reserveCount) < _collateralReservesLimit, MaximumCollateralReservesExceeded());
+    if (usingAsCollateral) {
+      require(!flags.frozen(), ReserveFrozen()); // disabling as collateral is allowed when reserve is frozen
+      // This must be a new collateral due to short-circuiting otherwise. Strict inequality because collateral count incremented later.
+      require(positionStatus.collateralCount(_reserveCount) < _collateralReservesLimit, MaximumCollateralReservesExceeded());
+    }
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
