@@ -106,6 +106,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     ORACLE = oracle_;
   }
 
+  /// @inheritdoc ISpoke
   /// @dev To be overridden by the inheriting Spoke instance contract.
   function initialize(address authority) external virtual;
 

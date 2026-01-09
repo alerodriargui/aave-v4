@@ -439,6 +439,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
     bytes32 permitS
   ) external;
 
+  /// @notice Initializes the spoke contract.
+  /// @dev To be overridden by the inheriting Spoke instance contract.
+  /// @param authority The address of the AccessManager contract.
   function initialize(address authority) external;
 
   /// @notice Returns the liquidation config struct.
