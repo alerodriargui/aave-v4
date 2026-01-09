@@ -6,7 +6,7 @@ import {IExtSload} from 'src/interfaces/IExtSload.sol';
 
 /// @title ExtSload
 /// @author Aave Labs
-/// @notice This allows source contract to make it's state available to external contracts.
+/// @notice This allows the source contract to make its state available to external contracts.
 abstract contract ExtSload is IExtSload {
   /// @inheritdoc IExtSload
   function extSload(bytes32 slot) external view returns (bytes32 ret) {

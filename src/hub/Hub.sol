@@ -2,7 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {ExtSload} from 'src/utils/ExtSload.sol';
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -15,6 +14,7 @@ import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {Premium} from 'src/hub/libraries/Premium.sol';
 import {IBasicInterestRateStrategy} from 'src/hub/interfaces/IBasicInterestRateStrategy.sol';
 import {IHubBase, IHub} from 'src/hub/interfaces/IHub.sol';
+import {ExtSload} from 'src/utils/ExtSload.sol';
 
 /// @title Hub
 /// @author Aave Labs
