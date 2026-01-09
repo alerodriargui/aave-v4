@@ -9,13 +9,42 @@ import {IExtSload} from 'src/interfaces/IExtSload.sol';
 /// @notice This allows the source contract to make its state available to external contracts.
 abstract contract ExtSload is IExtSload {
   /// @inheritdoc IExtSload
+  function extSload(bytes32) external returns (bytes32) {
+    assembly {
+      let lib := ExtSloadsLib
+      calldatacopy(0, 0, calldatasize())
+      let success := delegatecall(gas(), lib, 0, calldatasize(), 0, 0)
+      returndatacopy(0, 0, returndatasize())
+      if iszero(success) {
+        revert(0, returndatasize())
+      }
+      return(0, returndatasize())
+    }
+  }
+
+  /// @inheritdoc IExtSload
+  function extSloads(bytes32[] calldata) external returns (bytes32[] memory) {
+    assembly {
+      let lib := ExtSloadsLib
+
+      calldatacopy(0, 0, calldatasize())
+      let success := delegatecall(gas(), lib, 0, calldatasize(), 0, 0) // todo: predict exact return data len?
+      returndatacopy(0, 0, returndatasize())
+      if iszero(success) {
+        revert(0, returndatasize())
+      }
+      return(0, returndatasize())
+    }
+  }
+}
+
+library ExtSloadsLib {
   function extSload(bytes32 slot) external view returns (bytes32 ret) {
     assembly ('memory-safe') {
       ret := sload(slot)
     }
   }
 
-  /// @inheritdoc IExtSload
   function extSloads(bytes32[] calldata slots) external view returns (bytes32[] memory) {
     assembly ('memory-safe') {
       mstore(0x00, 0x20) // to abi-encode response, the array will be found at the next word

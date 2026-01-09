@@ -8,9 +8,9 @@ pragma solidity ^0.8.0;
 interface IExtSload {
   /// @notice Returns the storage `value` of this contract at a given `slot`.
   /// @param slot Slot to SLOAD from.
-  function extSload(bytes32 slot) external view returns (bytes32 value);
+  function extSload(bytes32 slot) external returns (bytes32 value);
 
   /// @notice Returns the storage `values` of this contract at the given `slots`.
   /// @param slots Array of slots to SLOAD from.
-  function extSloads(bytes32[] calldata slots) external view returns (bytes32[] memory values);
+  function extSloads(bytes32[] calldata slots) external returns (bytes32[] memory values);
 }
