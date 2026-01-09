@@ -49,6 +49,11 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(spokeProxyAddress);
     emit ISpoke.UpdateOracle(oracle);
     vm.expectEmit(spokeProxyAddress);
+    emit ISpoke.UpdateUserReservesLimits(
+      Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
+      Constants.MAX_ALLOWED_BORROWED_RESERVES
+    );
+    vm.expectEmit(spokeProxyAddress);
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.expectEmit(spokeProxyAddress);
     emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
@@ -74,6 +79,8 @@ contract SpokeUpgradeableTest is SpokeBase {
 
     assertEq(_getProxyInitializedVersion(address(spokeProxy)), revision);
     assertEq(spokeProxy.getLiquidationConfig(), expectedLiquidationConfig);
+    assertEq(spokeProxy.getCollateralReservesLimit(), Constants.MAX_ALLOWED_COLLATERAL_RESERVES);
+    assertEq(spokeProxy.getBorrowedReservesLimit(), Constants.MAX_ALLOWED_BORROWED_RESERVES);
   }
 
   function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {
@@ -152,7 +159,11 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    SpokeInstance spokeImpl = new SpokeInstance(oracle);
+    SpokeInstance spokeImpl = new SpokeInstance(
+      oracle,
+      Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
+      Constants.MAX_ALLOWED_BORROWED_RESERVES
+    );
     vm.expectRevert(ISpoke.InvalidAddress.selector);
     new TransparentUpgradeableProxy(
       address(spokeImpl),
@@ -162,7 +173,11 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_InvalidAddress() public {
-    SpokeInstance spokeImpl = new SpokeInstance(oracle);
+    SpokeInstance spokeImpl = new SpokeInstance(
+      oracle,
+      Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
+      Constants.MAX_ALLOWED_BORROWED_RESERVES
+    );
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
@@ -180,7 +195,11 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
-    SpokeInstance spokeImpl = new SpokeInstance(oracle);
+    SpokeInstance spokeImpl = new SpokeInstance(
+      oracle,
+      Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
+      Constants.MAX_ALLOWED_BORROWED_RESERVES
+    );
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
@@ -210,6 +229,16 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function _deployMockSpokeInstance(uint64 revision) internal returns (SpokeInstance) {
-    return SpokeInstance(address(new MockSpokeInstance(revision, oracle)));
+    return
+      SpokeInstance(
+        address(
+          new MockSpokeInstance(
+            revision,
+            oracle,
+            Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
+            Constants.MAX_ALLOWED_BORROWED_RESERVES
+          )
+        )
+      );
   }
 }

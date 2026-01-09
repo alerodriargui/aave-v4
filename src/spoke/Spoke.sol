@@ -44,10 +44,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
 
   /// @inheritdoc ISpoke
-  uint256 public constant MAX_ALLOWED_COLLATERAL_RESERVES = 128;
+  uint256 public immutable MAX_ALLOWED_COLLATERAL_RESERVES;
 
   /// @inheritdoc ISpoke
-  uint256 public constant MAX_ALLOWED_BORROWED_RESERVES = 128;
+  uint256 public immutable MAX_ALLOWED_BORROWED_RESERVES;
 
   /// @inheritdoc ISpoke
   address public immutable ORACLE;
@@ -76,6 +76,12 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @dev Number of reserves listed in the Spoke.
   uint256 internal _reserveCount;
+
+  /// @dev The governance-configurable maximum number of collateral reserves per user.
+  uint256 internal _collateralReservesLimit;
+
+  /// @dev The governance-configurable maximum number of borrowed reserves per user.
+  uint256 internal _borrowedReservesLimit;
 
   /// @dev Map of user addresses and reserve identifiers to user positions.
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
@@ -107,9 +113,20 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
-  constructor(address oracle_) {
+  constructor(
+    address oracle_,
+    uint256 maxAllowedCollateralReserves_,
+    uint256 maxAllowedBorrowedReserves_
+  ) {
+    require(maxAllowedCollateralReserves_ > 0 && maxAllowedBorrowedReserves_ > 0, InvalidReservesLimit());
     require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
+    MAX_ALLOWED_COLLATERAL_RESERVES = maxAllowedCollateralReserves_;
+    MAX_ALLOWED_BORROWED_RESERVES = maxAllowedBorrowedReserves_;
     ORACLE = oracle_;
+    _setReservesLimits({
+      collateralLimit: maxAllowedCollateralReserves_,
+      borrowedLimit: maxAllowedBorrowedReserves_
+    });
   }
 
   /// @dev To be overridden by the inheriting Spoke instance contract.
@@ -125,6 +142,17 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     );
     _liquidationConfig = config;
     emit UpdateLiquidationConfig(config);
+  }
+
+  /// @inheritdoc ISpoke
+  function updateUserReservesLimits(
+    uint256 collateralReservesLimit_,
+    uint256 borrowedReservesLimit_
+  ) external restricted {
+    _setReservesLimits({
+      collateralLimit: collateralReservesLimit_,
+      borrowedLimit: borrowedReservesLimit_
+    });
   }
 
   /// @inheritdoc ISpoke
@@ -296,7 +324,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
-      require(positionStatus.borrowedCount(_reserveCount) < MAX_ALLOWED_BORROWED_RESERVES, MaximumBorrowedReservesExceeded());
+      require(positionStatus.borrowedCount(_reserveCount) < _borrowedReservesLimit, MaximumBorrowedReservesExceeded());
       positionStatus.setBorrowing(reserveId, true);
     }
 
@@ -691,6 +719,16 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return address(LiquidationLogic);
   }
 
+    /// @inheritdoc ISpoke
+  function getCollateralReservesLimit() external view returns (uint256) {
+    return _collateralReservesLimit;
+  }
+
+  /// @inheritdoc ISpoke
+  function getBorrowedReservesLimit() external view returns (uint256) {
+    return _borrowedReservesLimit;
+  }
+
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(priceSource != address(0), InvalidAddress());
     IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource);
@@ -939,7 +977,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     // can disable as collateral if the reserve is frozen
     require(!usingAsCollateral || !flags.frozen(), ReserveFrozen());
     // max collateral reserves check, account for the new reserve being enabled by using strict inequality
-    require(!usingAsCollateral || positionStatus.collateralCount(_reserveCount) < MAX_ALLOWED_COLLATERAL_RESERVES, MaximumCollateralReservesExceeded());
+    require(!usingAsCollateral || positionStatus.collateralCount(_reserveCount) < _collateralReservesLimit, MaximumCollateralReservesExceeded());
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
@@ -964,6 +1002,22 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
+  }
+
+  function _setReservesLimits(
+    uint256 collateralLimit,
+    uint256 borrowedLimit
+  ) internal {
+    require(
+      collateralLimit > 0 &&
+        collateralLimit <= MAX_ALLOWED_COLLATERAL_RESERVES &&
+        borrowedLimit > 0 &&
+        borrowedLimit <= MAX_ALLOWED_BORROWED_RESERVES,
+      InvalidReservesLimit()
+    );
+    _collateralReservesLimit = collateralLimit;
+    _borrowedReservesLimit = borrowedLimit;
+    emit UpdateUserReservesLimits(collateralLimit, borrowedLimit);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

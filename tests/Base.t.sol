@@ -312,7 +312,7 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     {
-      bytes4[] memory selectors = new bytes4[](7);
+      bytes4[] memory selectors = new bytes4[](8);
       selectors[0] = ISpoke.updateLiquidationConfig.selector;
       selectors[1] = ISpoke.addReserve.selector;
       selectors[2] = ISpoke.updateReserveConfig.selector;
@@ -320,6 +320,7 @@ abstract contract Base is Test {
       selectors[4] = ISpoke.addDynamicReserveConfig.selector;
       selectors[5] = ISpoke.updatePositionManager.selector;
       selectors[6] = ISpoke.updateReservePriceSource.selector;
+      selectors[7] = ISpoke.updateUserReservesLimits.selector;
       manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
     }
 
@@ -2237,7 +2238,13 @@ abstract contract Base is Test {
     address deployer = makeAddr('deployer');
     address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
     IAaveOracle oracle = new AaveOracle(predictedSpoke, 8, _oracleDesc);
-    address spokeImpl = address(new SpokeInstance(address(oracle)));
+    address spokeImpl = address(
+      new SpokeInstance(
+        address(oracle),
+        Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
+        Constants.MAX_ALLOWED_BORROWED_RESERVES
+      )
+    );
     ISpoke spoke = ISpoke(
       _proxify(
         deployer,

@@ -179,7 +179,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_revertsWith_MaximumBorrowedReservesExceeded() public {
-    uint256 maxBorrowedReserves = spoke1.MAX_ALLOWED_BORROWED_RESERVES();
+    uint256 maxBorrowedReserves = spoke1.getBorrowedReservesLimit();
     _addNewAssetsAndReserves(maxBorrowedReserves + 1);
     
     // Bob borrows reserves up to max allowed
@@ -195,5 +195,22 @@ contract SpokeBorrowValidationTest is SpokeBase {
     vm.expectRevert(ISpoke.MaximumBorrowedReservesExceeded.selector);
     vm.prank(bob);
     spoke1.borrow(maxBorrowedReserves, 1e18, bob);
-  } 
+  }
+
+  function test_borrow_revertsWith_MaximumBorrowedReservesExceeded_afterLimitUpdate() public {
+    uint256 collateralLimit = spoke1.getCollateralReservesLimit();
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateUserReservesLimits(collateralLimit, 1);
+
+    uint256 daiReserveId = _daiReserveId(spoke1);
+    uint256 wethReserveId = _wethReserveId(spoke1);
+
+    Utils.supplyCollateral(spoke1, daiReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    Utils.borrow(spoke1, daiReserveId, bob, 1e18, bob);
+
+    Utils.supplyCollateral(spoke1, wethReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
+    vm.expectRevert(ISpoke.MaximumBorrowedReservesExceeded.selector);
+    vm.prank(bob);
+    spoke1.borrow(wethReserveId, 1e18, bob);
+  }
 }
