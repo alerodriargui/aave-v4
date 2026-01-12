@@ -316,4 +316,25 @@ contract SpokeGettersTest is SpokeBase {
     assetPremiumDebtRay = hub1.getAssetPremiumRay(wethAssetId);
     assertEq(assetPremiumDebtRay, spokePremiumDebtRay + spoke1PremiumDebtRay);
   }
+
+  function test_getReserveConfig_gracePeriod(uint40 gracePeriod, uint40 elapsedTime) public {
+    gracePeriod = uint40(bound(gracePeriod, 0, 100 days));
+    elapsedTime = uint40(bound(elapsedTime, 0, 150 days));
+
+    uint256 reserveId = _daiReserveId(spoke);
+    ISpoke.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
+    config.gracePeriod = gracePeriod;
+
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateReserveConfig(reserveId, config);
+
+    vm.warp(block.timestamp + elapsedTime);
+
+    config = spoke.getReserveConfig(reserveId);
+    if (elapsedTime >= gracePeriod) {
+      assertEq(config.gracePeriod, 0);
+    } else {
+      assertEq(config.gracePeriod, gracePeriod - elapsedTime);
+    }
+  }
 }

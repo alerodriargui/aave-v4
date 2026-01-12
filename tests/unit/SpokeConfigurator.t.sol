@@ -387,6 +387,30 @@ contract SpokeConfiguratorTest is SpokeBase {
     assertEq(spoke.getReserveConfig(_reserveId), expectedReserveConfig);
   }
 
+  function test_updateGracePeriod_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.updateGracePeriod(spokeAddr, _reserveId, 0);
+  }
+
+  function test_updateGracePeriod() public {
+    uint40 newGracePeriod = 10 days;
+
+    ISpoke.ReserveConfig memory expectedReserveConfig = spoke.getReserveConfig(_reserveId);
+    expectedReserveConfig.gracePeriod = newGracePeriod;
+
+    vm.expectCall(
+      spokeAddr,
+      abi.encodeCall(ISpoke.updateReserveConfig, (_reserveId, expectedReserveConfig))
+    );
+    vm.expectEmit(address(spoke));
+    emit ISpoke.UpdateReserveConfig(_reserveId, expectedReserveConfig);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateGracePeriod(spokeAddr, _reserveId, newGracePeriod);
+
+    assertEq(spoke.getReserveConfig(_reserveId), expectedReserveConfig);
+  }
+
   function test_addCollateralFactor_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);

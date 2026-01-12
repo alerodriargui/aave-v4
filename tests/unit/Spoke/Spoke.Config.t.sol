@@ -77,7 +77,7 @@ contract SpokeConfigTest is SpokeBase {
       borrowable: !config.borrowable,
       receiveSharesEnabled: !config.receiveSharesEnabled,
       collateralRisk: config.collateralRisk + 1,
-      gracePeriod: config.gracePeriod
+      gracePeriod: 10 days
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateReserveConfig(daiReserveId, newReserveConfig);

@@ -107,6 +107,12 @@ interface ISpokeConfigurator {
   /// @param collateralRisk The new collateral risk.
   function updateCollateralRisk(address spoke, uint256 reserveId, uint256 collateralRisk) external;
 
+  /// @notice Updates the grace period of a reserve.
+  /// @param spoke The address of the spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param gracePeriod The new grace period duration.
+  function updateGracePeriod(address spoke, uint256 reserveId, uint40 gracePeriod) external;
+
   /// @notice Adds a dynamic config to a reserve, identical to the latest one but with the specified collateral factor.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
