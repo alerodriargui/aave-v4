@@ -15,8 +15,8 @@ contract SpokeDynamicConfigTest is SpokeBase {
     address mockSpokeImpl = address(
       new MockSpoke(
         address(spoke.ORACLE()),
-        Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
-        Constants.MAX_ALLOWED_BORROWED_RESERVES
+        Constants.MAX_USER_COLLATERALS,
+        Constants.MAX_USER_BORROWS
       )
     );
     vm.etch(address(spoke1), mockSpokeImpl.code);

@@ -26,9 +26,9 @@ contract MockSpoke is Spoke, Test {
 
   constructor(
     address oracle_,
-    uint64 maxAllowedCollateralReserves_,
-    uint64 maxAllowedBorrowedReserves_
-  ) Spoke(oracle_, maxAllowedCollateralReserves_, maxAllowedBorrowedReserves_) {}
+    uint64 maxUserCollaterals_,
+    uint64 maxUserBorrows_
+  ) Spoke(oracle_, maxUserCollaterals_, maxUserBorrows_) {}
 
   function initialize(address) external override {}
 

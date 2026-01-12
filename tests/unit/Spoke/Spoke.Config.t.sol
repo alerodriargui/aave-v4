@@ -18,42 +18,34 @@ contract SpokeConfigTest is SpokeBase {
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
     SpokeInstance instance = new SpokeInstance(
       oracle,
-      Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
-      Constants.MAX_ALLOWED_BORROWED_RESERVES
+      Constants.MAX_USER_COLLATERALS,
+      Constants.MAX_USER_BORROWS
     );
     assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
     assertEq(instance.ORACLE(), oracle);
     assertNotEq(instance.getLiquidationLogic(), address(0));
-    assertEq(instance.MAX_ALLOWED_COLLATERAL_RESERVES(), Constants.MAX_ALLOWED_COLLATERAL_RESERVES);
-    assertEq(instance.MAX_ALLOWED_BORROWED_RESERVES(), Constants.MAX_ALLOWED_BORROWED_RESERVES);
+    assertEq(instance.MAX_USER_COLLATERALS(), Constants.MAX_USER_COLLATERALS);
+    assertEq(instance.MAX_USER_BORROWS(), Constants.MAX_USER_BORROWS);
     (uint64 collateralLimit, uint64 borrowedLimit) = instance.getUserReservesLimits();
-    assertEq(collateralLimit, Constants.MAX_ALLOWED_COLLATERAL_RESERVES);
-    assertEq(borrowedLimit, Constants.MAX_ALLOWED_BORROWED_RESERVES);
+    assertEq(collateralLimit, Constants.MAX_USER_COLLATERALS);
+    assertEq(borrowedLimit, Constants.MAX_USER_BORROWS);
   }
 
   function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
     vm.expectRevert();
-    new SpokeInstance(
-      address(0),
-      Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
-      Constants.MAX_ALLOWED_BORROWED_RESERVES
-    );
+    new SpokeInstance(address(0), Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS);
   }
 
   function test_spoke_deploy_revertsWith_InvalidOracleDecimals() public {
     address oracle = makeAddr('AaveOracle');
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
     vm.expectRevert(ISpoke.InvalidOracleDecimals.selector);
-    new SpokeInstance(
-      oracle,
-      Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
-      Constants.MAX_ALLOWED_BORROWED_RESERVES
-    );
+    new SpokeInstance(oracle, Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS);
   }
 
   function test_updateUserReservesLimits() public {
-    uint64 newCollateralLimit = Constants.MAX_ALLOWED_COLLATERAL_RESERVES - 1;
-    uint64 newBorrowedLimit = Constants.MAX_ALLOWED_BORROWED_RESERVES - 2;
+    uint64 newCollateralLimit = Constants.MAX_USER_COLLATERALS - 1;
+    uint64 newBorrowedLimit = Constants.MAX_USER_BORROWS - 2;
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateUserReservesLimits(newCollateralLimit, newBorrowedLimit);
@@ -68,17 +60,11 @@ contract SpokeConfigTest is SpokeBase {
   function test_updateUserReservesLimits_revertsWith_InvalidUserReservesLimit() public {
     vm.expectRevert(ISpoke.InvalidUserReservesLimit.selector);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateUserReservesLimits(
-      Constants.MAX_ALLOWED_COLLATERAL_RESERVES + 1,
-      Constants.MAX_ALLOWED_BORROWED_RESERVES
-    );
+    spoke1.updateUserReservesLimits(Constants.MAX_USER_COLLATERALS + 1, Constants.MAX_USER_BORROWS);
 
     vm.expectRevert(ISpoke.InvalidUserReservesLimit.selector);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateUserReservesLimits(
-      Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
-      Constants.MAX_ALLOWED_BORROWED_RESERVES + 1
-    );
+    spoke1.updateUserReservesLimits(Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS + 1);
   }
 
   function test_updateUserReservesLimits_revertsWith_AccessManagedUnauthorized(

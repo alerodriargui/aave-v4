@@ -132,7 +132,7 @@ contract SpokeConfigTest is SpokeBase {
     );
   }
 
-  function test_setUsingAsCollateral_revertsWith_MaximumCollateralReservesExceeded() public {
+  function test_setUsingAsCollateral_revertsWith_MaxUserCollateralsExceeded() public {
     (uint64 maxCollateralReserves, ) = spoke1.getUserReservesLimits();
     _addNewAssetsAndReserves(maxCollateralReserves + 1);
 
@@ -142,12 +142,12 @@ contract SpokeConfigTest is SpokeBase {
     }
 
     // Bob tries to set one more reserve as collateral
-    vm.expectRevert(ISpoke.MaximumCollateralReservesExceeded.selector, address(spoke1));
+    vm.expectRevert(ISpoke.MaxUserCollateralsExceeded.selector, address(spoke1));
     vm.prank(bob);
     spoke1.setUsingAsCollateral(maxCollateralReserves, true, bob);
   }
 
-  function test_setUsingAsCollateral_revertsWith_MaximumCollateralReservesExceeded_afterLimitUpdate()
+  function test_setUsingAsCollateral_revertsWith_MaxUserCollateralsExceeded_afterLimitUpdate()
     public
   {
     (, uint64 borrowLimit) = spoke1.getUserReservesLimits();
@@ -158,7 +158,7 @@ contract SpokeConfigTest is SpokeBase {
     spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, bob);
 
     // Bob tries to set one more reserve as collateral
-    vm.expectRevert(ISpoke.MaximumCollateralReservesExceeded.selector, address(spoke1));
+    vm.expectRevert(ISpoke.MaxUserCollateralsExceeded.selector, address(spoke1));
     spoke1.setUsingAsCollateral(_wethReserveId(spoke1), true, bob);
   }
 }

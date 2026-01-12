@@ -128,9 +128,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   event UpdateLiquidationConfig(LiquidationConfig config);
 
   /// @notice Emitted when user reserve limits are updated.
-  /// @param collateralReservesLimit The new max number of collateral reserves per user.
-  /// @param borrowedReservesLimit The new max number of borrowed reserves per user.
-  event UpdateUserReservesLimits(uint64 collateralReservesLimit, uint64 borrowedReservesLimit);
+  /// @param maxUserCollaterals The new max number of collateral reserves per user.
+  /// @param maxUserBorrows The new max number of borrowed reserves per user.
+  event UpdateUserReservesLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows);
 
   /// @notice Emitted when a reserve is added.
   /// @param reserveId The identifier of the reserve.
@@ -321,22 +321,19 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   error MaximumDynamicConfigKeyReached();
 
   /// @notice Thrown when user attempts to exceed the maximum allowed collateral reserves.
-  error MaximumCollateralReservesExceeded();
+  error MaxUserCollateralsExceeded();
 
   /// @notice Thrown when user attempts to exceed the maximum allowed borrowed reserves.
-  error MaximumBorrowedReservesExceeded();
+  error MaxUserBorrowsExceeded();
 
   /// @notice Updates the liquidation config.
   /// @param config The liquidation config.
   function updateLiquidationConfig(LiquidationConfig calldata config) external;
 
   /// @notice Updates the per-user reserve limits.
-  /// @param collateralReservesLimit The maximum number of collateral reserves a user can enable.
-  /// @param borrowedReservesLimit The maximum number of borrowed reserves a user can have.
-  function updateUserReservesLimits(
-    uint64 collateralReservesLimit,
-    uint64 borrowedReservesLimit
-  ) external;
+  /// @param maxUserCollaterals The maximum number of collateral reserves a user can enable.
+  /// @param maxUserBorrows The maximum number of borrowed reserves a user can have.
+  function updateUserReservesLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows) external;
 
   /// @notice Adds a new reserve to the spoke.
   /// @dev Allowed even if the spoke has not yet been added to the Hub.
@@ -561,11 +558,11 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice The absolute limit for the maximum allowed number of collateral reserves per user.
   /// @dev Governance can set the limit on max allowed user collateral reserves, but it cannot exceed this constant.
-  function MAX_ALLOWED_COLLATERAL_RESERVES() external view returns (uint64);
+  function MAX_USER_COLLATERALS() external view returns (uint64);
 
   /// @notice The absolute limit for the maximum allowed number of borrowed reserves per user.
   /// @dev Governance can set the limit on max allowed user borrowed reserves, but it cannot exceed this constant.
-  function MAX_ALLOWED_BORROWED_RESERVES() external view returns (uint64);
+  function MAX_USER_BORROWS() external view returns (uint64);
 
   /// @notice Returns the governance-controlled maximum allowed number of collateral and borrowed reserves per user.
   /// @return The maximum allowed number of collateral reserves per user.

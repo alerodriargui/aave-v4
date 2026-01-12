@@ -178,7 +178,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     Utils.borrow(spoke1, daiReserveId, bob, 1, bob);
   }
 
-  function test_borrow_revertsWith_MaximumBorrowedReservesExceeded() public {
+  function test_borrow_revertsWith_MaxUserBorrowsExceeded() public {
     (, uint64 maxBorrowedReserves) = spoke1.getUserReservesLimits();
     _addNewAssetsAndReserves(maxBorrowedReserves + 1);
 
@@ -192,12 +192,12 @@ contract SpokeBorrowValidationTest is SpokeBase {
     Utils.supply(spoke1, maxBorrowedReserves, bob, MAX_SUPPLY_AMOUNT, bob);
 
     // Bob tries to borrow from one more reserve
-    vm.expectRevert(ISpoke.MaximumBorrowedReservesExceeded.selector);
+    vm.expectRevert(ISpoke.MaxUserBorrowsExceeded.selector);
     vm.prank(bob);
     spoke1.borrow(maxBorrowedReserves, 1e18, bob);
   }
 
-  function test_borrow_revertsWith_MaximumBorrowedReservesExceeded_afterLimitUpdate() public {
+  function test_borrow_revertsWith_MaxUserBorrowsExceeded_afterLimitUpdate() public {
     (uint64 collateralLimit, ) = spoke1.getUserReservesLimits();
     vm.prank(SPOKE_ADMIN);
     spoke1.updateUserReservesLimits(collateralLimit, 1);
@@ -209,7 +209,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
     Utils.borrow(spoke1, daiReserveId, bob, 1e18, bob);
 
     Utils.supplyCollateral(spoke1, wethReserveId, bob, MAX_SUPPLY_AMOUNT, bob);
-    vm.expectRevert(ISpoke.MaximumBorrowedReservesExceeded.selector);
+    vm.expectRevert(ISpoke.MaxUserBorrowsExceeded.selector);
     vm.prank(bob);
     spoke1.borrow(wethReserveId, 1e18, bob);
   }

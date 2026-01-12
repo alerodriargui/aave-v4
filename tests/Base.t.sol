@@ -2239,11 +2239,7 @@ abstract contract Base is Test {
     address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
     IAaveOracle oracle = new AaveOracle(predictedSpoke, 8, _oracleDesc);
     address spokeImpl = address(
-      new SpokeInstance(
-        address(oracle),
-        Constants.MAX_ALLOWED_COLLATERAL_RESERVES,
-        Constants.MAX_ALLOWED_BORROWED_RESERVES
-      )
+      new SpokeInstance(address(oracle), Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
     );
     ISpoke spoke = ISpoke(
       _proxify(

@@ -14,13 +14,13 @@ contract SpokeInstance is Spoke {
   /// @dev Constructor.
   /// @dev During upgrade, must ensure that the new oracle is supporting existing assets on the spoke and the replaced oracle.
   /// @param oracle_ The address of the oracle.
-  /// @param maxAllowedCollateralReserves_ The maximum allowed number of collateral reserves per user.
-  /// @param maxAllowedBorrowedReserves_ The maximum allowed number of borrowed reserves per user.
+  /// @param maxUserCollaterals_ The maximum allowed number of collateral reserves per user.
+  /// @param maxUserBorrows_ The maximum allowed number of borrowed reserves per user.
   constructor(
     address oracle_,
-    uint64 maxAllowedCollateralReserves_,
-    uint64 maxAllowedBorrowedReserves_
-  ) Spoke(oracle_, maxAllowedCollateralReserves_, maxAllowedBorrowedReserves_) {
+    uint64 maxUserCollaterals_,
+    uint64 maxUserBorrows_
+  ) Spoke(oracle_, maxUserCollaterals_, maxUserBorrows_) {
     _disableInitializers();
   }
 
@@ -30,10 +30,7 @@ contract SpokeInstance is Spoke {
   function initialize(address authority) external override reinitializer(SPOKE_REVISION) {
     emit UpdateOracle(ORACLE);
     require(authority != address(0), InvalidAddress());
-    _setUserReservesLimits({
-      collateralLimit: MAX_ALLOWED_COLLATERAL_RESERVES,
-      borrowedLimit: MAX_ALLOWED_BORROWED_RESERVES
-    });
+    _setUserReservesLimits(MAX_USER_COLLATERALS, MAX_USER_BORROWS);
     __AccessManaged_init(authority);
     if (_liquidationConfig.targetHealthFactor == 0) {
       _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
