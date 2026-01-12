@@ -18,8 +18,8 @@ contract SpokeInstance is Spoke {
   /// @param maxAllowedBorrowedReserves_ The maximum allowed number of borrowed reserves per user.
   constructor(
     address oracle_,
-    uint256 maxAllowedCollateralReserves_,
-    uint256 maxAllowedBorrowedReserves_
+    uint8 maxAllowedCollateralReserves_,
+    uint8 maxAllowedBorrowedReserves_
   ) Spoke(oracle_, maxAllowedCollateralReserves_, maxAllowedBorrowedReserves_) {
     _disableInitializers();
   }
@@ -30,7 +30,7 @@ contract SpokeInstance is Spoke {
   function initialize(address authority) external override reinitializer(SPOKE_REVISION) {
     emit UpdateOracle(ORACLE);
     require(authority != address(0), InvalidAddress());
-    _setReservesLimits({
+    _setUserReservesLimits({
       collateralLimit: MAX_ALLOWED_COLLATERAL_RESERVES,
       borrowedLimit: MAX_ALLOWED_BORROWED_RESERVES
     });

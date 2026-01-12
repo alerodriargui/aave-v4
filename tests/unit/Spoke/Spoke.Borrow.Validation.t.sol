@@ -179,11 +179,11 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_revertsWith_MaximumBorrowedReservesExceeded() public {
-    uint256 maxBorrowedReserves = spoke1.getBorrowedReservesLimit();
+    (, uint8 maxBorrowedReserves) = spoke1.getUserReservesLimits();
     _addNewAssetsAndReserves(maxBorrowedReserves + 1);
-    
+
     // Bob borrows reserves up to max allowed
-    for(uint256 i = 0; i < maxBorrowedReserves; ++i) {
+    for (uint256 i = 0; i < maxBorrowedReserves; ++i) {
       Utils.supplyCollateral(spoke1, i, bob, MAX_SUPPLY_AMOUNT, bob);
       Utils.borrow(spoke1, i, bob, 1e18, bob);
     }
@@ -198,7 +198,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_revertsWith_MaximumBorrowedReservesExceeded_afterLimitUpdate() public {
-    uint256 collateralLimit = spoke1.getCollateralReservesLimit();
+    (uint8 collateralLimit, ) = spoke1.getUserReservesLimits();
     vm.prank(SPOKE_ADMIN);
     spoke1.updateUserReservesLimits(collateralLimit, 1);
 

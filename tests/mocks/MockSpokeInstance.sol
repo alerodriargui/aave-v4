@@ -20,8 +20,8 @@ contract MockSpokeInstance is Spoke {
   constructor(
     uint64 spokeRevision_,
     address oracle_,
-    uint256 maxAllowedCollateralReserves_,
-    uint256 maxAllowedBorrowedReserves_
+    uint8 maxAllowedCollateralReserves_,
+    uint8 maxAllowedBorrowedReserves_
   ) Spoke(oracle_, maxAllowedCollateralReserves_, maxAllowedBorrowedReserves_) {
     SPOKE_REVISION = spokeRevision_;
     _disableInitializers();
@@ -31,7 +31,7 @@ contract MockSpokeInstance is Spoke {
   function initialize(address _authority) external override reinitializer(SPOKE_REVISION) {
     emit UpdateOracle(ORACLE);
     require(_authority != address(0), InvalidAddress());
-    _setReservesLimits({
+    _setUserReservesLimits({
       collateralLimit: MAX_ALLOWED_COLLATERAL_RESERVES,
       borrowedLimit: MAX_ALLOWED_BORROWED_RESERVES
     });
