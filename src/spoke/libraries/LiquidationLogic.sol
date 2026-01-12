@@ -364,10 +364,10 @@ library LiquidationLogic {
     require(params.collateralReserveBalance > 0, ISpoke.ReserveNotSupplied());
     require(params.debtReserveBalance > 0, ISpoke.ReserveNotBorrowed());
     require(
-      block.timestamp > params.collateralGracePeriodEnd,
+      block.timestamp >= params.collateralGracePeriodEnd,
       ISpoke.CollateralCannotBeLiquidated()
     );
-    require(block.timestamp > params.debtGracePeriodEnd, ISpoke.DebtCannotBeLiquidated());
+    require(block.timestamp >= params.debtGracePeriodEnd, ISpoke.DebtCannotBeLiquidated());
     require(
       params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       ISpoke.HealthFactorNotBelowThreshold()

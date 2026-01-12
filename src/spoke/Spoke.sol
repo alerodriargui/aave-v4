@@ -87,9 +87,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => DynamicReserveConfig))
     internal _dynamicConfig;
 
-  /// @dev Grace period duration for liquidations after a Reserve is unpaused/unfrozen.
-  uint40 internal _gracePeriod;
-
   /// @dev Liquidation configuration for the Spoke.
   LiquidationConfig internal _liquidationConfig;
 
@@ -148,6 +145,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
     _reserves[reserveId] = Reserve({
       underlying: underlying,
+      gracePeriodEnd: block.timestamp.toUint40() + config.gracePeriod,
       hub: IHubBase(hub),
       assetId: assetId.toUint16(),
       decimals: decimals,
@@ -158,8 +156,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
         initFrozen: config.frozen,
         initBorrowable: config.borrowable,
         initReceiveSharesEnabled: config.receiveSharesEnabled
-      }),
-      gracePeriodEnd: 0
+      })
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
     _reserveExists[hub][assetId] = true;
@@ -178,7 +175,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) external restricted {
     Reserve storage reserve = _getReserve(reserveId);
     _validateReserveConfig(config);
-    _updateReserveGracePeriod(reserve, config);
     reserve.collateralRisk = config.collateralRisk;
     reserve.flags = ReserveFlagsMap.create({
       initPaused: config.paused,
@@ -186,6 +182,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       initBorrowable: config.borrowable,
       initReceiveSharesEnabled: config.receiveSharesEnabled
     });
+    reserve.gracePeriodEnd = block.timestamp.toUint40() + config.gracePeriod;
     emit UpdateReserveConfig(reserveId, config);
   }
 
@@ -227,12 +224,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   function updatePositionManager(address positionManager, bool active) external restricted {
     _positionManager[positionManager].active = active;
     emit UpdatePositionManager(positionManager, active);
-  }
-
-  /// @inheritdoc ISpoke
-  function updateGracePeriod(uint40 gracePeriod) external restricted {
-    _gracePeriod = gracePeriod;
-    emit UpdateGracePeriod(gracePeriod);
   }
 
   /// @inheritdoc ISpokeBase
@@ -559,13 +550,18 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   /// @inheritdoc ISpoke
   function getReserveConfig(uint256 reserveId) external view returns (ReserveConfig memory) {
     Reserve storage reserve = _getReserve(reserveId);
+    uint40 currentTimestamp = block.timestamp.toUint40();
+    uint40 gracePeriod = reserve.gracePeriodEnd > currentTimestamp
+      ? reserve.gracePeriodEnd - currentTimestamp
+      : 0;
     return
       ReserveConfig({
         collateralRisk: reserve.collateralRisk,
         paused: reserve.flags.paused(),
         frozen: reserve.flags.frozen(),
         borrowable: reserve.flags.borrowable(),
-        receiveSharesEnabled: reserve.flags.receiveSharesEnabled()
+        receiveSharesEnabled: reserve.flags.receiveSharesEnabled(),
+        gracePeriod: gracePeriod
       });
   }
 
@@ -696,15 +692,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(priceSource != address(0), InvalidAddress());
     IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource);
     emit UpdateReservePriceSource(reserveId, priceSource);
-  }
-
-  function _updateReserveGracePeriod(
-    Reserve storage reserve,
-    ReserveConfig calldata config
-  ) internal {
-    if ((reserve.flags.paused() && !config.paused) || (reserve.flags.frozen() && !config.frozen)) {
-      reserve.gracePeriodEnd = uint40(block.timestamp) + _gracePeriod;
-    }
   }
 
   function _setUserPositionManager(address positionManager, address user, bool approve) internal {

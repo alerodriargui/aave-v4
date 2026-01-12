@@ -76,7 +76,8 @@ contract SpokeConfigTest is SpokeBase {
       frozen: !config.frozen,
       borrowable: !config.borrowable,
       receiveSharesEnabled: !config.receiveSharesEnabled,
-      collateralRisk: config.collateralRisk + 1
+      collateralRisk: config.collateralRisk + 1,
+      gracePeriod: config.gracePeriod
     });
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateReserveConfig(daiReserveId, newReserveConfig);
@@ -92,6 +93,11 @@ contract SpokeConfigTest is SpokeBase {
       0,
       Constants.MAX_ALLOWED_COLLATERAL_RISK
     ).toUint24();
+    newReserveConfig.gracePeriod = bound(
+      newReserveConfig.gracePeriod,
+      0,
+      Constants.MAX_ALLOWED_GRACE_PERIOD - block.timestamp
+    ).toUint40();
 
     uint256 daiReserveId = _daiReserveId(spoke1);
 

@@ -2254,7 +2254,8 @@ abstract contract Base is Test {
         frozen: false,
         borrowable: true,
         receiveSharesEnabled: true,
-        collateralRisk: collateralRisk
+        collateralRisk: collateralRisk,
+        gracePeriod: 0
       });
   }
 

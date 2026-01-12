@@ -48,11 +48,6 @@ interface ISpokeConfigurator {
     ISpoke.LiquidationConfig calldata liquidationConfig
   ) external;
 
-  /// @notice Updates the grace period duration on a spoke.
-  /// @param spoke The address of the spoke.
-  /// @param gracePeriod The new grace period in seconds.
-  function updateGracePeriod(address spoke, uint40 gracePeriod) external;
-
   /// @notice Updates the maximum number of reserves allowed to exist on a spoke.
   /// @dev It allows setting the maximum below the amount of reserves that currently exist.
   /// @param spoke The address of the spoke.
