@@ -10,35 +10,53 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 library DeployUtils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
-  function deploySpokeInstance(address oracle) internal returns (ISpoke) {
-    return deploySpokeInstance(oracle, '');
+  function deploySpokeInstance(address deployer, address oracle) internal returns (ISpoke) {
+    return deploySpokeInstance(deployer, oracle, '');
   }
 
-  function deploySpokeInstance(address oracle, bytes32 salt) internal returns (ISpoke spoke) {
+  function deploySpokeInstance(
+    address deployer,
+    address oracle,
+    bytes32 salt
+  ) internal returns (ISpoke spoke) {
     bytes memory initCode = abi.encodePacked(
       vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
       abi.encode(oracle)
     );
+    // To be replaced by deterministic factory in Deploy Engine.
+    vm.startPrank(deployer);
     assembly {
       spoke := create2(0, add(initCode, 0x20), mload(initCode), salt)
     }
+    vm.stopPrank();
   }
 
   function deployProxifiedSpokeInstance(
-    address oracle,
     address deployer,
+    address oracle,
     address proxyAdminOwner,
     bytes memory initData
   ) internal returns (ISpoke) {
     return
-      ISpoke(_proxify(deployer, address(deploySpokeInstance(oracle)), proxyAdminOwner, initData));
-  }
-
-  function getDeterministicSpokeInstanceAddress(address oracle) internal view returns (address) {
-    return getDeterministicSpokeInstanceAddress(oracle, '');
+      ISpoke(
+        _proxify(
+          deployer,
+          address(deploySpokeInstance(deployer, oracle)),
+          proxyAdminOwner,
+          initData
+        )
+      );
   }
 
   function getDeterministicSpokeInstanceAddress(
+    address deployer,
+    address oracle
+  ) internal view returns (address) {
+    return getDeterministicSpokeInstanceAddress(deployer, oracle, '');
+  }
+
+  function getDeterministicSpokeInstanceAddress(
+    address deployer,
     address oracle,
     bytes32 salt
   ) internal view returns (address) {
@@ -47,7 +65,7 @@ library DeployUtils {
       abi.encode(oracle)
     );
     bytes32 initCodeHash = keccak256(initCode);
-    return computeAddress(salt, initCodeHash, address(this));
+    return computeAddress(salt, initCodeHash, deployer);
   }
 
   function computeAddress(

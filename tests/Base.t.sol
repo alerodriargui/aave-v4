@@ -11,10 +11,7 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {
-  TransparentUpgradeableProxy,
-  ITransparentUpgradeableProxy
-} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -47,11 +44,7 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {
-  AssetInterestRateStrategy,
-  IAssetInterestRateStrategy,
-  IBasicInterestRateStrategy
-} from 'src/hub/AssetInterestRateStrategy.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
@@ -2235,11 +2228,11 @@ abstract contract Base is Test {
     string memory _oracleDesc
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
-    address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
+    address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer) + 1);
     IAaveOracle oracle = new AaveOracle(predictedSpoke, 8, _oracleDesc);
     ISpoke spoke = DeployUtils.deployProxifiedSpokeInstance(
-      address(oracle),
       deployer,
+      address(oracle),
       proxyAdminOwner,
       abi.encodeCall(ISpoke.initialize, (_accessManager))
     );
