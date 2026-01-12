@@ -23,9 +23,11 @@ contract HubConfigTest is HubBase {
     );
   }
 
-  function test_hub_deploy_revertsWith_InvalidAddress() public {
-    vm.expectRevert(IHub.InvalidAddress.selector, address(hub1));
-    DeployUtils.deployHub(address(0));
+  function test_hub_deploy_reverts_on_InvalidConstructorInput() public {
+    DeployWrapper deployer = new DeployWrapper();
+
+    vm.expectRevert();
+    deployer.deployHub(address(0));
   }
 
   function test_hub_max_riskPremium() public view {
