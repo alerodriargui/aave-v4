@@ -981,8 +981,9 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   ) internal view {
     require(!flags.paused(), ReservePaused());
     if (usingAsCollateral) {
-      require(!flags.frozen(), ReserveFrozen()); // disabling as collateral is allowed when reserve is frozen
-      // This must be a new collateral due to short-circuiting otherwise.
+      // disabling as collateral is allowed when reserve is frozen
+      require(!flags.frozen(), ReserveFrozen());
+      // this must be a new collateral due to short-circuiting otherwise.
       require(
         positionStatus.collateralCount(_reserveCount) < _collateralReservesLimit,
         MaximumCollateralReservesExceeded()

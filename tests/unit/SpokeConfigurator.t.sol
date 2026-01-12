@@ -818,33 +818,61 @@ contract SpokeConfiguratorTest is SpokeBase {
     }
   }
 
-  function test_updateUserReservesLimits_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_updateUserCollateralReservesLimit_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.updateUserReservesLimits(spokeAddr, 0, 0);
+    spokeConfigurator.updateUserCollateralReservesLimit(spokeAddr, 0);
   }
 
-  function test_updateUserReservesLimits_revertsWith_InvalidUserReservesLimit() public {
+  function test_updateUserBorrowedReservesLimit_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.updateUserBorrowedReservesLimit(spokeAddr, 0);
+  }
+
+  function test_updateUserCollateralReservesLimit_revertsWith_InvalidUserReservesLimit() public {
     vm.expectRevert(ISpoke.InvalidUserReservesLimit.selector);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateUserReservesLimits(
+    spokeConfigurator.updateUserCollateralReservesLimit(
       spokeAddr,
-      Constants.MAX_ALLOWED_COLLATERAL_RESERVES + 1,
-      0
+      Constants.MAX_ALLOWED_COLLATERAL_RESERVES + 1
     );
+  }
+
+  function test_updateUserBorrowedReservesLimit_revertsWith_InvalidUserReservesLimit() public {
     vm.expectRevert(ISpoke.InvalidUserReservesLimit.selector);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateUserReservesLimits(
+    spokeConfigurator.updateUserBorrowedReservesLimit(
       spokeAddr,
-      0,
       Constants.MAX_ALLOWED_BORROWED_RESERVES + 1
     );
   }
 
-  function test_updateUserReservesLimits() public {
+  function test_updateUserCollateralReservesLimit() public {
+    (, uint64 oldBorrowedReservesLimit) = spoke.getUserReservesLimits();
     uint64 newCollateralReservesLimit = vm
       .randomUint(0, Constants.MAX_ALLOWED_COLLATERAL_RESERVES)
       .toUint64();
+
+    vm.expectCall(
+      spokeAddr,
+      abi.encodeCall(
+        ISpoke.updateUserReservesLimits,
+        (newCollateralReservesLimit, oldBorrowedReservesLimit)
+      )
+    );
+    vm.expectEmit(address(spoke));
+    emit ISpoke.UpdateUserReservesLimits(newCollateralReservesLimit, oldBorrowedReservesLimit);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateUserCollateralReservesLimit(spokeAddr, newCollateralReservesLimit);
+
+    (uint64 collateralReservesLimit, uint64 borrowedReservesLimit) = spoke.getUserReservesLimits();
+    assertEq(collateralReservesLimit, newCollateralReservesLimit);
+    assertEq(borrowedReservesLimit, oldBorrowedReservesLimit);
+  }
+
+  function test_updateUserBorrowedReservesLimit() public {
+    (uint64 oldCollateralReservesLimit, ) = spoke.getUserReservesLimits();
     uint64 newBorrowedReservesLimit = vm
       .randomUint(0, Constants.MAX_ALLOWED_BORROWED_RESERVES)
       .toUint64();
@@ -853,20 +881,16 @@ contract SpokeConfiguratorTest is SpokeBase {
       spokeAddr,
       abi.encodeCall(
         ISpoke.updateUserReservesLimits,
-        (newCollateralReservesLimit, newBorrowedReservesLimit)
+        (oldCollateralReservesLimit, newBorrowedReservesLimit)
       )
     );
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateUserReservesLimits(newCollateralReservesLimit, newBorrowedReservesLimit);
+    emit ISpoke.UpdateUserReservesLimits(oldCollateralReservesLimit, newBorrowedReservesLimit);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateUserReservesLimits(
-      spokeAddr,
-      newCollateralReservesLimit,
-      newBorrowedReservesLimit
-    );
+    spokeConfigurator.updateUserBorrowedReservesLimit(spokeAddr, newBorrowedReservesLimit);
 
     (uint64 collateralReservesLimit, uint64 borrowedReservesLimit) = spoke.getUserReservesLimits();
-    assertEq(collateralReservesLimit, newCollateralReservesLimit);
+    assertEq(collateralReservesLimit, oldCollateralReservesLimit);
     assertEq(borrowedReservesLimit, newBorrowedReservesLimit);
   }
 }

@@ -219,15 +219,18 @@ interface ISpokeConfigurator {
   /// @param active The new active flag.
   function updatePositionManager(address spoke, address positionManager, bool active) external;
 
-  /// @notice Updates the maximum allowed number of collateral and borrowed reserves per user.
+  /// @notice Updates the maximum allowed number of collateral reserves per user.
   /// @param spoke The address of the spoke.
   /// @param collateralReservesLimit The new maximum allowed number of collateral reserves per user.
-  /// @param borrowedReservesLimit The new maximum allowed number of borrowed reserves per user.
-  function updateUserReservesLimits(
+  function updateUserCollateralReservesLimit(
     address spoke,
-    uint64 collateralReservesLimit,
-    uint64 borrowedReservesLimit
+    uint64 collateralReservesLimit
   ) external;
+
+  /// @notice Updates the maximum allowed number of borrowed reserves per user.
+  /// @param spoke The address of the spoke.
+  /// @param borrowedReservesLimit The new maximum allowed number of borrowed reserves per user.
+  function updateUserBorrowedReservesLimit(address spoke, uint64 borrowedReservesLimit) external;
 
   /// @notice Returns the maximum number of reserves allowed to exist on a spoke.
   /// @param spoke The address of the spoke.
