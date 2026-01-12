@@ -133,7 +133,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_setUsingAsCollateral_revertsWith_MaximumCollateralReservesExceeded() public {
-    (uint8 maxCollateralReserves, ) = spoke1.getUserReservesLimits();
+    (uint64 maxCollateralReserves, ) = spoke1.getUserReservesLimits();
     _addNewAssetsAndReserves(maxCollateralReserves + 1);
 
     // Bob supplies and enables maximum allowed collateral reserves
@@ -150,7 +150,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_setUsingAsCollateral_revertsWith_MaximumCollateralReservesExceeded_afterLimitUpdate()
     public
   {
-    (, uint8 borrowLimit) = spoke1.getUserReservesLimits();
+    (, uint64 borrowLimit) = spoke1.getUserReservesLimits();
     vm.prank(SPOKE_ADMIN);
     spoke1.updateUserReservesLimits(1, borrowLimit);
 

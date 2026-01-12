@@ -225,8 +225,8 @@ interface ISpokeConfigurator {
   /// @param borrowedReservesLimit The new maximum allowed number of borrowed reserves per user.
   function updateUserReservesLimits(
     address spoke,
-    uint8 collateralReservesLimit,
-    uint8 borrowedReservesLimit
+    uint64 collateralReservesLimit,
+    uint64 borrowedReservesLimit
   ) external;
 
   /// @notice Returns the maximum number of reserves allowed to exist on a spoke.

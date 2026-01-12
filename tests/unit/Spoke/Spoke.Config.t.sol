@@ -26,7 +26,7 @@ contract SpokeConfigTest is SpokeBase {
     assertNotEq(instance.getLiquidationLogic(), address(0));
     assertEq(instance.MAX_ALLOWED_COLLATERAL_RESERVES(), Constants.MAX_ALLOWED_COLLATERAL_RESERVES);
     assertEq(instance.MAX_ALLOWED_BORROWED_RESERVES(), Constants.MAX_ALLOWED_BORROWED_RESERVES);
-    (uint8 collateralLimit, uint8 borrowedLimit) = instance.getUserReservesLimits();
+    (uint64 collateralLimit, uint64 borrowedLimit) = instance.getUserReservesLimits();
     assertEq(collateralLimit, Constants.MAX_ALLOWED_COLLATERAL_RESERVES);
     assertEq(borrowedLimit, Constants.MAX_ALLOWED_BORROWED_RESERVES);
   }
@@ -52,15 +52,15 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateUserReservesLimits() public {
-    uint8 newCollateralLimit = Constants.MAX_ALLOWED_COLLATERAL_RESERVES - 1;
-    uint8 newBorrowedLimit = Constants.MAX_ALLOWED_BORROWED_RESERVES - 2;
+    uint64 newCollateralLimit = Constants.MAX_ALLOWED_COLLATERAL_RESERVES - 1;
+    uint64 newBorrowedLimit = Constants.MAX_ALLOWED_BORROWED_RESERVES - 2;
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateUserReservesLimits(newCollateralLimit, newBorrowedLimit);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateUserReservesLimits(newCollateralLimit, newBorrowedLimit);
 
-    (uint8 collateralLimit, uint8 borrowedLimit) = spoke1.getUserReservesLimits();
+    (uint64 collateralLimit, uint64 borrowedLimit) = spoke1.getUserReservesLimits();
     assertEq(collateralLimit, newCollateralLimit);
     assertEq(borrowedLimit, newBorrowedLimit);
   }

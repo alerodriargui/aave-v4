@@ -20,8 +20,8 @@ contract MockSpokeInstance is Spoke {
   constructor(
     uint64 spokeRevision_,
     address oracle_,
-    uint8 maxAllowedCollateralReserves_,
-    uint8 maxAllowedBorrowedReserves_
+    uint64 maxAllowedCollateralReserves_,
+    uint64 maxAllowedBorrowedReserves_
   ) Spoke(oracle_, maxAllowedCollateralReserves_, maxAllowedBorrowedReserves_) {
     SPOKE_REVISION = spokeRevision_;
     _disableInitializers();

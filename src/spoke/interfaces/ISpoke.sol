@@ -130,7 +130,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Emitted when user reserve limits are updated.
   /// @param collateralReservesLimit The new max number of collateral reserves per user.
   /// @param borrowedReservesLimit The new max number of borrowed reserves per user.
-  event UpdateUserReservesLimits(uint8 collateralReservesLimit, uint8 borrowedReservesLimit);
+  event UpdateUserReservesLimits(uint64 collateralReservesLimit, uint64 borrowedReservesLimit);
 
   /// @notice Emitted when a reserve is added.
   /// @param reserveId The identifier of the reserve.
@@ -334,8 +334,8 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @param collateralReservesLimit The maximum number of collateral reserves a user can enable.
   /// @param borrowedReservesLimit The maximum number of borrowed reserves a user can have.
   function updateUserReservesLimits(
-    uint8 collateralReservesLimit,
-    uint8 borrowedReservesLimit
+    uint64 collateralReservesLimit,
+    uint64 borrowedReservesLimit
   ) external;
 
   /// @notice Adds a new reserve to the spoke.
@@ -468,7 +468,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Returns the number of listed reserves on the spoke.
   /// @dev Count includes reserves that are not currently active.
-  function getReserveCount() external view returns (uint256);
+  function getReserveCount() external view returns (uint64);
 
   /// @notice Returns the reserve struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
@@ -561,14 +561,14 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice The absolute limit for the maximum allowed number of collateral reserves per user.
   /// @dev Governance can set the limit on max allowed user collateral reserves, but it cannot exceed this constant.
-  function MAX_ALLOWED_COLLATERAL_RESERVES() external view returns (uint8);
+  function MAX_ALLOWED_COLLATERAL_RESERVES() external view returns (uint64);
 
   /// @notice The absolute limit for the maximum allowed number of borrowed reserves per user.
   /// @dev Governance can set the limit on max allowed user borrowed reserves, but it cannot exceed this constant.
-  function MAX_ALLOWED_BORROWED_RESERVES() external view returns (uint8);
+  function MAX_ALLOWED_BORROWED_RESERVES() external view returns (uint64);
 
   /// @notice Returns the governance-controlled maximum allowed number of collateral and borrowed reserves per user.
   /// @return The maximum allowed number of collateral reserves per user.
   /// @return The maximum allowed number of borrowed reserves per user.
-  function getUserReservesLimits() external view returns (uint8, uint8);
+  function getUserReservesLimits() external view returns (uint64, uint64);
 }

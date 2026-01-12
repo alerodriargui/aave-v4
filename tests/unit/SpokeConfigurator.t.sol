@@ -842,12 +842,12 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateUserReservesLimits() public {
-    uint8 newCollateralReservesLimit = vm
+    uint64 newCollateralReservesLimit = vm
       .randomUint(0, Constants.MAX_ALLOWED_COLLATERAL_RESERVES)
-      .toUint8();
-    uint8 newBorrowedReservesLimit = vm
+      .toUint64();
+    uint64 newBorrowedReservesLimit = vm
       .randomUint(0, Constants.MAX_ALLOWED_BORROWED_RESERVES)
-      .toUint8();
+      .toUint64();
 
     vm.expectCall(
       spokeAddr,
@@ -865,7 +865,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       newBorrowedReservesLimit
     );
 
-    (uint8 collateralReservesLimit, uint8 borrowedReservesLimit) = spoke.getUserReservesLimits();
+    (uint64 collateralReservesLimit, uint64 borrowedReservesLimit) = spoke.getUserReservesLimits();
     assertEq(collateralReservesLimit, newCollateralReservesLimit);
     assertEq(borrowedReservesLimit, newBorrowedReservesLimit);
   }
