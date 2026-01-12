@@ -166,6 +166,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(hub != address(0), InvalidAddress());
     require(assetId <= MAX_ALLOWED_ASSET_ID, InvalidAssetId());
     require(!_reserveExists[hub][assetId], ReserveExists());
+    _reserveExists[hub][assetId] = true;
 
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
@@ -193,7 +194,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
       })
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
-    _reserveExists[hub][assetId] = true;
 
     emit AddReserve(reserveId, assetId, hub);
     emit UpdateReserveConfig(reserveId, config);
