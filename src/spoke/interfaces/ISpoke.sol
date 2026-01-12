@@ -399,7 +399,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Allows suppliers to enable/disable a specific supplied reserve as collateral.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev It reverts if the user exceeds the maximum allowed collateral reserves when enabling.
-  /// @dev Reserves with zero supplied and zero collateral factor still count towards the collateral limit.
+  /// @dev Reserves with zero supplied or zero collateral factor count towards the max allowed collateral reserves.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param usingAsCollateral True if the user wants to use the supply as collateral.
@@ -559,9 +559,9 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);
 
-/// @notice The maximum allowed number of collateral reserves per user.
+  /// @notice The maximum allowed number of collateral reserves per user.
   function MAX_ALLOWED_COLLATERAL_RESERVES() external view returns (uint256);
-  
+
   /// @notice The maximum allowed number of borrowed reserves per user.
   function MAX_ALLOWED_BORROWED_RESERVES() external view returns (uint256);
 

@@ -6,7 +6,9 @@ import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
-import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
+import {
+  AccessManagedUpgradeable
+} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
@@ -118,7 +120,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 maxAllowedCollateralReserves_,
     uint256 maxAllowedBorrowedReserves_
   ) {
-    require(maxAllowedCollateralReserves_ > 0 && maxAllowedBorrowedReserves_ > 0, InvalidReservesLimit());
+    require(
+      maxAllowedCollateralReserves_ > 0 && maxAllowedBorrowedReserves_ > 0,
+      InvalidReservesLimit()
+    );
     require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
     MAX_ALLOWED_COLLATERAL_RESERVES = maxAllowedCollateralReserves_;
     MAX_ALLOWED_BORROWED_RESERVES = maxAllowedBorrowedReserves_;
@@ -324,7 +329,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
-      require(positionStatus.borrowedCount(_reserveCount) < _borrowedReservesLimit, MaximumBorrowedReservesExceeded());
+      require(
+        positionStatus.borrowedCount(_reserveCount) < _borrowedReservesLimit,
+        MaximumBorrowedReservesExceeded()
+      );
       positionStatus.setBorrowing(reserveId, true);
     }
 
@@ -444,7 +452,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
     }
-    _validateSetUsingAsCollateral(_getReserve(reserveId).flags, usingAsCollateral, positionStatus);
+    _validateSetUsingAsCollateral(positionStatus, _getReserve(reserveId).flags, usingAsCollateral);
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
@@ -718,7 +726,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     return address(LiquidationLogic);
   }
 
-    /// @inheritdoc ISpoke
+  /// @inheritdoc ISpoke
   function getCollateralReservesLimit() external view returns (uint256) {
     return _collateralReservesLimit;
   }
@@ -971,12 +979,19 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateSetUsingAsCollateral(ReserveFlags flags, bool usingAsCollateral, PositionStatus storage positionStatus) internal view {
+  function _validateSetUsingAsCollateral(
+    PositionStatus storage positionStatus,
+    ReserveFlags flags,
+    bool usingAsCollateral
+  ) internal view {
     require(!flags.paused(), ReservePaused());
     if (usingAsCollateral) {
       require(!flags.frozen(), ReserveFrozen()); // disabling as collateral is allowed when reserve is frozen
-      // This must be a new collateral due to short-circuiting otherwise. Strict inequality because collateral count incremented later.
-      require(positionStatus.collateralCount(_reserveCount) < _collateralReservesLimit, MaximumCollateralReservesExceeded());
+      // This must be a new collateral due to short-circuiting otherwise.
+      require(
+        positionStatus.collateralCount(_reserveCount) < _collateralReservesLimit,
+        MaximumCollateralReservesExceeded()
+      );
     }
   }
 
@@ -1004,10 +1019,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
   }
 
-  function _setReservesLimits(
-    uint256 collateralLimit,
-    uint256 borrowedLimit
-  ) internal {
+  function _setReservesLimits(uint256 collateralLimit, uint256 borrowedLimit) internal {
     require(
       collateralLimit > 0 &&
         collateralLimit <= MAX_ALLOWED_COLLATERAL_RESERVES &&

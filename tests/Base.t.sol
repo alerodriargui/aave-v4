@@ -2883,7 +2883,7 @@ abstract contract Base is Test {
       _calcUnrealizedFees(hub, assetId);
   }
 
-    function _addNewAssetsAndReserves(uint256 count) internal {
+  function _addNewAssetsAndReserves(uint256 count) internal {
     for (uint256 i = 0; i < count; i++) {
       MockERC20 newToken = new MockERC20();
       newToken.mint(alice, MAX_SUPPLY_AMOUNT * 10 ** 18);
