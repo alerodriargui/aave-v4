@@ -817,4 +817,56 @@ contract SpokeConfiguratorTest is SpokeBase {
       assertEq(spoke.isPositionManagerActive(newPositionManager), active);
     }
   }
+
+  function test_updateUserReservesLimits_revertsWith_OwnableUnauthorizedAccount() public {
+    vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
+    vm.prank(alice);
+    spokeConfigurator.updateUserReservesLimits(spokeAddr, 0, 0);
+  }
+
+  function test_updateUserReservesLimits_revertsWith_InvalidUserReservesLimit() public {
+    vm.expectRevert(ISpoke.InvalidUserReservesLimit.selector);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateUserReservesLimits(
+      spokeAddr,
+      Constants.MAX_ALLOWED_COLLATERAL_RESERVES + 1,
+      0
+    );
+    vm.expectRevert(ISpoke.InvalidUserReservesLimit.selector);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateUserReservesLimits(
+      spokeAddr,
+      0,
+      Constants.MAX_ALLOWED_BORROWED_RESERVES + 1
+    );
+  }
+
+  function test_updateUserReservesLimits() public {
+    uint8 newCollateralReservesLimit = vm
+      .randomUint(0, Constants.MAX_ALLOWED_COLLATERAL_RESERVES)
+      .toUint8();
+    uint8 newBorrowedReservesLimit = vm
+      .randomUint(0, Constants.MAX_ALLOWED_BORROWED_RESERVES)
+      .toUint8();
+
+    vm.expectCall(
+      spokeAddr,
+      abi.encodeCall(
+        ISpoke.updateUserReservesLimits,
+        (newCollateralReservesLimit, newBorrowedReservesLimit)
+      )
+    );
+    vm.expectEmit(address(spoke));
+    emit ISpoke.UpdateUserReservesLimits(newCollateralReservesLimit, newBorrowedReservesLimit);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
+    spokeConfigurator.updateUserReservesLimits(
+      spokeAddr,
+      newCollateralReservesLimit,
+      newBorrowedReservesLimit
+    );
+
+    (uint8 collateralReservesLimit, uint8 borrowedReservesLimit) = spoke.getUserReservesLimits();
+    assertEq(collateralReservesLimit, newCollateralReservesLimit);
+    assertEq(borrowedReservesLimit, newBorrowedReservesLimit);
+  }
 }
