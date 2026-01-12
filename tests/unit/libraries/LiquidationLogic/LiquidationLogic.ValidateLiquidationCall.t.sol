@@ -6,6 +6,7 @@ import 'tests/unit/libraries/LiquidationLogic/LiquidationLogic.Base.t.sol';
 
 contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest {
   using ReserveFlagsMap for ReserveFlags;
+  using SafeCast for uint256;
 
   LiquidationLogic.ValidateLiquidationCallParams params;
   uint256 constant collateralReserveId = 1;
@@ -205,13 +206,13 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
   }
 
   function test_validateLiquidationCall_revertsWith_CollateralCannotBeLiquidated() public {
-    params.collateralGracePeriodEnd = uint40(_warpBeforeRandomDeadline());
+    params.collateralGracePeriodEnd = _warpBeforeRandomDeadline().toUint40();
     vm.expectRevert(ISpoke.CollateralCannotBeLiquidated.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }
 
   function test_validateLiquidationCall_revertsWith_DebtCannotBeLiquidated() public {
-    params.debtGracePeriodEnd = uint40(_warpBeforeRandomDeadline());
+    params.debtGracePeriodEnd = _warpBeforeRandomDeadline().toUint40();
     vm.expectRevert(ISpoke.DebtCannotBeLiquidated.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }

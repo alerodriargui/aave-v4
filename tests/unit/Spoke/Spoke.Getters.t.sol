@@ -318,8 +318,8 @@ contract SpokeGettersTest is SpokeBase {
   }
 
   function test_getReserveConfig_gracePeriod(uint40 gracePeriod, uint40 elapsedTime) public {
-    gracePeriod = uint40(bound(gracePeriod, 0, 100 days));
-    elapsedTime = uint40(bound(elapsedTime, 0, 150 days));
+    gracePeriod = bound(gracePeriod, 0, 100 days).toUint40();
+    elapsedTime = bound(elapsedTime, 0, 150 days).toUint40();
 
     uint256 reserveId = _daiReserveId(spoke);
     ISpoke.ReserveConfig memory config = spoke.getReserveConfig(reserveId);
@@ -328,7 +328,7 @@ contract SpokeGettersTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke.updateReserveConfig(reserveId, config);
 
-    vm.warp(block.timestamp + elapsedTime);
+    skip(elapsedTime);
 
     config = spoke.getReserveConfig(reserveId);
     if (elapsedTime >= gracePeriod) {
