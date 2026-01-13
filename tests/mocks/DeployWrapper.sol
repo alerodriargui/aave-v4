@@ -5,20 +5,17 @@ pragma solidity ^0.8.0;
 import {DeployUtils} from 'tests/DeployUtils.sol';
 
 contract DeployWrapper {
-  function deploySpokeInstance(address oracle) external returns (address) {
-    return address(DeployUtils.deploySpokeInstance(oracle));
+  function deploySpokeImplementation(address oracle) external returns (address) {
+    return address(DeployUtils.deploySpokeImplementation(oracle));
   }
 
-  function deployProxifiedSpokeInstance(
+  function deploySpoke(
     address deployer,
     address oracle,
     address proxyAdminOwner,
     bytes calldata initData
   ) external returns (address) {
-    return
-      address(
-        DeployUtils.deployProxifiedSpokeInstance(deployer, oracle, proxyAdminOwner, initData)
-      );
+    return address(DeployUtils.deploySpoke(deployer, oracle, proxyAdminOwner, initData));
   }
 
   function deployHub(address authority) external returns (address) {

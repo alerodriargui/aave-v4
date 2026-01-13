@@ -274,7 +274,6 @@ abstract contract Base is Test {
 
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
-    DeployUtils.setCreate2Factory();
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     hub1 = DeployUtils.deployHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub1));
@@ -2232,7 +2231,7 @@ abstract contract Base is Test {
     address deployer = makeAddr('deployer');
     address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
     IAaveOracle oracle = new AaveOracle(predictedSpoke, 8, _oracleDesc);
-    ISpoke spoke = DeployUtils.deployProxifiedSpokeInstance(
+    ISpoke spoke = DeployUtils.deploySpoke(
       deployer,
       address(oracle),
       proxyAdminOwner,

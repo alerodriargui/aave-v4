@@ -13,7 +13,7 @@ contract SpokeConfigTest is SpokeBase {
     address predictedSpokeAddress = DeployUtils.getDeterministicSpokeInstanceAddress(oracle);
     vm.expectCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), 1);
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
-    ISpoke instance = ISpoke(address(DeployUtils.deploySpokeInstance(oracle)));
+    ISpoke instance = ISpoke(address(DeployUtils.deploySpokeImplementation(oracle)));
     assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
     assertEq(instance.ORACLE(), oracle);
     assertNotEq(instance.getLiquidationLogic(), address(0));
@@ -23,7 +23,7 @@ contract SpokeConfigTest is SpokeBase {
     DeployWrapper deployer = new DeployWrapper();
 
     vm.expectRevert();
-    deployer.deploySpokeInstance(address(0));
+    deployer.deploySpokeImplementation(address(0));
   }
 
   function test_spoke_deploy_reverts_on_InvalidOracleDecimals() public {
@@ -32,7 +32,7 @@ contract SpokeConfigTest is SpokeBase {
 
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
     vm.expectRevert();
-    deployer.deploySpokeInstance(oracle);
+    deployer.deploySpokeImplementation(oracle);
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(

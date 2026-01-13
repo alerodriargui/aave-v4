@@ -35,7 +35,6 @@ contract SpokeMultipleHubBase is SpokeBase {
 
   function deployFixtures() internal virtual override {
     vm.startPrank(ADMIN);
-    DeployUtils.setCreate2Factory();
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
     // Canonical hub and spoke
     hub1 = DeployUtils.deployHub(address(accessManager), hex'01');
