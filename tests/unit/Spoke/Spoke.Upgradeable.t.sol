@@ -28,7 +28,11 @@ contract SpokeUpgradeableTest is SpokeBase {
     assertEq(_getProxyInitializedVersion(spokeImplAddress), type(uint64).max);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    spokeImpl.initialize(address(accessManager));
+    spokeImpl.initialize(
+      address(accessManager),
+      Constants.MAX_USER_COLLATERALS,
+      Constants.MAX_USER_BORROWS
+    );
   }
 
   function test_proxy_constructor_fuzz(uint64 revision) public {
@@ -68,7 +72,10 @@ contract SpokeUpgradeableTest is SpokeBase {
         new TransparentUpgradeableProxy(
           address(spokeImpl),
           proxyAdminOwner,
-          abi.encodeCall(Spoke.initialize, address(accessManager))
+          abi.encodeCall(
+            Spoke.initialize,
+            (address(accessManager), Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
+          )
         )
       )
     );
@@ -92,7 +99,10 @@ contract SpokeUpgradeableTest is SpokeBase {
         new TransparentUpgradeableProxy(
           address(spokeImpl),
           proxyAdminOwner,
-          abi.encodeCall(Spoke.initialize, address(accessManager))
+          abi.encodeCall(
+            Spoke.initialize,
+            (address(accessManager), Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
+          )
         )
       )
     );
@@ -125,7 +135,10 @@ contract SpokeUpgradeableTest is SpokeBase {
     new TransparentUpgradeableProxy(
       address(spokeImpl),
       proxyAdminOwner,
-      abi.encodeCall(Spoke.initialize, address(accessManager))
+      abi.encodeCall(
+        Spoke.initialize,
+        (address(accessManager), Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
+      )
     );
   }
 
@@ -160,11 +173,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    SpokeInstance spokeImpl = new SpokeInstance(
-      oracle,
-      Constants.MAX_USER_COLLATERALS,
-      Constants.MAX_USER_BORROWS
-    );
+    SpokeInstance spokeImpl = new SpokeInstance(oracle);
     vm.expectRevert(ISpoke.InvalidAddress.selector);
     new TransparentUpgradeableProxy(
       address(spokeImpl),
@@ -174,11 +183,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_InvalidAddress() public {
-    SpokeInstance spokeImpl = new SpokeInstance(
-      oracle,
-      Constants.MAX_USER_COLLATERALS,
-      Constants.MAX_USER_BORROWS
-    );
+    SpokeInstance spokeImpl = new SpokeInstance(oracle);
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
@@ -196,11 +201,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
-    SpokeInstance spokeImpl = new SpokeInstance(
-      oracle,
-      Constants.MAX_USER_COLLATERALS,
-      Constants.MAX_USER_BORROWS
-    );
+    SpokeInstance spokeImpl = new SpokeInstance(oracle);
     ITransparentUpgradeableProxy spokeProxy = ITransparentUpgradeableProxy(
       address(
         new TransparentUpgradeableProxy(
@@ -226,20 +227,14 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function _getInitializeCalldata(address manager) internal pure returns (bytes memory) {
-    return abi.encodeCall(Spoke.initialize, manager);
+    return
+      abi.encodeCall(
+        Spoke.initialize,
+        (manager, Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
+      );
   }
 
   function _deployMockSpokeInstance(uint64 revision) internal returns (SpokeInstance) {
-    return
-      SpokeInstance(
-        address(
-          new MockSpokeInstance(
-            revision,
-            oracle,
-            Constants.MAX_USER_COLLATERALS,
-            Constants.MAX_USER_BORROWS
-          )
-        )
-      );
+    return SpokeInstance(address(new MockSpokeInstance(revision, oracle)));
   }
 }

@@ -46,12 +46,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
 
   /// @inheritdoc ISpoke
-  uint64 public immutable MAX_USER_COLLATERALS;
-
-  /// @inheritdoc ISpoke
-  uint64 public immutable MAX_USER_BORROWS;
-
-  /// @inheritdoc ISpoke
   address public immutable ORACLE;
 
   /// @dev The maximum allowed value for an asset identifier (inclusive).
@@ -115,16 +109,17 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @dev Constructor.
   /// @param oracle_ The address of the AaveOracle contract.
-  constructor(address oracle_, uint64 maxUserCollaterals_, uint64 maxUserBorrows_) {
+  constructor(address oracle_) {
     require(IAaveOracle(oracle_).DECIMALS() == ORACLE_DECIMALS, InvalidOracleDecimals());
-    MAX_USER_COLLATERALS = maxUserCollaterals_;
-    MAX_USER_BORROWS = maxUserBorrows_;
     ORACLE = oracle_;
-    _setUserReservesLimits(maxUserCollaterals_, maxUserBorrows_);
   }
 
   /// @dev To be overridden by the inheriting Spoke instance contract.
-  function initialize(address authority) external virtual;
+  function initialize(
+    address authority,
+    uint64 maxUserCollaterals,
+    uint64 maxUserBorrows
+  ) external virtual;
 
   /// @inheritdoc ISpoke
   function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
@@ -140,10 +135,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
 
   /// @inheritdoc ISpoke
   function updateUserReservesLimits(
-    uint64 maxUserCollaterals_,
-    uint64 maxUserBorrows_
+    uint64 maxUserCollaterals,
+    uint64 maxUserBorrows
   ) external restricted {
-    _setUserReservesLimits(maxUserCollaterals_, maxUserBorrows_);
+    _setUserReservesLimits(maxUserCollaterals, maxUserBorrows);
   }
 
   /// @inheritdoc ISpoke
@@ -924,10 +919,6 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   function _setUserReservesLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows) internal {
-    require(
-      maxUserCollaterals <= MAX_USER_COLLATERALS && maxUserBorrows <= MAX_USER_BORROWS,
-      InvalidUserReservesLimit()
-    );
     _maxUserCollaterals = maxUserCollaterals;
     _maxUserBorrows = maxUserBorrows;
     emit UpdateUserReservesLimits(maxUserCollaterals, maxUserBorrows);

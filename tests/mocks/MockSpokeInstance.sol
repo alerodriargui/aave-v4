@@ -14,25 +14,22 @@ contract MockSpokeInstance is Spoke {
    * @dev It sets the spoke revision and disables the initializers.
    * @param spokeRevision_ The revision of the spoke contract.
    * @param oracle_ The address of the oracle.
-   * @param maxUserCollaterals_ The maximum allowed number of collateral reserves per user.
-   * @param maxUserBorrows_ The maximum allowed number of borrowed reserves per user.
    */
-  constructor(
-    uint64 spokeRevision_,
-    address oracle_,
-    uint64 maxUserCollaterals_,
-    uint64 maxUserBorrows_
-  ) Spoke(oracle_, maxUserCollaterals_, maxUserBorrows_) {
+  constructor(uint64 spokeRevision_, address oracle_) Spoke(oracle_) {
     SPOKE_REVISION = spokeRevision_;
     _disableInitializers();
   }
 
   /// @inheritdoc Spoke
-  function initialize(address _authority) external override reinitializer(SPOKE_REVISION) {
+  function initialize(
+    address authority,
+    uint64 maxUserCollaterals,
+    uint64 maxUserBorrows
+  ) external override reinitializer(SPOKE_REVISION) {
     emit UpdateOracle(ORACLE);
-    require(_authority != address(0), InvalidAddress());
-    _setUserReservesLimits(MAX_USER_COLLATERALS, MAX_USER_BORROWS);
-    __AccessManaged_init(_authority);
+    require(authority != address(0), InvalidAddress());
+    _setUserReservesLimits(maxUserCollaterals, maxUserBorrows);
+    __AccessManaged_init(authority);
     if (_liquidationConfig.targetHealthFactor == 0) {
       _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
       emit UpdateLiquidationConfig(_liquidationConfig);

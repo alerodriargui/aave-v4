@@ -16,31 +16,22 @@ contract SpokeConfigTest is SpokeBase {
     address oracle = makeAddr('AaveOracle');
     vm.expectCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), 1);
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
-    SpokeInstance instance = new SpokeInstance(
-      oracle,
-      Constants.MAX_USER_COLLATERALS,
-      Constants.MAX_USER_BORROWS
-    );
+    SpokeInstance instance = new SpokeInstance(oracle);
     assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
     assertEq(instance.ORACLE(), oracle);
     assertNotEq(instance.getLiquidationLogic(), address(0));
-    assertEq(instance.MAX_USER_COLLATERALS(), Constants.MAX_USER_COLLATERALS);
-    assertEq(instance.MAX_USER_BORROWS(), Constants.MAX_USER_BORROWS);
-    (uint64 collateralLimit, uint64 borrowedLimit) = instance.getUserReservesLimits();
-    assertEq(collateralLimit, Constants.MAX_USER_COLLATERALS);
-    assertEq(borrowedLimit, Constants.MAX_USER_BORROWS);
   }
 
   function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
     vm.expectRevert();
-    new SpokeInstance(address(0), Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS);
+    new SpokeInstance(address(0));
   }
 
   function test_spoke_deploy_revertsWith_InvalidOracleDecimals() public {
     address oracle = makeAddr('AaveOracle');
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
     vm.expectRevert(ISpoke.InvalidOracleDecimals.selector);
-    new SpokeInstance(oracle, Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS);
+    new SpokeInstance(oracle);
   }
 
   function test_updateUserReservesLimits() public {
@@ -55,16 +46,6 @@ contract SpokeConfigTest is SpokeBase {
     (uint64 collateralLimit, uint64 borrowedLimit) = spoke1.getUserReservesLimits();
     assertEq(collateralLimit, newCollateralLimit);
     assertEq(borrowedLimit, newBorrowedLimit);
-  }
-
-  function test_updateUserReservesLimits_revertsWith_InvalidUserReservesLimit() public {
-    vm.expectRevert(ISpoke.InvalidUserReservesLimit.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateUserReservesLimits(Constants.MAX_USER_COLLATERALS + 1, Constants.MAX_USER_BORROWS);
-
-    vm.expectRevert(ISpoke.InvalidUserReservesLimit.selector);
-    vm.prank(SPOKE_ADMIN);
-    spoke1.updateUserReservesLimits(Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS + 1);
   }
 
   function test_updateUserReservesLimits_revertsWith_AccessManagedUnauthorized(

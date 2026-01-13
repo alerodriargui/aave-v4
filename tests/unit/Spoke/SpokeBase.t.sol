@@ -1102,9 +1102,7 @@ contract SpokeBase is Base {
     uint256 reserveId,
     uint256 debtAmount
   ) internal {
-    address mockSpoke = address(
-      new MockSpoke(spoke.ORACLE(), Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
-    );
+    address mockSpoke = address(new MockSpoke(spoke.ORACLE()));
 
     address implementation = _getImplementationAddress(address(spoke));
 

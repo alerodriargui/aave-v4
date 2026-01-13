@@ -2238,15 +2238,16 @@ abstract contract Base is Test {
     address deployer = makeAddr('deployer');
     address predictedSpoke = vm.computeCreateAddress(deployer, vm.getNonce(deployer));
     IAaveOracle oracle = new AaveOracle(predictedSpoke, 8, _oracleDesc);
-    address spokeImpl = address(
-      new SpokeInstance(address(oracle), Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
-    );
+    address spokeImpl = address(new SpokeInstance(address(oracle)));
     ISpoke spoke = ISpoke(
       _proxify(
         deployer,
         spokeImpl,
         proxyAdminOwner,
-        abi.encodeCall(Spoke.initialize, (_accessManager))
+        abi.encodeCall(
+          Spoke.initialize,
+          (_accessManager, Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
+        )
       )
     );
     assertEq(address(spoke), predictedSpoke, 'predictedSpoke');

@@ -830,18 +830,6 @@ contract SpokeConfiguratorTest is SpokeBase {
     spokeConfigurator.updateMaxUserBorrows(spokeAddr, 0);
   }
 
-  function test_updateMaxUserCollaterals_revertsWith_InvalidUserReservesLimit() public {
-    vm.expectRevert(ISpoke.InvalidUserReservesLimit.selector);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateMaxUserCollaterals(spokeAddr, Constants.MAX_USER_COLLATERALS + 1);
-  }
-
-  function test_updateMaxUserBorrows_revertsWith_InvalidUserReservesLimit() public {
-    vm.expectRevert(ISpoke.InvalidUserReservesLimit.selector);
-    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateMaxUserBorrows(spokeAddr, Constants.MAX_USER_BORROWS + 1);
-  }
-
   function test_updateMaxUserCollaterals() public {
     (, uint64 oldBorrowedReservesLimit) = spoke.getUserReservesLimits();
     uint64 newCollateralReservesLimit = vm.randomUint(0, Constants.MAX_USER_COLLATERALS).toUint64();

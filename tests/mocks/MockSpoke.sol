@@ -24,13 +24,11 @@ contract MockSpoke is Spoke, Test {
     uint256[] accruedPremiumAmounts;
   }
 
-  constructor(
-    address oracle_,
-    uint64 maxUserCollaterals_,
-    uint64 maxUserBorrows_
-  ) Spoke(oracle_, maxUserCollaterals_, maxUserBorrows_) {}
+  constructor(address oracle_) Spoke(oracle_) {}
 
-  function initialize(address) external override {}
+  function initialize(address, uint64 maxUserCollaterals, uint64 maxUserBorrows) external override {
+    _setUserReservesLimits(maxUserCollaterals, maxUserBorrows);
+  }
 
   // same as spoke's borrow, but without health factor check
   function borrowWithoutHfCheck(

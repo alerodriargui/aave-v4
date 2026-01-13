@@ -287,9 +287,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Thrown when a collateral risk exceeds the maximum allowed.
   error InvalidCollateralRisk();
 
-  /// @notice Thrown when attempting to set user reserve limits outside the allowed bounds.
-  error InvalidUserReservesLimit();
-
   /// @notice Thrown if a liquidation config is invalid when it is updated.
   error InvalidLiquidationConfig();
 
@@ -555,14 +552,6 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
 
   /// @notice Returns the address of the AaveOracle contract.
   function ORACLE() external view returns (address);
-
-  /// @notice The absolute limit for the maximum allowed number of collateral reserves per user.
-  /// @dev Governance can set the limit on max allowed user collateral reserves, but it cannot exceed this constant.
-  function MAX_USER_COLLATERALS() external view returns (uint64);
-
-  /// @notice The absolute limit for the maximum allowed number of borrowed reserves per user.
-  /// @dev Governance can set the limit on max allowed user borrowed reserves, but it cannot exceed this constant.
-  function MAX_USER_BORROWS() external view returns (uint64);
 
   /// @notice Returns the governance-controlled maximum allowed number of collateral and borrowed reserves per user.
   /// @return The maximum allowed number of collateral reserves per user.
