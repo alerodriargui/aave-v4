@@ -223,6 +223,13 @@ contract HubHandler is BaseHandler, IHubHandler {
 
         if (success) {
             _after();
+
+            // HSPOST_HUB_M: refreshPremium cannot change total premium debt (only redistribution)
+            assertEq(
+                defaultVarsAfter.assetVars[targetAssetId].premium,
+                defaultVarsBefore.assetVars[targetAssetId].premium,
+                HSPOST_HUB_M
+            );
         } else {
             revert("HubHandler: refreshPremium failed");
         }

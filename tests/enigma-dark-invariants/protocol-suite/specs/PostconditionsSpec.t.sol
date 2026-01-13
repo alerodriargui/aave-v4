@@ -48,7 +48,7 @@ abstract contract PostconditionsSpec {
         "GPOST_HUB_G: lastUpdateTimestamp is monotonic non-decreasing across actions (time does not go backwards)";
 
     string constant HSPOST_HUB_M =
-        "HSPOST_HUB_M: refreshPremium cannot change total premium debt (only redistribution)"; // TODO
+        "HSPOST_HUB_M: refreshPremium cannot change total premium debt (only redistribution)";
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                        SPOKE                                              //
@@ -63,7 +63,7 @@ abstract contract PostconditionsSpec {
     string constant GPOST_SP_B2 =
         "GPOST_SP_B2: Drawn debt of an individual user can only decrease by calling repay or liquidationCall and if premium debt is zero after the action";
 
-    string constant HSPOST_SP_C = "HSPOST_SP_C: User liability should decrease after repayment"; //@audit should this be strict?
+    string constant HSPOST_SP_C = "HSPOST_SP_C: User liability should decrease after repayment";
 
     string constant HSPOST_SP_D = "HSPOST_SP_D: Unhealthy users cannot borrow more";
 
@@ -105,4 +105,7 @@ abstract contract PostconditionsSpec {
 
     string constant HSPOST_SP_LIQ_G =
         "HSPOST_SP_LIQ_G: After liquidation, if debt remains, HF should improve toward target";
+
+    string constant GPOST_SP_LIQ_H =
+        "GPOST_SP_LIQ_H: The health factor of a user should be positive after any action but liquidationCall";
 }

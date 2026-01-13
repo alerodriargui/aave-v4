@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 // Libraries
 import {WadRayMath} from "src/libraries/math/WadRayMath.sol";
+import {PercentageMath} from "src/libraries/math/PercentageMath.sol";
 import "forge-std/console.sol";
 
 // Interfaces
@@ -70,8 +71,6 @@ abstract contract HubInvariants is HandlerAggregator {
     function assert_INV_HUB_EF(address hubAddress, uint256 assetId) internal {
         // Total amounts
         uint256 totalSuppliedAssets = IHub(hubAddress).getAddedAssets(assetId);
-        uint256 convertedAssets =
-            IHub(hubAddress).previewRemoveByShares(assetId, IHub(hubAddress).getAddedShares(assetId));
 
         IHub.Asset memory asset = IHub(hubAddress).getAsset(assetId);
         uint256 totalDebt = IHub(hubAddress).getAssetTotalOwed(assetId);
@@ -81,8 +80,8 @@ abstract contract HubInvariants is HandlerAggregator {
         // Note: tolerance increased to 2 shares due to premium rounding accumulation
         assertApproxEqAbs(
             totalSuppliedAssets,
-            convertedAssets,
-            IHub(hubAddress).previewRemoveByShares(assetId, 1) * 2,
+            IHub(hubAddress).previewRemoveByShares(assetId, IHub(hubAddress).getAddedShares(assetId)),
+            1, // tolerance of 1 share for rounding
             INV_HUB_E
         );
 
@@ -109,7 +108,6 @@ abstract contract HubInvariants is HandlerAggregator {
             totalAddedShares += IHub(hubAddress).getSpokeAddedShares(assetId, allSpokes[i]);
         }
 
-        // TODO take into account the burned interest from virtual shared -> _calculateBurntInterest from Base.t.sol
         // Checks
         assertApproxEqAbs(totalAddedAssets, IHub(hubAddress).getAddedAssets(assetId), SPOKE_COUNT, INV_HUB_G);
         assertEq(totalAddedShares, IHub(hubAddress).getAddedShares(assetId), INV_HUB_H);
@@ -159,5 +157,35 @@ abstract contract HubInvariants is HandlerAggregator {
         (uint256 premiumShares, int256 premiumOffsetRay) = IHub(hubAddress).getAssetPremiumData(assetId);
         uint256 drawnIndex = IHub(hubAddress).getAssetDrawnIndex(assetId);
         assertGe(int256(premiumShares * drawnIndex), premiumOffsetRay, INV_HUB_P);
+    }
+
+    function assert_INV_HUB_N(address hubAddress, uint256 assetId) internal {
+        IHub.Asset memory asset = IHub(hubAddress).getAsset(assetId);
+
+        // Skip if no debt (no interest can accrue)
+        if (asset.drawnShares == 0 && asset.premiumShares == 0) return;
+
+        // Get current index (includes unrealized interest) vs stored index
+        uint256 currentIndex = IHub(hubAddress).getAssetDrawnIndex(assetId);
+        uint256 storedIndex = asset.drawnIndex;
+
+        // Skip if no index growth (no interest accrued)
+        if (currentIndex == storedIndex) return;
+
+        // Calculate accrued interest from index growth
+        uint256 indexGrowth = currentIndex - storedIndex;
+        uint256 totalDebtShares = uint256(asset.drawnShares) + uint256(asset.premiumShares);
+        uint256 accruedInterestRay = (totalDebtShares * indexGrowth);
+
+        // Get unrealized fees
+        uint256 unrealizedFees = IHub(hubAddress).getAssetAccruedFees(assetId) - asset.realizedFees;
+
+        // Invariant: fees × PERCENTAGE_FACTOR × RAY ≈ accruedInterestRay × liquidityFee
+        uint256 lhs = unrealizedFees * PercentageMath.PERCENTAGE_FACTOR * WadRayMath.RAY;
+        uint256 rhs = accruedInterestRay * asset.liquidityFee;
+
+        // Tolerance: 1 wei rounding scaled up
+        uint256 tolerance = WadRayMath.RAY * PercentageMath.PERCENTAGE_FACTOR;
+        assertApproxEqAbs(lhs, rhs, tolerance, INV_HUB_N);
     }
 }

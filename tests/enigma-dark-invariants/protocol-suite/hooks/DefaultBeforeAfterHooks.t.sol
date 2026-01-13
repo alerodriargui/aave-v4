@@ -160,11 +160,11 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     }
 
     function assert_GPOST_HUB_B(address hubAddress, uint256 assetId) internal {
-        assertFullMulGe( // TODO review test_replay_1_supply
-            defaultVarsAfter.assetVars[hubAddress][assetId].totalAssets,
-            defaultVarsBefore.assetVars[hubAddress][assetId].totalShares,
-            defaultVarsBefore.assetVars[hubAddress][assetId].totalAssets,
-            defaultVarsAfter.assetVars[hubAddress][assetId].totalShares,
+        assertFullMulGe(
+            defaultVarsAfter.assetVars[hubAddress][assetId].totalAssets + 1e6,
+            defaultVarsBefore.assetVars[hubAddress][assetId].totalShares + 1e6,
+            defaultVarsBefore.assetVars[hubAddress][assetId].totalAssets + 1e6,
+            defaultVarsAfter.assetVars[hubAddress][assetId].totalShares + 1e6,
             GPOST_HUB_B
         );
     }
@@ -305,6 +305,16 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
             healthFactorBefore < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD && healthFactorAfter < healthFactorBefore
         ) {
             assertTrue(signature == ISpokeHandler.liquidationCall.selector, GPOST_SP_LIQ_G);
+        }
+    }
+
+    function assert_GPOST_SP_LIQ_H(address spoke, address user) internal {
+        if (currentActionSignature != ISpokeHandler.liquidationCall.selector) {
+            assertGe(
+                defaultVarsAfter.userAccountDataVars[spoke][user].healthFactor,
+                Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+                GPOST_SP_LIQ_H
+            );
         }
     }
 

@@ -90,6 +90,7 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
 
             // Check properties for the spoke
             assert_GPOST_LIQ_G(spoke, user);
+            assert_GPOST_SP_LIQ_H(spoke, user);
 
             // Check properties for all reserves of the spoke, used after actions: updateUserRiskPremium, updateUserDynamicConfig
             if (reserveId == CHECK_ALL_RESERVES) {

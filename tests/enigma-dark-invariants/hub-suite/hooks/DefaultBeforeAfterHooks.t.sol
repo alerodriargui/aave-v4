@@ -146,13 +146,13 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     }
 
     function assert_GPOST_HUB_B(uint256 assetId) internal {
-        /*  assertFullMulGe( // TODO review test_replay_1_supply
-            defaultVarsAfter.assetVars[assetId].totalAssets,
-            defaultVarsBefore.assetVars[assetId].totalShares,
-            defaultVarsBefore.assetVars[assetId].totalAssets,
-            defaultVarsAfter.assetVars[assetId].totalShares,
+        assertFullMulGe(
+            defaultVarsAfter.assetVars[assetId].totalAssets + 1e6,
+            defaultVarsBefore.assetVars[assetId].totalShares + 1e6,
+            defaultVarsBefore.assetVars[assetId].totalAssets + 1e6,
+            defaultVarsAfter.assetVars[assetId].totalShares + 1e6,
             GPOST_HUB_B
-        ); */
+        );
     }
 
     function assert_GPOST_HUB_C(uint256 assetId) internal {
