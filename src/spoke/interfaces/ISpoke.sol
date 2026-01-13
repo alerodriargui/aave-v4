@@ -130,7 +130,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Emitted when user reserve limits are updated.
   /// @param maxUserCollaterals The new max number of collateral reserves per user.
   /// @param maxUserBorrows The new max number of borrowed reserves per user.
-  event UpdateUserReservesLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows);
+  event UpdateUserReserveLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows);
 
   /// @notice Emitted when a reserve is added.
   /// @param reserveId The identifier of the reserve.
@@ -330,7 +330,7 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Updates the per-user reserve limits.
   /// @param maxUserCollaterals The maximum number of collateral reserves a user can enable.
   /// @param maxUserBorrows The maximum number of borrowed reserves a user can have.
-  function updateUserReservesLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows) external;
+  function updateUserReserveLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows) external;
 
   /// @notice Adds a new reserve to the spoke.
   /// @dev Allowed even if the spoke has not yet been added to the Hub.
@@ -556,5 +556,5 @@ interface ISpoke is ISpokeBase, IMulticall, INoncesKeyed, IAccessManaged {
   /// @notice Returns the governance-controlled maximum allowed number of collateral and borrowed reserves per user.
   /// @return The maximum allowed number of collateral reserves per user.
   /// @return The maximum allowed number of borrowed reserves per user.
-  function getUserReservesLimits() external view returns (uint64, uint64);
+  function getUserReserveLimits() external view returns (uint64, uint64);
 }

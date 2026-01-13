@@ -53,10 +53,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(spokeProxyAddress);
     emit ISpoke.UpdateOracle(oracle);
     vm.expectEmit(spokeProxyAddress);
-    emit ISpoke.UpdateUserReservesLimits(
-      Constants.MAX_USER_COLLATERALS,
-      Constants.MAX_USER_BORROWS
-    );
+    emit ISpoke.UpdateUserReserveLimits(Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS);
     vm.expectEmit(spokeProxyAddress);
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.expectEmit(spokeProxyAddress);
@@ -86,7 +83,7 @@ contract SpokeUpgradeableTest is SpokeBase {
 
     assertEq(_getProxyInitializedVersion(address(spokeProxy)), revision);
     assertEq(spokeProxy.getLiquidationConfig(), expectedLiquidationConfig);
-    (uint64 collateralLimit, uint64 borrowedLimit) = spokeProxy.getUserReservesLimits();
+    (uint64 collateralLimit, uint64 borrowedLimit) = spokeProxy.getUserReserveLimits();
     assertEq(collateralLimit, Constants.MAX_USER_COLLATERALS);
     assertEq(borrowedLimit, Constants.MAX_USER_BORROWS);
   }

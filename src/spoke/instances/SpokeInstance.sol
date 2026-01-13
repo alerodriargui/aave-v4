@@ -30,7 +30,7 @@ contract SpokeInstance is Spoke {
   ) external override reinitializer(SPOKE_REVISION) {
     emit UpdateOracle(ORACLE);
     require(authority != address(0), InvalidAddress());
-    _setUserReservesLimits(maxUserCollaterals, maxUserBorrows);
+    _setUserReserveLimits(maxUserCollaterals, maxUserBorrows);
     __AccessManaged_init(authority);
     if (_liquidationConfig.targetHealthFactor == 0) {
       _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;

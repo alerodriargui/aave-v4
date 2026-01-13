@@ -34,21 +34,21 @@ contract SpokeConfigTest is SpokeBase {
     new SpokeInstance(oracle);
   }
 
-  function test_updateUserReservesLimits() public {
+  function test_updateUserReserveLimits() public {
     uint64 newCollateralLimit = Constants.MAX_USER_COLLATERALS - 1;
     uint64 newBorrowedLimit = Constants.MAX_USER_BORROWS - 2;
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.UpdateUserReservesLimits(newCollateralLimit, newBorrowedLimit);
+    emit ISpoke.UpdateUserReserveLimits(newCollateralLimit, newBorrowedLimit);
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateUserReservesLimits(newCollateralLimit, newBorrowedLimit);
+    spoke1.updateUserReserveLimits(newCollateralLimit, newBorrowedLimit);
 
-    (uint64 collateralLimit, uint64 borrowedLimit) = spoke1.getUserReservesLimits();
+    (uint64 collateralLimit, uint64 borrowedLimit) = spoke1.getUserReserveLimits();
     assertEq(collateralLimit, newCollateralLimit);
     assertEq(borrowedLimit, newBorrowedLimit);
   }
 
-  function test_updateUserReservesLimits_revertsWith_AccessManagedUnauthorized(
+  function test_updateUserReserveLimits_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
     vm.assume(
@@ -58,7 +58,7 @@ contract SpokeConfigTest is SpokeBase {
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
     vm.prank(caller);
-    spoke1.updateUserReservesLimits(1, 1);
+    spoke1.updateUserReserveLimits(1, 1);
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(

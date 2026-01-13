@@ -202,7 +202,7 @@ contract PositionStatusMapTest is Base {
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
       if (p.isUsingAsCollateral(reserveId)) ++collateralCount;
       // reserveId is 0-base indexed, assert running collateralCount is maintained correctly
-      assertEq(p.collateralCount({reserveCount: reserveId + 1}), collateralCount);
+      assertEq(p.collateralCount(reserveId + 1), collateralCount);
     }
 
     assertEq(p.collateralCount(reserveCount), collateralCount);
@@ -229,7 +229,7 @@ contract PositionStatusMapTest is Base {
 
     p.setBorrowing(32, false);
     assertEq(p.borrowedCount(343), 4);
-    
+
     // disregards collateral reserves
     p.setUsingAsCollateral(32, true);
     assertEq(p.borrowedCount(343), 4);
@@ -269,7 +269,7 @@ contract PositionStatusMapTest is Base {
     for (uint256 reserveId; reserveId < reserveCount; ++reserveId) {
       if (p.isBorrowing(reserveId)) ++borrowedCount;
       // reserveId is 0-base indexed, assert running borrowedCount is maintained correctly
-      assertEq(p.borrowedCount({reserveCount: reserveId + 1}), borrowedCount);
+      assertEq(p.borrowedCount(reserveId + 1), borrowedCount);
     }
 
     assertEq(p.borrowedCount(reserveCount), borrowedCount);

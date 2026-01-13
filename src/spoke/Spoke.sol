@@ -134,11 +134,11 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function updateUserReservesLimits(
+  function updateUserReserveLimits(
     uint64 maxUserCollaterals,
     uint64 maxUserBorrows
   ) external restricted {
-    _setUserReservesLimits(maxUserCollaterals, maxUserBorrows);
+    _setUserReserveLimits(maxUserCollaterals, maxUserBorrows);
   }
 
   /// @inheritdoc ISpoke
@@ -708,7 +708,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
   }
 
   /// @inheritdoc ISpoke
-  function getUserReservesLimits() external view returns (uint64, uint64) {
+  function getUserReserveLimits() external view returns (uint64, uint64) {
     return (_maxUserCollaterals, _maxUserBorrows);
   }
 
@@ -918,10 +918,10 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     }
   }
 
-  function _setUserReservesLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows) internal {
+  function _setUserReserveLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows) internal {
     _maxUserCollaterals = maxUserCollaterals;
     _maxUserBorrows = maxUserBorrows;
-    emit UpdateUserReservesLimits(maxUserCollaterals, maxUserBorrows);
+    emit UpdateUserReserveLimits(maxUserCollaterals, maxUserBorrows);
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
@@ -970,7 +970,7 @@ abstract contract Spoke is ISpoke, Multicall, NoncesKeyed, AccessManagedUpgradea
     if (usingAsCollateral) {
       // disabling as collateral is allowed when reserve is frozen
       require(!flags.frozen(), ReserveFrozen());
-      // this must be a new collateral due to short-circuiting otherwise.
+      // this must be a new collateral, otherwise would have short-circuited.
       require(
         positionStatus.collateralCount(_reserveCount) < _maxUserCollaterals,
         MaxUserCollateralsExceeded()

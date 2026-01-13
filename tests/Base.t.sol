@@ -320,7 +320,7 @@ abstract contract Base is Test {
       selectors[4] = ISpoke.addDynamicReserveConfig.selector;
       selectors[5] = ISpoke.updatePositionManager.selector;
       selectors[6] = ISpoke.updateReservePriceSource.selector;
-      selectors[7] = ISpoke.updateUserReservesLimits.selector;
+      selectors[7] = ISpoke.updateUserReserveLimits.selector;
       manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
     }
 

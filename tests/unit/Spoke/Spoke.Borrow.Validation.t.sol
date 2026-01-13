@@ -179,7 +179,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_revertsWith_MaxUserBorrowsExceeded() public {
-    (, uint64 maxBorrowedReserves) = spoke1.getUserReservesLimits();
+    (, uint64 maxBorrowedReserves) = spoke1.getUserReserveLimits();
     _addNewAssetsAndReserves(maxBorrowedReserves + 1);
 
     // Bob borrows reserves up to max allowed
@@ -198,9 +198,9 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_revertsWith_MaxUserBorrowsExceeded_afterLimitUpdate() public {
-    (uint64 collateralLimit, ) = spoke1.getUserReservesLimits();
+    (uint64 collateralLimit, ) = spoke1.getUserReserveLimits();
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateUserReservesLimits(collateralLimit, 1);
+    spoke1.updateUserReserveLimits(collateralLimit, 1);
 
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 wethReserveId = _wethReserveId(spoke1);
