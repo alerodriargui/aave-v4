@@ -125,7 +125,14 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     vm.prank(alice);
     spoke1.borrow(_daiReserveId(spoke1), 100e18, alice);
 
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    uint256 maxLiquidationBonus = _getUserDynConfig(spoke1, alice, _daiReserveId(spoke1))
+      .maxLiquidationBonus;
+
+    _updateCollateralFactor(
+      spoke1,
+      _usdxReserveId(spoke1),
+      vm.randomUint(0, _collateralFactorUpperBound(maxLiquidationBonus)).toUint16()
+    );
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
