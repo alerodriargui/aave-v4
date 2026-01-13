@@ -304,15 +304,15 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
 
-    uint256 premiumAmount = premiumDelta.restoredPremiumRay.fromRayUp();
-    uint256 liquidity = asset.liquidity + drawnAmount + premiumAmount;
+    uint256 restoredAmount = (drawnShares * asset.drawnIndex + premiumDelta.restoredPremiumRay).fromRayUp();
+    uint256 liquidity = asset.liquidity + restoredAmount;
     uint256 balance = IERC20(asset.underlying).balanceOf(address(this));
     require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
     asset.liquidity = liquidity.toUint120();
 
     asset.updateDrawnRate(assetId);
 
-    emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
+    emit Restore(assetId, msg.sender, drawnShares, premiumDelta, restoredAmount);
 
     return drawnShares;
   }

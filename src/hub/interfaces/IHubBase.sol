@@ -47,15 +47,13 @@ interface IHubBase {
   /// @param spoke The address of the spoke.
   /// @param drawnShares The amount of drawn shares.
   /// @param premiumDelta The premium delta data struct.
-  /// @param drawnAmount The amount of drawn assets restored.
-  /// @param premiumAmount The amount of premium assets restored.
+  /// @param amount The amount of assets restored.
   event Restore(
     uint256 indexed assetId,
     address indexed spoke,
     uint256 drawnShares,
     PremiumDelta premiumDelta,
-    uint256 drawnAmount,
-    uint256 premiumAmount
+    uint256 amount
   );
 
   /// @notice Emitted on the `refreshPremium` action.
