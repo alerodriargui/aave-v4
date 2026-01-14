@@ -47,9 +47,9 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updateSpokeConfig(spokeConfig);
 
-    (uint24 collateralLimit, uint24 borrowedLimit) = spoke1.getUserReserveLimits();
-    assertEq(collateralLimit, newCollateralLimit);
-    assertEq(borrowedLimit, newBorrowedLimit);
+    ISpoke.SpokeConfig memory updatedConfig = spoke1.getSpokeConfig();
+    assertEq(updatedConfig.maxUserCollaterals, newCollateralLimit);
+    assertEq(updatedConfig.maxUserBorrows, newBorrowedLimit);
   }
 
   function test_updateUserReserveLimits_revertsWith_AccessManagedUnauthorized(

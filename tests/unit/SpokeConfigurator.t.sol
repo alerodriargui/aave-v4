@@ -835,9 +835,9 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateMaxUserCollaterals(spokeAddr, newCollateralReservesLimit);
 
-    (uint24 maxUserCollaterals, uint24 maxUserBorrows) = spoke.getUserReserveLimits();
-    assertEq(maxUserCollaterals, newCollateralReservesLimit);
-    assertEq(maxUserBorrows, expectedConfig.maxUserBorrows);
+    ISpoke.SpokeConfig memory updatedConfig = spoke.getSpokeConfig();
+    assertEq(updatedConfig.maxUserCollaterals, newCollateralReservesLimit);
+    assertEq(updatedConfig.maxUserBorrows, expectedConfig.maxUserBorrows);
   }
 
   function test_updateMaxUserBorrows() public {
@@ -852,8 +852,8 @@ contract SpokeConfiguratorTest is SpokeBase {
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateMaxUserBorrows(spokeAddr, newBorrowedReservesLimit);
 
-    (uint24 maxUserCollaterals, uint24 maxUserBorrows) = spoke.getUserReserveLimits();
-    assertEq(maxUserCollaterals, expectedConfig.maxUserCollaterals);
-    assertEq(maxUserBorrows, newBorrowedReservesLimit);
+    ISpoke.SpokeConfig memory updatedConfig = spoke.getSpokeConfig();
+    assertEq(updatedConfig.maxUserCollaterals, expectedConfig.maxUserCollaterals);
+    assertEq(updatedConfig.maxUserBorrows, newBorrowedReservesLimit);
   }
 }

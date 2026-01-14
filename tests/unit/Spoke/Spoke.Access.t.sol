@@ -57,7 +57,7 @@ contract SpokeAccessTest is SpokeBase {
   /// @dev Test showing that spoke configurations can only be set by spoke admin.
   function testAccess_spoke_admin_config_access() public {
     // updateSpokeConfig only callable by spoke admin
-    (uint24 maxUserCollaterals1, uint24 maxUserBorrows1) = spoke1.getUserReserveLimits();
+    ISpoke.SpokeConfig memory currentConfig = spoke1.getSpokeConfig();
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
@@ -66,21 +66,21 @@ contract SpokeAccessTest is SpokeBase {
         targetHealthFactor: WadRayMath.WAD.toUint64(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18,
-        maxUserCollaterals: maxUserCollaterals1,
-        maxUserBorrows: maxUserBorrows1
+        maxUserCollaterals: currentConfig.maxUserCollaterals,
+        maxUserBorrows: currentConfig.maxUserBorrows
       })
     );
 
     // Spoke admin can call updateSpokeConfig
-    (uint24 maxUserCollaterals2, uint24 maxUserBorrows2) = spoke1.getUserReserveLimits();
+    currentConfig = spoke1.getSpokeConfig();
     vm.prank(address(SPOKE_ADMIN));
     spoke1.updateSpokeConfig(
       ISpoke.SpokeConfig({
         targetHealthFactor: WadRayMath.WAD.toUint64(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18,
-        maxUserCollaterals: maxUserCollaterals2,
-        maxUserBorrows: maxUserBorrows2
+        maxUserCollaterals: currentConfig.maxUserCollaterals,
+        maxUserBorrows: currentConfig.maxUserBorrows
       })
     );
 
@@ -183,15 +183,15 @@ contract SpokeAccessTest is SpokeBase {
     assertEq(spoke1.authority(), address(newAuthority), 'Authority not changed');
 
     // Spoke admin can call update liquidation config on the spoke after authority change
-    (uint24 maxUserCollaterals, uint24 maxUserBorrows) = spoke1.getUserReserveLimits();
+    ISpoke.SpokeConfig memory currentConfig = spoke1.getSpokeConfig();
     vm.prank(SPOKE_ADMIN);
     spoke1.updateSpokeConfig(
       ISpoke.SpokeConfig({
         targetHealthFactor: WadRayMath.WAD.toUint64(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18,
-        maxUserCollaterals: maxUserCollaterals,
-        maxUserBorrows: maxUserBorrows
+        maxUserCollaterals: currentConfig.maxUserCollaterals,
+        maxUserBorrows: currentConfig.maxUserBorrows
       })
     );
 

@@ -1035,14 +1035,14 @@ abstract contract Base is Test {
     uint64 healthFactorForMaxBonus,
     uint16 liquidationBonusFactor
   ) internal view returns (ISpoke.SpokeConfig memory) {
-    (uint24 maxUserCollaterals, uint24 maxUserBorrows) = spoke1.getUserReserveLimits();
+    ISpoke.SpokeConfig memory currentConfig = spoke1.getSpokeConfig();
     return
       ISpoke.SpokeConfig({
         targetHealthFactor: targetHealthFactor,
         healthFactorForMaxBonus: healthFactorForMaxBonus,
         liquidationBonusFactor: liquidationBonusFactor,
-        maxUserCollaterals: maxUserCollaterals,
-        maxUserBorrows: maxUserBorrows
+        maxUserCollaterals: currentConfig.maxUserCollaterals,
+        maxUserBorrows: currentConfig.maxUserBorrows
       });
   }
 

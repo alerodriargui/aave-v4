@@ -76,9 +76,9 @@ contract SpokeUpgradeableTest is SpokeBase {
 
     assertEq(_getProxyInitializedVersion(address(spokeProxy)), revision);
     assertEq(spokeProxy.getSpokeConfig(), expectedSpokeConfig);
-    (uint24 collateralLimit, uint24 borrowedLimit) = spokeProxy.getUserReserveLimits();
-    assertEq(collateralLimit, Constants.MAX_USER_COLLATERALS);
-    assertEq(borrowedLimit, Constants.MAX_USER_COLLATERALS);
+    ISpoke.SpokeConfig memory config = spokeProxy.getSpokeConfig();
+    assertEq(config.maxUserCollaterals, Constants.MAX_USER_COLLATERALS);
+    assertEq(config.maxUserBorrows, Constants.MAX_USER_COLLATERALS);
   }
 
   function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {

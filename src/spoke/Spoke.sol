@@ -685,11 +685,6 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     return address(LiquidationLogic);
   }
 
-  /// @inheritdoc ISpoke
-  function getUserReserveLimits() external view returns (uint24, uint24) {
-    return (_spokeConfig.maxUserCollaterals, _spokeConfig.maxUserBorrows);
-  }
-
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
     require(priceSource != address(0), InvalidAddress());
     IAaveOracle(ORACLE).setReserveSource(reserveId, priceSource);
