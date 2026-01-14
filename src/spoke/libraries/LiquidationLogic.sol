@@ -130,7 +130,7 @@ library LiquidationLogic {
   /// @param debtReserve The debt reserve to repay during liquidation.
   /// @param positions The mapping of positions per reserve per user.
   /// @param positionStatus The mapping of position status per user.
-  /// @param liquidationConfig The liquidation config.
+  /// @param spokeConfig The spoke config.
   /// @param collateralDynConfig The collateral dynamic config.
   /// @param params The liquidate user params.
   /// @return True if the liquidation results in deficit.
@@ -139,7 +139,7 @@ library LiquidationLogic {
     ISpoke.Reserve storage debtReserve,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage positions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
-    ISpoke.LiquidationConfig storage liquidationConfig,
+    ISpoke.SpokeConfig storage spokeConfig,
     ISpoke.DynamicReserveConfig storage collateralDynConfig,
     LiquidateUserParams memory params
   ) external returns (bool) {
@@ -178,10 +178,10 @@ library LiquidationLogic {
         debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
         debtToCover: params.debtToCover,
         collateralFactor: collateralDynConfig.collateralFactor,
-        healthFactorForMaxBonus: liquidationConfig.healthFactorForMaxBonus,
-        liquidationBonusFactor: liquidationConfig.liquidationBonusFactor,
+        healthFactorForMaxBonus: spokeConfig.healthFactorForMaxBonus,
+        liquidationBonusFactor: spokeConfig.liquidationBonusFactor,
         maxLiquidationBonus: collateralDynConfig.maxLiquidationBonus,
-        targetHealthFactor: liquidationConfig.targetHealthFactor,
+        targetHealthFactor: spokeConfig.targetHealthFactor,
         healthFactor: params.healthFactor,
         liquidationFee: collateralDynConfig.liquidationFee
       })

@@ -59,20 +59,16 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
     uint16 liquidationFee;
   }
 
-  /// @notice Liquidation configuration data.
+  /// @notice Spoke configuration data.
   /// @dev targetHealthFactor The ideal health factor to restore a user position during liquidation, expressed in WAD.
   /// @dev healthFactorForMaxBonus The health factor under which liquidation bonus is maximum, expressed in WAD.
   /// @dev liquidationBonusFactor The value multiplied by `maxLiquidationBonus` to compute the minimum liquidation bonus, expressed in BPS.
-  struct LiquidationConfig {
+  /// @dev maxUserCollaterals The maximum number of reserves a user can enable as collateral.
+  /// @dev maxUserBorrows The maximum number of reserves a user can borrow.
+  struct SpokeConfig {
     uint128 targetHealthFactor;
     uint64 healthFactorForMaxBonus;
     uint16 liquidationBonusFactor;
-  }
-
-  /// @notice User safety limits configuration data.
-  /// @dev maxUserCollaterals The maximum number of reserves a user can enable as collateral.
-  /// @dev maxUserBorrows The maximum number of reserves a user can borrow.
-  struct UserSafetyLimits {
     uint64 maxUserCollaterals;
     uint64 maxUserBorrows;
   }
@@ -131,9 +127,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @param oracle The new address of the oracle.
   event UpdateOracle(address indexed oracle);
 
-  /// @notice Emitted when a liquidation config is updated.
-  /// @param config The new liquidation config.
-  event UpdateLiquidationConfig(LiquidationConfig config);
+  /// @notice Emitted when spoke config is updated.
+  /// @param config The new spoke config.
+  event UpdateSpokeConfig(SpokeConfig config);
 
   /// @notice Emitted when user reserve limits are updated.
   /// @param maxUserCollaterals The new max number of collateral reserves per user.
@@ -325,9 +321,9 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @notice Thrown when user attempts to exceed either the maximum allowed collateral or borrowed reserves.
   error MaximumUserReservesExceeded();
 
-  /// @notice Updates the liquidation config.
-  /// @param config The liquidation config.
-  function updateLiquidationConfig(LiquidationConfig calldata config) external;
+  /// @notice Updates the spoke config.
+  /// @param config The spoke config.
+  function updateSpokeConfig(SpokeConfig calldata config) external;
 
   /// @notice Updates the per-user reserve limits.
   /// @param maxUserCollaterals The maximum number of collateral reserves a user can enable.
@@ -459,8 +455,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
     bytes32 permitS
   ) external;
 
-  /// @notice Returns the liquidation config struct.
-  function getLiquidationConfig() external view returns (LiquidationConfig memory);
+  /// @notice Returns the spoke config struct.
+  function getSpokeConfig() external view returns (SpokeConfig memory);
 
   /// @notice Returns the number of listed reserves on the spoke.
   /// @dev Count includes reserves that are not currently active.

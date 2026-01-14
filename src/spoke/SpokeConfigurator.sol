@@ -35,9 +35,9 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     uint256 targetHealthFactor
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
-    ISpoke.LiquidationConfig memory liquidationConfig = targetSpoke.getLiquidationConfig();
-    liquidationConfig.targetHealthFactor = targetHealthFactor.toUint128();
-    targetSpoke.updateLiquidationConfig(liquidationConfig);
+    ISpoke.SpokeConfig memory spokeConfig = targetSpoke.getSpokeConfig();
+    spokeConfig.targetHealthFactor = targetHealthFactor.toUint128();
+    targetSpoke.updateSpokeConfig(spokeConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -46,9 +46,9 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     uint256 healthFactorForMaxBonus
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
-    ISpoke.LiquidationConfig memory liquidationConfig = targetSpoke.getLiquidationConfig();
-    liquidationConfig.healthFactorForMaxBonus = healthFactorForMaxBonus.toUint64();
-    targetSpoke.updateLiquidationConfig(liquidationConfig);
+    ISpoke.SpokeConfig memory spokeConfig = targetSpoke.getSpokeConfig();
+    spokeConfig.healthFactorForMaxBonus = healthFactorForMaxBonus.toUint64();
+    targetSpoke.updateSpokeConfig(spokeConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
@@ -57,17 +57,17 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
     uint256 liquidationBonusFactor
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
-    ISpoke.LiquidationConfig memory liquidationConfig = targetSpoke.getLiquidationConfig();
-    liquidationConfig.liquidationBonusFactor = liquidationBonusFactor.toUint16();
-    targetSpoke.updateLiquidationConfig(liquidationConfig);
+    ISpoke.SpokeConfig memory spokeConfig = targetSpoke.getSpokeConfig();
+    spokeConfig.liquidationBonusFactor = liquidationBonusFactor.toUint16();
+    targetSpoke.updateSpokeConfig(spokeConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateLiquidationConfig(
+  function updateSpokeConfig(
     address spoke,
-    ISpoke.LiquidationConfig calldata liquidationConfig
+    ISpoke.SpokeConfig calldata spokeConfig
   ) external onlyOwner {
-    ISpoke(spoke).updateLiquidationConfig(liquidationConfig);
+    ISpoke(spoke).updateSpokeConfig(spokeConfig);
   }
 
   /// @inheritdoc ISpokeConfigurator

@@ -17,11 +17,13 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     _spoke = spoke1;
 
     vm.prank(SPOKE_ADMIN);
-    _spoke.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    _spoke.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: 1.000001e18,
         healthFactorForMaxBonus: 0.9e18,
-        liquidationBonusFactor: 0
+        liquidationBonusFactor: 0,
+        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+        maxUserBorrows: Constants.MAX_USER_BORROWS
       })
     );
 
@@ -54,11 +56,13 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     uint256 targetHealthFactor = 1.0001e18;
 
     vm.prank(SPOKE_ADMIN);
-    _spoke.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    _spoke.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
-        liquidationBonusFactor: 0
+        liquidationBonusFactor: 0,
+        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+        maxUserBorrows: Constants.MAX_USER_BORROWS
       })
     );
 
@@ -127,11 +131,13 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     uint256 targetHealthFactor = 1.0001e18;
 
     vm.prank(SPOKE_ADMIN);
-    _spoke.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    _spoke.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
-        liquidationBonusFactor: 0
+        liquidationBonusFactor: 0,
+        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+        maxUserBorrows: Constants.MAX_USER_BORROWS
       })
     );
 
@@ -200,11 +206,13 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     uint256 targetHealthFactor = 1.1e18;
 
     vm.prank(SPOKE_ADMIN);
-    _spoke.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    _spoke.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
-        liquidationBonusFactor: 0
+        liquidationBonusFactor: 0,
+        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+        maxUserBorrows: Constants.MAX_USER_BORROWS
       })
     );
 
@@ -272,11 +280,13 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     uint256 targetHealthFactor = 1.1e18;
 
     vm.prank(SPOKE_ADMIN);
-    _spoke.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    _spoke.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: targetHealthFactor.toUint128(),
         healthFactorForMaxBonus: 0.99e18,
-        liquidationBonusFactor: 0
+        liquidationBonusFactor: 0,
+        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+        maxUserBorrows: Constants.MAX_USER_BORROWS
       })
     );
 

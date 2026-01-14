@@ -63,19 +63,16 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_updateLiquidationTargetHealthFactor() public {
     uint128 newTargetHealthFactor = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2;
 
-    ISpoke.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
+    ISpoke.SpokeConfig memory expectedLiquidationConfig = spoke.getSpokeConfig();
     expectedLiquidationConfig.targetHealthFactor = newTargetHealthFactor;
 
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
-    );
+    vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateSpokeConfig, (expectedLiquidationConfig)));
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
+    emit ISpoke.UpdateSpokeConfig(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationTargetHealthFactor(spokeAddr, newTargetHealthFactor);
 
-    assertEq(spoke.getLiquidationConfig(), expectedLiquidationConfig);
+    assertEq(spoke.getSpokeConfig(), expectedLiquidationConfig);
   }
 
   function test_updateHealthFactorForMaxBonus_revertsWith_OwnableUnauthorizedAccount() public {
@@ -87,19 +84,16 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_updateHealthFactorForMaxBonus() public {
     uint64 newHealthFactorForMaxBonus = Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2;
 
-    ISpoke.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
+    ISpoke.SpokeConfig memory expectedLiquidationConfig = spoke.getSpokeConfig();
     expectedLiquidationConfig.healthFactorForMaxBonus = newHealthFactorForMaxBonus;
 
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
-    );
+    vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateSpokeConfig, (expectedLiquidationConfig)));
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
+    emit ISpoke.UpdateSpokeConfig(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateHealthFactorForMaxBonus(spokeAddr, newHealthFactorForMaxBonus);
 
-    assertEq(spoke.getLiquidationConfig().healthFactorForMaxBonus, newHealthFactorForMaxBonus);
+    assertEq(spoke.getSpokeConfig().healthFactorForMaxBonus, newHealthFactorForMaxBonus);
   }
 
   function test_updateLiquidationBonusFactor_revertsWith_OwnableUnauthorizedAccount() public {
@@ -111,51 +105,49 @@ contract SpokeConfiguratorTest is SpokeBase {
   function test_updateLiquidationBonusFactor() public {
     uint16 newLiquidationBonusFactor = PercentageMath.PERCENTAGE_FACTOR.toUint16() / 2;
 
-    ISpoke.LiquidationConfig memory expectedLiquidationConfig = spoke.getLiquidationConfig();
+    ISpoke.SpokeConfig memory expectedLiquidationConfig = spoke.getSpokeConfig();
     expectedLiquidationConfig.liquidationBonusFactor = newLiquidationBonusFactor;
 
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateLiquidationConfig, (expectedLiquidationConfig))
-    );
+    vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateSpokeConfig, (expectedLiquidationConfig)));
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
+    emit ISpoke.UpdateSpokeConfig(expectedLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationBonusFactor(spokeAddr, newLiquidationBonusFactor);
 
-    assertEq(spoke.getLiquidationConfig(), expectedLiquidationConfig);
+    assertEq(spoke.getSpokeConfig(), expectedLiquidationConfig);
   }
 
-  function test_updateLiquidationConfig_revertsWith_OwnableUnauthorizedAccount() public {
+  function test_updateSpokeConfig_revertsWith_OwnableUnauthorizedAccount() public {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, alice));
     vm.prank(alice);
-    spokeConfigurator.updateLiquidationConfig(
+    spokeConfigurator.updateSpokeConfig(
       spokeAddr,
-      ISpoke.LiquidationConfig({
+      ISpoke.SpokeConfig({
         targetHealthFactor: 0,
         healthFactorForMaxBonus: 0,
-        liquidationBonusFactor: 0
+        liquidationBonusFactor: 0,
+        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+        maxUserBorrows: Constants.MAX_USER_BORROWS
       })
     );
   }
 
-  function test_updateLiquidationConfig() public {
-    ISpoke.LiquidationConfig memory newLiquidationConfig = ISpoke.LiquidationConfig({
+  function test_updateSpokeConfig() public {
+    ISpoke.SpokeConfig memory newLiquidationConfig = ISpoke.SpokeConfig({
       targetHealthFactor: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * 2,
       healthFactorForMaxBonus: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD / 2,
-      liquidationBonusFactor: PercentageMath.PERCENTAGE_FACTOR.toUint16() / 2
+      liquidationBonusFactor: PercentageMath.PERCENTAGE_FACTOR.toUint16() / 2,
+      maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+      maxUserBorrows: Constants.MAX_USER_BORROWS
     });
 
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(ISpoke.updateLiquidationConfig, (newLiquidationConfig))
-    );
+    vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateSpokeConfig, (newLiquidationConfig)));
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateLiquidationConfig(newLiquidationConfig);
+    emit ISpoke.UpdateSpokeConfig(newLiquidationConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
-    spokeConfigurator.updateLiquidationConfig(spokeAddr, newLiquidationConfig);
+    spokeConfigurator.updateSpokeConfig(spokeAddr, newLiquidationConfig);
 
-    assertEq(spoke.getLiquidationConfig(), newLiquidationConfig);
+    assertEq(spoke.getSpokeConfig(), newLiquidationConfig);
   }
 
   function test_updateMaxReserves_revertsWith_OwnableUnauthorizedAccount() public {

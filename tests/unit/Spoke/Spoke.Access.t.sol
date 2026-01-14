@@ -56,25 +56,31 @@ contract SpokeAccessTest is SpokeBase {
 
   /// @dev Test showing that spoke configurations can only be set by spoke admin.
   function testAccess_spoke_admin_config_access() public {
-    // updateLiquidationConfig only callable by spoke admin
+    // updateSpokeConfig only callable by spoke admin
+    (uint64 maxUserCollaterals1, uint64 maxUserBorrows1) = spoke1.getUserReserveLimits();
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
-    spoke1.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    spoke1.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
-        healthFactorForMaxBonus: 0.9e18
+        healthFactorForMaxBonus: 0.9e18,
+        maxUserCollaterals: maxUserCollaterals1,
+        maxUserBorrows: maxUserBorrows1
       })
     );
 
-    // Spoke admin can call updateLiquidationConfig
+    // Spoke admin can call updateSpokeConfig
+    (uint64 maxUserCollaterals2, uint64 maxUserBorrows2) = spoke1.getUserReserveLimits();
     vm.prank(address(SPOKE_ADMIN));
-    spoke1.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    spoke1.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
-        healthFactorForMaxBonus: 0.9e18
+        healthFactorForMaxBonus: 0.9e18,
+        maxUserCollaterals: maxUserCollaterals2,
+        maxUserBorrows: maxUserBorrows2
       })
     );
 
@@ -156,7 +162,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.startPrank(NEW_ADMIN);
     newAuthority.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
     bytes4[] memory selectors = new bytes4[](1);
-    selectors[0] = ISpoke.updateLiquidationConfig.selector;
+    selectors[0] = ISpoke.updateSpokeConfig.selector;
     newAuthority.setTargetFunctionRole(address(spoke1), selectors, Roles.SPOKE_ADMIN_ROLE);
     vm.stopPrank();
 
@@ -177,12 +183,15 @@ contract SpokeAccessTest is SpokeBase {
     assertEq(spoke1.authority(), address(newAuthority), 'Authority not changed');
 
     // Spoke admin can call update liquidation config on the spoke after authority change
+    (uint64 maxUserCollaterals, uint64 maxUserBorrows) = spoke1.getUserReserveLimits();
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    spoke1.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: WadRayMath.WAD.toUint128(),
         liquidationBonusFactor: 40_00,
-        healthFactorForMaxBonus: 0.9e18
+        healthFactorForMaxBonus: 0.9e18,
+        maxUserCollaterals: maxUserCollaterals,
+        maxUserBorrows: maxUserBorrows
       })
     );
 

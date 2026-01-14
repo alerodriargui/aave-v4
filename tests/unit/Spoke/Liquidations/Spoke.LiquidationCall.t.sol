@@ -15,11 +15,13 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
     spoke = spoke1;
 
     vm.prank(SPOKE_ADMIN);
-    spoke.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    spoke.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: 1.05e18,
         healthFactorForMaxBonus: 0.7e18,
-        liquidationBonusFactor: 20_00
+        liquidationBonusFactor: 20_00,
+        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+        maxUserBorrows: Constants.MAX_USER_BORROWS
       })
     );
   }

@@ -40,13 +40,10 @@ interface ISpokeConfigurator {
   /// @param liquidationBonusFactor The new liquidation bonus factor.
   function updateLiquidationBonusFactor(address spoke, uint256 liquidationBonusFactor) external;
 
-  /// @notice Updates the liquidation config of a spoke.
+  /// @notice Updates the spoke config of a spoke.
   /// @param spoke The address of the spoke.
-  /// @param liquidationConfig The new liquidation config.
-  function updateLiquidationConfig(
-    address spoke,
-    ISpoke.LiquidationConfig calldata liquidationConfig
-  ) external;
+  /// @param spokeConfig The new spoke config.
+  function updateSpokeConfig(address spoke, ISpoke.SpokeConfig calldata spokeConfig) external;
 
   /// @notice Updates the maximum number of reserves allowed to exist on a spoke.
   /// @dev It allows setting the maximum below the amount of reserves that currently exist.

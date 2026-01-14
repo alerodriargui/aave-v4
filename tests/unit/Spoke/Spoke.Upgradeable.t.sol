@@ -42,10 +42,12 @@ contract SpokeUpgradeableTest is SpokeBase {
     address spokeProxyAddress = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
     address proxyAdminAddress = vm.computeCreateAddress(spokeProxyAddress, 1);
 
-    ISpoke.LiquidationConfig memory expectedLiquidationConfig = ISpoke.LiquidationConfig({
+    ISpoke.SpokeConfig memory expectedLiquidationConfig = ISpoke.SpokeConfig({
       targetHealthFactor: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: 0,
-      liquidationBonusFactor: 0
+      liquidationBonusFactor: 0,
+      maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+      maxUserBorrows: Constants.MAX_USER_BORROWS
     });
 
     vm.expectEmit(spokeProxyAddress);
@@ -57,7 +59,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(spokeProxyAddress);
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.expectEmit(spokeProxyAddress);
-    emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
+    emit ISpoke.UpdateSpokeConfig(expectedLiquidationConfig);
     vm.expectEmit(spokeProxyAddress);
     emit Initializable.Initialized(revision);
     vm.expectEmit(proxyAdminAddress);
@@ -82,7 +84,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     assertEq(_getImplementationAddress(address(spokeProxy)), address(spokeImpl));
 
     assertEq(_getProxyInitializedVersion(address(spokeProxy)), revision);
-    assertEq(spokeProxy.getLiquidationConfig(), expectedLiquidationConfig);
+    assertEq(spokeProxy.getSpokeConfig(), expectedLiquidationConfig);
     (uint64 collateralLimit, uint64 borrowedLimit) = spokeProxy.getUserReserveLimits();
     assertEq(collateralLimit, Constants.MAX_USER_COLLATERALS);
     assertEq(borrowedLimit, Constants.MAX_USER_BORROWS);
@@ -120,7 +122,7 @@ contract SpokeUpgradeableTest is SpokeBase {
       _getInitializeCalldata(address(accessManager))
     );
 
-    _assertEventNotEmitted(ISpoke.UpdateLiquidationConfig.selector);
+    _assertEventNotEmitted(ISpoke.UpdateSpokeConfig.selector);
 
     assertEq(_getTargetHealthFactor(ISpoke(address(spokeProxy))), targetHealthFactor);
   }

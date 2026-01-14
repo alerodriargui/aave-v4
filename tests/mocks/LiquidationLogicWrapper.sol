@@ -26,7 +26,7 @@ contract LiquidationLogicWrapper {
   uint256 internal _collateralReserveId;
   uint256 internal _debtReserveId;
 
-  ISpoke.LiquidationConfig internal liquidationConfig;
+  ISpoke.SpokeConfig internal spokeConfig;
   ISpoke.DynamicReserveConfig internal dynamicCollateralConfig;
 
   constructor(address borrower_, address liquidator_) {
@@ -152,8 +152,8 @@ contract LiquidationLogicWrapper {
     return _positionStatuses[_liquidator].isBorrowing(reserveId);
   }
 
-  function setLiquidationConfig(ISpoke.LiquidationConfig memory newLiquidationConfig) public {
-    liquidationConfig = newLiquidationConfig;
+  function setSpokeConfig(ISpoke.SpokeConfig memory newSpokeConfig) public {
+    spokeConfig = newSpokeConfig;
   }
 
   function setDynamicCollateralConfig(
@@ -247,7 +247,7 @@ contract LiquidationLogicWrapper {
         _reserves[_debtReserveId],
         _userPositions,
         _positionStatuses,
-        liquidationConfig,
+        spokeConfig,
         dynamicCollateralConfig,
         params
       );

@@ -75,8 +75,8 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   /// @notice Bound liquidation config to full range of possible values
   function _bound(
-    ISpoke.LiquidationConfig memory liqConfig
-  ) internal pure virtual returns (ISpoke.LiquidationConfig memory) {
+    ISpoke.SpokeConfig memory liqConfig
+  ) internal pure virtual returns (ISpoke.SpokeConfig memory) {
     liqConfig.targetHealthFactor = bound(
       liqConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
@@ -222,7 +222,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           )
           .collateralFactor,
         healthFactor: userAccountData.healthFactor,
-        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor
+        targetHealthFactor: spoke.getSpokeConfig().targetHealthFactor
       });
   }
 
@@ -250,7 +250,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           userAccountData.healthFactor
         ),
         healthFactor: userAccountData.healthFactor,
-        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor
+        targetHealthFactor: spoke.getSpokeConfig().targetHealthFactor
       });
   }
 
@@ -278,15 +278,15 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
             spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .collateralFactor,
-        healthFactorForMaxBonus: spoke.getLiquidationConfig().healthFactorForMaxBonus,
-        liquidationBonusFactor: spoke.getLiquidationConfig().liquidationBonusFactor,
+        healthFactorForMaxBonus: spoke.getSpokeConfig().healthFactorForMaxBonus,
+        liquidationBonusFactor: spoke.getSpokeConfig().liquidationBonusFactor,
         maxLiquidationBonus: spoke
           .getDynamicReserveConfig(
             collateralReserveId,
             spoke.getUserPosition(collateralReserveId, user).dynamicConfigKey
           )
           .maxLiquidationBonus,
-        targetHealthFactor: spoke.getLiquidationConfig().targetHealthFactor,
+        targetHealthFactor: spoke.getSpokeConfig().targetHealthFactor,
         healthFactor: userAccountData.healthFactor,
         liquidationFee: spoke
           .getDynamicReserveConfig(

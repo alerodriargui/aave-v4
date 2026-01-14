@@ -30,9 +30,9 @@ contract MockSpokeInstance is Spoke {
     require(authority != address(0), InvalidAddress());
     _setUserReserveLimits(maxUserCollaterals, maxUserBorrows);
     __AccessManaged_init(authority);
-    if (_liquidationConfig.targetHealthFactor == 0) {
-      _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-      emit UpdateLiquidationConfig(_liquidationConfig);
+    if (_spokeConfig.targetHealthFactor == 0) {
+      _spokeConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+      emit UpdateSpokeConfig(_spokeConfig);
     }
   }
 }

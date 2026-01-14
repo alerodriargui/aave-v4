@@ -71,8 +71,8 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   /// @dev Number of reserves listed in the Spoke.
   uint256 internal _reserveCount;
 
-  /// @dev The governance-configurable user safety limits.
-  UserSafetyLimits internal _userSafetyLimits;
+  /// @dev The spoke configuration including liquidation params and user reserve limits.
+  SpokeConfig internal _spokeConfig;
 
   /// @dev Map of user addresses and reserve identifiers to user positions.
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
@@ -89,9 +89,6 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   /// @dev Map of reserve identifiers and dynamic configuration keys to the dynamic configuration data.
   mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => DynamicReserveConfig))
     internal _dynamicConfig;
-
-  /// @dev Liquidation configuration for the Spoke.
-  LiquidationConfig internal _liquidationConfig;
 
   /// @dev Map of hub addresses and asset identifiers to whether the reserve exists.
   mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
@@ -117,15 +114,15 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   ) external virtual;
 
   /// @inheritdoc ISpoke
-  function updateLiquidationConfig(LiquidationConfig calldata config) external restricted {
+  function updateSpokeConfig(SpokeConfig calldata config) external restricted {
     require(
       config.targetHealthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
         config.liquidationBonusFactor <= PercentageMath.PERCENTAGE_FACTOR &&
         config.healthFactorForMaxBonus < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       InvalidLiquidationConfig()
     );
-    _liquidationConfig = config;
-    emit UpdateLiquidationConfig(config);
+    _spokeConfig = config;
+    emit UpdateSpokeConfig(config);
   }
 
   /// @inheritdoc ISpoke
@@ -306,7 +303,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
       require(
-        positionStatus.borrowedCount(_reserveCount) < _userSafetyLimits.maxUserBorrows,
+        positionStatus.borrowedCount(_reserveCount) < _spokeConfig.maxUserBorrows,
         MaximumUserReservesExceeded()
       );
       positionStatus.setBorrowing(reserveId, true);
@@ -404,7 +401,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
       debtReserve,
       _userPositions,
       _positionStatus,
-      _liquidationConfig,
+      _spokeConfig,
       collateralDynConfig,
       params
     );
@@ -528,8 +525,8 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISpoke
-  function getLiquidationConfig() external view returns (LiquidationConfig memory) {
-    return _liquidationConfig;
+  function getSpokeConfig() external view returns (SpokeConfig memory) {
+    return _spokeConfig;
   }
 
   /// @inheritdoc ISpoke
@@ -674,8 +671,8 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     _getReserve(reserveId);
     return
       LiquidationLogic.calculateLiquidationBonus({
-        healthFactorForMaxBonus: _liquidationConfig.healthFactorForMaxBonus,
-        liquidationBonusFactor: _liquidationConfig.liquidationBonusFactor,
+        healthFactorForMaxBonus: _spokeConfig.healthFactorForMaxBonus,
+        liquidationBonusFactor: _spokeConfig.liquidationBonusFactor,
         healthFactor: healthFactor,
         maxLiquidationBonus: _dynamicConfig[reserveId][
           _userPositions[user][reserveId].dynamicConfigKey
@@ -700,7 +697,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
 
   /// @inheritdoc ISpoke
   function getUserReserveLimits() external view returns (uint64, uint64) {
-    return (_userSafetyLimits.maxUserCollaterals, _userSafetyLimits.maxUserBorrows);
+    return (_spokeConfig.maxUserCollaterals, _spokeConfig.maxUserBorrows);
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
@@ -910,8 +907,8 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   function _setUserReserveLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows) internal {
-    _userSafetyLimits.maxUserCollaterals = maxUserCollaterals;
-    _userSafetyLimits.maxUserBorrows = maxUserBorrows;
+    _spokeConfig.maxUserCollaterals = maxUserCollaterals;
+    _spokeConfig.maxUserBorrows = maxUserBorrows;
     emit UpdateUserReserveLimits(maxUserCollaterals, maxUserBorrows);
   }
 
@@ -963,7 +960,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
       require(!flags.frozen(), ReserveFrozen());
       // this must be a new collateral, otherwise would have short-circuited
       require(
-        positionStatus.collateralCount(_reserveCount) < _userSafetyLimits.maxUserCollaterals,
+        positionStatus.collateralCount(_reserveCount) < _spokeConfig.maxUserCollaterals,
         MaximumUserReservesExceeded()
       );
     }

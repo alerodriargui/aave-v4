@@ -11,7 +11,10 @@ import {console2 as console} from 'forge-std/console2.sol';
 
 // dependencies
 import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
-import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {
+  TransparentUpgradeableProxy,
+  ITransparentUpgradeableProxy
+} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IERC20Errors} from 'src/dependencies/openzeppelin/IERC20Errors.sol';
@@ -44,7 +47,11 @@ import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {Hub, IHub, IHubBase} from 'src/hub/Hub.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy, IBasicInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy,
+  IBasicInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 
 // spoke
 import {Spoke, ISpoke, ISpokeBase} from 'src/spoke/Spoke.sol';
@@ -307,7 +314,7 @@ abstract contract Base is Test {
     // Grant responsibilities to roles
     {
       bytes4[] memory selectors = new bytes4[](8);
-      selectors[0] = ISpoke.updateLiquidationConfig.selector;
+      selectors[0] = ISpoke.updateSpokeConfig.selector;
       selectors[1] = ISpoke.addReserve.selector;
       selectors[2] = ISpoke.updateReserveConfig.selector;
       selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
@@ -561,26 +568,35 @@ abstract contract Base is Test {
       new bytes(0)
     );
 
-    // Liquidation configs
-    spoke1.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    // Spoke configs
+    (uint64 maxUserCollaterals1, uint64 maxUserBorrows1) = spoke1.getUserReserveLimits();
+    spoke1.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: 1.05e18,
         healthFactorForMaxBonus: 0.7e18,
-        liquidationBonusFactor: 20_00
+        liquidationBonusFactor: 20_00,
+        maxUserCollaterals: maxUserCollaterals1,
+        maxUserBorrows: maxUserBorrows1
       })
     );
-    spoke2.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    (uint64 maxUserCollaterals2, uint64 maxUserBorrows2) = spoke2.getUserReserveLimits();
+    spoke2.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: 1.04e18,
         healthFactorForMaxBonus: 0.8e18,
-        liquidationBonusFactor: 15_00
+        liquidationBonusFactor: 15_00,
+        maxUserCollaterals: maxUserCollaterals2,
+        maxUserBorrows: maxUserBorrows2
       })
     );
-    spoke3.updateLiquidationConfig(
-      ISpoke.LiquidationConfig({
+    (uint64 maxUserCollaterals3, uint64 maxUserBorrows3) = spoke3.getUserReserveLimits();
+    spoke3.updateSpokeConfig(
+      ISpoke.SpokeConfig({
         targetHealthFactor: 1.03e18,
         healthFactorForMaxBonus: 0.9e18,
-        liquidationBonusFactor: 10_00
+        liquidationBonusFactor: 10_00,
+        maxUserCollaterals: maxUserCollaterals3,
+        maxUserBorrows: maxUserBorrows3
       })
     );
 
@@ -1011,14 +1027,27 @@ abstract contract Base is Test {
     assertEq(spoke.getReserveConfig(reserveId), config);
   }
 
-  function _updateLiquidationConfig(
-    ISpoke spoke,
-    ISpoke.LiquidationConfig memory config
-  ) internal pausePrank {
+  function _updateSpokeConfig(ISpoke spoke, ISpoke.SpokeConfig memory config) internal pausePrank {
     vm.prank(SPOKE_ADMIN);
-    spoke.updateLiquidationConfig(config);
+    spoke.updateSpokeConfig(config);
 
-    assertEq(spoke.getLiquidationConfig(), config);
+    assertEq(spoke.getSpokeConfig(), config);
+  }
+
+  function _createSpokeConfig(
+    uint128 targetHealthFactor,
+    uint64 healthFactorForMaxBonus,
+    uint16 liquidationBonusFactor
+  ) internal view returns (ISpoke.SpokeConfig memory) {
+    (uint64 maxUserCollaterals, uint64 maxUserBorrows) = spoke1.getUserReserveLimits();
+    return
+      ISpoke.SpokeConfig({
+        targetHealthFactor: targetHealthFactor,
+        healthFactorForMaxBonus: healthFactorForMaxBonus,
+        liquidationBonusFactor: liquidationBonusFactor,
+        maxUserCollaterals: maxUserCollaterals,
+        maxUserBorrows: maxUserBorrows
+      });
   }
 
   function _updateMaxLiquidationBonus(
@@ -1138,17 +1167,17 @@ abstract contract Base is Test {
     ISpoke spoke,
     uint128 newTargetHealthFactor
   ) internal pausePrank {
-    ISpoke.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
-    liqConfig.targetHealthFactor = newTargetHealthFactor;
+    ISpoke.SpokeConfig memory spokeConfig = spoke.getSpokeConfig();
+    spokeConfig.targetHealthFactor = newTargetHealthFactor;
     vm.prank(SPOKE_ADMIN);
-    spoke.updateLiquidationConfig(liqConfig);
+    spoke.updateSpokeConfig(spokeConfig);
 
-    assertEq(spoke.getLiquidationConfig(), liqConfig);
+    assertEq(spoke.getSpokeConfig(), spokeConfig);
   }
 
   function getTargetHealthFactor(ISpoke spoke) internal view returns (uint256) {
-    ISpoke.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
-    return liqConfig.targetHealthFactor;
+    ISpoke.SpokeConfig memory spokeConfig = spoke.getSpokeConfig();
+    return spokeConfig.targetHealthFactor;
   }
 
   /// @dev pseudo random randomizer
@@ -1976,7 +2005,7 @@ abstract contract Base is Test {
   }
 
   function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint128) {
-    return spoke.getLiquidationConfig().targetHealthFactor;
+    return spoke.getSpokeConfig().targetHealthFactor;
   }
 
   function _calcMinimumCollAmount(
@@ -2308,10 +2337,7 @@ abstract contract Base is Test {
     assertEq(abi.encode(a), abi.encode(b));
   }
 
-  function assertEq(
-    ISpoke.LiquidationConfig memory a,
-    ISpoke.LiquidationConfig memory b
-  ) internal pure {
+  function assertEq(ISpoke.SpokeConfig memory a, ISpoke.SpokeConfig memory b) internal pure {
     assertEq(a.targetHealthFactor, b.targetHealthFactor, 'targetHealthFactor');
     assertEq(a.liquidationBonusFactor, b.liquidationBonusFactor, 'liquidationBonusFactor');
     assertEq(a.healthFactorForMaxBonus, b.healthFactorForMaxBonus, 'healthFactorForMaxBonus');
