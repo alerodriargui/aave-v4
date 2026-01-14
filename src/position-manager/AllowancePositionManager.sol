@@ -2,7 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity 0.8.28;
 
-import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
@@ -49,13 +48,13 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     WithdrawPermit calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 digest = _hashTypedData(params.hash());
-    require(
-      SignatureChecker.isValidSignatureNow(params.owner, digest, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.owner, params.nonce);
+    _verifyAndConsumeIntent({
+      signer: params.owner,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
 
     _updateWithdrawAllowance({
       spoke: params.spoke,
@@ -87,13 +86,13 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     CreditDelegationPermit calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
-    bytes32 digest = _hashTypedData(params.hash());
-    require(
-      SignatureChecker.isValidSignatureNow(params.owner, digest, signature),
-      InvalidSignature()
-    );
-    _useCheckedNonce(params.owner, params.nonce);
+    _verifyAndConsumeIntent({
+      signer: params.owner,
+      intentHash: params.hash(),
+      nonce: params.nonce,
+      deadline: params.deadline,
+      signature: signature
+    });
 
     _updateCreditDelegation({
       spoke: params.spoke,
