@@ -69,6 +69,14 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
     uint16 liquidationBonusFactor;
   }
 
+  /// @notice User safety limits configuration data.
+  /// @dev maxUserCollaterals The maximum number of reserves a user can enable as collateral.
+  /// @dev maxUserBorrows The maximum number of reserves a user can borrow.
+  struct UserSafetyLimits {
+    uint64 maxUserCollaterals;
+    uint64 maxUserBorrows;
+  }
+
   /// @notice User position data per reserve.
   /// @dev drawnShares The drawn shares of the user position.
   /// @dev premiumShares The premium shares of the user position.
@@ -456,7 +464,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
 
   /// @notice Returns the number of listed reserves on the spoke.
   /// @dev Count includes reserves that are not currently active.
-  function getReserveCount() external view returns (uint64);
+  function getReserveCount() external view returns (uint256);
 
   /// @notice Returns the reserve struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.

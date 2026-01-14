@@ -69,13 +69,10 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   uint8 internal constant ORACLE_DECIMALS = 8;
 
   /// @dev Number of reserves listed in the Spoke.
-  uint64 internal _reserveCount;
+  uint256 internal _reserveCount;
 
-  /// @dev The governance-configurable maximum number of collateral reserves per user.
-  uint64 internal _maxUserCollaterals;
-
-  /// @dev The governance-configurable maximum number of borrowed reserves per user.
-  uint64 internal _maxUserBorrows;
+  /// @dev The governance-configurable user safety limits.
+  UserSafetyLimits internal _userSafetyLimits;
 
   /// @dev Map of user addresses and reserve identifiers to user positions.
   mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
@@ -309,7 +306,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
       require(
-        positionStatus.borrowedCount(_reserveCount) < _maxUserBorrows,
+        positionStatus.borrowedCount(_reserveCount) < _userSafetyLimits.maxUserBorrows,
         MaximumUserReservesExceeded()
       );
       positionStatus.setBorrowing(reserveId, true);
@@ -536,7 +533,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISpoke
-  function getReserveCount() external view returns (uint64) {
+  function getReserveCount() external view returns (uint256) {
     return _reserveCount;
   }
 
@@ -703,7 +700,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
 
   /// @inheritdoc ISpoke
   function getUserReserveLimits() external view returns (uint64, uint64) {
-    return (_maxUserCollaterals, _maxUserBorrows);
+    return (_userSafetyLimits.maxUserCollaterals, _userSafetyLimits.maxUserBorrows);
   }
 
   function _updateReservePriceSource(uint256 reserveId, address priceSource) internal {
@@ -913,8 +910,8 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   function _setUserReserveLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows) internal {
-    _maxUserCollaterals = maxUserCollaterals;
-    _maxUserBorrows = maxUserBorrows;
+    _userSafetyLimits.maxUserCollaterals = maxUserCollaterals;
+    _userSafetyLimits.maxUserBorrows = maxUserBorrows;
     emit UpdateUserReserveLimits(maxUserCollaterals, maxUserBorrows);
   }
 
@@ -966,7 +963,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
       require(!flags.frozen(), ReserveFrozen());
       // this must be a new collateral, otherwise would have short-circuited
       require(
-        positionStatus.collateralCount(_reserveCount) < _maxUserCollaterals,
+        positionStatus.collateralCount(_reserveCount) < _userSafetyLimits.maxUserCollaterals,
         MaximumUserReservesExceeded()
       );
     }
