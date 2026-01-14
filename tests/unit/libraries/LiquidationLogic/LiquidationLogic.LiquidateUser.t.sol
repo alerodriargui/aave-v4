@@ -13,7 +13,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   uint256 usdxReserveId;
   uint256 wethReserveId;
 
-  ISpoke.SpokeConfig liquidationConfig;
+  ISpoke.SpokeConfig spokeConfig;
   ISpoke.DynamicReserveConfig dynamicCollateralConfig;
   LiquidationLogic.LiquidateUserParams params;
 
@@ -53,7 +53,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     });
 
     // Set liquidationLogicWrapper as a spoke
-    IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
+    IHub.SpokeConfig memory hubSpokeConfig = IHub.SpokeConfig({
       active: true,
       paused: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
@@ -61,8 +61,8 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
     });
     vm.startPrank(HUB_ADMIN);
-    hub1.addSpoke(usdxAssetId, address(liquidationLogicWrapper), spokeConfig);
-    hub2.addSpoke(wethAssetId, address(liquidationLogicWrapper), spokeConfig);
+    hub1.addSpoke(usdxAssetId, address(liquidationLogicWrapper), hubSpokeConfig);
+    hub2.addSpoke(wethAssetId, address(liquidationLogicWrapper), hubSpokeConfig);
     vm.stopPrank();
 
     // set borrower
@@ -89,14 +89,14 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setBorrowerBorrowingStatus(wethReserveId, true);
 
     // Mock storage for liquidation config
-    liquidationConfig = ISpoke.SpokeConfig({
+    spokeConfig = ISpoke.SpokeConfig({
       healthFactorForMaxBonus: 0.8e18,
       liquidationBonusFactor: 50_00,
       targetHealthFactor: 1e18,
       maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
       maxUserBorrows: Constants.MAX_USER_BORROWS
     });
-    updateStorage(liquidationConfig);
+    updateStorage(spokeConfig);
 
     // Mock storage for dynamic collateral config
     dynamicCollateralConfig = ISpoke.DynamicReserveConfig({

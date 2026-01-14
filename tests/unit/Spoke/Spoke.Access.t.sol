@@ -63,7 +63,7 @@ contract SpokeAccessTest is SpokeBase {
     );
     spoke1.updateSpokeConfig(
       ISpoke.SpokeConfig({
-        targetHealthFactor: WadRayMath.WAD.toUint72(),
+        targetHealthFactor: WadRayMath.WAD.toUint64(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18,
         maxUserCollaterals: maxUserCollaterals1,
@@ -76,7 +76,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(address(SPOKE_ADMIN));
     spoke1.updateSpokeConfig(
       ISpoke.SpokeConfig({
-        targetHealthFactor: WadRayMath.WAD.toUint72(),
+        targetHealthFactor: WadRayMath.WAD.toUint64(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18,
         maxUserCollaterals: maxUserCollaterals2,
@@ -187,7 +187,7 @@ contract SpokeAccessTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.updateSpokeConfig(
       ISpoke.SpokeConfig({
-        targetHealthFactor: WadRayMath.WAD.toUint72(),
+        targetHealthFactor: WadRayMath.WAD.toUint64(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18,
         maxUserCollaterals: maxUserCollaterals,

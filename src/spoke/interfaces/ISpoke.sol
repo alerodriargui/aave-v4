@@ -66,7 +66,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @dev maxUserCollaterals The maximum number of reserves a user can enable as collateral.
   /// @dev maxUserBorrows The maximum number of reserves a user can borrow.
   struct SpokeConfig {
-    uint72 targetHealthFactor;
+    uint64 targetHealthFactor;
     uint64 healthFactorForMaxBonus;
     uint16 liquidationBonusFactor;
     uint24 maxUserCollaterals;
@@ -283,8 +283,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @notice Thrown when a collateral risk exceeds the maximum allowed.
   error InvalidCollateralRisk();
 
-  /// @notice Thrown if a liquidation config is invalid when it is updated.
-  error InvalidLiquidationConfig();
+  /// @notice Thrown if a spoke config is invalid when it is updated.
+  error InvalidSpokeConfig();
 
   /// @notice Thrown when a liquidation fee is invalid.
   error InvalidLiquidationFee();

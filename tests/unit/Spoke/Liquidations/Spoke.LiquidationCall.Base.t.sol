@@ -81,7 +81,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       liqConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       MAX_CLOSE_FACTOR
-    ).toUint72();
+    ).toUint64();
 
     liqConfig.healthFactorForMaxBonus = bound(
       liqConfig.healthFactorForMaxBonus,

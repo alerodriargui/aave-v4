@@ -126,9 +126,9 @@ abstract contract Base is Test {
   uint16 internal constant MAX_LIQUIDATION_BONUS_FACTOR = uint16(PercentageMath.PERCENTAGE_FACTOR); // 100%
   uint16 internal constant MAX_LIQUIDATION_FEE = 100_00;
   uint16 internal constant MIN_LIQUIDATION_FEE = 0;
-  uint128 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
-  uint128 internal constant MIN_CLOSE_FACTOR = 1e18;
-  uint128 internal constant MAX_CLOSE_FACTOR = 2e18;
+  uint64 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
+  uint64 internal constant MIN_CLOSE_FACTOR = 1e18;
+  uint64 internal constant MAX_CLOSE_FACTOR = 2e18;
   uint256 internal constant MAX_COLLATERAL_FACTOR = 100_00;
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8; // $100M per token
   uint256 internal constant MAX_LIQUIDATION_PROTOCOL_FEE_PERCENTAGE =
@@ -1031,7 +1031,7 @@ abstract contract Base is Test {
   }
 
   function _createSpokeConfig(
-    uint72 targetHealthFactor,
+    uint64 targetHealthFactor,
     uint64 healthFactorForMaxBonus,
     uint16 liquidationBonusFactor
   ) internal view returns (ISpoke.SpokeConfig memory) {
@@ -1164,7 +1164,7 @@ abstract contract Base is Test {
     uint128 newTargetHealthFactor
   ) internal pausePrank {
     ISpoke.SpokeConfig memory spokeConfig = spoke.getSpokeConfig();
-    spokeConfig.targetHealthFactor = newTargetHealthFactor.toUint72();
+    spokeConfig.targetHealthFactor = newTargetHealthFactor.toUint64();
     vm.prank(SPOKE_ADMIN);
     spoke.updateSpokeConfig(spokeConfig);
 
@@ -2000,7 +2000,7 @@ abstract contract Base is Test {
     return a > b ? a : b;
   }
 
-  function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint72) {
+  function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint64) {
     return spoke.getSpokeConfig().targetHealthFactor;
   }
 

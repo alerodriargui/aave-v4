@@ -36,7 +36,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   ) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.SpokeConfig memory spokeConfig = targetSpoke.getSpokeConfig();
-    spokeConfig.targetHealthFactor = targetHealthFactor.toUint72();
+    spokeConfig.targetHealthFactor = targetHealthFactor.toUint64();
     targetSpoke.updateSpokeConfig(spokeConfig);
   }
 

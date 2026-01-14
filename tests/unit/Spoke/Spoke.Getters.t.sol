@@ -123,7 +123,7 @@ contract SpokeGettersTest is SpokeBase {
     assertEq(
       _config,
       ISpoke.SpokeConfig({
-        targetHealthFactor: WadRayMath.WAD.toUint72(),
+        targetHealthFactor: WadRayMath.WAD.toUint64(),
         healthFactorForMaxBonus: 0,
         liquidationBonusFactor: 0,
         maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
@@ -166,7 +166,7 @@ contract SpokeGettersTest is SpokeBase {
     ).toUint64();
 
     ISpoke.SpokeConfig memory config = ISpoke.SpokeConfig({
-      targetHealthFactor: WadRayMath.WAD.toUint72(),
+      targetHealthFactor: WadRayMath.WAD.toUint64(),
       healthFactorForMaxBonus: healthFactorForMaxBonus,
       liquidationBonusFactor: liquidationBonusFactor,
       maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
