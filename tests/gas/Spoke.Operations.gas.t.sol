@@ -231,6 +231,7 @@ contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
     );
     calls[1] = abi.encodeCall(ISpokeBase.supply, (reserveId.wbtc, permit.value, permit.owner));
     calls[2] = abi.encodeCall(ISpoke.setUsingAsCollateral, (reserveId.wbtc, true, permit.owner));
+
     spoke.multicall(calls);
     vm.snapshotGasLastCall(NAMESPACE, 'permitReserve + supply + enable collateral (multicall)');
 
@@ -253,7 +254,7 @@ contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
       user: user,
       approve: true,
       nonce: spoke.nonces(user, nonceKey),
-      deadline: vm.getBlockTimestamp() + 1
+      deadline: vm.getBlockTimestamp()
     });
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, params));
     bytes memory signature = abi.encodePacked(r, s, v);
