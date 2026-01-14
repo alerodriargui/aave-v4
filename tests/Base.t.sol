@@ -2229,21 +2229,14 @@ abstract contract Base is Test {
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
 
-    vm.prank(deployer);
+    vm.startPrank(deployer);
     IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
-
     address spokeImpl = address(new SpokeInstance(address(oracle)));
     ISpoke spoke = ISpoke(
-      _proxify(
-        deployer,
-        spokeImpl,
-        proxyAdminOwner,
-        abi.encodeCall(Spoke.initialize, (_accessManager))
-      )
+      _proxify(spokeImpl, proxyAdminOwner, abi.encodeCall(Spoke.initialize, (_accessManager)))
     );
-
-    vm.prank(deployer);
     oracle.setSpoke(address(spoke));
+    vm.stopPrank();
 
     assertEq(spoke.ORACLE(), address(oracle));
     assertEq(oracle.SPOKE(), address(spoke));
@@ -2265,12 +2258,10 @@ abstract contract Base is Test {
   }
 
   function _proxify(
-    address deployer,
     address impl,
     address proxyAdminOwner,
     bytes memory initData
   ) internal returns (address) {
-    vm.prank(deployer);
     TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
       impl,
       proxyAdminOwner,
