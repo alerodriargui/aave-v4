@@ -2,13 +2,48 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
 /// @title IAllowancePositionManager
 /// @author Aave Labs
 /// @notice Interface for position manager handling withdraw permit & credit delegation actions.
 interface IAllowancePositionManager is IPositionManagerBase {
+  /// @notice Structured parameters for withdraw permit intent.
+  /// @param spoke The address of the spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param owner The address of the owner.
+  /// @param spender The address of the spender.
+  /// @param amount The amount of allowance.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the intent.
+  struct WithdrawPermit {
+    address spoke;
+    uint256 reserveId;
+    address owner;
+    address spender;
+    uint256 amount;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
+  /// @notice Structured parameters for credit delegation intent.
+  /// @param spoke The address of the spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param owner The address of the owner.
+  /// @param spender The address of the spender.
+  /// @param amount The amount of allowance.
+  /// @param nonce The key-prefixed nonce for the signature.
+  /// @param deadline The deadline for the intent.
+  struct CreditDelegationPermit {
+    address spoke;
+    uint256 reserveId;
+    address owner;
+    address spender;
+    uint256 amount;
+    uint256 nonce;
+    uint256 deadline;
+  }
+
   /// @notice Thrown when the withdraw allowance is insufficient.
   error InsufficientWithdrawAllowance(uint256 allowance, uint256 required);
   /// @notice Thrown when the credit delegation allowance is insufficient.
@@ -58,7 +93,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @param params The structured WithdrawPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
   function approveWithdrawWithSig(
-    EIP712Types.WithdrawPermit calldata params,
+    WithdrawPermit calldata params,
     bytes calldata signature
   ) external;
 
@@ -75,10 +110,10 @@ interface IAllowancePositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Approves a credit delegation allowance for a spender using an EIP712-typed intent.
-  /// @param params The structured CreditDelegation parameters.
+  /// @param params The structured CreditDelegationPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
   function delegateCreditWithSig(
-    EIP712Types.CreditDelegation calldata params,
+    CreditDelegationPermit calldata params,
     bytes calldata signature
   ) external;
 
@@ -152,12 +187,9 @@ interface IAllowancePositionManager is IPositionManagerBase {
     address spender
   ) external view returns (uint256);
 
-  /// @notice Returns the EIP712 domain separator.
-  function DOMAIN_SEPARATOR() external view returns (bytes32);
-
   /// @notice Returns the type hash for the WithdrawPermit intent.
   function WITHDRAW_PERMIT_TYPEHASH() external view returns (bytes32);
 
-  /// @notice Returns the type hash for the CreditDelegation intent.
-  function CREDIT_DELEGATION_TYPEHASH() external view returns (bytes32);
+  /// @notice Returns the type hash for the CreditDelegationPermit intent.
+  function CREDIT_DELEGATION_PERMIT_TYPEHASH() external view returns (bytes32);
 }

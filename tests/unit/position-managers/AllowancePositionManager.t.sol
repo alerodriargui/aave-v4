@@ -104,7 +104,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, mintAmount_DAI);
 
-    EIP712Types.WithdrawPermit memory p = _withdrawPermitData(
+    IAllowancePositionManager.WithdrawPermit memory p = _withdrawPermitData(
       spender,
       alice,
       _warpBeforeRandomDeadline()
@@ -129,14 +129,14 @@ contract AllowancePositionManagerTest is SpokeBase {
   }
 
   function test_approveWithdrawWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline() public {
-    EIP712Types.WithdrawPermit memory p = _withdrawPermitData(
+    IAllowancePositionManager.WithdrawPermit memory p = _withdrawPermitData(
       vm.randomAddress(),
       alice,
       _warpAfterRandomDeadline()
     );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     positionManager.approveWithdrawWithSig(p, signature);
   }
@@ -146,20 +146,20 @@ contract AllowancePositionManagerTest is SpokeBase {
     address onBehalfOf = vm.randomAddress();
     while (onBehalfOf == randomUser) onBehalfOf = vm.randomAddress();
 
-    EIP712Types.WithdrawPermit memory p = _withdrawPermitData(
+    IAllowancePositionManager.WithdrawPermit memory p = _withdrawPermitData(
       randomUser,
       onBehalfOf,
       _warpAfterRandomDeadline()
     );
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(positionManager, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     positionManager.approveWithdrawWithSig(p, signature);
   }
 
   function test_approveWithdrawWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
-    EIP712Types.WithdrawPermit memory p = _withdrawPermitData(
+    IAllowancePositionManager.WithdrawPermit memory p = _withdrawPermitData(
       vm.randomAddress(),
       alice,
       _warpBeforeRandomDeadline()
@@ -184,7 +184,7 @@ contract AllowancePositionManagerTest is SpokeBase {
   }
 
   function test_approveWithdrawWithSig_revertsWith_SpokeNotRegistered() public {
-    EIP712Types.WithdrawPermit memory p = _withdrawPermitData(
+    IAllowancePositionManager.WithdrawPermit memory p = _withdrawPermitData(
       bob,
       alice,
       _warpBeforeRandomDeadline()
@@ -537,11 +537,14 @@ contract AllowancePositionManagerTest is SpokeBase {
   }
 
   function test_creditDelegation_typeHash() public view {
-    assertEq(positionManager.CREDIT_DELEGATION_TYPEHASH(), vm.eip712HashType('CreditDelegation'));
     assertEq(
-      positionManager.CREDIT_DELEGATION_TYPEHASH(),
+      positionManager.CREDIT_DELEGATION_PERMIT_TYPEHASH(),
+      vm.eip712HashType('CreditDelegationPermit')
+    );
+    assertEq(
+      positionManager.CREDIT_DELEGATION_PERMIT_TYPEHASH(),
       keccak256(
-        'CreditDelegation(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)'
+        'CreditDelegationPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)'
       )
     );
   }
@@ -574,7 +577,7 @@ contract AllowancePositionManagerTest is SpokeBase {
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
     amount = bound(amount, 1, mintAmount_DAI);
 
-    EIP712Types.CreditDelegation memory p = _creditDelegationData(
+    IAllowancePositionManager.CreditDelegationPermit memory p = _creditDelegationData(
       spender,
       alice,
       _warpBeforeRandomDeadline()
@@ -601,14 +604,14 @@ contract AllowancePositionManagerTest is SpokeBase {
   function test_creditDelegationWithSig_revertsWith_InvalidSignature_dueTo_ExpiredDeadline()
     public
   {
-    EIP712Types.CreditDelegation memory p = _creditDelegationData(
+    IAllowancePositionManager.CreditDelegationPermit memory p = _creditDelegationData(
       vm.randomAddress(),
       alice,
       _warpAfterRandomDeadline()
     );
     bytes memory signature = _sign(alicePk, _getTypedDataHash(positionManager, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     positionManager.delegateCreditWithSig(p, signature);
   }
@@ -618,20 +621,20 @@ contract AllowancePositionManagerTest is SpokeBase {
     address onBehalfOf = vm.randomAddress();
     while (onBehalfOf == randomUser) onBehalfOf = vm.randomAddress();
 
-    EIP712Types.CreditDelegation memory p = _creditDelegationData(
+    IAllowancePositionManager.CreditDelegationPermit memory p = _creditDelegationData(
       randomUser,
       onBehalfOf,
       _warpAfterRandomDeadline()
     );
     bytes memory signature = _sign(randomUserPk, _getTypedDataHash(positionManager, p));
 
-    vm.expectRevert(ISpoke.InvalidSignature.selector);
+    vm.expectRevert(IIntentConsumer.InvalidSignature.selector);
     vm.prank(vm.randomAddress());
     positionManager.delegateCreditWithSig(p, signature);
   }
 
   function test_creditDelegationWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
-    EIP712Types.CreditDelegation memory p = _creditDelegationData(
+    IAllowancePositionManager.CreditDelegationPermit memory p = _creditDelegationData(
       vm.randomAddress(),
       alice,
       _warpBeforeRandomDeadline()
@@ -656,7 +659,7 @@ contract AllowancePositionManagerTest is SpokeBase {
   }
 
   function test_creditDelegationWithSig_revertsWith_SpokeNotRegistered() public {
-    EIP712Types.CreditDelegation memory p = _creditDelegationData(
+    IAllowancePositionManager.CreditDelegationPermit memory p = _creditDelegationData(
       bob,
       alice,
       _warpBeforeRandomDeadline()
@@ -863,9 +866,9 @@ contract AllowancePositionManagerTest is SpokeBase {
     address spender,
     address onBehalfOf,
     uint256 deadline
-  ) internal returns (EIP712Types.WithdrawPermit memory) {
+  ) internal returns (IAllowancePositionManager.WithdrawPermit memory) {
     return
-      EIP712Types.WithdrawPermit({
+      IAllowancePositionManager.WithdrawPermit({
         spoke: address(spoke1),
         reserveId: _randomReserveId(spoke1),
         owner: onBehalfOf,
@@ -880,9 +883,9 @@ contract AllowancePositionManagerTest is SpokeBase {
     address spender,
     address onBehalfOf,
     uint256 deadline
-  ) internal returns (EIP712Types.CreditDelegation memory) {
+  ) internal returns (IAllowancePositionManager.CreditDelegationPermit memory) {
     return
-      EIP712Types.CreditDelegation({
+      IAllowancePositionManager.CreditDelegationPermit({
         spoke: address(spoke1),
         reserveId: _randomReserveId(spoke1),
         owner: onBehalfOf,
@@ -895,7 +898,7 @@ contract AllowancePositionManagerTest is SpokeBase {
 
   function _getTypedDataHash(
     IAllowancePositionManager _positionManager,
-    EIP712Types.WithdrawPermit memory _params
+    IAllowancePositionManager.WithdrawPermit memory _params
   ) internal view returns (bytes32) {
     return
       _typedDataHash(_positionManager, vm.eip712HashStruct('WithdrawPermit', abi.encode(_params)));
@@ -903,12 +906,12 @@ contract AllowancePositionManagerTest is SpokeBase {
 
   function _getTypedDataHash(
     IAllowancePositionManager _positionManager,
-    EIP712Types.CreditDelegation memory _params
+    IAllowancePositionManager.CreditDelegationPermit memory _params
   ) internal view returns (bytes32) {
     return
       _typedDataHash(
         _positionManager,
-        vm.eip712HashStruct('CreditDelegation', abi.encode(_params))
+        vm.eip712HashStruct('CreditDelegationPermit', abi.encode(_params))
       );
   }
 

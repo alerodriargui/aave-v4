@@ -2,7 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
+import {IAllowancePositionManager} from 'src/position-manager/interfaces/IAllowancePositionManager.sol';
 
 /// @title EIP712Hash library
 /// @author Aave Labs
@@ -40,11 +41,11 @@ library EIP712Hash {
     // keccak256('WithdrawPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
     0x9e6642fd4c06a4c1a5e201f1e41c6b7892fcf06859c796b054c510b80e2a0a3f;
 
-  bytes32 public constant CREDIT_DELEGATION_TYPEHASH =
-    // keccak256('CreditDelegation(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
-    0x606e68c0d0b1a1e82ef01e76f35ecd8c76dba1c94679e6dc977b87d7bde1bb28;
+  bytes32 public constant CREDIT_DELEGATION_PERMIT_TYPEHASH =
+    // keccak256('CreditDelegationPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
+    0x14f398520eb6e86dd4ef6446709a28144cc09677185619599016c189b591f76a;
 
-  function hash(EIP712Types.Supply calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Supply calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -59,7 +60,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Withdraw calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Withdraw calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -74,7 +75,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Borrow calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Borrow calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -89,7 +90,7 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.Repay calldata params) internal pure returns (bytes32) {
+  function hash(ISignatureGateway.Repay calldata params) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -104,7 +105,9 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.SetUsingAsCollateral calldata params) internal pure returns (bytes32) {
+  function hash(
+    ISignatureGateway.SetUsingAsCollateral calldata params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -119,7 +122,9 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.UpdateUserRiskPremium calldata params) internal pure returns (bytes32) {
+  function hash(
+    ISignatureGateway.UpdateUserRiskPremium calldata params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -133,7 +138,7 @@ library EIP712Hash {
   }
 
   function hash(
-    EIP712Types.UpdateUserDynamicConfig calldata params
+    ISignatureGateway.UpdateUserDynamicConfig calldata params
   ) internal pure returns (bytes32) {
     return
       keccak256(
@@ -147,7 +152,9 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.WithdrawPermit calldata params) internal pure returns (bytes32) {
+  function hash(
+    IAllowancePositionManager.WithdrawPermit calldata params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -163,11 +170,13 @@ library EIP712Hash {
       );
   }
 
-  function hash(EIP712Types.CreditDelegation calldata params) internal pure returns (bytes32) {
+  function hash(
+    IAllowancePositionManager.CreditDelegationPermit calldata params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
-          CREDIT_DELEGATION_TYPEHASH,
+          CREDIT_DELEGATION_PERMIT_TYPEHASH,
           params.spoke,
           params.reserveId,
           params.owner,

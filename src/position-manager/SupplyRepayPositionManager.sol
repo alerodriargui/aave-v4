@@ -46,4 +46,8 @@ contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionMana
     asset.forceApprove(spoke, repayAmount);
     return ISpokeBase(spoke).repay(reserveId, repayAmount, onBehalfOf);
   }
+
+  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
+    return ('SupplyRepayPositionManager', '1');
+  }
 }

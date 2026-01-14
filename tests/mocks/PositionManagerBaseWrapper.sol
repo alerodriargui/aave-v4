@@ -10,4 +10,8 @@ contract PositionManagerBaseWrapper is PositionManagerBase {
   function getReserveUnderlying(address spoke, uint256 reserveId) external view returns (address) {
     return address(_getReserveUnderlying(spoke, reserveId));
   }
+
+  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
+    return ('PositionManagerBaseWrapper', '1');
+  }
 }

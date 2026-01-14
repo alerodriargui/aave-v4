@@ -2,14 +2,14 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
 import {IMulticall} from 'src/interfaces/IMulticall.sol';
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
 /// @title IPositionManagerBase
 /// @author Aave Labs
 /// @notice Base interface for position managers.
-interface IPositionManagerBase is IMulticall, IRescuable {
+interface IPositionManagerBase is IIntentConsumer, IRescuable, IMulticall {
   /// @notice Emitted when a spoke is registered or deregistered.
   event SpokeRegistered(address indexed spoke, bool active);
 
@@ -21,9 +21,6 @@ interface IPositionManagerBase is IMulticall, IRescuable {
 
   /// @notice Thrown when the specified spoke is not registered.
   error SpokeNotRegistered();
-
-  /// @notice Thrown when signature deadline has passed or signer is not onBehalfOf.
-  error InvalidSignature();
 
   /// @notice Facilitates setting this position manager as user position manager on the specified registered `spoke`
   /// with a typed signature from `user`.

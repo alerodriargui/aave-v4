@@ -5,7 +5,7 @@ pragma solidity 0.8.28;
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -14,7 +14,13 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @title PositionManagerBase
 /// @author Aave Labs
 /// @notice Base implementation for position manager common functionalities.
-abstract contract PositionManagerBase is IPositionManagerBase, Multicall, Rescuable, Ownable2Step {
+abstract contract PositionManagerBase is
+  IPositionManagerBase,
+  IntentConsumer,
+  Ownable2Step,
+  Rescuable,
+  Multicall
+{
   mapping(address => bool) internal _registeredSpokes;
 
   /// @notice Modifier that checks if the specified spoke is registered.

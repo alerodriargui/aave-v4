@@ -2,7 +2,7 @@
 pragma solidity >=0.6.2 <0.9.0;
 pragma experimental ABIEncoderV2;
 
-import {EIP712Types} from 'src/libraries/types/EIP712Types.sol';
+import {EIP712Types} from 'tests/mocks/EIP712Types.sol';
 
 interface Vm {
   function parseJsonTypeArray(
@@ -59,7 +59,7 @@ library JsonBindings {
   // prettier-ignore
   string constant schema_WithdrawPermit = "WithdrawPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)";
   // prettier-ignore
-  string constant schema_CreditDelegation = "CreditDelegation(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)";
+  string constant schema_CreditDelegationPermit = "CreditDelegationPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)";
 
   function serialize(
     EIP712Types.SetUserPositionManager memory value
@@ -441,45 +441,45 @@ library JsonBindings {
   }
 
   function serialize(
-    EIP712Types.CreditDelegation memory value
+    EIP712Types.CreditDelegationPermit memory value
   ) internal pure returns (string memory) {
-    return vm.serializeJsonType(schema_CreditDelegation, abi.encode(value));
+    return vm.serializeJsonType(schema_CreditDelegationPermit, abi.encode(value));
   }
 
   function serialize(
-    EIP712Types.CreditDelegation memory value,
+    EIP712Types.CreditDelegationPermit memory value,
     string memory objectKey,
     string memory valueKey
   ) internal returns (string memory) {
-    return vm.serializeJsonType(objectKey, valueKey, schema_CreditDelegation, abi.encode(value));
+    return vm.serializeJsonType(objectKey, valueKey, schema_CreditDelegationPermit, abi.encode(value));
   }
 
-  function deserializeCreditDelegation(
+  function deserializeCreditDelegationPermit(
     string memory json
-  ) public pure returns (EIP712Types.CreditDelegation memory) {
+  ) public pure returns (EIP712Types.CreditDelegationPermit memory) {
     return
-      abi.decode(vm.parseJsonType(json, schema_CreditDelegation), (EIP712Types.CreditDelegation));
+      abi.decode(vm.parseJsonType(json, schema_CreditDelegationPermit), (EIP712Types.CreditDelegationPermit));
   }
 
-  function deserializeCreditDelegation(
+  function deserializeCreditDelegationPermit(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.CreditDelegation memory) {
+  ) public pure returns (EIP712Types.CreditDelegationPermit memory) {
     return
       abi.decode(
-        vm.parseJsonType(json, path, schema_CreditDelegation),
-        (EIP712Types.CreditDelegation)
+        vm.parseJsonType(json, path, schema_CreditDelegationPermit),
+        (EIP712Types.CreditDelegationPermit)
       );
   }
 
-  function deserializeCreditDelegationArray(
+  function deserializeCreditDelegationPermitArray(
     string memory json,
     string memory path
-  ) public pure returns (EIP712Types.CreditDelegation[] memory) {
+  ) public pure returns (EIP712Types.CreditDelegationPermit[] memory) {
     return
       abi.decode(
-        vm.parseJsonTypeArray(json, path, schema_CreditDelegation),
-        (EIP712Types.CreditDelegation[])
+        vm.parseJsonTypeArray(json, path, schema_CreditDelegationPermit),
+        (EIP712Types.CreditDelegationPermit[])
       );
   }
 }

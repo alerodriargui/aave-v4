@@ -4,10 +4,8 @@ pragma solidity 0.8.28;
 
 import {SignatureChecker} from 'src/dependencies/openzeppelin/SignatureChecker.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {EIP712} from 'src/dependencies/solady/EIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {NoncesKeyed} from 'src/utils/NoncesKeyed.sol';
-import {EIP712Hash, EIP712Types} from 'src/position-manager/libraries/EIP712Hash.sol';
+import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {IAllowancePositionManager} from 'src/position-manager/interfaces/IAllowancePositionManager.sol';
@@ -15,12 +13,7 @@ import {IAllowancePositionManager} from 'src/position-manager/interfaces/IAllowa
 /// @title AllowancePositionManager
 /// @author Aave Labs
 /// @notice Position manager to handle withdraw permit, credit delegation and borrow actions on behalf of users.
-contract AllowancePositionManager is
-  IAllowancePositionManager,
-  PositionManagerBase,
-  NoncesKeyed,
-  EIP712
-{
+contract AllowancePositionManager is IAllowancePositionManager, PositionManagerBase {
   using SafeERC20 for IERC20;
   using MathUtils for uint256;
   using EIP712Hash for *;
@@ -53,7 +46,7 @@ contract AllowancePositionManager is
 
   /// @inheritdoc IAllowancePositionManager
   function approveWithdrawWithSig(
-    EIP712Types.WithdrawPermit calldata params,
+    WithdrawPermit calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -91,7 +84,7 @@ contract AllowancePositionManager is
 
   /// @inheritdoc IAllowancePositionManager
   function delegateCreditWithSig(
-    EIP712Types.CreditDelegation calldata params,
+    CreditDelegationPermit calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     require(block.timestamp <= params.deadline, InvalidSignature());
@@ -220,18 +213,13 @@ contract AllowancePositionManager is
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function DOMAIN_SEPARATOR() external view returns (bytes32) {
-    return _domainSeparator();
-  }
-
-  /// @inheritdoc IAllowancePositionManager
   function WITHDRAW_PERMIT_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.WITHDRAW_PERMIT_TYPEHASH;
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function CREDIT_DELEGATION_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.CREDIT_DELEGATION_TYPEHASH;
+  function CREDIT_DELEGATION_PERMIT_TYPEHASH() external pure returns (bytes32) {
+    return EIP712Hash.CREDIT_DELEGATION_PERMIT_TYPEHASH;
   }
 
   function _updateWithdrawAllowance(

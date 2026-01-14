@@ -185,4 +185,8 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
         canUpdateUserDynamicConfig: permissions.canUpdateUserDynamicConfig()
       });
   }
+
+  function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
+    return ('PositionConfigPositionManager', '1');
+  }
 }

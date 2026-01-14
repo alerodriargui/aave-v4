@@ -169,7 +169,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
   function test_approveWithdrawWithSig() public {
     uint256 amount = 100e18;
 
-    EIP712Types.WithdrawPermit memory p = EIP712Types.WithdrawPermit({
+    IAllowancePositionManager.WithdrawPermit memory p = IAllowancePositionManager.WithdrawPermit({
       spoke: address(spoke1),
       reserveId: _daiReserveId(spoke1),
       owner: alice,
@@ -212,19 +212,20 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
   function test_creditDelegationWithSig() public {
     uint256 amount = 100e18;
 
-    EIP712Types.CreditDelegation memory p = EIP712Types.CreditDelegation({
-      spoke: address(spoke1),
-      reserveId: _daiReserveId(spoke1),
-      owner: alice,
-      spender: bob,
-      amount: amount,
-      nonce: positionManager.nonces(alice, _randomNonceKey()),
-      deadline: _warpBeforeRandomDeadline()
-    });
+    IAllowancePositionManager.CreditDelegationPermit memory p = IAllowancePositionManager
+      .CreditDelegationPermit({
+        spoke: address(spoke1),
+        reserveId: _daiReserveId(spoke1),
+        owner: alice,
+        spender: bob,
+        amount: amount,
+        nonce: positionManager.nonces(alice, _randomNonceKey()),
+        deadline: _warpBeforeRandomDeadline()
+      });
     p.nonce = _burnRandomNoncesAtKey(positionManager, alice);
     bytes32 digest = _typedDataHash(
       positionManager,
-      vm.eip712HashStruct('CreditDelegation', abi.encode(p))
+      vm.eip712HashStruct('CreditDelegationPermit', abi.encode(p))
     );
     bytes memory signature = _sign(alicePk, digest);
 

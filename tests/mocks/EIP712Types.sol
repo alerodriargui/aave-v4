@@ -91,7 +91,7 @@ library EIP712Types {
     uint256 deadline;
   }
 
-  struct CreditDelegation {
+  struct CreditDelegationPermit {
     address spoke;
     uint256 reserveId;
     address owner;
