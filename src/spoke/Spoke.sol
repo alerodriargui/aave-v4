@@ -310,7 +310,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     if (!positionStatus.isBorrowing(reserveId)) {
       require(
         positionStatus.borrowedCount(_reserveCount) < _maxUserBorrows,
-        MaxUserBorrowsExceeded()
+        MaximumUserReservesExceeded()
       );
       positionStatus.setBorrowing(reserveId, true);
     }
@@ -967,7 +967,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
       // this must be a new collateral, otherwise would have short-circuited
       require(
         positionStatus.collateralCount(_reserveCount) < _maxUserCollaterals,
-        MaxUserCollateralsExceeded()
+        MaximumUserReservesExceeded()
       );
     }
   }

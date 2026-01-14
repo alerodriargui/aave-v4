@@ -314,11 +314,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @notice Thrown when the maximum number of dynamic config keys is reached.
   error MaximumDynamicConfigKeyReached();
 
-  /// @notice Thrown when user attempts to exceed the maximum allowed collateral reserves.
-  error MaxUserCollateralsExceeded();
-
-  /// @notice Thrown when user attempts to exceed the maximum allowed borrowed reserves.
-  error MaxUserBorrowsExceeded();
+  /// @notice Thrown when user attempts to exceed either the maximum allowed collateral or borrowed reserves.
+  error MaximumUserReservesExceeded();
 
   /// @notice Updates the liquidation config.
   /// @param config The liquidation config.
