@@ -90,6 +90,7 @@ contract AaveOracleTest is Base {
     emit IAaveOracle.SetSpoke(address(newSpoke));
 
     oracle.setSpoke(address(newSpoke));
+    vm.stopPrank();
 
     assertEq(oracle.SPOKE(), address(newSpoke));
   }
