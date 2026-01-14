@@ -188,7 +188,8 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     vm.prank(alice);
     spoke1.setUsingAsCollateral(_usdxReserveId(spoke1), false, alice);
 
-    _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), _randomBps());
+    uint256 reserveId = _usdxReserveId(spoke1);
+    _updateCollateralFactor(spoke1, reserveId, _randomCollateralFactor(spoke1, reserveId));
     configs = _getUserDynConfigKeys(spoke1, alice);
     Utils.supply(spoke1, _wethReserveId(spoke1), alice, 1e18, alice);
 
