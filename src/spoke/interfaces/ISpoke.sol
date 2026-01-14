@@ -131,11 +131,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @param config The new spoke config.
   event UpdateSpokeConfig(SpokeConfig config);
 
-  /// @notice Emitted when user reserve limits are updated.
-  /// @param maxUserCollaterals The new max number of collateral reserves per user.
-  /// @param maxUserBorrows The new max number of borrowed reserves per user.
-  event UpdateUserReserveLimits(uint24 maxUserCollaterals, uint24 maxUserBorrows);
-
   /// @notice Emitted when a reserve is added.
   /// @param reserveId The identifier of the reserve.
   /// @param assetId The identifier of the asset.
@@ -324,11 +319,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @notice Updates the spoke config.
   /// @param config The spoke config.
   function updateSpokeConfig(SpokeConfig calldata config) external;
-
-  /// @notice Updates the per-user reserve limits.
-  /// @param maxUserCollaterals The maximum number of collateral reserves a user can enable.
-  /// @param maxUserBorrows The maximum number of borrowed reserves a user can have.
-  function updateUserReserveLimits(uint24 maxUserCollaterals, uint24 maxUserBorrows) external;
 
   /// @notice Adds a new reserve to the spoke.
   /// @dev Allowed even if the spoke has not yet been added to the Hub.

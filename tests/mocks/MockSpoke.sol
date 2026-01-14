@@ -27,7 +27,8 @@ contract MockSpoke is Spoke, Test {
   constructor(address oracle_) Spoke(oracle_) {}
 
   function initialize(address) external override {
-    _setUserReserveLimits(type(uint24).max, type(uint24).max);
+    _spokeConfig.maxUserCollaterals = type(uint24).max;
+    _spokeConfig.maxUserBorrows = type(uint24).max;
   }
 
   // same as spoke's borrow, but without health factor check

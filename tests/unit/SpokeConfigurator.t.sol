@@ -824,44 +824,36 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateMaxUserCollaterals() public {
-    (, uint24 oldBorrowedReservesLimit) = spoke.getUserReserveLimits();
     uint24 newCollateralReservesLimit = vm.randomUint(0, Constants.MAX_USER_COLLATERALS).toUint24();
 
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(
-        ISpoke.updateUserReserveLimits,
-        (newCollateralReservesLimit, oldBorrowedReservesLimit)
-      )
-    );
+    ISpoke.SpokeConfig memory expectedConfig = spoke.getSpokeConfig();
+    expectedConfig.maxUserCollaterals = newCollateralReservesLimit;
+
+    vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateSpokeConfig, (expectedConfig)));
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateUserReserveLimits(newCollateralReservesLimit, oldBorrowedReservesLimit);
+    emit ISpoke.UpdateSpokeConfig(expectedConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateMaxUserCollaterals(spokeAddr, newCollateralReservesLimit);
 
     (uint24 maxUserCollaterals, uint24 maxUserBorrows) = spoke.getUserReserveLimits();
     assertEq(maxUserCollaterals, newCollateralReservesLimit);
-    assertEq(maxUserBorrows, oldBorrowedReservesLimit);
+    assertEq(maxUserBorrows, expectedConfig.maxUserBorrows);
   }
 
   function test_updateMaxUserBorrows() public {
-    (uint24 oldCollateralReservesLimit, ) = spoke.getUserReserveLimits();
     uint24 newBorrowedReservesLimit = vm.randomUint(0, Constants.MAX_USER_BORROWS).toUint24();
 
-    vm.expectCall(
-      spokeAddr,
-      abi.encodeCall(
-        ISpoke.updateUserReserveLimits,
-        (oldCollateralReservesLimit, newBorrowedReservesLimit)
-      )
-    );
+    ISpoke.SpokeConfig memory expectedConfig = spoke.getSpokeConfig();
+    expectedConfig.maxUserBorrows = newBorrowedReservesLimit;
+
+    vm.expectCall(spokeAddr, abi.encodeCall(ISpoke.updateSpokeConfig, (expectedConfig)));
     vm.expectEmit(address(spoke));
-    emit ISpoke.UpdateUserReserveLimits(oldCollateralReservesLimit, newBorrowedReservesLimit);
+    emit ISpoke.UpdateSpokeConfig(expectedConfig);
     vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateMaxUserBorrows(spokeAddr, newBorrowedReservesLimit);
 
     (uint24 maxUserCollaterals, uint24 maxUserBorrows) = spoke.getUserReserveLimits();
-    assertEq(maxUserCollaterals, oldCollateralReservesLimit);
+    assertEq(maxUserCollaterals, expectedConfig.maxUserCollaterals);
     assertEq(maxUserBorrows, newBorrowedReservesLimit);
   }
 }

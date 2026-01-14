@@ -313,7 +313,7 @@ abstract contract Base is Test {
 
     // Grant responsibilities to roles
     {
-      bytes4[] memory selectors = new bytes4[](8);
+      bytes4[] memory selectors = new bytes4[](7);
       selectors[0] = ISpoke.updateSpokeConfig.selector;
       selectors[1] = ISpoke.addReserve.selector;
       selectors[2] = ISpoke.updateReserveConfig.selector;
@@ -321,7 +321,6 @@ abstract contract Base is Test {
       selectors[4] = ISpoke.addDynamicReserveConfig.selector;
       selectors[5] = ISpoke.updatePositionManager.selector;
       selectors[6] = ISpoke.updateReservePriceSource.selector;
-      selectors[7] = ISpoke.updateUserReserveLimits.selector;
       manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
     }
 

@@ -134,9 +134,10 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_setUsingAsCollateral_revertsWith_MaximumUserReservesExceeded() public {
     uint24 maxCollateralReserves = 10;
-    (, uint24 maxBorrows) = spoke1.getUserReserveLimits();
+    ISpoke.SpokeConfig memory spokeConfig = spoke1.getSpokeConfig();
+    spokeConfig.maxUserCollaterals = maxCollateralReserves;
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateUserReserveLimits(maxCollateralReserves, maxBorrows);
+    spoke1.updateSpokeConfig(spokeConfig);
 
     _addNewAssetsAndReserves(maxCollateralReserves + 1);
 
@@ -154,9 +155,10 @@ contract SpokeConfigTest is SpokeBase {
   function test_setUsingAsCollateral_revertsWith_MaximumUserReservesExceeded_afterLimitUpdate()
     public
   {
-    (, uint24 borrowLimit) = spoke1.getUserReserveLimits();
+    ISpoke.SpokeConfig memory spokeConfig = spoke1.getSpokeConfig();
+    spokeConfig.maxUserCollaterals = 1;
     vm.prank(SPOKE_ADMIN);
-    spoke1.updateUserReserveLimits(1, borrowLimit);
+    spoke1.updateSpokeConfig(spokeConfig);
 
     vm.startPrank(bob);
     spoke1.setUsingAsCollateral(_daiReserveId(spoke1), true, bob);

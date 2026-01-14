@@ -51,8 +51,6 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(spokeProxyAddress);
     emit ISpoke.UpdateOracle(oracle);
     vm.expectEmit(spokeProxyAddress);
-    emit ISpoke.UpdateUserReserveLimits(Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_COLLATERALS);
-    vm.expectEmit(spokeProxyAddress);
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.expectEmit(spokeProxyAddress);
     emit ISpoke.UpdateSpokeConfig(expectedSpokeConfig);

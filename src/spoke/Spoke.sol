@@ -122,14 +122,6 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISpoke
-  function updateUserReserveLimits(
-    uint24 maxUserCollaterals,
-    uint24 maxUserBorrows
-  ) external restricted {
-    _setUserReserveLimits(maxUserCollaterals, maxUserBorrows);
-  }
-
-  /// @inheritdoc ISpoke
   function addReserve(
     address hub,
     uint256 assetId,
@@ -902,12 +894,6 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
 
       emit ReportDeficit(reserveId, user, deficitShares, premiumDelta);
     }
-  }
-
-  function _setUserReserveLimits(uint24 maxUserCollaterals, uint24 maxUserBorrows) internal {
-    _spokeConfig.maxUserCollaterals = maxUserCollaterals;
-    _spokeConfig.maxUserBorrows = maxUserBorrows;
-    emit UpdateUserReserveLimits(maxUserCollaterals, maxUserBorrows);
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
