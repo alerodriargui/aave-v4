@@ -1288,7 +1288,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     } else if (
       params.receiveShares &&
       liquidationMetadata.collateralSharesToLiquidate >
-      liquidationMetadata.collateralSharesToLiquidator
+        liquidationMetadata.collateralSharesToLiquidator
     ) {
       expectedTransferSharesEventCount = 1;
     }
