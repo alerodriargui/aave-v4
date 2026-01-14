@@ -179,7 +179,11 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_revertsWith_MaximumUserReservesExceeded() public {
-    (, uint64 maxBorrowedReserves) = spoke1.getUserReserveLimits();
+    uint24 maxBorrowedReserves = 10;
+    (uint24 maxCollaterals, ) = spoke1.getUserReserveLimits();
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updateUserReserveLimits(maxCollaterals, maxBorrowedReserves);
+
     _addNewAssetsAndReserves(maxBorrowedReserves + 1);
 
     // Bob borrows reserves up to max allowed

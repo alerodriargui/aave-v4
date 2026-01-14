@@ -2269,10 +2269,7 @@ abstract contract Base is Test {
         deployer,
         spokeImpl,
         proxyAdminOwner,
-        abi.encodeCall(
-          Spoke.initialize,
-          (_accessManager, Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
-        )
+        abi.encodeCall(Spoke.initialize, (_accessManager))
       )
     );
 

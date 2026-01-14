@@ -107,11 +107,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @dev To be overridden by the inheriting Spoke instance contract.
-  function initialize(
-    address authority,
-    uint24 maxUserCollaterals,
-    uint24 maxUserBorrows
-  ) external virtual;
+  function initialize(address authority) external virtual;
 
   /// @inheritdoc ISpoke
   function updateSpokeConfig(SpokeConfig calldata config) external restricted {
@@ -302,8 +298,10 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
+      uint24 maxUserBorrows = _spokeConfig.maxUserBorrows;
       require(
-        positionStatus.borrowedCount(_reserveCount) < _spokeConfig.maxUserBorrows,
+        maxUserBorrows == type(uint24).max ||
+          positionStatus.borrowCount(_reserveCount) < maxUserBorrows,
         MaximumUserReservesExceeded()
       );
       positionStatus.setBorrowing(reserveId, true);
@@ -391,7 +389,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
       drawnIndex: drawnIndex,
       totalDebtValue: userAccountData.totalDebtValue,
       activeCollateralCount: userAccountData.activeCollateralCount,
-      borrowedCount: userAccountData.borrowedCount,
+      borrowCount: userAccountData.borrowCount,
       liquidator: msg.sender,
       receiveShares: receiveShares
     });
@@ -791,7 +789,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
         // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += ((drawnDebt + premiumDebtRay.fromRayUp()) * assetPrice)
           .wadDivUp(assetUnit);
-        accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
+        accountData.borrowCount = accountData.borrowCount.uncheckedAdd(1);
       }
     }
 
@@ -959,8 +957,10 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
       // disabling as collateral is allowed when reserve is frozen
       require(!flags.frozen(), ReserveFrozen());
       // this must be a new collateral, otherwise would have short-circuited
+      uint24 maxUserCollaterals = _spokeConfig.maxUserCollaterals;
       require(
-        positionStatus.collateralCount(_reserveCount) < _spokeConfig.maxUserCollaterals,
+        maxUserCollaterals == type(uint24).max ||
+          positionStatus.collateralCount(_reserveCount) < maxUserCollaterals,
         MaximumUserReservesExceeded()
       );
     }

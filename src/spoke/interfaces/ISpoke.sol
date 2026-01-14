@@ -112,7 +112,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
   /// @dev totalDebtValue The total debt value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
   /// @dev activeCollateralCount The number of active collaterals, which includes reserves with `collateralFactor` > 0, `enabledAsCollateral` and `suppliedAmount` > 0.
-  /// @dev borrowedCount The number of borrowed reserves of the user position.
+  /// @dev borrowCount The number of borrowed reserves of the user position.
   struct UserAccountData {
     uint256 riskPremium;
     uint256 avgCollateralFactor;
@@ -120,7 +120,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
     uint256 totalCollateralValue;
     uint256 totalDebtValue;
     uint256 activeCollateralCount;
-    uint256 borrowedCount;
+    uint256 borrowCount;
   }
 
   /// @notice Emitted when the oracle address of the spoke is updated.

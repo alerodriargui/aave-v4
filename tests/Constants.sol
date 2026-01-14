@@ -19,6 +19,6 @@ library Constants {
     // keccak256('SetUserPositionManager(address positionManager,address user,bool approve,uint256 nonce,uint256 deadline)')
     0x758d23a3c07218b7ea0b4f7f63903c4e9d5cbde72d3bcfe3e9896639025a0214;
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
-  uint24 public constant MAX_USER_COLLATERALS = 128;
-  uint24 public constant MAX_USER_BORROWS = 128;
+  uint24 public constant MAX_USER_COLLATERALS = type(uint24).max;
+  uint24 public constant MAX_USER_BORROWS = type(uint24).max;
 }

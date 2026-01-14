@@ -101,7 +101,7 @@ library PositionStatusMap {
   /// @notice Counts the number of reserves borrowed.
   /// @dev Disregards potential dirty bits set after `reserveCount`.
   /// @param reserveCount The current `reserveCount`, to avoid reading uninitialized buckets.
-  function borrowedCount(
+  function borrowCount(
     ISpoke.PositionStatus storage self,
     uint256 reserveCount
   ) internal view returns (uint256) {

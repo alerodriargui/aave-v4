@@ -21,14 +21,10 @@ contract MockSpokeInstance is Spoke {
   }
 
   /// @inheritdoc Spoke
-  function initialize(
-    address authority,
-    uint24 maxUserCollaterals,
-    uint24 maxUserBorrows
-  ) external override reinitializer(SPOKE_REVISION) {
+  function initialize(address authority) external override reinitializer(SPOKE_REVISION) {
     emit UpdateOracle(ORACLE);
     require(authority != address(0), InvalidAddress());
-    _setUserReserveLimits(maxUserCollaterals, maxUserBorrows);
+    _setUserReserveLimits(type(uint24).max, type(uint24).max);
     __AccessManaged_init(authority);
     if (_spokeConfig.targetHealthFactor == 0) {
       _spokeConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;

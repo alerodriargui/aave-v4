@@ -55,7 +55,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 0.96e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -89,7 +89,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 0.96e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -123,7 +123,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 1.28e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -165,7 +165,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 2.596e18,
         riskPremium: 14_50,
         activeCollateralCount: 2,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -207,7 +207,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 0.576e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 2
+        borrowCount: 2
       })
     );
   }
@@ -247,7 +247,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
         healthFactor: 0.96e18,
         riskPremium: 10_00,
         activeCollateralCount: 1,
-        borrowedCount: 1
+        borrowCount: 1
       })
     );
   }
@@ -279,6 +279,6 @@ contract SpokeUserAccountDataTest is SpokeBase {
     assertApproxEqAbs(a.healthFactor, b.healthFactor, 1e12, 'healthFactor');
     assertApproxEqAbs(a.riskPremium, b.riskPremium, 1, 'riskPremium');
     assertEq(a.activeCollateralCount, b.activeCollateralCount, 'activeCollateralCount');
-    assertEq(a.borrowedCount, b.borrowedCount, 'borrowedCount');
+    assertEq(a.borrowCount, b.borrowCount, 'borrowCount');
   }
 }

@@ -28,11 +28,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     assertEq(_getProxyInitializedVersion(spokeImplAddress), type(uint64).max);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    spokeImpl.initialize(
-      address(accessManager),
-      Constants.MAX_USER_COLLATERALS,
-      Constants.MAX_USER_BORROWS
-    );
+    spokeImpl.initialize(address(accessManager));
   }
 
   function test_proxy_constructor_fuzz(uint64 revision) public {
@@ -42,12 +38,12 @@ contract SpokeUpgradeableTest is SpokeBase {
     address spokeProxyAddress = vm.computeCreateAddress(address(this), vm.getNonce(address(this)));
     address proxyAdminAddress = vm.computeCreateAddress(spokeProxyAddress, 1);
 
-    ISpoke.SpokeConfig memory expectedLiquidationConfig = ISpoke.SpokeConfig({
+    ISpoke.SpokeConfig memory expectedSpokeConfig = ISpoke.SpokeConfig({
       targetHealthFactor: Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       healthFactorForMaxBonus: 0,
       liquidationBonusFactor: 0,
       maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
-      maxUserBorrows: Constants.MAX_USER_BORROWS
+      maxUserBorrows: Constants.MAX_USER_COLLATERALS
     });
 
     vm.expectEmit(spokeProxyAddress);
@@ -55,11 +51,11 @@ contract SpokeUpgradeableTest is SpokeBase {
     vm.expectEmit(spokeProxyAddress);
     emit ISpoke.UpdateOracle(oracle);
     vm.expectEmit(spokeProxyAddress);
-    emit ISpoke.UpdateUserReserveLimits(Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS);
+    emit ISpoke.UpdateUserReserveLimits(Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_COLLATERALS);
     vm.expectEmit(spokeProxyAddress);
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.expectEmit(spokeProxyAddress);
-    emit ISpoke.UpdateSpokeConfig(expectedLiquidationConfig);
+    emit ISpoke.UpdateSpokeConfig(expectedSpokeConfig);
     vm.expectEmit(spokeProxyAddress);
     emit Initializable.Initialized(revision);
     vm.expectEmit(proxyAdminAddress);
@@ -71,10 +67,7 @@ contract SpokeUpgradeableTest is SpokeBase {
         new TransparentUpgradeableProxy(
           address(spokeImpl),
           proxyAdminOwner,
-          abi.encodeCall(
-            Spoke.initialize,
-            (address(accessManager), Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
-          )
+          abi.encodeCall(Spoke.initialize, (address(accessManager)))
         )
       )
     );
@@ -84,10 +77,10 @@ contract SpokeUpgradeableTest is SpokeBase {
     assertEq(_getImplementationAddress(address(spokeProxy)), address(spokeImpl));
 
     assertEq(_getProxyInitializedVersion(address(spokeProxy)), revision);
-    assertEq(spokeProxy.getSpokeConfig(), expectedLiquidationConfig);
-    (uint64 collateralLimit, uint64 borrowedLimit) = spokeProxy.getUserReserveLimits();
+    assertEq(spokeProxy.getSpokeConfig(), expectedSpokeConfig);
+    (uint24 collateralLimit, uint24 borrowedLimit) = spokeProxy.getUserReserveLimits();
     assertEq(collateralLimit, Constants.MAX_USER_COLLATERALS);
-    assertEq(borrowedLimit, Constants.MAX_USER_BORROWS);
+    assertEq(borrowedLimit, Constants.MAX_USER_COLLATERALS);
   }
 
   function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {
@@ -98,10 +91,7 @@ contract SpokeUpgradeableTest is SpokeBase {
         new TransparentUpgradeableProxy(
           address(spokeImpl),
           proxyAdminOwner,
-          abi.encodeCall(
-            Spoke.initialize,
-            (address(accessManager), Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
-          )
+          abi.encodeCall(Spoke.initialize, (address(accessManager)))
         )
       )
     );
@@ -134,10 +124,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     new TransparentUpgradeableProxy(
       address(spokeImpl),
       proxyAdminOwner,
-      abi.encodeCall(
-        Spoke.initialize,
-        (address(accessManager), Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
-      )
+      abi.encodeCall(Spoke.initialize, (address(accessManager)))
     );
   }
 
@@ -226,11 +213,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function _getInitializeCalldata(address manager) internal pure returns (bytes memory) {
-    return
-      abi.encodeCall(
-        Spoke.initialize,
-        (manager, Constants.MAX_USER_COLLATERALS, Constants.MAX_USER_BORROWS)
-      );
+    return abi.encodeCall(Spoke.initialize, (manager));
   }
 
   function _deployMockSpokeInstance(uint64 revision) internal returns (SpokeInstance) {
