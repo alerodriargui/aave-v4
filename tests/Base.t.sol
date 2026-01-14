@@ -568,34 +568,31 @@ abstract contract Base is Test {
     );
 
     // Spoke configs
-    (uint24 maxUserCollaterals1, uint24 maxUserBorrows1) = spoke1.getUserReserveLimits();
     spoke1.updateSpokeConfig(
       ISpoke.SpokeConfig({
         targetHealthFactor: 1.05e18,
         healthFactorForMaxBonus: 0.7e18,
         liquidationBonusFactor: 20_00,
-        maxUserCollaterals: maxUserCollaterals1,
-        maxUserBorrows: maxUserBorrows1
+        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+        maxUserBorrows: Constants.MAX_USER_BORROWS
       })
     );
-    (uint24 maxUserCollaterals2, uint24 maxUserBorrows2) = spoke2.getUserReserveLimits();
     spoke2.updateSpokeConfig(
       ISpoke.SpokeConfig({
         targetHealthFactor: 1.04e18,
         healthFactorForMaxBonus: 0.8e18,
         liquidationBonusFactor: 15_00,
-        maxUserCollaterals: maxUserCollaterals2,
-        maxUserBorrows: maxUserBorrows2
+        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+        maxUserBorrows: Constants.MAX_USER_BORROWS
       })
     );
-    (uint24 maxUserCollaterals3, uint24 maxUserBorrows3) = spoke3.getUserReserveLimits();
     spoke3.updateSpokeConfig(
       ISpoke.SpokeConfig({
         targetHealthFactor: 1.03e18,
         healthFactorForMaxBonus: 0.9e18,
         liquidationBonusFactor: 10_00,
-        maxUserCollaterals: maxUserCollaterals3,
-        maxUserBorrows: maxUserBorrows3
+        maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
+        maxUserBorrows: Constants.MAX_USER_BORROWS
       })
     );
 
