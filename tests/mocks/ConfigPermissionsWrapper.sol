@@ -2,7 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {ConfigPermissions, ConfigPermissionsMap} from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
+import {
+  ConfigPermissions,
+  ConfigPermissionsMap
+} from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
 
 contract ConfigPermissionsWrapper {
   using ConfigPermissionsMap for ConfigPermissions;

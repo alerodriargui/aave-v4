@@ -67,13 +67,28 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
 
 // position manager
-import {PositionManagerBase, IPositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
+import {
+  PositionManagerBase,
+  IPositionManagerBase
+} from 'src/position-manager/PositionManagerBase.sol';
 import {NativeTokenGateway, INativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 import {SignatureGateway, ISignatureGateway} from 'src/position-manager/SignatureGateway.sol';
-import {SupplyRepayPositionManager, ISupplyRepayPositionManager} from 'src/position-manager/SupplyRepayPositionManager.sol';
-import {AllowancePositionManager, IAllowancePositionManager} from 'src/position-manager/AllowancePositionManager.sol';
-import {PositionConfigPositionManager, IPositionConfigPositionManager} from 'src/position-manager/PositionConfigPositionManager.sol';
-import {ConfigPermissions, ConfigPermissionsMap} from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
+import {
+  SupplyRepayPositionManager,
+  ISupplyRepayPositionManager
+} from 'src/position-manager/SupplyRepayPositionManager.sol';
+import {
+  AllowancePositionManager,
+  IAllowancePositionManager
+} from 'src/position-manager/AllowancePositionManager.sol';
+import {
+  PositionConfigPositionManager,
+  IPositionConfigPositionManager
+} from 'src/position-manager/PositionConfigPositionManager.sol';
+import {
+  ConfigPermissions,
+  ConfigPermissionsMap
+} from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
 
 // test
 import {Constants} from 'tests/Constants.sol';
