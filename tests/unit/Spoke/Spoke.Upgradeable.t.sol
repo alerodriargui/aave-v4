@@ -63,7 +63,7 @@ contract SpokeUpgradeableTest is SpokeBase {
         new TransparentUpgradeableProxy(
           address(spokeImpl),
           proxyAdminOwner,
-          abi.encodeCall(ISpoke.initialize, address(accessManager))
+          abi.encodeCall(ISpokeInstance.initialize, address(accessManager))
         )
       )
     );
@@ -84,7 +84,7 @@ contract SpokeUpgradeableTest is SpokeBase {
         new TransparentUpgradeableProxy(
           address(spokeImpl),
           proxyAdminOwner,
-          abi.encodeCall(ISpoke.initialize, address(accessManager))
+          abi.encodeCall(ISpokeInstance.initialize, address(accessManager))
         )
       )
     );
@@ -117,7 +117,7 @@ contract SpokeUpgradeableTest is SpokeBase {
     new TransparentUpgradeableProxy(
       address(spokeImpl),
       proxyAdminOwner,
-      abi.encodeCall(ISpoke.initialize, address(accessManager))
+      abi.encodeCall(ISpokeInstance.initialize, address(accessManager))
     );
   }
 
@@ -212,16 +212,10 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function _getInitializeCalldata(address manager) internal pure returns (bytes memory) {
-    return abi.encodeCall(ISpoke.initialize, manager);
+    return abi.encodeCall(ISpokeInstance.initialize, manager);
   }
 
   function _deployMockSpokeInstance(uint64 revision) internal returns (ISpokeInstance) {
     return ISpokeInstance(address(new MockSpokeInstance(revision, oracle)));
   }
-}
-
-interface ISpokeInstance is ISpoke {
-  function initialize(address _authority) external;
-
-  function SPOKE_REVISION() external view returns (uint64);
 }

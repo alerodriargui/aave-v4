@@ -436,8 +436,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
     bytes32 permitS
   ) external;
 
-  function initialize(address authority) external;
-
   /// @notice Returns the liquidation config struct.
   function getLiquidationConfig() external view returns (LiquidationConfig memory);
 

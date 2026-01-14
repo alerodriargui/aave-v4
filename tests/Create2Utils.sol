@@ -23,9 +23,7 @@ library Create2Utils {
   }
 
   function create2Deploy(bytes32 salt, bytes memory bytecode) internal returns (address) {
-    if (_isContractDeployed(CREATE2_FACTORY) == false) {
-      revert NoCreate2Factory();
-    }
+    require(_isContractDeployed(CREATE2_FACTORY), NoCreate2Factory());
 
     address computed = computeCreate2Address(salt, bytecode);
 

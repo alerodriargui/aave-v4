@@ -104,7 +104,6 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     ORACLE = oracle_;
   }
 
-  /// @inheritdoc ISpoke
   /// @dev To be overridden by the inheriting Spoke instance contract.
   function initialize(address authority) external virtual;
 

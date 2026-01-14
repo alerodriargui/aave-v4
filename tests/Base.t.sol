@@ -81,6 +81,7 @@ import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
+import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
 
 abstract contract Base is Test {
@@ -2238,7 +2239,7 @@ abstract contract Base is Test {
       deployer,
       address(oracle),
       proxyAdminOwner,
-      abi.encodeCall(ISpoke.initialize, (_accessManager))
+      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
     );
     vm.prank(deployer);
     oracle.setSpoke(address(spoke));
