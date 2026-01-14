@@ -35,15 +35,15 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateUserReserveLimits() public {
-    uint64 newCollateralLimit = Constants.MAX_USER_COLLATERALS - 1;
-    uint64 newBorrowedLimit = Constants.MAX_USER_BORROWS - 2;
+    uint24 newCollateralLimit = Constants.MAX_USER_COLLATERALS - 1;
+    uint24 newBorrowedLimit = Constants.MAX_USER_BORROWS - 2;
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateUserReserveLimits(newCollateralLimit, newBorrowedLimit);
     vm.prank(SPOKE_ADMIN);
     spoke1.updateUserReserveLimits(newCollateralLimit, newBorrowedLimit);
 
-    (uint64 collateralLimit, uint64 borrowedLimit) = spoke1.getUserReserveLimits();
+    (uint24 collateralLimit, uint24 borrowedLimit) = spoke1.getUserReserveLimits();
     assertEq(collateralLimit, newCollateralLimit);
     assertEq(borrowedLimit, newBorrowedLimit);
   }
@@ -297,13 +297,13 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateSpokeConfig_fuzz_targetHealthFactor(uint128 newTargetHealthFactor) public {
-    newTargetHealthFactor = bound(
+    uint72 newTargetHealthFactor = bound(
       newTargetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint128).max
-    ).toUint128();
+      type(uint72).max
+    ).toUint72();
 
-    ISpoke.SpokeConfig memory liquidationConfig;
+    ISpoke.SpokeConfig memory liquidationConfig = spoke1.getSpokeConfig();
     liquidationConfig.targetHealthFactor = newTargetHealthFactor;
 
     vm.expectEmit(address(spoke1));
@@ -320,7 +320,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_updateSpokeConfig_liqBonusConfig() public {
     ISpoke.SpokeConfig memory liquidationConfig = ISpoke.SpokeConfig({
-      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD.toUint72(),
       healthFactorForMaxBonus: 0.9e18,
       liquidationBonusFactor: 10_00,
       maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
@@ -345,8 +345,8 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.targetHealthFactor = bound(
       liquidationConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint128).max
-    ).toUint128();
+      type(uint72).max
+    ).toUint72();
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateSpokeConfig(liquidationConfig);
@@ -369,7 +369,7 @@ contract SpokeConfigTest is SpokeBase {
     public
   {
     ISpoke.SpokeConfig memory liquidationConfig = ISpoke.SpokeConfig({
-      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD.toUint72(),
       healthFactorForMaxBonus: HEALTH_FACTOR_LIQUIDATION_THRESHOLD.toUint64(),
       liquidationBonusFactor: 10_00,
       maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
@@ -397,8 +397,8 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.targetHealthFactor = bound(
       liquidationConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint128).max
-    ).toUint128(); // valid values
+      type(uint72).max
+    ).toUint72(); // valid values
 
     vm.expectRevert(ISpoke.InvalidLiquidationConfig.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);
@@ -409,7 +409,7 @@ contract SpokeConfigTest is SpokeBase {
     public
   {
     ISpoke.SpokeConfig memory liquidationConfig = ISpoke.SpokeConfig({
-      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      targetHealthFactor: HEALTH_FACTOR_LIQUIDATION_THRESHOLD.toUint72(),
       healthFactorForMaxBonus: 0.9e18,
       liquidationBonusFactor: MAX_LIQUIDATION_BONUS_FACTOR + 1,
       maxUserCollaterals: Constants.MAX_USER_COLLATERALS,
@@ -437,8 +437,8 @@ contract SpokeConfigTest is SpokeBase {
     liquidationConfig.targetHealthFactor = bound(
       liquidationConfig.targetHealthFactor,
       HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
-      type(uint128).max
-    ).toUint128(); // valid values
+      type(uint72).max
+    ).toUint72(); // valid values
 
     vm.expectRevert(ISpoke.InvalidLiquidationConfig.selector, address(spoke1));
     vm.prank(SPOKE_ADMIN);

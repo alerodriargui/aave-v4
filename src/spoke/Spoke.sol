@@ -109,8 +109,8 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   /// @dev To be overridden by the inheriting Spoke instance contract.
   function initialize(
     address authority,
-    uint64 maxUserCollaterals,
-    uint64 maxUserBorrows
+    uint24 maxUserCollaterals,
+    uint24 maxUserBorrows
   ) external virtual;
 
   /// @inheritdoc ISpoke
@@ -127,8 +127,8 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
 
   /// @inheritdoc ISpoke
   function updateUserReserveLimits(
-    uint64 maxUserCollaterals,
-    uint64 maxUserBorrows
+    uint24 maxUserCollaterals,
+    uint24 maxUserBorrows
   ) external restricted {
     _setUserReserveLimits(maxUserCollaterals, maxUserBorrows);
   }
@@ -696,7 +696,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISpoke
-  function getUserReserveLimits() external view returns (uint64, uint64) {
+  function getUserReserveLimits() external view returns (uint24, uint24) {
     return (_spokeConfig.maxUserCollaterals, _spokeConfig.maxUserBorrows);
   }
 
@@ -906,7 +906,7 @@ abstract contract Spoke is ISpoke, AccessManagedUpgradeable, IntentConsumer, Mul
     }
   }
 
-  function _setUserReserveLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows) internal {
+  function _setUserReserveLimits(uint24 maxUserCollaterals, uint24 maxUserBorrows) internal {
     _spokeConfig.maxUserCollaterals = maxUserCollaterals;
     _spokeConfig.maxUserBorrows = maxUserBorrows;
     emit UpdateUserReserveLimits(maxUserCollaterals, maxUserBorrows);

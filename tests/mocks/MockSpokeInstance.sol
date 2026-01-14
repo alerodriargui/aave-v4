@@ -23,8 +23,8 @@ contract MockSpokeInstance is Spoke {
   /// @inheritdoc Spoke
   function initialize(
     address authority,
-    uint64 maxUserCollaterals,
-    uint64 maxUserBorrows
+    uint24 maxUserCollaterals,
+    uint24 maxUserBorrows
   ) external override reinitializer(SPOKE_REVISION) {
     emit UpdateOracle(ORACLE);
     require(authority != address(0), InvalidAddress());

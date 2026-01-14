@@ -66,11 +66,11 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @dev maxUserCollaterals The maximum number of reserves a user can enable as collateral.
   /// @dev maxUserBorrows The maximum number of reserves a user can borrow.
   struct SpokeConfig {
-    uint128 targetHealthFactor;
+    uint72 targetHealthFactor;
     uint64 healthFactorForMaxBonus;
     uint16 liquidationBonusFactor;
-    uint64 maxUserCollaterals;
-    uint64 maxUserBorrows;
+    uint24 maxUserCollaterals;
+    uint24 maxUserBorrows;
   }
 
   /// @notice User position data per reserve.
@@ -134,7 +134,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @notice Emitted when user reserve limits are updated.
   /// @param maxUserCollaterals The new max number of collateral reserves per user.
   /// @param maxUserBorrows The new max number of borrowed reserves per user.
-  event UpdateUserReserveLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows);
+  event UpdateUserReserveLimits(uint24 maxUserCollaterals, uint24 maxUserBorrows);
 
   /// @notice Emitted when a reserve is added.
   /// @param reserveId The identifier of the reserve.
@@ -328,7 +328,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @notice Updates the per-user reserve limits.
   /// @param maxUserCollaterals The maximum number of collateral reserves a user can enable.
   /// @param maxUserBorrows The maximum number of borrowed reserves a user can have.
-  function updateUserReserveLimits(uint64 maxUserCollaterals, uint64 maxUserBorrows) external;
+  function updateUserReserveLimits(uint24 maxUserCollaterals, uint24 maxUserBorrows) external;
 
   /// @notice Adds a new reserve to the spoke.
   /// @dev Allowed even if the spoke has not yet been added to the Hub.
@@ -551,5 +551,5 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IMulticall {
   /// @notice Returns the governance-controlled maximum allowed number of collateral and borrowed reserves per user.
   /// @return The maximum allowed number of collateral reserves per user.
   /// @return The maximum allowed number of borrowed reserves per user.
-  function getUserReserveLimits() external view returns (uint64, uint64);
+  function getUserReserveLimits() external view returns (uint24, uint24);
 }

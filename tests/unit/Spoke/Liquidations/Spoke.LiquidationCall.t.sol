@@ -608,7 +608,7 @@ contract SpokeLiquidationCallTest_TargetHealthFactor_LiquidationFee is
     address
   ) internal virtual override {
     uint256 targetHealthFactor = vm.randomUint(MIN_CLOSE_FACTOR, MAX_CLOSE_FACTOR);
-    _updateTargetHealthFactor(spoke, targetHealthFactor.toUint128());
+    _updateTargetHealthFactor(spoke, targetHealthFactor.toUint72());
 
     uint32 maxLiquidationBonus = _randomMaxLiquidationBonus(spoke, collateralReserveId);
     _updateMaxLiquidationBonus(spoke, collateralReserveId, maxLiquidationBonus);

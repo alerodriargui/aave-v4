@@ -198,7 +198,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_revertsWith_MaximumUserReservesExceeded_afterLimitUpdate() public {
-    (uint64 collateralLimit, ) = spoke1.getUserReserveLimits();
+    (uint24 collateralLimit, ) = spoke1.getUserReserveLimits();
     vm.prank(SPOKE_ADMIN);
     spoke1.updateUserReserveLimits(collateralLimit, 1);
 

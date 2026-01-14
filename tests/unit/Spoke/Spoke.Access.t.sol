@@ -57,13 +57,13 @@ contract SpokeAccessTest is SpokeBase {
   /// @dev Test showing that spoke configurations can only be set by spoke admin.
   function testAccess_spoke_admin_config_access() public {
     // updateSpokeConfig only callable by spoke admin
-    (uint64 maxUserCollaterals1, uint64 maxUserBorrows1) = spoke1.getUserReserveLimits();
+    (uint24 maxUserCollaterals1, uint24 maxUserBorrows1) = spoke1.getUserReserveLimits();
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, address(this))
     );
     spoke1.updateSpokeConfig(
       ISpoke.SpokeConfig({
-        targetHealthFactor: WadRayMath.WAD.toUint128(),
+        targetHealthFactor: WadRayMath.WAD.toUint72(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18,
         maxUserCollaterals: maxUserCollaterals1,
@@ -72,11 +72,11 @@ contract SpokeAccessTest is SpokeBase {
     );
 
     // Spoke admin can call updateSpokeConfig
-    (uint64 maxUserCollaterals2, uint64 maxUserBorrows2) = spoke1.getUserReserveLimits();
+    (uint24 maxUserCollaterals2, uint24 maxUserBorrows2) = spoke1.getUserReserveLimits();
     vm.prank(address(SPOKE_ADMIN));
     spoke1.updateSpokeConfig(
       ISpoke.SpokeConfig({
-        targetHealthFactor: WadRayMath.WAD.toUint128(),
+        targetHealthFactor: WadRayMath.WAD.toUint72(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18,
         maxUserCollaterals: maxUserCollaterals2,
@@ -183,11 +183,11 @@ contract SpokeAccessTest is SpokeBase {
     assertEq(spoke1.authority(), address(newAuthority), 'Authority not changed');
 
     // Spoke admin can call update liquidation config on the spoke after authority change
-    (uint64 maxUserCollaterals, uint64 maxUserBorrows) = spoke1.getUserReserveLimits();
+    (uint24 maxUserCollaterals, uint24 maxUserBorrows) = spoke1.getUserReserveLimits();
     vm.prank(SPOKE_ADMIN);
     spoke1.updateSpokeConfig(
       ISpoke.SpokeConfig({
-        targetHealthFactor: WadRayMath.WAD.toUint128(),
+        targetHealthFactor: WadRayMath.WAD.toUint72(),
         liquidationBonusFactor: 40_00,
         healthFactorForMaxBonus: 0.9e18,
         maxUserCollaterals: maxUserCollaterals,

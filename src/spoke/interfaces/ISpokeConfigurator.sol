@@ -219,12 +219,12 @@ interface ISpokeConfigurator {
   /// @notice Updates the maximum allowed number of collateral reserves per user.
   /// @param spoke The address of the spoke.
   /// @param maxUserCollaterals The new maximum allowed number of collateral reserves per user.
-  function updateMaxUserCollaterals(address spoke, uint64 maxUserCollaterals) external;
+  function updateMaxUserCollaterals(address spoke, uint24 maxUserCollaterals) external;
 
   /// @notice Updates the maximum allowed number of borrowed reserves per user.
   /// @param spoke The address of the spoke.
   /// @param maxUserBorrows The new maximum allowed number of borrowed reserves per user.
-  function updateMaxUserBorrows(address spoke, uint64 maxUserBorrows) external;
+  function updateMaxUserBorrows(address spoke, uint24 maxUserBorrows) external;
 
   /// @notice Returns the maximum number of reserves allowed to exist on a spoke.
   /// @param spoke The address of the spoke.

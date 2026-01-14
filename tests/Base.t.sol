@@ -569,7 +569,7 @@ abstract contract Base is Test {
     );
 
     // Spoke configs
-    (uint64 maxUserCollaterals1, uint64 maxUserBorrows1) = spoke1.getUserReserveLimits();
+    (uint24 maxUserCollaterals1, uint24 maxUserBorrows1) = spoke1.getUserReserveLimits();
     spoke1.updateSpokeConfig(
       ISpoke.SpokeConfig({
         targetHealthFactor: 1.05e18,
@@ -579,7 +579,7 @@ abstract contract Base is Test {
         maxUserBorrows: maxUserBorrows1
       })
     );
-    (uint64 maxUserCollaterals2, uint64 maxUserBorrows2) = spoke2.getUserReserveLimits();
+    (uint24 maxUserCollaterals2, uint24 maxUserBorrows2) = spoke2.getUserReserveLimits();
     spoke2.updateSpokeConfig(
       ISpoke.SpokeConfig({
         targetHealthFactor: 1.04e18,
@@ -589,7 +589,7 @@ abstract contract Base is Test {
         maxUserBorrows: maxUserBorrows2
       })
     );
-    (uint64 maxUserCollaterals3, uint64 maxUserBorrows3) = spoke3.getUserReserveLimits();
+    (uint24 maxUserCollaterals3, uint24 maxUserBorrows3) = spoke3.getUserReserveLimits();
     spoke3.updateSpokeConfig(
       ISpoke.SpokeConfig({
         targetHealthFactor: 1.03e18,
@@ -1035,11 +1035,11 @@ abstract contract Base is Test {
   }
 
   function _createSpokeConfig(
-    uint128 targetHealthFactor,
+    uint72 targetHealthFactor,
     uint64 healthFactorForMaxBonus,
     uint16 liquidationBonusFactor
   ) internal view returns (ISpoke.SpokeConfig memory) {
-    (uint64 maxUserCollaterals, uint64 maxUserBorrows) = spoke1.getUserReserveLimits();
+    (uint24 maxUserCollaterals, uint24 maxUserBorrows) = spoke1.getUserReserveLimits();
     return
       ISpoke.SpokeConfig({
         targetHealthFactor: targetHealthFactor,
@@ -1168,7 +1168,7 @@ abstract contract Base is Test {
     uint128 newTargetHealthFactor
   ) internal pausePrank {
     ISpoke.SpokeConfig memory spokeConfig = spoke.getSpokeConfig();
-    spokeConfig.targetHealthFactor = newTargetHealthFactor;
+    spokeConfig.targetHealthFactor = newTargetHealthFactor.toUint72();
     vm.prank(SPOKE_ADMIN);
     spoke.updateSpokeConfig(spokeConfig);
 
@@ -2004,7 +2004,7 @@ abstract contract Base is Test {
     return a > b ? a : b;
   }
 
-  function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint128) {
+  function _getTargetHealthFactor(ISpoke spoke) internal view returns (uint72) {
     return spoke.getSpokeConfig().targetHealthFactor;
   }
 
