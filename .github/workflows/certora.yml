@@ -44,6 +44,7 @@ on:
     branches:
       - main
       - certora
+      - feat/ir-compiler-settings
   workflow_dispatch:
 
 jobs:
