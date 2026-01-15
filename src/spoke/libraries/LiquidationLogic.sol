@@ -39,7 +39,7 @@ library LiquidationLogic {
     ISpoke.LiquidationConfig liquidationConfig;
     uint256 debtToCover;
     uint256 healthFactor;
-    uint256 totalDebtValue;
+    uint256 totalDebtValueRay;
     address liquidator;
     uint256 activeCollateralCount;
     uint256 borrowedCount;
@@ -64,7 +64,7 @@ library LiquidationLogic {
     address user;
     uint256 debtToCover;
     uint256 healthFactor;
-    uint256 totalDebtValue;
+    uint256 totalDebtValueRay;
     address liquidator;
     uint256 activeCollateralCount;
     uint256 borrowedCount;
@@ -117,7 +117,7 @@ library LiquidationLogic {
   }
 
   struct CalculateDebtToTargetHealthFactorParams {
-    uint256 totalDebtValue;
+    uint256 totalDebtValueRay;
     uint256 debtAssetUnit;
     uint256 debtAssetPrice;
     uint256 collateralFactor;
@@ -130,7 +130,7 @@ library LiquidationLogic {
     uint256 drawnShares;
     uint256 premiumDebtRay;
     uint256 drawnIndex;
-    uint256 totalDebtValue;
+    uint256 totalDebtValueRay;
     uint256 debtAssetDecimals;
     uint256 debtAssetUnit;
     uint256 debtAssetPrice;
@@ -163,7 +163,7 @@ library LiquidationLogic {
     uint256 drawnShares;
     uint256 premiumDebtRay;
     uint256 drawnIndex;
-    uint256 totalDebtValue;
+    uint256 totalDebtValueRay;
     uint256 debtAssetDecimals;
     uint256 debtAssetPrice;
     uint256 debtToCover;
@@ -229,7 +229,7 @@ library LiquidationLogic {
       user: params.user,
       debtToCover: params.debtToCover,
       healthFactor: params.healthFactor,
-      totalDebtValue: params.totalDebtValue,
+      totalDebtValueRay: params.totalDebtValueRay,
       liquidator: params.liquidator,
       activeCollateralCount: params.activeCollateralCount,
       borrowedCount: params.borrowedCount,
@@ -344,7 +344,7 @@ library LiquidationLogic {
         drawnShares: debtComponents.drawnShares,
         premiumDebtRay: debtComponents.premiumDebtRay,
         drawnIndex: debtComponents.drawnIndex,
-        totalDebtValue: params.totalDebtValue,
+        totalDebtValueRay: params.totalDebtValueRay,
         debtAssetDecimals: params.debtAssetDecimals,
         debtAssetPrice: IAaveOracle(params.oracle).getReservePrice(params.debtReserveId),
         debtToCover: params.debtToCover,
@@ -544,7 +544,7 @@ library LiquidationLogic {
         drawnShares: params.drawnShares,
         premiumDebtRay: params.premiumDebtRay,
         drawnIndex: params.drawnIndex,
-        totalDebtValue: params.totalDebtValue,
+        totalDebtValueRay: params.totalDebtValueRay,
         debtAssetDecimals: params.debtAssetDecimals,
         debtAssetUnit: debtAssetUnit,
         debtAssetPrice: params.debtAssetPrice,
@@ -699,9 +699,9 @@ library LiquidationLogic {
   function _calculateDebtToLiquidate(
     CalculateDebtToLiquidateParams memory params
   ) internal pure returns (uint256, uint256) {
-    uint256 debtToTarget = _calculateDebtToTargetHealthFactor(
+    uint256 debtRayToTarget = _calculateDebtToTargetHealthFactor(
       CalculateDebtToTargetHealthFactorParams({
-        totalDebtValue: params.totalDebtValue,
+        totalDebtValueRay: params.totalDebtValueRay,
         debtAssetUnit: params.debtAssetUnit,
         debtAssetPrice: params.debtAssetPrice,
         collateralFactor: params.collateralFactor,
@@ -711,12 +711,14 @@ library LiquidationLogic {
       })
     );
 
-    uint256 premiumDebtRayToLiquidate = debtToTarget.min(params.debtToCover).toRay().min(
-      params.premiumDebtRay
-    );
+    uint256 premiumDebtRayToLiquidate = debtRayToTarget.min(params.premiumDebtRay);
+    if (params.debtToCover <= premiumDebtRayToLiquidate.fromRayDown()) {
+      premiumDebtRayToLiquidate = params.debtToCover.toRay();
+    }
+
     uint256 drawnSharesToLiquidate;
     if (premiumDebtRayToLiquidate == params.premiumDebtRay) {
-      uint256 drawnSharesToTarget = (debtToTarget.toRay() - premiumDebtRayToLiquidate).divUp(
+      uint256 drawnSharesToTarget = (debtRayToTarget - premiumDebtRayToLiquidate).divUp(
         params.drawnIndex
       );
       uint256 drawnSharesToCover = Math.mulDiv(
@@ -762,9 +764,11 @@ library LiquidationLogic {
     // `liquidationBonus.percentMulUp(collateralFactor) < PercentageMath.PERCENTAGE_FACTOR` is enforced in `_validateDynamicReserveConfig`
     // and targetHealthFactor is always >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     return
-      params.totalDebtValue.mulDivUp(
+      Math.mulDiv(
+        params.totalDebtValueRay,
         params.debtAssetUnit * (params.targetHealthFactor - params.healthFactor),
-        (params.targetHealthFactor - liquidationPenalty) * params.debtAssetPrice.toWad()
+        (params.targetHealthFactor - liquidationPenalty) * params.debtAssetPrice * WadRayMath.WAD,
+        Math.Rounding.Ceil
       );
   }
 

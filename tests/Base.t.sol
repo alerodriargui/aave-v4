@@ -1433,30 +1433,6 @@ abstract contract Base is Test {
     assertEq(newRate, oldRate, string.concat('debt rate should be constant ', label));
   }
 
-  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getValue(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 amount
-  ) internal view returns (uint256) {
-    return
-      (amount * IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId)).wadDivDown(
-        10 ** _underlying(spoke, reserveId).decimals()
-      );
-  }
-
-  /// returns the USD value of the reserve normalized by it's decimals, in terms of WAD
-  function _getDebtValue(
-    ISpoke spoke,
-    uint256 reserveId,
-    uint256 amount
-  ) internal view returns (uint256) {
-    return
-      (amount * IPriceOracle(spoke.ORACLE()).getReservePrice(reserveId)).wadDivUp(
-        10 ** _underlying(spoke, reserveId).decimals()
-      );
-  }
-
   /// @notice Convert 1 asset amount to equivalent amount in another asset.
   /// @notice Will contain precision loss due to conversion split into two steps.
   /// @return Converted amount of toAsset.
@@ -1934,7 +1910,7 @@ abstract contract Base is Test {
     uint256 assetPrice,
     uint256 assetUnit
   ) internal pure returns (uint256) {
-    return (amount * assetPrice).wadDivUp(assetUnit);
+    return (amount * assetPrice) * (WadRayMath.WAD / assetUnit);
   }
 
   function _convertValueToAmount(
@@ -2000,7 +1976,7 @@ abstract contract Base is Test {
     requiredDebtValue =
       userAccountData.totalCollateralValue.wadMulUp(userAccountData.avgCollateralFactor).wadDivUp(
         desiredHf
-      ) - userAccountData.totalDebtValue;
+      ) - userAccountData.totalDebtValueRay.fromRayUp();
   }
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
@@ -2409,6 +2385,13 @@ abstract contract Base is Test {
       indexDelta.rayMulUp(initialDrawnShares + initialPremiumShares).percentMulDown(liquidityFee);
   }
 
+  function _calculateMaxSupplyAmount(
+    ISpoke spoke,
+    uint256 reserveId
+  ) internal view returns (uint256) {
+    return MAX_SUPPLY_ASSET_UNITS * 10 ** spoke.getReserve(reserveId).decimals;
+  }
+
   /// @dev Get the liquidation bonus for a given reserve at a user HF
   function _getLiquidationBonus(
     ISpoke spoke,
@@ -2435,7 +2418,7 @@ abstract contract Base is Test {
         .totalCollateralValue
         .percentMulDown(userAccountData.avgCollateralFactor.fromWadDown())
         .percentMulDown(99_00)
-        .wadDivDown(desiredHf) - userAccountData.totalDebtValue;
+        .wadDivDown(desiredHf) - userAccountData.totalDebtValueRay.fromRayUp();
     // buffer to force debt lower (ie making sure resultant debt creates HF that is gt desired)
   }
 

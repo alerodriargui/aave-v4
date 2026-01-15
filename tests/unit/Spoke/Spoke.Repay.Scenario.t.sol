@@ -1325,9 +1325,10 @@ contract SpokeRepayScenarioTest is SpokeBase {
     _assumeValidSupplier(caller);
     vm.assume(caller != derl);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    userBorrowing = bound(userBorrowing, 0, MAX_SUPPLY_AMOUNT / 2 - 1); // Allow some buffer from borrow cap
+    uint256 assetDecimals = spoke1.getReserve(reserveId).decimals;
+    userBorrowing = bound(userBorrowing, 0, _calculateMaxSupplyAmount(spoke1, reserveId) / 2 - 1); // Allow some buffer from borrow cap
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
-    assets = bound(assets, 1, MAX_SUPPLY_AMOUNT / 2 - userBorrowing);
+    assets = bound(assets, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 2 - userBorrowing);
 
     // Set up initial state of the vault by having derl borrow
     uint256 supplyAmount = _calcMinimumCollAmount(spoke1, reserveId, reserveId, userBorrowing);
@@ -1375,10 +1376,11 @@ contract SpokeRepayScenarioTest is SpokeBase {
     address caller,
     uint256 assets
   ) public {
-    uint256 MAX_BORROW_AMOUNT = MAX_SUPPLY_AMOUNT / 2;
     _assumeValidSupplier(caller);
     vm.assume(caller != derl);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    uint256 assetDecimals = spoke1.getReserve(reserveId).decimals;
+    uint256 MAX_BORROW_AMOUNT = _calculateMaxSupplyAmount(spoke1, reserveId) / 2;
     userBorrowing = bound(userBorrowing, 0, MAX_BORROW_AMOUNT - 2); // Allow some buffer from borrow cap
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     assets = bound(assets, 1, MAX_BORROW_AMOUNT - userBorrowing - 1); // Allow some buffer from borrow cap

@@ -4,6 +4,7 @@ pragma solidity 0.8.28;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {Math} from 'src/dependencies/openzeppelin/Math.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {AccessManagedUpgradeable} from 'src/dependencies/openzeppelin-upgradeable/AccessManagedUpgradeable.sol';
@@ -369,7 +370,7 @@ abstract contract Spoke is
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
-      totalDebtValue: userAccountData.totalDebtValue,
+      totalDebtValueRay: userAccountData.totalDebtValueRay,
       activeCollateralCount: userAccountData.activeCollateralCount,
       borrowedCount: userAccountData.borrowedCount,
       liquidator: msg.sender,
@@ -751,28 +752,29 @@ abstract contract Spoke is
       }
 
       if (borrowing) {
-        (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+        UserPositionDebt.DebtComponents memory debtComponents = userPosition.getDebtComponents(
           reserve.hub,
           reserve.assetId
         );
-        accountData.totalDebtValue += (
-          (drawnDebt + premiumDebtRay.fromRayUp()).toValue({
-            decimals: assetDecimals,
-            price: assetPrice
-          })
+        uint256 debtRay = debtComponents.drawnShares * debtComponents.drawnIndex +
+          debtComponents.premiumDebtRay;
+        accountData.totalDebtValueRay += (
+          debtRay.toValue({decimals: assetDecimals, price: assetPrice})
         );
         accountData.borrowedCount = accountData.borrowedCount.uncheckedAdd(1);
       }
     }
 
-    if (accountData.totalDebtValue > 0) {
+    if (accountData.totalDebtValueRay > 0) {
       // at this point, `avgCollateralFactor` is the collateral-weighted sum (scaled by `collateralFactor` in BPS)
       // health factor uses this directly for simplicity
       // the division by `totalCollateralValue` to compute the weighted average is done later
-      accountData.healthFactor = accountData
-        .avgCollateralFactor
-        .wadDivDown(accountData.totalDebtValue)
-        .fromBpsDown();
+      accountData.healthFactor = Math.mulDiv(
+        accountData.avgCollateralFactor,
+        (WadRayMath.WAD * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR,
+        accountData.totalDebtValueRay,
+        Math.Rounding.Floor
+      );
     } else {
       accountData.healthFactor = type(uint256).max;
     }
@@ -788,7 +790,8 @@ abstract contract Spoke is
     collateralInfo.sortByKey();
 
     // runs until either the collateral or debt is exhausted
-    uint256 debtValueLeftToCover = accountData.totalDebtValue;
+    uint256 totalDebtValue = accountData.totalDebtValueRay.fromRayUp();
+    uint256 debtValueLeftToCover = totalDebtValue;
 
     for (uint256 index = 0; index < collateralInfo.length(); ++index) {
       if (debtValueLeftToCover == 0) {
@@ -801,8 +804,8 @@ abstract contract Spoke is
       debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
     }
 
-    if (debtValueLeftToCover < accountData.totalDebtValue) {
-      accountData.riskPremium /= accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover);
+    if (debtValueLeftToCover < totalDebtValue) {
+      accountData.riskPremium /= totalDebtValue.uncheckedSub(debtValueLeftToCover);
     }
 
     return accountData;

@@ -62,7 +62,7 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
       user: makeAddr('user'),
       debtToCover: 3e18,
       healthFactor: 0.8e18,
-      totalDebtValue: 10_000e26,
+      totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
       liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,
       borrowedCount: 1,
@@ -229,7 +229,7 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
   function test_executeLiquidation_revertsWith_MustNotLeaveDust_Debt() public {
     // debtToTarget doubles (from 2.5 to 5)
     // debtToCover is 4.9, so 5.02 - 4.9 = 0.12 debt is left
-    params.totalDebtValue *= 2;
+    params.totalDebtValueRay *= 2;
     params.debtToCover = 4.9e18;
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(
       liquidationLogicWrapper.getCollateralPosition(params.user).suppliedShares * 2

@@ -47,7 +47,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   }
 
   struct LiquidationMetadata {
-    uint256 debtToTarget;
+    uint256 debtRayToTarget;
     uint256 collateralAssetsToLiquidate;
     uint256 collateralAssetsToLiquidator;
     uint256 collateralSharesToLiquidate;
@@ -56,6 +56,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 debtRayToLiquidate;
     uint256 drawnSharesToLiquidate;
     uint256 premiumDebtRayToLiquidate;
+    uint256 debtAssetsToRestore;
     uint256 liquidationBonus;
     ISpoke.UserAccountData expectedUserAccountData;
     bool fullDebtReserveLiquidated;
@@ -227,7 +228,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         drawnShares: spoke.getUserPosition(debtReserveId, user).drawnShares,
         premiumDebtRay: _calculatePremiumDebtRay(spoke, debtReserveId, user),
         drawnIndex: _reserveDrawnIndex(spoke, debtReserveId),
-        totalDebtValue: userAccountData.totalDebtValue,
+        totalDebtValueRay: userAccountData.totalDebtValueRay,
         debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
         debtAssetDecimals: spoke.getReserve(debtReserveId).decimals,
         debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
@@ -257,7 +258,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-        totalDebtValue: userAccountData.totalDebtValue,
+        totalDebtValueRay: userAccountData.totalDebtValueRay,
         debtAssetUnit: 10 ** spoke.getReserve(debtReserveId).decimals,
         debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
         collateralFactor: spoke
@@ -294,7 +295,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         drawnShares: spoke.getUserPosition(debtReserveId, user).drawnShares,
         premiumDebtRay: _calculatePremiumDebtRay(spoke, debtReserveId, user),
         drawnIndex: _reserveDrawnIndex(spoke, debtReserveId),
-        totalDebtValue: userAccountData.totalDebtValue,
+        totalDebtValueRay: userAccountData.totalDebtValueRay,
         debtAssetDecimals: spoke.getReserve(debtReserveId).decimals,
         debtAssetPrice: IPriceOracle(spoke.ORACLE()).getReservePrice(debtReserveId),
         debtToCover: debtToCover,
@@ -402,19 +403,20 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         continue;
       }
       expectedUserAccountData.borrowedCount++;
-      expectedUserAccountData.totalDebtValue += _convertAmountToValue(
+      expectedUserAccountData.totalDebtValueRay += _convertAmountToValue(
         params.spoke,
         reserveId,
-        userDrawnShares.rayMulUp(_reserveDrawnIndex(params.spoke, reserveId)) +
-          userPremiumDebtRay.fromRayUp()
+        userDrawnShares * _reserveDrawnIndex(params.spoke, reserveId) + userPremiumDebtRay
       );
     }
 
-    if (expectedUserAccountData.totalDebtValue > 0) {
-      expectedUserAccountData.healthFactor = expectedUserAccountData
-        .avgCollateralFactor
-        .wadDivDown(expectedUserAccountData.totalDebtValue)
-        .fromBpsDown();
+    if (expectedUserAccountData.totalDebtValueRay > 0) {
+      expectedUserAccountData.healthFactor = Math.mulDiv(
+        expectedUserAccountData.avgCollateralFactor,
+        (WadRayMath.WAD * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR,
+        expectedUserAccountData.totalDebtValueRay,
+        Math.Rounding.Floor
+      );
     } else {
       expectedUserAccountData.healthFactor = type(uint256).max;
     }
@@ -427,7 +429,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     }
     list.sortByKey();
 
-    uint256 remainingDebtToCover = expectedUserAccountData.totalDebtValue;
+    uint256 remainingDebtToCover = expectedUserAccountData.totalDebtValueRay.fromRayUp();
     for (uint256 i = 0; i < list.length() && remainingDebtToCover > 0; i++) {
       (uint256 collateralRisk, uint256 collateralValue) = list.get(i);
       expectedUserAccountData.riskPremium +=
@@ -437,7 +439,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     expectedUserAccountData.riskPremium /= _max(
       1,
-      _min(expectedUserAccountData.totalDebtValue, expectedUserAccountData.totalCollateralValue)
+      _min(
+        expectedUserAccountData.totalDebtValueRay.fromRayUp(),
+        expectedUserAccountData.totalCollateralValue
+      )
     );
 
     return expectedUserAccountData;
@@ -724,7 +729,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     CheckedLiquidationCallParams memory params,
     ISpoke.UserAccountData memory userAccountDataBefore
   ) internal virtual returns (LiquidationMetadata memory) {
-    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getCalculateDebtToTargetHealthFactorParams(
         params.spoke,
         params.collateralReserveId,
@@ -813,7 +818,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     return
       LiquidationMetadata({
-        debtToTarget: debtToTarget,
+        debtRayToTarget: debtRayToTarget,
         collateralAssetsToLiquidate: collateralHub.previewRemoveByShares(
           collateralAssetId,
           liquidationAmounts.collateralSharesToLiquidate
@@ -829,6 +834,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
           liquidationAmounts.premiumDebtRayToLiquidate,
         drawnSharesToLiquidate: liquidationAmounts.drawnSharesToLiquidate,
         premiumDebtRayToLiquidate: liquidationAmounts.premiumDebtRayToLiquidate,
+        debtAssetsToRestore: _calculateDebtAssetsToRestore(
+          liquidationAmounts.drawnSharesToLiquidate,
+          liquidationAmounts.premiumDebtRayToLiquidate,
+          drawnIndex
+        ),
         liquidationBonus: liquidationBonus,
         expectedUserAccountData: expectedUserAccountData,
         fullDebtReserveLiquidated: fullDebtReserveLiquidated,
@@ -918,7 +928,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
     if (
-      accountsInfoAfter.userAccountData.totalDebtValue == 0 ||
+      accountsInfoAfter.userAccountData.totalDebtValueRay == 0 ||
       !liquidationMetadata.isCollateralAffectingUserHf
     ) {
       assertGe(
@@ -944,7 +954,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         UINT256_MAX,
         'health factor should be max if all debt is liquidated'
       );
-    } else if (liquidationMetadata.debtToTarget.toRay() <= liquidationMetadata.debtRayToLiquidate) {
+    } else if (liquidationMetadata.debtRayToTarget <= liquidationMetadata.debtRayToLiquidate) {
       assertGe(
         accountsInfoAfter.userAccountData.healthFactor,
         _getTargetHealthFactor(params.spoke),
@@ -1038,6 +1048,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     // Hubs
     address collateralHub = address(_hub(params.spoke, params.collateralReserveId));
     address debtHub = address(_hub(params.spoke, params.debtReserveId));
+
     if (collateralHub == debtHub && params.collateralReserveId == params.debtReserveId) {
       assertEq(
         accountsInfoAfter.collateralHubBalanceInfo.collateralErc20Balance,

@@ -41,7 +41,11 @@ contract LiquidationLogicBaseTest is SpokeBase {
   function _bound(
     LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
-    uint256 totalDebtValue = bound(params.totalDebtValue, 1, MAX_SUPPLY_IN_BASE_CURRENCY);
+    uint256 totalDebtValueRay = bound(
+      params.totalDebtValueRay,
+      1,
+      MAX_SUPPLY_IN_BASE_CURRENCY * WadRayMath.RAY
+    );
 
     uint256 liquidationBonus = bound(
       params.liquidationBonus,
@@ -68,7 +72,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
 
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-        totalDebtValue: totalDebtValue,
+        totalDebtValueRay: totalDebtValueRay,
         debtAssetUnit: debtAssetUnit,
         debtAssetPrice: debtAssetPrice,
         collateralFactor: collateralFactor,
@@ -111,7 +115,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
         drawnShares: drawnShares,
         premiumDebtRay: premiumDebtRay,
         drawnIndex: drawnIndex,
-        totalDebtValue: debtToTargetParams.totalDebtValue,
+        totalDebtValueRay: debtToTargetParams.totalDebtValueRay,
         debtAssetDecimals: Math.log10(debtToTargetParams.debtAssetUnit),
         debtAssetUnit: debtToTargetParams.debtAssetUnit,
         debtAssetPrice: debtToTargetParams.debtAssetPrice,
@@ -139,12 +143,13 @@ contract LiquidationLogicBaseTest is SpokeBase {
       ).rayDivDown(params.drawnIndex)
     );
 
-    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );
 
-    uint256 debtRayToLiquidate = (debtToTarget.toRay()).min(
-      _max(params.debtToCover.toRay(), params.drawnIndex) - params.drawnIndex // debtToCover acts as an upperbound
+    uint256 debtRayToLiquidate = debtRayToTarget.min(
+      _max(_min(type(uint256).max.fromRayDown(), params.debtToCover.toRay()), params.drawnIndex) -
+        params.drawnIndex // debtToCover acts as an upperbound
     );
     uint256 debtRay = vm.randomUint(
       debtRayToLiquidate + 1,
@@ -248,7 +253,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.drawnShares = debtToLiquidateParams.drawnShares;
     params.premiumDebtRay = debtToLiquidateParams.premiumDebtRay;
     params.drawnIndex = debtToLiquidateParams.drawnIndex;
-    params.totalDebtValue = debtToLiquidateParams.totalDebtValue;
+    params.totalDebtValueRay = debtToLiquidateParams.totalDebtValueRay;
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
     params.debtToCover = debtToLiquidateParams.debtToCover;
     params.healthFactor = debtToLiquidateParams.healthFactor;
@@ -298,7 +303,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.drawnShares = debtToLiquidateParams.drawnShares;
     params.premiumDebtRay = debtToLiquidateParams.premiumDebtRay;
     params.drawnIndex = debtToLiquidateParams.drawnIndex;
-    params.totalDebtValue = debtToLiquidateParams.totalDebtValue;
+    params.totalDebtValueRay = debtToLiquidateParams.totalDebtValueRay;
     params.debtAssetDecimals = debtToLiquidateParams.debtAssetDecimals;
     params.debtAssetPrice = debtToLiquidateParams.debtAssetPrice;
     params.debtToCover = debtToLiquidateParams.debtToCover;
@@ -314,7 +319,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
   ) internal pure returns (LiquidationLogic.CalculateDebtToTargetHealthFactorParams memory) {
     return
       LiquidationLogic.CalculateDebtToTargetHealthFactorParams({
-        totalDebtValue: params.totalDebtValue,
+        totalDebtValueRay: params.totalDebtValueRay,
         debtAssetUnit: params.debtAssetUnit,
         debtAssetPrice: params.debtAssetPrice,
         collateralFactor: params.collateralFactor,
@@ -338,7 +343,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
         drawnShares: params.drawnShares,
         premiumDebtRay: params.premiumDebtRay,
         drawnIndex: params.drawnIndex,
-        totalDebtValue: params.totalDebtValue,
+        totalDebtValueRay: params.totalDebtValueRay,
         debtAssetDecimals: params.debtAssetDecimals,
         debtAssetUnit: 10 ** params.debtAssetDecimals,
         debtAssetPrice: params.debtAssetPrice,

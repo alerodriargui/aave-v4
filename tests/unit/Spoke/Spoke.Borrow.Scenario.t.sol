@@ -171,10 +171,10 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     state.usdxReserveId = _usdxReserveId(spoke2);
     state.wbtcReserveId = _wbtcReserveId(spoke2);
 
-    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    wethBorrowAmount = bound(wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
-    wbtcBorrowAmount = bound(wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 2);
+    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
+    wethBorrowAmount = bound(wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WETH);
+    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT_USDX);
+    wbtcBorrowAmount = bound(wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WBTC);
 
     // should be 0 because no realized premium yet
     state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
@@ -567,7 +567,7 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     assertEq(_getCollateralFactor(spoke1, coll1ReserveId), 0); // initially
     assertNotEq(_getCollateralFactor(spoke1, coll2ReserveId), 0);
 
-    uint256 coll2Value = _getValue(spoke1, coll2ReserveId, coll2Amount);
+    uint256 coll2Value = _convertAmountToValue(spoke1, coll2ReserveId, coll2Amount);
 
     Utils.supplyCollateral(spoke1, coll1ReserveId, alice, coll1Amount, alice);
     Utils.supplyCollateral(spoke1, coll2ReserveId, alice, coll2Amount, alice);

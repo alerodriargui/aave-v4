@@ -15,13 +15,15 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
   ) public {
     params = _bound(params);
 
-    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );
-    uint256 rawPremiumDebtRayToLiquidate = params.debtToCover.min(debtToTarget).toRay().min(
-      params.premiumDebtRay
-    );
-    uint256 drawnSharesToTarget = (debtToTarget.toRay() - rawPremiumDebtRayToLiquidate).divUp(
+    uint256 rawPremiumDebtRayToLiquidate = debtRayToTarget.min(params.premiumDebtRay);
+    if (params.debtToCover <= rawPremiumDebtRayToLiquidate.fromRayDown()) {
+      rawPremiumDebtRayToLiquidate = params.debtToCover.toRay();
+    }
+
+    uint256 drawnSharesToTarget = (debtRayToTarget - rawPremiumDebtRayToLiquidate).divUp(
       params.drawnIndex
     );
     uint256 drawnSharesToCover = Math.mulDiv(
@@ -75,15 +77,16 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
       LiquidationLogic.DUST_LIQUIDATION_THRESHOLD.fromWadDown() * params.debtAssetUnit,
       MAX_ASSET_PRICE
     );
-    uint256 debtToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
+    uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );
 
-    uint256 rawPremiumDebtRayToLiquidate = params.debtToCover.min(debtToTarget).toRay().min(
-      params.premiumDebtRay
-    );
+    uint256 rawPremiumDebtRayToLiquidate = debtRayToTarget.min(params.premiumDebtRay);
+    if (params.debtToCover <= rawPremiumDebtRayToLiquidate.fromRayDown()) {
+      rawPremiumDebtRayToLiquidate = params.debtToCover.toRay();
+    }
 
-    uint256 drawnSharesToTarget = (debtToTarget.toRay() - rawPremiumDebtRayToLiquidate).divUp(
+    uint256 drawnSharesToTarget = (debtRayToTarget - rawPremiumDebtRayToLiquidate).divUp(
       params.drawnIndex
     );
     uint256 drawnSharesToCover = Math.mulDiv(
@@ -92,7 +95,6 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
       params.drawnIndex,
       Math.Rounding.Floor
     );
-
     params.drawnShares = bound(
       params.drawnShares,
       drawnSharesToTarget.min(drawnSharesToCover),

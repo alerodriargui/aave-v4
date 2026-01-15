@@ -782,53 +782,54 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     ISpoke spoke,
     TestAmounts memory amounts
   ) internal view returns (TestAmounts memory) {
-    uint256 remainingCollateralValue = _getValue(
+    uint256 remainingCollateralValue = _convertAmountToValue(
       spoke,
       _daiReserveId(spoke),
       amounts.daiSupplyAmount
     ) +
-      _getValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
-      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
-      _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
+      _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
+      _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
+      _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
 
     // Bound each debt amount to be no more than half the remaining collateral value
     amounts.daiBorrowAmount = bound(
       amounts.daiBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _daiReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _daiReserveId(spoke), 1)
     );
     // Subtract out the set debt value from the remaining collateral value
-    remainingCollateralValue -= _getValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) * 2;
+    remainingCollateralValue -=
+      _convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) * 2;
     amounts.wethBorrowAmount = bound(
       amounts.wethBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _wethReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _wethReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) * 2;
+      _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) * 2;
     amounts.usdxBorrowAmount = bound(
       amounts.usdxBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _usdxReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _usdxReserveId(spoke), 1)
     );
     remainingCollateralValue -=
-      _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) * 2;
+      _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) * 2;
     amounts.wbtcBorrowAmount = bound(
       amounts.wbtcBorrowAmount,
       0,
-      (remainingCollateralValue / 2) / _getValue(spoke, _wbtcReserveId(spoke), 1)
+      (remainingCollateralValue / 2) / _convertAmountToValue(spoke, _wbtcReserveId(spoke), 1)
     );
 
     assertGt(
-      _getValue(spoke, _daiReserveId(spoke), amounts.daiSupplyAmount) +
-        _getValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
-        _getValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
-        _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount),
+      _convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiSupplyAmount) +
+        _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethSupplyAmount) +
+        _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
+        _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount),
       2 *
-        (_getValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) +
-          _getValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) +
-          _getValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) +
-          _getValue(spoke, _wbtcReserveId(spoke), amounts.wbtcBorrowAmount)),
+        (_convertAmountToValue(spoke, _daiReserveId(spoke), amounts.daiBorrowAmount) +
+          _convertAmountToValue(spoke, _wethReserveId(spoke), amounts.wethBorrowAmount) +
+          _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxBorrowAmount) +
+          _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcBorrowAmount)),
       'collateral sufficiently covers debt'
     );
 

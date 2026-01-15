@@ -49,7 +49,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       }),
       debtToCover: 3e18,
       healthFactor: 0.8e18,
-      totalDebtValue: 10_000e26,
+      totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
       liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,
       borrowedCount: 1,
@@ -236,7 +236,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   }
 
   function test_liquidateUser_revertsWith_MustNotLeaveDust_Debt() public {
-    params.totalDebtValue *= 2;
+    params.totalDebtValueRay *= 2;
     params.debtToCover = 4.9e18;
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(
       liquidationLogicWrapper.getCollateralPosition(params.user).suppliedShares * 2
