@@ -1161,10 +1161,10 @@ abstract contract Base is Test {
 
   function _updateTargetHealthFactor(
     ISpoke spoke,
-    uint128 newTargetHealthFactor
+    uint64 newTargetHealthFactor
   ) internal pausePrank {
     ISpoke.SpokeConfig memory spokeConfig = spoke.getSpokeConfig();
-    spokeConfig.targetHealthFactor = newTargetHealthFactor.toUint64();
+    spokeConfig.targetHealthFactor = newTargetHealthFactor;
     vm.prank(SPOKE_ADMIN);
     spoke.updateSpokeConfig(spokeConfig);
 
