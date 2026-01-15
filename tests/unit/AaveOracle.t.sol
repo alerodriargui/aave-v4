@@ -28,7 +28,7 @@ contract AaveOracleTest is Base {
 
     vm.startPrank(deployer);
     oracle = new AaveOracle(_oracleDecimals, _description);
-    spoke1 = ISpoke(address(new SpokeInstance(address(oracle))));
+    spoke1 = ISpoke(address(DeployUtils.deploySpokeImplementation(address(oracle))));
     oracle.setSpoke(address(spoke1));
     vm.stopPrank();
   }
@@ -84,7 +84,7 @@ contract AaveOracleTest is Base {
     vm.startPrank(deployer);
     oracle = new AaveOracle(_oracleDecimals, _description);
 
-    address newSpoke = address(new SpokeInstance(address(oracle)));
+    address newSpoke = address(DeployUtils.deploySpokeImplementation(address(oracle)));
 
     vm.expectEmit(address(oracle));
     emit IAaveOracle.SetSpoke(address(newSpoke));
@@ -144,7 +144,7 @@ contract AaveOracleTest is Base {
 
     // set new spoke to a separate oracle
     address mismatchOracle = address(new AaveOracle(_oracleDecimals, _description));
-    address newSpoke = address(new SpokeInstance(mismatchOracle));
+    address newSpoke = address(DeployUtils.deploySpokeImplementation(mismatchOracle));
 
     vm.expectRevert(IAaveOracle.OracleMismatch.selector);
     newOracle.setSpoke(newSpoke);
