@@ -13,7 +13,7 @@ contract TesterFoundry is Invariants, Setup, StdInvariant {
     /// forge-config: default.invariant.fail-on-revert = false
     /// forge-config: default.invariant.runs = 1000
     /// forge-config: default.invariant.depth = 100
-    /// forge-config: default.invariant.corpus-dir = "tests/enigma-dark-invariants/_corpus/foundry"
+    /// forge-config: default.invariant.corpus-dir = "tests/invariants/_corpus/foundry"
     /// forge-config: default.invariant.show-solidity = true
     /// forge-config: default.invariant.show-metrics = true
     /// forge-config: default.fuzz.seed = '0x1'

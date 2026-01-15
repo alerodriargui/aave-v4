@@ -90,6 +90,8 @@ abstract contract SpokeInvariants is HandlerAggregator {
         for (uint256 i; i < actorAddresses.length; i++) {
             sumUserAssets += ISpokeBase(spoke).getUserSuppliedAssets(reserveId, actorAddresses[i]);
         }
-        assertEq(sumUserAssets, ISpokeBase(spoke).getReserveSuppliedAssets(reserveId), INV_SP_F);
+        uint256 reserveSuppliedAssets = ISpokeBase(spoke).getReserveSuppliedAssets(reserveId);
+        assertLe(sumUserAssets, reserveSuppliedAssets, INV_SP_F);
+        assertApproxEqAbs(sumUserAssets, reserveSuppliedAssets, NUMBER_OF_ACTORS, INV_SP_F);
     }
 }

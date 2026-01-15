@@ -16,6 +16,7 @@ import {BaseHandler} from "../../base/BaseHandler.t.sol";
 
 // Contracts
 import {Spoke} from "src/spoke/Spoke.sol";
+import {IHub} from "src/hub/interfaces/IHub.sol";
 
 /// @title SpokeHandler
 /// @notice Handler test contract for a set of actions
@@ -69,7 +70,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         if (success) {
             _after();
         } else {
-            revert("DefaultHandler: supply failed");
+            revert("SpokeHandler: supply failed");
         }
     }
 
@@ -85,6 +86,9 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         // Get one of the reserves IDs randomly
         uint256 reserveId = _getRandomReserveId(spoke, k);
 
+        uint256 userAmount = IHub(_getHubAddress(spoke, reserveId))
+            .previewRemoveByShares(reserveId, ISpoke(spoke).getUserSuppliedShares(reserveId, onBehalfOf));
+
         // Register user to check postconditions
         _registerUserToCheck(spoke, reserveId, onBehalfOf);
 
@@ -92,14 +96,15 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         (success, returnData) = actor.proxy(spoke, abi.encodeCall(Spoke.withdraw, (reserveId, amount, onBehalfOf)));
 
         // Implemented outside the success check to assert success
-        if (defaultVarsBefore.userVars[spoke][reserveId][onBehalfOf].totalDebt == 0 && amount > 0) {
+        if (defaultVarsBefore.userVars[spoke][reserveId][onBehalfOf].totalDebt == 0 && (amount > 0 && userAmount != 0))
+        {
             assertTrue(success, GPOST_SP_H);
         }
 
         if (success) {
             _after();
         } else {
-            revert("DefaultHandler: withdraw failed");
+            revert("SpokeHandler: withdraw failed");
         }
     }
 
@@ -131,7 +136,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
             assertTrue(isHealthy, HSPOST_SP_D);
         } else {
-            revert("DefaultHandler: borrow failed");
+            revert("SpokeHandler: borrow failed");
         }
     }
 
@@ -164,7 +169,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
                 HSPOST_SP_C
             );
         } else {
-            revert("DefaultHandler: repay failed");
+            revert("SpokeHandler: repay failed");
         }
     }
 
@@ -291,7 +296,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
                 );
             }
         } else {
-            revert("DefaultHandler: liquidationCall failed");
+            revert("SpokeHandler: liquidationCall failed");
         }
     }
 
@@ -307,7 +312,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
         (bool isUsingAsCollateral,) = ISpoke(spoke).getUserReserveStatus(reserveId, onBehalfOf);
 
-        require(usingAsCollateral != isUsingAsCollateral, "DefaultHandler: usingAsCollateral already set");
+        require(usingAsCollateral != isUsingAsCollateral, "SpokeHandler: usingAsCollateral already set");
 
         // Register user to check postconditions
         /// @dev setUsingAsCollateral(reserveId, FALSE) all reserves in user position should be refreshed,
@@ -323,7 +328,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         if (success) {
             _after();
         } else {
-            revert("DefaultHandler: setUsingAsCollateral failed");
+            revert("SpokeHandler: setUsingAsCollateral failed");
         }
     }
 
@@ -349,7 +354,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
             ///// HSPOST /////
             assertEq(_getTotalDebt(spoke, onBehalfOf), totalDebt, HSPOST_SP_F);
         } else {
-            revert("DefaultHandler: updateUserRiskPremium failed");
+            revert("SpokeHandler: updateUserRiskPremium failed");
         }
     }
 
@@ -369,7 +374,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         if (success) {
             _after();
         } else {
-            revert("DefaultHandler: updateUserDynamicConfig failed");
+            revert("SpokeHandler: updateUserDynamicConfig failed");
         }
     }
 

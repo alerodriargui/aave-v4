@@ -32,18 +32,18 @@ coverage :
 
 # Echidna
 echidna:
-	echidna tests/enigma-dark-invariants/protocol-suite/Tester.t.sol --contract Tester --config ./tests/enigma-dark-invariants/protocol-suite/_config/echidna_config.yaml
+	echidna tests/invariants/protocol-suite/Tester.t.sol --contract Tester --config ./tests/invariants/protocol-suite/_config/echidna_config.yaml
 echidna-assert:
-	echidna tests/enigma-dark-invariants/protocol-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./tests/enigma-dark-invariants/protocol-suite/_config/echidna_config.yaml
+	echidna tests/invariants/protocol-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./tests/invariants/protocol-suite/_config/echidna_config.yaml
 echidna-explore:
-	echidna tests/enigma-dark-invariants/protocol-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./tests/enigma-dark-invariants/protocol-suite/_config/echidna_config.yaml
+	echidna tests/invariants/protocol-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./tests/invariants/protocol-suite/_config/echidna_config.yaml
 
 echidna-hub:
-	echidna tests/enigma-dark-invariants/hub-suite/Tester.t.sol --contract Tester --config ./tests/enigma-dark-invariants/hub-suite/_config/echidna_config.yaml
+	echidna tests/invariants/hub-suite/Tester.t.sol --contract Tester --config ./tests/invariants/hub-suite/_config/echidna_config.yaml
 echidna-hub-assert:
-	echidna tests/enigma-dark-invariants/hub-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./tests/enigma-dark-invariants/hub-suite/_config/echidna_config.yaml
+	echidna tests/invariants/hub-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./tests/invariants/hub-suite/_config/echidna_config.yaml
 echidna-hub-explore:
-	echidna tests/enigma-dark-invariants/hub-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./tests/enigma-dark-invariants/hub-suite/_config/echidna_config.yaml
+	echidna tests/invariants/hub-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./tests/invariants/hub-suite/_config/echidna_config.yaml
 
 # Medusa
 medusa:
@@ -56,11 +56,11 @@ foundry-invariants:
 
 # Results
 runes-echidna:
-	runes convert ./tests/enigma-dark-invariants/protocol-suite/_corpus/echidna/default/_data/corpus/reproducers --output ./tests/enigma-dark-invariants/protocol-suite/replays
+	runes convert ./tests/invariants/protocol-suite/_corpus/echidna/default/_data/corpus/reproducers --output ./tests/invariants/protocol-suite/replays
 runes-medusa:
-	runes convert ./tests/enigma-dark-invariants/protocol-suite/_corpus/medusa/ --output ./tests/enigma-dark-invariants/protocol-suite/replays
+	runes convert ./tests/invariants/protocol-suite/_corpus/medusa/ --output ./tests/invariants/protocol-suite/replays
 
 runes-echidna-hub:
-	runes convert ./tests/enigma-dark-invariants/hub-suite/_corpus/echidna/default/_data/corpus/reproducers --output ./tests/enigma-dark-invariants/hub-suite/replays
+	runes convert ./tests/invariants/hub-suite/_corpus/echidna/default/_data/corpus/reproducers --output ./tests/invariants/hub-suite/replays
 runes-medusa-hub:
-	runes convert ./tests/enigma-dark-invariants/hub-suite/_corpus/medusa/ --output ./tests/enigma-dark-invariants/hub-suite/replays
+	runes convert ./tests/invariants/hub-suite/_corpus/medusa/ --output ./tests/invariants/hub-suite/replays

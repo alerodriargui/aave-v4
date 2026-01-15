@@ -33,8 +33,9 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
     //                                         OWNER ACTIONS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function supply(uint256 amount, uint8 i, uint8 j) external {// TODO fix coverage issues
-        // Get one of the hub addresses randomly
+    function supply(uint256 amount, uint8 i, uint8 j) external {
+        // TODO fix coverage issues
+    // Get one of the hub addresses randomly
         address hubAddress = _getRandomHub(i);
         address treasurySpoke = hubInfo[hubAddress].treasurySpoke;
 
@@ -45,7 +46,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
         try ITreasurySpoke(treasurySpoke).supply(reserveId, amount, msg.sender) {
             _after();
         } catch {
-            revert("DefaultHandler: supply failed");
+            revert("TreasurySpokeHandler: supply failed");
         }
     }
 
@@ -53,7 +54,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
         // Get one of the hub addresses randomly
         address hubAddress = _getRandomHub(i);
         address treasurySpoke = hubInfo[hubAddress].treasurySpoke;
-        
+
         // Get one of the reserves IDs randomly
         uint256 reserveId = _getRandomReserveId(treasurySpoke, j);
 
@@ -61,7 +62,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
         try ITreasurySpoke(treasurySpoke).withdraw(reserveId, amount, msg.sender) {
             _after();
         } catch {
-            revert("DefaultHandler: withdraw failed");
+            revert("TreasurySpokeHandler: withdraw failed");
         }
     }
 
@@ -79,7 +80,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
         try ITreasurySpoke(hubInfo[hubAddress].treasurySpoke).transfer(asset, to, amount) {
             _after();
         } catch {
-            revert("DefaultHandler: transfer failed");
+            revert("TreasurySpokeHandler: transfer failed");
         }
     }
 
