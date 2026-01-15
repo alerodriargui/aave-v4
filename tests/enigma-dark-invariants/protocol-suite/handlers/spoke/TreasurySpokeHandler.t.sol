@@ -36,7 +36,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
     function supply(uint256 amount, uint8 i, uint8 j) external {// TODO fix coverage issues
         // Get one of the hub addresses randomly
         address hubAddress = _getRandomHub(i);
-        address treasurySpoke = hubInfo[hubAddress].treasureSpoke;
+        address treasurySpoke = hubInfo[hubAddress].treasurySpoke;
 
         // Get one of the reserves IDs randomly
         uint256 reserveId = _getRandomReserveId(treasurySpoke, j);
@@ -52,7 +52,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
     function withdraw(uint256 amount, uint8 i, uint8 j) external {
         // Get one of the hub addresses randomly
         address hubAddress = _getRandomHub(i);
-        address treasurySpoke = hubInfo[hubAddress].treasureSpoke;
+        address treasurySpoke = hubInfo[hubAddress].treasurySpoke;
         
         // Get one of the reserves IDs randomly
         uint256 reserveId = _getRandomReserveId(treasurySpoke, j);
@@ -76,7 +76,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
         address to = _getRandomActor(k);
 
         _before();
-        try ITreasurySpoke(hubInfo[hubAddress].treasureSpoke).transfer(asset, to, amount) {
+        try ITreasurySpoke(hubInfo[hubAddress].treasurySpoke).transfer(asset, to, amount) {
             _after();
         } catch {
             revert("DefaultHandler: transfer failed");

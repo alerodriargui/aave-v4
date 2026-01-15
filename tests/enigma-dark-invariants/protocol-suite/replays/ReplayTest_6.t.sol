@@ -12,11 +12,11 @@ import {Setup} from "../Setup.t.sol";
 // Utils
 import {Actor} from "../../shared/utils/Actor.sol";
 
-contract ReplayTest4 is Invariants, Setup {
+contract ReplayTest6 is Invariants, Setup {
     // Generated from Echidna reproducers
 
     // Target contract instance (you may need to adjust this)
-    ReplayTest4 Tester = this;
+    ReplayTest6 Tester = this;
 
     modifier setup() override {
         _;
@@ -36,14 +36,26 @@ contract ReplayTest4 is Invariants, Setup {
     //                                   		REPLAY TESTS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function test_replay_4_supply() public {
+    function test_replay_6_freezeAllReserves() public {
         _setUpActor(USER3);
-        Tester.supply(790, 128, 71, 201);
+        Tester.supply(673, 128, 1, 201);
         Tester.setUsingAsCollateral(true, 111, 253);
-        Tester.borrow(527, 68, 95, 9);
+        Tester.borrow(527, 68, 203, 9);
         _setUpActor(USER1);
-        _delay(434894);
-        Tester.supply(423, 66, 149, 45);
+        _delay(338347);
+        Tester.freezeAllReserves(32);
+        invariant_INV_HUB();
+    }
+
+    function test_replay_6_supply() public {
+        _setUpActor(USER3);
+        Tester.supply(790, 197, 87, 201);
+        Tester.setUsingAsCollateral(true, 197, 253);
+        Tester.borrow(527, 68, 65, 9);
+        _setUpActor(USER1);
+        _delay(467);
+        Tester.supply(1327428228, 3, 151, 97);
+        invariant_INV_SP();
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

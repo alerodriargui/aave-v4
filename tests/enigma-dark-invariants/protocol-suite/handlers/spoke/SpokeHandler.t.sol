@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 // Interfaces
 import {ISpoke} from "src/spoke/interfaces/ISpoke.sol";
 import {ISpokeHandler} from "../interfaces/ISpokeHandler.sol";
+import {IERC20} from "src/dependencies/openzeppelin/IERC20.sol";
 
 // Libraries
 import {Constants} from "tests/Constants.sol";
@@ -23,11 +24,25 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    // Used on the liquidation handler to store the collateral and debt reserve IDs and avoid stack to deep errors
-    /// @dev should be zeroed after each liquidation call
-    uint256 internal collateralReserveId;
-    uint256 internal debtReserveId;
-    uint256 internal totalDebtValueBefore;
+    struct LiquidationVars {
+        // Spoke
+        address violator;
+        address liquidator;
+        address spoke;
+        address underlying;
+        // Debt reserve
+        uint256 debtReserveId;
+        uint256 collateralReserveId;
+        uint256 reserveDebtBefore;
+        uint256 reserveDebtAfter;
+        // Liquidation
+        uint256 debtToCover;
+        uint256 debtLiquidated;
+        uint256 totalDebtValueBefore;
+        // Liquidator
+        uint256 liquidatorCollateralBalanceBefore;
+        uint256 liquidatorCollateralBalanceAfter;
+    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                          ACTIONS                                          //
@@ -71,13 +86,13 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         uint256 reserveId = _getRandomReserveId(spoke, k);
 
         // Register user to check postconditions
-        _registerUserToCheck(spoke, reserveId, address(actor));
+        _registerUserToCheck(spoke, reserveId, onBehalfOf);
 
         _before();
         (success, returnData) = actor.proxy(spoke, abi.encodeCall(Spoke.withdraw, (reserveId, amount, onBehalfOf)));
 
         // Implemented outside the success check to assert success
-        if (defaultVarsBefore.userVars[spoke][reserveId][onBehalfOf].totalDebt == 0) {
+        if (defaultVarsBefore.userVars[spoke][reserveId][onBehalfOf].totalDebt == 0 && amount > 0) {
             assertTrue(success, GPOST_SP_H);
         }
 
@@ -101,7 +116,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         uint256 reserveId = _getRandomReserveId(spoke, k);
 
         // Register user to check postconditions
-        _registerUserToCheck(spoke, reserveId, address(actor));
+        _registerUserToCheck(spoke, reserveId, onBehalfOf);
 
         // Check if user is healthy
         bool isHealthy = _isHealthy(spoke, onBehalfOf);
@@ -160,28 +175,55 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         bool success;
         bytes memory returnData;
 
+        LiquidationVars memory liquidationVars;
+
         // Get one of the three actors randomly
-        address spoke = _getRandomSpoke(j);
+        liquidationVars.spoke = _getRandomSpoke(j);
+        liquidationVars.debtToCover = debtToCover;
 
-        // Get one of the reserves IDs randomly
-        collateralReserveId = _getRandomReserveId(spoke, k);
-        debtReserveId = _getRandomReserveId(spoke, l);
+        liquidationVars.violator = _getRandomActor(i);
+        liquidationVars.liquidator = address(actor);
 
-        totalDebtValueBefore = ISpoke(spoke).getUserAccountData(_getRandomActor(i)).totalDebtValue;
-        uint256 reserveDebtBefore = ISpoke(spoke).getReserveTotalDebt(debtReserveId);
+        // Get both reserves IDs randomly and the collateral underlying asset
+        liquidationVars.collateralReserveId = _getRandomReserveId(liquidationVars.spoke, k);
+        liquidationVars.debtReserveId = _getRandomReserveId(liquidationVars.spoke, l);
+        liquidationVars.underlying =
+        ISpoke(liquidationVars.spoke).getReserve(liquidationVars.collateralReserveId).underlying;
+
+        uint256 violatorCollateralBalanceBefore = ISpoke(liquidationVars.spoke)
+            .getUserSuppliedAssets(liquidationVars.collateralReserveId, liquidationVars.violator);
+
+        liquidationVars.totalDebtValueBefore =
+        ISpoke(liquidationVars.spoke).getUserAccountData(_getRandomActor(i)).totalDebtValue;
+        liquidationVars.reserveDebtBefore =
+            ISpoke(liquidationVars.spoke).getReserveTotalDebt(liquidationVars.debtReserveId);
+
+        if (receiveShares) {
+            liquidationVars.liquidatorCollateralBalanceBefore = ISpoke(liquidationVars.spoke)
+                .getUserSuppliedAssets(liquidationVars.collateralReserveId, address(actor));
+        } else {
+            liquidationVars.liquidatorCollateralBalanceBefore =
+                IERC20(liquidationVars.underlying).balanceOf(address(actor));
+        }
 
         // Register users to check postconditions: liquidated user and liquidator for both reserves
-        _registerUserToCheck(spoke, debtReserveId, _getRandomActor(i));
-        _registerUserToCheck(spoke, collateralReserveId, _getRandomActor(i));
-        _registerUserToCheck(spoke, debtReserveId, address(actor));
-        _registerUserToCheck(spoke, collateralReserveId, address(actor));
+        _registerUserToCheck(liquidationVars.spoke, liquidationVars.debtReserveId, liquidationVars.violator);
+        _registerUserToCheck(liquidationVars.spoke, liquidationVars.collateralReserveId, liquidationVars.violator);
+        _registerUserToCheck(liquidationVars.spoke, liquidationVars.debtReserveId, liquidationVars.liquidator);
+        _registerUserToCheck(liquidationVars.spoke, liquidationVars.collateralReserveId, liquidationVars.liquidator);
 
         _before();
         (success, returnData) = actor.proxy(
-            spoke,
+            liquidationVars.spoke,
             abi.encodeCall(
                 Spoke.liquidationCall,
-                (collateralReserveId, debtReserveId, _getRandomActor(i), debtToCover, receiveShares)
+                (
+                    liquidationVars.collateralReserveId,
+                    liquidationVars.debtReserveId,
+                    liquidationVars.violator,
+                    liquidationVars.debtToCover,
+                    receiveShares
+                )
             )
         );
 
@@ -189,44 +231,68 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
             _after();
 
             // Calculate the debt liquidated
-            uint256 reserveDebtAfter = ISpoke(spoke).getReserveTotalDebt(debtReserveId);
-            uint256 debtLiquidated = (reserveDebtBefore > reserveDebtAfter) ? reserveDebtBefore - reserveDebtAfter : 0;
+            liquidationVars.reserveDebtAfter =
+                ISpoke(liquidationVars.spoke).getReserveTotalDebt(liquidationVars.debtReserveId);
+            liquidationVars.debtLiquidated = (liquidationVars.reserveDebtBefore > liquidationVars.reserveDebtAfter)
+                ? liquidationVars.reserveDebtBefore - liquidationVars.reserveDebtAfter
+                : 0;
+
+            if (receiveShares) {
+                liquidationVars.liquidatorCollateralBalanceAfter = ISpoke(liquidationVars.spoke)
+                    .getUserSuppliedAssets(liquidationVars.collateralReserveId, address(actor));
+            } else {
+                liquidationVars.liquidatorCollateralBalanceAfter =
+                    IERC20(liquidationVars.underlying).balanceOf(address(actor));
+            }
 
             ///// HSPOST /////
             assertLe(
-                debtLiquidated,
-                defaultVarsBefore.userVars[spoke][debtReserveId][_getRandomActor(i)].totalDebt,
+                liquidationVars.debtLiquidated,
+                defaultVarsBefore.userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator].totalDebt,
                 HSPOST_SP_LIQ_A
             );
 
-            if (totalDebtValueBefore < Constants.DUST_LIQUIDATION_THRESHOLD) {
-                assertEq(
-                    defaultVarsAfter.userVars[spoke][debtReserveId][_getRandomActor(i)].totalDebt, 0, HSPOST_SP_LIQ_C
+            if (liquidationVars.liquidatorCollateralBalanceAfter > liquidationVars.liquidatorCollateralBalanceBefore) {
+                assertLe(
+                    liquidationVars.liquidatorCollateralBalanceAfter
+                        - liquidationVars.liquidatorCollateralBalanceBefore,
+                    violatorCollateralBalanceBefore,
+                    HSPOST_SP_LIQ_B
                 );
             }
 
-            assertGe(debtToCover, debtLiquidated, HSPOST_SP_LIQ_D);
+            if (liquidationVars.totalDebtValueBefore < Constants.DUST_LIQUIDATION_THRESHOLD) {
+                assertEq(
+                    defaultVarsAfter.userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(
+                            i
+                        )].totalDebt,
+                    0,
+                    HSPOST_SP_LIQ_C
+                );
+            }
+
+            assertGe(liquidationVars.debtToCover, liquidationVars.debtLiquidated, HSPOST_SP_LIQ_D);
 
             assertLt(
-                defaultVarsBefore.userAccountDataVars[spoke][_getRandomActor(i)].healthFactor,
+                defaultVarsBefore.userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)].healthFactor,
                 Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
                 HSPOST_SP_LIQ_E
             );
 
-            if (defaultVarsAfter.userVars[spoke][debtReserveId][_getRandomActor(i)].totalDebt > 0) {
+            if (
+                defaultVarsAfter.userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(
+                            i
+                        )].totalDebt > 0
+            ) {
                 assertGt(
-                    defaultVarsAfter.userAccountDataVars[spoke][_getRandomActor(i)].healthFactor,
-                    defaultVarsBefore.userAccountDataVars[spoke][_getRandomActor(i)].healthFactor,
+                    defaultVarsAfter.userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)].healthFactor,
+                    defaultVarsBefore.userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)].healthFactor,
                     HSPOST_SP_LIQ_G
                 );
             }
         } else {
             revert("DefaultHandler: liquidationCall failed");
         }
-
-        delete collateralReserveId;
-        delete debtReserveId;
-        delete totalDebtValueBefore;
     }
 
     function setUsingAsCollateral(bool usingAsCollateral, uint8 i, uint8 j) external setup {
@@ -238,6 +304,10 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         address spoke = _getRandomSpoke(i);
 
         uint256 reserveId = _getRandomReserveId(spoke, j);
+
+        (bool isUsingAsCollateral,) = ISpoke(spoke).getUserReserveStatus(reserveId, onBehalfOf);
+
+        require(usingAsCollateral != isUsingAsCollateral, "DefaultHandler: usingAsCollateral already set");
 
         // Register user to check postconditions
         /// @dev setUsingAsCollateral(reserveId, FALSE) all reserves in user position should be refreshed,
@@ -277,8 +347,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
             _after();
 
             ///// HSPOST /////
-
-            assertApproxEqAbs(totalDebt, totalDebt, 2, HSPOST_SP_F);
+            assertEq(_getTotalDebt(spoke, onBehalfOf), totalDebt, HSPOST_SP_F);
         } else {
             revert("DefaultHandler: updateUserRiskPremium failed");
         }

@@ -143,7 +143,7 @@ abstract contract BaseStorage {
     }
 
     struct HubInfo {
-        address treasureSpoke;
+        address treasurySpoke;
         address irStrategy;
     }
 

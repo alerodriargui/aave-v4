@@ -75,10 +75,10 @@ abstract contract HubInvariants is HandlerAggregator {
         uint256 totalDebt = hub.getAssetTotalOwed(assetId);
 
         // Checks
-        assertApproxEqAbs( // TODO review test_replay_3_add
+        assertApproxEqAbs(
             totalSuppliedAssets,
             hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId)),
-            1, // tolerance of 1 share for rounding
+            hub.previewRemoveByShares(assetId, 1), // tolerance of 1 share for rounding
             INV_HUB_E
         );
 
@@ -106,7 +106,7 @@ abstract contract HubInvariants is HandlerAggregator {
         // Checks
         uint256 addedShares = hub.getAddedShares(assetId);
         if (addedShares > 0) {
-            assertApproxEqAbs(totalAddedAssets, hub.getAddedAssets(assetId), SPOKE_COUNT, INV_HUB_G);// TODO check if tolerance is correct
+            assertApproxEqAbs(totalAddedAssets, hub.getAddedAssets(assetId), SPOKE_COUNT, INV_HUB_G); // TODO check if tolerance is correct
         }
         assertEq(totalAddedShares, hub.getAddedShares(assetId), INV_HUB_H);
     }

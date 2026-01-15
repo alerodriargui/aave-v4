@@ -139,8 +139,10 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
                 }
             } else {
                 // Cache values for a specific reserve of the spoke, used after actions: supply, withdraw, borrow, repay, setUsingAsCollateral
-                (, _defaultVars.userVars[userInfo.spoke][userInfo.reserveId][userInfo.user].premiumDebt) =
-                    ISpoke(userInfo.spoke).getUserDebt(userInfo.reserveId, userInfo.user);
+                (
+                    _defaultVars.userVars[userInfo.spoke][userInfo.reserveId][userInfo.user].drawnDebt,
+                    _defaultVars.userVars[userInfo.spoke][userInfo.reserveId][userInfo.user].premiumDebt
+                ) = ISpoke(userInfo.spoke).getUserDebt(userInfo.reserveId, userInfo.user);
                 _defaultVars.userVars[userInfo.spoke][userInfo.reserveId][userInfo.user].totalDebt =
                     ISpoke(userInfo.spoke).getUserTotalDebt(userInfo.reserveId, userInfo.user);
             }
@@ -176,6 +178,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
             signature == ISpokeHandler.supply.selector || signature == ISpokeHandler.withdraw.selector
                 || signature == ISpokeHandler.borrow.selector || signature == ISpokeHandler.repay.selector
                 || signature == ISpokeHandler.updateUserRiskPremium.selector
+                || signature == ISpokeHandler.liquidationCall.selector
         ) {
             assertEq(
                 IHub(hubAddress).getAssetDrawnRate(assetId),
@@ -309,10 +312,14 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     }
 
     function assert_GPOST_SP_LIQ_H(address spoke, address user) internal {
-        if (currentActionSignature != ISpokeHandler.liquidationCall.selector) {
-            assertGe(
-                defaultVarsAfter.userAccountDataVars[spoke][user].healthFactor,
-                Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+        if (
+            defaultVarsAfter.userAccountDataVars[spoke][user].healthFactor
+                < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
+        ) {
+            assertTrue(
+                currentActionSignature == ISpokeHandler.supply.selector
+                    || currentActionSignature == ISpokeHandler.repay.selector
+                    || currentActionSignature == ISpokeHandler.liquidationCall.selector,
                 GPOST_SP_LIQ_H
             );
         }

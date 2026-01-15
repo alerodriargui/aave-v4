@@ -81,7 +81,7 @@ abstract contract HubInvariants is HandlerAggregator {
         assertApproxEqAbs(
             totalSuppliedAssets,
             IHub(hubAddress).previewRemoveByShares(assetId, IHub(hubAddress).getAddedShares(assetId)),
-            1, // tolerance of 1 share for rounding
+            IHub(hubAddress).previewRemoveByShares(assetId, 1), // tolerance of 1 share for rounding
             INV_HUB_E
         );
 

@@ -87,7 +87,7 @@ abstract contract PostconditionsSpec {
         "HSPOST_SP_LIQ_A: Liquidation cannot result in an amount of liquidated debt > user's total debt position";
 
     string constant HSPOST_SP_LIQ_B =
-        "HSPOST_SP_LIQ_B: Liquidation cannot result in an amount of seized collateral (sold collateral + liquidation bonus) > user's collateral position"; // TODO
+        "HSPOST_SP_LIQ_B: Liquidation cannot result in an amount of seized collateral (sold collateral + liquidation bonus) > user's collateral position";
 
     string constant HSPOST_SP_LIQ_C =
         "HSPOST_SP_LIQ_C: Liquidator is always forced to repay all the debt of a user if debt value is below DUST_DEBT_LIQUIDATION_THRESHOLD";
@@ -97,15 +97,12 @@ abstract contract PostconditionsSpec {
 
     string constant HSPOST_SP_LIQ_E = "HSPOST_SP_LIQ_E: Only unhealthy users can be liquidated";
 
-    string constant HSPOST_SP_LIQ_F =
-        "HSPOST_SP_LIQ_F: Post-liquidation transfers match close factor/bonus (amounts to violator and liquidator)"; // TODO
+    string constant HSPOST_SP_LIQ_G =
+        "HSPOST_SP_LIQ_G: After liquidation, if debt remains, health factor should improve toward target";
 
     string constant GPOST_SP_LIQ_G =
-        "GPOST_SP_LIQ_G: Only liquidations can worsen an already unhealthy account's health";
-
-    string constant HSPOST_SP_LIQ_G =
-        "HSPOST_SP_LIQ_G: After liquidation, if debt remains, HF should improve toward target";
+        "GPOST_SP_LIQ_G: Only liquidations can deteriorate the health factor of an already unhealthy account";
 
     string constant GPOST_SP_LIQ_H =
-        "GPOST_SP_LIQ_H: The health factor of a user should be positive after any action but liquidationCall";
+        "GPOST_SP_LIQ_H: Only a supply, repay & liquidationCall can leave an account in an unhealthy state";
 }

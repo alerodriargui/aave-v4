@@ -78,13 +78,13 @@ contract Setup is BaseTest {
         // Hub 1
         hub1 = new Hub(address(accessManager));
         irStrategy1 = new AssetInterestRateStrategy(address(hub1));
-        hubInfo[address(hub1)] = HubInfo({treasureSpoke: address(treasurySpoke1), irStrategy: address(irStrategy1)});
+        hubInfo[address(hub1)] = HubInfo({treasurySpoke: address(treasurySpoke1), irStrategy: address(irStrategy1)});
         hubAddresses.push(address(hub1));
 
         // Hub 2
         hub2 = new Hub(address(accessManager));
         irStrategy2 = new AssetInterestRateStrategy(address(hub2));
-        hubInfo[address(hub2)] = HubInfo({treasureSpoke: address(treasurySpoke2), irStrategy: address(irStrategy2)});
+        hubInfo[address(hub2)] = HubInfo({treasurySpoke: address(treasurySpoke2), irStrategy: address(irStrategy2)});
         hubAddresses.push(address(hub2));
 
         // Spokes
