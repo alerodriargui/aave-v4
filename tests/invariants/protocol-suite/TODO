@@ -27,7 +27,7 @@
 - Error: `if addedAssets for a spoke & assetId increase, addedAssets <= addCap * precision (when cap != MAX)`
 - Details: 100000000000000000000000977 > 172000000000000000000 (exceeds cap)
 - Context: After repay, addedAssets exceeds the configured add cap
-- TODO: check if totalAssets increasing is expected behaviour on repayment due to rounding
+- TODO: check if totalAssets increasing is expected behaviour on repayment due to round up on repay amount, before: 100000000000000000000000976, after: 100000000000000000000000977, 1 wei difference
 
 # GPOST_SP_LIQ_H
 ## test_replay_7_updateUserRiskPremium
