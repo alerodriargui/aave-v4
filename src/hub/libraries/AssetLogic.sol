@@ -173,7 +173,7 @@ library AssetLogic {
     if (
       lastUpdateTimestamp == block.timestamp || (asset.drawnShares == 0 && asset.premiumShares == 0)
     ) {
-      return (previousDrawnIndex, previousSupplyIndex, 0);
+      return (previousSupplyIndex, previousDrawnIndex, 0);
     }
 
     uint256 drawnIndex = previousDrawnIndex.rayMulUp(
@@ -182,46 +182,40 @@ library AssetLogic {
 
     uint256 growth;
     {
-      uint120 drawnShares = asset.drawnShares;
-      uint120 premiumShares = asset.premiumShares;
-      int256 premiumOffsetRay = asset.premiumOffsetRay;
-      uint256 deficitRay = asset.deficitRay;
+      uint256 owedNew = _calculateAggregatedOwedRay({
+        drawnShares: asset.drawnShares,
+        premiumShares: asset.premiumShares,
+        premiumOffsetRay: asset.premiumOffsetRay,
+        deficitRay: asset.deficitRay,
+        drawnIndex: drawnIndex
+      }).fromRayUp();
 
-      growth =
-        _calculateAggregatedOwedRay({
-          drawnShares: drawnShares,
-          premiumShares: premiumShares,
-          premiumOffsetRay: premiumOffsetRay,
-          deficitRay: deficitRay,
-          drawnIndex: drawnIndex
-        }).fromRayUp() -
-        _calculateAggregatedOwedRay({
-          drawnShares: drawnShares,
-          premiumShares: premiumShares,
-          premiumOffsetRay: premiumOffsetRay,
-          deficitRay: deficitRay,
-          drawnIndex: previousDrawnIndex
-        }).fromRayUp();
+      uint256 owedOld = _calculateAggregatedOwedRay({
+        drawnShares: asset.drawnShares,
+        premiumShares: asset.premiumShares,
+        premiumOffsetRay: asset.premiumOffsetRay,
+        deficitRay: asset.deficitRay,
+        drawnIndex: previousDrawnIndex
+      }).fromRayUp();
+
+      growth = owedNew - owedOld;
     }
     uint256 fees = growth.percentMulDown(asset.liquidityFee);
 
-    uint256 supplyIndex = cumulateToIndex(
-      previousSupplyIndex,
-      asset.addedShares.rayMulDown(previousSupplyIndex),
-      growth - fees
-    );
+    uint256 supplyIndex = cumulateToIndex(previousSupplyIndex, asset.addedShares, growth - fees);
 
     return (supplyIndex, drawnIndex, fees);
   }
 
   function cumulateToIndex(
     uint256 index,
-    uint256 totalAssets,
+    uint256 shares,
     uint256 amount
   ) internal pure returns (uint256) {
-    // next index is calculated this way: `((amount / totalAssets) + 1) * index`
-    // division `amount / totalAssets` done in ray for precision
-    return (amount.toRay().rayDivDown(totalAssets.toRay()) + WadRayMath.RAY).rayMulDown(index);
+    if (shares == 0) {
+      return index;
+    }
+    return index + amount.rayDivDown(shares);
   }
 
   /// @notice Calculates the aggregated owed amount for a specified asset, expressed in asset units and scaled by RAY.

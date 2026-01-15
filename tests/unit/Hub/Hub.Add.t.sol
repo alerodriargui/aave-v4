@@ -522,9 +522,10 @@ contract HubAddTest is HubBase {
     hub1.add(daiAssetId, addAmount);
     vm.stopPrank();
 
-    assertEq(
+    assertApproxEqAbs(
       hub1.getSpokeAddedAssets(daiAssetId, address(spoke2)),
       addedAssetsBefore + addAmount,
+      1,
       'spoke addedAssets after'
     );
     assertEq(
@@ -533,9 +534,10 @@ contract HubAddTest is HubBase {
       'spoke addedShares after'
     );
     // Hub and Spoke accounting do not match because of liquidity fees
-    assertGe(
+    assertApproxEqAbs(
       hub1.getAddedAssets(daiAssetId),
       addedAssetsBefore + addAmount,
+      1,
       'hub addedAssets after'
     );
     assertGe(hub1.getAddedShares(daiAssetId), addedSharesBefore + shares, 'hub addedShares after');

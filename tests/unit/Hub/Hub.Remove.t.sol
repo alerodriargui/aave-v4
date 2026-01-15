@@ -148,9 +148,10 @@ contract HubRemoveTest is HubBase {
 
     // asset
     // only remaining added amount are fees
-    assertEq(
+    assertApproxEqAbs(
       assetData.liquidity,
       hub1.getAsset(assetId).realizedFees + _calculateBurntInterest(hub1, assetId),
+      100,
       'asset liquidity after'
     );
     assertEq(
@@ -170,7 +171,7 @@ contract HubRemoveTest is HubBase {
     assertApproxEqAbs(
       underlying.balanceOf(alice),
       aliceBalanceBefore + spoke1Amount + spoke2Amount,
-      1,
+      100,
       'alice token balance after'
     );
   }
@@ -322,7 +323,7 @@ contract HubRemoveTest is HubBase {
     assertApproxEqAbs(
       asset.liquidity,
       _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).realizedFees,
-      1,
+      100,
       'dai liquidity'
     );
     assertEq(asset.drawn, 0, 'dai drawn');

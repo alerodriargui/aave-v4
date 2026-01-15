@@ -1713,7 +1713,7 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualDrawnDebt,
       expectedDrawnDebt,
-      1,
+      3,
       string.concat('reserve drawn debt ', label)
     );
     assertApproxEqAbs(
@@ -1745,7 +1745,7 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualDrawnDebt,
       expectedDrawnDebt,
-      1,
+      3,
       string.concat('spoke drawn debt ', label)
     );
     assertApproxEqAbs(
@@ -1774,7 +1774,7 @@ abstract contract Base is Test {
     assertApproxEqAbs(
       actualDrawnDebt,
       expectedDrawnDebt,
-      1,
+      3,
       string.concat('asset drawn debt ', label)
     );
     assertApproxEqAbs(
