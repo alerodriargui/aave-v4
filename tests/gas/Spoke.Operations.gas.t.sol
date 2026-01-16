@@ -2,21 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/Spoke/SpokeBase.t.sol';
+import 'tests/gas/Spoke.Operations.base.gas.t.sol';
 
 /// forge-config: default.isolate = true
-contract SpokeOperations_Gas_Tests is SpokeBase {
-  string internal NAMESPACE = 'Spoke.Operations';
-  ReserveIds internal reserveId;
-  ISpoke internal spoke;
-
-  function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
-    spoke = spoke1;
-    reserveId = _getReserveIds(spoke);
-    _seed();
-  }
+contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
+  using SafeERC20 for *;
 
   function test_supply() public {
     vm.startPrank(alice);
@@ -36,11 +26,11 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
   function test_supplySkimmed() public {
     vm.startPrank(alice);
-    tokenList.usdx.transfer(address(_hub(spoke, reserveId.usdx)), 1000e6);
+    tokenList.usdx.safeTransfer(address(_hub(spoke, reserveId.usdx)), 1000e6);
     spoke.supplySkimmed(reserveId.usdx, 1000e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supplySkimmed: 0 borrows, collateral disabled');
 
-    tokenList.usdx.transfer(address(_hub(spoke, reserveId.usdx)), 1000e6);
+    tokenList.usdx.safeTransfer(address(_hub(spoke, reserveId.usdx)), 1000e6);
     spoke.supplySkimmed(reserveId.usdx, 1000e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supplySkimmed: second action, same reserve');
 
@@ -163,11 +153,11 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     spoke.borrow(reserveId.dai, 500e18, alice);
 
-    tokenList.dai.transfer(address(_hub(spoke, reserveId.dai)), 200e18);
+    tokenList.dai.safeTransfer(address(_hub(spoke, reserveId.dai)), 200e18);
     spoke.repaySkimmed(reserveId.dai, 200e18, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'repaySkimmed: partial');
 
-    tokenList.dai.transfer(
+    tokenList.dai.safeTransfer(
       address(_hub(spoke, reserveId.dai)),
       spoke.getUserTotalDebt(reserveId.dai, alice)
     );
@@ -376,19 +366,6 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagerWithSig: disable');
   }
 
-  function _seed() internal {
-    vm.startPrank(address(spoke2));
-    tokenList.dai.transferFrom(bob, address(hub1), 10000e18);
-    hub1.add(daiAssetId, 10000e18);
-    tokenList.weth.transferFrom(bob, address(hub1), 1000e18);
-    hub1.add(wethAssetId, 1000e18);
-    tokenList.usdx.transferFrom(bob, address(hub1), 1000e6);
-    hub1.add(usdxAssetId, 1000e6);
-    tokenList.wbtc.transferFrom(bob, address(hub1), 1000e8);
-    hub1.add(wbtcAssetId, 1000e8);
-    vm.stopPrank();
-  }
-
   function _liquidationSetup() internal {
     _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
     _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
@@ -426,9 +403,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 }
 
 /// forge-config: default.isolate = true
-contract SpokeOperations_ZeroRiskPremium_Gas_Tests is SpokeOperations_Gas_Tests {
-  function setUp() public override {
-    super.setUp();
+contract SpokeOperations_Basic_ZeroRiskPremium_Gas_Tests is SpokeOperations_Gas_Tests {
+  function _afterSetUp() internal override {
     NAMESPACE = 'Spoke.Operations.ZeroRiskPremium';
 
     _updateCollateralRisk(spoke, reserveId.dai, 0);
