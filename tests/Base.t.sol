@@ -2233,6 +2233,10 @@ abstract contract Base is Test {
     }
   }
 
+  function _spokeDrawnIndex(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+    return _hub(spoke, reserveId).getAssetDrawnIndex(_spokeAssetId(spoke, reserveId));
+  }
+
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
     address _accessManager,
