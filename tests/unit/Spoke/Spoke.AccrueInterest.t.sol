@@ -880,30 +880,49 @@ contract SpokeAccrueInterestTest is SpokeBase {
       expectedPremiumDebt,
       'dai after accrual'
     );
-    assertApproxEqAbs(
-      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob),
-      amounts.daiSupplyAmount + (interest * amounts.daiSupplyAmount) / MAX_SUPPLY_AMOUNT,
-      1000,
-      'dai after accrual'
-    );
-    assertApproxEqAbs(
-      spoke1.getReserveSuppliedAssets(_daiReserveId(spoke1)),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'dai after accrual'
-    );
-    assertApproxEqAbs(
-      hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'dai after accrual'
-    );
-    assertApproxEqAbs(
-      hub1.getAddedAssets(daiAssetId) - _calculateBurntInterest(hub1, daiAssetId),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'dai after accrual'
-    );
+    {
+      uint256 expectedTotalAssets = MAX_SUPPLY_AMOUNT + interest;
+      uint256 actualTotalAssets = hub1.getAddedAssets(daiAssetId);
+      uint256 totalShares = hub1.getAddedShares(daiAssetId);
+
+      assertApproxEqAbs(
+        actualTotalAssets - _calculateBurntInterest(hub1, daiAssetId),
+        expectedTotalAssets,
+        1000,
+        'dai total assets check'
+      );
+
+      uint256 expectedSpokeAssets = _getExpectedAssetsLocal(
+        hub1.getSpokeAddedShares(daiAssetId, address(spoke1)),
+        actualTotalAssets,
+        totalShares
+      );
+
+      assertApproxEqAbs(
+        hub1.getSpokeAddedAssets(daiAssetId, address(spoke1)),
+        expectedSpokeAssets,
+        1,
+        'dai spoke assets check'
+      );
+
+      uint256 expectedDaiUserAssets = _getExpectedAssetsLocal(
+        spoke1.getUserSuppliedShares(_daiReserveId(spoke1), bob),
+        actualTotalAssets,
+        totalShares
+      );
+      assertApproxEqAbs(
+        spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), bob),
+        expectedDaiUserAssets,
+        1,
+        'dai user assets check'
+      );
+      assertApproxEqAbs(
+        spoke1.getReserveSuppliedAssets(_daiReserveId(spoke1)),
+        expectedSpokeAssets,
+        1,
+        'dai reserve supply check'
+      );
+    }
 
     bobPosition = spoke1.getUserPosition(_wethReserveId(spoke1), bob);
     drawnDebt = _calculateExpectedDrawnDebt(
@@ -930,30 +949,47 @@ contract SpokeAccrueInterestTest is SpokeBase {
       expectedPremiumDebt,
       'weth after accrual'
     );
-    assertApproxEqAbs(
-      spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob),
-      amounts.wethSupplyAmount + (interest * amounts.wethSupplyAmount) / MAX_SUPPLY_AMOUNT,
-      1000,
-      'weth after accrual'
-    );
-    assertApproxEqAbs(
-      spoke1.getReserveSuppliedAssets(_wethReserveId(spoke1)),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'weth after accrual'
-    );
-    assertApproxEqAbs(
-      hub1.getSpokeAddedAssets(wethAssetId, address(spoke1)),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'weth after accrual'
-    );
-    assertApproxEqAbs(
-      hub1.getAddedAssets(wethAssetId) - _calculateBurntInterest(hub1, wethAssetId),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'weth after accrual'
-    );
+    {
+      uint256 expectedTotalAssets = MAX_SUPPLY_AMOUNT + interest;
+      uint256 actualTotalAssets = hub1.getAddedAssets(wethAssetId);
+      uint256 totalShares = hub1.getAddedShares(wethAssetId);
+
+      assertApproxEqAbs(
+        actualTotalAssets - _calculateBurntInterest(hub1, wethAssetId),
+        expectedTotalAssets,
+        1000,
+        'weth total assets check'
+      );
+
+      uint256 expectedSpokeAssets = _getExpectedAssetsLocal(
+        hub1.getSpokeAddedShares(wethAssetId, address(spoke1)),
+        actualTotalAssets,
+        totalShares
+      );
+      assertApproxEqAbs(
+        hub1.getSpokeAddedAssets(wethAssetId, address(spoke1)),
+        expectedSpokeAssets,
+        1,
+        'weth spoke assets check'
+      );
+      uint256 expectedWethUserAssets = _getExpectedAssetsLocal(
+        spoke1.getUserSuppliedShares(_wethReserveId(spoke1), bob),
+        actualTotalAssets,
+        totalShares
+      );
+      assertApproxEqAbs(
+        spoke1.getUserSuppliedAssets(_wethReserveId(spoke1), bob),
+        expectedWethUserAssets,
+        1,
+        'weth user assets check'
+      );
+      assertApproxEqAbs(
+        spoke1.getReserveSuppliedAssets(_wethReserveId(spoke1)),
+        expectedSpokeAssets,
+        1,
+        'weth reserve supply check'
+      );
+    }
 
     bobPosition = spoke1.getUserPosition(_usdxReserveId(spoke1), bob);
     drawnDebt = _calculateExpectedDrawnDebt(
@@ -980,30 +1016,47 @@ contract SpokeAccrueInterestTest is SpokeBase {
       expectedPremiumDebt,
       'usdx after accrual'
     );
-    assertApproxEqAbs(
-      spoke1.getUserSuppliedAssets(_usdxReserveId(spoke1), bob),
-      amounts.usdxSupplyAmount + (interest * amounts.usdxSupplyAmount) / MAX_SUPPLY_AMOUNT,
-      1000,
-      'usdx after accrual'
-    );
-    assertApproxEqAbs(
-      spoke1.getReserveSuppliedAssets(_usdxReserveId(spoke1)),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'usdx after accrual'
-    );
-    assertApproxEqAbs(
-      hub1.getSpokeAddedAssets(usdxAssetId, address(spoke1)),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'usdx after accrual'
-    );
-    assertApproxEqAbs(
-      hub1.getAddedAssets(usdxAssetId) - _calculateBurntInterest(hub1, usdxAssetId),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'usdx after accrual'
-    );
+    {
+      uint256 expectedTotalAssets = MAX_SUPPLY_AMOUNT + interest;
+      uint256 actualTotalAssets = hub1.getAddedAssets(usdxAssetId);
+      uint256 totalShares = hub1.getAddedShares(usdxAssetId);
+
+      assertApproxEqAbs(
+        actualTotalAssets - _calculateBurntInterest(hub1, usdxAssetId),
+        expectedTotalAssets,
+        1000,
+        'usdx total assets check'
+      );
+
+      uint256 expectedSpokeAssets = _getExpectedAssetsLocal(
+        hub1.getSpokeAddedShares(usdxAssetId, address(spoke1)),
+        actualTotalAssets,
+        totalShares
+      );
+      assertApproxEqAbs(
+        hub1.getSpokeAddedAssets(usdxAssetId, address(spoke1)),
+        expectedSpokeAssets,
+        1,
+        'usdx spoke assets check'
+      );
+      uint256 expectedUsdxUserAssets = _getExpectedAssetsLocal(
+        spoke1.getUserSuppliedShares(_usdxReserveId(spoke1), bob),
+        actualTotalAssets,
+        totalShares
+      );
+      assertApproxEqAbs(
+        spoke1.getUserSuppliedAssets(_usdxReserveId(spoke1), bob),
+        expectedUsdxUserAssets,
+        1,
+        'usdx user assets check'
+      );
+      assertApproxEqAbs(
+        spoke1.getReserveSuppliedAssets(_usdxReserveId(spoke1)),
+        expectedSpokeAssets,
+        1,
+        'usdx reserve supply check'
+      );
+    }
 
     bobPosition = spoke1.getUserPosition(_wbtcReserveId(spoke1), bob);
     drawnDebt = _calculateExpectedDrawnDebt(
@@ -1030,30 +1083,47 @@ contract SpokeAccrueInterestTest is SpokeBase {
       expectedPremiumDebt,
       'wbtc after accrual'
     );
-    assertApproxEqAbs(
-      spoke1.getUserSuppliedAssets(_wbtcReserveId(spoke1), bob),
-      amounts.wbtcSupplyAmount + (interest * amounts.wbtcSupplyAmount) / MAX_SUPPLY_AMOUNT,
-      1000,
-      'wbtc after accrual'
-    );
-    assertApproxEqAbs(
-      spoke1.getReserveSuppliedAssets(_wbtcReserveId(spoke1)),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'wbtc after accrual'
-    );
-    assertApproxEqAbs(
-      hub1.getSpokeAddedAssets(wbtcAssetId, address(spoke1)),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'wbtc after accrual'
-    );
-    assertApproxEqAbs(
-      hub1.getAddedAssets(wbtcAssetId) - _calculateBurntInterest(hub1, wbtcAssetId),
-      MAX_SUPPLY_AMOUNT + interest,
-      1000,
-      'wbtc after accrual'
-    );
+    {
+      uint256 expectedTotalAssets = MAX_SUPPLY_AMOUNT + interest;
+      uint256 actualTotalAssets = hub1.getAddedAssets(wbtcAssetId);
+      uint256 totalShares = hub1.getAddedShares(wbtcAssetId);
+
+      assertApproxEqAbs(
+        actualTotalAssets - _calculateBurntInterest(hub1, wbtcAssetId),
+        expectedTotalAssets,
+        1000,
+        'wbtc total assets check'
+      );
+
+      uint256 expectedSpokeAssets = _getExpectedAssetsLocal(
+        hub1.getSpokeAddedShares(wbtcAssetId, address(spoke1)),
+        actualTotalAssets,
+        totalShares
+      );
+      assertApproxEqAbs(
+        hub1.getSpokeAddedAssets(wbtcAssetId, address(spoke1)),
+        expectedSpokeAssets,
+        1,
+        'wbtc spoke assets check'
+      );
+      uint256 expectedWbtcUserAssets = _getExpectedAssetsLocal(
+        spoke1.getUserSuppliedShares(_wbtcReserveId(spoke1), bob),
+        actualTotalAssets,
+        totalShares
+      );
+      assertApproxEqAbs(
+        spoke1.getUserSuppliedAssets(_wbtcReserveId(spoke1), bob),
+        expectedWbtcUserAssets,
+        1,
+        'wbtc user assets check'
+      );
+      assertApproxEqAbs(
+        spoke1.getReserveSuppliedAssets(_wbtcReserveId(spoke1)),
+        expectedSpokeAssets,
+        1,
+        'wbtc reserve supply check'
+      );
+    }
   }
 
   function _bound(TestAmounts memory amounts) internal pure returns (TestAmounts memory) {
@@ -1143,5 +1213,13 @@ contract SpokeAccrueInterestTest is SpokeBase {
     );
 
     return amounts;
+  }
+  function _getExpectedAssetsLocal(
+    uint256 shares,
+    uint256 totalAssets,
+    uint256 totalShares
+  ) internal pure returns (uint256) {
+    if (totalShares == 0) return 0;
+    return shares.rayMulDown(totalAssets.rayDivDown(totalShares));
   }
 }
