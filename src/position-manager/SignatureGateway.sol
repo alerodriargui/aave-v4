@@ -11,6 +11,7 @@ import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
+import {ISignatureTransfer} from 'lib/permit2/src/interfaces/ISignatureTransfer.sol';
 
 /// @title SignatureGateway
 /// @author Aave Labs
@@ -21,6 +22,15 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Multicall {
   using SafeERC20 for IERC20;
   using EIP712Hash for *;
+
+  /// @inheritdoc ISignatureGateway
+  address public constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
+
+  string internal constant _SUPPLY_PERMIT2_WITNESS_TYPE_STRING =
+    'Supply witness)Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)';
+
+  string internal constant _REPAY_PERMIT2_WITNESS_TYPE_STRING =
+    'Repay witness)Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)';
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
@@ -230,6 +240,56 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
   }
 
   /// @inheritdoc ISignatureGateway
+  function supplyWithPermit2(
+    ISignatureTransfer.PermitTransferFrom calldata permit,
+    Supply calldata params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
+    address spoke = params.spoke;
+    uint256 reserveId = params.reserveId;
+    address user = params.onBehalfOf;
+
+    ISignatureTransfer(PERMIT2).permitWitnessTransferFrom(
+      permit,
+      ISignatureTransfer.SignatureTransferDetails({to: address(this), requestedAmount: params.amount}),
+      user,
+      params.hash(),
+      _SUPPLY_PERMIT2_WITNESS_TYPE_STRING,
+      signature
+    );
+
+    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
+    underlying.forceApprove(spoke, params.amount);
+
+    return ISpoke(spoke).supply(reserveId, params.amount, user);
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function repayWithPermit2(
+    ISignatureTransfer.PermitTransferFrom calldata permit,
+    Repay calldata params,
+    bytes calldata signature
+  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
+    uint256 repayAmount = MathUtils.min(
+      params.amount,
+      ISpoke(params.spoke).getUserTotalDebt(params.reserveId, params.onBehalfOf)
+    );
+
+    ISignatureTransfer(PERMIT2).permitWitnessTransferFrom(
+      permit,
+      ISignatureTransfer.SignatureTransferDetails({to: address(this), requestedAmount: repayAmount}),
+      params.onBehalfOf,
+      params.hash(),
+      _REPAY_PERMIT2_WITNESS_TYPE_STRING,
+      signature
+    );
+
+    IERC20(_getReserveUnderlying(params.spoke, params.reserveId)).forceApprove(params.spoke, repayAmount);
+
+    return ISpoke(params.spoke).repay(params.reserveId, repayAmount, params.onBehalfOf);
+  }
+
+  /// @inheritdoc ISignatureGateway
   function SUPPLY_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.SUPPLY_TYPEHASH;
   }
@@ -262,6 +322,16 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
   /// @inheritdoc ISignatureGateway
   function UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() external pure returns (bytes32) {
     return EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH;
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function SUPPLY_PERMIT2_WITNESS_TYPE_STRING() external pure returns (string memory) {
+    return _SUPPLY_PERMIT2_WITNESS_TYPE_STRING;
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function REPAY_PERMIT2_WITNESS_TYPE_STRING() external pure returns (string memory) {
+    return _REPAY_PERMIT2_WITNESS_TYPE_STRING;
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
