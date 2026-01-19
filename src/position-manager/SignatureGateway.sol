@@ -24,13 +24,39 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
   using EIP712Hash for *;
 
   /// @inheritdoc ISignatureGateway
-  address public constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
-
-  string internal constant _SUPPLY_PERMIT2_WITNESS_TYPE_STRING =
+  string public constant SUPPLY_PERMIT2_WITNESS_TYPE_STRING =
     'Supply witness)Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)';
 
-  string internal constant _REPAY_PERMIT2_WITNESS_TYPE_STRING =
+  /// @inheritdoc ISignatureGateway
+  string public constant REPAY_PERMIT2_WITNESS_TYPE_STRING =
     'Repay witness)Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)';
+
+  /// @inheritdoc ISignatureGateway
+  address public constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant SUPPLY_TYPEHASH = EIP712Hash.SUPPLY_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant WITHDRAW_TYPEHASH = EIP712Hash.WITHDRAW_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant BORROW_TYPEHASH = EIP712Hash.BORROW_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant REPAY_TYPEHASH = EIP712Hash.REPAY_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant SET_USING_AS_COLLATERAL_TYPEHASH =
+    EIP712Hash.SET_USING_AS_COLLATERAL_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant UPDATE_USER_RISK_PREMIUM_TYPEHASH =
+    EIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH;
+
+  /// @inheritdoc ISignatureGateway
+  bytes32 public constant UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH =
+    EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH;
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
@@ -64,7 +90,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     Withdraw calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
@@ -92,7 +117,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     Borrow calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
@@ -120,7 +144,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     Repay calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
     address user = params.onBehalfOf;
@@ -202,15 +225,18 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     uint256 deadline,
     bytes calldata signature
   ) external onlyRegisteredSpoke(spoke) {
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate({positionManager: address(this), approve: approve});
     try
-      ISpoke(spoke).setUserPositionManagerWithSig({
-        positionManager: address(this),
-        user: user,
-        approve: approve,
-        nonce: nonce,
-        deadline: deadline,
-        signature: signature
-      })
+      ISpoke(spoke).setUserPositionManagersWithSig(
+        ISpoke.SetUserPositionManagers({
+          user: user,
+          updates: updates,
+          nonce: nonce,
+          deadline: deadline
+        }),
+        signature
+      )
     {} catch {}
   }
 
@@ -256,7 +282,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
       }),
       params.onBehalfOf,
       params.hash(),
-      _SUPPLY_PERMIT2_WITNESS_TYPE_STRING,
+      SUPPLY_PERMIT2_WITNESS_TYPE_STRING,
       signature
     );
 
@@ -288,7 +314,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
       }),
       params.onBehalfOf,
       params.hash(),
-      _REPAY_PERMIT2_WITNESS_TYPE_STRING,
+      REPAY_PERMIT2_WITNESS_TYPE_STRING,
       signature
     );
 
@@ -298,51 +324,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     );
 
     return ISpoke(params.spoke).repay(params.reserveId, repayAmount, params.onBehalfOf);
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function SUPPLY_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.SUPPLY_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function WITHDRAW_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.WITHDRAW_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function BORROW_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.BORROW_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function REPAY_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.REPAY_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function SET_USING_AS_COLLATERAL_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.SET_USING_AS_COLLATERAL_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function UPDATE_USER_RISK_PREMIUM_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function SUPPLY_PERMIT2_WITNESS_TYPE_STRING() external pure returns (string memory) {
-    return _SUPPLY_PERMIT2_WITNESS_TYPE_STRING;
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function REPAY_PERMIT2_WITNESS_TYPE_STRING() external pure returns (string memory) {
-    return _REPAY_PERMIT2_WITNESS_TYPE_STRING;
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
