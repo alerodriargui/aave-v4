@@ -18,7 +18,10 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
     _approvePermit2(spoke1, p.reserveId, alice);
     deal(permit.permitted.token, alice, p.amount);
 
-    uint256 shares = _hub(spoke1, p.reserveId).previewAddByAssets(_spokeAssetId(spoke1, p.reserveId), p.amount);
+    uint256 shares = _hub(spoke1, p.reserveId).previewAddByAssets(
+      _spokeAssetId(spoke1, p.reserveId),
+      p.amount
+    );
 
     TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));

@@ -38,7 +38,13 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
     ISpoke spoke,
     address who,
     uint256 deadline
-  ) internal returns (ISignatureTransfer.PermitTransferFrom memory permit, ISignatureGateway.Supply memory params) {
+  )
+    internal
+    returns (
+      ISignatureTransfer.PermitTransferFrom memory permit,
+      ISignatureGateway.Supply memory params
+    )
+  {
     uint256 reserveId = _randomReserveId(spoke);
     uint256 amount = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     address underlying = address(_underlying(spoke, reserveId));
@@ -63,7 +69,13 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
     ISpoke spoke,
     address who,
     uint256 deadline
-  ) internal returns (ISignatureTransfer.PermitTransferFrom memory permit, ISignatureGateway.Repay memory params) {
+  )
+    internal
+    returns (
+      ISignatureTransfer.PermitTransferFrom memory permit,
+      ISignatureGateway.Repay memory params
+    )
+  {
     uint256 reserveId = _randomReserveId(spoke);
     uint256 amount = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     address underlying = address(_underlying(spoke, reserveId));
@@ -113,7 +125,14 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
     );
 
     bytes32 structHash = keccak256(
-      abi.encode(fullTypehash, tokenPermissionsHash, address(gateway), permit.nonce, permit.deadline, witness)
+      abi.encode(
+        fullTypehash,
+        tokenPermissionsHash,
+        address(gateway),
+        permit.nonce,
+        permit.deadline,
+        witness
+      )
     );
 
     bytes32 digest = keccak256(abi.encodePacked('\x19\x01', PERMIT2_DOMAIN_SEPARATOR, structHash));
@@ -122,7 +141,9 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
     return abi.encodePacked(r, s, v);
   }
 
-  function _getSupplyWitnessHash(ISignatureGateway.Supply memory params) internal pure returns (bytes32) {
+  function _getSupplyWitnessHash(
+    ISignatureGateway.Supply memory params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
@@ -137,7 +158,9 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
       );
   }
 
-  function _getRepayWitnessHash(ISignatureGateway.Repay memory params) internal pure returns (bytes32) {
+  function _getRepayWitnessHash(
+    ISignatureGateway.Repay memory params
+  ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(

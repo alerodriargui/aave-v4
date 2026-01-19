@@ -251,7 +251,10 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
 
     ISignatureTransfer(PERMIT2).permitWitnessTransferFrom(
       permit,
-      ISignatureTransfer.SignatureTransferDetails({to: address(this), requestedAmount: params.amount}),
+      ISignatureTransfer.SignatureTransferDetails({
+        to: address(this),
+        requestedAmount: params.amount
+      }),
       user,
       params.hash(),
       _SUPPLY_PERMIT2_WITNESS_TYPE_STRING,
@@ -277,14 +280,20 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
 
     ISignatureTransfer(PERMIT2).permitWitnessTransferFrom(
       permit,
-      ISignatureTransfer.SignatureTransferDetails({to: address(this), requestedAmount: repayAmount}),
+      ISignatureTransfer.SignatureTransferDetails({
+        to: address(this),
+        requestedAmount: repayAmount
+      }),
       params.onBehalfOf,
       params.hash(),
       _REPAY_PERMIT2_WITNESS_TYPE_STRING,
       signature
     );
 
-    IERC20(_getReserveUnderlying(params.spoke, params.reserveId)).forceApprove(params.spoke, repayAmount);
+    IERC20(_getReserveUnderlying(params.spoke, params.reserveId)).forceApprove(
+      params.spoke,
+      repayAmount
+    );
 
     return ISpoke(params.spoke).repay(params.reserveId, repayAmount, params.onBehalfOf);
   }

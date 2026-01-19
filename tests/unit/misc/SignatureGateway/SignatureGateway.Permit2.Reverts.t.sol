@@ -62,7 +62,9 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
 
     bytes memory signature = _getPermit2SupplySignature(permit, p, alicePk);
 
-    vm.expectRevert(abi.encodeWithSelector(IGatewayBase.SpokeNotRegistered.selector, unregisteredSpoke));
+    vm.expectRevert(
+      abi.encodeWithSelector(IGatewayBase.SpokeNotRegistered.selector, unregisteredSpoke)
+    );
     vm.prank(vm.randomAddress());
     gateway.supplyWithPermit2(permit, p, signature);
   }
@@ -158,7 +160,9 @@ contract SignatureGatewayPermit2RevertsTest is SignatureGatewayPermit2BaseTest {
 
     bytes memory signature = _getPermit2RepaySignature(permit, p, alicePk);
 
-    vm.expectRevert(abi.encodeWithSelector(IGatewayBase.SpokeNotRegistered.selector, unregisteredSpoke));
+    vm.expectRevert(
+      abi.encodeWithSelector(IGatewayBase.SpokeNotRegistered.selector, unregisteredSpoke)
+    );
     vm.prank(vm.randomAddress());
     gateway.repayWithPermit2(permit, p, signature);
   }
