@@ -48,10 +48,11 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
     uint256 reserveId = _randomReserveId(spoke);
     uint256 amount = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     address underlying = address(_underlying(spoke, reserveId));
+    uint256 nonce = gateway.nonces(who, _randomNonceKey());
 
     permit = ISignatureTransfer.PermitTransferFrom({
       permitted: ISignatureTransfer.TokenPermissions({token: underlying, amount: amount}),
-      nonce: vm.randomUint(),
+      nonce: _randomUnusedPermit2Nonce(who),
       deadline: deadline
     });
 
@@ -60,7 +61,7 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
       reserveId: reserveId,
       amount: amount,
       onBehalfOf: who,
-      nonce: permit.nonce,
+      nonce: nonce,
       deadline: deadline
     });
   }
@@ -79,10 +80,11 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
     uint256 reserveId = _randomReserveId(spoke);
     uint256 amount = vm.randomUint(1, MAX_SUPPLY_AMOUNT);
     address underlying = address(_underlying(spoke, reserveId));
+    uint256 nonce = gateway.nonces(who, _randomNonceKey());
 
     permit = ISignatureTransfer.PermitTransferFrom({
       permitted: ISignatureTransfer.TokenPermissions({token: underlying, amount: amount}),
-      nonce: vm.randomUint(),
+      nonce: _randomUnusedPermit2Nonce(who),
       deadline: deadline
     });
 
@@ -91,7 +93,7 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
       reserveId: reserveId,
       amount: amount,
       onBehalfOf: who,
-      nonce: permit.nonce,
+      nonce: nonce,
       deadline: deadline
     });
   }
@@ -120,6 +122,23 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
     bytes32 fullTypehash,
     uint256 privateKey
   ) internal view returns (bytes memory) {
+    return
+      _getPermit2WitnessSignatureForSpender(
+        permit,
+        witness,
+        fullTypehash,
+        privateKey,
+        address(gateway)
+      );
+  }
+
+  function _getPermit2WitnessSignatureForSpender(
+    ISignatureTransfer.PermitTransferFrom memory permit,
+    bytes32 witness,
+    bytes32 fullTypehash,
+    uint256 privateKey,
+    address spender
+  ) internal view returns (bytes memory) {
     bytes32 tokenPermissionsHash = keccak256(
       abi.encode(_TOKEN_PERMISSIONS_TYPEHASH, permit.permitted.token, permit.permitted.amount)
     );
@@ -128,7 +147,7 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
       abi.encode(
         fullTypehash,
         tokenPermissionsHash,
-        address(gateway),
+        spender,
         permit.nonce,
         permit.deadline,
         witness
@@ -180,5 +199,53 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
     vm.startPrank(who);
     IERC20(underlying).approve(gateway.PERMIT2(), type(uint256).max);
     vm.stopPrank();
+  }
+
+  /// @dev Returns a random unused Permit2 nonce for the given owner.
+  /// Permit2 uses unordered nonces with a bitmap - nonce is split into wordPos (upper 248 bits)
+  /// and bitPos (lower 8 bits). A nonce is unused if its bit is 0 in the bitmap.
+  function _randomUnusedPermit2Nonce(address owner) internal returns (uint256) {
+    ISignatureTransfer permit2 = ISignatureTransfer(gateway.PERMIT2());
+    uint256 nonce;
+    uint256 wordPos;
+    uint256 bitPos;
+    uint256 bitmap;
+
+    // Generate random nonces until we find an unused one
+    do {
+      nonce = vm.randomUint();
+      wordPos = uint248(nonce >> 8);
+      bitPos = uint8(nonce);
+      bitmap = permit2.nonceBitmap(owner, wordPos);
+    } while ((bitmap & (1 << bitPos)) != 0);
+
+    return nonce;
+  }
+
+  /// @dev Asserts that a Permit2 nonce has been consumed (bit is set in bitmap).
+  function _assertPermit2NonceConsumed(address owner, uint256 nonce) internal view {
+    ISignatureTransfer permit2 = ISignatureTransfer(gateway.PERMIT2());
+    uint256 wordPos = uint248(nonce >> 8);
+    uint256 bitPos = uint8(nonce);
+    uint256 bitmap = permit2.nonceBitmap(owner, wordPos);
+    assertTrue((bitmap & (1 << bitPos)) != 0, 'Permit2 nonce not consumed');
+  }
+
+  /// @dev Asserts that gateway has no allowance to/from Permit2 for any reserve underlying.
+  function _assertGatewayHasNoPermit2Allowance(ISpoke spoke) internal view {
+    address permit2 = gateway.PERMIT2();
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      IERC20 underlying = _underlying(spoke, reserveId);
+      assertEq(
+        underlying.allowance(address(gateway), permit2),
+        0,
+        'Gateway has allowance to Permit2'
+      );
+      assertEq(
+        underlying.allowance(permit2, address(gateway)),
+        0,
+        'Permit2 has allowance to Gateway'
+      );
+    }
   }
 }

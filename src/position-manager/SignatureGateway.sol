@@ -245,9 +245,8 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     Supply calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    address spoke = params.spoke;
-    uint256 reserveId = params.reserveId;
-    address user = params.onBehalfOf;
+    require(block.timestamp <= params.deadline, InvalidSignature());
+    _useCheckedNonce(params.onBehalfOf, params.nonce);
 
     ISignatureTransfer(PERMIT2).permitWitnessTransferFrom(
       permit,
@@ -255,16 +254,16 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
         to: address(this),
         requestedAmount: params.amount
       }),
-      user,
+      params.onBehalfOf,
       params.hash(),
       _SUPPLY_PERMIT2_WITNESS_TYPE_STRING,
       signature
     );
 
-    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
-    underlying.forceApprove(spoke, params.amount);
+    IERC20 underlying = IERC20(_getReserveUnderlying(params.spoke, params.reserveId));
+    underlying.forceApprove(params.spoke, params.amount);
 
-    return ISpoke(spoke).supply(reserveId, params.amount, user);
+    return ISpoke(params.spoke).supply(params.reserveId, params.amount, params.onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -273,6 +272,9 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     Repay calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
+    require(block.timestamp <= params.deadline, InvalidSignature());
+    _useCheckedNonce(params.onBehalfOf, params.nonce);
+
     uint256 repayAmount = MathUtils.min(
       params.amount,
       ISpoke(params.spoke).getUserTotalDebt(params.reserveId, params.onBehalfOf)

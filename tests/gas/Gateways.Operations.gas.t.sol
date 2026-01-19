@@ -267,19 +267,22 @@ contract SignatureGatewayPermit2_Gas_Tests is SignatureGatewayPermit2BaseTest {
 
   function setUp() public virtual override {
     super.setUp();
+    vm.prank(alice);
+    gateway.useNonce(100);
   }
 
   function test_supplyWithPermit2() public {
     uint256 reserveId = _wethReserveId(spoke1);
     uint256 amount = 100e18;
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = vm.getBlockTimestamp() + 1 hours;
+    uint256 gatewayNonce = gateway.nonces(alice, 100);
 
     ISignatureTransfer.PermitTransferFrom memory permit = ISignatureTransfer.PermitTransferFrom({
       permitted: ISignatureTransfer.TokenPermissions({
         token: address(_underlying(spoke1, reserveId)),
         amount: amount
       }),
-      nonce: 1,
+      nonce: 0,
       deadline: deadline
     });
 
@@ -288,18 +291,14 @@ contract SignatureGatewayPermit2_Gas_Tests is SignatureGatewayPermit2BaseTest {
       reserveId: reserveId,
       amount: amount,
       onBehalfOf: alice,
-      nonce: permit.nonce,
+      nonce: gatewayNonce,
       deadline: deadline
     });
 
     bytes memory signature = _getPermit2SupplySignature(permit, p, alicePk);
 
     _approvePermit2(spoke1, reserveId, alice);
-
-    // Warmup: do a supply first to avoid cold storage gas costs
     Utils.supply(spoke1, reserveId, alice, amount, alice);
-
-    // Deal tokens after warmup so alice has funds for the actual test call
     deal(permit.permitted.token, alice, amount);
 
     gateway.supplyWithPermit2(permit, p, signature);
@@ -311,14 +310,13 @@ contract SignatureGatewayPermit2_Gas_Tests is SignatureGatewayPermit2BaseTest {
     uint256 supplyAmount = 1000e18;
     uint256 borrowAmount = 300e18;
     uint256 repayAmount = 100e18;
-    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 deadline = vm.getBlockTimestamp() + 1 hours;
 
-    // Setup: supply collateral and borrow
     Utils.supplyCollateral(spoke1, reserveId, alice, supplyAmount, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
-
-    // Warmup: do a repay first
     Utils.repay(spoke1, reserveId, alice, repayAmount, alice);
+
+    uint256 gatewayNonce = gateway.nonces(alice, 100);
 
     ISignatureTransfer.PermitTransferFrom memory permit = ISignatureTransfer.PermitTransferFrom({
       permitted: ISignatureTransfer.TokenPermissions({
@@ -334,7 +332,7 @@ contract SignatureGatewayPermit2_Gas_Tests is SignatureGatewayPermit2BaseTest {
       reserveId: reserveId,
       amount: repayAmount,
       onBehalfOf: alice,
-      nonce: permit.nonce,
+      nonce: gatewayNonce,
       deadline: deadline
     });
 

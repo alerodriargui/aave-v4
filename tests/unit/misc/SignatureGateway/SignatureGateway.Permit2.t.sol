@@ -7,7 +7,7 @@ import 'tests/unit/misc/SignatureGateway/SignatureGateway.Permit2.Base.t.sol';
 contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
   using SafeCast for *;
 
-  function test_supplyWithPermit2() public {
+  function test_supplyWithPermit2(bytes32) public {
     (
       ISignatureTransfer.PermitTransferFrom memory permit,
       ISignatureGateway.Supply memory p
@@ -33,11 +33,14 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
     assertEq(returnValues.shares, shares);
     assertEq(returnValues.amount, p.amount);
 
+    _assertNonceIncrement(gateway, alice, p.nonce);
+    _assertPermit2NonceConsumed(alice, permit.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoPermit2Allowance(spoke1);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
-  function test_repayWithPermit2() public {
+  function test_repayWithPermit2(bytes32) public {
     uint256 deadline = _warpBeforeRandomDeadline();
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 borrowAmount = 1e18;
@@ -46,12 +49,15 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
     Utils.supplyCollateral(spoke1, reserveId, alice, borrowAmount * 2, alice);
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
+    uint256 permit2Nonce = _randomUnusedPermit2Nonce(alice);
+    uint256 intentNonce = gateway.nonces(alice, _randomNonceKey());
+
     ISignatureTransfer.PermitTransferFrom memory permit = ISignatureTransfer.PermitTransferFrom({
       permitted: ISignatureTransfer.TokenPermissions({
         token: address(_underlying(spoke1, reserveId)),
         amount: repayAmount
       }),
-      nonce: vm.randomUint(),
+      nonce: permit2Nonce,
       deadline: deadline
     });
 
@@ -60,7 +66,7 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
       reserveId: reserveId,
       amount: repayAmount,
       onBehalfOf: alice,
-      nonce: permit.nonce,
+      nonce: intentNonce,
       deadline: deadline
     });
 
@@ -77,11 +83,14 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
     assertEq(returnAmount, repayAmount);
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), debtBefore - repayAmount);
 
+    _assertNonceIncrement(gateway, alice, intentNonce);
+    _assertPermit2NonceConsumed(alice, permit2Nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoPermit2Allowance(spoke1);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 
-  function test_repayWithPermit2_capAtDebt() public {
+  function test_repayWithPermit2_capAtDebt(bytes32) public {
     uint256 deadline = _warpBeforeRandomDeadline();
     uint256 reserveId = _daiReserveId(spoke1);
     uint256 borrowAmount = 1e18;
@@ -91,6 +100,8 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
     Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
 
     uint256 actualDebt = spoke1.getUserTotalDebt(reserveId, alice);
+    uint256 permit2Nonce = _randomUnusedPermit2Nonce(alice);
+    uint256 intentNonce = gateway.nonces(alice, _randomNonceKey());
 
     deal(address(_underlying(spoke1, reserveId)), alice, requestedRepayAmount);
 
@@ -99,7 +110,7 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
         token: address(_underlying(spoke1, reserveId)),
         amount: requestedRepayAmount
       }),
-      nonce: vm.randomUint(),
+      nonce: permit2Nonce,
       deadline: deadline
     });
 
@@ -108,7 +119,7 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
       reserveId: reserveId,
       amount: requestedRepayAmount,
       onBehalfOf: alice,
-      nonce: permit.nonce,
+      nonce: intentNonce,
       deadline: deadline
     });
 
@@ -122,7 +133,10 @@ contract SignatureGatewayPermit2Test is SignatureGatewayPermit2BaseTest {
     assertEq(amount, actualDebt);
     assertEq(spoke1.getUserTotalDebt(reserveId, alice), 0);
 
+    _assertNonceIncrement(gateway, alice, intentNonce);
+    _assertPermit2NonceConsumed(alice, permit2Nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoPermit2Allowance(spoke1);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
 }
