@@ -96,6 +96,7 @@ interface ISpokeBase {
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior token approval is required.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @dev See `supplySkimmed` for a variant that uses tokens already transferred to the Hub.
   /// @param reserveId The reserve identifier.
   /// @param amount The amount of asset to supply.
   /// @param onBehalfOf The owner of the position to add supply shares to.
@@ -107,6 +108,16 @@ interface ISpokeBase {
     address onBehalfOf
   ) external returns (uint256, uint256);
 
+  /// @notice Supplies an amount of underlying asset of the specified reserve using tokens already transferred to the Hub.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev Unlike `supply`, this function does not pull tokens from the caller. The underlying asset must already
+  ///      be transferred to the Hub before calling this function.
+  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @param reserveId The reserve identifier.
+  /// @param amount The amount of asset to supply.
+  /// @param onBehalfOf The owner of the position to add supply shares to.
+  /// @return The amount of shares supplied.
+  /// @return The amount of assets supplied.
   function supplySkimmed(
     uint256 reserveId,
     uint256 amount,
@@ -148,6 +159,7 @@ interface ISpokeBase {
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
   /// @dev The Spoke pulls the underlying asset from the caller, so prior approval is required.
   /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @dev See `repaySkimmed` for a variant that uses tokens already transferred to the Hub.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of asset to repay.
   /// @param onBehalfOf The owner of the position whose debt is repaid.
@@ -159,6 +171,16 @@ interface ISpokeBase {
     address onBehalfOf
   ) external returns (uint256, uint256);
 
+  /// @notice Repays a specified amount of underlying asset to a given reserve using tokens already transferred to the Hub.
+  /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
+  /// @dev Unlike `repay`, this function does not pull tokens from the caller. The underlying asset must already
+  ///      be transferred to the Hub before calling this function.
+  /// @dev Caller must be `onBehalfOf` or an authorized position manager for `onBehalfOf`.
+  /// @param reserveId The identifier of the reserve.
+  /// @param amount The amount of asset to repay.
+  /// @param onBehalfOf The owner of the position whose debt is repaid.
+  /// @return The amount of shares repaid.
+  /// @return The amount of assets repaid.
   function repaySkimmed(
     uint256 reserveId,
     uint256 amount,
