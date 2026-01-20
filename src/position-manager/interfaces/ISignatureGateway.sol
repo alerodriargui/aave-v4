@@ -11,6 +11,79 @@ import {ISignatureTransfer} from 'lib/permit2/src/interfaces/ISignatureTransfer.
 /// @author Aave Labs
 /// @notice Minimal interface for protocol actions involving signed intents.
 interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
+  /// @notice Action type enumeration for batch operations.
+  enum ActionType {
+    Supply, // 0
+    Withdraw, // 1
+    Borrow, // 2
+    Repay, // 3
+    SetUsingAsCollateral, // 4
+    UpdateUserRiskPremium, // 5
+    UpdateUserDynamicConfig // 6
+  }
+
+  /// @notice Batch action for supplying assets (without nonce/deadline/onBehalfOf - lifted to batch level).
+  /// @param spoke The address of the registered spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param amount The amount of assets to supply.
+  struct SupplyAction {
+    address spoke;
+    uint256 reserveId;
+    uint256 amount;
+  }
+
+  /// @notice Batch action for withdrawing assets.
+  /// @param spoke The address of the registered spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param amount The amount of assets to withdraw.
+  struct WithdrawAction {
+    address spoke;
+    uint256 reserveId;
+    uint256 amount;
+  }
+
+  /// @notice Batch action for borrowing assets.
+  /// @param spoke The address of the registered spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param amount The amount of assets to borrow.
+  struct BorrowAction {
+    address spoke;
+    uint256 reserveId;
+    uint256 amount;
+  }
+
+  /// @notice Batch action for repaying assets.
+  /// @param spoke The address of the registered spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param amount The amount of assets to repay.
+  struct RepayAction {
+    address spoke;
+    uint256 reserveId;
+    uint256 amount;
+  }
+
+  /// @notice Batch action for setting collateral usage.
+  /// @param spoke The address of the registered spoke.
+  /// @param reserveId The identifier of the reserve.
+  /// @param useAsCollateral True to enable the reserve as collateral, false to disable it.
+  struct SetUsingAsCollateralAction {
+    address spoke;
+    uint256 reserveId;
+    bool useAsCollateral;
+  }
+
+  /// @notice Batch action for updating user risk premium.
+  /// @param spoke The address of the registered spoke.
+  struct UpdateUserRiskPremiumAction {
+    address spoke;
+  }
+
+  /// @notice Batch action for updating user dynamic config.
+  /// @param spoke The address of the registered spoke.
+  struct UpdateUserDynamicConfigAction {
+    address spoke;
+  }
+
   /// @notice Intent data to supply assets to a reserve.
   /// @param spoke The address of the registered spoke.
   /// @param reserveId The identifier of the reserve.
@@ -258,6 +331,25 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
     Repay calldata params,
     bytes calldata signature
   ) external returns (uint256, uint256);
+
+  /// @notice Executes a batch of actions with a single signature.
+  /// @dev The batch type string is constructed dynamically based on the action types.
+  /// @dev All actions in the batch are executed for the same `onBehalfOf` address.
+  /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
+  /// @param actionTypes Array of action types (ActionType enum values).
+  /// @param actionData Array of ABI-encoded action structs corresponding to each action type.
+  /// @param onBehalfOf The address of the user on whose behalf all actions are performed.
+  /// @param nonce The key-prefixed nonce for the batch signature.
+  /// @param deadline The deadline for the batch intent.
+  /// @param signature The signed bytes for the batch intent.
+  function executeBatchWithSig(
+    uint8[] memory actionTypes,
+    bytes[] memory actionData,
+    address onBehalfOf,
+    uint256 nonce,
+    uint256 deadline,
+    bytes calldata signature
+  ) external;
 
   /// @notice Returns the type hash for the Supply intent.
   function SUPPLY_TYPEHASH() external view returns (bytes32);

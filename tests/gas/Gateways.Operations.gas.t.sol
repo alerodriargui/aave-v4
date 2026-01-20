@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import 'tests/Base.t.sol';
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
 import 'tests/unit/misc/SignatureGateway/SignatureGateway.Permit2.Base.t.sol';
+import {BatchEIP712} from 'src/position-manager/libraries/BatchEIP712.sol';
 
 /// forge-config: default.isolate = true
 contract NativeTokenGateway_Gas_Tests is Base {
@@ -259,6 +260,289 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
       signature: signature
     });
     vm.snapshotGasLastCall(NAMESPACE, 'setSelfAsUserPositionManagerWithSig');
+  }
+}
+
+/// forge-config: default.isolate = true
+contract SignatureGatewayBatch_Gas_Tests is SignatureGatewayBaseTest {
+  using BatchEIP712 for *;
+
+  string internal NAMESPACE = 'SignatureGateway.BatchOperations';
+  uint192 internal nonceKey = 0;
+
+  function setUp() public virtual override {
+    super.setUp();
+    vm.prank(SPOKE_ADMIN);
+    spoke1.updatePositionManager(address(gateway), true);
+    vm.prank(alice);
+    spoke1.setUserPositionManager(address(gateway), true);
+    vm.prank(alice);
+    gateway.useNonce(nonceKey);
+  }
+
+  function _getBatchDigest(
+    uint8[] memory actionTypes,
+    bytes[] memory actionData,
+    address onBehalfOf,
+    uint256 nonce,
+    uint256 deadline
+  ) internal view returns (bytes32) {
+    bytes32 structHash = BatchEIP712.hashBatch(
+      actionTypes,
+      actionData,
+      onBehalfOf,
+      nonce,
+      deadline
+    );
+    return keccak256(abi.encodePacked('\x19\x01', gateway.DOMAIN_SEPARATOR(), structHash));
+  }
+
+  function test_executeBatchWithSig_singleSupply() public {
+    uint256 reserveId = _wethReserveId(spoke1);
+    uint256 amount = 100e18;
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 nonce = gateway.nonces(alice, nonceKey);
+
+    uint8[] memory actionTypes = new uint8[](1);
+    actionTypes[0] = uint8(ISignatureGateway.ActionType.Supply);
+
+    bytes[] memory actionData = new bytes[](1);
+    actionData[0] = abi.encode(
+      ISignatureGateway.SupplyAction({spoke: address(spoke1), reserveId: reserveId, amount: amount})
+    );
+
+    bytes memory signature = _sign(
+      alicePk,
+      _getBatchDigest(actionTypes, actionData, alice, nonce, deadline)
+    );
+    Utils.approve(spoke1, reserveId, alice, address(gateway), amount);
+    Utils.supply(spoke1, reserveId, alice, amount, alice);
+
+    gateway.executeBatchWithSig(actionTypes, actionData, alice, nonce, deadline, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'executeBatchWithSig: 1 action (supply)');
+  }
+
+  function test_executeBatchWithSig_supplyAndSetCollateral() public {
+    uint256 reserveId = _wethReserveId(spoke1);
+    uint256 amount = 100e18;
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 nonce = gateway.nonces(alice, nonceKey);
+
+    uint8[] memory actionTypes = new uint8[](2);
+    actionTypes[0] = uint8(ISignatureGateway.ActionType.Supply);
+    actionTypes[1] = uint8(ISignatureGateway.ActionType.SetUsingAsCollateral);
+
+    bytes[] memory actionData = new bytes[](2);
+    actionData[0] = abi.encode(
+      ISignatureGateway.SupplyAction({spoke: address(spoke1), reserveId: reserveId, amount: amount})
+    );
+    actionData[1] = abi.encode(
+      ISignatureGateway.SetUsingAsCollateralAction({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        useAsCollateral: true
+      })
+    );
+
+    bytes memory signature = _sign(
+      alicePk,
+      _getBatchDigest(actionTypes, actionData, alice, nonce, deadline)
+    );
+    Utils.approve(spoke1, reserveId, alice, address(gateway), amount);
+    Utils.supplyCollateral(spoke1, reserveId, alice, amount, alice);
+
+    gateway.executeBatchWithSig(actionTypes, actionData, alice, nonce, deadline, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'executeBatchWithSig: 2 actions (supply+setCollateral)');
+  }
+
+  function test_executeBatchWithSig_supplyWithdraw() public {
+    uint256 reserveId = _wethReserveId(spoke1);
+    uint256 supplyAmount = 100e18;
+    uint256 withdrawAmount = 50e18;
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 nonce = gateway.nonces(alice, nonceKey);
+
+    Utils.supply(spoke1, reserveId, alice, supplyAmount * 2, alice);
+
+    uint8[] memory actionTypes = new uint8[](2);
+    actionTypes[0] = uint8(ISignatureGateway.ActionType.Supply);
+    actionTypes[1] = uint8(ISignatureGateway.ActionType.Withdraw);
+
+    bytes[] memory actionData = new bytes[](2);
+    actionData[0] = abi.encode(
+      ISignatureGateway.SupplyAction({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: supplyAmount
+      })
+    );
+    actionData[1] = abi.encode(
+      ISignatureGateway.WithdrawAction({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: withdrawAmount
+      })
+    );
+
+    bytes memory signature = _sign(
+      alicePk,
+      _getBatchDigest(actionTypes, actionData, alice, nonce, deadline)
+    );
+    Utils.approve(spoke1, reserveId, alice, address(gateway), supplyAmount);
+    Utils.withdraw(spoke1, reserveId, alice, withdrawAmount, alice);
+
+    gateway.executeBatchWithSig(actionTypes, actionData, alice, nonce, deadline, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'executeBatchWithSig: 2 actions (supply+withdraw)');
+  }
+
+  function test_executeBatchWithSig_borrowRepay() public {
+    uint256 reserveId = _wethReserveId(spoke1);
+    uint256 borrowAmount = 100e18;
+    uint256 repayAmount = 50e18;
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 nonce = gateway.nonces(alice, nonceKey);
+
+    Utils.supplyCollateral(spoke1, reserveId, alice, borrowAmount * 10, alice);
+    Utils.borrow(spoke1, reserveId, alice, borrowAmount, alice);
+
+    uint8[] memory actionTypes = new uint8[](2);
+    actionTypes[0] = uint8(ISignatureGateway.ActionType.Borrow);
+    actionTypes[1] = uint8(ISignatureGateway.ActionType.Repay);
+
+    bytes[] memory actionData = new bytes[](2);
+    actionData[0] = abi.encode(
+      ISignatureGateway.BorrowAction({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: borrowAmount
+      })
+    );
+    actionData[1] = abi.encode(
+      ISignatureGateway.RepayAction({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: repayAmount
+      })
+    );
+
+    bytes memory signature = _sign(
+      alicePk,
+      _getBatchDigest(actionTypes, actionData, alice, nonce, deadline)
+    );
+    Utils.approve(spoke1, reserveId, alice, address(gateway), repayAmount);
+    Utils.repay(spoke1, reserveId, alice, repayAmount, alice);
+
+    gateway.executeBatchWithSig(actionTypes, actionData, alice, nonce, deadline, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'executeBatchWithSig: 2 actions (borrow+repay)');
+  }
+
+  function test_executeBatchWithSig_threeActions() public {
+    uint256 reserveId = _wethReserveId(spoke1);
+    uint256 amount = 100e18;
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 nonce = gateway.nonces(alice, nonceKey);
+
+    Utils.supply(spoke1, reserveId, alice, amount * 3, alice);
+
+    uint8[] memory actionTypes = new uint8[](3);
+    actionTypes[0] = uint8(ISignatureGateway.ActionType.Supply);
+    actionTypes[1] = uint8(ISignatureGateway.ActionType.SetUsingAsCollateral);
+    actionTypes[2] = uint8(ISignatureGateway.ActionType.Withdraw);
+
+    bytes[] memory actionData = new bytes[](3);
+    actionData[0] = abi.encode(
+      ISignatureGateway.SupplyAction({spoke: address(spoke1), reserveId: reserveId, amount: amount})
+    );
+    actionData[1] = abi.encode(
+      ISignatureGateway.SetUsingAsCollateralAction({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        useAsCollateral: true
+      })
+    );
+    actionData[2] = abi.encode(
+      ISignatureGateway.WithdrawAction({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: amount / 2
+      })
+    );
+
+    bytes memory signature = _sign(
+      alicePk,
+      _getBatchDigest(actionTypes, actionData, alice, nonce, deadline)
+    );
+    Utils.approve(spoke1, reserveId, alice, address(gateway), amount);
+    Utils.setUsingAsCollateral(spoke1, reserveId, alice, true, alice);
+    Utils.withdraw(spoke1, reserveId, alice, amount / 2, alice);
+
+    gateway.executeBatchWithSig(actionTypes, actionData, alice, nonce, deadline, signature);
+    vm.snapshotGasLastCall(
+      NAMESPACE,
+      'executeBatchWithSig: 3 actions (supply+setCollateral+withdraw)'
+    );
+  }
+
+  function test_executeBatchWithSig_fiveActions() public {
+    uint256 reserveId = _wethReserveId(spoke1);
+    uint256 amount = 100e18;
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 nonce = gateway.nonces(alice, nonceKey);
+
+    Utils.supplyCollateral(spoke1, reserveId, alice, amount * 10, alice);
+    Utils.borrow(spoke1, reserveId, alice, amount, alice);
+
+    uint8[] memory actionTypes = new uint8[](5);
+    actionTypes[0] = uint8(ISignatureGateway.ActionType.Supply);
+    actionTypes[1] = uint8(ISignatureGateway.ActionType.SetUsingAsCollateral);
+    actionTypes[2] = uint8(ISignatureGateway.ActionType.Borrow);
+    actionTypes[3] = uint8(ISignatureGateway.ActionType.Repay);
+    actionTypes[4] = uint8(ISignatureGateway.ActionType.Withdraw);
+
+    bytes[] memory actionData = new bytes[](5);
+    actionData[0] = abi.encode(
+      ISignatureGateway.SupplyAction({spoke: address(spoke1), reserveId: reserveId, amount: amount})
+    );
+    actionData[1] = abi.encode(
+      ISignatureGateway.SetUsingAsCollateralAction({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        useAsCollateral: true
+      })
+    );
+    actionData[2] = abi.encode(
+      ISignatureGateway.BorrowAction({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: amount / 2
+      })
+    );
+    actionData[3] = abi.encode(
+      ISignatureGateway.RepayAction({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: amount / 4
+      })
+    );
+    actionData[4] = abi.encode(
+      ISignatureGateway.WithdrawAction({
+        spoke: address(spoke1),
+        reserveId: reserveId,
+        amount: amount / 4
+      })
+    );
+
+    bytes memory signature = _sign(
+      alicePk,
+      _getBatchDigest(actionTypes, actionData, alice, nonce, deadline)
+    );
+    Utils.approve(spoke1, reserveId, alice, address(gateway), amount + amount / 4);
+    Utils.borrow(spoke1, reserveId, alice, amount / 2, alice);
+    Utils.repay(spoke1, reserveId, alice, amount / 4, alice);
+    Utils.withdraw(spoke1, reserveId, alice, amount / 4, alice);
+
+    gateway.executeBatchWithSig(actionTypes, actionData, alice, nonce, deadline, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'executeBatchWithSig: 5 actions');
   }
 }
 

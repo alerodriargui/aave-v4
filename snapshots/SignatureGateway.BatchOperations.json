@@ -1,0 +1,8 @@
+{
+  "executeBatchWithSig: 1 action (supply)": "157129",
+  "executeBatchWithSig: 2 actions (borrow+repay)": "280249",
+  "executeBatchWithSig: 2 actions (supply+setCollateral)": "166166",
+  "executeBatchWithSig: 2 actions (supply+withdraw)": "206147",
+  "executeBatchWithSig: 3 actions (supply+setCollateral+withdraw)": "234510",
+  "executeBatchWithSig: 5 actions": "436106"
+}

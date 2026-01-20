@@ -5,6 +5,7 @@ pragma solidity 0.8.28;
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
+import {BatchEIP712} from 'src/position-manager/libraries/BatchEIP712.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
 import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
@@ -320,6 +321,174 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     IERC20(underlying).forceApprove(params.spoke, repayAmount);
 
     return ISpoke(params.spoke).repay(params.reserveId, repayAmount, params.onBehalfOf);
+  }
+
+  /// @inheritdoc ISignatureGateway
+  function executeBatchWithSig(
+    uint8[] memory actionTypes,
+    bytes[] memory actionData,
+    address onBehalfOf,
+    uint256 nonce,
+    uint256 deadline,
+    bytes calldata signature
+  ) external {
+    uint256 len = actionTypes.length;
+    require(len == actionData.length, LengthMismatch());
+    require(len > 0 && len <= 10, InvalidBatchSize());
+
+    bytes32 structHash = BatchEIP712.hashBatch(
+      actionTypes,
+      actionData,
+      onBehalfOf,
+      nonce,
+      deadline
+    );
+    _verifyAndConsumeIntent({
+      signer: onBehalfOf,
+      intentHash: structHash,
+      nonce: nonce,
+      deadline: deadline,
+      signature: signature
+    });
+
+    for (uint256 i = 0; i < len; i++) {
+      _executeAction(actionTypes[i], actionData[i], onBehalfOf);
+    }
+  }
+
+  /// @dev Execute a single action from the batch.
+  /// @param actionType The action type enum value.
+  /// @param actionData The ABI-encoded action struct.
+  /// @param onBehalfOf The user on whose behalf the action is performed.
+  function _executeAction(uint8 actionType, bytes memory actionData, address onBehalfOf) internal {
+    if (actionType == uint8(ISignatureGateway.ActionType.Supply)) {
+      _executeSupplyAction(actionData, onBehalfOf);
+    } else if (actionType == uint8(ISignatureGateway.ActionType.Withdraw)) {
+      _executeWithdrawAction(actionData, onBehalfOf);
+    } else if (actionType == uint8(ISignatureGateway.ActionType.Borrow)) {
+      _executeBorrowAction(actionData, onBehalfOf);
+    } else if (actionType == uint8(ISignatureGateway.ActionType.Repay)) {
+      _executeRepayAction(actionData, onBehalfOf);
+    } else if (actionType == uint8(ISignatureGateway.ActionType.SetUsingAsCollateral)) {
+      _executeSetUsingAsCollateralAction(actionData, onBehalfOf);
+    } else if (actionType == uint8(ISignatureGateway.ActionType.UpdateUserRiskPremium)) {
+      _executeUpdateUserRiskPremiumAction(actionData, onBehalfOf);
+    } else if (actionType == uint8(ISignatureGateway.ActionType.UpdateUserDynamicConfig)) {
+      _executeUpdateUserDynamicConfigAction(actionData, onBehalfOf);
+    } else {
+      revert InvalidActionType();
+    }
+  }
+
+  /// @dev Execute a supply action.
+  function _executeSupplyAction(bytes memory actionData, address onBehalfOf) internal {
+    ISignatureGateway.SupplyAction memory action = abi.decode(
+      actionData,
+      (ISignatureGateway.SupplyAction)
+    );
+    _isSpokeValid(action.spoke);
+
+    IERC20 underlying = IERC20(_getReserveUnderlying(action.spoke, action.reserveId));
+    underlying.safeTransferFrom(onBehalfOf, address(this), action.amount);
+    underlying.forceApprove(action.spoke, action.amount);
+
+    ISpoke(action.spoke).supply(action.reserveId, action.amount, onBehalfOf);
+  }
+
+  /// @dev Execute a withdraw action.
+  function _executeWithdrawAction(bytes memory actionData, address onBehalfOf) internal {
+    ISignatureGateway.WithdrawAction memory action = abi.decode(
+      actionData,
+      (ISignatureGateway.WithdrawAction)
+    );
+    _isSpokeValid(action.spoke);
+
+    IERC20 underlying = IERC20(_getReserveUnderlying(action.spoke, action.reserveId));
+    (, uint256 withdrawnAmount) = ISpoke(action.spoke).withdraw(
+      action.reserveId,
+      action.amount,
+      onBehalfOf
+    );
+    underlying.safeTransfer(onBehalfOf, withdrawnAmount);
+  }
+
+  /// @dev Execute a borrow action.
+  function _executeBorrowAction(bytes memory actionData, address onBehalfOf) internal {
+    ISignatureGateway.BorrowAction memory action = abi.decode(
+      actionData,
+      (ISignatureGateway.BorrowAction)
+    );
+    _isSpokeValid(action.spoke);
+
+    IERC20 underlying = IERC20(_getReserveUnderlying(action.spoke, action.reserveId));
+    (, uint256 borrowedAmount) = ISpoke(action.spoke).borrow(
+      action.reserveId,
+      action.amount,
+      onBehalfOf
+    );
+    underlying.safeTransfer(onBehalfOf, borrowedAmount);
+  }
+
+  /// @dev Execute a repay action.
+  function _executeRepayAction(bytes memory actionData, address onBehalfOf) internal {
+    ISignatureGateway.RepayAction memory action = abi.decode(
+      actionData,
+      (ISignatureGateway.RepayAction)
+    );
+    _isSpokeValid(action.spoke);
+
+    IERC20 underlying = IERC20(_getReserveUnderlying(action.spoke, action.reserveId));
+    uint256 repayAmount = MathUtils.min(
+      action.amount,
+      ISpoke(action.spoke).getUserTotalDebt(action.reserveId, onBehalfOf)
+    );
+
+    underlying.safeTransferFrom(onBehalfOf, address(this), repayAmount);
+    underlying.forceApprove(action.spoke, repayAmount);
+
+    ISpoke(action.spoke).repay(action.reserveId, repayAmount, onBehalfOf);
+  }
+
+  /// @dev Execute a setUsingAsCollateral action.
+  function _executeSetUsingAsCollateralAction(
+    bytes memory actionData,
+    address onBehalfOf
+  ) internal {
+    ISignatureGateway.SetUsingAsCollateralAction memory action = abi.decode(
+      actionData,
+      (ISignatureGateway.SetUsingAsCollateralAction)
+    );
+    _isSpokeValid(action.spoke);
+
+    ISpoke(action.spoke).setUsingAsCollateral(action.reserveId, action.useAsCollateral, onBehalfOf);
+  }
+
+  /// @dev Execute an updateUserRiskPremium action.
+  function _executeUpdateUserRiskPremiumAction(
+    bytes memory actionData,
+    address onBehalfOf
+  ) internal {
+    ISignatureGateway.UpdateUserRiskPremiumAction memory action = abi.decode(
+      actionData,
+      (ISignatureGateway.UpdateUserRiskPremiumAction)
+    );
+    _isSpokeValid(action.spoke);
+
+    ISpoke(action.spoke).updateUserRiskPremium(onBehalfOf);
+  }
+
+  /// @dev Execute an updateUserDynamicConfig action.
+  function _executeUpdateUserDynamicConfigAction(
+    bytes memory actionData,
+    address onBehalfOf
+  ) internal {
+    ISignatureGateway.UpdateUserDynamicConfigAction memory action = abi.decode(
+      actionData,
+      (ISignatureGateway.UpdateUserDynamicConfigAction)
+    );
+    _isSpokeValid(action.spoke);
+
+    ISpoke(action.spoke).updateUserDynamicConfig(onBehalfOf);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
