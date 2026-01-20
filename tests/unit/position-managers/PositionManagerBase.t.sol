@@ -40,10 +40,12 @@ contract PositionManagerBaseTest is SpokeBase {
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
-    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
-      positionManager: address(positionManager),
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(address(positionManager), true);
+
+    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
       user: alice,
-      approve: true,
+      updates: updates,
       nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke1
       deadline: _warpBeforeRandomDeadline()
     });
@@ -55,13 +57,13 @@ contract PositionManagerBaseTest is SpokeBase {
     assertFalse(spoke1.isPositionManager(alice, address(positionManager)));
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.SetUserPositionManager(alice, address(positionManager), p.approve);
+    emit ISpoke.SetUserPositionManager(alice, address(positionManager), p.updates[0].approve);
 
     vm.prank(vm.randomAddress());
     positionManager.setSelfAsUserPositionManagerWithSig(
       address(spoke1),
       p.user,
-      p.approve,
+      p.updates[0].approve,
       p.nonce,
       p.deadline,
       signature

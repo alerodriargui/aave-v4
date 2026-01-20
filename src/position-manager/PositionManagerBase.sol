@@ -49,15 +49,18 @@ abstract contract PositionManagerBase is
     uint256 deadline,
     bytes calldata signature
   ) external onlyRegisteredSpoke(spoke) {
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate({positionManager: address(this), approve: approve});
     try
-      ISpoke(spoke).setUserPositionManagerWithSig({
-        positionManager: address(this),
-        user: user,
-        approve: approve,
-        nonce: nonce,
-        deadline: deadline,
-        signature: signature
-      })
+      ISpoke(spoke).setUserPositionManagersWithSig(
+        ISpoke.SetUserPositionManagers({
+          user: user,
+          updates: updates,
+          nonce: nonce,
+          deadline: deadline
+        }),
+        signature
+      )
     {} catch {}
   }
 
