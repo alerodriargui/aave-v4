@@ -9,29 +9,28 @@ contract SpokeConfigTest is SpokeBase {
   using PercentageMath for uint256;
 
   function test_spoke_deploy() public {
-    address predictedSpokeAddress = vm.computeCreateAddress(
-      address(this),
-      vm.getNonce(address(this))
-    );
     address oracle = makeAddr('AaveOracle');
     vm.expectCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), 1);
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(8));
-    SpokeInstance instance = new SpokeInstance(oracle);
-    assertEq(address(instance), predictedSpokeAddress, 'predictedSpokeAddress');
+    ISpoke instance = ISpoke(address(DeployUtils.deploySpokeImplementation(oracle)));
     assertEq(instance.ORACLE(), oracle);
     assertNotEq(instance.getLiquidationLogic(), address(0));
   }
 
   function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
+    DeployWrapper deployer = new DeployWrapper();
+
     vm.expectRevert();
-    new SpokeInstance(address(0));
+    deployer.deploySpokeImplementation(address(0));
   }
 
-  function test_spoke_deploy_revertsWith_InvalidOracleDecimals() public {
+  function test_spoke_deploy_reverts_on_InvalidOracleDecimals() public {
+    DeployWrapper deployer = new DeployWrapper();
     address oracle = makeAddr('AaveOracle');
+
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.DECIMALS, ()), abi.encode(7));
-    vm.expectRevert(ISpoke.InvalidOracleDecimals.selector);
-    new SpokeInstance(oracle);
+    vm.expectRevert();
+    deployer.deploySpokeImplementation(oracle);
   }
 
   function test_updateReservePriceSource_revertsWith_AccessManagedUnauthorized(
@@ -75,6 +74,8 @@ contract SpokeConfigTest is SpokeBase {
       paused: !config.paused,
       frozen: !config.frozen,
       borrowable: !config.borrowable,
+      liquidatable: !config.liquidatable,
+      receiveSharesEnabled: !config.receiveSharesEnabled,
       collateralRisk: config.collateralRisk + 1
     });
     vm.expectEmit(address(spoke1));
@@ -125,12 +126,7 @@ contract SpokeConfigTest is SpokeBase {
 
   function test_addReserve() public {
     uint256 reserveId = spoke1.getReserveCount();
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -140,38 +136,33 @@ contract SpokeConfigTest is SpokeBase {
     address reserveSource = _deployMockPriceFeed(spoke1, 1e8);
 
     vm.expectEmit(address(spoke1));
-    emit ISpoke.AddReserve(reserveId, dai2AssetId, address(hub1));
+    emit ISpoke.AddReserve(reserveId, usdzAssetId, address(hub1));
     vm.expectEmit(address(spoke1));
     emit ISpoke.UpdateReserveConfig(reserveId, newReserveConfig);
     vm.expectEmit(address(spoke1));
     emit ISpoke.AddDynamicReserveConfig({
       reserveId: reserveId,
-      configKey: 0,
+      dynamicConfigKey: 0,
       config: newDynReserveConfig
     });
 
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
     );
 
     assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
-    assertEq(spoke1.getDynamicReserveConfig(reserveId), newDynReserveConfig);
+    assertEq(_getLatestDynamicReserveConfig(spoke1, reserveId), newDynReserveConfig);
   }
 
   function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
     uint256 assetId = vm.randomUint(hub1.getAssetCount(), Constants.MAX_ALLOWED_ASSET_ID); // non-existing asset id
 
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -204,12 +195,7 @@ contract SpokeConfigTest is SpokeBase {
   function test_addReserve_revertsWith_InvalidAddress_oracle() public {
     (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager), 'New Spoke (USD)');
 
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -228,12 +214,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_ReserveExists() public {
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,
@@ -245,7 +226,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
@@ -255,7 +236,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke1.addReserve(
       address(hub1),
-      dai2AssetId,
+      usdzAssetId,
       reserveSource,
       newReserveConfig,
       newDynReserveConfig
@@ -263,12 +244,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_addReserve_revertsWith_InvalidAssetId() public {
-    ISpoke.ReserveConfig memory newReserveConfig = ISpoke.ReserveConfig({
-      paused: true,
-      frozen: true,
-      borrowable: true,
-      collateralRisk: 10_00
-    });
+    ISpoke.ReserveConfig memory newReserveConfig = _getDefaultReserveConfig(10_00);
     ISpoke.DynamicReserveConfig memory newDynReserveConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 10_00,
       maxLiquidationBonus: 110_00,

@@ -5,12 +5,14 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeWithdrawValidationTest is SpokeBase {
+  using ReserveFlagsMap for ReserveFlags;
+
   function test_withdraw_revertsWith_ReservePaused() public {
     uint256 daiReserveId = _daiReserveId(spoke1);
     uint256 amount = 100e18;
 
     _updateReservePausedFlag(spoke1, daiReserveId, true);
-    assertTrue(spoke1.getReserve(daiReserveId).paused);
+    assertTrue(spoke1.getReserve(daiReserveId).flags.paused());
 
     vm.expectRevert(ISpoke.ReservePaused.selector);
     vm.prank(bob);
@@ -51,7 +53,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
   }
 
   // Withdrawal limit increases due to debt interest, but still cannot withdraw more than available liquidity
-  function test_withdraw_revertsWith_InsufficientSupply_with_debt() public {
+  function test_withdraw_revertsWith_InsufficientLiquidity_with_debt() public {
     uint256 supplyAmount = 100e18;
     uint256 borrowAmount = 50e18;
     uint256 reserveId = _daiReserveId(spoke1);
@@ -96,7 +98,7 @@ contract SpokeWithdrawValidationTest is SpokeBase {
   }
 
   // Cannot withdraw more than available liquidity, before and after time skip, fuzzed
-  function test_withdraw_fuzz_revertsWith_InsufficientSupply_with_debt(
+  function test_withdraw_fuzz_revertsWith_InsufficientLiquidity_with_debt(
     uint256 reserveId,
     uint256 supplyAmount,
     uint256 borrowAmount,

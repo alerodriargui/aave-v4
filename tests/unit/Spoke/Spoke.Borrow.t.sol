@@ -5,6 +5,56 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeBorrowTest is SpokeBase {
+  function test_borrow_revertsWith_ReentrancyGuardReentrantCall_hubDraw() public {
+    uint256 amount = 100e18;
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount * 10,
+      onBehalfOf: bob
+    });
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke1),
+      ISpokeBase.borrow.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.draw.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    spoke1.borrow(_daiReserveId(spoke1), amount, bob);
+  }
+
+  function test_borrow_revertsWith_ReentrancyGuardReentrantCall_hubRefreshPremium() public {
+    uint256 amount = 100e18;
+    Utils.supplyCollateral({
+      spoke: spoke1,
+      reserveId: _daiReserveId(spoke1),
+      caller: bob,
+      amount: amount * 10,
+      onBehalfOf: bob
+    });
+
+    MockReentrantCaller reentrantCaller = new MockReentrantCaller(
+      address(spoke1),
+      ISpokeBase.borrow.selector
+    );
+
+    vm.mockFunction(
+      address(_hub(spoke1, _daiReserveId(spoke1))),
+      address(reentrantCaller),
+      abi.encodeWithSelector(IHubBase.refreshPremium.selector)
+    );
+    vm.expectRevert(ReentrancyGuardTransient.ReentrancyGuardReentrantCall.selector);
+    vm.prank(bob);
+    spoke1.borrow(_daiReserveId(spoke1), amount, bob);
+  }
+
   function test_borrow() public {
     BorrowTestData memory state;
 
@@ -16,22 +66,14 @@ contract SpokeBorrowTest is SpokeBase {
     state.daiBob.borrowAmount = state.daiAlice.supplyAmount;
 
     // should be 0 because no realized premium yet
-    state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.daiReserveId,
-      bob
-    );
-    state.wethBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.wethReserveId,
-      bob
-    );
-    state.daiAlice.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
+    state.wethBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.wethReserveId, bob);
+    state.daiAlice.premiumDebtRayBefore = _calculatePremiumDebtRay(
       spoke1,
       state.daiReserveId,
       alice
     );
-    state.wethAlice.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.wethAlice.premiumDebtRayBefore = _calculatePremiumDebtRay(
       spoke1,
       state.wethReserveId,
       alice
@@ -60,7 +102,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiBob.premiumDebtRayBefore,
       label: 'bob dai data before'
     });
     _assertUserPositionAndDebt({
@@ -69,7 +111,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.wethBob.supplyAmount,
-      expectedRealizedPremium: state.wethBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wethBob.premiumDebtRayBefore,
       label: 'bob weth data before'
     });
     _assertUserPositionAndDebt({
@@ -78,7 +120,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: state.daiAlice.supplyAmount,
-      expectedRealizedPremium: state.daiAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiAlice.premiumDebtRayBefore,
       label: 'alice dai data before'
     });
     _assertUserPositionAndDebt({
@@ -87,31 +129,38 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.wethAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wethAlice.premiumDebtRayBefore,
       label: 'alice weth data before'
     });
 
     uint256 expectedShares = hub1.previewRestoreByAssets(daiAssetId, state.daiBob.borrowAmount);
 
     // Bob draw all dai reserve liquidity
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares);
+    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares, state.daiBob.borrowAmount);
     vm.prank(bob);
-    uint256 returnedShares = spoke1.borrow(state.daiReserveId, state.daiBob.borrowAmount, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.borrow(
+      state.daiReserveId,
+      state.daiBob.borrowAmount,
+      bob
+    );
+    _assertUserRpUnchanged(spoke1, bob);
 
     state.daiBob.userBalanceAfter = tokenList.dai.balanceOf(bob);
     state.wethBob.userBalanceAfter = tokenList.weth.balanceOf(bob);
     state.daiAlice.userBalanceAfter = tokenList.dai.balanceOf(alice);
     state.wethAlice.userBalanceAfter = tokenList.weth.balanceOf(alice);
 
-    assertEq(expectedShares, returnedShares);
+    assertEq(returnValues.shares, expectedShares);
+    assertEq(returnValues.amount, state.daiBob.borrowAmount);
     _assertUserPositionAndDebt({
       spoke: spoke1,
       reserveId: state.daiReserveId,
       user: bob,
       debtAmount: state.daiBob.borrowAmount,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiBob.premiumDebtRayBefore,
       label: 'bob dai data after'
     });
     _assertUserPositionAndDebt({
@@ -120,7 +169,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.wethBob.supplyAmount,
-      expectedRealizedPremium: state.wethBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wethBob.premiumDebtRayBefore,
       label: 'bob weth data after'
     });
     _assertUserPositionAndDebt({
@@ -129,7 +178,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: state.daiAlice.supplyAmount,
-      expectedRealizedPremium: state.daiAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiAlice.premiumDebtRayBefore,
       label: 'alice dai data after'
     });
     _assertUserPositionAndDebt({
@@ -138,7 +187,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.wethAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wethAlice.premiumDebtRayBefore,
       label: 'alice weth data after'
     });
 
@@ -157,6 +206,8 @@ contract SpokeBorrowTest is SpokeBase {
     address[] memory users = new address[](1);
     users[0] = bob;
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'bob dai after');
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.borrow');
   }
 
   function test_borrow_fuzz_amounts(uint256 wethSupplyAmount, uint256 daiBorrowAmount) public {
@@ -176,22 +227,14 @@ contract SpokeBorrowTest is SpokeBase {
     Utils.supply(spoke1, state.daiReserveId, alice, state.daiAlice.supplyAmount, alice);
 
     // should be 0 because no realized premium yet
-    state.daiBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.daiReserveId,
-      bob
-    );
-    state.wethBob.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
-      spoke1,
-      state.wethReserveId,
-      bob
-    );
-    state.daiAlice.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
+    state.wethBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.wethReserveId, bob);
+    state.daiAlice.premiumDebtRayBefore = _calculatePremiumDebtRay(
       spoke1,
       state.daiReserveId,
       alice
     );
-    state.wethAlice.userPosBefore.realizedPremium = _calculateExpectedRealizedPremium(
+    state.wethAlice.premiumDebtRayBefore = _calculatePremiumDebtRay(
       spoke1,
       state.wethReserveId,
       alice
@@ -214,7 +257,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiBob.premiumDebtRayBefore,
       label: 'bob dai data before'
     });
     _assertUserPositionAndDebt({
@@ -223,7 +266,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.wethBob.supplyAmount,
-      expectedRealizedPremium: state.wethBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wethBob.premiumDebtRayBefore,
       label: 'bob weth data before'
     });
     _assertUserPositionAndDebt({
@@ -232,7 +275,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: state.daiAlice.supplyAmount,
-      expectedRealizedPremium: state.daiAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiAlice.premiumDebtRayBefore,
       label: 'alice dai data before'
     });
     _assertUserPositionAndDebt({
@@ -241,24 +284,31 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.wethAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wethAlice.premiumDebtRayBefore,
       label: 'alice weth data before'
     });
 
     uint256 expectedShares = hub1.previewRestoreByAssets(daiAssetId, state.daiBob.borrowAmount);
 
     // Bob draw dai
+    TestReturnValues memory returnValues;
     vm.expectEmit(address(spoke1));
-    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares);
+    emit ISpokeBase.Borrow(state.daiReserveId, bob, bob, expectedShares, state.daiBob.borrowAmount);
     vm.prank(bob);
-    uint256 returnedShares = spoke1.borrow(state.daiReserveId, state.daiBob.borrowAmount, bob);
+    (returnValues.shares, returnValues.amount) = spoke1.borrow(
+      state.daiReserveId,
+      state.daiBob.borrowAmount,
+      bob
+    );
+    _assertUserRpUnchanged(spoke1, bob);
 
     state.daiBob.userBalanceAfter = tokenList.dai.balanceOf(bob);
     state.wethBob.userBalanceAfter = tokenList.weth.balanceOf(bob);
     state.daiAlice.userBalanceAfter = tokenList.dai.balanceOf(alice);
     state.wethAlice.userBalanceAfter = tokenList.weth.balanceOf(alice);
 
-    assertEq(expectedShares, returnedShares);
+    assertEq(returnValues.shares, expectedShares);
+    assertEq(returnValues.amount, state.daiBob.borrowAmount);
 
     // token balance
     assertEq(
@@ -288,7 +338,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: state.daiBob.borrowAmount,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.daiBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiBob.premiumDebtRayBefore,
       label: 'bob dai data after'
     });
     _assertUserPositionAndDebt({
@@ -297,7 +347,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: bob,
       debtAmount: 0,
       suppliedAmount: state.wethBob.supplyAmount,
-      expectedRealizedPremium: state.wethBob.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wethBob.premiumDebtRayBefore,
       label: 'bob weth data after'
     });
     _assertUserPositionAndDebt({
@@ -306,7 +356,7 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: state.daiAlice.supplyAmount,
-      expectedRealizedPremium: state.daiAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.daiAlice.premiumDebtRayBefore,
       label: 'alice dai data after'
     });
     _assertUserPositionAndDebt({
@@ -315,12 +365,15 @@ contract SpokeBorrowTest is SpokeBase {
       user: alice,
       debtAmount: 0,
       suppliedAmount: 0,
-      expectedRealizedPremium: state.wethAlice.userPosBefore.realizedPremium,
+      expectedPremiumDebtRay: state.wethAlice.premiumDebtRayBefore,
       label: 'alice weth data after'
     });
 
     address[] memory users = new address[](1);
     users[0] = bob;
     _assertUsersAndReserveDebt(spoke1, state.daiReserveId, users, 'bob dai after');
+
+    _assertHubLiquidity(hub1, daiAssetId, 'spoke1.borrow');
+    _assertHubLiquidity(hub1, wethAssetId, 'spoke1.borrow');
   }
 }
