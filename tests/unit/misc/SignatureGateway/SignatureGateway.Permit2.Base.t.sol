@@ -24,9 +24,16 @@ contract SignatureGatewayPermit2BaseTest is SignatureGatewayBaseTest, DeployPerm
   bytes32 internal PERMIT2_DOMAIN_SEPARATOR;
 
   function setUp() public virtual override {
-    super.setUp();
-    deployPermit2();
-    PERMIT2_DOMAIN_SEPARATOR = ISignatureTransfer(gateway.PERMIT2()).DOMAIN_SEPARATOR();
+    deployFixtures();
+    initEnvironment();
+    address permit2 = deployPermit2();
+    gateway = ISignatureGateway(new SignatureGateway(ADMIN, permit2));
+    (alice, alicePk) = makeAddrAndKey('alice');
+
+    vm.prank(address(ADMIN));
+    gateway.registerSpoke(address(spoke1), true);
+
+    PERMIT2_DOMAIN_SEPARATOR = ISignatureTransfer(permit2).DOMAIN_SEPARATOR();
 
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(gateway), true);

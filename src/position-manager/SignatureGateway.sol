@@ -32,9 +32,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     'Repay witness)Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)';
 
   /// @inheritdoc ISignatureGateway
-  address public constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
-
-  /// @inheritdoc ISignatureGateway
   bytes32 public constant SUPPLY_TYPEHASH = EIP712Hash.SUPPLY_TYPEHASH;
 
   /// @inheritdoc ISignatureGateway
@@ -58,9 +55,16 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
   bytes32 public constant UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH =
     EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH;
 
+  /// @inheritdoc ISignatureGateway
+  address public immutable PERMIT2;
+
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address initialOwner_) GatewayBase(initialOwner_) {}
+  /// @param permit2_ The address of the Permit2 contract.
+  constructor(address initialOwner_, address permit2_) GatewayBase(initialOwner_) {
+    require(permit2_ != address(0), InvalidAddress());
+    PERMIT2 = permit2_;
+  }
 
   /// @inheritdoc ISignatureGateway
   function supplyWithSig(

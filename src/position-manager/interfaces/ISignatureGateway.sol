@@ -230,27 +230,6 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
     bytes32 permitS
   ) external;
 
-  /// @notice Returns the type hash for the Supply intent.
-  function SUPPLY_TYPEHASH() external view returns (bytes32);
-
-  /// @notice Returns the type hash for the Withdraw intent.
-  function WITHDRAW_TYPEHASH() external view returns (bytes32);
-
-  /// @notice Returns the type hash for the Borrow intent.
-  function BORROW_TYPEHASH() external view returns (bytes32);
-
-  /// @notice Returns the type hash for the Repay intent.
-  function REPAY_TYPEHASH() external view returns (bytes32);
-
-  /// @notice Returns the type hash for the SetUsingAsCollateral intent.
-  function SET_USING_AS_COLLATERAL_TYPEHASH() external view returns (bytes32);
-
-  /// @notice Returns the type hash for the UpdateUserRiskPremium intent.
-  function UPDATE_USER_RISK_PREMIUM_TYPEHASH() external view returns (bytes32);
-
-  /// @notice Returns the type hash for the UpdateUserDynamicConfig intent.
-  function UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() external view returns (bytes32);
-
   /// @notice Facilitates `supply` action using Permit2's permitWitnessTransferFrom.
   /// @dev User must have approved Permit2 to spend their tokens.
   /// @dev The Supply struct is used as the witness data in the Permit2 signature.
@@ -280,12 +259,33 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
     bytes calldata signature
   ) external returns (uint256, uint256);
 
-  /// @notice Returns the canonical Permit2 contract address.
-  function PERMIT2() external view returns (address);
+  /// @notice Returns the type hash for the Supply intent.
+  function SUPPLY_TYPEHASH() external view returns (bytes32);
+
+  /// @notice Returns the type hash for the Withdraw intent.
+  function WITHDRAW_TYPEHASH() external view returns (bytes32);
+
+  /// @notice Returns the type hash for the Borrow intent.
+  function BORROW_TYPEHASH() external view returns (bytes32);
+
+  /// @notice Returns the type hash for the Repay intent.
+  function REPAY_TYPEHASH() external view returns (bytes32);
+
+  /// @notice Returns the type hash for the SetUsingAsCollateral intent.
+  function SET_USING_AS_COLLATERAL_TYPEHASH() external view returns (bytes32);
+
+  /// @notice Returns the type hash for the UpdateUserRiskPremium intent.
+  function UPDATE_USER_RISK_PREMIUM_TYPEHASH() external view returns (bytes32);
+
+  /// @notice Returns the type hash for the UpdateUserDynamicConfig intent.
+  function UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() external view returns (bytes32);
 
   /// @notice Returns the EIP-712 witness type string for Supply used with Permit2.
   function SUPPLY_PERMIT2_WITNESS_TYPE_STRING() external view returns (string memory);
 
   /// @notice Returns the EIP-712 witness type string for Repay used with Permit2.
   function REPAY_PERMIT2_WITNESS_TYPE_STRING() external view returns (string memory);
+
+  /// @notice Returns the canonical Permit2 contract address.
+  function PERMIT2() external view returns (address);
 }
