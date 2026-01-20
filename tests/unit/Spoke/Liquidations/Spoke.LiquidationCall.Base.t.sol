@@ -56,6 +56,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     uint256 liquidationBonus;
     uint256 expectedUserRiskPremium;
     uint256 expectedUserAvgCollateralFactor;
+    bool fullDebtReserveLiquidated;
     bool isCollateralAffectingUserHf;
     bool hasDeficit;
   }
@@ -71,6 +72,14 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     IHub debtHub;
     uint256 debtAssetId;
     uint256 collateralAssetId;
+  }
+
+  struct ExactLiquidationAmounts {
+    uint256 collateralSharesToLiquidate;
+    uint256 collateralSharesToLiquidator;
+    uint256 drawnSharesToLiquidate;
+    uint256 premiumDebtRayToLiquidate;
+    bool fullDebtReserveLiquidated;
   }
 
   /// @notice Bound liquidation config to full range of possible values
@@ -639,26 +648,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         )
       );
 
-    uint256 collateralSharesToLiquidate = _hub(params.spoke, params.collateralReserveId)
-      .previewRemoveByAssets(
-        _spokeAssetId(params.spoke, params.collateralReserveId),
-        liquidationAmounts.collateralToLiquidate
-      );
-
-    uint256 collateralSharesToLiquidator;
-    if (params.receiveShares && liquidationAmounts.collateralToLiquidator > 0) {
-      collateralSharesToLiquidator = _hub(params.spoke, params.collateralReserveId)
-        .previewAddByAssets(
-          _spokeAssetId(params.spoke, params.collateralReserveId),
-          liquidationAmounts.collateralToLiquidator
-        );
-    } else {
-      collateralSharesToLiquidator = _hub(params.spoke, params.collateralReserveId)
-        .previewRemoveByAssets(
-          _spokeAssetId(params.spoke, params.collateralReserveId),
-          liquidationAmounts.collateralToLiquidator
-        );
-    }
+    ExactLiquidationAmounts memory exactLiquidationAmounts = _getExactLiquidationAmounts(
+      params,
+      liquidationAmounts
+    );
 
     uint256 liquidationBonus = params.spoke.getLiquidationBonus(
       params.collateralReserveId,
@@ -668,7 +661,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     uint256 effectiveLiquidationBonusWad = _calculateEffectiveLiquidationBonusWad(
       params,
-      liquidationAmounts
+      exactLiquidationAmounts
     );
 
     assertApproxEqRel(
@@ -704,20 +697,66 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         debtToTarget: debtToTarget,
         collateralToLiquidate: liquidationAmounts.collateralToLiquidate,
         collateralToLiquidator: liquidationAmounts.collateralToLiquidator,
-        collateralSharesToLiquidate: collateralSharesToLiquidate,
-        collateralSharesToLiquidator: collateralSharesToLiquidator,
+        collateralSharesToLiquidate: exactLiquidationAmounts.collateralSharesToLiquidate,
+        collateralSharesToLiquidator: exactLiquidationAmounts.collateralSharesToLiquidator,
         debtToLiquidate: liquidationAmounts.debtToLiquidate,
         liquidationBonus: liquidationBonus,
         expectedUserRiskPremium: expectedUserRiskPremium,
         expectedUserAvgCollateralFactor: expectedUserAvgCollateralFactor,
+        fullDebtReserveLiquidated: exactLiquidationAmounts.fullDebtReserveLiquidated,
         isCollateralAffectingUserHf: isCollateralAffectingUserHf,
         hasDeficit: hasDeficit
       });
   }
 
-  function _calculateEffectiveLiquidationBonusWad(
+  function _getExactLiquidationAmounts(
     CheckedLiquidationCallParams memory params,
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts
+  ) internal view returns (ExactLiquidationAmounts memory) {
+    uint256 collateralSharesToLiquidate = _hub(params.spoke, params.collateralReserveId)
+      .previewRemoveByAssets(
+        _spokeAssetId(params.spoke, params.collateralReserveId),
+        liquidationAmounts.collateralToLiquidate
+      );
+
+    uint256 collateralSharesToLiquidator;
+    if (params.receiveShares && liquidationAmounts.collateralToLiquidator > 0) {
+      collateralSharesToLiquidator = _hub(params.spoke, params.collateralReserveId)
+        .previewAddByAssets(
+          _spokeAssetId(params.spoke, params.collateralReserveId),
+          liquidationAmounts.collateralToLiquidator
+        );
+    } else {
+      collateralSharesToLiquidator = _hub(params.spoke, params.collateralReserveId)
+        .previewRemoveByAssets(
+          _spokeAssetId(params.spoke, params.collateralReserveId),
+          liquidationAmounts.collateralToLiquidator
+        );
+    }
+
+    uint256 premiumDebtRayToLiquidate = liquidationAmounts.debtToLiquidate.toRay().min(
+      params.spoke.getUserPremiumDebtRay(params.debtReserveId, params.user)
+    );
+    uint256 drawnSharesToLiquidate = _hub(params.spoke, params.debtReserveId)
+      .previewRestoreByAssets(
+        _spokeAssetId(params.spoke, params.debtReserveId),
+        liquidationAmounts.debtToLiquidate - premiumDebtRayToLiquidate.fromRayUp()
+      );
+
+    return
+      ExactLiquidationAmounts({
+        collateralSharesToLiquidate: collateralSharesToLiquidate,
+        collateralSharesToLiquidator: collateralSharesToLiquidator,
+        drawnSharesToLiquidate: drawnSharesToLiquidate,
+        premiumDebtRayToLiquidate: premiumDebtRayToLiquidate,
+        fullDebtReserveLiquidated: drawnSharesToLiquidate ==
+          params.spoke.getUserPosition(params.debtReserveId, params.user).drawnShares
+      });
+  }
+
+  function _calculateEffectiveLiquidationBonusWad(
+    CheckedLiquidationCallParams memory params,
+    ExactLiquidationAmounts memory exactLiquidationAmounts
   ) internal view returns (uint256) {
     uint256 collateralValueRemoved;
     uint256 debtValueRepaid;
@@ -728,16 +767,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         params.collateralReserveId,
         params.user
       );
-      uint256 collateralSharesToLiquidate = _hub(params.spoke, params.collateralReserveId)
-        .previewRemoveByAssets(
-          _spokeAssetId(params.spoke, params.collateralReserveId),
-          liquidationAmounts.collateralToLiquidate
-        );
       uint256 collateralAfter = _hub(params.spoke, params.collateralReserveId)
         .previewRemoveByShares(
           _spokeAssetId(params.spoke, params.collateralReserveId),
           params.spoke.getUserPosition(params.collateralReserveId, params.user).suppliedShares -
-            collateralSharesToLiquidate
+            exactLiquidationAmounts.collateralSharesToLiquidate
         );
       collateralValueRemoved = _convertAmountToValue(
         params.spoke,
@@ -757,19 +791,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         params.debtReserveId,
         params.user
       );
-      uint256 premiumDebtRayToLiquidate = liquidationAmounts.debtToLiquidate.toRay().min(
-        premiumDebtRayBefore
-      );
-      uint256 drawnSharesToLiquidate = _hub(params.spoke, params.debtReserveId)
-        .previewRestoreByAssets(
-          _spokeAssetId(params.spoke, params.debtReserveId),
-          liquidationAmounts.debtToLiquidate - premiumDebtRayToLiquidate.fromRayUp()
-        );
-
       uint256 debtAfter = _hub(params.spoke, params.debtReserveId).previewRestoreByShares(
         _spokeAssetId(params.spoke, params.debtReserveId),
-        drawnSharesBefore - drawnSharesToLiquidate
-      ) + (premiumDebtRayBefore - premiumDebtRayToLiquidate).fromRayUp();
+        drawnSharesBefore - exactLiquidationAmounts.drawnSharesToLiquidate
+      ) + (premiumDebtRayBefore - exactLiquidationAmounts.premiumDebtRayToLiquidate).fromRayUp();
       debtValueRepaid = _convertAmountToValue(
         params.spoke,
         params.debtReserveId,
@@ -786,7 +811,6 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
   function _checkPositionStatus(
     CheckedLiquidationCallParams memory params,
-    AccountsInfo memory accountsInfoBefore,
     LiquidationMetadata memory liquidationMetadata
   ) internal virtual {
     assertEq(
@@ -794,10 +818,11 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       true,
       'user position status: using as collateral'
     );
-    assertEq(
-      _isBorrowing(params.spoke, params.debtReserveId, params.user) ||
-        liquidationMetadata.hasDeficit,
-      liquidationMetadata.debtToLiquidate < accountsInfoBefore.userBalanceInfo.borrowedFromSpoke,
+    bool isBorrowing = _isBorrowing(params.spoke, params.debtReserveId, params.user);
+    assertTrue(
+      !liquidationMetadata.fullDebtReserveLiquidated
+        ? (isBorrowing || liquidationMetadata.hasDeficit)
+        : !isBorrowing,
       'user position status: borrowing'
     );
   }
@@ -1448,7 +1473,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
     _checkRiskPremium(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata, logs);
     _checkAvgCollateralFactor(accountsInfoAfter, liquidationMetadata);
 
-    _checkPositionStatus(params, accountsInfoBefore, liquidationMetadata);
+    _checkPositionStatus(params, liquidationMetadata);
     _checkHealthFactor(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkErc20Balances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
     _checkSpokeBalances(params, accountsInfoBefore, accountsInfoAfter, liquidationMetadata);
