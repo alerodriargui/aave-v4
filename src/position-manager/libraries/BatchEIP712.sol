@@ -9,56 +9,58 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 /// @notice Helper methods to construct dynamic EIP-712 type strings and hash batch actions.
 /// @dev Constructs type strings at runtime to maintain full wallet UX visibility for batch signing.
 library BatchEIP712 {
-  string internal constant SUPPLY_ACTION_NAME = 'SupplyAction';
-  string internal constant WITHDRAW_ACTION_NAME = 'WithdrawAction';
-  string internal constant BORROW_ACTION_NAME = 'BorrowAction';
-  string internal constant REPAY_ACTION_NAME = 'RepayAction';
-  string internal constant SET_USING_AS_COLLATERAL_ACTION_NAME = 'SetUsingAsCollateralAction';
-  string internal constant UPDATE_USER_RISK_PREMIUM_ACTION_NAME = 'UpdateUserRiskPremiumAction';
-  string internal constant UPDATE_USER_DYNAMIC_CONFIG_ACTION_NAME = 'UpdateUserDynamicConfigAction';
+  error InvalidActionType(uint8 actionType);
 
-  string internal constant BORROW_ACTION_DEF =
-    'BorrowAction(address spoke,uint256 reserveId,uint256 amount)';
-  string internal constant REPAY_ACTION_DEF =
-    'RepayAction(address spoke,uint256 reserveId,uint256 amount)';
-  string internal constant SET_USING_AS_COLLATERAL_ACTION_DEF =
-    'SetUsingAsCollateralAction(address spoke,uint256 reserveId,bool useAsCollateral)';
-  string internal constant SUPPLY_ACTION_DEF =
-    'SupplyAction(address spoke,uint256 reserveId,uint256 amount)';
-  string internal constant UPDATE_USER_DYNAMIC_CONFIG_ACTION_DEF =
-    'UpdateUserDynamicConfigAction(address spoke)';
-  string internal constant UPDATE_USER_RISK_PREMIUM_ACTION_DEF =
-    'UpdateUserRiskPremiumAction(address spoke)';
-  string internal constant WITHDRAW_ACTION_DEF =
-    'WithdrawAction(address spoke,uint256 reserveId,uint256 amount)';
+  string internal constant SUPPLY_PARAMS_NAME = 'SupplyParams';
+  string internal constant WITHDRAW_PARAMS_NAME = 'WithdrawParams';
+  string internal constant BORROW_PARAMS_NAME = 'BorrowParams';
+  string internal constant REPAY_PARAMS_NAME = 'RepayParams';
+  string internal constant SET_USING_AS_COLLATERAL_PARAMS_NAME = 'SetUsingAsCollateralParams';
+  string internal constant UPDATE_USER_RISK_PREMIUM_PARAMS_NAME = 'UpdateUserRiskPremiumParams';
+  string internal constant UPDATE_USER_DYNAMIC_CONFIG_PARAMS_NAME = 'UpdateUserDynamicConfigParams';
 
-  bytes32 internal constant SUPPLY_ACTION_TYPEHASH =
-    // keccak256('SupplyAction(address spoke,uint256 reserveId,uint256 amount)')
-    0x92108fb6c1c54e895857cadeb15a1d0ff251d05ab5bc45c397f7f0bf4513524f;
+  string internal constant BORROW_PARAMS_DEF =
+    'BorrowParams(address spoke,uint256 reserveId,uint256 amount)';
+  string internal constant REPAY_PARAMS_DEF =
+    'RepayParams(address spoke,uint256 reserveId,uint256 amount)';
+  string internal constant SET_USING_AS_COLLATERAL_PARAMS_DEF =
+    'SetUsingAsCollateralParams(address spoke,uint256 reserveId,bool useAsCollateral)';
+  string internal constant SUPPLY_PARAMS_DEF =
+    'SupplyParams(address spoke,uint256 reserveId,uint256 amount)';
+  string internal constant UPDATE_USER_DYNAMIC_CONFIG_PARAMS_DEF =
+    'UpdateUserDynamicConfigParams(address spoke)';
+  string internal constant UPDATE_USER_RISK_PREMIUM_PARAMS_DEF =
+    'UpdateUserRiskPremiumParams(address spoke)';
+  string internal constant WITHDRAW_PARAMS_DEF =
+    'WithdrawParams(address spoke,uint256 reserveId,uint256 amount)';
 
-  bytes32 internal constant WITHDRAW_ACTION_TYPEHASH =
-    // keccak256('WithdrawAction(address spoke,uint256 reserveId,uint256 amount)')
-    0x9886e55b7e2df773f3c842b4432b6e809e8669053f302bffdacc143660738090;
+  bytes32 internal constant SUPPLY_PARAMS_TYPEHASH =
+    // keccak256('SupplyParams(address spoke,uint256 reserveId,uint256 amount)')
+    0x1b6c40592fda6c0e86066b14d06a185a879ce67373f4cd91b4fe3e33349bc0e4;
 
-  bytes32 internal constant BORROW_ACTION_TYPEHASH =
-    // keccak256('BorrowAction(address spoke,uint256 reserveId,uint256 amount)')
-    0x2d06ff6c841f7e36ccc14b960e3f08ce8e6eb41ab93b31281ffa7ad44e21026c;
+  bytes32 internal constant WITHDRAW_PARAMS_TYPEHASH =
+    // keccak256('WithdrawParams(address spoke,uint256 reserveId,uint256 amount)')
+    0x58e75e9fd311eede04e4a3321d00361fa26e40f92d428b2f3b7112091c0860f2;
 
-  bytes32 internal constant REPAY_ACTION_TYPEHASH =
-    // keccak256('RepayAction(address spoke,uint256 reserveId,uint256 amount)')
-    0xd0bfcdb753a3de34964385d0931b97edfc843abb115302d37b474e15a31220e4;
+  bytes32 internal constant BORROW_PARAMS_TYPEHASH =
+    // keccak256('BorrowParams(address spoke,uint256 reserveId,uint256 amount)')
+    0x27e94de9e568a399cf53391caca93fcca225076a0b9f458c66cd5fa6ee6ceb38;
 
-  bytes32 internal constant SET_USING_AS_COLLATERAL_ACTION_TYPEHASH =
-    // keccak256('SetUsingAsCollateralAction(address spoke,uint256 reserveId,bool useAsCollateral)')
-    0x274cee27fcc6e1e5383183a5d15ceaba083b45ceb85fd75d497dc482b444ff89;
+  bytes32 internal constant REPAY_PARAMS_TYPEHASH =
+    // keccak256('RepayParams(address spoke,uint256 reserveId,uint256 amount)')
+    0x48a24fcb78882348e1291dd601640ee99f1b94a1225439c70518495fe9d1ba0f;
 
-  bytes32 internal constant UPDATE_USER_RISK_PREMIUM_ACTION_TYPEHASH =
-    // keccak256('UpdateUserRiskPremiumAction(address spoke)')
-    0x3d45bb6df468588f10dd8ff3cb2c53086fc7d49dc451b275b868a3c2b32e50d7;
+  bytes32 internal constant SET_USING_AS_COLLATERAL_PARAMS_TYPEHASH =
+    // keccak256('SetUsingAsCollateralParams(address spoke,uint256 reserveId,bool useAsCollateral)')
+    0xbeb8a283b5a625e3baa522c56742f1fd573cf67a4a5f3e8fa864d4baa30901cf;
 
-  bytes32 internal constant UPDATE_USER_DYNAMIC_CONFIG_ACTION_TYPEHASH =
-    // keccak256('UpdateUserDynamicConfigAction(address spoke)')
-    0x8548aa46ece028df12b6ecd855470cbc563c7599931c9c156ae140206e8853ca;
+  bytes32 internal constant UPDATE_USER_RISK_PREMIUM_PARAMS_TYPEHASH =
+    // keccak256('UpdateUserRiskPremiumParams(address spoke)')
+    0xbe8b5422434fc4c91f3a5701cf247efae41407cd51fe5ea72082e9d8d2e5f83d;
+
+  bytes32 internal constant UPDATE_USER_DYNAMIC_CONFIG_PARAMS_TYPEHASH =
+    // keccak256('UpdateUserDynamicConfigParams(address spoke)')
+    0xbf8bd4f7648216d4e812c05faf8b3c04c9d48c630d02d868deb2ad3dc4dd45a5;
 
   bytes internal constant ACTION_FIELD_PREFIX = ' action';
   bytes internal constant FIELD_SEPARATOR = ',';
@@ -76,7 +78,7 @@ library BatchEIP712 {
 
   /// @notice Build the full batch type string from an array of action types.
   /// @dev The type string format is:
-  ///      Batch({ActionType} action0,{ActionType} action1,...,address onBehalfOf,uint256 nonce,uint256 deadline){TypeDefs}
+  ///      Batch({ParamsType} action0,{ParamsType} action1,...,address onBehalfOf,uint256 nonce,uint256 deadline){TypeDefs}
   ///      where {TypeDefs} are the nested type definitions in alphabetical order.
   /// @param actionTypes Array of action type enum values.
   /// @return The constructed type string.
@@ -93,10 +95,10 @@ library BatchEIP712 {
       uint8 actionType = actionTypes[i];
       usedTypes |= uint8(1 << actionType);
 
-      // Append "{ActionTypeName} action{i},"
+      // Append "{ParamsTypeName} action{i},"
       batchPart = bytes.concat(
         batchPart,
-        bytes(_getActionTypeName(actionType)),
+        bytes(_getParamsTypeName(actionType)),
         ACTION_FIELD_PREFIX,
         bytes(_uintToString(i)),
         FIELD_SEPARATOR
@@ -111,25 +113,25 @@ library BatchEIP712 {
     bytes memory typeDefs = '';
 
     if (usedTypes & (1 << uint8(ISignatureGateway.ActionType.Borrow)) != 0) {
-      typeDefs = bytes.concat(typeDefs, bytes(BORROW_ACTION_DEF));
+      typeDefs = bytes.concat(typeDefs, bytes(BORROW_PARAMS_DEF));
     }
     if (usedTypes & (1 << uint8(ISignatureGateway.ActionType.Repay)) != 0) {
-      typeDefs = bytes.concat(typeDefs, bytes(REPAY_ACTION_DEF));
+      typeDefs = bytes.concat(typeDefs, bytes(REPAY_PARAMS_DEF));
     }
     if (usedTypes & (1 << uint8(ISignatureGateway.ActionType.SetUsingAsCollateral)) != 0) {
-      typeDefs = bytes.concat(typeDefs, bytes(SET_USING_AS_COLLATERAL_ACTION_DEF));
+      typeDefs = bytes.concat(typeDefs, bytes(SET_USING_AS_COLLATERAL_PARAMS_DEF));
     }
     if (usedTypes & (1 << uint8(ISignatureGateway.ActionType.Supply)) != 0) {
-      typeDefs = bytes.concat(typeDefs, bytes(SUPPLY_ACTION_DEF));
+      typeDefs = bytes.concat(typeDefs, bytes(SUPPLY_PARAMS_DEF));
     }
     if (usedTypes & (1 << uint8(ISignatureGateway.ActionType.UpdateUserDynamicConfig)) != 0) {
-      typeDefs = bytes.concat(typeDefs, bytes(UPDATE_USER_DYNAMIC_CONFIG_ACTION_DEF));
+      typeDefs = bytes.concat(typeDefs, bytes(UPDATE_USER_DYNAMIC_CONFIG_PARAMS_DEF));
     }
     if (usedTypes & (1 << uint8(ISignatureGateway.ActionType.UpdateUserRiskPremium)) != 0) {
-      typeDefs = bytes.concat(typeDefs, bytes(UPDATE_USER_RISK_PREMIUM_ACTION_DEF));
+      typeDefs = bytes.concat(typeDefs, bytes(UPDATE_USER_RISK_PREMIUM_PARAMS_DEF));
     }
     if (usedTypes & (1 << uint8(ISignatureGateway.ActionType.Withdraw)) != 0) {
-      typeDefs = bytes.concat(typeDefs, bytes(WITHDRAW_ACTION_DEF));
+      typeDefs = bytes.concat(typeDefs, bytes(WITHDRAW_PARAMS_DEF));
     }
 
     return string(bytes.concat(batchPart, typeDefs));
@@ -137,71 +139,71 @@ library BatchEIP712 {
 
   /// @notice Hash a specific action based on its type.
   /// @param actionType The action type enum value.
-  /// @param actionData The ABI-encoded action struct.
-  /// @return The struct hash of the action.
+  /// @param actionData The ABI-encoded params struct.
+  /// @return The struct hash of the params.
   function hashAction(uint8 actionType, bytes memory actionData) internal pure returns (bytes32) {
     if (actionType == uint8(ISignatureGateway.ActionType.Supply)) {
-      ISignatureGateway.SupplyAction memory action = abi.decode(
+      ISignatureGateway.SupplyParams memory params = abi.decode(
         actionData,
-        (ISignatureGateway.SupplyAction)
+        (ISignatureGateway.SupplyParams)
       );
       return
         keccak256(
-          abi.encode(SUPPLY_ACTION_TYPEHASH, action.spoke, action.reserveId, action.amount)
+          abi.encode(SUPPLY_PARAMS_TYPEHASH, params.spoke, params.reserveId, params.amount)
         );
     } else if (actionType == uint8(ISignatureGateway.ActionType.Withdraw)) {
-      ISignatureGateway.WithdrawAction memory action = abi.decode(
+      ISignatureGateway.WithdrawParams memory params = abi.decode(
         actionData,
-        (ISignatureGateway.WithdrawAction)
+        (ISignatureGateway.WithdrawParams)
       );
       return
         keccak256(
-          abi.encode(WITHDRAW_ACTION_TYPEHASH, action.spoke, action.reserveId, action.amount)
+          abi.encode(WITHDRAW_PARAMS_TYPEHASH, params.spoke, params.reserveId, params.amount)
         );
     } else if (actionType == uint8(ISignatureGateway.ActionType.Borrow)) {
-      ISignatureGateway.BorrowAction memory action = abi.decode(
+      ISignatureGateway.BorrowParams memory params = abi.decode(
         actionData,
-        (ISignatureGateway.BorrowAction)
+        (ISignatureGateway.BorrowParams)
       );
       return
         keccak256(
-          abi.encode(BORROW_ACTION_TYPEHASH, action.spoke, action.reserveId, action.amount)
+          abi.encode(BORROW_PARAMS_TYPEHASH, params.spoke, params.reserveId, params.amount)
         );
     } else if (actionType == uint8(ISignatureGateway.ActionType.Repay)) {
-      ISignatureGateway.RepayAction memory action = abi.decode(
+      ISignatureGateway.RepayParams memory params = abi.decode(
         actionData,
-        (ISignatureGateway.RepayAction)
+        (ISignatureGateway.RepayParams)
       );
       return
-        keccak256(abi.encode(REPAY_ACTION_TYPEHASH, action.spoke, action.reserveId, action.amount));
+        keccak256(abi.encode(REPAY_PARAMS_TYPEHASH, params.spoke, params.reserveId, params.amount));
     } else if (actionType == uint8(ISignatureGateway.ActionType.SetUsingAsCollateral)) {
-      ISignatureGateway.SetUsingAsCollateralAction memory action = abi.decode(
+      ISignatureGateway.SetUsingAsCollateralParams memory params = abi.decode(
         actionData,
-        (ISignatureGateway.SetUsingAsCollateralAction)
+        (ISignatureGateway.SetUsingAsCollateralParams)
       );
       return
         keccak256(
           abi.encode(
-            SET_USING_AS_COLLATERAL_ACTION_TYPEHASH,
-            action.spoke,
-            action.reserveId,
-            action.useAsCollateral
+            SET_USING_AS_COLLATERAL_PARAMS_TYPEHASH,
+            params.spoke,
+            params.reserveId,
+            params.useAsCollateral
           )
         );
     } else if (actionType == uint8(ISignatureGateway.ActionType.UpdateUserRiskPremium)) {
-      ISignatureGateway.UpdateUserRiskPremiumAction memory action = abi.decode(
+      ISignatureGateway.UpdateUserRiskPremiumParams memory params = abi.decode(
         actionData,
-        (ISignatureGateway.UpdateUserRiskPremiumAction)
+        (ISignatureGateway.UpdateUserRiskPremiumParams)
       );
-      return keccak256(abi.encode(UPDATE_USER_RISK_PREMIUM_ACTION_TYPEHASH, action.spoke));
+      return keccak256(abi.encode(UPDATE_USER_RISK_PREMIUM_PARAMS_TYPEHASH, params.spoke));
     } else if (actionType == uint8(ISignatureGateway.ActionType.UpdateUserDynamicConfig)) {
-      ISignatureGateway.UpdateUserDynamicConfigAction memory action = abi.decode(
+      ISignatureGateway.UpdateUserDynamicConfigParams memory params = abi.decode(
         actionData,
-        (ISignatureGateway.UpdateUserDynamicConfigAction)
+        (ISignatureGateway.UpdateUserDynamicConfigParams)
       );
-      return keccak256(abi.encode(UPDATE_USER_DYNAMIC_CONFIG_ACTION_TYPEHASH, action.spoke));
+      return keccak256(abi.encode(UPDATE_USER_DYNAMIC_CONFIG_PARAMS_TYPEHASH, params.spoke));
     } else {
-      revert('BatchEIP712: invalid action type');
+      revert InvalidActionType(actionType);
     }
   }
 
@@ -209,7 +211,7 @@ library BatchEIP712 {
   /// @dev Per EIP-712, struct hash = keccak256(abi.encode(typeHash, member1, member2, ...))
   ///      For nested structs, each member is the hashStruct of that nested struct.
   /// @param actionTypes Array of action type enum values.
-  /// @param actionData Array of ABI-encoded action structs.
+  /// @param actionData Array of ABI-encoded params structs.
   /// @param onBehalfOf The user on whose behalf all actions are performed.
   /// @param nonce The nonce for replay protection.
   /// @param deadline The deadline for the batch.
@@ -238,26 +240,26 @@ library BatchEIP712 {
     return keccak256(encoded);
   }
 
-  /// @notice Get the action type name string for a given action type.
+  /// @notice Get the params type name string for a given action type.
   /// @param actionType The action type enum value.
-  /// @return The action type name string.
-  function _getActionTypeName(uint8 actionType) private pure returns (string memory) {
+  /// @return The params type name string.
+  function _getParamsTypeName(uint8 actionType) private pure returns (string memory) {
     if (actionType == uint8(ISignatureGateway.ActionType.Supply)) {
-      return SUPPLY_ACTION_NAME;
+      return SUPPLY_PARAMS_NAME;
     } else if (actionType == uint8(ISignatureGateway.ActionType.Withdraw)) {
-      return WITHDRAW_ACTION_NAME;
+      return WITHDRAW_PARAMS_NAME;
     } else if (actionType == uint8(ISignatureGateway.ActionType.Borrow)) {
-      return BORROW_ACTION_NAME;
+      return BORROW_PARAMS_NAME;
     } else if (actionType == uint8(ISignatureGateway.ActionType.Repay)) {
-      return REPAY_ACTION_NAME;
+      return REPAY_PARAMS_NAME;
     } else if (actionType == uint8(ISignatureGateway.ActionType.SetUsingAsCollateral)) {
-      return SET_USING_AS_COLLATERAL_ACTION_NAME;
+      return SET_USING_AS_COLLATERAL_PARAMS_NAME;
     } else if (actionType == uint8(ISignatureGateway.ActionType.UpdateUserRiskPremium)) {
-      return UPDATE_USER_RISK_PREMIUM_ACTION_NAME;
+      return UPDATE_USER_RISK_PREMIUM_PARAMS_NAME;
     } else if (actionType == uint8(ISignatureGateway.ActionType.UpdateUserDynamicConfig)) {
-      return UPDATE_USER_DYNAMIC_CONFIG_ACTION_NAME;
+      return UPDATE_USER_DYNAMIC_CONFIG_PARAMS_NAME;
     } else {
-      revert('BatchEIP712: invalid action type');
+      revert InvalidActionType(actionType);
     }
   }
 

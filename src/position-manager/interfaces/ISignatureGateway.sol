@@ -22,181 +22,161 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
     UpdateUserDynamicConfig // 6
   }
 
-  /// @notice Batch action for supplying assets (without nonce/deadline/onBehalfOf - lifted to batch level).
+  /// @notice Parameters for supplying assets.
   /// @param spoke The address of the registered spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of assets to supply.
-  struct SupplyAction {
+  struct SupplyParams {
     address spoke;
     uint256 reserveId;
     uint256 amount;
   }
 
-  /// @notice Batch action for withdrawing assets.
+  /// @notice Parameters for withdrawing assets.
   /// @param spoke The address of the registered spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of assets to withdraw.
-  struct WithdrawAction {
+  struct WithdrawParams {
     address spoke;
     uint256 reserveId;
     uint256 amount;
   }
 
-  /// @notice Batch action for borrowing assets.
+  /// @notice Parameters for borrowing assets.
   /// @param spoke The address of the registered spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of assets to borrow.
-  struct BorrowAction {
+  struct BorrowParams {
     address spoke;
     uint256 reserveId;
     uint256 amount;
   }
 
-  /// @notice Batch action for repaying assets.
+  /// @notice Parameters for repaying assets.
   /// @param spoke The address of the registered spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount of assets to repay.
-  struct RepayAction {
+  struct RepayParams {
     address spoke;
     uint256 reserveId;
     uint256 amount;
   }
 
-  /// @notice Batch action for setting collateral usage.
+  /// @notice Parameters for setting collateral usage.
   /// @param spoke The address of the registered spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param useAsCollateral True to enable the reserve as collateral, false to disable it.
-  struct SetUsingAsCollateralAction {
+  struct SetUsingAsCollateralParams {
     address spoke;
     uint256 reserveId;
     bool useAsCollateral;
   }
 
-  /// @notice Batch action for updating user risk premium.
+  /// @notice Parameters for updating user risk premium.
   /// @param spoke The address of the registered spoke.
-  struct UpdateUserRiskPremiumAction {
+  struct UpdateUserRiskPremiumParams {
     address spoke;
   }
 
-  /// @notice Batch action for updating user dynamic config.
+  /// @notice Parameters for updating user dynamic config.
   /// @param spoke The address of the registered spoke.
-  struct UpdateUserDynamicConfigAction {
+  struct UpdateUserDynamicConfigParams {
     address spoke;
   }
 
-  /// @notice Intent data to supply assets to a reserve.
-  /// @param spoke The address of the registered spoke.
-  /// @param reserveId The identifier of the reserve.
-  /// @param amount The amount of assets to supply.
+  /// @notice Intent action to supply assets to a reserve.
   /// @param onBehalfOf The address of the user on whose behalf the supply is performed.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct Supply {
-    address spoke;
-    uint256 reserveId;
-    uint256 amount;
+  /// @param params The supply parameters.
+  struct SupplyAction {
     address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
+    SupplyParams params;
   }
 
-  /// @notice Intent data to withdraw assets from a reserve.
-  /// @param spoke The address of the registered spoke.
-  /// @param reserveId The identifier of the reserve.
-  /// @param amount The amount of assets to withdraw.
+  /// @notice Intent action to withdraw assets from a reserve.
   /// @param onBehalfOf The address of the user on whose behalf the withdraw is performed.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct Withdraw {
-    address spoke;
-    uint256 reserveId;
-    uint256 amount;
+  /// @param params The withdraw parameters.
+  struct WithdrawAction {
     address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
+    WithdrawParams params;
   }
 
-  /// @notice Intent data to borrow assets from a reserve.
-  /// @param spoke The address of the registered spoke.
-  /// @param reserveId The identifier of the reserve.
-  /// @param amount The amount of assets to borrow.
+  /// @notice Intent action to borrow assets from a reserve.
   /// @param onBehalfOf The address of the user on whose behalf the borrow is performed.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct Borrow {
-    address spoke;
-    uint256 reserveId;
-    uint256 amount;
+  /// @param params The borrow parameters.
+  struct BorrowAction {
     address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
+    BorrowParams params;
   }
 
-  /// @notice Intent data to repay assets to a reserve.
-  /// @param spoke The address of the registered spoke.
-  /// @param reserveId The identifier of the reserve.
-  /// @param amount The amount of assets to repay.
+  /// @notice Intent action to repay assets to a reserve.
   /// @param onBehalfOf The address of the user on whose behalf the repay is performed.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct Repay {
-    address spoke;
-    uint256 reserveId;
-    uint256 amount;
+  /// @param params The repay parameters.
+  struct RepayAction {
     address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
+    RepayParams params;
   }
 
-  /// @notice Intent data to enable or disable a reserve as collateral.
-  /// @param spoke The address of the registered spoke.
-  /// @param reserveId The identifier of the reserve.
-  /// @param useAsCollateral True to enable the reserve as collateral, false to disable it.
+  /// @notice Intent action to enable or disable a reserve as collateral.
   /// @param onBehalfOf The address of the user on whose behalf the action is performed.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct SetUsingAsCollateral {
-    address spoke;
-    uint256 reserveId;
-    bool useAsCollateral;
+  /// @param params The setUsingAsCollateral parameters.
+  struct SetUsingAsCollateralAction {
     address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
+    SetUsingAsCollateralParams params;
   }
 
-  /// @notice Intent data to update the risk premium of a user position.
-  /// @param spoke The address of the registered spoke.
+  /// @notice Intent action to update the risk premium of a user position.
   /// @param user The address of the user whose risk premium is being updated.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct UpdateUserRiskPremium {
-    address spoke;
+  /// @param params The updateUserRiskPremium parameters.
+  struct UpdateUserRiskPremiumAction {
     address user;
     uint256 nonce;
     uint256 deadline;
+    UpdateUserRiskPremiumParams params;
   }
 
-  /// @notice Intent data to update the dynamic configuration of a user position.
-  /// @param spoke The address of the registered spoke.
+  /// @notice Intent action to update the dynamic configuration of a user position.
   /// @param user The address of the user whose dynamic config is being updated.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct UpdateUserDynamicConfig {
-    address spoke;
+  /// @param params The updateUserDynamicConfig parameters.
+  struct UpdateUserDynamicConfigAction {
     address user;
     uint256 nonce;
     uint256 deadline;
+    UpdateUserDynamicConfigParams params;
   }
 
   /// @notice Facilitates `supply` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param params The structured supply parameters.
+  /// @param action The structured supply action.
   /// @param signature The signed bytes for the intent.
   /// @return The amount of shares supplied.
   /// @return The amount of assets supplied.
   function supplyWithSig(
-    Supply calldata params,
+    SupplyAction calldata action,
     bytes calldata signature
   ) external returns (uint256, uint256);
 
@@ -204,24 +184,24 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
   /// @dev Providing an amount exceeding the user's current withdrawable balance indicates a request for a maximum withdrawal.
   /// @dev Withdrawn assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param params The structured withdraw parameters.
+  /// @param action The structured withdraw action.
   /// @param signature The signed bytes for the intent.
   /// @return The amount of shares withdrawn.
   /// @return The amount of assets withdrawn.
   function withdrawWithSig(
-    Withdraw calldata params,
+    WithdrawAction calldata action,
     bytes calldata signature
   ) external returns (uint256, uint256);
 
   /// @notice Facilitates `borrow` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Borrowed assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param params The structured borrow parameters.
+  /// @param action The structured borrow action.
   /// @param signature The signed bytes for the intent.
   /// @return The amount of shares borrowed.
   /// @return The amount of assets borrowed.
   function borrowWithSig(
-    Borrow calldata params,
+    BorrowAction calldata action,
     bytes calldata signature
   ) external returns (uint256, uint256);
 
@@ -229,39 +209,39 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
   /// @dev Repay assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param params The structured repay parameters.
+  /// @param action The structured repay action.
   /// @param signature The signed bytes for the intent.
   /// @return The amount of shares repaid.
   /// @return The amount of assets repaid.
   function repayWithSig(
-    Repay calldata params,
+    RepayAction calldata action,
     bytes calldata signature
   ) external returns (uint256, uint256);
 
   /// @notice Facilitates `setUsingAsCollateral` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param params The structured setUsingAsCollateral parameters.
+  /// @param action The structured setUsingAsCollateral action.
   /// @param signature The signed bytes for the intent.
   function setUsingAsCollateralWithSig(
-    SetUsingAsCollateral calldata params,
+    SetUsingAsCollateralAction calldata action,
     bytes calldata signature
   ) external;
 
   /// @notice Facilitates `updateUserRiskPremium` action on the specified registered `spoke` with a typed signature from `user`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param params The structured updateUserRiskPremium parameters.
+  /// @param action The structured updateUserRiskPremium action.
   /// @param signature The signed bytes for the intent.
   function updateUserRiskPremiumWithSig(
-    UpdateUserRiskPremium calldata params,
+    UpdateUserRiskPremiumAction calldata action,
     bytes calldata signature
   ) external;
 
   /// @notice Facilitates `updateUserDynamicConfig` action on the specified registered `spoke` with a typed signature from `user`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
-  /// @param params The structured updateUserDynamicConfig parameters.
+  /// @param action The structured updateUserDynamicConfig action.
   /// @param signature The signed bytes for the intent.
   function updateUserDynamicConfigWithSig(
-    UpdateUserDynamicConfig calldata params,
+    UpdateUserDynamicConfigAction calldata action,
     bytes calldata signature
   ) external;
 
@@ -305,30 +285,30 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
 
   /// @notice Facilitates `supply` action using Permit2's permitWitnessTransferFrom.
   /// @dev User must have approved Permit2 to spend their tokens.
-  /// @dev The Supply struct is used as the witness data in the Permit2 signature.
+  /// @dev The SupplyAction struct is used as the witness data in the Permit2 signature.
   /// @param permit The Permit2 transfer data signed over by the user.
-  /// @param params The structured supply parameters (used as witness).
+  /// @param action The structured supply action (used as witness).
   /// @param signature The Permit2 signature.
   /// @return The amount of shares supplied.
   /// @return The amount of assets supplied.
   function supplyWithPermit2(
     ISignatureTransfer.PermitTransferFrom calldata permit,
-    Supply calldata params,
+    SupplyAction calldata action,
     bytes calldata signature
   ) external returns (uint256, uint256);
 
   /// @notice Facilitates `repay` action using Permit2's permitWitnessTransferFrom.
   /// @dev User must have approved Permit2 to spend their tokens.
-  /// @dev The Repay struct is used as the witness data in the Permit2 signature.
+  /// @dev The RepayAction struct is used as the witness data in the Permit2 signature.
   /// @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
   /// @param permit The Permit2 transfer data signed over by the user.
-  /// @param params The structured repay parameters (used as witness).
+  /// @param action The structured repay action (used as witness).
   /// @param signature The Permit2 signature.
   /// @return The amount of shares repaid.
   /// @return The amount of assets repaid.
   function repayWithPermit2(
     ISignatureTransfer.PermitTransferFrom calldata permit,
-    Repay calldata params,
+    RepayAction calldata action,
     bytes calldata signature
   ) external returns (uint256, uint256);
 
@@ -337,7 +317,7 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
   /// @dev All actions in the batch are executed for the same `onBehalfOf` address.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param actionTypes Array of action types (ActionType enum values).
-  /// @param actionData Array of ABI-encoded action structs corresponding to each action type.
+  /// @param actionData Array of ABI-encoded action params structs corresponding to each action type.
   /// @param onBehalfOf The address of the user on whose behalf all actions are performed.
   /// @param nonce The key-prefixed nonce for the batch signature.
   /// @param deadline The deadline for the batch intent.
@@ -351,31 +331,31 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
     bytes calldata signature
   ) external;
 
-  /// @notice Returns the type hash for the Supply intent.
+  /// @notice Returns the type hash for the SupplyAction intent.
   function SUPPLY_TYPEHASH() external view returns (bytes32);
 
-  /// @notice Returns the type hash for the Withdraw intent.
+  /// @notice Returns the type hash for the WithdrawAction intent.
   function WITHDRAW_TYPEHASH() external view returns (bytes32);
 
-  /// @notice Returns the type hash for the Borrow intent.
+  /// @notice Returns the type hash for the BorrowAction intent.
   function BORROW_TYPEHASH() external view returns (bytes32);
 
-  /// @notice Returns the type hash for the Repay intent.
+  /// @notice Returns the type hash for the RepayAction intent.
   function REPAY_TYPEHASH() external view returns (bytes32);
 
-  /// @notice Returns the type hash for the SetUsingAsCollateral intent.
+  /// @notice Returns the type hash for the SetUsingAsCollateralAction intent.
   function SET_USING_AS_COLLATERAL_TYPEHASH() external view returns (bytes32);
 
-  /// @notice Returns the type hash for the UpdateUserRiskPremium intent.
+  /// @notice Returns the type hash for the UpdateUserRiskPremiumAction intent.
   function UPDATE_USER_RISK_PREMIUM_TYPEHASH() external view returns (bytes32);
 
-  /// @notice Returns the type hash for the UpdateUserDynamicConfig intent.
+  /// @notice Returns the type hash for the UpdateUserDynamicConfigAction intent.
   function UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH() external view returns (bytes32);
 
-  /// @notice Returns the EIP-712 witness type string for Supply used with Permit2.
+  /// @notice Returns the EIP-712 witness type string for SupplyAction used with Permit2.
   function SUPPLY_PERMIT2_WITNESS_TYPE_STRING() external view returns (string memory);
 
-  /// @notice Returns the EIP-712 witness type string for Repay used with Permit2.
+  /// @notice Returns the EIP-712 witness type string for RepayAction used with Permit2.
   function REPAY_PERMIT2_WITNESS_TYPE_STRING() external view returns (string memory);
 
   /// @notice Returns the canonical Permit2 contract address.

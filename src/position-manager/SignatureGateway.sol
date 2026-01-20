@@ -26,11 +26,11 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
 
   /// @inheritdoc ISignatureGateway
   string public constant SUPPLY_PERMIT2_WITNESS_TYPE_STRING =
-    'Supply witness)Supply(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)';
+    'SupplyAction witness)SupplyAction(address onBehalfOf,uint256 nonce,uint256 deadline,SupplyParams params)SupplyParams(address spoke,uint256 reserveId,uint256 amount)TokenPermissions(address token,uint256 amount)';
 
   /// @inheritdoc ISignatureGateway
   string public constant REPAY_PERMIT2_WITNESS_TYPE_STRING =
-    'Repay witness)Repay(address spoke,uint256 reserveId,uint256 amount,address onBehalfOf,uint256 nonce,uint256 deadline)TokenPermissions(address token,uint256 amount)';
+    'RepayAction witness)RepayAction(address onBehalfOf,uint256 nonce,uint256 deadline,RepayParams params)RepayParams(address spoke,uint256 reserveId,uint256 amount)TokenPermissions(address token,uint256 amount)';
 
   /// @inheritdoc ISignatureGateway
   bytes32 public constant SUPPLY_TYPEHASH = EIP712Hash.SUPPLY_TYPEHASH;
@@ -69,156 +69,119 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
 
   /// @inheritdoc ISignatureGateway
   function supplyWithSig(
-    Supply calldata params,
+    SupplyAction calldata action,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    address spoke = params.spoke;
-    uint256 reserveId = params.reserveId;
-    address user = params.onBehalfOf;
+  ) external onlyRegisteredSpoke(action.params.spoke) returns (uint256, uint256) {
+    address user = action.onBehalfOf;
     _verifyAndConsumeIntent({
       signer: user,
-      intentHash: params.hash(),
-      nonce: params.nonce,
-      deadline: params.deadline,
+      intentHash: action.hash(),
+      nonce: action.nonce,
+      deadline: action.deadline,
       signature: signature
     });
 
-    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
-    underlying.safeTransferFrom(user, address(this), params.amount);
-    underlying.forceApprove(spoke, params.amount);
-
-    return ISpoke(spoke).supply(reserveId, params.amount, user);
+    return _executeSupply(action.params, user);
   }
 
   /// @inheritdoc ISignatureGateway
   function withdrawWithSig(
-    Withdraw calldata params,
+    WithdrawAction calldata action,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    address spoke = params.spoke;
-    uint256 reserveId = params.reserveId;
-    address user = params.onBehalfOf;
+  ) external onlyRegisteredSpoke(action.params.spoke) returns (uint256, uint256) {
+    address user = action.onBehalfOf;
     _verifyAndConsumeIntent({
       signer: user,
-      intentHash: params.hash(),
-      nonce: params.nonce,
-      deadline: params.deadline,
+      intentHash: action.hash(),
+      nonce: action.nonce,
+      deadline: action.deadline,
       signature: signature
     });
 
-    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
-    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
-      reserveId,
-      params.amount,
-      user
-    );
-    underlying.safeTransfer(user, withdrawnAmount);
-
-    return (withdrawnShares, withdrawnAmount);
+    return _executeWithdraw(action.params, user);
   }
 
   /// @inheritdoc ISignatureGateway
   function borrowWithSig(
-    Borrow calldata params,
+    BorrowAction calldata action,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    address spoke = params.spoke;
-    uint256 reserveId = params.reserveId;
-    address user = params.onBehalfOf;
+  ) external onlyRegisteredSpoke(action.params.spoke) returns (uint256, uint256) {
+    address user = action.onBehalfOf;
     _verifyAndConsumeIntent({
       signer: user,
-      intentHash: params.hash(),
-      nonce: params.nonce,
-      deadline: params.deadline,
+      intentHash: action.hash(),
+      nonce: action.nonce,
+      deadline: action.deadline,
       signature: signature
     });
 
-    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
-    (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
-      reserveId,
-      params.amount,
-      user
-    );
-    underlying.safeTransfer(user, borrowedAmount);
-
-    return (borrowedShares, borrowedAmount);
+    return _executeBorrow(action.params, user);
   }
 
   /// @inheritdoc ISignatureGateway
   function repayWithSig(
-    Repay calldata params,
+    RepayAction calldata action,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    address spoke = params.spoke;
-    uint256 reserveId = params.reserveId;
-    address user = params.onBehalfOf;
+  ) external onlyRegisteredSpoke(action.params.spoke) returns (uint256, uint256) {
+    address user = action.onBehalfOf;
     _verifyAndConsumeIntent({
       signer: user,
-      intentHash: params.hash(),
-      nonce: params.nonce,
-      deadline: params.deadline,
+      intentHash: action.hash(),
+      nonce: action.nonce,
+      deadline: action.deadline,
       signature: signature
     });
 
-    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
-    uint256 repayAmount = MathUtils.min(
-      params.amount,
-      ISpoke(spoke).getUserTotalDebt(reserveId, user)
-    );
-
-    underlying.safeTransferFrom(user, address(this), repayAmount);
-    underlying.forceApprove(spoke, repayAmount);
-
-    return ISpoke(spoke).repay(reserveId, repayAmount, user);
+    return _executeRepay(action.params, user);
   }
 
   /// @inheritdoc ISignatureGateway
   function setUsingAsCollateralWithSig(
-    SetUsingAsCollateral calldata params,
+    SetUsingAsCollateralAction calldata action,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) {
-    address user = params.onBehalfOf;
+  ) external onlyRegisteredSpoke(action.params.spoke) {
+    address user = action.onBehalfOf;
     _verifyAndConsumeIntent({
       signer: user,
-      intentHash: params.hash(),
-      nonce: params.nonce,
-      deadline: params.deadline,
+      intentHash: action.hash(),
+      nonce: action.nonce,
+      deadline: action.deadline,
       signature: signature
     });
 
-    ISpoke(params.spoke).setUsingAsCollateral(params.reserveId, params.useAsCollateral, user);
+    _executeSetUsingAsCollateral(action.params, user);
   }
 
   /// @inheritdoc ISignatureGateway
   function updateUserRiskPremiumWithSig(
-    UpdateUserRiskPremium calldata params,
+    UpdateUserRiskPremiumAction calldata action,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) {
+  ) external onlyRegisteredSpoke(action.params.spoke) {
     _verifyAndConsumeIntent({
-      signer: params.user,
-      intentHash: params.hash(),
-      nonce: params.nonce,
-      deadline: params.deadline,
+      signer: action.user,
+      intentHash: action.hash(),
+      nonce: action.nonce,
+      deadline: action.deadline,
       signature: signature
     });
 
-    ISpoke(params.spoke).updateUserRiskPremium(params.user);
+    _executeUpdateUserRiskPremium(action.params, action.user);
   }
 
   /// @inheritdoc ISignatureGateway
   function updateUserDynamicConfigWithSig(
-    UpdateUserDynamicConfig calldata params,
+    UpdateUserDynamicConfigAction calldata action,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) {
+  ) external onlyRegisteredSpoke(action.params.spoke) {
     _verifyAndConsumeIntent({
-      signer: params.user,
-      intentHash: params.hash(),
-      nonce: params.nonce,
-      deadline: params.deadline,
+      signer: action.user,
+      intentHash: action.hash(),
+      nonce: action.nonce,
+      deadline: action.deadline,
       signature: signature
     });
 
-    ISpoke(params.spoke).updateUserDynamicConfig(params.user);
+    _executeUpdateUserDynamicConfig(action.params, action.user);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -273,54 +236,60 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
   /// @inheritdoc ISignatureGateway
   function supplyWithPermit2(
     ISignatureTransfer.PermitTransferFrom calldata permit,
-    Supply calldata params,
+    SupplyAction calldata action,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
-    _useCheckedNonce(params.onBehalfOf, params.nonce);
+  ) external onlyRegisteredSpoke(action.params.spoke) returns (uint256, uint256) {
+    require(block.timestamp <= action.deadline, InvalidSignature());
+    _useCheckedNonce(action.onBehalfOf, action.nonce);
 
     ISignatureTransfer(PERMIT2).permitWitnessTransferFrom(
       permit,
-      ISignatureTransfer.SignatureTransferDetails(address(this), params.amount),
-      params.onBehalfOf,
-      params.hash(),
+      ISignatureTransfer.SignatureTransferDetails(address(this), action.params.amount),
+      action.onBehalfOf,
+      action.hash(),
       SUPPLY_PERMIT2_WITNESS_TYPE_STRING,
       signature
     );
 
-    address underlying = _getReserveUnderlying(params.spoke, params.reserveId);
-    IERC20(underlying).forceApprove(params.spoke, params.amount);
+    address underlying = _getReserveUnderlying(action.params.spoke, action.params.reserveId);
+    IERC20(underlying).forceApprove(action.params.spoke, action.params.amount);
 
-    return ISpoke(params.spoke).supply(params.reserveId, params.amount, params.onBehalfOf);
+    return
+      ISpoke(action.params.spoke).supply(
+        action.params.reserveId,
+        action.params.amount,
+        action.onBehalfOf
+      );
   }
 
   /// @inheritdoc ISignatureGateway
   function repayWithPermit2(
     ISignatureTransfer.PermitTransferFrom calldata permit,
-    Repay calldata params,
+    RepayAction calldata action,
     bytes calldata signature
-  ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
-    require(block.timestamp <= params.deadline, InvalidSignature());
-    _useCheckedNonce(params.onBehalfOf, params.nonce);
+  ) external onlyRegisteredSpoke(action.params.spoke) returns (uint256, uint256) {
+    require(block.timestamp <= action.deadline, InvalidSignature());
+    _useCheckedNonce(action.onBehalfOf, action.nonce);
 
     uint256 repayAmount = MathUtils.min(
-      params.amount,
-      ISpoke(params.spoke).getUserTotalDebt(params.reserveId, params.onBehalfOf)
+      action.params.amount,
+      ISpoke(action.params.spoke).getUserTotalDebt(action.params.reserveId, action.onBehalfOf)
     );
 
     ISignatureTransfer(PERMIT2).permitWitnessTransferFrom(
       permit,
       ISignatureTransfer.SignatureTransferDetails(address(this), repayAmount),
-      params.onBehalfOf,
-      params.hash(),
+      action.onBehalfOf,
+      action.hash(),
       REPAY_PERMIT2_WITNESS_TYPE_STRING,
       signature
     );
 
-    address underlying = _getReserveUnderlying(params.spoke, params.reserveId);
-    IERC20(underlying).forceApprove(params.spoke, repayAmount);
+    address underlying = _getReserveUnderlying(action.params.spoke, action.params.reserveId);
+    IERC20(underlying).forceApprove(action.params.spoke, repayAmount);
 
-    return ISpoke(params.spoke).repay(params.reserveId, repayAmount, params.onBehalfOf);
+    return
+      ISpoke(action.params.spoke).repay(action.params.reserveId, repayAmount, action.onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -352,143 +321,133 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     });
 
     for (uint256 i = 0; i < len; i++) {
-      _executeAction(actionTypes[i], actionData[i], onBehalfOf);
+      _executeBatchAction(actionTypes[i], actionData[i], onBehalfOf);
     }
   }
 
-  /// @dev Execute a single action from the batch.
-  /// @param actionType The action type enum value.
-  /// @param actionData The ABI-encoded action struct.
-  /// @param onBehalfOf The user on whose behalf the action is performed.
-  function _executeAction(uint8 actionType, bytes memory actionData, address onBehalfOf) internal {
-    if (actionType == uint8(ISignatureGateway.ActionType.Supply)) {
-      _executeSupplyAction(actionData, onBehalfOf);
-    } else if (actionType == uint8(ISignatureGateway.ActionType.Withdraw)) {
-      _executeWithdrawAction(actionData, onBehalfOf);
-    } else if (actionType == uint8(ISignatureGateway.ActionType.Borrow)) {
-      _executeBorrowAction(actionData, onBehalfOf);
-    } else if (actionType == uint8(ISignatureGateway.ActionType.Repay)) {
-      _executeRepayAction(actionData, onBehalfOf);
-    } else if (actionType == uint8(ISignatureGateway.ActionType.SetUsingAsCollateral)) {
-      _executeSetUsingAsCollateralAction(actionData, onBehalfOf);
-    } else if (actionType == uint8(ISignatureGateway.ActionType.UpdateUserRiskPremium)) {
-      _executeUpdateUserRiskPremiumAction(actionData, onBehalfOf);
-    } else if (actionType == uint8(ISignatureGateway.ActionType.UpdateUserDynamicConfig)) {
-      _executeUpdateUserDynamicConfigAction(actionData, onBehalfOf);
+  function _executeBatchAction(
+    uint8 actionType,
+    bytes memory actionData,
+    address onBehalfOf
+  ) internal {
+    if (actionType == uint8(ActionType.Supply)) {
+      SupplyParams memory params = abi.decode(actionData, (SupplyParams));
+      _isSpokeValid(params.spoke);
+      _executeSupply(params, onBehalfOf);
+    } else if (actionType == uint8(ActionType.Withdraw)) {
+      WithdrawParams memory params = abi.decode(actionData, (WithdrawParams));
+      _isSpokeValid(params.spoke);
+      _executeWithdraw(params, onBehalfOf);
+    } else if (actionType == uint8(ActionType.Borrow)) {
+      BorrowParams memory params = abi.decode(actionData, (BorrowParams));
+      _isSpokeValid(params.spoke);
+      _executeBorrow(params, onBehalfOf);
+    } else if (actionType == uint8(ActionType.Repay)) {
+      RepayParams memory params = abi.decode(actionData, (RepayParams));
+      _isSpokeValid(params.spoke);
+      _executeRepay(params, onBehalfOf);
+    } else if (actionType == uint8(ActionType.SetUsingAsCollateral)) {
+      SetUsingAsCollateralParams memory params = abi.decode(
+        actionData,
+        (SetUsingAsCollateralParams)
+      );
+      _isSpokeValid(params.spoke);
+      _executeSetUsingAsCollateral(params, onBehalfOf);
+    } else if (actionType == uint8(ActionType.UpdateUserRiskPremium)) {
+      UpdateUserRiskPremiumParams memory params = abi.decode(
+        actionData,
+        (UpdateUserRiskPremiumParams)
+      );
+      _isSpokeValid(params.spoke);
+      _executeUpdateUserRiskPremium(params, onBehalfOf);
+    } else if (actionType == uint8(ActionType.UpdateUserDynamicConfig)) {
+      UpdateUserDynamicConfigParams memory params = abi.decode(
+        actionData,
+        (UpdateUserDynamicConfigParams)
+      );
+      _isSpokeValid(params.spoke);
+      _executeUpdateUserDynamicConfig(params, onBehalfOf);
     } else {
       revert InvalidActionType();
     }
   }
 
-  /// @dev Execute a supply action.
-  function _executeSupplyAction(bytes memory actionData, address onBehalfOf) internal {
-    ISignatureGateway.SupplyAction memory action = abi.decode(
-      actionData,
-      (ISignatureGateway.SupplyAction)
-    );
-    _isSpokeValid(action.spoke);
+  function _executeSupply(
+    SupplyParams memory params,
+    address onBehalfOf
+  ) internal returns (uint256, uint256) {
+    IERC20 underlying = IERC20(_getReserveUnderlying(params.spoke, params.reserveId));
+    underlying.safeTransferFrom(onBehalfOf, address(this), params.amount);
+    underlying.forceApprove(params.spoke, params.amount);
 
-    IERC20 underlying = IERC20(_getReserveUnderlying(action.spoke, action.reserveId));
-    underlying.safeTransferFrom(onBehalfOf, address(this), action.amount);
-    underlying.forceApprove(action.spoke, action.amount);
-
-    ISpoke(action.spoke).supply(action.reserveId, action.amount, onBehalfOf);
+    return ISpoke(params.spoke).supply(params.reserveId, params.amount, onBehalfOf);
   }
 
-  /// @dev Execute a withdraw action.
-  function _executeWithdrawAction(bytes memory actionData, address onBehalfOf) internal {
-    ISignatureGateway.WithdrawAction memory action = abi.decode(
-      actionData,
-      (ISignatureGateway.WithdrawAction)
-    );
-    _isSpokeValid(action.spoke);
-
-    IERC20 underlying = IERC20(_getReserveUnderlying(action.spoke, action.reserveId));
-    (, uint256 withdrawnAmount) = ISpoke(action.spoke).withdraw(
-      action.reserveId,
-      action.amount,
+  function _executeWithdraw(
+    WithdrawParams memory params,
+    address onBehalfOf
+  ) internal returns (uint256, uint256) {
+    IERC20 underlying = IERC20(_getReserveUnderlying(params.spoke, params.reserveId));
+    (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(params.spoke).withdraw(
+      params.reserveId,
+      params.amount,
       onBehalfOf
     );
     underlying.safeTransfer(onBehalfOf, withdrawnAmount);
+
+    return (withdrawnShares, withdrawnAmount);
   }
 
-  /// @dev Execute a borrow action.
-  function _executeBorrowAction(bytes memory actionData, address onBehalfOf) internal {
-    ISignatureGateway.BorrowAction memory action = abi.decode(
-      actionData,
-      (ISignatureGateway.BorrowAction)
-    );
-    _isSpokeValid(action.spoke);
-
-    IERC20 underlying = IERC20(_getReserveUnderlying(action.spoke, action.reserveId));
-    (, uint256 borrowedAmount) = ISpoke(action.spoke).borrow(
-      action.reserveId,
-      action.amount,
+  function _executeBorrow(
+    BorrowParams memory params,
+    address onBehalfOf
+  ) internal returns (uint256, uint256) {
+    IERC20 underlying = IERC20(_getReserveUnderlying(params.spoke, params.reserveId));
+    (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(params.spoke).borrow(
+      params.reserveId,
+      params.amount,
       onBehalfOf
     );
     underlying.safeTransfer(onBehalfOf, borrowedAmount);
+
+    return (borrowedShares, borrowedAmount);
   }
 
-  /// @dev Execute a repay action.
-  function _executeRepayAction(bytes memory actionData, address onBehalfOf) internal {
-    ISignatureGateway.RepayAction memory action = abi.decode(
-      actionData,
-      (ISignatureGateway.RepayAction)
-    );
-    _isSpokeValid(action.spoke);
-
-    IERC20 underlying = IERC20(_getReserveUnderlying(action.spoke, action.reserveId));
+  function _executeRepay(
+    RepayParams memory params,
+    address onBehalfOf
+  ) internal returns (uint256, uint256) {
+    IERC20 underlying = IERC20(_getReserveUnderlying(params.spoke, params.reserveId));
     uint256 repayAmount = MathUtils.min(
-      action.amount,
-      ISpoke(action.spoke).getUserTotalDebt(action.reserveId, onBehalfOf)
+      params.amount,
+      ISpoke(params.spoke).getUserTotalDebt(params.reserveId, onBehalfOf)
     );
 
     underlying.safeTransferFrom(onBehalfOf, address(this), repayAmount);
-    underlying.forceApprove(action.spoke, repayAmount);
+    underlying.forceApprove(params.spoke, repayAmount);
 
-    ISpoke(action.spoke).repay(action.reserveId, repayAmount, onBehalfOf);
+    return ISpoke(params.spoke).repay(params.reserveId, repayAmount, onBehalfOf);
   }
 
-  /// @dev Execute a setUsingAsCollateral action.
-  function _executeSetUsingAsCollateralAction(
-    bytes memory actionData,
+  function _executeSetUsingAsCollateral(
+    SetUsingAsCollateralParams memory params,
     address onBehalfOf
   ) internal {
-    ISignatureGateway.SetUsingAsCollateralAction memory action = abi.decode(
-      actionData,
-      (ISignatureGateway.SetUsingAsCollateralAction)
-    );
-    _isSpokeValid(action.spoke);
-
-    ISpoke(action.spoke).setUsingAsCollateral(action.reserveId, action.useAsCollateral, onBehalfOf);
+    ISpoke(params.spoke).setUsingAsCollateral(params.reserveId, params.useAsCollateral, onBehalfOf);
   }
 
-  /// @dev Execute an updateUserRiskPremium action.
-  function _executeUpdateUserRiskPremiumAction(
-    bytes memory actionData,
+  function _executeUpdateUserRiskPremium(
+    UpdateUserRiskPremiumParams memory params,
     address onBehalfOf
   ) internal {
-    ISignatureGateway.UpdateUserRiskPremiumAction memory action = abi.decode(
-      actionData,
-      (ISignatureGateway.UpdateUserRiskPremiumAction)
-    );
-    _isSpokeValid(action.spoke);
-
-    ISpoke(action.spoke).updateUserRiskPremium(onBehalfOf);
+    ISpoke(params.spoke).updateUserRiskPremium(onBehalfOf);
   }
 
-  /// @dev Execute an updateUserDynamicConfig action.
-  function _executeUpdateUserDynamicConfigAction(
-    bytes memory actionData,
+  function _executeUpdateUserDynamicConfig(
+    UpdateUserDynamicConfigParams memory params,
     address onBehalfOf
   ) internal {
-    ISignatureGateway.UpdateUserDynamicConfigAction memory action = abi.decode(
-      actionData,
-      (ISignatureGateway.UpdateUserDynamicConfigAction)
-    );
-    _isSpokeValid(action.spoke);
-
-    ISpoke(action.spoke).updateUserDynamicConfig(onBehalfOf);
+    ISpoke(params.spoke).updateUserDynamicConfig(onBehalfOf);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
