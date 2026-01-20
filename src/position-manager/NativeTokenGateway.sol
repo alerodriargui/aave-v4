@@ -15,7 +15,7 @@ import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenG
 /// @notice Gateway to interact with a spoke using the native coin of a chain.
 /// @dev Contract must be an active & approved user position manager in order to execute spoke actions on a user's behalf.
 contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuardTransient {
-  using SafeERC20 for *;
+  using SafeERC20 for IERC20;
 
   address public immutable NATIVE_WRAPPER;
 
@@ -124,7 +124,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     }
 
     INativeWrapper(NATIVE_WRAPPER).deposit{value: repayAmount}();
-    INativeWrapper(NATIVE_WRAPPER).safeTransfer(hub, repayAmount);
+    IERC20(NATIVE_WRAPPER).safeTransfer(hub, repayAmount);
     (uint256 repaidShares, uint256 repaidAmount) = ISpoke(spoke).repaySkimmed(
       reserveId,
       repayAmount,
@@ -149,7 +149,7 @@ contract NativeTokenGateway is INativeTokenGateway, GatewayBase, ReentrancyGuard
     _validateParams(underlying, amount);
 
     INativeWrapper(NATIVE_WRAPPER).deposit{value: amount}();
-    INativeWrapper(NATIVE_WRAPPER).safeTransfer(hub, amount);
+    IERC20(NATIVE_WRAPPER).safeTransfer(hub, amount);
     return ISpoke(spoke).supplySkimmed(reserveId, amount, user);
   }
 
