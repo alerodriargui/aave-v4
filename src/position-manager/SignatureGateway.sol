@@ -88,12 +88,13 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
       signature: signature
     });
 
+    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
       reserveId,
       params.amount,
       user
     );
-    IERC20(_getReserveUnderlying(spoke, reserveId)).safeTransfer(user, withdrawnAmount);
+    underlying.safeTransfer(user, withdrawnAmount);
 
     return (withdrawnShares, withdrawnAmount);
   }
@@ -114,12 +115,13 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
       signature: signature
     });
 
+    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
       reserveId,
       params.amount,
       user
     );
-    IERC20(_getReserveUnderlying(spoke, reserveId)).safeTransfer(user, borrowedAmount);
+    underlying.safeTransfer(user, borrowedAmount);
 
     return (borrowedShares, borrowedAmount);
   }

@@ -101,7 +101,7 @@ abstract contract Spoke is
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
-    _onlyPositionManager({onBehalfOf: onBehalfOf, caller: msg.sender});
+    require(_isPositionManager({user: onBehalfOf, manager: msg.sender}), Unauthorized());
     _;
   }
 
@@ -1005,9 +1005,5 @@ abstract contract Spoke is
     assembly ('memory-safe') {
       fnOut := fnIn
     }
-  }
-
-  function _onlyPositionManager(address onBehalfOf, address caller) private view {
-    require(_isPositionManager({user: onBehalfOf, manager: caller}), Unauthorized());
   }
 }
