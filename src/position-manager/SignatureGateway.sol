@@ -66,11 +66,10 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
       signature: signature
     });
 
-    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
-    underlying.safeTransferFrom(user, address(this), params.amount);
-    underlying.forceApprove(spoke, params.amount);
+    (address hub, address underlying) = _getReserveInfo(spoke, reserveId);
+    IERC20(underlying).safeTransferFrom(user, hub, params.amount);
 
-    return ISpoke(spoke).supply(reserveId, params.amount, user);
+    return ISpoke(spoke).supplySkimmed(reserveId, params.amount, user);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -89,13 +88,12 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
       signature: signature
     });
 
-    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
       reserveId,
       params.amount,
       user
     );
-    underlying.safeTransfer(user, withdrawnAmount);
+    IERC20(_getReserveUnderlying(spoke, reserveId)).safeTransfer(user, withdrawnAmount);
 
     return (withdrawnShares, withdrawnAmount);
   }
@@ -116,13 +114,12 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
       signature: signature
     });
 
-    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
       reserveId,
       params.amount,
       user
     );
-    underlying.safeTransfer(user, borrowedAmount);
+    IERC20(_getReserveUnderlying(spoke, reserveId)).safeTransfer(user, borrowedAmount);
 
     return (borrowedShares, borrowedAmount);
   }
@@ -143,16 +140,15 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
       signature: signature
     });
 
-    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     uint256 repayAmount = MathUtils.min(
       params.amount,
       ISpoke(spoke).getUserTotalDebt(reserveId, user)
     );
 
-    underlying.safeTransferFrom(user, address(this), repayAmount);
-    underlying.forceApprove(spoke, repayAmount);
+    (address hub, address underlying) = _getReserveInfo(spoke, reserveId);
+    IERC20(underlying).safeTransferFrom(user, hub, repayAmount);
 
-    return ISpoke(spoke).repay(reserveId, repayAmount, user);
+    return ISpoke(spoke).repaySkimmed(reserveId, repayAmount, user);
   }
 
   /// @inheritdoc ISignatureGateway
