@@ -37,7 +37,7 @@ lint_on_build = false
 runs = 1000
 
 [profile.pr.fuzz]
-runs = 10000
+runs = 20000
 
 [profile.ci.fuzz]
 runs = 10000
