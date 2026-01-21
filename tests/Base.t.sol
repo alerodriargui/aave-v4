@@ -1475,7 +1475,7 @@ abstract contract Base is Test {
         userDrawnDebt,
         userPremiumDebt,
         repayAmount,
-        _spokeAssetId(spoke, reserveId)
+        _reserveAssetId(spoke, reserveId)
       );
   }
 
@@ -2217,7 +2217,7 @@ abstract contract Base is Test {
     return IHub(address(spoke.getReserve(reserveId).hub));
   }
 
-  function _spokeAssetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+  function _reserveAssetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
     return spoke.getReserve(reserveId).assetId;
   }
 
@@ -2231,10 +2231,6 @@ abstract contract Base is Test {
       vm.prank(owner);
       underlying.approve(spender, UINT256_MAX);
     }
-  }
-
-  function _spokeDrawnIndex(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
-    return _hub(spoke, reserveId).getAssetDrawnIndex(_spokeAssetId(spoke, reserveId));
   }
 
   function _deploySpokeWithOracle(
