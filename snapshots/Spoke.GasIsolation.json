@@ -1,0 +1,13 @@
+{
+  "borrow: first reserve (borrowCount sees 0 existing)": "222110",
+  "borrow: new reserve (WITH config read + borrowCount)": "254861",
+  "borrow: same reserve (no config read, no borrowCount)": "69849",
+  "borrow: second reserve (borrowCount sees 1 existing)": "254861",
+  "borrow: third reserve (borrowCount sees 2 existing)": "286232",
+  "isolated: borrowCount() with 0 borrows, 1 reserveCount": "2758",
+  "isolated: borrowCount() with 1 borrow, 1 reserveCount": "758",
+  "isolated: borrowCount() with 1 borrow, 10 reserveCount": "758",
+  "isolated: read config + borrowCount() combined": "938",
+  "isolated: read uint16 from cold storage struct": "304",
+  "isolated: read uint16 from warm storage struct": "304"
+}
