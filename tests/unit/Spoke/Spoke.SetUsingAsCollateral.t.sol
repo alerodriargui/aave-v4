@@ -174,7 +174,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_setUsingAsCollateral_revertsWith_MaximumUserReservesExceeded() public {
-    uint24 maxCollateralReserves = 10;
+    uint16 maxCollateralReserves = 10;
     ISpoke.SpokeConfig memory spokeConfig = spoke1.getSpokeConfig();
     spokeConfig.maxUserCollaterals = maxCollateralReserves;
     vm.prank(SPOKE_ADMIN);

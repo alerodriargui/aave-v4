@@ -90,8 +90,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     uint64 targetHealthFactor;
     uint64 healthFactorForMaxBonus;
     uint16 liquidationBonusFactor;
-    uint24 maxUserCollaterals;
-    uint24 maxUserBorrows;
+    uint16 maxUserCollaterals;
+    uint16 maxUserBorrows;
   }
 
   /// @notice User position data per reserve.
@@ -334,8 +334,8 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Thrown when user attempts to exceed either the maximum allowed collateral or borrowed reserves.
   error MaximumUserReservesExceeded();
 
-  /// @notice Updates the spoke config.
-  /// @param config The spoke config.
+  /// @notice Updates the spoke configuration.
+  /// @param config The new spoke config.
   function updateSpokeConfig(SpokeConfig calldata config) external;
 
   /// @notice Adds a new reserve to the spoke.

@@ -34,8 +34,8 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_updateUserReserveLimits() public {
-    uint24 newCollateralLimit = Constants.MAX_USER_COLLATERALS - 1;
-    uint24 newBorrowedLimit = Constants.MAX_USER_BORROWS - 2;
+    uint16 newCollateralLimit = Constants.MAX_USER_COLLATERALS - 1;
+    uint16 newBorrowedLimit = Constants.MAX_USER_BORROWS - 2;
 
     ISpoke.SpokeConfig memory spokeConfig = spoke1.getSpokeConfig();
     spokeConfig.maxUserCollaterals = newCollateralLimit;

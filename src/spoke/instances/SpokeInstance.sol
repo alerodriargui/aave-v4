@@ -27,8 +27,8 @@ contract SpokeInstance is Spoke {
     __AccessManaged_init(authority);
     if (_spokeConfig.targetHealthFactor == 0) {
       _spokeConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-      _spokeConfig.maxUserCollaterals = type(uint24).max;
-      _spokeConfig.maxUserBorrows = type(uint24).max;
+      _spokeConfig.maxUserCollaterals = MAX_ALLOWED_USER_RESERVES_LIMIT;
+      _spokeConfig.maxUserBorrows = MAX_ALLOWED_USER_RESERVES_LIMIT;
       emit UpdateSpokeConfig(_spokeConfig);
     }
   }

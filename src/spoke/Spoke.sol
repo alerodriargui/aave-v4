@@ -63,6 +63,9 @@ abstract contract Spoke is
   /// @dev The maximum allowed value for a dynamic configuration key (inclusive).
   uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
 
+  /// @dev The maximum allowed value for a user reserves limit (inclusive).
+  uint16 internal constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
+
   /// @dev The minimum health factor below which a position is considered unhealthy and subject to liquidation.
   /// @dev Expressed in WAD (18 decimals) (e.g. 1e18 is 1.00).
   uint64 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
@@ -79,7 +82,7 @@ abstract contract Spoke is
   /// @dev Number of reserves listed in the Spoke.
   uint256 internal _reserveCount;
 
-  /// @dev The spoke configuration including liquidation params and user reserve limits.
+  /// @dev The spoke configuration, including liquidation params and user reserve limits.
   SpokeConfig internal _spokeConfig;
 
   /// @dev Map of user addresses and reserve identifiers to user positions.
@@ -298,9 +301,9 @@ abstract contract Spoke is
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
     if (!positionStatus.isBorrowing(reserveId)) {
-      uint24 maxUserBorrows = _spokeConfig.maxUserBorrows;
+      uint16 maxUserBorrows = _spokeConfig.maxUserBorrows;
       require(
-        maxUserBorrows == type(uint24).max ||
+        maxUserBorrows == MAX_ALLOWED_USER_RESERVES_LIMIT ||
           positionStatus.borrowCount(_reserveCount) < maxUserBorrows,
         MaximumUserReservesExceeded()
       );
@@ -938,9 +941,9 @@ abstract contract Spoke is
       // disabling as collateral is allowed when reserve is frozen
       require(!flags.frozen(), ReserveFrozen());
       // this must be a new collateral, otherwise would have short-circuited
-      uint24 maxUserCollaterals = _spokeConfig.maxUserCollaterals;
+      uint16 maxUserCollaterals = _spokeConfig.maxUserCollaterals;
       require(
-        maxUserCollaterals == type(uint24).max ||
+        maxUserCollaterals == MAX_ALLOWED_USER_RESERVES_LIMIT ||
           positionStatus.collateralCount(_reserveCount) < maxUserCollaterals,
         MaximumUserReservesExceeded()
       );

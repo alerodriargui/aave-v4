@@ -179,7 +179,7 @@ contract SpokeBorrowValidationTest is SpokeBase {
   }
 
   function test_borrow_revertsWith_MaximumUserReservesExceeded() public {
-    uint24 maxBorrowedReserves = 10;
+    uint16 maxBorrowedReserves = 10;
     ISpoke.SpokeConfig memory spokeConfig = spoke1.getSpokeConfig();
     spokeConfig.maxUserBorrows = maxBorrowedReserves;
     vm.prank(SPOKE_ADMIN);

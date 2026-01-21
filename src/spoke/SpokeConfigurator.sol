@@ -296,7 +296,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateMaxUserCollaterals(address spoke, uint24 maxUserCollaterals) external onlyOwner {
+  function updateMaxUserCollaterals(address spoke, uint16 maxUserCollaterals) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.SpokeConfig memory spokeConfig = targetSpoke.getSpokeConfig();
     spokeConfig.maxUserCollaterals = maxUserCollaterals;
@@ -304,7 +304,7 @@ contract SpokeConfigurator is Ownable2Step, ISpokeConfigurator {
   }
 
   /// @inheritdoc ISpokeConfigurator
-  function updateMaxUserBorrows(address spoke, uint24 maxUserBorrows) external onlyOwner {
+  function updateMaxUserBorrows(address spoke, uint16 maxUserBorrows) external onlyOwner {
     ISpoke targetSpoke = ISpoke(spoke);
     ISpoke.SpokeConfig memory spokeConfig = targetSpoke.getSpokeConfig();
     spokeConfig.maxUserBorrows = maxUserBorrows;

@@ -824,7 +824,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateMaxUserCollaterals() public {
-    uint24 newCollateralReservesLimit = vm.randomUint(0, Constants.MAX_USER_COLLATERALS).toUint24();
+    uint16 newCollateralReservesLimit = vm.randomUint(0, Constants.MAX_USER_COLLATERALS).toUint16();
 
     ISpoke.SpokeConfig memory expectedConfig = spoke.getSpokeConfig();
     expectedConfig.maxUserCollaterals = newCollateralReservesLimit;
@@ -841,7 +841,7 @@ contract SpokeConfiguratorTest is SpokeBase {
   }
 
   function test_updateMaxUserBorrows() public {
-    uint24 newBorrowedReservesLimit = vm.randomUint(0, Constants.MAX_USER_BORROWS).toUint24();
+    uint16 newBorrowedReservesLimit = vm.randomUint(0, Constants.MAX_USER_BORROWS).toUint16();
 
     ISpoke.SpokeConfig memory expectedConfig = spoke.getSpokeConfig();
     expectedConfig.maxUserBorrows = newBorrowedReservesLimit;
