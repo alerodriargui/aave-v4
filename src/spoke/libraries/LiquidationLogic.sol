@@ -454,7 +454,7 @@ library LiquidationLogic {
     ISpoke.PositionStatus storage positionStatus,
     LiquidateDebtParams memory params
   ) internal returns (LiquidateDebtResult memory) {
-    IHubBase.PremiumDelta memory premiumDelta = userPosition.getPremiumDelta({
+    IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
       drawnSharesTaken: params.drawnSharesToLiquidate,
       drawnIndex: params.drawnIndex,
       riskPremium: positionStatus.riskPremium,

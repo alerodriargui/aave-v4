@@ -140,7 +140,7 @@ contract HubDrawTest is HubBase {
     emit IHubBase.Draw(assetId, address(spoke1), shares, amount);
 
     vm.prank(address(spoke1));
-    hub1.draw(assetId, amount, alice);
+    uint256 drawnShares = hub1.draw(assetId, amount, alice);
 
     assertEq(
       hub1.getAsset(assetId).liquidity,
@@ -152,6 +152,7 @@ contract HubDrawTest is HubBase {
       assetBefore.drawnShares + shares,
       'drawnShares after draw'
     );
+    assertGe(hub1.previewDrawByShares(assetId, drawnShares), amount);
 
     _assertBorrowRateSynced(hub1, assetId, 'hub1.draw');
     _assertHubLiquidity(hub1, assetId, 'hub1.draw');
@@ -165,7 +166,7 @@ contract HubDrawTest is HubBase {
   }
 
   function test_draw_revertsWith_SpokeNotActive() public {
-    updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
+    _updateSpokeActive(hub1, daiAssetId, address(spoke1), false);
     vm.expectRevert(IHub.SpokeNotActive.selector);
     vm.prank(address(spoke1));
     hub1.draw(daiAssetId, 100e18, alice);
