@@ -48,7 +48,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
 
     spoke.supply(reserveId.weth, 1000e18, alice);
 
-    tokenList.weth.safeTransfer(address(_hub(spoke, reserveId.weth)), 1e18);
+    tokenList.weth.transfer(address(_hub(spoke, reserveId.weth)), 1e18);
     spoke.setUsingAsCollateral(reserveId.weth, true, alice);
     spoke.supplySkimmed(reserveId.weth, 1e18, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supplySkimmed: 0 borrows, collateral enabled');
