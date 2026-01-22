@@ -100,7 +100,7 @@ contract HubDrawTest is HubBase {
     assetId = bound(assetId, 0, hub1.getAssetCount() - 3); // Exclude usdy & usdz
     amount = bound(amount, 1, MAX_SUPPLY_AMOUNT / 10);
 
-    _addLiquidity(assetId, amount * 2);
+    _addLiquidity(assetId, amount * 3);
     _drawLiquidity(assetId, amount, true);
     skip(365 days);
 
@@ -429,6 +429,10 @@ contract HubDrawTest is HubBase {
       premiumDelta: ZERO_PREMIUM_DELTA
     });
     vm.stopPrank();
+
+    // Mint fee shares to make liquidity available
+    vm.prank(HUB_ADMIN);
+    hub1.mintFeeShares(daiAssetId);
 
     (uint256 drawn, ) = hub1.getAssetOwed(daiAssetId);
     assertGt(drawn, drawCap);

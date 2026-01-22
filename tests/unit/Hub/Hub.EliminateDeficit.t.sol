@@ -94,7 +94,16 @@ contract HubEliminateDeficitTest is HubBase {
   function test_eliminateDeficit(uint256) public {
     uint256 deficitAmountRay2 = _deficitAmountRay / 2;
     _createDeficit(_assetId, _coveredSpoke, _deficitAmountRay);
+
+    // Deficit creation accrued and created fees, so mint them
+    vm.prank(HUB_ADMIN);
+    hub1.mintFeeShares(_assetId);
+
     _createDeficit(_assetId, _otherSpoke, deficitAmountRay2);
+
+    // Second deficit creation accrued and created fees, so mint them
+    vm.prank(HUB_ADMIN);
+    hub1.mintFeeShares(_assetId);
 
     uint256 eliminateDeficitRay = vm.randomUint(1, type(uint256).max);
     uint256 clearedDeficitRay = eliminateDeficitRay.min(_deficitAmountRay);

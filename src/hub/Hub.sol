@@ -246,7 +246,8 @@ contract Hub is IHub, AccessManaged {
     _validateRemove(spoke, amount, to);
 
     uint256 liquidity = asset.liquidity;
-    require(amount <= liquidity, InsufficientLiquidity(liquidity));
+    uint256 availableLiquidity = asset.getAvailableLiquidity();
+    require(amount <= availableLiquidity, InsufficientLiquidity(availableLiquidity));
 
     uint120 shares = asset.toAddedSharesUp(amount).toUint120();
     asset.addedShares -= shares;
@@ -271,7 +272,8 @@ contract Hub is IHub, AccessManaged {
     _validateDraw(asset, spoke, amount, to);
 
     uint256 liquidity = asset.liquidity;
-    require(amount <= liquidity, InsufficientLiquidity(liquidity));
+    uint256 availableLiquidity = asset.getAvailableLiquidity();
+    require(amount <= availableLiquidity, InsufficientLiquidity(availableLiquidity));
 
     uint120 drawnShares = asset.toDrawnSharesUp(amount).toUint120();
     asset.drawnShares += drawnShares;
@@ -566,7 +568,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHubBase
   function getAssetLiquidity(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].liquidity;
+    return _assets[assetId].getAvailableLiquidity();
   }
 
   /// @inheritdoc IHubBase

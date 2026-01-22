@@ -654,7 +654,7 @@ contract HubAddTest is HubBase {
       'hub addedShares after'
     );
     assertEq(
-      hub1.getAssetLiquidity(daiAssetId),
+      hub1.getAsset(daiAssetId).liquidity,
       amount + addAmount - drawnAmount,
       'asset liquidity after'
     );
@@ -762,7 +762,7 @@ contract HubAddTest is HubBase {
       // hub
       assertGe(hub1.getAddedAssets(assetId), params.assetAddedAmount, 'hub addedAmount after');
       assertGe(hub1.getAddedShares(assetId), params.assetAddedShares, 'hub addedShares after');
-      assertEq(hub1.getAssetLiquidity(assetId), params.availableLiq, 'asset liquidity after');
+      assertEq(hub1.getAsset(assetId).liquidity, params.availableLiq, 'asset liquidity after');
       assertEq(
         hub1.getAsset(assetId).lastUpdateTimestamp,
         vm.getBlockTimestamp(),

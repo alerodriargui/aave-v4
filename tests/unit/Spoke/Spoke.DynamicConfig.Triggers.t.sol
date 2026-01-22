@@ -120,6 +120,11 @@ contract SpokeDynamicConfigTriggersTest is SpokeBase {
     configs = _getUserDynConfigKeys(spoke1, alice);
     skip(322 days);
 
+    // Mint fee shares to make liquidity available
+    ISpoke.Reserve memory daiReserve = spoke1.getReserve(_daiReserveId(spoke1));
+    vm.prank(HUB_ADMIN);
+    hub1.mintFeeShares(daiReserve.assetId);
+
     _updateCollateralFactor(spoke1, _usdxReserveId(spoke1), 0);
     vm.expectRevert(ISpoke.HealthFactorBelowThreshold.selector);
     vm.prank(alice);

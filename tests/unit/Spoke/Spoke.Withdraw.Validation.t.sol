@@ -89,9 +89,12 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     // newWithdrawalLimit with accrued interest should be greater than supplyAmount
     assertGt(newWithdrawalLimit, supplyAmount);
 
-    // Interest added on both sides, so can ignore
+    // Get the actual available liquidity (after fees are subtracted)
+    ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
+    uint256 availableLiquidity = reserve.hub.getAssetLiquidity(reserve.assetId);
+
     vm.expectRevert(
-      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, availableLiquidity)
     );
     vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, onBehalfOf: alice});
@@ -130,8 +133,12 @@ contract SpokeWithdrawValidationTest is SpokeBase {
       onBehalfOf: alice
     });
 
+    // Get the actual available liquidity
+    ISpoke.Reserve memory reserve = spoke1.getReserve(reserveId);
+    uint256 availableLiquidity = reserve.hub.getAssetLiquidity(reserve.assetId);
+
     vm.expectRevert(
-      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, availableLiquidity)
     );
     vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: supplyAmount + 1, onBehalfOf: alice});
@@ -143,9 +150,11 @@ contract SpokeWithdrawValidationTest is SpokeBase {
     // newWithdrawalLimit with accrued interest should be greater than supplyAmount
     vm.assume(newWithdrawalLimit > supplyAmount);
 
-    // Interest added on both sides, so can ignore
+    // Get the available liquidity after time has passed (fees have accumulated)
+    availableLiquidity = reserve.hub.getAssetLiquidity(reserve.assetId);
+
     vm.expectRevert(
-      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, supplyAmount - borrowAmount)
+      abi.encodeWithSelector(IHub.InsufficientLiquidity.selector, availableLiquidity)
     );
     vm.prank(alice);
     spoke1.withdraw({reserveId: reserveId, amount: newWithdrawalLimit + 1, onBehalfOf: alice});

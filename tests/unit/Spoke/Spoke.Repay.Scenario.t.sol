@@ -977,6 +977,10 @@ contract SpokeRepayScenarioTest is SpokeBase {
     // Time passes
     skip(action1.skipTime);
 
+    // Mint fee shares to make liquidity available (fees accumulated)
+    vm.prank(HUB_ADMIN);
+    hub1.mintFeeShares(daiAssetId);
+
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));
     bobDaiBefore = getUserDebt(spoke1, bob, _daiReserveId(spoke1));
 
@@ -1081,6 +1085,10 @@ contract SpokeRepayScenarioTest is SpokeBase {
 
     // Time passes
     skip(action2.skipTime);
+
+    // Mint fee shares to make liquidity available (fees accumulated during second time skip)
+    vm.prank(HUB_ADMIN);
+    hub1.mintFeeShares(daiAssetId);
 
     bobDaiBalanceBefore = tokenList.dai.balanceOf(bob);
     bobDaiDataBefore = getUserInfo(spoke1, bob, _daiReserveId(spoke1));

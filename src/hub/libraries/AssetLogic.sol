@@ -216,6 +216,17 @@ library AssetLogic {
       );
   }
 
+  /// @notice Calculates available liquidity by subtracting fees from total liquidity.
+  /// @dev Prevents borrowing against unrealized and realized fee shares.
+  function getAvailableLiquidity(IHub.Asset storage asset) internal view returns (uint256) {
+    uint256 liquidity = asset.liquidity;
+    uint256 drawnIndex = asset.getDrawnIndex();
+    uint256 totalFees = asset.realizedFees + asset.getUnrealizedFees(drawnIndex);
+
+    // availableLiquidity = liquidity - min(liquidity, totalFees)
+    return liquidity > totalFees ? liquidity - totalFees : 0;
+  }
+
   /// @notice Calculates the aggregated owed amount for a specified asset, expressed in asset units and scaled by RAY.
   function _calculateAggregatedOwedRay(
     uint256 drawnShares,

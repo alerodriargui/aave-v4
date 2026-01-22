@@ -117,6 +117,10 @@ contract HubRescueTest is HubBase {
       restorer: alice
     });
 
+    // Mint fee shares to make all liquidity available for removal
+    vm.prank(HUB_ADMIN);
+    hub1.mintFeeShares(daiAssetId);
+
     // remove all
     Utils.remove({
       hub: hub1,
