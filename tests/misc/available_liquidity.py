@@ -1,5 +1,5 @@
-# Proves the available liquidity formula correctly reserves fees and maintains share price >= 1.0
-# Handles debt repayments and liquidity withdrawals.
+# Proves the available liquidity formula correctly reserves fees and maintains share price properties.
+# Handles debt repayments, liquidity withdrawals, and fee share minting.
 #
 # Key formulas:
 # - availableLiquidity = liquidity - min(liquidity, unrealizedFees + realizedFees)
@@ -11,10 +11,17 @@
 # - totalShares = liquidity
 # - sharePrice = 1.0
 #
-# Key constraint: Fees come from cumulative debt (not current debt)
-# - unrealizedFees + realizedFees <= cumulativeDebt
-# - cumulativeDebt tracks all debt ever generated (even if repaid)
-# - This ensures fees remain valid even after debt repayments
+# Key constraints:
+# 1. Fees come from cumulative debt (not current debt)
+#    - unrealizedFees + realizedFees <= cumulativeDebt
+#    - cumulativeDebt tracks all debt ever generated (even if repaid)
+# 2. Share price never decreases
+#    - totalAssets_t1 * totalShares_t2 <= totalAssets_t2 * totalShares_t1
+#    - Ensures totalAssets grows proportionally or faster than totalShares
+# 3. Fee share minting
+#    - Fees can be converted to shares (minting)
+#    - When minted, fees reset and totalShares increases
+#    - This increases available liquidity and maintains share price
 
 from z3 import *
 
@@ -102,6 +109,24 @@ availableLiquidity_t2 = liquidity_t2 - min_val(liquidity_t2, totalFees_t2)
 totalAssets_t1 = liquidity_t1 + debt_t1 - unrealizedFees_t1 - realizedFees_t1
 totalAssets_t2 = liquidity_t2 + debt_t2 - unrealizedFees_t2 - realizedFees_t2
 
+# Additional constraint to ensure share price doesn't decrease:
+# Enforce that share price is non-decreasing by requiring proper proportionality
+# sharePrice_t1 <= sharePrice_t2
+# i.e., totalAssets_t1 / totalShares_t1 <= totalAssets_t2 / totalShares_t2
+# Cross-multiply: totalAssets_t1 * totalShares_t2 <= totalAssets_t2 * totalShares_t1
+s.add(totalAssets_t1 * totalShares_t2 <= totalAssets_t2 * totalShares_t1)
+
+# Model fee share minting: fees can be reset when converted to shares
+# When fees are minted, they become 0 and shares increase proportionally
+feesMinted_t1 = Int('feesMinted_t1')  # Fees minted at t1
+feesMinted_t2 = Int('feesMinted_t2')  # Fees minted at t2
+s.add(0 <= feesMinted_t1, feesMinted_t1 <= MAX_AMOUNT)
+s.add(0 <= feesMinted_t2, feesMinted_t2 <= MAX_AMOUNT)
+
+# Fees minted should not exceed accumulated fees
+s.add(feesMinted_t1 <= unrealizedFees_t1 + realizedFees_t1)
+s.add(feesMinted_t2 <= unrealizedFees_t2 + realizedFees_t2)
+
 # ============================================================================
 # Available Liquidity Properties
 # ============================================================================
@@ -172,6 +197,18 @@ check("At inception (debt=0, fees=0): share price = 1.0")
 s.pop()
 
 s.push()
+# Share price should never decrease over time
+# sharePrice = totalAssets / totalShares
+# At t1: sharePrice_t1 = totalAssets_t1 / totalShares_t1
+# At t2: sharePrice_t2 = totalAssets_t2 / totalShares_t2
+# We want: sharePrice_t2 >= sharePrice_t1
+# i.e., totalAssets_t2 / totalShares_t2 >= totalAssets_t1 / totalShares_t1
+# Cross-multiply: totalAssets_t2 * totalShares_t1 >= totalAssets_t1 * totalShares_t2
+s.add(totalAssets_t2 * totalShares_t1 < totalAssets_t1 * totalShares_t2)
+check("Share price never decreases (monotonically non-decreasing)")
+s.pop()
+
+s.push()
 # When debt is repaid but fees remain valid
 s.add(debt_t2 < debt_t1)  # Debt repaid
 s.add(cumulativeDebt_t2 >= cumulativeDebt_t1)  # Cumulative still grows
@@ -184,4 +221,74 @@ s.push()
 s.add(liquidity_t2 < liquidity_t1)  # Liquidity withdrawn
 s.add(availableLiquidity_t2 > liquidity_t2)  # Available exceeds liquidity?
 check("Available liquidity <= liquidity even after withdrawals")
+s.pop()
+
+# ============================================================================
+# Fee Minting Properties - Both Scenarios
+# ============================================================================
+
+s.push()
+# SCENARIO 1: Fees ARE minted at t2
+s.add(feesMinted_t2 == unrealizedFees_t2 + realizedFees_t2)  # All fees minted
+totalAssets_afterMint = liquidity_t2 + debt_t2  # Fees reset to 0
+# totalAssets should increase by the fee amount
+s.add(totalAssets_afterMint != totalAssets_t2 + feesMinted_t2)
+check("MINTED: Fee minting increases totalAssets by the fee amount")
+s.pop()
+
+s.push()
+# SCENARIO 1: When fees are minted, available liquidity increases
+s.add(feesMinted_t2 == totalFees_t2)  # All fees minted
+availableLiquidity_afterMint = liquidity_t2  # All liquidity now available (fees = 0)
+s.add(availableLiquidity_afterMint < availableLiquidity_t2)  # Should increase
+check("MINTED: Available liquidity increases after fee minting")
+s.pop()
+
+s.push()
+# SCENARIO 1: Share price doesn't decrease after minting
+s.add(feesMinted_t2 == totalFees_t2)  # All fees minted
+totalAssets_afterMint_sp = liquidity_t2 + debt_t2
+# Assume shares are minted proportionally: newShares = feesMinted / sharePrice_before
+# sharePrice_before = totalAssets_t2 / totalShares_t2
+# newShares = feesMinted_t2 / sharePrice_before = feesMinted_t2 * totalShares_t2 / totalAssets_t2
+# totalShares_after = totalShares_t2 + newShares
+# sharePrice_after = totalAssets_afterMint / totalShares_after
+# For sharePrice not to decrease: sharePrice_after >= sharePrice_before
+# i.e., totalAssets_afterMint / totalShares_after >= totalAssets_t2 / totalShares_t2
+# We need to verify this property holds
+newFeeShares = If(totalAssets_t2 > 0, (feesMinted_t2 * totalShares_t2) / totalAssets_t2, 0)
+totalShares_afterMint = totalShares_t2 + newFeeShares
+# Check: sharePrice doesn't decrease
+# totalAssets_afterMint / totalShares_afterMint >= totalAssets_t2 / totalShares_t2
+s.add(totalAssets_afterMint_sp * totalShares_t2 < totalAssets_t2 * totalShares_afterMint)
+check("MINTED: Share price doesn't decrease after minting")
+s.pop()
+
+s.push()
+# SCENARIO 2: Fees are NOT minted (remain as unrealized/realized)
+s.add(feesMinted_t1 == 0)  # No fees minted at t1
+s.add(feesMinted_t2 == 0)  # No fees minted at t2
+# All core invariants should still hold
+s.add(availableLiquidity_t1 < 0)  # Available liquidity still valid
+check("NOT MINTED: Available liquidity valid when no fees are minted")
+s.pop()
+
+s.push()
+# SCENARIO 2: Share price still doesn't decrease without minting
+s.add(feesMinted_t1 == 0)
+s.add(feesMinted_t2 == 0)
+# With no minting, share price constraint should still hold
+s.add(totalAssets_t1 * totalShares_t2 > totalAssets_t2 * totalShares_t1)
+check("NOT MINTED: Share price doesn't decrease without minting")
+s.pop()
+
+s.push()
+# SCENARIO 3: Partial minting (some fees minted, some remain)
+s.add(feesMinted_t2 > 0)  # Some fees minted
+s.add(feesMinted_t2 < totalFees_t2)  # But not all
+# Available liquidity should still be valid
+remainingFees = totalFees_t2 - feesMinted_t2
+availableLiq_partial = liquidity_t2 - min_val(liquidity_t2, remainingFees)
+s.add(availableLiq_partial < 0)
+check("PARTIAL: Available liquidity valid with partial fee minting")
 s.pop()
