@@ -63,7 +63,7 @@ abstract contract Spoke is
   /// @dev The maximum allowed value for a dynamic configuration key (inclusive).
   uint256 internal constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint24).max;
 
-  /// @dev The maximum allowed value for a user reserves limit (inclusive).
+  /// @dev The maximum allowed value for the maximum number of reserves a user can have (collateral or borrowed) (inclusive).
   uint16 internal constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
 
   /// @dev The minimum health factor below which a position is considered unhealthy and subject to liquidation.
