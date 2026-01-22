@@ -44,7 +44,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest, Hu
 
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
