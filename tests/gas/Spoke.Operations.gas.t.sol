@@ -2,11 +2,23 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/gas/Spoke.Operations.base.gas.t.sol';
+import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 /// forge-config: default.isolate = true
-contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
+contract SpokeOperations_Gas_Tests is SpokeBase {
   using SafeERC20 for *;
+
+  string internal NAMESPACE = 'Spoke.Operations';
+  ReserveIds internal reserveId;
+  ISpoke internal spoke;
+
+  function setUp() public virtual override {
+    deployFixtures();
+    initEnvironment();
+    spoke = spoke1;
+    reserveId = _getReserveIds(spoke);
+    _seed();
+  }
 
   function test_supply() public {
     vm.startPrank(alice);
@@ -36,7 +48,7 @@ contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
 
     spoke.supply(reserveId.weth, 1000e18, alice);
 
-    tokenList.weth.transfer(address(_hub(spoke, reserveId.weth)), 1e18);
+    tokenList.weth.safeTransfer(address(_hub(spoke, reserveId.weth)), 1e18);
     spoke.setUsingAsCollateral(reserveId.weth, true, alice);
     spoke.supplySkimmed(reserveId.weth, 1e18, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supplySkimmed: 0 borrows, collateral enabled');
@@ -320,13 +332,12 @@ contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
   }
 
   function test_setUserPositionManagersWithSig() public {
-    (address user, uint256 userPk) = makeAddrAndKey(string(vm.randomBytes(32)));
-    vm.label(user, 'user');
-    address positionManager = vm.randomAddress();
+    (address user, uint256 userPk) = makeAddrAndKey('user');
+    address positionManager = makeAddr('positionManager');
     vm.prank(SPOKE_ADMIN);
     spoke.updatePositionManager(positionManager, true);
 
-    uint192 nonceKey = _randomNonceKey();
+    uint192 nonceKey = 100;
     vm.prank(user);
     spoke.useNonce(nonceKey);
 
@@ -337,7 +348,7 @@ contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
       user: user,
       updates: updates,
       nonce: spoke.nonces(user, nonceKey),
-      deadline: vm.randomUint(vm.getBlockTimestamp(), MAX_SKIP_TIME)
+      deadline: vm.getBlockTimestamp()
     });
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     bytes memory signature = abi.encodePacked(r, s, v);
@@ -352,6 +363,19 @@ contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
 
     spoke.setUserPositionManagersWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagersWithSig: disable');
+  }
+
+  function _seed() internal {
+    vm.startPrank(address(spoke2));
+    tokenList.dai.transferFrom(bob, address(hub1), 10000e18);
+    hub1.add(daiAssetId, 10000e18);
+    tokenList.weth.transferFrom(bob, address(hub1), 1000e18);
+    hub1.add(wethAssetId, 1000e18);
+    tokenList.usdx.transferFrom(bob, address(hub1), 1000e6);
+    hub1.add(usdxAssetId, 1000e6);
+    tokenList.wbtc.transferFrom(bob, address(hub1), 1000e8);
+    hub1.add(wbtcAssetId, 1000e8);
+    vm.stopPrank();
   }
 
   function _liquidationSetup() internal {
@@ -391,8 +415,9 @@ contract SpokeOperations_Gas_Tests is SpokeOperationsGasBase {
 }
 
 /// forge-config: default.isolate = true
-contract SpokeOperations_Basic_ZeroRiskPremium_Gas_Tests is SpokeOperations_Gas_Tests {
-  function _afterSetUp() internal override {
+contract SpokeOperations_ZeroRiskPremium_Gas_Tests is SpokeOperations_Gas_Tests {
+  function setUp() public override {
+    super.setUp();
     NAMESPACE = 'Spoke.Operations.ZeroRiskPremium';
 
     _updateCollateralRisk(spoke, reserveId.dai, 0);
