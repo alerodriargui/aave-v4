@@ -277,6 +277,8 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     _useCheckedNonce(params.onBehalfOf, params.nonce);
+    address underlying = _getReserveUnderlying(params.spoke, params.reserveId);
+    require(permit.permitted.token == underlying, InvalidSignature());
 
     ISignatureTransfer(PERMIT2).permitWitnessTransferFrom(
       permit,
@@ -287,7 +289,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
       signature
     );
 
-    address underlying = _getReserveUnderlying(params.spoke, params.reserveId);
     IERC20(underlying).forceApprove(params.spoke, params.amount);
 
     return ISpoke(params.spoke).supply(params.reserveId, params.amount, params.onBehalfOf);
@@ -301,6 +302,8 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     require(block.timestamp <= params.deadline, InvalidSignature());
     _useCheckedNonce(params.onBehalfOf, params.nonce);
+    address underlying = _getReserveUnderlying(params.spoke, params.reserveId);
+    require(permit.permitted.token == underlying, InvalidSignature());
 
     uint256 repayAmount = MathUtils.min(
       params.amount,
@@ -316,7 +319,6 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
       signature
     );
 
-    address underlying = _getReserveUnderlying(params.spoke, params.reserveId);
     IERC20(underlying).forceApprove(params.spoke, repayAmount);
 
     return ISpoke(params.spoke).repay(params.reserveId, repayAmount, params.onBehalfOf);
