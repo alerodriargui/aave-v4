@@ -2917,7 +2917,7 @@ abstract contract Base is Test {
 
       IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
         active: true,
-        paused: false,
+        halted: false,
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: 1000_00
