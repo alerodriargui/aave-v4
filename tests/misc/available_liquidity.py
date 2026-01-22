@@ -29,13 +29,11 @@ def min_val(a, b):
     return If(a < b, a, b)
 
 def check(propertyDescription):
-    print(f"\n-- {propertyDescription} --")
     result = s.check()
     if result == sat:
+        print(f"\n-- {propertyDescription} --")
         print("Counterexample found:")
         print(s.model())
-    elif result == unsat:
-        print("Property holds.")
     elif result == unknown:
         print("Timed out or unknown.")
 
