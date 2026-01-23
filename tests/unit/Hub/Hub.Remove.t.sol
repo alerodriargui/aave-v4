@@ -350,6 +350,110 @@ contract HubRemoveTest is HubBase {
     hub1.remove(daiAssetId, amount, address(spoke1));
   }
 
+  /// @dev Test demonstrating that available liquidity excludes fees.
+  /// @dev Users can only remove up to (total liquidity - fees). Fees remain locked.
+  function test_remove_availableLiquidity_excludes_fees(
+    uint256 addAmount,
+    uint256 skipTime
+  ) public {
+    addAmount = bound(addAmount, 1e18, MAX_SUPPLY_AMOUNT / 10);
+    skipTime = bound(skipTime, 1 days, MAX_SKIP_TIME);
+    uint256 assetId = daiAssetId;
+
+    Utils.add({
+      hub: hub1,
+      assetId: assetId,
+      caller: address(spoke1),
+      amount: addAmount,
+      user: alice
+    });
+    Utils.draw({hub: hub1, assetId: assetId, caller: address(spoke2), amount: addAmount, to: bob});
+    skip(skipTime);
+
+    (uint256 drawnAmount, ) = hub1.getSpokeOwed(assetId, address(spoke2));
+    Utils.restoreDrawn({
+      hub: hub1,
+      assetId: assetId,
+      caller: address(spoke2),
+      drawnAmount: drawnAmount,
+      restorer: bob
+    });
+
+    uint256 totalLiquidity = hub1.getAsset(assetId).liquidity;
+    uint256 totalFees = hub1.getAssetAccruedFees(assetId);
+    uint256 availableLiquidity = hub1.getAssetLiquidity(assetId);
+
+    assertGt(totalFees, 0, 'fees generated');
+    assertEq(availableLiquidity, totalLiquidity - totalFees, 'available = total - fees');
+
+    // Remove all available liquidity (up to what spoke1 owns)
+    uint256 spokeAddedAssets = hub1.getSpokeAddedAssets(assetId, address(spoke1));
+    uint256 removableAmount = spokeAddedAssets < availableLiquidity
+      ? spokeAddedAssets
+      : availableLiquidity;
+
+    vm.prank(address(spoke1));
+    hub1.remove(assetId, removableAmount, alice);
+
+    // Spoke1 removed everything it could - its assets are now 0
+    assertEq(
+      hub1.getSpokeAddedAssets(assetId, address(spoke1)),
+      0,
+      'spoke1 removed all its assets'
+    );
+
+    // Fees remain locked and represent the majority of remaining liquidity
+    uint256 feesAfterRemoval = hub1.getAssetAccruedFees(assetId);
+    uint256 remainingLiquidity = hub1.getAsset(assetId).liquidity;
+    assertGt(feesAfterRemoval, 0, 'fees exist');
+    assertGe(remainingLiquidity, feesAfterRemoval, 'remaining liquidity >= fees');
+
+    // Cannot remove more - spoke1 has 0 shares, attempting to remove causes underflow
+    vm.expectRevert(stdError.arithmeticError);
+    vm.prank(address(spoke1));
+    hub1.remove(assetId, 1, alice);
+
+    // 1. Fee receiver also cannot withdraw because fees haven't been minted as shares yet
+    address feeReceiver = hub1.getAsset(assetId).feeReceiver;
+    assertEq(hub1.getSpokeAddedAssets(assetId, feeReceiver), 0, 'fee receiver has no assets');
+    vm.expectRevert(stdError.arithmeticError);
+    vm.prank(feeReceiver);
+    hub1.remove(assetId, 1, feeReceiver);
+
+    // 2. After minting fee shares, both drawing and treasury withdrawal become possible
+    remainingLiquidity = hub1.getAssetLiquidity(assetId);
+    totalFees = hub1.getAsset(assetId).realizedFees;
+    vm.prank(HUB_ADMIN);
+    uint256 feeSharesMinted = hub1.mintFeeShares(assetId);
+    assertGt(feeSharesMinted, 0, 'fee shares minted');
+    assertEq(
+      feeSharesMinted,
+      hub1.previewAddByAssets(assetId, totalFees),
+      'minted shares match expected'
+    );
+
+    // 2a. More can now be drawn (available liquidity increased)
+    totalLiquidity = hub1.getAssetLiquidity(assetId);
+    assertGt(totalLiquidity, feesAfterRemoval, 'available liquidity increased');
+    removableAmount = totalLiquidity / 2;
+    uint256 expectedShares = hub1.previewDrawByAssets(assetId, removableAmount);
+    vm.prank(address(spoke2));
+    uint256 actualShares = hub1.draw(assetId, removableAmount, bob);
+    assertGt(actualShares, 0, 'drawn shares > 0');
+    assertEq(actualShares, expectedShares, 'drawn shares match expected');
+
+    // 2b. Treasury can still withdraw the remaining available liquidity
+    spokeAddedAssets = hub1.getSpokeAddedAssets(assetId, feeReceiver);
+    assertGt(spokeAddedAssets, 0, 'fee receiver has assets after minting');
+    availableLiquidity = hub1.getAssetLiquidity(assetId);
+    removableAmount = spokeAddedAssets < availableLiquidity ? spokeAddedAssets : availableLiquidity;
+    expectedShares = hub1.previewRemoveByAssets(assetId, removableAmount);
+    vm.prank(feeReceiver);
+    actualShares = hub1.remove(assetId, removableAmount, feeReceiver);
+    assertGt(actualShares, 0, 'removed shares > 0');
+    assertEq(actualShares, expectedShares, 'removed shares match expected');
+  }
+
   function test_remove_revertsWith_InsufficientLiquidity_exceeding_added_amount() public {
     uint256 amount = 100e18;
 
