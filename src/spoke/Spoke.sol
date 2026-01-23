@@ -426,10 +426,21 @@ abstract contract Spoke is
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
     }
-    _validateSetUsingAsCollateral(positionStatus, _getReserve(reserveId).flags, usingAsCollateral);
+    ReserveFlags flags = _getReserve(reserveId).flags;
+    _validateSetUsingAsCollateral(flags);
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
+      // disabling as collateral is allowed when reserve is frozen
+      require(!flags.frozen(), ReserveFrozen());
+      // this must be a new collateral, otherwise would have short-circuited
+      uint16 maxUserCollaterals = _spokeConfig.maxUserCollaterals;
+      // We set as collateral above in order to potentially refresh, so check <= here
+      require(
+        maxUserCollaterals == MAX_ALLOWED_USER_RESERVES_LIMIT ||
+          positionStatus.collateralCount(_reserveCount) <= maxUserCollaterals,
+        MaximumUserReservesExceeded()
+      );
       _refreshDynamicConfig(onBehalfOf, reserveId);
     } else {
       uint256 newRiskPremium = _refreshAndValidateUserAccountData(onBehalfOf).riskPremium;
@@ -931,23 +942,8 @@ abstract contract Spoke is
     require(!flags.paused(), ReservePaused());
   }
 
-  function _validateSetUsingAsCollateral(
-    PositionStatus storage positionStatus,
-    ReserveFlags flags,
-    bool usingAsCollateral
-  ) internal view {
+  function _validateSetUsingAsCollateral(ReserveFlags flags) internal pure {
     require(!flags.paused(), ReservePaused());
-    if (usingAsCollateral) {
-      // disabling as collateral is allowed when reserve is frozen
-      require(!flags.frozen(), ReserveFrozen());
-      // this must be a new collateral, otherwise would have short-circuited
-      uint16 maxUserCollaterals = _spokeConfig.maxUserCollaterals;
-      require(
-        maxUserCollaterals == MAX_ALLOWED_USER_RESERVES_LIMIT ||
-          positionStatus.collateralCount(_reserveCount) < maxUserCollaterals,
-        MaximumUserReservesExceeded()
-      );
-    }
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
