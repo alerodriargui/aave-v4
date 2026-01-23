@@ -3,7 +3,7 @@
   "approveWithdrawWithSig": "66013",
   "borrowOnBehalfOf": "306891",
   "delegateCredit": "49838",
-  "delegateCreditWithSig": "66025",
+  "delegateCreditWithSig": "66001",
   "renounceCreditDelegation": "27982",
   "renounceWithdrawAllowance": "27947",
   "withdrawOnBehalfOf: full": "120478",
