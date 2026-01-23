@@ -455,7 +455,7 @@ abstract contract Base is Test {
   function configureTokenList() internal {
     IHub.SpokeConfig memory spokeConfig = IHub.SpokeConfig({
       active: true,
-      paused: false,
+      halted: false,
       addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
       riskPremiumThreshold: Constants.MAX_ALLOWED_COLLATERAL_RISK
@@ -1214,14 +1214,14 @@ abstract contract Base is Test {
     return spokeInfo[spoke].usdz.reserveId;
   }
 
-  function _updateSpokePaused(
+  function _updateSpokeHalted(
     IHub hub,
     uint256 assetId,
     address spoke,
-    bool paused
+    bool halted
   ) internal pausePrank {
     IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, spoke);
-    spokeConfig.paused = paused;
+    spokeConfig.halted = halted;
     vm.prank(HUB_ADMIN);
     hub.updateSpokeConfig(assetId, spoke, spokeConfig);
 
@@ -1497,7 +1497,7 @@ abstract contract Base is Test {
         userDrawnDebt,
         userPremiumDebt,
         repayAmount,
-        _spokeAssetId(spoke, reserveId)
+        _reserveAssetId(spoke, reserveId)
       );
   }
 
@@ -1632,7 +1632,7 @@ abstract contract Base is Test {
       );
 
       uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
-      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(reserveId));
+      uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(assetId));
       uint256 riskPremium = _getUserLastRiskPremium(spoke, user);
 
       return
@@ -2239,7 +2239,7 @@ abstract contract Base is Test {
     return IHub(address(spoke.getReserve(reserveId).hub));
   }
 
-  function _spokeAssetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
+  function _reserveAssetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
     return spoke.getReserve(reserveId).assetId;
   }
 
@@ -2262,7 +2262,7 @@ abstract contract Base is Test {
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
     address deployer = makeAddr('deployer');
 
-    vm.prank(deployer);
+    vm.startPrank(deployer);
     IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
 
     ISpoke spoke = DeployUtils.deploySpoke({
@@ -2271,8 +2271,8 @@ abstract contract Base is Test {
       initData: abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
     });
 
-    vm.prank(deployer);
     oracle.setSpoke(address(spoke));
+    vm.stopPrank();
 
     assertEq(spoke.ORACLE(), address(oracle));
     assertEq(oracle.SPOKE(), address(spoke));
@@ -2314,7 +2314,7 @@ abstract contract Base is Test {
     assertEq(a.drawCap, b.drawCap, 'drawCap');
     assertEq(a.riskPremiumThreshold, b.riskPremiumThreshold, 'riskPremiumThreshold');
     assertEq(a.active, b.active, 'active');
-    assertEq(a.paused, b.paused, 'paused');
+    assertEq(a.halted, b.halted, 'halted');
     assertEq(abi.encode(a), abi.encode(b));
   }
 
