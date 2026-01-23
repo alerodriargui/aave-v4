@@ -146,7 +146,7 @@ contract PositionManagerBaseTest is SpokeBase {
 
   function test_permitReserveUnderlying() public {
     (address user, uint256 userPk) = makeAddrAndKey('user');
-    uint256 reserveId = _randomReserveId(spoke1);
+    uint256 reserveId = _daiReserveId(spoke1);
     TestnetERC20 token = TestnetERC20(address(_underlying(spoke1, reserveId)));
 
     vm.prank(ADMIN);
