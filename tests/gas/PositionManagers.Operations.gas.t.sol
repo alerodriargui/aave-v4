@@ -37,7 +37,7 @@ contract PositionManager_Gas_Tests is SpokeBase {
       user: alice,
       updates: updates,
       nonce: spoke1.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
@@ -108,6 +108,8 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
   string internal NAMESPACE = 'AllowancePositionManager.Operations';
 
   AllowancePositionManager public positionManager;
+  uint192 internal withdrawNonceKey = 0;
+  uint192 internal creditNonceKey = 1;
   uint256 public alicePk;
 
   function setUp() public virtual override {
@@ -172,16 +174,18 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
   function test_approveWithdrawWithSig() public {
     uint256 amount = 100e18;
 
+    vm.prank(alice);
+    positionManager.useNonce(withdrawNonceKey);
+
     IAllowancePositionManager.WithdrawPermit memory p = IAllowancePositionManager.WithdrawPermit({
       spoke: address(spoke1),
       reserveId: _daiReserveId(spoke1),
       owner: alice,
       spender: bob,
       amount: amount,
-      nonce: positionManager.nonces(alice, _randomNonceKey()),
-      deadline: _warpBeforeRandomDeadline()
+      nonce: positionManager.nonces(alice, withdrawNonceKey),
+      deadline: vm.getBlockTimestamp()
     });
-    p.nonce = _burnRandomNoncesAtKey(positionManager, alice);
     bytes32 digest = _typedDataHash(
       positionManager,
       vm.eip712HashStruct('WithdrawPermit', abi.encode(p))
@@ -212,8 +216,11 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'delegateCredit');
   }
 
-  function test_creditDelegationWithSig() public {
+  function test_delegateCreditWithSig() public {
     uint256 amount = 100e18;
+
+    vm.prank(alice);
+    positionManager.useNonce(creditNonceKey);
 
     IAllowancePositionManager.CreditDelegationPermit memory p = IAllowancePositionManager
       .CreditDelegationPermit({
@@ -222,10 +229,9 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
         owner: alice,
         spender: bob,
         amount: amount,
-        nonce: positionManager.nonces(alice, _randomNonceKey()),
-        deadline: _warpBeforeRandomDeadline()
+        nonce: positionManager.nonces(alice, creditNonceKey),
+        deadline: vm.getBlockTimestamp()
       });
-    p.nonce = _burnRandomNoncesAtKey(positionManager, alice);
     bytes32 digest = _typedDataHash(
       positionManager,
       vm.eip712HashStruct('CreditDelegationPermit', abi.encode(p))
