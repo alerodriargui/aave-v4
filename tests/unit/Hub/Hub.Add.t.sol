@@ -759,10 +759,17 @@ contract HubAddTest is HubBase {
       params.spoke1AddedAmount = hub1.previewRemoveByShares(assetId, params.spoke1AddedShares);
       params.bobBalance -= addAmount;
 
+      uint256 totalFees = hub1.getAssetAccruedFees(assetId);
+
       // hub
       assertGe(hub1.getAddedAssets(assetId), params.assetAddedAmount, 'hub addedAmount after');
       assertGe(hub1.getAddedShares(assetId), params.assetAddedShares, 'hub addedShares after');
       assertEq(hub1.getAsset(assetId).liquidity, params.availableLiq, 'asset liquidity after');
+      assertEq(
+        hub1.getAssetLiquidity(assetId),
+        params.availableLiq - _min(totalFees, params.availableLiq),
+        'asset available liquidity after'
+      );
       assertEq(
         hub1.getAsset(assetId).lastUpdateTimestamp,
         vm.getBlockTimestamp(),

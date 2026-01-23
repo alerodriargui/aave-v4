@@ -245,14 +245,13 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     _validateRemove(spoke, amount, to);
 
-    uint256 liquidity = asset.liquidity;
     uint256 availableLiquidity = asset.getAvailableLiquidity();
     require(amount <= availableLiquidity, InsufficientLiquidity(availableLiquidity));
 
     uint120 shares = asset.toAddedSharesUp(amount).toUint120();
     asset.addedShares -= shares;
     spoke.addedShares -= shares;
-    asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
+    asset.liquidity = asset.liquidity.uncheckedSub(amount).toUint120();
 
     asset.updateDrawnRate(assetId);
 
@@ -271,14 +270,13 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     _validateDraw(asset, spoke, amount, to);
 
-    uint256 liquidity = asset.liquidity;
     uint256 availableLiquidity = asset.getAvailableLiquidity();
     require(amount <= availableLiquidity, InsufficientLiquidity(availableLiquidity));
 
     uint120 drawnShares = asset.toDrawnSharesUp(amount).toUint120();
     asset.drawnShares += drawnShares;
     spoke.drawnShares += drawnShares;
-    asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
+    asset.liquidity = asset.liquidity.uncheckedSub(amount).toUint120();
 
     asset.updateDrawnRate(assetId);
 
