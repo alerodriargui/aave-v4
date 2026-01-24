@@ -15,6 +15,8 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 
+import {console2 as console} from 'forge-std/console2.sol';
+
 /// @title LiquidationLogic library
 /// @author Aave Labs
 /// @notice Implements the logic for liquidations.
@@ -291,7 +293,7 @@ library LiquidationLogic {
     uint256 decimals,
     uint256 price
   ) internal pure returns (uint256) {
-    return amount * MathUtils.uncheckedExp(10, 18 - decimals) * price;
+    return amount * MathUtils.uncheckedExp(10, WadRayMath.WAD_DECIMALS - decimals) * price;
   }
 
   /// @dev Executes the liquidation.
@@ -606,7 +608,7 @@ library LiquidationLogic {
       );
 
       if (debtRayToLiquidate <= params.premiumDebtRay) {
-        // premiumDebtRayToLiquidate may be more than debtRayToLiquidate in order to utilise all assets
+        // premiumDebtRayToLiquidate may be more than debtRayToLiquidate in order to utilize all assets
         premiumDebtRayToLiquidate = debtRayToLiquidate.fromRayUp().toRay().min(
           params.premiumDebtRay
         );
@@ -642,7 +644,7 @@ library LiquidationLogic {
       }
     }
 
-    // revert if the liquidator does not cover the necessary debt to prevent dust from remaining
+    // revert if the liquidator does not intend to cover the necessary debt to prevent dust from remaining
     require(
       params.debtToCover >=
         drawnSharesToLiquidate.rayMulUp(params.drawnIndex) + premiumDebtRayToLiquidate.fromRayUp(),
@@ -664,7 +666,8 @@ library LiquidationLogic {
       });
   }
 
-  /// @notice Calculate the amount of collateral shares that should be liquidated.
+  /// @notice Calculates the amount of collateral shares that should be liquidated based on liquidated debt.
+  /// @return The amount of collateral shares that should be liquidated.
   function _calculateCollateralToLiquidate(
     CalculateCollateralToLiquidateParams memory params
   ) internal view returns (uint256) {

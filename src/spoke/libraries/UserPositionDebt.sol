@@ -20,6 +20,10 @@ library UserPositionDebt {
   using WadRayMath for *;
   using MathUtils for *;
 
+  /// @notice Debt components of a user position.
+  /// @dev drawnShares The amount of drawn shares.
+  /// @dev premiumDebtRay The amount of premium debt, expressed in asset units and scaled by RAY.
+  /// @dev drawnIndex The drawn index of the reserve, expressed in RAY.
   struct DebtComponents {
     uint256 drawnShares;
     uint256 premiumDebtRay;

@@ -131,7 +131,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
     params.debtAssetPrice = bound(
       params.debtAssetPrice,
       1,
-      _changeDecimals(
+      _convertDecimals(
         LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
         18,
         params.debtAssetDecimals,

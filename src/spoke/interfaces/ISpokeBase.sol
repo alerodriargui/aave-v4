@@ -72,10 +72,10 @@ interface ISpokeBase {
   /// @param user The address of the borrower getting liquidated.
   /// @param liquidator The address of the liquidator.
   /// @param receiveShares True if the liquidator received collateral in supplied shares rather than underlying assets.
-  /// @param debtAmountRestored The amount of debt assets restored.
+  /// @param debtAmountRestored The amount of debt restored, expressed in asset units.
   /// @param drawnSharesLiquidated The amount of drawn shares liquidated.
   /// @param premiumDelta A struct representing the changes to premium debt after liquidation.
-  /// @param collateralAmountRemoved The amount of collateral assets removed.
+  /// @param collateralAmountRemoved The amount of collateral removed, expressed in asset units.
   /// @param collateralSharesLiquidated The total amount of collateral shares liquidated.
   /// @param collateralSharesToLiquidator The amount of collateral shares that the liquidator received.
   event LiquidationCall(

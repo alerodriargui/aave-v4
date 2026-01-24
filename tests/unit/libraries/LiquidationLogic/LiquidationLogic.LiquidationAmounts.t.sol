@@ -381,7 +381,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       1,
       params.collateralReserveHub.previewAddByAssets(
         params.collateralReserveAssetId,
-        _changeDecimals(
+        _convertDecimals(
           LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
           18,
           params.collateralAssetDecimals,

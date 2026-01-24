@@ -755,7 +755,6 @@ abstract contract Spoke is
           reserve.hub,
           reserve.assetId
         );
-        // we can simplify since there is no precision loss due to the division here
         accountData.totalDebtValue += (
           (drawnDebt + premiumDebtRay.fromRayUp()).toValue({
             decimals: assetDecimals,

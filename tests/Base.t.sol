@@ -1958,7 +1958,7 @@ abstract contract Base is Test {
     return ((valueAmount * assetUnit) / assetPrice).fromWadDown();
   }
 
-  function _changeDecimals(
+  function _convertDecimals(
     uint256 amount,
     uint256 fromDecimals,
     uint256 toDecimals,

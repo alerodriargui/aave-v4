@@ -227,6 +227,8 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
   }
 
   function test_executeLiquidation_revertsWith_MustNotLeaveDust_Debt() public {
+    // debtToTarget doubles (from 2.5 to 5)
+    // debtToCover is 4.9, so 5.02 - 4.9 = 0.12 debt is left
     params.totalDebtValue *= 2;
     params.debtToCover = 4.9e18;
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(
@@ -237,6 +239,9 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
   }
 
   function test_executeLiquidation_revertsWith_MustNotLeaveDust_Collateral() public {
+    // collateral shares remaining is 5200 - 4800 = 400
+    // this would leave collateral dust, hence collateral are increased
+    // new debt that needs to be liquidated is > 2.7, which is more than debtToCover (2.6)
     liquidationLogicWrapper.setCollateralPositionSuppliedShares(5200e6);
     params.debtToCover = 2.6e18;
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
