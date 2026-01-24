@@ -223,7 +223,6 @@ library AssetLogic {
     uint256 drawnIndex = asset.getDrawnIndex();
     uint256 totalFees = asset.realizedFees + asset.getUnrealizedFees(drawnIndex);
 
-    // availableLiquidity = liquidity - min(liquidity, totalFees)
     return liquidity > totalFees ? liquidity - totalFees : 0;
   }
 
