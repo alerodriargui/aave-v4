@@ -15,8 +15,6 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 
-import {console2 as console} from 'forge-std/console2.sol';
-
 /// @title LiquidationLogic library
 /// @author Aave Labs
 /// @notice Implements the logic for liquidations.
@@ -39,6 +37,7 @@ library LiquidationLogic {
     ISpoke.LiquidationConfig liquidationConfig;
     uint256 debtToCover;
     uint256 healthFactor;
+    uint256 totalAdjustedCollateralValueBps;
     uint256 totalDebtValueRay;
     address liquidator;
     uint256 activeCollateralCount;
@@ -64,6 +63,7 @@ library LiquidationLogic {
     address user;
     uint256 debtToCover;
     uint256 healthFactor;
+    uint256 totalAdjustedCollateralValueBps;
     uint256 totalDebtValueRay;
     address liquidator;
     uint256 activeCollateralCount;
@@ -112,7 +112,8 @@ library LiquidationLogic {
     uint256 debtToCover;
     uint256 collateralFactor;
     bool isUsingAsCollateral;
-    uint256 healthFactor;
+    uint256 totalAdjustedCollateralValueBps;
+    uint256 totalDebtValueRay;
     bool receiveShares;
   }
 
@@ -229,6 +230,7 @@ library LiquidationLogic {
       user: params.user,
       debtToCover: params.debtToCover,
       healthFactor: params.healthFactor,
+      totalAdjustedCollateralValueBps: params.totalAdjustedCollateralValueBps,
       totalDebtValueRay: params.totalDebtValueRay,
       liquidator: params.liquidator,
       activeCollateralCount: params.activeCollateralCount,
@@ -327,7 +329,8 @@ library LiquidationLogic {
         debtToCover: params.debtToCover,
         collateralFactor: params.collateralDynConfig.collateralFactor,
         isUsingAsCollateral: userPositionStatus.isUsingAsCollateral(params.collateralReserveId),
-        healthFactor: params.healthFactor,
+        totalAdjustedCollateralValueBps: params.totalAdjustedCollateralValueBps,
+        totalDebtValueRay: params.totalDebtValueRay,
         receiveShares: params.receiveShares
       })
     );
@@ -503,8 +506,9 @@ library LiquidationLogic {
     // and can only be created when drawn shares exist)
     require(params.drawnShares > 0, ISpoke.ReserveNotBorrowed());
     require(params.collateralReserveFlags.liquidatable(), ISpoke.CollateralCannotBeLiquidated());
+    // SAFETY: HEALTH_FACTOR_LIQUIDATION_THRESHOLD is assumed to be 1e18.
     require(
-      params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      params.totalAdjustedCollateralValueBps.bpsToRay() < params.totalDebtValueRay,
       ISpoke.HealthFactorNotBelowThreshold()
     );
     require(

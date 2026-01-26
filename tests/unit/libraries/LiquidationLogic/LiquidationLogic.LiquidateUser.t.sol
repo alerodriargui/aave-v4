@@ -49,6 +49,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       }),
       debtToCover: 3e18,
       healthFactor: 0.8e18,
+      totalAdjustedCollateralValueBps: 8_000e26 * PercentageMath.PERCENTAGE_FACTOR,
       totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
       liquidator: makeAddr('liquidator'),
       activeCollateralCount: 1,

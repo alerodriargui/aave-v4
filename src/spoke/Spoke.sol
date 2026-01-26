@@ -370,6 +370,7 @@ abstract contract Spoke is
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
+      totalAdjustedCollateralValueBps: userAccountData.totalAdjustedCollateralValueBps,
       totalDebtValueRay: userAccountData.totalDebtValueRay,
       activeCollateralCount: userAccountData.activeCollateralCount,
       borrowedCount: userAccountData.borrowedCount,
@@ -690,8 +691,9 @@ abstract contract Spoke is
   ) internal returns (UserAccountData memory) {
     UserAccountData memory accountData = _processUserAccountData(user, true);
     emit RefreshAllUserDynamicConfig(user);
+    // SAFETY: HEALTH_FACTOR_LIQUIDATION_THRESHOLD is assumed to be 1e18.
     require(
-      accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
+      accountData.totalAdjustedCollateralValueBps.bpsToRay() >= accountData.totalDebtValueRay,
       HealthFactorBelowThreshold()
     );
     return accountData;
@@ -745,7 +747,7 @@ abstract contract Spoke is
               reserve.collateralRisk,
               userCollateralValue
             );
-            accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
+            accountData.totalAdjustedCollateralValueBps += collateralFactor * userCollateralValue;
             accountData.activeCollateralCount = accountData.activeCollateralCount.uncheckedAdd(1);
           }
         }
@@ -766,12 +768,9 @@ abstract contract Spoke is
     }
 
     if (accountData.totalDebtValueRay > 0) {
-      // at this point, `avgCollateralFactor` is the collateral-weighted sum (scaled by `collateralFactor` in BPS)
-      // health factor uses this directly for simplicity
-      // the division by `totalCollateralValue` to compute the weighted average is done later
       accountData.healthFactor = Math.mulDiv(
-        accountData.avgCollateralFactor,
-        (WadRayMath.WAD * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR,
+        accountData.totalAdjustedCollateralValueBps,
+        WadRayMath.WAD * (WadRayMath.RAY / PercentageMath.PERCENTAGE_FACTOR),
         accountData.totalDebtValueRay,
         Math.Rounding.Floor
       );
@@ -780,10 +779,10 @@ abstract contract Spoke is
     }
 
     if (accountData.totalCollateralValue > 0) {
-      accountData.avgCollateralFactor = accountData
-        .avgCollateralFactor
-        .wadDivDown(accountData.totalCollateralValue)
-        .fromBpsDown();
+      accountData.avgCollateralFactor = accountData.totalAdjustedCollateralValueBps.mulDivDown(
+        WadRayMath.WAD / PercentageMath.PERCENTAGE_FACTOR,
+        accountData.totalCollateralValue
+      );
     }
 
     // sort by collateral risk in ASC, collateral value in DESC

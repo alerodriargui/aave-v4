@@ -1344,7 +1344,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 
     // Deal caller max collateral amount, approve spoke, supply
-    supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
+    supplyAmount = _calculateMaxSupplyAmount(spoke1, reserveId) - supplyAmount;
     deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
     underlying.approve(address(spoke1), supplyAmount);
@@ -1400,7 +1400,7 @@ contract SpokeRepayScenarioTest is SpokeBase {
     IERC20 underlying = getAssetUnderlyingByReserveId(spoke1, reserveId);
 
     // Set up caller initial debt position
-    supplyAmount = MAX_SUPPLY_AMOUNT - supplyAmount;
+    supplyAmount = _calculateMaxSupplyAmount(spoke1, reserveId) - supplyAmount;
     deal(address(underlying), caller, supplyAmount);
     vm.prank(caller);
     underlying.approve(address(spoke1), supplyAmount);

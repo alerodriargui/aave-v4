@@ -15,10 +15,10 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     uint256 daiBorrowAmount2,
     uint256 usdxBorrowAmount2
   ) public {
-    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 4);
-    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT / 4);
-    daiBorrowAmount2 = bound(daiBorrowAmount2, 0, MAX_SUPPLY_AMOUNT / 4);
-    usdxBorrowAmount2 = bound(usdxBorrowAmount2, 0, MAX_SUPPLY_AMOUNT / 4);
+    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 4);
+    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT_USDX / 4);
+    daiBorrowAmount2 = bound(daiBorrowAmount2, 0, MAX_SUPPLY_AMOUNT_DAI / 4);
+    usdxBorrowAmount2 = bound(usdxBorrowAmount2, 0, MAX_SUPPLY_AMOUNT_USDX / 4);
 
     BorrowTestData memory state;
 
@@ -41,9 +41,10 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
     state.usdxBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.usdxReserveId, bob);
 
-    state.wethAlice.supplyAmount = state.wbtcAlice.supplyAmount = state.wethBob.supplyAmount = state
-      .wbtcBob
-      .supplyAmount = MAX_SUPPLY_AMOUNT / 2;
+    state.wethAlice.supplyAmount = MAX_SUPPLY_AMOUNT_WETH / 2;
+    state.wbtcAlice.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC / 2;
+    state.wethBob.supplyAmount = MAX_SUPPLY_AMOUNT_WETH / 2;
+    state.wbtcBob.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC / 2;
 
     // Alice supply collateral through spoke1
     Utils.supplyCollateral(spoke1, state.wethReserveId, alice, state.wethAlice.supplyAmount, alice);
@@ -171,10 +172,10 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     state.usdxReserveId = _usdxReserveId(spoke2);
     state.wbtcReserveId = _wbtcReserveId(spoke2);
 
-    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT_DAI);
-    wethBorrowAmount = bound(wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WETH);
-    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT_USDX);
-    wbtcBorrowAmount = bound(wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WBTC);
+    daiBorrowAmount = bound(daiBorrowAmount, 0, MAX_SUPPLY_AMOUNT_DAI / 4);
+    wethBorrowAmount = bound(wethBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WETH / 4);
+    usdxBorrowAmount = bound(usdxBorrowAmount, 0, MAX_SUPPLY_AMOUNT_USDX / 4);
+    wbtcBorrowAmount = bound(wbtcBorrowAmount, 0, MAX_SUPPLY_AMOUNT_WBTC / 4);
 
     // should be 0 because no realized premium yet
     state.daiBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.daiReserveId, bob);
@@ -182,9 +183,19 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     state.usdxBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.usdxReserveId, bob);
     state.wbtcBob.premiumDebtRayBefore = _calculatePremiumDebtRay(spoke1, state.wbtcReserveId, bob);
 
-    state.daiBob.supplyAmount = state.wethBob.supplyAmount = state.usdxBob.supplyAmount = state
-      .wbtcBob
-      .supplyAmount = MAX_SUPPLY_AMOUNT;
+    state.daiBob.supplyAmount = MAX_SUPPLY_AMOUNT_DAI;
+    state.wethBob.supplyAmount = MAX_SUPPLY_AMOUNT_WETH;
+    state.usdxBob.supplyAmount = MAX_SUPPLY_AMOUNT_USDX;
+    state.wbtcBob.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC;
+
+    uint256 usdSupplyAmount = _convertAmountToValue(
+      spoke1,
+      state.usdxReserveId,
+      MAX_SUPPLY_AMOUNT_USDX
+    ) +
+      _convertAmountToValue(spoke1, state.wethReserveId, MAX_SUPPLY_AMOUNT_WETH) +
+      _convertAmountToValue(spoke1, state.usdxReserveId, MAX_SUPPLY_AMOUNT_USDX) +
+      _convertAmountToValue(spoke1, state.wbtcReserveId, MAX_SUPPLY_AMOUNT_WBTC);
 
     // Bob supply all reserves as collateral
     Utils.supplyCollateral(spoke2, state.daiReserveId, bob, state.daiBob.supplyAmount, bob);

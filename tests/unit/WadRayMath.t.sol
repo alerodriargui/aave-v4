@@ -230,15 +230,14 @@ contract WadRayMathDifferentialTests is Test {
     uint256 b;
     bool safetyCheck;
     unchecked {
-      b = a * w.WAD();
-      safetyCheck = b / w.WAD() == a;
+      b = a * (w.WAD() / w.PERCENTAGE_FACTOR());
+      safetyCheck = (a == 0 || type(uint256).max / a >= w.WAD() / w.PERCENTAGE_FACTOR());
     }
     if (!safetyCheck) {
       vm.expectRevert();
       w.bpsToWad(a);
     } else {
-      assertEq(w.bpsToWad(a), (a * w.WAD()) / 100_00);
-      assertEq(w.bpsToWad(a), b / 100_00);
+      assertEq(w.bpsToWad(a), b);
     }
   }
 
@@ -246,15 +245,14 @@ contract WadRayMathDifferentialTests is Test {
     uint256 b;
     bool safetyCheck;
     unchecked {
-      b = a * w.RAY();
-      safetyCheck = b / w.RAY() == a;
+      b = a * (w.RAY() / w.PERCENTAGE_FACTOR());
+      safetyCheck = (a == 0 || type(uint256).max / a >= w.RAY() / w.PERCENTAGE_FACTOR());
     }
     if (!safetyCheck) {
       vm.expectRevert();
       w.bpsToRay(a);
     } else {
-      assertEq(w.bpsToRay(a), (a * w.RAY()) / 100_00);
-      assertEq(w.bpsToRay(a), b / 100_00);
+      assertEq(w.bpsToRay(a), b);
     }
   }
 }
