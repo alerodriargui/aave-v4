@@ -127,7 +127,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @dev avgCollateralFactor The weighted average collateral factor of the user position, expressed in WAD.
   /// @dev healthFactor The health factor of the user position, expressed in WAD. 1e18 represents a health factor of 1.00.
   /// @dev totalCollateralValue The total collateral value of the user position, expressed in units of base currency. 1e26 represents 1 USD.
-  /// @dev totalAdjustedCollateralValueBps The total collateral value of the user position weighted by collateral factors, expressed in units of base currency and scaled by BPS. 1e30 represents 1 USD.
   /// @dev totalDebtValueRay The total debt value of the user position, expressed in units of base currency and scaled by RAY. 1e53 represents 1 USD.
   /// @dev activeCollateralCount The number of active collaterals, which includes reserves with `collateralFactor` > 0, `enabledAsCollateral` and `suppliedAmount` > 0.
   /// @dev borrowedCount The number of borrowed reserves of the user position.
@@ -136,7 +135,6 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
     uint256 avgCollateralFactor;
     uint256 healthFactor;
     uint256 totalCollateralValue;
-    uint256 totalAdjustedCollateralValueBps;
     uint256 totalDebtValueRay;
     uint256 activeCollateralCount;
     uint256 borrowedCount;

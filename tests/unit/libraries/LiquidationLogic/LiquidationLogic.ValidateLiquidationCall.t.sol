@@ -24,8 +24,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
       debtToCover: 5e18,
       collateralFactor: 75_00,
       isUsingAsCollateral: true,
-      totalAdjustedCollateralValueBps: 8_000e26 * PercentageMath.PERCENTAGE_FACTOR,
-      totalDebtValueRay: 10_000e26 * WadRayMath.RAY,
+      healthFactor: 0.8e18,
       receiveShares: false
     });
     liquidationLogicWrapper.setBorrower(params.user);
@@ -170,7 +169,7 @@ contract LiquidationLogicValidateLiquidationCallTest is LiquidationLogicBaseTest
   }
 
   function test_validateLiquidationCall_revertsWith_HealthFactorNotBelowThreshold() public {
-    params.totalAdjustedCollateralValueBps = 11_000e26 * PercentageMath.PERCENTAGE_FACTOR;
+    params.healthFactor = 1.1e18;
     vm.expectRevert(ISpoke.HealthFactorNotBelowThreshold.selector);
     liquidationLogicWrapper.validateLiquidationCall(params);
   }

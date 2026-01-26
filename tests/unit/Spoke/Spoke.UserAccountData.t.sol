@@ -50,7 +50,6 @@ contract SpokeUserAccountDataTest is SpokeBase {
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
-        totalAdjustedCollateralValueBps: 72e26 * PercentageMath.PERCENTAGE_FACTOR,
         totalDebtValueRay: 75e26 * WadRayMath.RAY,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
@@ -85,7 +84,6 @@ contract SpokeUserAccountDataTest is SpokeBase {
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
-        totalAdjustedCollateralValueBps: 72e26 * PercentageMath.PERCENTAGE_FACTOR,
         totalDebtValueRay: 75e26 * WadRayMath.RAY,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,
@@ -120,7 +118,6 @@ contract SpokeUserAccountDataTest is SpokeBase {
       true,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
-        totalAdjustedCollateralValueBps: 96e26 * PercentageMath.PERCENTAGE_FACTOR,
         totalDebtValueRay: 75e26 * WadRayMath.RAY,
         avgCollateralFactor: 0.96e18,
         healthFactor: 1.28e18,
@@ -143,7 +140,7 @@ contract SpokeUserAccountDataTest is SpokeBase {
     // Debt: 0.3 + 0.15 + 0.05 = 0.5 WETH = 0.5 * $2000 = $1000
     // Health Factor: ($100 * 0.96 + $5000 * 0.5) / $1000 = 2.596
     // Total Adjusted Collateral Value: 0.96 * $100 + 0.5 * $5000 = 2596
-    // Avg Collateral Factor: $2596 / ($100 + $5000) = 0.509019607
+    // Avg Collateral Factor: $2596 / ($100 + $5000) = 0.509019607843137254
     // Risk Premium: (0.1 * $100 + 0.15 * $900) / $1000 = 0.145
     // Supplied Collaterals Count: 2
     // Borrowed Reserves Count: 1
@@ -164,7 +161,6 @@ contract SpokeUserAccountDataTest is SpokeBase {
       true,
       ISpoke.UserAccountData({
         totalCollateralValue: 5100e26,
-        totalAdjustedCollateralValueBps: 2596e26 * PercentageMath.PERCENTAGE_FACTOR,
         totalDebtValueRay: 1000e26 * WadRayMath.RAY,
         avgCollateralFactor: 0.509019607843137254e18,
         healthFactor: 2.596e18,
@@ -207,7 +203,6 @@ contract SpokeUserAccountDataTest is SpokeBase {
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
-        totalAdjustedCollateralValueBps: 72e26 * PercentageMath.PERCENTAGE_FACTOR,
         totalDebtValueRay: 125e26 * WadRayMath.RAY,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.576e18,
@@ -248,7 +243,6 @@ contract SpokeUserAccountDataTest is SpokeBase {
       false,
       ISpoke.UserAccountData({
         totalCollateralValue: 100e26,
-        totalAdjustedCollateralValueBps: 72e26 * PercentageMath.PERCENTAGE_FACTOR,
         totalDebtValueRay: 75e26 * WadRayMath.RAY,
         avgCollateralFactor: 0.72e18,
         healthFactor: 0.96e18,

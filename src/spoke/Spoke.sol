@@ -370,7 +370,6 @@ abstract contract Spoke is
       user: user,
       debtToCover: debtToCover,
       healthFactor: userAccountData.healthFactor,
-      totalAdjustedCollateralValueBps: userAccountData.totalAdjustedCollateralValueBps,
       totalDebtValueRay: userAccountData.totalDebtValueRay,
       activeCollateralCount: userAccountData.activeCollateralCount,
       borrowedCount: userAccountData.borrowedCount,
@@ -691,9 +690,8 @@ abstract contract Spoke is
   ) internal returns (UserAccountData memory) {
     UserAccountData memory accountData = _processUserAccountData(user, true);
     emit RefreshAllUserDynamicConfig(user);
-    // SAFETY: HEALTH_FACTOR_LIQUIDATION_THRESHOLD is assumed to be 1e18.
     require(
-      accountData.totalAdjustedCollateralValueBps.bpsToRay() >= accountData.totalDebtValueRay,
+      accountData.healthFactor >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       HealthFactorBelowThreshold()
     );
     return accountData;
@@ -747,7 +745,7 @@ abstract contract Spoke is
               reserve.collateralRisk,
               userCollateralValue
             );
-            accountData.totalAdjustedCollateralValueBps += collateralFactor * userCollateralValue;
+            accountData.avgCollateralFactor += collateralFactor * userCollateralValue;
             accountData.activeCollateralCount = accountData.activeCollateralCount.uncheckedAdd(1);
           }
         }
@@ -768,8 +766,10 @@ abstract contract Spoke is
     }
 
     if (accountData.totalDebtValueRay > 0) {
+      // at this point, `avgCollateralFactor` is the total collateral value weighted by collateral factors,
+      // expressed in units of base currency and scaled by BPS. 1e30 represents 1 USD.
       accountData.healthFactor = Math.mulDiv(
-        accountData.totalAdjustedCollateralValueBps,
+        accountData.avgCollateralFactor,
         WadRayMath.WAD * (WadRayMath.RAY / PercentageMath.PERCENTAGE_FACTOR),
         accountData.totalDebtValueRay,
         Math.Rounding.Floor
@@ -779,7 +779,7 @@ abstract contract Spoke is
     }
 
     if (accountData.totalCollateralValue > 0) {
-      accountData.avgCollateralFactor = accountData.totalAdjustedCollateralValueBps.mulDivDown(
+      accountData.avgCollateralFactor = accountData.avgCollateralFactor.mulDivDown(
         WadRayMath.WAD / PercentageMath.PERCENTAGE_FACTOR,
         accountData.totalCollateralValue
       );

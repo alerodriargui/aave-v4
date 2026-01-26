@@ -381,8 +381,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         userSuppliedValue
       );
       expectedUserAccountData.totalCollateralValue += userSuppliedValue;
-      expectedUserAccountData.totalAdjustedCollateralValueBps +=
-        collateralFactor * userSuppliedValue;
+      expectedUserAccountData.avgCollateralFactor += collateralFactor * userSuppliedValue;
     }
 
     for (
@@ -413,7 +412,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     if (expectedUserAccountData.totalDebtValueRay > 0) {
       expectedUserAccountData.healthFactor = Math.mulDiv(
-        expectedUserAccountData.totalAdjustedCollateralValueBps,
+        expectedUserAccountData.avgCollateralFactor,
         (WadRayMath.WAD * WadRayMath.RAY) / PercentageMath.PERCENTAGE_FACTOR,
         expectedUserAccountData.totalDebtValueRay,
         Math.Rounding.Floor
@@ -424,7 +423,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
 
     if (expectedUserAccountData.totalCollateralValue != 0) {
       expectedUserAccountData.avgCollateralFactor = expectedUserAccountData
-        .totalAdjustedCollateralValueBps
+        .avgCollateralFactor
         .mulDivDown(
           WadRayMath.WAD / PercentageMath.PERCENTAGE_FACTOR,
           expectedUserAccountData.totalCollateralValue

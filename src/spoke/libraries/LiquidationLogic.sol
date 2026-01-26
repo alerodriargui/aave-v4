@@ -37,7 +37,6 @@ library LiquidationLogic {
     ISpoke.LiquidationConfig liquidationConfig;
     uint256 debtToCover;
     uint256 healthFactor;
-    uint256 totalAdjustedCollateralValueBps;
     uint256 totalDebtValueRay;
     address liquidator;
     uint256 activeCollateralCount;
@@ -63,7 +62,6 @@ library LiquidationLogic {
     address user;
     uint256 debtToCover;
     uint256 healthFactor;
-    uint256 totalAdjustedCollateralValueBps;
     uint256 totalDebtValueRay;
     address liquidator;
     uint256 activeCollateralCount;
@@ -112,8 +110,7 @@ library LiquidationLogic {
     uint256 debtToCover;
     uint256 collateralFactor;
     bool isUsingAsCollateral;
-    uint256 totalAdjustedCollateralValueBps;
-    uint256 totalDebtValueRay;
+    uint256 healthFactor;
     bool receiveShares;
   }
 
@@ -230,7 +227,6 @@ library LiquidationLogic {
       user: params.user,
       debtToCover: params.debtToCover,
       healthFactor: params.healthFactor,
-      totalAdjustedCollateralValueBps: params.totalAdjustedCollateralValueBps,
       totalDebtValueRay: params.totalDebtValueRay,
       liquidator: params.liquidator,
       activeCollateralCount: params.activeCollateralCount,
@@ -329,8 +325,7 @@ library LiquidationLogic {
         debtToCover: params.debtToCover,
         collateralFactor: params.collateralDynConfig.collateralFactor,
         isUsingAsCollateral: userPositionStatus.isUsingAsCollateral(params.collateralReserveId),
-        totalAdjustedCollateralValueBps: params.totalAdjustedCollateralValueBps,
-        totalDebtValueRay: params.totalDebtValueRay,
+        healthFactor: params.healthFactor,
         receiveShares: params.receiveShares
       })
     );
@@ -506,9 +501,8 @@ library LiquidationLogic {
     // and can only be created when drawn shares exist)
     require(params.drawnShares > 0, ISpoke.ReserveNotBorrowed());
     require(params.collateralReserveFlags.liquidatable(), ISpoke.CollateralCannotBeLiquidated());
-    // SAFETY: HEALTH_FACTOR_LIQUIDATION_THRESHOLD is assumed to be 1e18.
     require(
-      params.totalAdjustedCollateralValueBps.bpsToRay() < params.totalDebtValueRay,
+      params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       ISpoke.HealthFactorNotBelowThreshold()
     );
     require(
