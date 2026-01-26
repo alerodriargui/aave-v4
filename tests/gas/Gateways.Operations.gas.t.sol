@@ -102,7 +102,7 @@ contract NativeTokenGateway_Gas_Tests is Base {
 /// forge-config: default.isolate = true
 contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   string internal NAMESPACE = 'SignatureGateway.Operations';
-  uint192 internal nonceKey = 0;
+  uint160 internal nonceKey = 0;
 
   function setUp() public virtual override {
     super.setUp();

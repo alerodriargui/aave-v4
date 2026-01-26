@@ -202,7 +202,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
   function test_supplyWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
     ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, _warpBeforeRandomDeadline());
-    uint192 nonceKey = _randomNonceKey();
+    uint160 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
     p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
@@ -217,7 +217,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
   function test_withdrawWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
     ISignatureGateway.Withdraw memory p = _withdrawData(spoke1, alice, _warpBeforeRandomDeadline());
-    uint192 nonceKey = _randomNonceKey();
+    uint160 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
     p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
@@ -232,7 +232,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
   function test_borrowWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
     ISignatureGateway.Borrow memory p = _borrowData(spoke1, alice, _warpBeforeRandomDeadline());
-    uint192 nonceKey = _randomNonceKey();
+    uint160 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
     p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
@@ -247,7 +247,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
 
   function test_repayWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
     ISignatureGateway.Repay memory p = _repayData(spoke1, alice, _warpBeforeRandomDeadline());
-    uint192 nonceKey = _randomNonceKey();
+    uint160 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
     p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
@@ -263,7 +263,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
   function test_setUsingAsCollateralWithSig_revertsWith_InvalidAccountNonce(bytes32) public {
     uint256 deadline = _warpBeforeRandomDeadline();
     ISignatureGateway.SetUsingAsCollateral memory p = _setAsCollateralData(spoke1, alice, deadline);
-    uint192 nonceKey = _randomNonceKey();
+    uint160 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf, nonceKey);
     p.nonce = _getRandomInvalidNonceAtKey(gateway, p.onBehalfOf, nonceKey);
 
@@ -283,7 +283,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       alice,
       deadline
     );
-    uint192 nonceKey = _randomNonceKey();
+    uint160 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.user, nonceKey);
     p.nonce = _getRandomInvalidNonceAtKey(gateway, p.user, nonceKey);
 
@@ -302,7 +302,7 @@ contract SignatureGatewayInvalidSignatureTest is SignatureGatewayBaseTest {
       alice,
       _warpBeforeRandomDeadline()
     );
-    uint192 nonceKey = _randomNonceKey();
+    uint160 nonceKey = _randomNonceKey();
     uint256 currentNonce = _burnRandomNoncesAtKey(gateway, p.user, nonceKey);
     p.nonce = _getRandomInvalidNonceAtKey(gateway, p.user, nonceKey);
 

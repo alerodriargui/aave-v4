@@ -1176,12 +1176,12 @@ abstract contract Base is Test {
     return vm.randomUint(min, max);
   }
 
-  function _randomNonceKey() internal returns (uint192) {
-    return uint192(vm.randomUint());
+  function _randomNonceKey() internal returns (uint160) {
+    return uint160(vm.randomUint());
   }
 
-  function _randomNonce() internal returns (uint64) {
-    return uint64(vm.randomUint());
+  function _randomNonce() internal returns (uint96) {
+    return uint96(vm.randomUint());
   }
 
   // assumes spoke has usdx supported
@@ -2789,12 +2789,12 @@ abstract contract Base is Test {
   function _burnRandomNoncesAtKey(
     INoncesKeyed verifier,
     address user,
-    uint192 key
+    uint160 key
   ) internal returns (uint256) {
     uint256 currentKeyNonce = verifier.nonces(user, key);
-    (, uint64 nonce) = _unpackNonce(currentKeyNonce);
+    (, uint96 nonce) = _unpackNonce(currentKeyNonce);
 
-    uint64 toBurn = vm.randomUint(1, 100).toUint64();
+    uint96 toBurn = vm.randomUint(1, 100).toUint96();
     for (uint256 i; i < toBurn; ++i) {
       vm.prank(user);
       verifier.useNonce(key);
@@ -2820,11 +2820,11 @@ abstract contract Base is Test {
   function _getRandomInvalidNonceAtKey(
     INoncesKeyed verifier,
     address user,
-    uint192 key
+    uint160 key
   ) internal returns (uint256) {
-    (uint192 currentKey, uint64 currentNonce) = _unpackNonce(verifier.nonces(user, key));
+    (uint160 currentKey, uint96 currentNonce) = _unpackNonce(verifier.nonces(user, key));
     assertEq(currentKey, key);
-    uint64 nonce = _randomNonce();
+    uint96 nonce = _randomNonce();
     while (currentNonce == nonce) nonce = _randomNonce();
     return _packNonce(key, nonce);
   }
@@ -2834,20 +2834,20 @@ abstract contract Base is Test {
     address who,
     uint256 prevKeyNonce
   ) internal view {
-    (uint192 nonceKey, uint64 nonce) = _unpackNonce(prevKeyNonce);
+    (uint160 nonceKey, uint96 nonce) = _unpackNonce(prevKeyNonce);
     // prettier-ignore
     unchecked { ++nonce; }
     assertEq(verifier.nonces(who, nonceKey), _packNonce(nonceKey, nonce));
   }
 
   /// @dev Pack key and nonce into a keyNonce
-  function _packNonce(uint192 key, uint64 nonce) internal pure returns (uint256) {
-    return (uint256(key) << 64) | nonce;
+  function _packNonce(uint160 key, uint96 nonce) internal pure returns (uint256) {
+    return (uint256(key) << 96) | nonce;
   }
 
   /// @dev Unpack a keyNonce into its key and nonce components
-  function _unpackNonce(uint256 keyNonce) internal pure returns (uint192 key, uint64 nonce) {
-    return (uint192(keyNonce >> 64), uint64(keyNonce));
+  function _unpackNonce(uint256 keyNonce) internal pure returns (uint160 key, uint96 nonce) {
+    return (uint160(keyNonce >> 96), uint96(keyNonce));
   }
 
   function _bpsToRay(uint256 bps) internal pure returns (uint256) {

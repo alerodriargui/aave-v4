@@ -16,7 +16,7 @@ contract NoncesKeyedTest is Base {
     vm.setArbitraryStorage(address(mock));
 
     address owner = vm.randomAddress();
-    uint192 key = _randomNonceKey();
+    uint160 key = _randomNonceKey();
 
     uint256 keyNonce = mock.nonces(owner, key);
 
@@ -31,7 +31,7 @@ contract NoncesKeyedTest is Base {
     vm.setArbitraryStorage(address(mock));
 
     address owner = vm.randomAddress();
-    uint192 key = _randomNonceKey();
+    uint160 key = _randomNonceKey();
 
     uint256 keyNonce = mock.nonces(owner, key);
 
@@ -44,7 +44,7 @@ contract NoncesKeyedTest is Base {
     vm.setArbitraryStorage(address(mock));
 
     address owner = vm.randomAddress();
-    uint192 key = _randomNonceKey();
+    uint160 key = _randomNonceKey();
 
     uint256 currentNonce = _burnRandomNoncesAtKey(mock, owner, key);
     uint256 invalidNonce = _getRandomInvalidNonceAtKey(mock, owner, key);

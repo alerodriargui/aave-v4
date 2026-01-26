@@ -21,9 +21,9 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   function test_useNonce_monotonic(bytes32) public {
     vm.setArbitraryStorage(address(gateway));
     address user = vm.randomAddress();
-    uint192 nonceKey = vm.randomUint(0, type(uint192).max).toUint192();
+    uint160 nonceKey = vm.randomUint(0, type(uint160).max).toUint160();
 
-    (, uint64 nonce) = _unpackNonce(gateway.nonces(user, nonceKey));
+    (, uint96 nonce) = _unpackNonce(gateway.nonces(user, nonceKey));
 
     vm.prank(user);
     gateway.useNonce(nonceKey);

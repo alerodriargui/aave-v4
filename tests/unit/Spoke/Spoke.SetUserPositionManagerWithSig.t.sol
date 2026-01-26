@@ -19,9 +19,9 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
   function test_useNonce_monotonic(bytes32) public {
     vm.setArbitraryStorage(address(spoke1));
     address user = vm.randomAddress();
-    uint192 nonceKey = vm.randomUint(0, type(uint192).max).toUint192();
+    uint160 nonceKey = vm.randomUint(0, type(uint160).max).toUint160();
 
-    (, uint64 nonce) = _unpackNonce(spoke1.nonces(user, nonceKey));
+    (, uint96 nonce) = _unpackNonce(spoke1.nonces(user, nonceKey));
 
     vm.prank(user);
     spoke1.useNonce(nonceKey);
@@ -136,7 +136,7 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
     spoke1.updatePositionManager(positionManager, true);
     uint256 deadline = _warpBeforeRandomDeadline();
 
-    uint192 nonceKey = _randomNonceKey();
+    uint160 nonceKey = _randomNonceKey();
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(user, deadline);
     uint256 currentNonce = _burnRandomNoncesAtKey(spoke1, params.user, nonceKey);
     params.nonce = _getRandomInvalidNonceAtKey(spoke1, params.user, nonceKey);
@@ -302,7 +302,7 @@ contract SpokesetUserPositionManagersWithSigTest is SpokeBase {
     MockERC1271Wallet smartWallet = new MockERC1271Wallet(alice);
     uint256 deadline = _warpBeforeRandomDeadline();
 
-    uint192 nonceKey = _randomNonceKey();
+    uint160 nonceKey = _randomNonceKey();
     ISpoke.SetUserPositionManagers memory params = _setUserPositionManagerData(
       address(smartWallet),
       deadline

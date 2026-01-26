@@ -66,7 +66,7 @@ contract SignatureGatewaySetSelfAsUserPositionManagerTest is SignatureGatewayBas
   }
 
   function test_setSelfAsUserPositionManagerWithSig() public {
-    uint192 nonceKey = _randomNonceKey();
+    uint160 nonceKey = _randomNonceKey();
     vm.prank(alice);
     spoke1.useNonce(nonceKey);
     ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);

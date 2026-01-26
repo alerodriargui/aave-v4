@@ -294,7 +294,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.prank(SPOKE_ADMIN);
     spoke.updatePositionManager(positionManager, true);
 
-    uint192 nonceKey = 100;
+    uint160 nonceKey = 100;
     vm.prank(user);
     spoke.useNonce(nonceKey);
 
