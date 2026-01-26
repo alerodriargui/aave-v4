@@ -16,7 +16,6 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {UserPositionDebt} from 'src/spoke/libraries/UserPositionDebt.sol';
-import {ValidationLogic} from 'src/spoke/libraries/ValidationLogic.sol';
 import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
 import {Multicall} from 'src/utils/Multicall.sol';
 import {ExtSload} from 'src/utils/ExtSload.sol';
@@ -47,7 +46,6 @@ abstract contract Spoke is
   using PositionStatusMap for *;
   using ReserveFlagsMap for ReserveFlags;
   using UserPositionDebt for ISpoke.UserPosition;
-  using ValidationLogic for *;
 
   /// @inheritdoc ISpoke
   bytes32 public constant SET_USER_POSITION_MANAGERS_TYPEHASH =
@@ -147,8 +145,8 @@ abstract contract Spoke is
     require(!_reserveExists[hub][assetId], ReserveExists());
     _reserveExists[hub][assetId] = true;
 
-    ValidationLogic.validateReserveConfig(config, MAX_ALLOWED_COLLATERAL_RISK);
-    ValidationLogic.validateDynamicReserveConfig(dynamicConfig);
+    _validateReserveConfig(config);
+    _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
     uint24 dynamicConfigKey; // 0 as first key to use
 
@@ -187,7 +185,7 @@ abstract contract Spoke is
     ReserveConfig calldata config
   ) external restricted {
     Reserve storage reserve = _getReserve(reserveId);
-    ValidationLogic.validateReserveConfig(config, MAX_ALLOWED_COLLATERAL_RISK);
+    _validateReserveConfig(config);
     reserve.collateralRisk = config.collateralRisk;
     reserve.flags = ReserveFlagsMap.create({
       initPaused: config.paused,
@@ -213,7 +211,7 @@ abstract contract Spoke is
     require(reserveId < _reserveCount, ReserveNotListed());
     uint24 dynamicConfigKey = _reserves[reserveId].dynamicConfigKey;
     require(dynamicConfigKey < MAX_ALLOWED_DYNAMIC_CONFIG_KEY, MaximumDynamicConfigKeyReached());
-    ValidationLogic.validateDynamicReserveConfig(dynamicConfig);
+    _validateDynamicReserveConfig(dynamicConfig);
     dynamicConfigKey = dynamicConfigKey.uncheckedAdd(1).toUint24();
     _reserves[reserveId].dynamicConfigKey = dynamicConfigKey;
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
@@ -247,7 +245,7 @@ abstract contract Spoke is
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    ValidationLogic.validateSupply(reserve.flags);
+    _validateSupply(reserve.flags);
 
     IERC20(reserve.underlying).safeTransferFrom(msg.sender, address(reserve.hub), amount);
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
@@ -266,7 +264,7 @@ abstract contract Spoke is
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    ValidationLogic.validateWithdraw(reserve.flags);
+    _validateWithdraw(reserve.flags);
     IHubBase hub = reserve.hub;
     uint256 assetId = reserve.assetId;
 
@@ -297,7 +295,7 @@ abstract contract Spoke is
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    ValidationLogic.validateBorrow(reserve.flags);
+    _validateBorrow(reserve.flags);
     IHubBase hub = reserve.hub;
 
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
@@ -328,7 +326,7 @@ abstract contract Spoke is
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    ValidationLogic.validateRepay(reserve.flags);
+    _validateRepay(reserve.flags);
 
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
     (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
@@ -429,7 +427,7 @@ abstract contract Spoke is
       return;
     }
     ReserveFlags flags = _getReserve(reserveId).flags;
-    ValidationLogic.validateSetUsingAsCollateral(flags);
+    _validateSetUsingAsCollateral(flags);
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
@@ -921,7 +919,31 @@ abstract contract Spoke is
     // sufficient check since maxLiquidationBonus is always >= 100_00
     require(currentConfig.maxLiquidationBonus > 0, ConfigKeyUninitialized());
     require(newConfig.collateralFactor > 0, InvalidCollateralFactor());
-    ValidationLogic.validateDynamicReserveConfig(newConfig);
+    _validateDynamicReserveConfig(newConfig);
+  }
+
+  function _validateSupply(ReserveFlags flags) internal pure {
+    require(!flags.paused(), ReservePaused());
+    require(!flags.frozen(), ReserveFrozen());
+  }
+
+  function _validateWithdraw(ReserveFlags flags) internal pure {
+    require(!flags.paused(), ReservePaused());
+  }
+
+  function _validateBorrow(ReserveFlags flags) internal pure {
+    require(!flags.paused(), ReservePaused());
+    require(!flags.frozen(), ReserveFrozen());
+    require(flags.borrowable(), ReserveNotBorrowable());
+    // health factor is checked at the end of borrow action
+  }
+
+  function _validateRepay(ReserveFlags flags) internal pure {
+    require(!flags.paused(), ReservePaused());
+  }
+
+  function _validateSetUsingAsCollateral(ReserveFlags flags) internal pure {
+    require(!flags.paused(), ReservePaused());
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
@@ -929,6 +951,23 @@ abstract contract Spoke is
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
+  }
+
+  function _validateReserveConfig(ReserveConfig calldata config) internal pure {
+    require(config.collateralRisk <= MAX_ALLOWED_COLLATERAL_RISK, InvalidCollateralRisk());
+  }
+
+  /// @dev Enforces compatible `maxLiquidationBonus` and `collateralFactor` so at the moment debt is created
+  /// there is enough collateral to cover liquidation.
+  function _validateDynamicReserveConfig(DynamicReserveConfig calldata config) internal pure {
+    require(
+      config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
+        config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
+        uint256(config.maxLiquidationBonus).percentMulUp(config.collateralFactor) <
+          PercentageMath.PERCENTAGE_FACTOR,
+      InvalidCollateralFactorAndMaxLiquidationBonus()
+    );
+    require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
