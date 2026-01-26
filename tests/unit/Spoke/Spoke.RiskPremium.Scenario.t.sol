@@ -830,6 +830,12 @@ contract SpokeRiskPremiumScenarioTest is SpokeBase {
       );
     }
 
+    // Mint fee shares before borrow to ensure available liquidity is sufficient
+    vm.prank(HUB_ADMIN);
+    hub1.mintFeeShares(daiAssetId);
+    vm.prank(HUB_ADMIN);
+    hub1.mintFeeShares(usdxAssetId);
+
     // Alice borrows more usdx and we check risk premiums
     if (
       aliceUsdxInfo.borrowAmount > 2 &&
