@@ -22,6 +22,7 @@ import {ExtSload} from 'src/utils/ExtSload.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {SpokeStorage} from 'src/spoke/SpokeStorage.sol';
 
 /// @title Spoke
 /// @author Aave Labs
@@ -29,6 +30,7 @@ import {ISpokeBase, ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @dev Each reserve can be associated with a separate Hub.
 abstract contract Spoke is
   ISpoke,
+  SpokeStorage,
   AccessManagedUpgradeable,
   IntentConsumer,
   ExtSload,
@@ -75,31 +77,6 @@ abstract contract Spoke is
 
   /// @dev The number of decimals used by the oracle.
   uint8 internal constant ORACLE_DECIMALS = 8;
-
-  /// @dev Number of reserves listed in the Spoke.
-  uint256 internal _reserveCount;
-
-  /// @dev Map of user addresses and reserve identifiers to user positions.
-  mapping(address user => mapping(uint256 reserveId => UserPosition)) internal _userPositions;
-
-  /// @dev Map of user addresses to their position status.
-  mapping(address user => PositionStatus) internal _positionStatus;
-
-  /// @dev Map of reserve identifiers to their Reserve data.
-  mapping(uint256 reserveId => Reserve) internal _reserves;
-
-  /// @dev Map of position manager addresses to their configuration data.
-  mapping(address positionManager => PositionManagerConfig) internal _positionManager;
-
-  /// @dev Map of reserve identifiers and dynamic configuration keys to the dynamic configuration data.
-  mapping(uint256 reserveId => mapping(uint24 dynamicConfigKey => DynamicReserveConfig))
-    internal _dynamicConfig;
-
-  /// @dev Liquidation configuration for the Spoke.
-  LiquidationConfig internal _liquidationConfig;
-
-  /// @dev Map of hub addresses and asset identifiers to whether the reserve exists.
-  mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
