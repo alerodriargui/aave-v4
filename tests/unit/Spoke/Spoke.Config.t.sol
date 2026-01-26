@@ -157,6 +157,7 @@ contract SpokeConfigTest is SpokeBase {
 
     assertEq(spoke1.getReserveConfig(reserveId), newReserveConfig);
     assertEq(_getLatestDynamicReserveConfig(spoke1, reserveId), newDynReserveConfig);
+    assertEq(spoke1.getReserveId(address(hub1), usdzAssetId), reserveId);
   }
 
   function test_addReserve_fuzz_revertsWith_AssetNotListed() public {
@@ -260,6 +261,20 @@ contract SpokeConfigTest is SpokeBase {
       newReserveConfig,
       newDynReserveConfig
     );
+  }
+
+  function test_getReserveId_fuzz(uint256 reserveId) public view {
+    reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+
+    uint256 returnedId = spoke1.getReserveId(address(hub1), assetId);
+    assertEq(returnedId, getReserveIdByAssetId(spoke1, hub1, assetId));
+  }
+
+  function test_getReserveId_fuzz_revertsWith_ReserveNotListed(uint256 assetId) public {
+    assetId = bound(assetId, hub1.getAssetCount() + 1, 100);
+    vm.expectRevert(ISpoke.ReserveNotListed.selector, address(spoke1));
+    spoke1.getReserveId(address(hub1), assetId);
   }
 
   function test_updateLiquidationConfig_targetHealthFactor() public {

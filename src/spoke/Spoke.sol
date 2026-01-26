@@ -98,8 +98,9 @@ abstract contract Spoke is
   /// @dev Liquidation configuration for the Spoke.
   LiquidationConfig internal _liquidationConfig;
 
-  /// @dev Map of hub addresses and asset identifiers to whether the reserve exists.
-  mapping(address hub => mapping(uint256 assetId => bool)) internal _reserveExists;
+  /// @dev Map of hub addresses and asset identifiers to the reserveId.
+  mapping(address hub => mapping(uint256 assetId => uint256 reserveId))
+    internal _assetIdToReserveId;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {
@@ -139,8 +140,6 @@ abstract contract Spoke is
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
     require(assetId <= MAX_ALLOWED_ASSET_ID, InvalidAssetId());
-    require(!_reserveExists[hub][assetId], ReserveExists());
-    _reserveExists[hub][assetId] = true;
 
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
@@ -149,6 +148,9 @@ abstract contract Spoke is
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
+
+    require(_reserves[_assetIdToReserveId[hub][assetId]].underlying != underlying, ReserveExists());
+    _assetIdToReserveId[hub][assetId] = reserveId;
 
     _updateReservePriceSource(reserveId, priceSource);
 
@@ -543,6 +545,16 @@ abstract contract Spoke is
   function getReserveTotalDebt(uint256 reserveId) external view returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     return reserve.hub.getSpokeTotalOwed(reserve.assetId, address(this));
+  }
+
+  /// @inheritdoc ISpoke
+  function getReserveId(address hub, uint256 assetId) external view returns (uint256) {
+    uint256 reserveId = _assetIdToReserveId[hub][assetId];
+    require(
+      _reserves[reserveId].assetId == assetId && address(_reserves[reserveId].hub) == hub,
+      ReserveNotListed()
+    );
+    return reserveId;
   }
 
   /// @inheritdoc ISpoke
