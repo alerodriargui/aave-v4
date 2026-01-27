@@ -291,7 +291,8 @@ library LiquidationLogic {
     uint256 decimals,
     uint256 price
   ) internal pure returns (uint256) {
-    return amount * MathUtils.uncheckedExp(10, WadRayMath.WAD_DECIMALS - decimals) * price;
+    return
+      amount * MathUtils.uncheckedExp(10, WadRayMath.WAD_DECIMALS.uncheckedSub(decimals)) * price;
   }
 
   /// @dev Executes the liquidation.
@@ -617,7 +618,7 @@ library LiquidationLogic {
           params.drawnIndex
         );
 
-        // `drawnSharesToLiquidate` may exceed `params.drawnShares` due to roundings.
+        // `drawnSharesToLiquidate` may exceed `params.drawnShares` due to rounding.
         if (drawnSharesToLiquidate > params.drawnShares) {
           drawnSharesToLiquidate = params.drawnShares;
 
