@@ -2873,19 +2873,24 @@ abstract contract Base is Test {
       );
   }
 
+  /// @dev Get pending fee shares (already stored as shares, no conversion needed)
+  function _getPendingFeeShares(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.getAsset(assetId).pendingFeeShares;
+  }
+
   function _getExpectedFeeReceiverAddedAssets(
     IHub hub,
     uint256 assetId
   ) internal view returns (uint256) {
-    uint256 expectedFees = hub.getAsset(assetId).realizedFees + _calcUnrealizedFees(hub, assetId);
-    assertEq(expectedFees, hub.getAssetAccruedFees(assetId), 'asset accrued fees');
-    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFees;
+    // pendingFeeShares is now in share units, convert to assets for comparison
+    uint256 pendingFeeShares = hub.getAsset(assetId).pendingFeeShares;
+    uint256 feeAssets = hub.previewRemoveByShares(assetId, pendingFeeShares);
+    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + feeAssets;
   }
 
   function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return
-      hub.getAddedAssets(assetId) +
-      hub.getAsset(assetId).realizedFees +
-      _calcUnrealizedFees(hub, assetId);
+    // With virtual fee shares, fees are already included in totalAddedAssets via the share denominator
+    // So we just return the added assets directly
+    return hub.getAddedAssets(assetId);
   }
 }

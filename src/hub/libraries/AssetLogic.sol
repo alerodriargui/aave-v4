@@ -77,6 +77,8 @@ library AssetLogic {
   }
 
   /// @notice Returns the total added assets for the specified asset.
+  /// @dev With virtual fee shares, fees are not subtracted from total assets.
+  /// @dev Instead, pending fee shares are added to the share denominator.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
     uint256 drawnIndex = asset.getDrawnIndex();
 
@@ -88,12 +90,12 @@ library AssetLogic {
       drawnIndex: drawnIndex
     });
 
-    return
-      asset.liquidity +
-      asset.swept +
-      aggregatedOwedRay.fromRayUp() -
-      asset.realizedFees -
-      asset.getUnrealizedFees(drawnIndex);
+    return asset.liquidity + asset.swept + aggregatedOwedRay.fromRayUp();
+  }
+
+  /// @notice Returns the total effective shares including pending fee shares.
+  function totalEffectiveShares(IHub.Asset storage asset) internal view returns (uint256) {
+    return asset.addedShares + asset.pendingFeeShares;
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -101,7 +103,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsUp(asset.totalAddedAssets(), asset.addedShares);
+    return shares.toAssetsUp(asset.totalAddedAssets(), asset.totalEffectiveShares());
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding down.
@@ -109,7 +111,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsDown(asset.totalAddedAssets(), asset.addedShares);
+    return shares.toAssetsDown(asset.totalAddedAssets(), asset.totalEffectiveShares());
   }
 
   /// @notice Converts an amount of added assets to the equivalent amount of shares, rounding up.
@@ -117,7 +119,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesUp(asset.totalAddedAssets(), asset.addedShares);
+    return assets.toSharesUp(asset.totalAddedAssets(), asset.totalEffectiveShares());
   }
 
   /// @notice Converts an amount of added assets to the equivalent amount of shares, rounding down.
@@ -125,7 +127,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesDown(asset.totalAddedAssets(), asset.addedShares);
+    return assets.toSharesDown(asset.totalAddedAssets(), asset.totalEffectiveShares());
   }
 
   /// @notice Updates the drawn rate of a specified asset.
@@ -143,17 +145,37 @@ library AssetLogic {
     });
     asset.drawnRate = newDrawnRate.toUint96();
 
-    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate, asset.realizedFees);
+    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate, asset.pendingFeeShares);
   }
 
   /// @notice Accrues interest and fees for the specified asset.
+  /// @dev Converts fees to pending fee shares at the current share price.
   function accrue(IHub.Asset storage asset) internal {
     if (asset.lastUpdateTimestamp == block.timestamp) {
       return;
     }
 
     uint256 drawnIndex = asset.getDrawnIndex();
-    asset.realizedFees += asset.getUnrealizedFees(drawnIndex).toUint120();
+    uint256 unrealizedFees = asset.getUnrealizedFees(drawnIndex);
+
+    if (unrealizedFees > 0) {
+      // Convert fees to shares at the current share price (before adding new fee shares)
+      // totalAssets uses the new drawnIndex, totalShares uses current pendingFeeShares
+      uint256 totalAssets = asset.liquidity +
+        asset.swept +
+        _calculateAggregatedOwedRay({
+          drawnShares: asset.drawnShares,
+          premiumShares: asset.premiumShares,
+          premiumOffsetRay: asset.premiumOffsetRay,
+          deficitRay: asset.deficitRay,
+          drawnIndex: drawnIndex
+        }).fromRayUp();
+      uint256 totalShares = asset.addedShares + asset.pendingFeeShares;
+
+      uint256 newFeeShares = unrealizedFees.toSharesDown(totalAssets, totalShares);
+      asset.pendingFeeShares += newFeeShares.toUint120();
+    }
+
     asset.drawnIndex = drawnIndex.toUint120();
     asset.lastUpdateTimestamp = block.timestamp.toUint40();
   }

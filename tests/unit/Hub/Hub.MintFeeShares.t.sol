@@ -54,7 +54,7 @@ contract HubMintFeeSharesTest is HubBase {
     address feeReceiver = _getFeeReceiver(hub1, daiAssetId);
 
     // before mintFeeShares, the fee shares should be 0
-    uint256 realizedFees = hub1.getAsset(daiAssetId).realizedFees;
+    uint256 realizedFees = hub1.getAsset(daiAssetId).pendingFeeShares;
     assertEq(realizedFees, 0);
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, feeReceiver);
     assertEq(feeShares, 0);
@@ -89,7 +89,7 @@ contract HubMintFeeSharesTest is HubBase {
     uint256 mintedShares = Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertEq(mintedShares, expectedMintedShares, 'minted shares');
-    assertEq(hub1.getAsset(daiAssetId).realizedFees, 0, 'realized fees after');
+    assertEq(hub1.getAsset(daiAssetId).pendingFeeShares, 0, 'realized fees after');
     assertEq(
       hub1.getSpokeAddedShares(daiAssetId, feeReceiver),
       expectedMintedShares,
@@ -151,6 +151,6 @@ contract HubMintFeeSharesTest is HubBase {
     vm.getRecordedLogs();
     _assertEventNotEmitted(IHub.MintFeeShares.selector);
 
-    assertEq(hub1.getAsset(daiAssetId).realizedFees, 1, 'realized fees after');
+    assertEq(hub1.getAsset(daiAssetId).pendingFeeShares, 1, 'realized fees after');
   }
 }

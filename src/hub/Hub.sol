@@ -106,7 +106,7 @@ contract Hub is IHub, AccessManaged {
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
-      realizedFees: 0,
+      pendingFeeShares: 0,
       reinvestmentController: address(0),
       feeReceiver: feeReceiver,
       liquidityFee: 0
@@ -592,9 +592,8 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getAssetAccruedFees(uint256 assetId) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return asset.realizedFees + asset.getUnrealizedFees(asset.getDrawnIndex());
+  function getAssetPendingFeeShares(uint256 assetId) external view returns (uint256) {
+    return _assets[assetId].pendingFeeShares;
   }
 
   /// @inheritdoc IHub
@@ -772,8 +771,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
-    uint256 fees = asset.realizedFees;
-    uint120 shares = asset.toAddedSharesDown(fees).toUint120();
+    uint120 shares = asset.pendingFeeShares;
     if (shares == 0) {
       return 0;
     }
@@ -782,10 +780,13 @@ contract Hub is IHub, AccessManaged {
     SpokeData storage feeReceiverSpoke = _spokes[assetId][feeReceiver];
     require(feeReceiverSpoke.active, SpokeNotActive());
 
+    // Convert shares to assets for the event
+    uint256 assets = asset.toAddedAssetsDown(shares);
+
     asset.addedShares += shares;
     feeReceiverSpoke.addedShares += shares;
-    asset.realizedFees = 0;
-    emit MintFeeShares(assetId, feeReceiver, shares, fees);
+    asset.pendingFeeShares = 0;
+    emit MintFeeShares(assetId, feeReceiver, shares, assets);
 
     return shares;
   }
