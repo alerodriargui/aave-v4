@@ -150,7 +150,7 @@ contract HubRemoveTest is HubBase {
     // only remaining added amount are fees
     assertEq(
       assetData.liquidity,
-      hub1.getAsset(assetId).pendingFeeShares + _calculateBurntInterest(hub1, assetId),
+      hub1.getAssetAccruedFees(assetId) + _calculateBurntInterest(hub1, assetId),
       'asset liquidity after'
     );
     assertEq(
@@ -321,7 +321,7 @@ contract HubRemoveTest is HubBase {
     assertEq(asset.addedShares, 0, 'hub addedShares');
     assertApproxEqAbs(
       asset.liquidity,
-      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAsset(daiAssetId).pendingFeeShares,
+      _calculateBurntInterest(hub1, daiAssetId) + hub1.getAssetAccruedFees(daiAssetId),
       1,
       'dai liquidity'
     );

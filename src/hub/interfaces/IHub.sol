@@ -357,6 +357,12 @@ interface IHub is IHubBase, IAccessManaged {
   /// @return The asset configuration struct.
   function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory);
 
+  /// @notice Returns the pending fees for the asset, expressed in asset units.
+  /// @dev Pending fees are included in total assets for share price calculation.
+  /// @param assetId The identifier of the asset.
+  /// @return The amount of pending fees.
+  function getAssetAccruedFees(uint256 assetId) external view returns (uint256);
+
   /// @notice Returns the pending fee shares for the asset.
   /// @dev Pending fee shares are included in total shares for share price calculation.
   /// @param assetId The identifier of the asset.

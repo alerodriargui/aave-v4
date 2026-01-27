@@ -2875,7 +2875,7 @@ abstract contract Base is Test {
 
   /// @dev Get pending fee shares (already stored as shares, no conversion needed)
   function _getPendingFeeShares(IHub hub, uint256 assetId) internal view returns (uint256) {
-    return hub.getAsset(assetId).pendingFeeShares;
+    return hub.getAssetPendingFeeShares(assetId);
   }
 
   function _getExpectedFeeReceiverAddedAssets(
@@ -2883,8 +2883,10 @@ abstract contract Base is Test {
     uint256 assetId
   ) internal view returns (uint256) {
     // pendingFeeShares is now in share units, convert to assets for comparison
-    uint256 pendingFeeShares = hub.getAsset(assetId).pendingFeeShares;
+    uint256 pendingFeeShares = hub.getAssetPendingFeeShares(assetId);
     uint256 feeAssets = hub.previewRemoveByShares(assetId, pendingFeeShares);
+    uint256 expectedFees = feeAssets + _calcUnrealizedFees(hub, assetId);
+    assertEq(expectedFees, hub.getAssetAccruedFees(assetId), 'asset accrued fees');
     return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + feeAssets;
   }
 

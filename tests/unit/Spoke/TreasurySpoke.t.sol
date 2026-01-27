@@ -96,13 +96,11 @@ contract TreasurySpokeTest is SpokeBase {
     assertEq(hub1.getAsset(daiAssetId).pendingFeeShares, 0, 'fees'); // fees not yet accrued
 
     uint256 expectedFeeAmount = _calcUnrealizedFees(hub1, daiAssetId);
+    uint256 expectedFeeShares = hub1.previewAddByAssets(daiAssetId, expectedFeeAmount);
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertEq(hub1.getAsset(daiAssetId).pendingFeeShares, 0, 'realized fees after minting');
-    assertGe(
-      treasurySpoke.getSuppliedShares(daiAssetId),
-      hub1.previewAddByAssets(daiAssetId, expectedFeeAmount)
-    );
+    assertGe(treasurySpoke.getSuppliedShares(daiAssetId), expectedFeeShares);
 
     Utils.withdraw(
       _treasurySpoke(),
