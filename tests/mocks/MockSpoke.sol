@@ -34,9 +34,9 @@ contract MockSpoke is Spoke, Test {
     uint256 amount,
     address onBehalfOf
   ) external onlyPositionManager(onBehalfOf) {
-    Reserve storage reserve = _reserves[reserveId];
-    UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
+    Reserve storage reserve = _getSpokeStorage()._reserves[reserveId];
+    UserPosition storage userPosition = _getSpokeStorage()._userPositions[onBehalfOf][reserveId];
+    PositionStatus storage positionStatus = _getSpokeStorage()._positionStatus[onBehalfOf];
     uint256 assetId = reserve.assetId;
     IHubBase hub = reserve.hub;
 
@@ -53,23 +53,25 @@ contract MockSpoke is Spoke, Test {
 
   // Mock the user account data
   function mockStorage(address user, AccountDataInfo memory info) external {
-    PositionStatus storage positionStatus = _positionStatus[user];
+    PositionStatus storage positionStatus = _getSpokeStorage()._positionStatus[user];
     for (uint256 i = 0; i < info.collateralReserveIds.length; i++) {
       positionStatus.setUsingAsCollateral(info.collateralReserveIds[i], true);
-      Reserve storage reserve = _reserves[info.collateralReserveIds[i]];
-      _userPositions[user][info.collateralReserveIds[i]].suppliedShares = reserve
+      Reserve storage reserve = _getSpokeStorage()._reserves[info.collateralReserveIds[i]];
+      _getSpokeStorage()._userPositions[user][info.collateralReserveIds[i]].suppliedShares = reserve
         .hub
         .previewAddByAssets(reserve.assetId, info.collateralAmounts[i])
         .toUint120();
 
-      _userPositions[user][info.collateralReserveIds[i]].dynamicConfigKey = info
+      _getSpokeStorage()._userPositions[user][info.collateralReserveIds[i]].dynamicConfigKey = info
         .collateralDynamicConfigKeys[i]
         .toUint16();
     }
 
     for (uint256 i = 0; i < info.suppliedAssetsReserveIds.length; i++) {
-      Reserve storage reserve = _reserves[info.suppliedAssetsReserveIds[i]];
-      _userPositions[user][info.suppliedAssetsReserveIds[i]].suppliedShares = reserve
+      Reserve storage reserve = _getSpokeStorage()._reserves[info.suppliedAssetsReserveIds[i]];
+      _getSpokeStorage()
+        ._userPositions[user][info.suppliedAssetsReserveIds[i]]
+        .suppliedShares = reserve
         .hub
         .previewAddByAssets(reserve.assetId, info.suppliedAssetsAmounts[i])
         .toUint120();
@@ -77,19 +79,19 @@ contract MockSpoke is Spoke, Test {
 
     for (uint256 i = 0; i < info.debtReserveIds.length; i++) {
       positionStatus.setBorrowing(info.debtReserveIds[i], true);
-      Reserve storage reserve = _reserves[info.debtReserveIds[i]];
-      _userPositions[user][info.debtReserveIds[i]].drawnShares = reserve
+      Reserve storage reserve = _getSpokeStorage()._reserves[info.debtReserveIds[i]];
+      _getSpokeStorage()._userPositions[user][info.debtReserveIds[i]].drawnShares = reserve
         .hub
         .previewDrawByAssets(reserve.assetId, info.drawnDebtAmounts[i])
         .toUint120();
-      _userPositions[user][info.debtReserveIds[i]].premiumShares = vm
+      _getSpokeStorage()._userPositions[user][info.debtReserveIds[i]].premiumShares = vm
         .randomUint(
           reserve.hub.previewRemoveByAssets(reserve.assetId, info.accruedPremiumAmounts[i]),
           100e18
         )
         .toUint120();
-      _userPositions[user][info.debtReserveIds[i]].premiumOffsetRay =
-        (_userPositions[user][info.debtReserveIds[i]].premiumShares *
+      _getSpokeStorage()._userPositions[user][info.debtReserveIds[i]].premiumOffsetRay =
+        (_getSpokeStorage()._userPositions[user][info.debtReserveIds[i]].premiumShares *
           reserve.hub.getAssetDrawnIndex(reserve.assetId)).toInt256().toInt200() -
         (info.accruedPremiumAmounts[i] * WadRayMath.RAY).toInt256().toInt200() -
         (info.realizedPremiumAmountsRay[i]).toInt256().toInt200();
@@ -105,10 +107,10 @@ contract MockSpoke is Spoke, Test {
   }
 
   function getRiskPremium(address user) external view returns (uint24) {
-    return _positionStatus[user].riskPremium;
+    return _getSpokeStorage()._positionStatus[user].riskPremium;
   }
 
   function setReserveDynamicConfigKey(uint256 reserveId, uint24 configKey) external {
-    _reserves[reserveId].dynamicConfigKey = configKey;
+    _getSpokeStorage()._reserves[reserveId].dynamicConfigKey = configKey;
   }
 }

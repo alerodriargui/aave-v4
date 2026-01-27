@@ -25,9 +25,11 @@ contract MockSpokeInstance is Spoke {
     emit UpdateOracle(ORACLE);
     require(_authority != address(0), InvalidAddress());
     __AccessManaged_init(_authority);
-    if (_liquidationConfig.targetHealthFactor == 0) {
-      _liquidationConfig.targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
-      emit UpdateLiquidationConfig(_liquidationConfig);
+    if (_getSpokeStorage()._liquidationConfig.targetHealthFactor == 0) {
+      _getSpokeStorage()
+        ._liquidationConfig
+        .targetHealthFactor = HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+      emit UpdateLiquidationConfig(_getSpokeStorage()._liquidationConfig);
     }
   }
 }
