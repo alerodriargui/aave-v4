@@ -435,7 +435,7 @@ abstract contract Spoke is
     bytes calldata signature
   ) external {
     _verifyAndConsumeIntent({
-      signer: params.user,
+      signer: params.onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
@@ -445,7 +445,7 @@ abstract contract Spoke is
     for (uint256 i = 0; i < params.updates.length; ++i) {
       _setUserPositionManager({
         positionManager: params.updates[i].positionManager,
-        user: params.user,
+        user: params.onBehalfOf,
         approve: params.updates[i].approve
       });
     }
