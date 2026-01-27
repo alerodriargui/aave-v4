@@ -272,7 +272,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_getReserveId_fuzz_revertsWith_ReserveNotListed(uint256 assetId) public {
-    assetId = bound(assetId, hub1.getAssetCount() + 1, 100);
+    assetId = bound(assetId, hub1.getAssetCount(), 100);
     vm.expectRevert(ISpoke.ReserveNotListed.selector, address(spoke1));
     spoke1.getReserveId(address(hub1), assetId);
   }
