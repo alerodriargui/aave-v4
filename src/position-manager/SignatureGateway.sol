@@ -56,9 +56,9 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
-    address user = params.onBehalfOf;
+    address onBehalfOf = params.onBehalfOf;
     _verifyAndConsumeIntent({
-      signer: user,
+      signer: onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
@@ -66,10 +66,10 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
     });
 
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
-    underlying.safeTransferFrom(user, address(this), params.amount);
+    underlying.safeTransferFrom(onBehalfOf, address(this), params.amount);
     underlying.forceApprove(spoke, params.amount);
 
-    return ISpoke(spoke).supply(reserveId, params.amount, user);
+    return ISpoke(spoke).supply(reserveId, params.amount, onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -79,9 +79,9 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
-    address user = params.onBehalfOf;
+    address onBehalfOf = params.onBehalfOf;
     _verifyAndConsumeIntent({
-      signer: user,
+      signer: onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
@@ -92,9 +92,9 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
     (uint256 withdrawnShares, uint256 withdrawnAmount) = ISpoke(spoke).withdraw(
       reserveId,
       params.amount,
-      user
+      onBehalfOf
     );
-    underlying.safeTransfer(user, withdrawnAmount);
+    underlying.safeTransfer(onBehalfOf, withdrawnAmount);
 
     return (withdrawnShares, withdrawnAmount);
   }
@@ -106,9 +106,9 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
-    address user = params.onBehalfOf;
+    address onBehalfOf = params.onBehalfOf;
     _verifyAndConsumeIntent({
-      signer: user,
+      signer: onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
@@ -119,9 +119,9 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
     (uint256 borrowedShares, uint256 borrowedAmount) = ISpoke(spoke).borrow(
       reserveId,
       params.amount,
-      user
+      onBehalfOf
     );
-    underlying.safeTransfer(user, borrowedAmount);
+    underlying.safeTransfer(onBehalfOf, borrowedAmount);
 
     return (borrowedShares, borrowedAmount);
   }
@@ -133,9 +133,9 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
   ) external onlyRegisteredSpoke(params.spoke) returns (uint256, uint256) {
     address spoke = params.spoke;
     uint256 reserveId = params.reserveId;
-    address user = params.onBehalfOf;
+    address onBehalfOf = params.onBehalfOf;
     _verifyAndConsumeIntent({
-      signer: user,
+      signer: onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
@@ -145,13 +145,13 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
     IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
     uint256 repayAmount = MathUtils.min(
       params.amount,
-      ISpoke(spoke).getUserTotalDebt(reserveId, user)
+      ISpoke(spoke).getUserTotalDebt(reserveId, onBehalfOf)
     );
 
-    underlying.safeTransferFrom(user, address(this), repayAmount);
+    underlying.safeTransferFrom(onBehalfOf, address(this), repayAmount);
     underlying.forceApprove(spoke, repayAmount);
 
-    return ISpoke(spoke).repay(reserveId, repayAmount, user);
+    return ISpoke(spoke).repay(reserveId, repayAmount, onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -159,16 +159,16 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
     SetUsingAsCollateral calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
-    address user = params.onBehalfOf;
+    address onBehalfOf = params.onBehalfOf;
     _verifyAndConsumeIntent({
-      signer: user,
+      signer: onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
       signature: signature
     });
 
-    ISpoke(params.spoke).setUsingAsCollateral(params.reserveId, params.useAsCollateral, user);
+    ISpoke(params.spoke).setUsingAsCollateral(params.reserveId, params.useAsCollateral, onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -177,14 +177,14 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     _verifyAndConsumeIntent({
-      signer: params.user,
+      signer: params.onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
       signature: signature
     });
 
-    ISpoke(params.spoke).updateUserRiskPremium(params.user);
+    ISpoke(params.spoke).updateUserRiskPremium(params.onBehalfOf);
   }
 
   /// @inheritdoc ISignatureGateway
@@ -193,14 +193,14 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     _verifyAndConsumeIntent({
-      signer: params.user,
+      signer: params.onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
       signature: signature
     });
 
-    ISpoke(params.spoke).updateUserDynamicConfig(params.user);
+    ISpoke(params.spoke).updateUserDynamicConfig(params.onBehalfOf);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

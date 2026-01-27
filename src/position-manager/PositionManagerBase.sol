@@ -43,7 +43,7 @@ abstract contract PositionManagerBase is
   /// @inheritdoc IPositionManagerBase
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
-    address user,
+    address onBehalfOf,
     bool approve,
     uint256 nonce,
     uint256 deadline,
@@ -54,7 +54,7 @@ abstract contract PositionManagerBase is
     try
       ISpoke(spoke).setUserPositionManagersWithSig(
         ISpoke.SetUserPositionManagers({
-          user: user,
+          onBehalfOf: onBehalfOf,
           updates: updates,
           nonce: nonce,
           deadline: deadline

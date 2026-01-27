@@ -23,18 +23,18 @@ interface IPositionManagerBase is IIntentConsumer, IRescuable, IMulticall {
   error SpokeNotRegistered();
 
   /// @notice Facilitates setting this position manager as user position manager on the specified registered `spoke`
-  /// with a typed signature from `user`.
+  /// with a typed signature from `onBehalfOf`.
   /// @dev The signature is consumed on the the specified registered `spoke`.
   /// @dev The given data is passed to the `spoke` for the signature to be verified.
   /// @param spoke The address of the registered spoke.
-  /// @param user The address of the user on whose behalf this position manager can act.
+  /// @param onBehalfOf The address of the user on whose behalf this position manager can act.
   /// @param approve True to approve the position manager, false to revoke approval.
   /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the signature.
+  /// @param deadline The deadline for the intent.
   /// @param signature The signed bytes for the intent.
   function setSelfAsUserPositionManagerWithSig(
     address spoke,
-    address user,
+    address onBehalfOf,
     bool approve,
     uint256 nonce,
     uint256 deadline,

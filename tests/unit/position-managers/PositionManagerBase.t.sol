@@ -44,7 +44,7 @@ contract PositionManagerBaseTest is SpokeBase {
     updates[0] = ISpoke.PositionManagerUpdate(address(positionManager), true);
 
     ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      user: alice,
+      onBehalfOf: alice,
       updates: updates,
       nonce: spoke1.nonces(address(alice), _randomNonceKey()), // note: this typed sig is forwarded to spoke1
       deadline: _warpBeforeRandomDeadline()
@@ -62,7 +62,7 @@ contract PositionManagerBaseTest is SpokeBase {
     vm.prank(vm.randomAddress());
     positionManager.setSelfAsUserPositionManagerWithSig(
       address(spoke1),
-      p.user,
+      p.onBehalfOf,
       p.updates[0].approve,
       p.nonce,
       p.deadline,

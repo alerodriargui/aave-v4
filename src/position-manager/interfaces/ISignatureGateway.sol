@@ -90,24 +90,24 @@ interface ISignatureGateway is IPositionManagerBase {
 
   /// @notice Intent data to update the risk premium of a user position.
   /// @param spoke The address of the registered spoke.
-  /// @param user The address of the user whose risk premium is being updated.
+  /// @param onBehalfOf The address of the user whose risk premium is being updated.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
   struct UpdateUserRiskPremium {
     address spoke;
-    address user;
+    address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
   }
 
   /// @notice Intent data to update the dynamic configuration of a user position.
   /// @param spoke The address of the registered spoke.
-  /// @param user The address of the user whose dynamic config is being updated.
+  /// @param onBehalfOf The address of the user whose dynamic config is being updated.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
   struct UpdateUserDynamicConfig {
     address spoke;
-    address user;
+    address onBehalfOf;
     uint256 nonce;
     uint256 deadline;
   }
@@ -171,7 +171,7 @@ interface ISignatureGateway is IPositionManagerBase {
     bytes calldata signature
   ) external;
 
-  /// @notice Facilitates `updateUserRiskPremium` action on the specified registered `spoke` with a typed signature from `user`.
+  /// @notice Facilitates `updateUserRiskPremium` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured updateUserRiskPremium parameters.
   /// @param signature The signed bytes for the intent.
@@ -180,7 +180,7 @@ interface ISignatureGateway is IPositionManagerBase {
     bytes calldata signature
   ) external;
 
-  /// @notice Facilitates `updateUserDynamicConfig` action on the specified registered `spoke` with a typed signature from `user`.
+  /// @notice Facilitates `updateUserDynamicConfig` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured updateUserDynamicConfig parameters.
   /// @param signature The signed bytes for the intent.

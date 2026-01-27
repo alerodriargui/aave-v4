@@ -106,7 +106,7 @@ contract SignatureGatewayBaseTest is SpokeBase {
     return
       ISignatureGateway.UpdateUserRiskPremium({
         spoke: address(spoke),
-        user: user,
+        onBehalfOf: user,
         nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });
@@ -120,7 +120,7 @@ contract SignatureGatewayBaseTest is SpokeBase {
     return
       ISignatureGateway.UpdateUserDynamicConfig({
         spoke: address(spoke),
-        user: user,
+        onBehalfOf: user,
         nonce: gateway.nonces(user, _randomNonceKey()),
         deadline: deadline
       });

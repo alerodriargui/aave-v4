@@ -34,7 +34,7 @@ contract PositionManager_Gas_Tests is SpokeBase {
     updates[0] = ISpoke.PositionManagerUpdate(address(positionManager), true);
 
     ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
-      user: alice,
+      onBehalfOf: alice,
       updates: updates,
       nonce: spoke1.nonces(alice, nonceKey),
       deadline: vm.getBlockTimestamp()
@@ -46,7 +46,7 @@ contract PositionManager_Gas_Tests is SpokeBase {
 
     positionManager.setSelfAsUserPositionManagerWithSig({
       spoke: address(spoke1),
-      user: p.user,
+      onBehalfOf: p.onBehalfOf,
       approve: p.updates[0].approve,
       nonce: p.nonce,
       deadline: p.deadline,
