@@ -165,7 +165,6 @@ abstract contract Spoke is
         initPaused: config.paused,
         initFrozen: config.frozen,
         initBorrowable: config.borrowable,
-        initLiquidatable: config.liquidatable,
         initReceiveSharesEnabled: config.receiveSharesEnabled
       })
     });
@@ -190,7 +189,6 @@ abstract contract Spoke is
       initPaused: config.paused,
       initFrozen: config.frozen,
       initBorrowable: config.borrowable,
-      initLiquidatable: config.liquidatable,
       initReceiveSharesEnabled: config.receiveSharesEnabled
     });
     emit UpdateReserveConfig(reserveId, config);
@@ -571,7 +569,6 @@ abstract contract Spoke is
         paused: reserve.flags.paused(),
         frozen: reserve.flags.frozen(),
         borrowable: reserve.flags.borrowable(),
-        liquidatable: reserve.flags.liquidatable(),
         receiveSharesEnabled: reserve.flags.receiveSharesEnabled()
       });
   }
