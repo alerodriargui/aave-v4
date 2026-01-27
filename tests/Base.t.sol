@@ -2949,12 +2949,8 @@ abstract contract Base is Test {
     uint256 drawnIndex = asset.drawnIndex.rayMulUp(
       MathUtils.calculateLinearInterest(asset.drawnRate, uint40(asset.lastUpdateTimestamp))
     );
-
-    if (previousIndex == drawnIndex) {
-      return 0;
-    }
-
-    if (asset.liquidityFee == 0) {
+    uint256 liquidityFee = asset.liquidityFee;
+    if (previousIndex == drawnIndex || liquidityFee == 0) {
       return 0;
     }
 
@@ -2970,7 +2966,7 @@ abstract contract Base is Test {
     }
 
     // fees = protocol's cut of the delta
-    uint256 fees = delta.percentMulDown(asset.liquidityFee);
+    uint256 fees = delta.percentMulDown(liquidityFee);
 
     // interest = supplier's cut of the delta
     uint256 interest = delta - fees;
