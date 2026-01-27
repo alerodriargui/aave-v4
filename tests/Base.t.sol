@@ -2942,6 +2942,7 @@ abstract contract Base is Test {
   }
 
   /// @dev Calculate expected fees based on previous drawn index
+  /// @dev Splits interest proportionally between suppliers and accumulated fees
   function _calcUnrealizedFees(IHub hub, uint256 assetId) internal view returns (uint256) {
     IHub.Asset memory asset = hub.getAsset(assetId);
     uint256 previousIndex = asset.drawnIndex;
@@ -2949,15 +2950,42 @@ abstract contract Base is Test {
       MathUtils.calculateLinearInterest(asset.drawnRate, uint40(asset.lastUpdateTimestamp))
     );
 
+    if (previousIndex == drawnIndex) {
+      return 0;
+    }
+
+    if (asset.liquidityFee == 0) {
+      return 0;
+    }
+
     uint256 aggregatedOwedRayAfter = (((uint256(asset.drawnShares) + asset.premiumShares) *
       drawnIndex).toInt256() - asset.premiumOffsetRay).toUint256() + asset.deficitRay;
     uint256 aggregatedOwedRayBefore = (((uint256(asset.drawnShares) + asset.premiumShares) *
       previousIndex).toInt256() - asset.premiumOffsetRay).toUint256() + asset.deficitRay;
 
-    return
-      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
-        asset.liquidityFee
-      );
+    // delta = total growth in aggregated owed
+    uint256 delta = aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp();
+    if (delta == 0) {
+      return 0;
+    }
+
+    // fees = protocol's cut of the delta
+    uint256 fees = delta.percentMulDown(asset.liquidityFee);
+
+    // interest = supplier's cut of the delta
+    uint256 interest = delta - fees;
+
+    // Calculate how much fees are borrowed
+    uint256 feesBorrowed = asset.realizedFees > asset.liquidity
+      ? asset.realizedFees - asset.liquidity
+      : 0;
+
+    // interest earned by the fees
+    uint256 drawnAmount = uint256(asset.drawnShares).rayMulUp(previousIndex);
+    uint256 interestForFees = interest.mulDivDown(feesBorrowed, drawnAmount);
+
+    // Total unrealized fees = protocol fee cut + interest earned by fee portion
+    return fees + interestForFees;
   }
 
   function _getExpectedFeeReceiverAddedAssets(
