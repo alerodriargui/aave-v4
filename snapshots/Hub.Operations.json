@@ -4,15 +4,15 @@
   "draw": "104174",
   "eliminateDeficit: full": "72419",
   "eliminateDeficit: partial": "82024",
-  "mintFeeShares": "83365",
-  "payFee": "71481",
+  "mintFeeShares": "83623",
+  "payFee": "71739",
   "refreshPremium": "70391",
   "remove: full": "75445",
   "remove: partial": "80586",
-  "reportDeficit": "112546",
-  "restore: full": "77216",
-  "restore: full - with transfer": "169825",
-  "restore: partial": "85938",
-  "restore: partial - with transfer": "143918",
-  "transferShares": "70295"
+  "reportDeficit": "112804",
+  "restore: full": "77474",
+  "restore: full - with transfer": "170083",
+  "restore: partial": "86196",
+  "restore: partial - with transfer": "144176",
+  "transferShares": "70553"
 }

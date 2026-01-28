@@ -76,13 +76,15 @@ s.add(previousIndex < drawnIndex, drawnIndex <= 100 * RAY)
 drawnShares = Int('drawnShares')
 s.add(1 <= drawnShares, drawnShares <= 10**30)
 
-# Fee state - realizedFees, liquidity, and swept determine feesBorrowed
+# Fee state - realizedFees, liquidity, swept, and addedShares
 realizedFees = Int('realizedFees')
 s.add(0 <= realizedFees, realizedFees <= 10**30)
 liquidity = Int('liquidity')
 s.add(0 <= liquidity, liquidity <= 10**30)
 swept = Int('swept')
 s.add(0 <= swept, swept <= 10**30)
+addedShares = Int('addedShares')
+s.add(1 <= addedShares, addedShares <= 10**30)
 
 # Calculate delta (growth in drawn debt)
 drawnAfter = fromRayUp(drawnShares * drawnIndex)
@@ -97,11 +99,15 @@ fees = percentMulDown(delta, liquidityFee)
 interest = delta - fees
 s.add(interest > 0)  # Ensured by liquidityFee < 100%
 
-# Calculate totalAssetsBefore (liquidity + swept + aggregatedOwedBefore)
-totalAssetsBefore = liquidity + swept + drawnBefore
+# Calculate totalAddedAssetsBefore (liquidity + swept + aggregatedOwedBefore - realizedFees)
+totalAddedAssetsBefore = liquidity + swept + drawnBefore - realizedFees
+s.add(totalAddedAssetsBefore > 0)  # Must have positive assets backing shares
 
-# Calculate interestForFees (interest distributed proportionally to realizedFees' share)
-interestForFees = mulDivDown(interest, realizedFees, totalAssetsBefore)
+# Calculate unmintedFeeShares = toAddedSharesDown(realizedFees)
+unmintedFeeShares = mulDivDown(realizedFees, addedShares, totalAddedAssetsBefore)
+
+# Calculate interestForFees (interest distributed pro-rata to shares)
+interestForFees = mulDivDown(interest, unmintedFeeShares, addedShares + unmintedFeeShares)
 
 # Total fees
 totalFees = fees + interestForFees
@@ -169,14 +175,14 @@ check("Test 7: Base fees > 0, realizedFees > 0, but interestForFees rounds to 0"
 s.pop()
 
 # =============================================================================
-# Test 8: Explore totalAssets/realizedFees ratio that causes rounding
+# Test 8: Explore totalAddedAssets/realizedFees ratio that causes rounding
 # =============================================================================
 s.push()
 s.add(fees > 0)
 s.add(realizedFees > 0)
-s.add(totalAssetsBefore > realizedFees * 1000)
+s.add(totalAddedAssetsBefore > realizedFees * 1000)
 s.add(interestForFees == 0)
-check("Test 8: interestForFees = 0 when totalAssetsBefore > 1000 * realizedFees")
+check("Test 8: interestForFees = 0 when totalAddedAssetsBefore > 1000 * realizedFees")
 s.pop()
 
 # =============================================================================
@@ -207,20 +213,20 @@ for fee_bps in [100, 500, 1000, 2000, 5000]:
     print(f"   liquidityFee = {fee_bps:4d} bps ({fee_bps/100:5.2f}%): min delta = {min_delta:,} wei")
 
 print("\n2. CONDITION FOR NON-ZERO interestForFees:")
-print("   Formula: interest * realizedFees >= totalAssetsBefore")
-print("   Rearranged: realizedFees / totalAssetsBefore >= 1 / interest")
-print("   Where interest = delta - fees = delta * (1 - liquidityFee/10000)")
+print("   Formula (share-based):")
+print("     unmintedFeeShares = realizedFees * addedShares / totalAddedAssetsBefore")
+print("     interestForFees = interest * unmintedFeeShares / (addedShares + unmintedFeeShares)")
 print()
-print("   Key insight: As totalAssetsBefore grows, realizedFees must grow proportionally")
-print("   to avoid interestForFees rounding to 0.")
+print("   Key insight: Interest is distributed pro-rata to shares.")
+print("   unmintedFeeShares represents what shares realizedFees would be if minted.")
 print()
-print("   Example: If interest = 1000 wei and totalAssetsBefore = 1e24 (1M tokens)")
-print("            Then realizedFees must be >= 1e24 / 1000 = 1e21 (1000 tokens)")
-print("            Otherwise interestForFees rounds to 0")
+print("   Rounding can occur in two places:")
+print("   - unmintedFeeShares calculation (realizedFees * addedShares / totalAddedAssets)")
+print("   - interestForFees calculation (interest * unmintedFeeShares / totalShares)")
 
 print("\n3. PRACTICAL IMPLICATIONS:")
 print("   - With typical 18-decimal tokens, 1 wei = 10^-18 tokens")
 print("   - Small/frequent accruals with low fees may lose precision")
 print("   - Higher liquidityFee reduces minimum delta needed")
 print("   - Rounding favors suppliers over protocol fees (by design)")
-print("   - Interest is now distributed by share ownership, not by borrow status")
+print("   - Interest is distributed pro-rata to share ownership")
