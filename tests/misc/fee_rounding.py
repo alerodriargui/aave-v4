@@ -34,7 +34,7 @@ def check(propertyDescription, show_model=True):
             m = s.model()
             # Print key variables in a readable format
             vars_to_show = ['liquidityFee', 'drawnShares', 'realizedFees', 
-                           'liquidity', 'previousIndex', 'drawnIndex']
+                           'liquidity', 'swept', 'previousIndex', 'drawnIndex']
             for name in vars_to_show:
                 for d in m.decls():
                     if d.name() == name:
@@ -76,11 +76,13 @@ s.add(previousIndex < drawnIndex, drawnIndex <= 100 * RAY)
 drawnShares = Int('drawnShares')
 s.add(1 <= drawnShares, drawnShares <= 10**30)
 
-# Fee state - realizedFees and liquidity determine feesBorrowed
+# Fee state - realizedFees, liquidity, and swept determine feesBorrowed
 realizedFees = Int('realizedFees')
 s.add(0 <= realizedFees, realizedFees <= 10**30)
 liquidity = Int('liquidity')
 s.add(0 <= liquidity, liquidity <= 10**30)
+swept = Int('swept')
+s.add(0 <= swept, swept <= 10**30)
 
 # Calculate delta (growth in drawn debt)
 drawnAfter = fromRayUp(drawnShares * drawnIndex)
@@ -95,14 +97,11 @@ fees = percentMulDown(delta, liquidityFee)
 interest = delta - fees
 s.add(interest > 0)  # Ensured by liquidityFee < 100%
 
-# Calculate feesBorrowed
-feesBorrowed = If(realizedFees > liquidity, realizedFees - liquidity, IntVal(0))
+# Calculate totalAssetsBefore (liquidity + swept + aggregatedOwedBefore)
+totalAssetsBefore = liquidity + swept + drawnBefore
 
-# Calculate drawnAmount
-drawnAmount = rayMulUp(drawnShares, previousIndex)
-
-# Calculate interestForFees
-interestForFees = mulDivDown(interest, feesBorrowed, drawnAmount)
+# Calculate interestForFees (interest distributed proportionally to realizedFees' share)
+interestForFees = mulDivDown(interest, realizedFees, totalAssetsBefore)
 
 # Total fees
 totalFees = fees + interestForFees
@@ -124,12 +123,12 @@ check("Test 2: Base fee rounds to 0 (delta * liquidityFee < 10000)")
 s.pop()
 
 # =============================================================================
-# Test 3: Interest for fees rounding to 0 when feesBorrowed > 0
+# Test 3: Interest for fees rounding to 0 when realizedFees > 0
 # =============================================================================
 s.push()
-s.add(feesBorrowed > 0)
+s.add(realizedFees > 0)
 s.add(interestForFees == 0)
-check("Test 3: interestForFees rounds to 0 despite feesBorrowed > 0")
+check("Test 3: interestForFees rounds to 0 despite realizedFees > 0")
 s.pop()
 
 # =============================================================================
@@ -160,24 +159,24 @@ check("Test 6: Fees round to 0 with drawnShares >= 1e18")
 s.pop()
 
 # =============================================================================
-# Test 7: Large drawn causes interestForFees to round to 0
+# Test 7: Large totalAssets causes interestForFees to round to 0
 # =============================================================================
 s.push()
 s.add(fees > 0)
-s.add(feesBorrowed > 0)
+s.add(realizedFees > 0)
 s.add(interestForFees == 0)
-check("Test 7: Base fees > 0, feesBorrowed > 0, but interestForFees rounds to 0")
+check("Test 7: Base fees > 0, realizedFees > 0, but interestForFees rounds to 0")
 s.pop()
 
 # =============================================================================
-# Test 8: Explore drawn/feesBorrowed ratio that causes rounding
+# Test 8: Explore totalAssets/realizedFees ratio that causes rounding
 # =============================================================================
 s.push()
 s.add(fees > 0)
-s.add(feesBorrowed > 0)
-s.add(drawnAmount > feesBorrowed * 1000)
+s.add(realizedFees > 0)
+s.add(totalAssetsBefore > realizedFees * 1000)
 s.add(interestForFees == 0)
-check("Test 8: interestForFees = 0 when drawnAmount > 1000 * feesBorrowed")
+check("Test 8: interestForFees = 0 when totalAssetsBefore > 1000 * realizedFees")
 s.pop()
 
 # =============================================================================
@@ -186,10 +185,10 @@ s.pop()
 s.push()
 s.add(drawnShares >= 10**24)
 s.add(fees > 0)
-s.add(feesBorrowed > 0)
-s.add(feesBorrowed <= 10**20)
+s.add(realizedFees > 0)
+s.add(realizedFees <= 10**20)
 s.add(interestForFees == 0)
-check("Test 9: 1M tokens borrowed, <= 100 tokens feesBorrowed, interestForFees = 0")
+check("Test 9: 1M tokens borrowed, <= 100 tokens realizedFees, interestForFees = 0")
 s.pop()
 
 # =============================================================================
@@ -208,15 +207,15 @@ for fee_bps in [100, 500, 1000, 2000, 5000]:
     print(f"   liquidityFee = {fee_bps:4d} bps ({fee_bps/100:5.2f}%): min delta = {min_delta:,} wei")
 
 print("\n2. CONDITION FOR NON-ZERO interestForFees:")
-print("   Formula: interest * feesBorrowed >= drawnAmount")
-print("   Rearranged: feesBorrowed / drawnAmount >= 1 / interest")
+print("   Formula: interest * realizedFees >= totalAssetsBefore")
+print("   Rearranged: realizedFees / totalAssetsBefore >= 1 / interest")
 print("   Where interest = delta - fees = delta * (1 - liquidityFee/10000)")
 print()
-print("   Key insight: As drawnAmount grows, feesBorrowed must grow proportionally")
+print("   Key insight: As totalAssetsBefore grows, realizedFees must grow proportionally")
 print("   to avoid interestForFees rounding to 0.")
 print()
-print("   Example: If interest = 1000 wei and drawnAmount = 1e24 (1M tokens)")
-print("            Then feesBorrowed must be >= 1e24 / 1000 = 1e21 (1000 tokens)")
+print("   Example: If interest = 1000 wei and totalAssetsBefore = 1e24 (1M tokens)")
+print("            Then realizedFees must be >= 1e24 / 1000 = 1e21 (1000 tokens)")
 print("            Otherwise interestForFees rounds to 0")
 
 print("\n3. PRACTICAL IMPLICATIONS:")
@@ -224,3 +223,4 @@ print("   - With typical 18-decimal tokens, 1 wei = 10^-18 tokens")
 print("   - Small/frequent accruals with low fees may lose precision")
 print("   - Higher liquidityFee reduces minimum delta needed")
 print("   - Rounding favors suppliers over protocol fees (by design)")
+print("   - Interest is now distributed by share ownership, not by borrow status")

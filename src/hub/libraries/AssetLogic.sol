@@ -224,14 +224,10 @@ library AssetLogic {
     // interest = supplier's cut of the delta
     uint256 interest = delta - fees;
 
-    // Calculate how much fees are borrowed
+    // Distribute interestForFees pro-rata to realizedFees
     uint256 realizedFees = asset.realizedFees;
-    uint256 liquidity = asset.liquidity;
-    uint256 feesBorrowed = realizedFees > liquidity ? realizedFees - liquidity : 0;
-
-    // interest earned by the fees
-    uint256 drawnAmount = drawnShares.rayMulUp(previousIndex);
-    uint256 interestForFees = interest.mulDivDown(feesBorrowed, drawnAmount);
+    uint256 totalAssetsBefore = asset.liquidity + asset.swept + aggregatedOwedRayBefore.fromRayUp();
+    uint256 interestForFees = interest.mulDivDown(realizedFees, totalAssetsBefore);
 
     // Total unrealized fees = protocol fee cut + interest earned by fee portion
     return fees + interestForFees;

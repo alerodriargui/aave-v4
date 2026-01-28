@@ -2971,14 +2971,10 @@ abstract contract Base is Test {
     // interest = supplier's cut of the delta
     uint256 interest = delta - fees;
 
-    // Calculate how much fees are borrowed
-    uint256 feesBorrowed = asset.realizedFees > asset.liquidity
-      ? asset.realizedFees - asset.liquidity
-      : 0;
-
-    // interest earned by the fees
-    uint256 drawnAmount = uint256(asset.drawnShares).rayMulUp(previousIndex);
-    uint256 interestForFees = interest.mulDivDown(feesBorrowed, drawnAmount);
+    // Distribute interestForFees pro-rata to realizedFees
+    uint256 realizedFees = asset.realizedFees;
+    uint256 totalAssetsBefore = asset.liquidity + asset.swept + aggregatedOwedRayBefore.fromRayUp();
+    uint256 interestForFees = interest.mulDivDown(realizedFees, totalAssetsBefore);
 
     // Total unrealized fees = protocol fee cut + interest earned by fee portion
     return fees + interestForFees;
