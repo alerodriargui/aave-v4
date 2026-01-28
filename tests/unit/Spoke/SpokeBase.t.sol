@@ -1071,7 +1071,7 @@ contract SpokeBase is Base {
   }
 
   function _randomCollateralFactor(ISpoke spoke, uint256 reserveId) internal returns (uint16) {
-    return vm.randomUint(1, _collateralFactorUpperBound(spoke, reserveId)).toUint16();
+    return vm.randomUint(10_00, _collateralFactorUpperBound(spoke, reserveId)).toUint16();
   }
 
   /// @dev Returns the id of the reserve corresponding to the given Liquidity Hub asset id

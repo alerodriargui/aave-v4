@@ -1124,6 +1124,15 @@ abstract contract Base is Test {
     assertEq(_getLatestDynamicReserveConfig(spoke, reserveId), config);
   }
 
+  function _addDynamicReserveConfig(
+    ISpoke spoke,
+    uint256 reserveId,
+    ISpoke.DynamicReserveConfig memory config
+  ) internal pausePrank returns (uint24) {
+    vm.prank(SPOKE_ADMIN);
+    return spoke.addDynamicReserveConfig(reserveId, config);
+  }
+
   function _updateReserveBorrowableFlag(
     ISpoke spoke,
     uint256 reserveId,
@@ -1165,6 +1174,18 @@ abstract contract Base is Test {
   ) internal pausePrank {
     ISpoke.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
     liqConfig.targetHealthFactor = newTargetHealthFactor;
+    vm.prank(SPOKE_ADMIN);
+    spoke.updateLiquidationConfig(liqConfig);
+
+    assertEq(spoke.getLiquidationConfig(), liqConfig);
+  }
+
+  function _updateLiquidationBonusFactor(
+    ISpoke spoke,
+    uint16 newLiquidationBonusFactor
+  ) internal pausePrank {
+    ISpoke.LiquidationConfig memory liqConfig = spoke.getLiquidationConfig();
+    liqConfig.liquidationBonusFactor = newLiquidationBonusFactor;
     vm.prank(SPOKE_ADMIN);
     spoke.updateLiquidationConfig(liqConfig);
 
@@ -1958,7 +1979,7 @@ abstract contract Base is Test {
     address user,
     uint256 reserveId,
     uint256 desiredHf
-  ) internal view returns (uint256 requiredDebtAmount) {
+  ) internal returns (uint256 requiredDebtAmount) {
     uint256 requiredDebtAmountValue = _getRequiredDebtValueForHf(spoke, user, desiredHf);
     return _convertValueToAmount(spoke, reserveId, requiredDebtAmountValue);
   }
@@ -1970,13 +1991,36 @@ abstract contract Base is Test {
     ISpoke spoke,
     address user,
     uint256 desiredHf
-  ) internal view returns (uint256 requiredDebtValue) {
+  ) internal returns (uint256 requiredDebtValue) {
+    ISpoke.UserAccountData memory userAccountData = _getUserAccountData(spoke, user, true);
+    uint256 totalAdjustedCollateralValue = userAccountData.totalCollateralValue.wadMulDown(
+      userAccountData.avgCollateralFactor
+    );
+    uint256 targetTotalDebtValue = totalAdjustedCollateralValue.wadDivUp(desiredHf);
+    require(
+      userAccountData.totalDebtValueRay.fromRayUp() < targetTotalDebtValue,
+      'User has enough debt'
+    );
+    return targetTotalDebtValue - userAccountData.totalDebtValueRay.fromRayUp();
+  }
+
+  // Helper function to get user account data with potential dynamic config refresh
+  function _getUserAccountData(
+    ISpoke spoke,
+    address user,
+    bool refreshConfig
+  ) internal returns (ISpoke.UserAccountData memory) {
+    uint256 snapshot = vm.snapshotState();
+
+    if (refreshConfig) {
+      vm.prank(user);
+      spoke.updateUserDynamicConfig(user);
+    }
     ISpoke.UserAccountData memory userAccountData = spoke.getUserAccountData(user);
 
-    requiredDebtValue =
-      userAccountData.totalCollateralValue.wadMulUp(userAccountData.avgCollateralFactor).wadDivUp(
-        desiredHf
-      ) - userAccountData.totalDebtValueRay.fromRayUp();
+    vm.revertToState(snapshot);
+
+    return userAccountData;
   }
 
   function _getUserHealthFactor(ISpoke spoke, address user) internal view returns (uint256) {
@@ -2225,6 +2269,15 @@ abstract contract Base is Test {
     function(ISpoke) internal view returns (uint256) reserveId
   ) internal view returns (uint16) {
     return _getLatestDynamicReserveConfig(spoke, reserveId(spoke)).collateralFactor;
+  }
+
+  function _getLiquidationFee(
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (uint16) {
+    uint24 dynamicConfigKey = spoke.getUserPosition(reserveId, user).dynamicConfigKey;
+    return spoke.getDynamicReserveConfig(reserveId, dynamicConfigKey).liquidationFee;
   }
 
   function _hasRole(

@@ -33,22 +33,26 @@ contract MockSpoke is Spoke, Test {
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external onlyPositionManager(onBehalfOf) {
-    Reserve storage reserve = _reserves[reserveId];
+  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+    Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    uint256 assetId = reserve.assetId;
+    _validateBorrow(reserve.flags);
     IHubBase hub = reserve.hub;
 
-    uint256 drawnShares = hub.draw(assetId, amount, msg.sender);
-
+    uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
     userPosition.drawnShares += drawnShares.toUint120();
-    positionStatus.setBorrowing(reserveId, true);
+    if (!positionStatus.isBorrowing(reserveId)) {
+      positionStatus.setBorrowing(reserveId, true);
+    }
 
-    ISpoke.UserAccountData memory userAccountData = _processUserAccountData(onBehalfOf, true);
-    _notifyRiskPremiumUpdate(onBehalfOf, userAccountData.riskPremium);
+    uint256 newRiskPremium = _processUserAccountData(onBehalfOf, true).riskPremium;
+    emit RefreshAllUserDynamicConfig(onBehalfOf);
+    _notifyRiskPremiumUpdate(onBehalfOf, newRiskPremium);
 
     emit Borrow(reserveId, msg.sender, onBehalfOf, drawnShares, amount);
+
+    return (drawnShares, amount);
   }
 
   // Mock the user account data
