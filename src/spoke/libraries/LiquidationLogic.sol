@@ -417,7 +417,10 @@ library LiquidationLogic {
     ISpoke.UserPosition storage liquidatorPosition,
     LiquidateCollateralParams memory params
   ) internal returns (LiquidateCollateralResult memory) {
-    userPosition.suppliedShares -= params.sharesToLiquidate.toUint120();
+    uint120 newUserSuppliedShares = userPosition.suppliedShares -
+      params.sharesToLiquidate.toUint120();
+    userPosition.suppliedShares = newUserSuppliedShares;
+
     uint256 amountRemoved = params.hub.previewRemoveByShares(
       params.assetId,
       params.sharesToLiquidate
@@ -446,7 +449,7 @@ library LiquidationLogic {
     return
       LiquidateCollateralResult({
         amountRemoved: amountRemoved,
-        isCollateralPositionEmpty: userPosition.suppliedShares == 0
+        isCollateralPositionEmpty: newUserSuppliedShares == 0
       });
   }
 
@@ -500,7 +503,7 @@ library LiquidationLogic {
       ISpoke.ReservePaused()
     );
     require(params.suppliedShares > 0, ISpoke.ReserveNotSupplied());
-    // user has active debt <=> user has drawn shares (premium debt is always repaid first,
+    // user has active debt if and only if user has drawn shares (premium debt is always repaid first,
     // and can only be created when drawn shares exist)
     require(params.drawnShares > 0, ISpoke.ReserveNotBorrowed());
     require(
@@ -575,7 +578,7 @@ library LiquidationLogic {
     if (collateralSharesToLiquidate < params.suppliedShares) {
       uint256 remainingCollateralBalance = params.collateralReserveHub.previewRemoveByShares(
         params.collateralReserveAssetId,
-        params.suppliedShares - collateralSharesToLiquidate
+        params.suppliedShares.uncheckedSub(collateralSharesToLiquidate)
       );
       leavesCollateralDust =
         remainingCollateralBalance.toValue({
@@ -584,7 +587,7 @@ library LiquidationLogic {
         }) < DUST_LIQUIDATION_THRESHOLD;
     }
 
-    // debt is fully liquidated <=> all drawn shares are liquidated
+    // debt is fully liquidated if and only if all drawn shares are liquidated
     if (
       collateralSharesToLiquidate > params.suppliedShares ||
       (leavesCollateralDust && drawnSharesToLiquidate < params.drawnShares)
@@ -741,7 +744,7 @@ library LiquidationLogic {
       params.premiumDebtRay -
       premiumDebtRayToLiquidate;
 
-    // debt is fully liquidated <=> all drawn shares are liquidated (premium debt is always liquidated first)
+    // debt is fully liquidated if and only if all drawn shares are liquidated (premium debt is always liquidated first)
     bool leavesDebtDust = (drawnSharesToLiquidate < params.drawnShares) &&
       debtRayRemaining.fromRayDown().toValue({
         decimals: params.debtAssetDecimals,
