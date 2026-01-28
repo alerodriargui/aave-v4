@@ -18,14 +18,17 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
     uint256 debtRayToTarget = liquidationLogicWrapper.calculateDebtToTargetHealthFactor(
       _getDebtToTargetHealthFactorParams(params)
     );
-    uint256 rawPremiumDebtRayToLiquidate = debtRayToTarget.min(params.premiumDebtRay);
+    uint256 rawPremiumDebtRayToLiquidate = debtRayToTarget.fromRayUp().toRay().min(
+      params.premiumDebtRay
+    );
     if (params.debtToCover <= rawPremiumDebtRayToLiquidate.fromRayDown()) {
       rawPremiumDebtRayToLiquidate = params.debtToCover.toRay();
     }
 
-    uint256 drawnSharesToTarget = (debtRayToTarget - rawPremiumDebtRayToLiquidate).divUp(
-      params.drawnIndex
-    );
+    uint256 drawnSharesToTarget = (rawPremiumDebtRayToLiquidate == params.premiumDebtRay &&
+      rawPremiumDebtRayToLiquidate < debtRayToTarget)
+      ? (debtRayToTarget - rawPremiumDebtRayToLiquidate).divUp(params.drawnIndex)
+      : 0;
     uint256 drawnSharesToCover = Math.mulDiv(
       params.debtToCover - rawPremiumDebtRayToLiquidate.fromRayUp(),
       WadRayMath.RAY,
@@ -81,14 +84,17 @@ contract LiquidationLogicDebtToLiquidateTest is LiquidationLogicBaseTest {
       _getDebtToTargetHealthFactorParams(params)
     );
 
-    uint256 rawPremiumDebtRayToLiquidate = debtRayToTarget.min(params.premiumDebtRay);
+    uint256 rawPremiumDebtRayToLiquidate = debtRayToTarget.fromRayUp().toRay().min(
+      params.premiumDebtRay
+    );
     if (params.debtToCover <= rawPremiumDebtRayToLiquidate.fromRayDown()) {
       rawPremiumDebtRayToLiquidate = params.debtToCover.toRay();
     }
 
-    uint256 drawnSharesToTarget = (debtRayToTarget - rawPremiumDebtRayToLiquidate).divUp(
-      params.drawnIndex
-    );
+    uint256 drawnSharesToTarget = (rawPremiumDebtRayToLiquidate == params.premiumDebtRay &&
+      rawPremiumDebtRayToLiquidate < debtRayToTarget)
+      ? (debtRayToTarget - rawPremiumDebtRayToLiquidate).divUp(params.drawnIndex)
+      : 0;
     uint256 drawnSharesToCover = Math.mulDiv(
       params.debtToCover - rawPremiumDebtRayToLiquidate.fromRayUp(),
       WadRayMath.RAY,

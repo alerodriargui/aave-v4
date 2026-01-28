@@ -1325,7 +1325,6 @@ contract SpokeRepayScenarioTest is SpokeBase {
     _assumeValidSupplier(caller);
     vm.assume(caller != derl);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    uint256 assetDecimals = spoke1.getReserve(reserveId).decimals;
     userBorrowing = bound(userBorrowing, 0, _calculateMaxSupplyAmount(spoke1, reserveId) / 2 - 1); // Allow some buffer from borrow cap
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
     assets = bound(assets, 1, _calculateMaxSupplyAmount(spoke1, reserveId) / 2 - userBorrowing);
@@ -1379,7 +1378,6 @@ contract SpokeRepayScenarioTest is SpokeBase {
     _assumeValidSupplier(caller);
     vm.assume(caller != derl);
     reserveId = bound(reserveId, 0, spoke1.getReserveCount() - 1);
-    uint256 assetDecimals = spoke1.getReserve(reserveId).decimals;
     uint256 MAX_BORROW_AMOUNT = _calculateMaxSupplyAmount(spoke1, reserveId) / 2;
     userBorrowing = bound(userBorrowing, 0, MAX_BORROW_AMOUNT - 2); // Allow some buffer from borrow cap
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();

@@ -1337,8 +1337,9 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
   ) internal virtual {}
 
   function _checkedLiquidationCall(CheckedLiquidationCallParams memory params) internal virtual {
-    // make sure there is enough liquidity to liquidate
-    _openSupplyPosition(params.spoke, params.collateralReserveId, MAX_SUPPLY_AMOUNT);
+    // multiplication by 50 accounts for supply share price increase due to time skip (and interest rate) and for number of supply operations.
+    // ensures there is enough liquidity to liquidate
+    _openSupplyPosition(params.spoke, params.collateralReserveId, MAX_SUPPLY_AMOUNT * 50);
 
     _execBeforeLiquidation(params);
 

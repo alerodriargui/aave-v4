@@ -129,7 +129,6 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
   function test_accrueLiquidityFee_maxLiquidityFee_multi_user() public {
     uint256 reserveId = _randomReserveId(spoke1);
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
-    uint256 assetDecimals = spoke1.getReserve(reserveId).decimals;
     updateLiquidityFee(hub1, assetId, MAX_LIQUIDITY_FEE);
 
     uint256 count = vm.randomUint(10, 1000);

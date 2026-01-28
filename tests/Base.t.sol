@@ -1595,23 +1595,13 @@ abstract contract Base is Test {
   function _calculateRestoreAmounts(
     uint256 restoreAmount,
     uint256 drawn,
-    uint256 premium
-  ) internal pure returns (uint256 baseAmount, uint256 premiumAmount) {
-    if (restoreAmount <= premium) {
-      return (0, restoreAmount);
+    uint256 premiumRay
+  ) internal pure returns (uint256 drawnAmountToRestore, uint256 premiumRayToRestore) {
+    if (restoreAmount <= premiumRay.fromRayDown()) {
+      return (0, restoreAmount.toRay());
     }
 
-    return (drawn.min(restoreAmount - premium), premium);
-  }
-
-  function _calculateRestoreAmounts(
-    ISpoke spoke,
-    uint256 reserveId,
-    address user,
-    uint256 repayAmount
-  ) internal view returns (uint256 baseAmount, uint256 premiumAmount) {
-    (uint256 userDrawnDebt, uint256 userPremiumDebt) = spoke.getUserDebt(reserveId, user);
-    return _calculateRestoreAmounts(repayAmount, userDrawnDebt, userPremiumDebt);
+    return (drawn.min(restoreAmount - premiumRay.fromRayUp()), premiumRay);
   }
 
   function _getExpectedPremiumDelta(
@@ -1668,22 +1658,14 @@ abstract contract Base is Test {
     uint256 repayAmount
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
     Debts memory userDebt = getUserDebt(spoke, user, reserveId);
-    (, uint256 premiumAmountToRestore) = _calculateRestoreAmounts(
+    (, uint256 premiumRayToRestore) = _calculateRestoreAmounts(
       repayAmount,
       userDebt.drawnDebt,
-      userDebt.premiumDebt
+      userDebt.premiumDebtRay
     );
 
     ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
     uint256 assetId = spoke.getReserve(reserveId).assetId;
-    uint256 premiumDebtRay = _calculatePremiumDebtRay(
-      hub1,
-      assetId,
-      userPosition.premiumShares,
-      userPosition.premiumOffsetRay
-    );
-
-    uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
 
     return
       _getExpectedPremiumDelta({
@@ -1693,7 +1675,7 @@ abstract contract Base is Test {
         oldPremiumOffsetRay: userPosition.premiumOffsetRay,
         drawnShares: 0, // risk premium is 0, so drawn shares do not matter here (otherwise they need to be updated with restored drawn shares amount)
         riskPremium: 0,
-        restoredPremiumRay: restoredPremiumRay
+        restoredPremiumRay: premiumRayToRestore
       });
   }
 
@@ -1705,24 +1687,17 @@ abstract contract Base is Test {
     uint256 repayAmount
   ) internal view virtual returns (IHubBase.PremiumDelta memory) {
     Debts memory userDebt = getUserDebt(spoke, user, reserveId);
-    (uint256 drawnDebtToRestore, uint256 premiumAmountToRestore) = _calculateRestoreAmounts(
+    (uint256 drawnDebtToRestore, uint256 premiumRayToRestore) = _calculateRestoreAmounts(
       repayAmount,
       userDebt.drawnDebt,
-      userDebt.premiumDebt
+      userDebt.premiumDebtRay
     );
 
     {
       ISpoke.UserPosition memory userPosition = spoke.getUserPosition(reserveId, user);
       uint256 assetId = spoke.getReserve(reserveId).assetId;
       IHub hub = IHub(address(spoke.getReserve(reserveId).hub));
-      uint256 premiumDebtRay = _calculatePremiumDebtRay(
-        hub,
-        assetId,
-        userPosition.premiumShares,
-        userPosition.premiumOffsetRay
-      );
 
-      uint256 restoredPremiumRay = (premiumAmountToRestore * WadRayMath.RAY).min(premiumDebtRay);
       uint256 restoredShares = drawnDebtToRestore.rayDivDown(hub.getAssetDrawnIndex(assetId));
       uint256 riskPremium = _getUserLastRiskPremium(spoke, user);
 
@@ -1734,7 +1709,7 @@ abstract contract Base is Test {
           oldPremiumOffsetRay: userPosition.premiumOffsetRay,
           drawnShares: userPosition.drawnShares - restoredShares,
           riskPremium: riskPremium,
-          restoredPremiumRay: restoredPremiumRay
+          restoredPremiumRay: premiumRayToRestore
         });
     }
   }

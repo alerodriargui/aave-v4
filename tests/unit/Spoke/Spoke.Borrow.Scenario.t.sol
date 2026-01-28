@@ -188,15 +188,6 @@ contract SpokeBorrowScenarioTest is SpokeBase {
     state.usdxBob.supplyAmount = MAX_SUPPLY_AMOUNT_USDX;
     state.wbtcBob.supplyAmount = MAX_SUPPLY_AMOUNT_WBTC;
 
-    uint256 usdSupplyAmount = _convertAmountToValue(
-      spoke1,
-      state.usdxReserveId,
-      MAX_SUPPLY_AMOUNT_USDX
-    ) +
-      _convertAmountToValue(spoke1, state.wethReserveId, MAX_SUPPLY_AMOUNT_WETH) +
-      _convertAmountToValue(spoke1, state.usdxReserveId, MAX_SUPPLY_AMOUNT_USDX) +
-      _convertAmountToValue(spoke1, state.wbtcReserveId, MAX_SUPPLY_AMOUNT_WBTC);
-
     // Bob supply all reserves as collateral
     Utils.supplyCollateral(spoke2, state.daiReserveId, bob, state.daiBob.supplyAmount, bob);
     Utils.supplyCollateral(spoke2, state.wethReserveId, bob, state.wethBob.supplyAmount, bob);

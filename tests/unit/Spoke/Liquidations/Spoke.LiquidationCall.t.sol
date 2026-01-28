@@ -55,7 +55,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
   }
 
   function _processAdditionalSetup(
-    uint256 collateralReserveId,
+    uint256 /* collateralReserveId */,
     uint256 /* debtReserveId */
   ) internal virtual {
     // user enables more collaterals, but still has deficit given that only one collateral is supplied
@@ -64,13 +64,6 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
         Utils.setUsingAsCollateral(spoke, reserveId, _user(), true, _user());
       }
     }
-
-    // supply more liquidity in case supply share price increases
-    _openSupplyPosition(
-      spoke,
-      collateralReserveId,
-      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue())
-    );
   }
 
   function _processAdditionalCollateralReserves(uint256 debtReserveId) internal {
