@@ -64,7 +64,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setCollateralReserveDecimals(6);
     liquidationLogicWrapper.setCollateralReserveAssetId(usdxAssetId);
     liquidationLogicWrapper.setCollateralReserveFlags(
-      ReserveFlagsMap.create(false, false, false, true, true)
+      ReserveFlagsMap.create(false, false, false, true)
     );
     liquidationLogicWrapper.setDynamicCollateralConfig(
       ISpoke.DynamicReserveConfig({
@@ -79,9 +79,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
     liquidationLogicWrapper.setDebtReserveDecimals(18);
     liquidationLogicWrapper.setDebtReserveAssetId(wethAssetId);
     liquidationLogicWrapper.setDebtReserveUnderlying(address(tokenList.weth));
-    liquidationLogicWrapper.setDebtReserveFlags(
-      ReserveFlagsMap.create(false, false, false, false, false)
-    );
+    liquidationLogicWrapper.setDebtReserveFlags(ReserveFlagsMap.create(false, false, false, false));
     liquidationLogicWrapper.setDebtPositionDrawnShares(4.4e18);
     liquidationLogicWrapper.setDebtPositionPremiumShares(1e18);
     liquidationLogicWrapper.setDebtPositionPremiumOffsetRay((0.65e18 * WadRayMath.RAY).toInt256());

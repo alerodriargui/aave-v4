@@ -501,7 +501,6 @@ library LiquidationLogic {
     // user has active debt <=> user has drawn shares (premium debt is always repaid first,
     // and can only be created when drawn shares exist)
     require(params.drawnShares > 0, ISpoke.ReserveNotBorrowed());
-    require(params.collateralReserveFlags.liquidatable(), ISpoke.CollateralCannotBeLiquidated());
     require(
       params.healthFactor < HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
       ISpoke.HealthFactorNotBelowThreshold()

@@ -41,7 +41,7 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
       collateralAssetId: usdxAssetId,
       collateralAssetDecimals: 6,
       collateralReserveId: usdxReserveId,
-      collateralReserveFlags: ReserveFlagsMap.create(false, false, false, true, true),
+      collateralReserveFlags: ReserveFlagsMap.create(false, false, false, true),
       collateralDynConfig: ISpoke.DynamicReserveConfig({
         maxLiquidationBonus: 120_00,
         collateralFactor: 50_00,
@@ -52,7 +52,7 @@ contract LiquidationLogicExecuteLiquidationTest is LiquidationLogicBaseTest {
       debtAssetDecimals: 18,
       debtUnderlying: address(tokenList.weth),
       debtReserveId: wethReserveId,
-      debtReserveFlags: ReserveFlagsMap.create(false, false, false, false, false),
+      debtReserveFlags: ReserveFlagsMap.create(false, false, false, false),
       liquidationConfig: ISpoke.LiquidationConfig({
         targetHealthFactor: 1e18,
         healthFactorForMaxBonus: 0.8e18,
