@@ -841,13 +841,13 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoAfter.userAccountData.totalDebtValueRay == 0 ||
       !liquidationMetadata.isCollateralAffectingUserHf
     ) {
-      assertGe(
+      assertGt(
         accountsInfoAfter.userAccountData.healthFactor,
         accountsInfoBefore.userAccountData.healthFactor,
         'health factor should increase after liquidation'
       );
     } else {
-      assertLe(
+      assertLt(
         accountsInfoAfter.userAccountData.healthFactor,
         accountsInfoBefore.userAccountData.healthFactor,
         'health factor should decrease after liquidation'
