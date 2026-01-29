@@ -5,11 +5,17 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Hub/HubBase.t.sol';
 
 contract HubAccruedFeesTest is HubBase {
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
+
   uint256 constant SUPPLY_AMOUNT = 1000e18;
   uint256 constant BORROW_AMOUNT = 500e18;
 
-  function test_unrealizedFees_basicAccrual() public {
-    uint256 liquidityFee = hub1.getAssetConfig(daiAssetId).liquidityFee;
+  function test_unrealizedFees_fuzz_basicAccrual(uint256 liquidityFee, uint256 skipTime) public {
+    liquidityFee = bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
+    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
+
+    updateLiquidityFee(hub1, daiAssetId, liquidityFee);
 
     Utils.add({
       hub: hub1,
@@ -28,51 +34,7 @@ contract HubAccruedFeesTest is HubBase {
 
     uint256 totalAssetsBefore = hub1.getAddedAssets(daiAssetId);
 
-    skip(365 days);
-
-    uint256 expectedAccruedFees = _calcUnrealizedFees(hub1, daiAssetId);
-
-    // Get total interest generated (delta in debt)
-    (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
-    uint256 totalInterest = drawnDebt - BORROW_AMOUNT;
-    assertGt(totalInterest, 0);
-
-    uint256 expectedProtocolCut = (totalInterest * liquidityFee) / PercentageMath.PERCENTAGE_FACTOR;
-
-    uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
-    assertGt(accruedFees, 0);
-    assertEq(accruedFees, expectedAccruedFees);
-
-    // Accrued fees >= protocol cut (fees also earn interest on themselves)
-    assertGe(accruedFees, expectedProtocolCut);
-
-    uint256 supplierInterest = totalInterest - accruedFees;
-    uint256 totalAssetsAfter = hub1.getAddedAssets(daiAssetId);
-
-    assertEq(totalAssetsAfter, totalAssetsBefore + supplierInterest);
-  }
-
-  function test_unrealizedFees_basicAccrual_10pctFee() public {
-    updateLiquidityFee(hub1, daiAssetId, 10_00);
-
-    Utils.add({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: SUPPLY_AMOUNT,
-      user: bob
-    });
-    Utils.draw({
-      hub: hub1,
-      assetId: daiAssetId,
-      to: bob,
-      caller: address(spoke1),
-      amount: BORROW_AMOUNT
-    });
-
-    uint256 totalAssetsBefore = hub1.getAddedAssets(daiAssetId);
-
-    skip(365 days);
+    skip(skipTime);
 
     (uint256 drawnDebt, ) = hub1.getAssetOwed(daiAssetId);
     uint256 totalInterest = drawnDebt - BORROW_AMOUNT;
@@ -143,7 +105,10 @@ contract HubAccruedFeesTest is HubBase {
     assertEq(hub1.getAssetAccruedFees(daiAssetId), expectedFees);
   }
 
-  function test_unrealizedFees_smallAmounts() public {
+  /// @dev Tests fee accrual with small amounts, where growth is 1 wei
+  function test_unrealizedFees_fuzz_smallAmounts(uint256 initialDrawnDebt) public {
+    initialDrawnDebt = bound(initialDrawnDebt, 1, 10);
+    uint256 initialDrawnIndex = hub1.getAssetDrawnIndex(daiAssetId);
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: daiAssetId,
@@ -152,21 +117,26 @@ contract HubAccruedFeesTest is HubBase {
       addAmount: 100,
       drawUser: bob,
       drawSpoke: address(spoke1),
-      drawAmount: 10,
+      drawAmount: initialDrawnDebt,
       skipTime: 365 days
     });
 
     uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
     uint256 drawnDebt = getAssetDrawnDebt(daiAssetId);
-    uint256 totalInterest = drawnDebt - 10;
+    uint256 totalInterest = drawnDebt - initialDrawnDebt;
 
-    uint256 expectedAccruedFees = _calcUnrealizedFees(hub1, daiAssetId);
-    assertEq(hub1.getAssetAccruedFees(daiAssetId), expectedAccruedFees);
-    assertEq(accruedFees, expectedAccruedFees);
+    // growth is 1 wei at most
+    assertLe(totalInterest, 1);
 
-    assertGt(drawnDebt, 10);
-    assertLe(accruedFees, totalInterest);
-    assertEq(accruedFees + (totalInterest - accruedFees), totalInterest);
+    uint256 drawnIndex = hub1.getAssetDrawnIndex(daiAssetId);
+    uint256 liquidityFee = hub1.getAssetConfig(daiAssetId).liquidityFee;
+
+    uint256 expectedTotalInterest = drawnIndex.rayMulUp(initialDrawnDebt) -
+      initialDrawnIndex.rayMulUp(initialDrawnDebt);
+
+    assertEq(expectedTotalInterest, totalInterest);
+    assertEq(drawnDebt, initialDrawnDebt + expectedTotalInterest);
+    assertEq(accruedFees, totalInterest.percentMulDown(liquidityFee));
   }
 
   /// @dev Tests fee accrual with swept, deficit, and drawn
