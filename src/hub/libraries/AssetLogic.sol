@@ -226,8 +226,13 @@ library AssetLogic {
 
     // Distribute interestForFees pro-rata to realizedFees
     uint256 realizedFees = asset.realizedFees;
-    uint256 totalAssetsBefore = asset.liquidity + asset.swept + aggregatedOwedRayBefore.fromRayUp();
-    uint256 interestForFees = interest.mulDivDown(realizedFees, totalAssetsBefore);
+    uint256 totalAddedAssetsBefore = asset.liquidity +
+      asset.swept +
+      aggregatedOwedRayBefore.fromRayUp();
+    uint256 interestForFees = interest.mulDivDown(
+      realizedFees,
+      totalAddedAssetsBefore + SharesMath.VIRTUAL_ASSETS
+    );
 
     // Total unrealized fees = protocol fee cut + interest earned by fee portion
     return fees + interestForFees;

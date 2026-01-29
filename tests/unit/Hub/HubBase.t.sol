@@ -3,11 +3,13 @@
 pragma solidity ^0.8.0;
 
 import 'tests/Base.t.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 
 contract HubBase is Base {
   using SharesMath for uint256;
   using MathUtils for uint256;
   using SafeCast for *;
+  using WadRayMath for uint256;
 
   struct TestAddParams {
     uint256 drawnAmount;
@@ -226,5 +228,20 @@ contract HubBase is Base {
 
   function _randomInvalidAssetId(IHub hub) internal returns (uint256) {
     return vm.randomUint(hub.getAssetCount(), UINT256_MAX);
+  }
+  function _calcTotalAddedAssets(IHub.Asset memory asset) internal pure returns (uint256) {
+    uint256 aggregatedOwedRay = (uint256(asset.drawnShares) + asset.premiumShares) *
+      asset.drawnIndex;
+
+    if (asset.premiumOffsetRay >= 0) {
+      aggregatedOwedRay += int256(asset.premiumOffsetRay).toUint256();
+    } else {
+      aggregatedOwedRay -= int256(-asset.premiumOffsetRay).toUint256();
+    }
+    aggregatedOwedRay += asset.deficitRay;
+
+    uint256 owedAssets = aggregatedOwedRay.fromRayUp();
+
+    return asset.liquidity + asset.swept + owedAssets;
   }
 }
