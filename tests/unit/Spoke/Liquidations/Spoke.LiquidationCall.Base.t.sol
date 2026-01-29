@@ -1106,7 +1106,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       accountsInfoAfter.userBalanceInfo.suppliedInSpoke,
       accountsInfoBefore.userBalanceInfo.suppliedInSpoke -
         liquidationMetadata.collateralAssetsToLiquidate,
-      2,
+      1,
       'user: collateral supplied'
     );
     assertApproxEqAbs(
@@ -1115,7 +1115,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         ? 0
         : accountsInfoBefore.userBalanceInfo.borrowedFromSpoke -
           liquidationMetadata.debtAssetsToLiquidate,
-      2,
+      1,
       'user: debt borrowed'
     );
 
@@ -1149,11 +1149,10 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         'liquidator: collateral supplied'
       );
     } else {
-      assertApproxEqAbs(
+      assertEq(
         accountsInfoAfter.liquidatorBalanceInfo.suppliedInSpoke,
         accountsInfoBefore.liquidatorBalanceInfo.suppliedInSpoke +
           liquidationMetadata.collateralAssetsToLiquidator,
-        2,
         'liquidator: collateral supplied (receiveShares)'
       );
     }
@@ -1292,7 +1291,7 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
               liquidationMetadata.collateralAssetsToLiquidator
             : liquidationMetadata.collateralAssetsToLiquidate
         ),
-      5,
+      3,
       'spoke: added'
     );
     assertApproxEqAbs(
