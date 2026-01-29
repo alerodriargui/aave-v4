@@ -310,11 +310,11 @@ contract HubAccruedFeesTest is HubBase {
     uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
 
     assertEq(accruedFees, _calcUnrealizedFees(hub1, daiAssetId));
-    assertApproxEqAbs(accruedFees, expectedProtocolCut, 1);
-    assertApproxEqAbs(accruedFees, (totalDelta * 90) / 100, 1);
+    assertEq(accruedFees, expectedProtocolCut);
+    assertEq(accruedFees, (totalDelta * 90) / 100);
 
     uint256 supplierYield = hub1.getAddedAssets(daiAssetId) - SUPPLY_AMOUNT;
-    assertApproxEqAbs(supplierYield, (totalDelta * 10) / 100, 1);
+    assertEq(supplierYield, (totalDelta * 10) / 100);
     assertEq(accruedFees + supplierYield, totalDelta);
     assertGt(hub1.previewAddByShares(daiAssetId, 1e18), sharePriceBefore);
 
@@ -327,7 +327,7 @@ contract HubAccruedFeesTest is HubBase {
       daiAssetId,
       hub1.getSpokeAddedShares(daiAssetId, address(spoke1))
     );
-    assertApproxEqAbs(supplierAssetsAfter, supplierAssetsBefore, 2);
+    assertEq(supplierAssetsAfter, supplierAssetsBefore);
   }
 
   /// @dev Tests 5 years of fee accumulation, verifies fees grow and mint doesn't dilute suppliers
@@ -377,7 +377,7 @@ contract HubAccruedFeesTest is HubBase {
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke1)), supplierSharesBefore);
-    assertApproxEqAbs(hub1.previewAddByShares(daiAssetId, 1e18), sharePriceBefore, 2);
+    assertEq(hub1.previewAddByShares(daiAssetId, 1e18), sharePriceBefore);
   }
 
   /// @dev Verifies exact fee formula: first accrual fees = protocolCut when no prior fees
@@ -410,12 +410,12 @@ contract HubAccruedFeesTest is HubBase {
     assertEq(accruedFees, _calcUnrealizedFees(hub1, daiAssetId));
 
     // First accrual with no prior fees: fees = protocolCut exactly
-    assertApproxEqAbs(accruedFees, expectedProtocolCut, 1);
+    assertEq(accruedFees, expectedProtocolCut);
 
     uint256 supplierYield = hub1.getAddedAssets(daiAssetId) - SUPPLY_AMOUNT;
     assertApproxEqAbs(supplierYield, interest, 1);
     assertApproxEqAbs(accruedFees + supplierYield, delta, 1);
-    assertApproxEqAbs(accruedFees, (delta * 20) / 100, 1);
+    assertEq(accruedFees, (delta * 20) / 100);
     assertApproxEqAbs(supplierYield, (delta * 80) / 100, 1);
   }
 
@@ -519,7 +519,7 @@ contract HubAccruedFeesTest is HubBase {
 
     assertGt(carolGrowth, 0);
     assertGt(treasuryGrowth, 0);
-    assertApproxEqAbs(carolGrowth, treasuryGrowth, 1);
+    assertEq(carolGrowth, treasuryGrowth);
     assertEq(
       hub1.getAssetAccruedFees(daiAssetId) - hub1.getAsset(daiAssetId).realizedFees,
       _calcUnrealizedFees(hub1, daiAssetId)
@@ -655,11 +655,7 @@ contract HubAccruedFeesTest is HubBase {
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertEq(hub1.getSpokeAddedShares(daiAssetId, address(spoke1)), supplierSharesBefore);
-    assertApproxEqAbs(
-      hub1.previewRemoveByShares(daiAssetId, supplierSharesBefore),
-      supplierValueBefore,
-      2
-    );
+    assertEq(hub1.previewRemoveByShares(daiAssetId, supplierSharesBefore), supplierValueBefore);
   }
 
   /// @dev Tests multiple borrow/repay cycles, verifies share price increases each cycle
@@ -1027,7 +1023,7 @@ contract HubAccruedFeesTest is HubBase {
     uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
 
     uint256 expectedProtocolCut = (totalDelta * liquidityFee) / PercentageMath.PERCENTAGE_FACTOR;
-    assertApproxEqAbs(accruedFees, expectedProtocolCut, 2);
+    assertEq(accruedFees, expectedProtocolCut);
     assertEq(accruedFees, _calcUnrealizedFees(hub1, daiAssetId));
   }
 
