@@ -42,7 +42,7 @@ contract HubAccruedFeesTest is HubBase {
     uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
     assertGt(accruedFees, 0);
 
-    assertApproxEqAbs(accruedFees, expectedAccruedFees, 2);
+    assertEq(accruedFees, expectedAccruedFees);
 
     // Accrued fees >= protocol cut (fees also earn interest on themselves)
     assertGe(accruedFees, expectedProtocolCut);
@@ -50,10 +50,10 @@ contract HubAccruedFeesTest is HubBase {
     uint256 supplierInterest = totalInterest - accruedFees;
 
     uint256 totalAssetsAfter = hub1.getAddedAssets(daiAssetId);
-    assertApproxEqAbs(totalAssetsAfter, totalAssetsBefore + supplierInterest, 2);
+
+    assertEq(totalAssetsAfter, totalAssetsBefore + supplierInterest);
   }
 
-  /// @dev Same test with 10% fee for cleaner numbers
   function test_unrealizedFees_basicAccrual_10pctFee() public {
     updateLiquidityFee(hub1, daiAssetId, 10_00);
 
@@ -82,12 +82,12 @@ contract HubAccruedFeesTest is HubBase {
     uint256 totalInterest = drawnDebt - BORROW_AMOUNT;
     uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
 
-    assertApproxEqAbs(accruedFees, expectedAccruedFees, 2);
+    assertEq(accruedFees, expectedAccruedFees);
 
     uint256 supplierInterest = totalInterest - accruedFees;
 
     uint256 totalAssetsAfter = hub1.getAddedAssets(daiAssetId);
-    assertApproxEqAbs(totalAssetsAfter, totalAssetsBefore + supplierInterest, 2);
+    assertEq(totalAssetsAfter, totalAssetsBefore + supplierInterest);
   }
 
   function test_unrealizedFees_accrualOverTime() public {
@@ -314,7 +314,7 @@ contract HubAccruedFeesTest is HubBase {
     uint256 expectedAccruedFees = realizedFees + _calcUnrealizedFees(hub1, daiAssetId);
     uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
 
-    assertApproxEqAbs(accruedFees, expectedAccruedFees, 2);
+    assertEq(accruedFees, expectedAccruedFees);
     assertGt(accruedFees, 0);
 
     IHub.Asset memory asset = hub1.getAsset(daiAssetId);
@@ -439,11 +439,11 @@ contract HubAccruedFeesTest is HubBase {
     uint256 accruedFees = _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId);
 
     assertApproxEqAbs(accruedFees, expectedProtocolCut, 1);
-    assertApproxEqAbs(accruedFees, (totalDelta * 90) / 100, 2);
+    assertApproxEqAbs(accruedFees, (totalDelta * 90) / 100, 1);
 
     uint256 supplierYield = hub1.getAddedAssets(daiAssetId) - SUPPLY_AMOUNT;
-    assertApproxEqAbs(supplierYield, (totalDelta * 10) / 100, 2);
-    assertApproxEqAbs(accruedFees + supplierYield, totalDelta, 2);
+    assertApproxEqAbs(supplierYield, (totalDelta * 10) / 100, 1);
+    assertEq(accruedFees + supplierYield, totalDelta);
     assertGt(hub1.previewAddByShares(daiAssetId, 1e18), sharePriceBefore);
 
     uint256 supplierAssetsBefore = hub1.previewRemoveByShares(
@@ -535,10 +535,10 @@ contract HubAccruedFeesTest is HubBase {
     assertApproxEqAbs(accruedFees, expectedProtocolCut, 1);
 
     uint256 supplierYield = hub1.getAddedAssets(daiAssetId) - SUPPLY_AMOUNT;
-    assertApproxEqAbs(supplierYield, interest, 2);
-    assertApproxEqAbs(accruedFees + supplierYield, delta, 2);
-    assertApproxEqAbs(accruedFees, (delta * 20) / 100, 2);
-    assertApproxEqAbs(supplierYield, (delta * 80) / 100, 2);
+    assertApproxEqAbs(supplierYield, interest, 1);
+    assertApproxEqAbs(accruedFees + supplierYield, delta, 1);
+    assertApproxEqAbs(accruedFees, (delta * 20) / 100, 1);
+    assertApproxEqAbs(supplierYield, (delta * 80) / 100, 1);
   }
 
   /// @dev Tests interestForFees calculation when realizedFees > 0 from prior accrual
@@ -581,12 +581,12 @@ contract HubAccruedFeesTest is HubBase {
     uint256 expectedNewUnrealizedFees = protocolCut + expectedInterestForFees;
 
     uint256 totalAccruedFees = hub1.getAssetAccruedFees(daiAssetId);
-    assertApproxEqAbs(totalAccruedFees, realizedFeesAfterFirst + expectedNewUnrealizedFees, 1);
+    assertEq(totalAccruedFees, realizedFeesAfterFirst + expectedNewUnrealizedFees);
     assertGt(expectedInterestForFees, 0);
 
     uint256 interestForSuppliers = interest - expectedInterestForFees;
-    assertApproxEqAbs(totalAccruedFees - realizedFeesAfterFirst, expectedNewUnrealizedFees, 1);
-    assertApproxEqAbs(protocolCut + expectedInterestForFees + interestForSuppliers, delta, 1);
+    assertEq(totalAccruedFees - realizedFeesAfterFirst, expectedNewUnrealizedFees);
+    assertEq(protocolCut + expectedInterestForFees + interestForSuppliers, delta);
   }
 
   /// @dev When user assets equal treasury's fee shares, both should earn interest at same rate

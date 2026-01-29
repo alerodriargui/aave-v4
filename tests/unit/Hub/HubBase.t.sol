@@ -240,8 +240,6 @@ contract HubBase is Base {
     }
     aggregatedOwedRay += asset.deficitRay;
 
-    uint256 owedAssets = aggregatedOwedRay.fromRayUp();
-
-    return asset.liquidity + asset.swept + owedAssets;
+    return asset.liquidity + asset.swept + aggregatedOwedRay.fromRayUp();
   }
 }
