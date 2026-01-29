@@ -2978,10 +2978,14 @@ abstract contract Base is Test {
       asset.swept +
       aggregatedOwedRayBefore.fromRayUp() -
       realizedFees;
-    uint256 unmintedFeeShares = realizedFees.mulDivDown(addedShares, totalAddedAssetsBefore);
+    uint256 unmintedFeeShares = SharesMath.toSharesDown(
+      realizedFees,
+      totalAddedAssetsBefore,
+      addedShares
+    );
     uint256 interestForFees = interest.mulDivDown(
       unmintedFeeShares,
-      addedShares + unmintedFeeShares
+      addedShares + SharesMath.VIRTUAL_SHARES + unmintedFeeShares
     );
 
     // Total unrealized fees = protocol fee cut + interest earned by fee portion

@@ -9,6 +9,8 @@ from z3 import *
 
 RAY = IntVal(10**27)
 PERCENTAGE_FACTOR = IntVal(10**4)
+VIRTUAL_SHARES = IntVal(10**6)
+VIRTUAL_ASSETS = IntVal(10**6)
 
 def percentMulDown(a, b):
     return (a * b) / PERCENTAGE_FACTOR
@@ -33,7 +35,7 @@ def check(propertyDescription, show_model=True):
         if show_model:
             m = s.model()
             # Print key variables in a readable format
-            vars_to_show = ['liquidityFee', 'drawnShares', 'realizedFees', 
+            vars_to_show = ['liquidityFee', 'drawnShares', 'addedShares', 'realizedFees', 
                            'liquidity', 'swept', 'previousIndex', 'drawnIndex']
             for name in vars_to_show:
                 for d in m.decls():
@@ -104,10 +106,11 @@ totalAddedAssetsBefore = liquidity + swept + drawnBefore - realizedFees
 s.add(totalAddedAssetsBefore > 0)  # Must have positive assets backing shares
 
 # Calculate unmintedFeeShares = toAddedSharesDown(realizedFees)
-unmintedFeeShares = mulDivDown(realizedFees, addedShares, totalAddedAssetsBefore)
+# Includes virtual shares/assets per SharesMath library
+unmintedFeeShares = mulDivDown(realizedFees, addedShares + VIRTUAL_SHARES, totalAddedAssetsBefore + VIRTUAL_ASSETS)
 
 # Calculate interestForFees (interest distributed pro-rata to shares)
-interestForFees = mulDivDown(interest, unmintedFeeShares, addedShares + unmintedFeeShares)
+interestForFees = mulDivDown(interest, unmintedFeeShares, addedShares + VIRTUAL_SHARES + unmintedFeeShares)
 
 # Total fees
 totalFees = fees + interestForFees
