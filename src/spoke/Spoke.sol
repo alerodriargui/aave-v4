@@ -548,10 +548,7 @@ abstract contract Spoke is
   /// @inheritdoc ISpoke
   function getReserveId(address hub, uint256 assetId) external view returns (uint256) {
     uint256 reserveId = _assetIdToReserveId[hub][assetId];
-    require(
-      _reserves[reserveId].assetId == assetId && address(_reserves[reserveId].hub) == hub,
-      ReserveNotListed()
-    );
+    require(_isAssetListed(hub, assetId, reserveId), ReserveNotListed());
     return reserveId;
   }
 
@@ -936,6 +933,14 @@ abstract contract Spoke is
     require(!flags.paused(), ReservePaused());
     // can disable as collateral if the reserve is frozen
     require(!usingAsCollateral || !flags.frozen(), ReserveFrozen());
+  }
+
+  function _isAssetListed(
+    address hub,
+    uint256 assetId,
+    uint256 reserveId
+  ) internal view returns (bool) {
+    return _reserves[reserveId].assetId == assetId && address(_reserves[reserveId].hub) == hub;
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
