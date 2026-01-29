@@ -172,30 +172,27 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest, Hu
       abi.encodeCall(IHubBase.previewRemoveByShares, (assetId, p.sharesToLiquidate)),
       1
     );
-    if (p.sharesToLiquidator > 0 && !p.receiveShares) {
-      if (p.sharesToLiquidator != p.sharesToLiquidate) {
-        vm.expectCall(
-          address(hub),
-          abi.encodeCall(IHubBase.previewRemoveByShares, (assetId, p.sharesToLiquidator)),
-          1
-        );
-      }
+
+    if (p.sharesToLiquidator != p.sharesToLiquidate) {
+      // otherwise already checked above
       vm.expectCall(
         address(hub),
-        abi.encodeCall(IHubBase.remove, (assetId, collateralToLiquidator, p.liquidator)),
-        1
+        abi.encodeCall(IHubBase.previewRemoveByShares, (assetId, p.sharesToLiquidator)),
+        (p.sharesToLiquidator > 0 && !p.receiveShares) ? 1 : 0
       );
-    } else if (p.sharesToLiquidator == 0) {
-      vm.expectCall(address(hub), abi.encodeWithSelector(IHubBase.remove.selector), 0);
     }
 
+    vm.expectCall(
+      address(hub),
+      abi.encodeCall(IHubBase.remove, (assetId, collateralToLiquidator, p.liquidator)),
+      (p.sharesToLiquidator > 0 && !p.receiveShares) ? 1 : 0
+    );
+
     uint256 sharesToPayFee = p.sharesToLiquidate - p.sharesToLiquidator;
-    if (sharesToPayFee > 0) {
-      vm.expectCall(
-        address(hub),
-        abi.encodeCall(IHubBase.payFeeShares, (assetId, sharesToPayFee)),
-        1
-      );
-    }
+    vm.expectCall(
+      address(hub),
+      abi.encodeCall(IHubBase.payFeeShares, (assetId, sharesToPayFee)),
+      sharesToPayFee > 0 ? 1 : 0
+    );
   }
 }

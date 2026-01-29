@@ -434,20 +434,18 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       collateralSharesToLiquidator: liquidationMetadata.collateralSharesToLiquidator
     });
 
-    if (!params.receiveShares && liquidationMetadata.collateralSharesToLiquidator > 0) {
-      vm.expectCall(
-        address(vars.collateralHub),
-        abi.encodeCall(
-          IHubBase.remove,
-          (
-            vars.collateralAssetId,
-            liquidationMetadata.collateralAssetsToLiquidator,
-            params.liquidator
-          )
-        ),
-        1
-      );
-    }
+    vm.expectCall(
+      address(vars.collateralHub),
+      abi.encodeCall(
+        IHubBase.remove,
+        (
+          vars.collateralAssetId,
+          liquidationMetadata.collateralAssetsToLiquidator,
+          params.liquidator
+        )
+      ),
+      (!params.receiveShares && liquidationMetadata.collateralSharesToLiquidator > 0) ? 1 : 0
+    );
 
     vm.expectCall(
       address(vars.debtHub),
@@ -458,22 +456,21 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
       1
     );
 
-    if (
-      liquidationMetadata.collateralSharesToLiquidate >
-      liquidationMetadata.collateralSharesToLiquidator
-    ) {
-      vm.expectCall(
-        address(_hub(params.spoke, params.collateralReserveId)),
-        abi.encodeCall(
-          IHubBase.payFeeShares,
-          (
-            vars.collateralAssetId,
-            liquidationMetadata.collateralSharesToLiquidate -
-              liquidationMetadata.collateralSharesToLiquidator
-          )
+    vm.expectCall(
+      address(_hub(params.spoke, params.collateralReserveId)),
+      abi.encodeCall(
+        IHubBase.payFeeShares,
+        (
+          vars.collateralAssetId,
+          liquidationMetadata.collateralSharesToLiquidate -
+            liquidationMetadata.collateralSharesToLiquidator
         )
-      );
-    }
+      ),
+      liquidationMetadata.collateralSharesToLiquidate >
+        liquidationMetadata.collateralSharesToLiquidator
+        ? 1
+        : 0
+    );
 
     bool riskPremiumOptimisation = accountsInfoBefore.userLastRiskPremium == 0 &&
       expectedUserAccountData.riskPremium == 0;
@@ -536,28 +533,42 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
               drawnShares: vars.userReservePosition.drawnShares,
               premiumDelta: premiumDelta
             });
-          } else if (!riskPremiumOptimisation) {
-            IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
-              hub: targetHub,
-              assetId: assetId,
-              oldPremiumShares: vars.userReservePosition.premiumShares,
-              oldPremiumOffsetRay: vars.userReservePosition.premiumOffsetRay,
-              drawnShares: vars.userReservePosition.drawnShares,
-              riskPremium: expectedUserAccountData.riskPremium,
-              restoredPremiumRay: 0
-            });
-
+          } else {
             vm.expectCall(
               address(targetHub),
-              abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta)),
-              1
+              abi.encodeWithSelector(IHubBase.reportDeficit.selector, assetId),
+              0
             );
-            vm.expectEmit(address(params.spoke));
-            emit ISpoke.RefreshPremiumDebt({
-              reserveId: reserveId,
-              user: params.user,
-              premiumDelta: premiumDelta
-            });
+
+            if (!riskPremiumOptimisation) {
+              IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta({
+                hub: targetHub,
+                assetId: assetId,
+                oldPremiumShares: vars.userReservePosition.premiumShares,
+                oldPremiumOffsetRay: vars.userReservePosition.premiumOffsetRay,
+                drawnShares: vars.userReservePosition.drawnShares,
+                riskPremium: expectedUserAccountData.riskPremium,
+                restoredPremiumRay: 0
+              });
+
+              vm.expectCall(
+                address(targetHub),
+                abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta)),
+                1
+              );
+              vm.expectEmit(address(params.spoke));
+              emit ISpoke.RefreshPremiumDebt({
+                reserveId: reserveId,
+                user: params.user,
+                premiumDelta: premiumDelta
+              });
+            } else {
+              vm.expectCall(
+                address(targetHub),
+                abi.encodeWithSelector(IHubBase.refreshPremium.selector, assetId),
+                0
+              );
+            }
           }
         }
       }

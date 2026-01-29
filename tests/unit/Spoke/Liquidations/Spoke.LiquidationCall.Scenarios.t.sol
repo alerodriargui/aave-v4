@@ -520,6 +520,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
   }
 
+  // When (at least) debtRayToTarget is liquidated, user should not be below target health factor even if debtRayToTarget
+  // cannot be represented within the precision of the debt token but can be represented within the precision of the collateral token.
   function test_liquidationCall_scenario6() public {
     // set target health factor to 1
     _updateTargetHealthFactor(spoke, 1e18);
@@ -609,6 +611,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     });
   }
 
+  // When (at least) debtRayToTarget is liquidated, user should not be below target health factor even if debtRayToTarget
+  // cannot be represented within the precision of the debt token but can be represented within the precision of the collateral token.
   function test_liquidationCall_scenario7() public {
     // set target health factor to 1
     _updateTargetHealthFactor(spoke, 1e18);
