@@ -174,8 +174,7 @@ library AssetLogic {
   }
 
   /// @notice Calculates the amount of fees derived from the index growth due to interest accrual.
-  /// @dev Splits interest proportionally between suppliers and accumulated fees based on
-  /// @dev how much of the borrowed funds are "backed" by supplier liquidity vs accumulated fees.
+  /// @dev Splits interest proportionally between suppliers and accumulated fees.
   /// @param drawnIndex The current drawn index.
   function getUnrealizedFees(
     IHub.Asset storage asset,
@@ -212,17 +211,16 @@ library AssetLogic {
       drawnIndex: previousIndex
     });
 
-    // delta = total growth in aggregated owed
-    uint256 delta = aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp();
-    if (delta == 0) {
+    uint256 totalGrowth = aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp();
+    if (totalGrowth == 0) {
       return 0;
     }
 
-    // fees = protocol's cut of the delta
-    uint256 fees = delta.percentMulDown(liquidityFee);
+    // fees = protocol's cut of the total growth
+    uint256 fees = totalGrowth.percentMulDown(liquidityFee);
 
-    // interest = supplier's cut of the delta
-    uint256 interest = delta - fees;
+    // interest = supplier's cut of the total growth
+    uint256 interest = totalGrowth - fees;
 
     // Distribute interestForFees pro-rata to realizedFees
     uint256 realizedFees = asset.realizedFees;

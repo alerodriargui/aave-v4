@@ -2960,16 +2960,16 @@ abstract contract Base is Test {
       previousIndex).toInt256() - asset.premiumOffsetRay).toUint256() + asset.deficitRay;
 
     // delta = total growth in aggregated owed
-    uint256 delta = aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp();
-    if (delta == 0) {
+    uint256 totalGrowth = aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp();
+    if (totalGrowth == 0) {
       return 0;
     }
 
     // fees = protocol's cut of the delta
-    uint256 fees = delta.percentMulDown(liquidityFee);
+    uint256 fees = totalGrowth.percentMulDown(liquidityFee);
 
     // interest = supplier's cut of the delta
-    uint256 interest = delta - fees;
+    uint256 interest = totalGrowth - fees;
 
     // Distribute interestForFees pro-rata to realizedFees
     uint256 realizedFees = asset.realizedFees;
