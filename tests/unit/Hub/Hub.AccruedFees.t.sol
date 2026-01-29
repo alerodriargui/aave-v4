@@ -369,7 +369,6 @@ contract HubAccruedFeesTest is HubBase {
       _getExpectedFeeReceiverAddedAssets(hub1, daiAssetId),
       _calcUnrealizedFees(hub1, daiAssetId)
     );
-
     assertGe(finalFees, cumulativeProtocolCut);
 
     uint256 supplierSharesBefore = hub1.getSpokeAddedShares(daiAssetId, address(spoke1));
@@ -553,7 +552,7 @@ contract HubAccruedFeesTest is HubBase {
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     uint256 supplierAssetsAfterMint = hub1.previewRemoveByShares(daiAssetId, supplierShares);
-    assertApproxEqAbs(supplierAssetsAfterMint, supplierAssetsBeforeMint, 2);
+    assertApproxEqAbs(supplierAssetsAfterMint, supplierAssetsBeforeMint, 1);
     assertEq(hub1.getAssetAccruedFees(daiAssetId) - hub1.getAsset(daiAssetId).realizedFees, 0);
     assertEq(_calcUnrealizedFees(hub1, daiAssetId), 0);
 
@@ -601,11 +600,11 @@ contract HubAccruedFeesTest is HubBase {
 
     uint256 aliceShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke1)) - bobShares;
     uint256 aliceRedeemable = hub1.previewRemoveByShares(daiAssetId, aliceShares);
-    assertApproxEqAbs(aliceRedeemable, aliceSupply, 2);
+    assertApproxEqAbs(aliceRedeemable, aliceSupply, 1);
 
     uint256 bobValueAfter = hub1.previewRemoveByShares(daiAssetId, bobShares);
-    assertApproxEqAbs(bobValueAfter, bobValueBefore, 2);
-    assertApproxEqAbs(hub1.previewAddByShares(daiAssetId, 1e18), sharePriceBefore, 2);
+    assertApproxEqAbs(bobValueAfter, bobValueBefore, 1);
+    assertApproxEqAbs(hub1.previewAddByShares(daiAssetId, 1e18), sharePriceBefore, 1);
 
     skip(180 days);
 
