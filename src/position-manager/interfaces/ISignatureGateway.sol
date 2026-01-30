@@ -116,7 +116,7 @@ interface ISignatureGateway is IPositionManagerBase {
   /// @dev Supplied assets are pulled from `onBehalfOf`, prior approval to this gateway is required.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured supply parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares supplied.
   /// @return The amount of assets supplied.
   function supplyWithSig(
@@ -129,7 +129,7 @@ interface ISignatureGateway is IPositionManagerBase {
   /// @dev Withdrawn assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured withdraw parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares withdrawn.
   /// @return The amount of assets withdrawn.
   function withdrawWithSig(
@@ -141,7 +141,7 @@ interface ISignatureGateway is IPositionManagerBase {
   /// @dev Borrowed assets are pushed to `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured borrow parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares borrowed.
   /// @return The amount of assets borrowed.
   function borrowWithSig(
@@ -154,7 +154,7 @@ interface ISignatureGateway is IPositionManagerBase {
   /// @dev Providing an amount greater than the user's current debt indicates a request to repay the maximum possible amount.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured repay parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   /// @return The amount of shares repaid.
   /// @return The amount of assets repaid.
   function repayWithSig(
@@ -165,7 +165,7 @@ interface ISignatureGateway is IPositionManagerBase {
   /// @notice Facilitates `setUsingAsCollateral` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured setUsingAsCollateral parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   function setUsingAsCollateralWithSig(
     SetUsingAsCollateral calldata params,
     bytes calldata signature
@@ -174,7 +174,7 @@ interface ISignatureGateway is IPositionManagerBase {
   /// @notice Facilitates `updateUserRiskPremium` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured updateUserRiskPremium parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   function updateUserRiskPremiumWithSig(
     UpdateUserRiskPremium calldata params,
     bytes calldata signature
@@ -183,7 +183,7 @@ interface ISignatureGateway is IPositionManagerBase {
   /// @notice Facilitates `updateUserDynamicConfig` action on the specified registered `spoke` with a typed signature from `onBehalfOf`.
   /// @dev Uses keyed-nonces where for each key's namespace nonce is consumed sequentially.
   /// @param params The structured updateUserDynamicConfig parameters.
-  /// @param signature The signed bytes for the intent.
+  /// @param signature The EIP712-typed signed bytes for the intent.
   function updateUserDynamicConfigWithSig(
     UpdateUserDynamicConfig calldata params,
     bytes calldata signature
