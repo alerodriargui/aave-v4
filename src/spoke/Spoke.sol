@@ -149,17 +149,16 @@ abstract contract Spoke is
   ) external restricted returns (uint256) {
     require(hub != address(0), InvalidAddress());
     require(assetId <= MAX_ALLOWED_ASSET_ID, InvalidAssetId());
+    require(!_isAssetListed(hub, assetId, _assetIdToReserveId[hub][assetId]), ReserveExists());
 
     _validateReserveConfig(config);
     _validateDynamicReserveConfig(dynamicConfig);
     uint256 reserveId = _reserveCount++;
     uint24 dynamicConfigKey; // 0 as first key to use
+    _assetIdToReserveId[hub][assetId] = reserveId;
 
     (address underlying, uint8 decimals) = IHubBase(hub).getAssetUnderlyingAndDecimals(assetId);
     require(underlying != address(0), AssetNotListed());
-
-    require(_reserves[_assetIdToReserveId[hub][assetId]].underlying != underlying, ReserveExists());
-    _assetIdToReserveId[hub][assetId] = reserveId;
 
     _updateReservePriceSource(reserveId, priceSource);
 
