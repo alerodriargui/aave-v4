@@ -120,7 +120,7 @@ abstract contract Base is Test {
   uint256 internal MAX_SUPPLY_AMOUNT_USDY;
   uint256 internal MAX_SUPPLY_AMOUNT_USDZ;
   uint256 internal constant MAX_SUPPLY_IN_BASE_CURRENCY = 1e39;
-  uint24 internal constant MIN_COLLATERAL_RISK_BPS = 1;
+  uint24 internal constant MIN_COLLATERAL_RISK_BPS = 0;
   uint24 internal constant MAX_COLLATERAL_RISK_BPS = 1000_00;
   uint256 internal constant MAX_SUPPLY_PRICE = 100;
   uint256 internal constant MIN_DRAWN_INDEX = WadRayMath.RAY;
@@ -2362,6 +2362,17 @@ abstract contract Base is Test {
 
   function _reserveAssetId(ISpoke spoke, uint256 reserveId) internal view returns (uint256) {
     return spoke.getReserve(reserveId).assetId;
+  }
+
+  function _spokeMaxCollateralRisk(ISpoke spoke) internal view returns (uint24) {
+    uint24 maxCollateralRisk;
+    for (uint256 reserveId; reserveId < spoke.getReserveCount(); ++reserveId) {
+      uint24 collateralRisk = _getCollateralRisk(spoke, reserveId);
+      if (collateralRisk > maxCollateralRisk) {
+        maxCollateralRisk = collateralRisk;
+      }
+    }
+    return maxCollateralRisk;
   }
 
   function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (TestnetERC20) {

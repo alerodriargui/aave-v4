@@ -7,6 +7,7 @@ import 'tests/unit/Spoke/Liquidations/Spoke.LiquidationCall.Base.t.sol';
 abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest {
   using WadRayMath for uint256;
   using SafeCast for uint256;
+  using PercentageMath for uint256;
 
   ISpoke spoke;
 
@@ -35,6 +36,11 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
         vm.randomUint(MIN_LIQUIDATION_FEE, MAX_LIQUIDATION_FEE).toUint16()
       );
       _updateCollateralFactor(spoke, i, _randomCollateralFactor(spoke, i));
+      _updateCollateralRisk(
+        spoke,
+        i,
+        vm.randomUint(MIN_COLLATERAL_RISK_BPS, MAX_COLLATERAL_RISK_BPS).toUint24()
+      );
     }
   }
 
@@ -51,7 +57,7 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
   }
 
   function _skipTime() internal virtual returns (uint256) {
-    return vm.randomUint(0, 365 days);
+    return vm.randomUint(0, 10 * 365 days);
   }
 
   function _processAdditionalSetup(
@@ -91,13 +97,13 @@ abstract contract SpokeLiquidationCallHelperTest is SpokeLiquidationCallBaseTest
 
   function _processAdditionalDebtReserves() internal {
     uint256 count = vm.randomUint(1, spoke.getReserveCount() * 2);
-    // division by 2 accounts for borrow share price increase due to time skip (and borrow interest rate)
-    // ensures user is healthy enough to borrow these amounts
+    // accounts for borrow share price increase due to time skip (and borrow interest rate)
+    // ensures user is healthy enough to borrow
     uint256 borrowableValue = _getRequiredDebtValueForHf(
       spoke,
       _user(),
-      Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
-    ) / 2;
+      Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * (2 + _skipTime() / 365 days)
+    ).percentDivDown(2 * PercentageMath.PERCENTAGE_FACTOR + _spokeMaxCollateralRisk(spoke));
     for (uint256 i = 0; i < count; i++) {
       uint256 reserveId = vm.randomUint(0, spoke.getReserveCount() - 1);
       uint256 maxBorrowAmount = _convertValueToAmount(spoke, reserveId, borrowableValue);
@@ -463,6 +469,56 @@ contract SpokeLiquidationCallTest_NoPremium is SpokeLiquidationCallHelperTest {
   ) internal virtual override {
     (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
     assertEq(premiumDebt, 0, 'No premium');
+  }
+}
+
+contract SpokeLiquidationCallTest_Premium is SpokeLiquidationCallHelperTest {
+  using SafeCast for uint256;
+  using PercentageMath for uint256;
+
+  function _skipTime() internal virtual override returns (uint256) {
+    return vm.randomUint(1, 10 * 365 days);
+  }
+
+  function _processAdditionalSetup(
+    uint256 collateralReserveId,
+    uint256 debtReserveId
+  ) internal virtual override {
+    super._processAdditionalSetup(collateralReserveId, debtReserveId);
+    _updateCollateralRisk(
+      spoke,
+      collateralReserveId,
+      vm.randomUint(1, MAX_COLLATERAL_RISK_BPS).toUint24()
+    );
+    _increaseCollateralSupply(
+      spoke,
+      collateralReserveId,
+      _convertValueToAmount(spoke, collateralReserveId, _baseAmountValue()),
+      _user()
+    );
+    _increaseReserveDebt(
+      spoke,
+      debtReserveId,
+      _convertValueToAmount(
+        spoke,
+        debtReserveId,
+        _getRequiredDebtValueForHf(
+          spoke,
+          _user(),
+          Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD * (2 + _skipTime() / 365 days)
+        )
+      ).percentDivDown(2 * PercentageMath.PERCENTAGE_FACTOR + _spokeMaxCollateralRisk(spoke)),
+      _user()
+    );
+  }
+
+  function _assertBeforeLiquidation(
+    CheckedLiquidationCallParams memory params,
+    AccountsInfo memory /* accountsInfoBefore */,
+    LiquidationMetadata memory /* liquidationMetadata */
+  ) internal virtual override {
+    (, uint256 premiumDebt) = params.spoke.getUserDebt(params.debtReserveId, params.user);
+    assertGt(premiumDebt, 0, 'User should have premium debt');
   }
 }
 
