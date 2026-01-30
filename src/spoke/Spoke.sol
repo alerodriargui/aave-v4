@@ -163,7 +163,6 @@ abstract contract Spoke is
         initPaused: config.paused,
         initFrozen: config.frozen,
         initBorrowable: config.borrowable,
-        initLiquidatable: config.liquidatable,
         initReceiveSharesEnabled: config.receiveSharesEnabled
       })
     });
@@ -188,7 +187,6 @@ abstract contract Spoke is
       initPaused: config.paused,
       initFrozen: config.frozen,
       initBorrowable: config.borrowable,
-      initLiquidatable: config.liquidatable,
       initReceiveSharesEnabled: config.receiveSharesEnabled
     });
     emit UpdateReserveConfig(reserveId, config);
@@ -399,7 +397,7 @@ abstract contract Spoke is
     );
 
     if (isUserInDeficit) {
-      _reportDeficit(user);
+      _notifyReportDeficit(user);
     } else {
       uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
       _notifyRiskPremiumUpdate(user, newRiskPremium);
@@ -459,7 +457,7 @@ abstract contract Spoke is
     bytes calldata signature
   ) external {
     _verifyAndConsumeIntent({
-      signer: params.user,
+      signer: params.onBehalfOf,
       intentHash: params.hash(),
       nonce: params.nonce,
       deadline: params.deadline,
@@ -469,7 +467,7 @@ abstract contract Spoke is
     for (uint256 i = 0; i < params.updates.length; ++i) {
       _setUserPositionManager({
         positionManager: params.updates[i].positionManager,
-        user: params.user,
+        user: params.onBehalfOf,
         approve: params.updates[i].approve
       });
     }
@@ -558,7 +556,6 @@ abstract contract Spoke is
         paused: reserve.flags.paused(),
         frozen: reserve.flags.frozen(),
         borrowable: reserve.flags.borrowable(),
-        liquidatable: reserve.flags.liquidatable(),
         receiveSharesEnabled: reserve.flags.receiveSharesEnabled()
       });
   }
@@ -855,7 +852,7 @@ abstract contract Spoke is
   /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.
   /// @dev Deficit validation should already have occurred during liquidation.
   /// @dev It clears the user position, setting drawn debt, premium debt, and risk premium to zero.
-  function _reportDeficit(address user) internal {
+  function _notifyReportDeficit(address user) internal {
     PositionStatus storage positionStatus = _positionStatus[user];
     positionStatus.riskPremium = 0;
 
