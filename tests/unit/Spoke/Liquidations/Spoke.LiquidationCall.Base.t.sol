@@ -846,11 +846,18 @@ contract SpokeLiquidationCallBaseTest is LiquidationLogicBaseTest {
         accountsInfoBefore.userAccountData.healthFactor,
         'health factor should increase after liquidation'
       );
-    } else {
+    } else if (liquidationMetadata.debtAssetsToLiquidate > 0) {
+      // if any debt is liquidated, health factor should decrease
       assertLt(
         accountsInfoAfter.userAccountData.healthFactor,
         accountsInfoBefore.userAccountData.healthFactor,
         'health factor should decrease after liquidation'
+      );
+    } else {
+      assertEq(
+        accountsInfoAfter.userAccountData.healthFactor,
+        accountsInfoBefore.userAccountData.healthFactor,
+        'health factor should be equal to before liquidation'
       );
     }
 
