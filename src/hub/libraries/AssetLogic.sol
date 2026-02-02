@@ -132,7 +132,18 @@ library AssetLogic {
   /// @dev Premium debt is not used in the interest rate calculation.
   /// @dev Uses last stored index; asset accrual should have already occurred.
   /// @dev Imprecision from downscaling `deficitRay` does not accumulate.
-  function updateDrawnRate(IHub.Asset storage asset, uint256 assetId) internal {
+  function updateDrawnRateAndMintFeeShares(
+    mapping(uint256 assetId => mapping(address spoke => IHub.SpokeData)) storage spokes,
+    IHub.Asset storage asset,
+    uint256 assetId
+  ) internal {
+    uint120 feeShares = asset.toAddedSharesDown(asset.realizedFees).toUint120(); // donated share price
+    if (feeShares > 0) {
+      asset.addedShares += feeShares;
+      spokes[assetId][asset.feeReceiver].addedShares += feeShares;
+      asset.realizedFees = 0; // do not reset when `realizedFees` < 1 share worth
+    }
+
     uint256 drawnIndex = asset.drawnIndex;
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
@@ -143,7 +154,7 @@ library AssetLogic {
     });
     asset.drawnRate = newDrawnRate.toUint96();
 
-    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate, asset.realizedFees);
+    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate, feeShares);
   }
 
   /// @notice Accrues interest and fees for the specified asset.

@@ -110,12 +110,12 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @param drawnIndex The new drawn index of the asset.
   /// @param drawnRate The new drawn rate of the asset.
-  /// @param accruedFees The accrued fees of the asset since the last mint.
+  /// @param feeShares The accrued fees of the asset since the last mint.
   event UpdateAsset(
     uint256 indexed assetId,
     uint256 drawnIndex,
     uint256 drawnRate,
-    uint256 accruedFees
+    uint256 feeShares
   );
 
   /// @notice Emitted when an asset configuration is updated.
