@@ -7,6 +7,53 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeRepaySkimmedTest is SpokeBase {
   using PercentageMath for uint256;
   using SafeCast for uint256;
+  using ReserveFlagsMap for ReserveFlags;
+
+  function test_repaySkimmed_revertsWith_Unauthorized() public {
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+    uint256 daiRepayAmount = daiSupplyAmount / 4;
+
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+
+    deal(address(tokenList.dai), carol, daiRepayAmount);
+    vm.prank(carol);
+    tokenList.dai.transfer(address(hub1), daiRepayAmount);
+
+    vm.expectRevert(ISpoke.Unauthorized.selector);
+    vm.prank(carol);
+    spoke1.repaySkimmed(_daiReserveId(spoke1), daiRepayAmount, bob);
+  }
+
+  function test_repaySkimmed_revertsWith_ReserveNotListed() public {
+    uint256 reserveId = spoke1.getReserveCount() + 1;
+    uint256 amount = 100e18;
+
+    vm.expectRevert(ISpoke.ReserveNotListed.selector);
+    vm.prank(bob);
+    spoke1.repaySkimmed(reserveId, amount, bob);
+  }
+
+  function test_repaySkimmed_revertsWith_ReservePaused() public {
+    uint256 daiSupplyAmount = 100e18;
+    uint256 wethSupplyAmount = 10e18;
+    uint256 daiBorrowAmount = daiSupplyAmount / 2;
+    uint256 daiRepayAmount = daiSupplyAmount / 4;
+
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), bob, wethSupplyAmount, bob);
+    Utils.supply(spoke1, _daiReserveId(spoke1), alice, daiSupplyAmount, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), bob, daiBorrowAmount, bob);
+
+    _updateReservePausedFlag(spoke1, _daiReserveId(spoke1), true);
+    assertTrue(spoke1.getReserve(_daiReserveId(spoke1)).flags.paused());
+
+    vm.expectRevert(ISpoke.ReservePaused.selector);
+    vm.prank(bob);
+    spoke1.repaySkimmed(_daiReserveId(spoke1), daiRepayAmount, bob);
+  }
 
   function test_repaySkimmed_revertsWith_InsufficientTransferred() public {
     uint256 daiSupplyAmount = 100e18;
