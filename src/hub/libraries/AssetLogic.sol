@@ -137,20 +137,37 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 assetId
   ) internal {
-    uint120 feeShares = asset.toAddedSharesDown(asset.realizedFees).toUint120(); // donated share price
-    if (feeShares > 0) {
-      asset.addedShares += feeShares;
-      spokes[assetId][asset.feeReceiver].addedShares += feeShares;
-      asset.realizedFees = 0; // do not reset when `realizedFees` < 1 share worth
+    uint256 drawnIndex = asset.drawnIndex;
+    uint256 swept = asset.swept;
+    uint256 deficitRay = asset.deficitRay;
+    uint120 drawnShares = asset.drawnShares;
+    uint256 liquidity = asset.liquidity;
+    uint256 fees = asset.realizedFees;
+    uint120 feeShares = 0;
+    if (fees > 0) {
+      uint256 aggregatedOwedRay = _calculateAggregatedOwedRay({
+        drawnShares: drawnShares,
+        premiumShares: asset.premiumShares,
+        premiumOffsetRay: asset.premiumOffsetRay,
+        deficitRay: deficitRay,
+        drawnIndex: drawnIndex
+      });
+      uint256 totalAdded = liquidity + swept + aggregatedOwedRay.fromRayUp() - fees;
+      feeShares = fees.toSharesDown(totalAdded, asset.addedShares).toUint120(); // donated share price
+
+      if (feeShares > 0) {
+        asset.addedShares += feeShares;
+        spokes[assetId][asset.feeReceiver].addedShares += feeShares;
+        asset.realizedFees = 0; // reset and get gas refund of 1990 only when >0 shares minted
+      }
     }
 
-    uint256 drawnIndex = asset.drawnIndex;
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
       assetId: assetId,
-      liquidity: asset.liquidity,
-      drawn: asset.drawn(drawnIndex),
-      deficit: asset.deficitRay.fromRayUp(),
-      swept: asset.swept
+      liquidity: liquidity,
+      drawn: drawnShares.rayMulUp(drawnIndex),
+      deficit: deficitRay.fromRayUp(),
+      swept: swept
     });
     asset.drawnRate = newDrawnRate.toUint96();
 
