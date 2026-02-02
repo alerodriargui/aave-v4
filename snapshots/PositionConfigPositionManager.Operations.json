@@ -8,6 +8,6 @@
   "setUserRiskPremiumPermission": "49794",
   "setUsingAsCollateralOnBehalfOf": "72584",
   "setUsingAsCollateralPermission": "49772",
-  "updateUserDynamicConfigOnBehalfOf": "50400",
-  "updateUserRiskPremiumOnBehalfOf": "129540"
+  "updateUserDynamicConfigOnBehalfOf": "50412",
+  "updateUserRiskPremiumOnBehalfOf": "129594"
 }

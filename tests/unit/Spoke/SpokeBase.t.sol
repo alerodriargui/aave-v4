@@ -1145,4 +1145,11 @@ contract SpokeBase is Base {
     (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
     return abi.encodePacked(r, s, v);
   }
+
+  /// @dev Helper to etch spoke's implementation with a new maxUserReservesLimit
+  function _updateMaxUserReservesLimit(ISpoke spoke, uint16 newLimit) internal {
+    address currentImpl = _getImplementationAddress(address(spoke));
+    ISpokeInstance newImpl = DeployUtils.deploySpokeImplementation(spoke.ORACLE(), newLimit);
+    vm.etch(currentImpl, address(newImpl).code);
+  }
 }
