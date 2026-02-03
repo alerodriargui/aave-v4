@@ -389,7 +389,7 @@ abstract contract Spoke is
     );
 
     if (isUserInDeficit) {
-      _notifyReportDeficit(user);
+      _reportDeficit(user);
     } else {
       uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
       _notifyRiskPremiumUpdate(user, newRiskPremium);
@@ -841,43 +841,12 @@ abstract contract Spoke is
       userPosition.applyPremiumDelta(premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
     }
+
     emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
-  /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.
-  /// @dev Deficit validation should already have occurred during liquidation.
-  /// @dev It clears the user position, setting drawn debt, premium debt, and risk premium to zero.
-  function _notifyReportDeficit(address user) internal {
-    PositionStatus storage positionStatus = _positionStatus[user];
-    positionStatus.riskPremium = 0;
-
-    uint256 reserveId = _reserveCount;
-    while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
-      UserPosition storage userPosition = _userPositions[user][reserveId];
-      Reserve storage reserve = _reserves[reserveId];
-      IHubBase hub = reserve.hub;
-      uint256 assetId = reserve.assetId;
-
-      uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-      (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
-      uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
-
-      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
-        drawnSharesTaken: deficitShares,
-        drawnIndex: drawnIndex,
-        riskPremium: 0,
-        restoredPremiumRay: premiumDebtRay
-      });
-
-      hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
-      userPosition.applyPremiumDelta(premiumDelta);
-      userPosition.drawnShares -= deficitShares.toUint120();
-      positionStatus.setBorrowing(reserveId, false);
-
-      emit ReportDeficit(reserveId, user, deficitShares, premiumDelta);
-    }
-
-    emit UpdateUserRiskPremium(user, 0);
+  function _reportDeficit(address user) internal {
+    LiquidationLogic.reportDeficit(_reserves, _userPositions, _positionStatus, _reserveCount, user);
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {
