@@ -389,7 +389,8 @@ abstract contract Spoke is
     );
 
     if (isUserInDeficit) {
-      _reportDeficit(user);
+      // report deficit for all debt reserves, including the reserve being repaid
+      _notifyReportDeficit(user);
     } else {
       uint256 newRiskPremium = _calculateUserAccountData(user).riskPremium;
       _notifyRiskPremiumUpdate(user, newRiskPremium);
@@ -845,8 +846,14 @@ abstract contract Spoke is
     emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
-  function _reportDeficit(address user) internal {
-    LiquidationLogic.reportDeficit(_reserves, _userPositions, _positionStatus, _reserveCount, user);
+  function _notifyReportDeficit(address user) internal {
+    LiquidationLogic.notifyReportDeficit(
+      _reserves,
+      _userPositions,
+      _positionStatus,
+      _reserveCount,
+      user
+    );
   }
 
   function _getReserve(uint256 reserveId) internal view returns (Reserve storage) {

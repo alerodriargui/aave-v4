@@ -251,7 +251,7 @@ library LiquidationLogic {
   /// @param positionStatus The mapping of position status per user.
   /// @param reserveCount The number of reserves.
   /// @param user The address of the user.
-  function reportDeficit(
+  function notifyReportDeficit(
     mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
     mapping(address user => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,
     mapping(address user => ISpoke.PositionStatus) storage positionStatus,
