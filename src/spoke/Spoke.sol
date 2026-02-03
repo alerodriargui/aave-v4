@@ -916,8 +916,17 @@ abstract contract Spoke is
     address hub,
     uint256 assetId,
     uint256 reserveId
-  ) internal view returns (bool) {
-    return _reserves[reserveId].assetId == assetId && address(_reserves[reserveId].hub) == hub;
+  ) internal view returns (bool ret) {
+    assembly ('memory-safe') {
+      mstore(0, reserveId)
+      mstore(32, _reserves.slot)
+      let slot := add(keccak256(0, 64), 1)
+
+      let storedHubAssetId := shr(80, shl(80, sload(slot)))
+      let expected := or(hub, shl(160, assetId))
+
+      ret := eq(storedHubAssetId, expected)
+    }
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
