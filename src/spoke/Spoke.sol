@@ -876,6 +876,7 @@ abstract contract Spoke is
 
       emit ReportDeficit(reserveId, user, deficitShares, premiumDelta);
     }
+
     emit UpdateUserRiskPremium(user, 0);
   }
 
