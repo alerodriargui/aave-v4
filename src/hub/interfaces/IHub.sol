@@ -118,6 +118,8 @@ interface IHub is IHubBase, IAccessManaged {
     uint256 accruedFees
   );
 
+  event AccrueFees(uint256 indexed assetId, address feeReceiver, uint256 feeShares);
+
   /// @notice Emitted when an asset configuration is updated.
   /// @param assetId The identifier of the asset.
   /// @param config The new asset configuration struct.
