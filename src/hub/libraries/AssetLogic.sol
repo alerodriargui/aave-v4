@@ -112,6 +112,34 @@ library AssetLogic {
     return asset.addedShares + feeShares;
   }
 
+  /// @notice Returns both totalAddedAssets and totalAddedShares with a single getFee() call.
+  function getTotalAssetsAndShares(
+    IHub.Asset storage asset,
+    uint256 drawnIndex,
+    uint256 previousIndex
+  ) internal view returns (uint256, uint256) {
+    (uint256 feeAmount, uint256 feeShares) = asset.getFee(drawnIndex, previousIndex);
+
+    uint256 projectedRealizedFees = feeShares > 0 ? 0 : feeAmount;
+
+    uint256 aggregatedOwedRay = _calculateAggregatedOwedRay({
+      drawnShares: asset.drawnShares,
+      premiumShares: asset.premiumShares,
+      premiumOffsetRay: asset.premiumOffsetRay,
+      deficitRay: asset.deficitRay,
+      drawnIndex: drawnIndex
+    });
+
+    uint256 totalAssets = asset.liquidity +
+      asset.swept +
+      aggregatedOwedRay.fromRayUp() -
+      projectedRealizedFees;
+
+    uint256 totalShares = asset.addedShares + feeShares;
+
+    return (totalAssets, totalShares);
+  }
+
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
   function toAddedAssetsUp(
     IHub.Asset storage asset,
@@ -119,11 +147,11 @@ library AssetLogic {
   ) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
     uint256 drawnIndex = asset.getDrawnIndex(previousIndex);
-    return
-      shares.toAssetsUp(
-        asset.totalAddedAssets(drawnIndex),
-        asset.totalAddedShares(drawnIndex, previousIndex)
-      );
+    (uint256 totalAssets, uint256 totalShares) = asset.getTotalAssetsAndShares(
+      drawnIndex,
+      previousIndex
+    );
+    return shares.toAssetsUp(totalAssets, totalShares);
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding down.
@@ -133,11 +161,11 @@ library AssetLogic {
   ) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
     uint256 drawnIndex = asset.getDrawnIndex(previousIndex);
-    return
-      shares.toAssetsDown(
-        asset.totalAddedAssets(drawnIndex),
-        asset.totalAddedShares(drawnIndex, previousIndex)
-      );
+    (uint256 totalAssets, uint256 totalShares) = asset.getTotalAssetsAndShares(
+      drawnIndex,
+      previousIndex
+    );
+    return shares.toAssetsDown(totalAssets, totalShares);
   }
 
   /// @notice Converts an amount of added assets to the equivalent amount of shares, rounding up.
@@ -147,11 +175,11 @@ library AssetLogic {
   ) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
     uint256 drawnIndex = asset.getDrawnIndex(previousIndex);
-    return
-      assets.toSharesUp(
-        asset.totalAddedAssets(drawnIndex),
-        asset.totalAddedShares(drawnIndex, previousIndex)
-      );
+    (uint256 totalAssets, uint256 totalShares) = asset.getTotalAssetsAndShares(
+      drawnIndex,
+      previousIndex
+    );
+    return assets.toSharesUp(totalAssets, totalShares);
   }
 
   /// @notice Converts an amount of added assets to the equivalent amount of shares, rounding down.
@@ -161,11 +189,11 @@ library AssetLogic {
   ) internal view returns (uint256) {
     uint256 previousIndex = asset.drawnIndex;
     uint256 drawnIndex = asset.getDrawnIndex(previousIndex);
-    return
-      assets.toSharesDown(
-        asset.totalAddedAssets(drawnIndex),
-        asset.totalAddedShares(drawnIndex, previousIndex)
-      );
+    (uint256 totalAssets, uint256 totalShares) = asset.getTotalAssetsAndShares(
+      drawnIndex,
+      previousIndex
+    );
+    return assets.toSharesDown(totalAssets, totalShares);
   }
 
   /// @notice Updates the drawn rate of a specified asset.
