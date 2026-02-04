@@ -227,4 +227,11 @@ contract HubBase is Base {
   function _randomInvalidAssetId(IHub hub) internal returns (uint256) {
     return vm.randomUint(hub.getAssetCount(), UINT256_MAX);
   }
+
+  /// @dev Calculates the risk premium threshold associated with the maximum collateral risk, both expressed in BPS.
+  function _calculateRiskPremiumThreshold(
+    uint256 maxCollateralRisk
+  ) internal pure returns (uint24) {
+    return (maxCollateralRisk + PercentageMath.PERCENTAGE_FACTOR).toUint24();
+  }
 }

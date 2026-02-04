@@ -976,9 +976,11 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateSpokeRiskPremiumThreshold() public {
-    uint24 newRiskPremiumThreshold = 100;
+    // maxCollateralRisk of 15% (15_00 BPS) should result in riskPremiumThreshold of 115% (115_00 BPS)
+    uint256 maxCollateralRisk = 15_00;
+    uint24 expectedRiskPremiumThreshold = _calculateRiskPremiumThreshold(15_00); // maxCollateralRisk + PERCENTAGE_FACTOR
     IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(_assetId, spoke);
-    expectedSpokeConfig.riskPremiumThreshold = newRiskPremiumThreshold;
+    expectedSpokeConfig.riskPremiumThreshold = expectedRiskPremiumThreshold;
     vm.expectCall(
       address(hub1),
       abi.encodeCall(IHub.updateSpokeConfig, (_assetId, spoke, expectedSpokeConfig))
@@ -988,9 +990,49 @@ contract HubConfiguratorTest is HubBase {
       address(hub1),
       _assetId,
       spoke,
-      newRiskPremiumThreshold
+      maxCollateralRisk
     );
     assertEq(hub1.getSpokeConfig(_assetId, spoke), expectedSpokeConfig);
+  }
+
+  function test_updateSpokeRiskPremiumThreshold_zeroMaxRisk() public {
+    // maxCollateralRisk of 0% should result in riskPremiumThreshold of 100%
+    uint256 maxCollateralRisk = 0;
+    uint24 expectedRiskPremiumThreshold = PercentageMath.PERCENTAGE_FACTOR.toUint24();
+    IHub.SpokeConfig memory expectedSpokeConfig = hub1.getSpokeConfig(_assetId, spoke);
+    expectedSpokeConfig.riskPremiumThreshold = expectedRiskPremiumThreshold;
+    vm.prank(HUB_CONFIGURATOR);
+    hubConfigurator.updateSpokeRiskPremiumThreshold(
+      address(hub1),
+      _assetId,
+      spoke,
+      maxCollateralRisk
+    );
+    assertEq(
+      hub1.getSpokeConfig(_assetId, spoke).riskPremiumThreshold,
+      expectedRiskPremiumThreshold
+    );
+  }
+
+  function test_updateSpokeRiskPremiumThreshold_fuzz(uint256 maxCollateralRisk) public {
+    // Bound to prevent overflow when casting to uint24
+    maxCollateralRisk = bound(
+      maxCollateralRisk,
+      0,
+      type(uint24).max - PercentageMath.PERCENTAGE_FACTOR
+    );
+    uint24 expectedRiskPremiumThreshold = _calculateRiskPremiumThreshold(maxCollateralRisk);
+    vm.prank(HUB_CONFIGURATOR);
+    hubConfigurator.updateSpokeRiskPremiumThreshold(
+      address(hub1),
+      _assetId,
+      spoke,
+      maxCollateralRisk
+    );
+    assertEq(
+      hub1.getSpokeConfig(_assetId, spoke).riskPremiumThreshold,
+      expectedRiskPremiumThreshold
+    );
   }
 
   function test_updateSpokeCaps_revertsWith_AccessManagedUnauthorized() public {

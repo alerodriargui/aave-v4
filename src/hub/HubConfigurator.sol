@@ -327,7 +327,7 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
     hub.updateAssetConfig(assetId, config, new bytes(0));
   }
 
-  /// @dev Calculates the risk premium threshold from the maximum collateral risk, both expressed in BPS.
+  /// @dev Calculates the risk premium threshold associated with the maximum collateral risk, both expressed in BPS.
   function _calculateRiskPremiumThreshold(
     uint256 maxCollateralRisk
   ) internal pure returns (uint256) {
