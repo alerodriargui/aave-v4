@@ -2986,14 +2986,6 @@ abstract contract Base is Test {
     return hub.getSpokeAddedAssets(assetId, feeReceiver);
   }
 
-  function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
-    // !fix
-    // return
-    //   hub.getAddedAssets(assetId) +
-    //   hub.getAsset(assetId).realizedFees +
-    //   _calcUnrealizedFees(hub, assetId);
-  }
-
   function _extrapolateFeeShares(IHub hub, uint256 assetId) internal view returns (uint256) {
     uint256 extrapolatedBalance = hub.getAddedShares(assetId);
     uint256 cachedBalance = hub.getAsset(assetId).addedShares;
