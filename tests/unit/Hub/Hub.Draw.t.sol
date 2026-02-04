@@ -36,6 +36,12 @@ contract HubDrawTest is HubBase {
     );
 
     vm.expectEmit(address(hub1));
+    emit IHub.AccrueFees(
+      assetId,
+      _getFeeReceiver(hub1, assetId),
+      _extrapolateFeeShares(hub1, assetId)
+    );
+    vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
@@ -45,8 +51,7 @@ contract HubDrawTest is HubBase {
         drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficitRay,
         swept: assetBefore.swept
-      }),
-      hub1.getAssetAccruedFees(assetId)
+      })
     );
     vm.expectEmit(address(hub1.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
@@ -122,6 +127,12 @@ contract HubDrawTest is HubBase {
     );
 
     vm.expectEmit(address(hub1));
+    emit IHub.AccrueFees(
+      assetId,
+      _getFeeReceiver(hub1, assetId),
+      _extrapolateFeeShares(hub1, assetId)
+    );
+    vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(
       assetId,
       hub1.getAssetDrawnIndex(assetId),
@@ -131,8 +142,7 @@ contract HubDrawTest is HubBase {
         drawn: hub1.previewRestoreByShares(assetId, assetBefore.drawnShares + shares),
         deficit: assetBefore.deficitRay,
         swept: assetBefore.swept
-      }),
-      hub1.getAssetAccruedFees(assetId)
+      })
     );
     vm.expectEmit(address(hub1.getAsset(assetId).underlying));
     emit IERC20.Transfer(address(hub1), alice, amount);
