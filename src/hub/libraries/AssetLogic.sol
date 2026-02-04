@@ -308,9 +308,7 @@ library AssetLogic {
       drawnIndex: previousIndex
     }).fromRayUp();
 
-    feeAmount =
-      asset.realizedFees +
-      (aggregatedOwedAfter - aggregatedOwedBefore).percentMulDown(liquidityFee);
+    feeAmount += (aggregatedOwedAfter - aggregatedOwedBefore).percentMulDown(liquidityFee);
 
     return (
       feeAmount,

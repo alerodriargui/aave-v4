@@ -2181,6 +2181,15 @@ abstract contract Base is Test {
       hub.getAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId));
   }
 
+  /// @dev Helper function to calculate the expected dust (tokens left in hub) after full withdrawal.
+  /// @dev This equals burntInterest + realizedFees
+  function _calculateExpectedDustAfterFullWithdraw(
+    IHub hub,
+    uint256 assetId
+  ) internal view returns (uint256) {
+    return _calculateBurntInterest(hub, assetId) + hub.getAsset(assetId).realizedFees;
+  }
+
   function _calculatePremiumDebt(
     IHub hub,
     uint256 assetId,
