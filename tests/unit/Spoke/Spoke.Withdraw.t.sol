@@ -441,6 +441,8 @@ contract SpokeWithdrawTest is SpokeBase {
     assertEq(returnValues.amount, expectedAssets);
     assertEq(returnValues.shares, expectedShares);
 
+    _withdrawLiquidityFees(hub1, daiAssetId, UINT256_MAX);
+
     _checkSuppliedAmounts(daiAssetId, _daiReserveId(spoke1), spoke1, bob, 0, 'after withdraw');
     _checkSupplyRateIncreasing(addExRate, getAddExRate(daiAssetId), 'after withdraw');
     _assertHubLiquidity(hub1, daiAssetId, 'spoke1.withdraw');

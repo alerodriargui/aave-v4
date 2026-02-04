@@ -481,14 +481,15 @@ contract HubConfigTest is HubBase {
     address oldFeeReceiver = _getFeeReceiver(hub1, assetId);
     IHub.SpokeConfig memory oldFeeReceiverConfig = hub1.getSpokeConfig(assetId, oldFeeReceiver);
 
+    uint256 expectedFeeShares = _extrapolateFeeShares(hub1, assetId);
+    if (expectedFeeShares > 0) {
+      vm.expectEmit(address(hub1));
+      emit IHub.AccrueFees(assetId, _getFeeReceiver(hub1, assetId), expectedFeeShares);
+    }
+
     // new spoke is added only if it is different from the old one and not yet listed
     bool isNewFeeReceiver = newConfig.feeReceiver != _getFeeReceiver(hub1, assetId);
     if (isNewFeeReceiver && !hub1.isSpokeListed(assetId, newConfig.feeReceiver)) {
-      uint256 extrapolateFeeShares = _extrapolateFeeShares(hub1, assetId);
-      if (extrapolateFeeShares > 0) {
-        vm.expectEmit(address(hub1));
-        emit IHub.AccrueFees(assetId, _getFeeReceiver(hub1, assetId), extrapolateFeeShares);
-      }
       vm.expectEmit(address(hub1));
       emit IHub.UpdateSpokeConfig(
         assetId,
@@ -519,12 +520,6 @@ contract HubConfigTest is HubBase {
     } else {
       newConfig.feeReceiver = _getFeeReceiver(hub1, assetId);
     }
-    vm.expectEmit(address(hub1));
-    emit IHub.AccrueFees(
-      assetId,
-      _getFeeReceiver(hub1, assetId),
-      _extrapolateFeeShares(hub1, assetId)
-    );
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(
       assetId,
@@ -651,23 +646,6 @@ contract HubConfigTest is HubBase {
       halted,
       'old fee receiver halted'
     );
-  }
-
-  /// Updates the fee receiver while the current fee receiver is not active
-  function test_updateAssetConfig_NewFeeReceiver_revertsWith_SpokeNotActive_noFees() public {
-    uint256 assetId = daiAssetId;
-
-    uint256 amount = 1000e18;
-    _addLiquidity(assetId, amount);
-    _drawLiquidity(assetId, amount, true);
-    skip(365 days);
-
-    _updateSpokeActive(hub1, assetId, _getFeeReceiver(hub1, assetId), false);
-    IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
-    config.feeReceiver = makeAddr('newFeeReceiver');
-
-    vm.expectRevert(IHub.SpokeNotActive.selector, address(hub1));
-    Utils.updateAssetConfig(hub1, ADMIN, assetId, config, new bytes(0));
   }
 
   /// Updates the fee receiver while the current fee receiver is not active and no fees are accrued

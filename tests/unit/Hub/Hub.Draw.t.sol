@@ -35,12 +35,11 @@ contract HubDrawTest is HubBase {
       )
     );
 
-    vm.expectEmit(address(hub1));
-    emit IHub.AccrueFees(
-      assetId,
-      _getFeeReceiver(hub1, assetId),
-      _extrapolateFeeShares(hub1, assetId)
-    );
+    uint256 expectedFeeShares = _extrapolateFeeShares(hub1, assetId);
+    if (expectedFeeShares > 0) {
+      vm.expectEmit(address(hub1));
+      emit IHub.AccrueFees(assetId, _getFeeReceiver(hub1, assetId), expectedFeeShares);
+    }
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(
       assetId,
@@ -126,12 +125,11 @@ contract HubDrawTest is HubBase {
       )
     );
 
-    vm.expectEmit(address(hub1));
-    emit IHub.AccrueFees(
-      assetId,
-      _getFeeReceiver(hub1, assetId),
-      _extrapolateFeeShares(hub1, assetId)
-    );
+    uint256 expectedFeeShares = _extrapolateFeeShares(hub1, assetId);
+    if (expectedFeeShares > 0) {
+      vm.expectEmit(address(hub1));
+      emit IHub.AccrueFees(assetId, _getFeeReceiver(hub1, assetId), expectedFeeShares);
+    }
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAsset(
       assetId,
