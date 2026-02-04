@@ -76,7 +76,7 @@ library AssetLogic {
     return asset.drawn(drawnIndex) + asset.premium(drawnIndex);
   }
 
-  /// @notice Returns the total amount owed for the specified asset, including drawn and premium.
+  /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
     return asset.totalAddedAssets(asset.getDrawnIndex());
   }
