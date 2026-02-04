@@ -36,100 +36,124 @@ library EIP712Hash {
     // keccak256('UpdateUserDynamicConfig(address spoke,address onBehalfOf,uint256 nonce,uint256 deadline)')
     0x4a168dd8b32d260d07d6f0be832e23035a65a47f788675b0b02270c68b987886;
 
-  function hash(ISignatureGateway.Supply calldata params) internal pure returns (bytes32 result) {
+  function hash(ISignatureGateway.Supply calldata params) internal pure returns (bytes32 digest) {
     assembly ('memory-safe') {
       // retrieve fmp; note: memory will be left dirtied
       let m := mload(0x40)
 
       mstore(m, SUPPLY_TYPEHASH)
-      // subsequent data directly copied from calldata
-      calldatacopy(add(m, 0x20), params, 0xc0)
+      mstore(add(m, 0x20), shr(96, shl(96, calldataload(params)))) // params.spoke
+      mstore(add(m, 0x40), calldataload(add(params, 0x20))) // params.reserveId
+      mstore(add(m, 0x60), calldataload(add(params, 0x40))) // params.amount
+      mstore(add(m, 0x80), shr(96, shl(96, calldataload(add(params, 0x60))))) // params.onBehalfOf
+      mstore(add(m, 0xa0), calldataload(add(params, 0x80))) // params.nonce
+      mstore(add(m, 0xc0), calldataload(add(params, 0xa0))) // params.deadline
 
-      result := keccak256(m, 0xe0)
+      digest := keccak256(m, 0xe0)
     }
   }
 
-  function hash(ISignatureGateway.Withdraw calldata params) internal pure returns (bytes32 result) {
+  function hash(ISignatureGateway.Withdraw calldata params) internal pure returns (bytes32 digest) {
     assembly ('memory-safe') {
       // retrieve fmp; note: memory will be left dirtied
       let m := mload(0x40)
 
       mstore(m, WITHDRAW_TYPEHASH)
-      // subsequent data directly copied from calldata
-      calldatacopy(add(m, 0x20), params, 0xc0)
+      mstore(add(m, 0x20), shr(96, shl(96, calldataload(params)))) // params.spoke
+      mstore(add(m, 0x40), calldataload(add(params, 0x20))) // params.reserveId
+      mstore(add(m, 0x60), calldataload(add(params, 0x40))) // params.amount
+      mstore(add(m, 0x80), shr(96, shl(96, calldataload(add(params, 0x60))))) // params.onBehalfOf
+      mstore(add(m, 0xa0), calldataload(add(params, 0x80))) // params.nonce
+      mstore(add(m, 0xc0), calldataload(add(params, 0xa0))) // params.deadline
 
-      result := keccak256(m, 0xe0)
+      digest := keccak256(m, 0xe0)
     }
   }
 
-  function hash(ISignatureGateway.Borrow calldata params) internal pure returns (bytes32 result) {
+  function hash(ISignatureGateway.Borrow calldata params) internal pure returns (bytes32 digest) {
     assembly ('memory-safe') {
       // retrieve fmp; note: memory will be left dirtied
       let m := mload(0x40)
 
       mstore(m, BORROW_TYPEHASH)
-      // subsequent data directly copied from calldata
-      calldatacopy(add(m, 0x20), params, 0xc0)
+      mstore(add(m, 0x20), shr(96, shl(96, calldataload(params)))) // params.spoke
+      mstore(add(m, 0x40), calldataload(add(params, 0x20))) // params.reserveId
+      mstore(add(m, 0x60), calldataload(add(params, 0x40))) // params.amount
+      mstore(add(m, 0x80), shr(96, shl(96, calldataload(add(params, 0x60))))) // params.onBehalfOf
+      mstore(add(m, 0xa0), calldataload(add(params, 0x80))) // params.nonce
+      mstore(add(m, 0xc0), calldataload(add(params, 0xa0))) // params.deadline
 
-      result := keccak256(m, 0xe0)
+      digest := keccak256(m, 0xe0)
     }
   }
 
-  function hash(ISignatureGateway.Repay calldata params) internal pure returns (bytes32 result) {
+  function hash(ISignatureGateway.Repay calldata params) internal pure returns (bytes32 digest) {
     assembly ('memory-safe') {
       // retrieve fmp; note: memory will be left dirtied
       let m := mload(0x40)
 
       mstore(m, REPAY_TYPEHASH)
-      // subsequent data directly copied from calldata
-      calldatacopy(add(m, 0x20), params, 0xc0)
+      mstore(add(m, 0x20), shr(96, shl(96, calldataload(params)))) // params.spoke
+      mstore(add(m, 0x40), calldataload(add(params, 0x20))) // params.reserveId
+      mstore(add(m, 0x60), calldataload(add(params, 0x40))) // params.amount
+      mstore(add(m, 0x80), shr(96, shl(96, calldataload(add(params, 0x60))))) // params.onBehalfOf
+      mstore(add(m, 0xa0), calldataload(add(params, 0x80))) // params.nonce
+      mstore(add(m, 0xc0), calldataload(add(params, 0xa0))) // params.deadline
 
-      result := keccak256(m, 0xe0)
+      digest := keccak256(m, 0xe0)
     }
   }
 
   function hash(
     ISignatureGateway.SetUsingAsCollateral calldata params
-  ) internal pure returns (bytes32 result) {
+  ) internal pure returns (bytes32 digest) {
     assembly ('memory-safe') {
       // retrieve fmp; note: memory will be left dirtied
       let m := mload(0x40)
 
       mstore(m, SET_USING_AS_COLLATERAL_TYPEHASH)
-      // subsequent data directly copied from calldata
-      calldatacopy(add(m, 0x20), params, 0xc0)
+      mstore(add(m, 0x20), shr(96, shl(96, calldataload(params)))) // params.spoke
+      mstore(add(m, 0x40), calldataload(add(params, 0x20))) // params.reserveId
+      mstore(add(m, 0x60), iszero(iszero(calldataload(add(params, 0x40))))) // params.useAsCollateral
+      mstore(add(m, 0x80), shr(96, shl(96, calldataload(add(params, 0x60))))) // params.onBehalfOf
+      mstore(add(m, 0xa0), calldataload(add(params, 0x80))) // params.nonce
+      mstore(add(m, 0xc0), calldataload(add(params, 0xa0))) // params.deadline
 
-      result := keccak256(m, 0xe0)
+      digest := keccak256(m, 0xe0)
     }
   }
 
   function hash(
     ISignatureGateway.UpdateUserRiskPremium calldata params
-  ) internal pure returns (bytes32 result) {
+  ) internal pure returns (bytes32 digest) {
     assembly ('memory-safe') {
       // retrieve fmp; note: memory will be left dirtied
       let m := mload(0x40)
 
       mstore(m, UPDATE_USER_RISK_PREMIUM_TYPEHASH)
-      // subsequent data directly copied from calldata
-      calldatacopy(add(m, 0x20), params, 0x80)
+      mstore(add(m, 0x20), shr(96, shl(96, calldataload(params)))) // params.spoke
+      mstore(add(m, 0x40), shr(96, shl(96, calldataload(add(params, 0x20))))) // params.onBehalfOf
+      mstore(add(m, 0x60), calldataload(add(params, 0x40))) // params.nonce
+      mstore(add(m, 0x80), calldataload(add(params, 0x60))) // params.deadline
 
-      result := keccak256(m, 0xa0)
+      digest := keccak256(m, 0xa0)
     }
   }
 
   function hash(
     ISignatureGateway.UpdateUserDynamicConfig calldata params
-  ) internal pure returns (bytes32 result) {
+  ) internal pure returns (bytes32 digest) {
     assembly ('memory-safe') {
       // retrieve fmp; note: memory will be left dirtied
       let m := mload(0x40)
 
       mstore(m, UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH)
-      // subsequent data directly copied from calldata
-      calldatacopy(add(m, 0x20), params, 0x80)
+      mstore(add(m, 0x20), shr(96, shl(96, calldataload(params)))) // params.spoke
+      mstore(add(m, 0x40), shr(96, shl(96, calldataload(add(params, 0x20))))) // params.onBehalfOf
+      mstore(add(m, 0x60), calldataload(add(params, 0x40))) // params.nonce
+      mstore(add(m, 0x80), calldataload(add(params, 0x60))) // params.deadline
 
-      result := keccak256(m, 0xa0)
+      digest := keccak256(m, 0xa0)
     }
   }
 }
