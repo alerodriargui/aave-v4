@@ -94,7 +94,7 @@ library AssetLogic {
       drawnIndex: drawnIndex
     });
 
-    return asset.liquidity + asset.swept + aggregatedOwedRay.fromRayUp();
+    return asset.liquidity + asset.swept + aggregatedOwedRay.fromRayUp() - asset.realizedFees;
   }
 
   /// @notice Returns the total added assets for the specified asset.
@@ -108,7 +108,8 @@ library AssetLogic {
     uint256 drawnIndex,
     uint256 previousIndex
   ) internal view returns (uint256) {
-    return asset.addedShares + asset.getFeeShares(drawnIndex, previousIndex);
+    (, uint256 feeShares) = asset.getFee(drawnIndex, previousIndex);
+    return asset.addedShares + feeShares;
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -201,12 +202,15 @@ library AssetLogic {
     asset.drawnIndex = drawnIndex.toUint120();
     asset.lastUpdateTimestamp = block.timestamp.toUint40();
 
-    uint120 feeShares = asset.getFeeShares(drawnIndex, previousIndex).toUint120();
+    (uint256 feeAmount, uint256 feeShares) = asset.getFee(drawnIndex, previousIndex);
     if (feeShares > 0) {
       address feeReceiver = asset.feeReceiver;
-      asset.addedShares += feeShares;
-      spokes[assetId][feeReceiver].addedShares += feeShares;
+      asset.realizedFees = 0;
+      asset.addedShares += feeShares.toUint120();
+      spokes[assetId][feeReceiver].addedShares += feeShares.toUint120();
       emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
+    } else {
+      asset.realizedFees += feeAmount.toUint120();
     }
   }
 
@@ -234,23 +238,25 @@ library AssetLogic {
 
   /// @notice Calculates the amount of unrealized fee shares since last accrual.
   function unrealizedFeeShares(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.getFeeShares(asset.getDrawnIndex(), asset.drawnIndex);
+    (, uint256 feeShares) = asset.getFee(asset.getDrawnIndex(), asset.drawnIndex);
+    return feeShares;
   }
 
   /// @notice Calculates the amount of fee shares derived from the index growth due to interest accrual.
   /// @dev The true liquidity growth is always greater than accrued fees, even with 100.00% liquidity fee.
-  function getFeeShares(
+  function getFee(
     IHub.Asset storage asset,
     uint256 drawnIndex,
     uint256 previousIndex
-  ) internal view returns (uint256) {
+  ) internal view returns (uint256, uint256) {
+    uint256 feeAmount = asset.realizedFees;
     if (drawnIndex == previousIndex) {
-      return 0;
+      return (feeAmount, 0);
     }
 
     uint256 liquidityFee = asset.liquidityFee;
     if (liquidityFee == 0) {
-      return 0;
+      return (feeAmount, 0);
     }
 
     uint120 drawnShares = asset.drawnShares;
@@ -274,13 +280,17 @@ library AssetLogic {
       drawnIndex: previousIndex
     }).fromRayUp();
 
-    uint256 feeAmount = (aggregatedOwedAfter - aggregatedOwedBefore).percentMulDown(liquidityFee);
+    feeAmount =
+      asset.realizedFees +
+      (aggregatedOwedAfter - aggregatedOwedBefore).percentMulDown(liquidityFee);
 
-    return
+    return (
+      feeAmount,
       feeAmount.toSharesDown(
         asset.liquidity + asset.swept + aggregatedOwedAfter - feeAmount,
         asset.addedShares
-      );
+      )
+    );
   }
 
   /// @notice Calculates the aggregated owed amount for a specified asset, expressed in asset units and scaled by RAY.
