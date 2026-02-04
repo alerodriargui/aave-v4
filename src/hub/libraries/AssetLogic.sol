@@ -71,16 +71,17 @@ library AssetLogic {
         .fromRayUp();
   }
 
-  /// @notice Returns the total amount owed for the specified asset, including drawn and premium.
+  /// @notice Returns the total amount owed for the specified asset at specified drawnIndex.
   function totalOwed(IHub.Asset storage asset, uint256 drawnIndex) internal view returns (uint256) {
     return asset.drawn(drawnIndex) + asset.premium(drawnIndex);
   }
 
+  /// @notice Returns the total amount owed for the specified asset, including drawn and premium.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
     return asset.totalAddedAssets(asset.getDrawnIndex());
   }
 
-  /// @notice Returns the total added assets for the specified asset.
+  /// @notice Returns the total added assets for the specified asset at specified drawnIndex.
   function totalAddedAssets(
     IHub.Asset storage asset,
     uint256 drawnIndex
@@ -96,10 +97,12 @@ library AssetLogic {
     return asset.liquidity + asset.swept + aggregatedOwedRay.fromRayUp();
   }
 
+  /// @notice Returns the total added assets for the specified asset.
   function totalAddedShares(IHub.Asset storage asset) internal view returns (uint256) {
     return asset.addedShares + asset.unrealizedFeeShares();
   }
 
+  /// @notice Returns the total added shares for the specified asset at specified indices.
   function totalAddedShares(
     IHub.Asset storage asset,
     uint256 drawnIndex,
@@ -207,6 +210,7 @@ library AssetLogic {
     }
   }
 
+  /// @notice Calculates the current drawnIndex based on stored drawnRate.
   function getDrawnIndex(IHub.Asset storage asset) internal view returns (uint256) {
     return asset.getDrawnIndex({previousIndex: asset.drawnIndex});
   }
