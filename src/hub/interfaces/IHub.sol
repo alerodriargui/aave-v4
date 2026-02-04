@@ -11,10 +11,11 @@ import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 interface IHub is IHubBase, IAccessManaged {
   /// @notice Asset position and configuration data.
   /// @dev liquidity The liquidity available to be accessed, expressed in asset units.
+  /// @dev swept The outstanding liquidity which has been invested by the reinvestment controller, expressed in asset units.
   /// @dev decimals The number of decimals of the underlying asset.
   /// @dev addedShares The total shares added across all spokes.
-  /// @dev swept The outstanding liquidity which has been invested by the reinvestment controller, expressed in asset units.
   /// @dev premiumOffsetRay The total premium offset across all spokes, used to calculate the premium, expressed in asset units and scaled by RAY.
+  /// @dev deficitRay The amount of outstanding bad debt across all spokes, expressed in asset units and scaled by RAY.
   /// @dev drawnShares The total drawn shares across all spokes.
   /// @dev premiumShares The total premium shares across all spokes.
   /// @dev liquidityFee The protocol fee charged on drawn and premium liquidity growth, expressed in BPS.
@@ -25,7 +26,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev irStrategy The address of the interest rate strategy.
   /// @dev reinvestmentController The address of the reinvestment controller.
   /// @dev feeReceiver The address of the fee receiver spoke.
-  /// @dev deficitRay The amount of outstanding bad debt across all spokes, expressed in asset units and scaled by RAY.
   struct Asset {
     uint120 liquidity;
     uint120 swept;
