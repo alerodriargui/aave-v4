@@ -16,17 +16,20 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke = spoke1;
     reserveId = _getReserveIds(spoke);
     _seed();
+
+    // create initial borrow to generate interest
+    vm.startPrank(bob);
+    spoke.supply(reserveId.usdx, 100_000e6, bob);
+    spoke.setUsingAsCollateral(reserveId.usdx, true, bob);
+    spoke.borrow(reserveId.dai, 100e18, bob);
+    spoke.borrow(reserveId.weth, 1e18, bob);
+    spoke.borrow(reserveId.wbtc, 1e5, bob);
+    vm.stopPrank();
+    skip(100);
   }
 
   function test_supply() public {
-    vm.startPrank(bob);
-    spoke.supply(reserveId.usdx, 10000e6, bob);
-    spoke.setUsingAsCollateral(reserveId.usdx, true, bob);
-    spoke.borrow(reserveId.dai, 100e18, bob);
-    vm.stopPrank();
-
     skip(100);
-
     vm.startPrank(alice);
     spoke.supply(reserveId.usdx, 1000e6, alice);
     vm.snapshotGasLastCall(NAMESPACE, 'supply: 0 borrows, collateral disabled');

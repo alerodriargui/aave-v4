@@ -12,21 +12,28 @@ contract HubOperations_Gas_Tests is Base {
   function setUp() public override {
     deployFixtures();
     initEnvironment();
-  }
 
-  function test_add() public {
-    // make sure there are already drawn asset prior to add
+    // create debt on multiple assets to capture realistic accrual/fee costs
     vm.startPrank(address(spoke2));
     tokenList.dai.transferFrom(alice, address(hub1), 1000e18);
     hub1.add(daiAssetId, 1000e18);
     vm.stopPrank();
+
     vm.startPrank(address(spoke1));
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
     hub1.add(usdxAssetId, 1000e6);
-    skip(100);
     hub1.draw(daiAssetId, 500e18, alice);
     vm.stopPrank();
 
+    // add debt on usdx as well
+    vm.startPrank(address(spoke2));
+    hub1.draw(usdxAssetId, 500e6, alice);
+    vm.stopPrank();
+
+    skip(100);
+  }
+
+  function test_add() public {
     vm.startPrank(address(spoke1));
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
     hub1.add(usdxAssetId, 1000e6);

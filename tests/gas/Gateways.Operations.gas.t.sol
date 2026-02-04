@@ -124,6 +124,12 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
     spoke1.setUserPositionManager(address(gateway), true);
     vm.prank(alice);
     gateway.useNonce(nonceKey);
+
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, 10_000e18, bob);
+    Utils.supplyCollateral(spoke1, _wethReserveId(spoke1), alice, 100e18, alice);
+    Utils.borrow(spoke1, _wethReserveId(spoke1), bob, 1e18, bob);
+
+    skip(100);
   }
 
   function test_supplyWithSig() public {
