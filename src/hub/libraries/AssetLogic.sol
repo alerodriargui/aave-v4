@@ -210,7 +210,7 @@ library AssetLogic {
       spokes[assetId][feeReceiver].addedShares += feeShares.toUint120();
       emit IHub.AccrueFees(assetId, feeReceiver, feeShares);
     } else {
-      asset.realizedFees += feeAmount.toUint120();
+      asset.realizedFees = feeAmount.toUint120();
     }
   }
 
