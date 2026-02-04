@@ -225,11 +225,15 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUsingAsCollateral(reserveId.usdx, true, alice);
     _updateLiquidationFee(spoke, reserveId.usdx, 10_00);
 
+    skip(100);
+
     spoke.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 1 collateral');
 
     spoke.setUsingAsCollateral(reserveId.dai, true, alice);
     _updateLiquidationFee(spoke, reserveId.dai, 15_00);
+
+    skip(100);
 
     spoke.updateUserDynamicConfig(alice);
     vm.snapshotGasLastCall(NAMESPACE, 'updateUserDynamicConfig: 2 collaterals');
@@ -242,6 +246,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.supply(reserveId.usdx, 1000e6, bob);
     spoke.supply(reserveId.wbtc, 1e18, bob);
 
+    skip(100);
+
     bytes[] memory calls = new bytes[](2);
     calls[0] = abi.encodeCall(ISpokeBase.supply, (reserveId.dai, 1000e18, bob));
     calls[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (reserveId.dai, true, bob));
@@ -250,6 +256,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'supply + enable collateral (multicall)');
 
     // supplyWithPermit (dai)
+    skip(100);
+
     tokenList.dai.approve(address(spoke), 0);
     (, uint256 bobPk) = makeAddrAndKey('bob');
     EIP712Types.Permit memory permit = EIP712Types.Permit({
@@ -271,6 +279,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.borrow(reserveId.usdx, 500e6, bob);
 
     // repayWithPermit (usdx)
+    skip(100);
+
     tokenList.usdx.approve(address(spoke), 0);
     permit = EIP712Types.Permit({
       owner: bob,
@@ -289,6 +299,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'permitReserve + repay (multicall)');
 
     // supplyWithPermitAndEnableCollateral (wbtc)
+    skip(100);
+
     calls = new bytes[](3);
     tokenList.wbtc.approve(address(spoke), 0);
     (, bobPk) = makeAddrAndKey('bob');
@@ -300,6 +312,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       deadline: vm.getBlockTimestamp()
     });
     (v, r, s) = vm.sign(bobPk, _getTypedDataHash(tokenList.wbtc, permit));
+
     calls[0] = abi.encodeCall(
       ISpoke.permitReserve,
       (reserveId.wbtc, permit.owner, permit.value, permit.deadline, v, r, s)
@@ -325,6 +338,8 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
     updates[0] = ISpoke.PositionManagerUpdate(positionManager, true);
 
+    skip(100);
+
     ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
       onBehalfOf: user,
       updates: updates,
@@ -337,8 +352,11 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     spoke.setUserPositionManagersWithSig(p, signature);
     vm.snapshotGasLastCall(NAMESPACE, 'setUserPositionManagersWithSig: enable');
 
+    skip(100);
+
     p.updates[0].approve = false;
     p.nonce = spoke.nonces(user, nonceKey);
+    p.deadline = vm.getBlockTimestamp();
     (v, r, s) = vm.sign(userPk, _getTypedDataHash(spoke, p));
     signature = abi.encodePacked(r, s, v);
 
