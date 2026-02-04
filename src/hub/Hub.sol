@@ -108,7 +108,6 @@ contract Hub is IHub, AccessManaged {
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
-      realizedFees: 0,
       reinvestmentController: address(0),
       feeReceiver: feeReceiver,
       liquidityFee: 0
@@ -125,7 +124,7 @@ contract Hub is IHub, AccessManaged {
         reinvestmentController: address(0)
       })
     );
-    emit UpdateAsset(assetId, drawnIndex, drawnRate, 0);
+    emit UpdateAsset(assetId, drawnIndex, drawnRate);
 
     return assetId;
   }
@@ -152,7 +151,6 @@ contract Hub is IHub, AccessManaged {
 
     address oldFeeReceiver = asset.feeReceiver;
     if (oldFeeReceiver != config.feeReceiver) {
-      _mintFeeShares(asset, assetId);
       IHub.SpokeConfig memory spokeConfig;
       spokeConfig.active = _spokes[assetId][oldFeeReceiver].active;
       spokeConfig.halted = _spokes[assetId][oldFeeReceiver].halted;
@@ -203,16 +201,6 @@ contract Hub is IHub, AccessManaged {
     asset.accrue(_spokes, assetId);
     IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, irData);
     asset.updateDrawnRate(assetId);
-  }
-
-  /// @inheritdoc IHub
-  function mintFeeShares(uint256 assetId) external restricted returns (uint256) {
-    require(assetId < _assetCount, AssetNotListed());
-    Asset storage asset = _assets[assetId];
-    asset.accrue(_spokes, assetId);
-    uint256 feeShares = _mintFeeShares(asset, assetId);
-    asset.updateDrawnRate(assetId);
-    return feeShares;
   }
 
   /// @inheritdoc IHubBase
@@ -534,7 +522,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHubBase
   function getAddedShares(uint256 assetId) external view returns (uint256) {
-    return _assets[assetId].addedShares;
+    return _assets[assetId].totalAddedShares();
   }
 
   /// @inheritdoc IHubBase
@@ -600,12 +588,6 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getAssetAccruedFees(uint256 assetId) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return asset.realizedFees; // todo fix
-  }
-
-  /// @inheritdoc IHub
   function getAssetSwept(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].swept;
   }
@@ -622,12 +604,22 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHubBase
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256) {
-    return _assets[assetId].toAddedAssetsDown(_spokes[assetId][spoke].addedShares);
+    Asset storage asset = _assets[assetId];
+    uint256 addedShares = _spokes[assetId][spoke].addedShares;
+    if (asset.feeReceiver == spoke) {
+      addedShares += asset.unrealizedFeeShares();
+    }
+    return _assets[assetId].toAddedAssetsDown(addedShares);
   }
 
   /// @inheritdoc IHubBase
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256) {
-    return _spokes[assetId][spoke].addedShares;
+    Asset storage asset = _assets[assetId];
+    uint256 addedShares = _spokes[assetId][spoke].addedShares;
+    if (asset.feeReceiver == spoke) {
+      addedShares += asset.unrealizedFeeShares();
+    }
+    return addedShares;
   }
 
   /// @inheritdoc IHubBase
@@ -777,25 +769,6 @@ contract Hub is IHub, AccessManaged {
         spoke.premiumShares <= spoke.drawnShares.percentMulUp(riskPremiumThreshold),
       InvalidPremiumChange()
     );
-  }
-
-  function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
-    uint256 fees = asset.realizedFees;
-    uint120 shares = asset.toAddedSharesDown(fees).toUint120();
-    if (shares == 0) {
-      return 0;
-    }
-
-    address feeReceiver = asset.feeReceiver;
-    SpokeData storage feeReceiverSpoke = _spokes[assetId][feeReceiver];
-    require(feeReceiverSpoke.active, SpokeNotActive());
-
-    asset.addedShares += shares;
-    feeReceiverSpoke.addedShares += shares;
-    asset.realizedFees = 0;
-    emit MintFeeShares(assetId, feeReceiver, shares, fees);
-
-    return shares;
   }
 
   /// @dev Returns the spoke's drawn amount for a specified asset.
