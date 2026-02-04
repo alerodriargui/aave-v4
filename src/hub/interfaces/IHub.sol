@@ -110,7 +110,11 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param drawnRate The new drawn rate of the asset.
   event UpdateAsset(uint256 indexed assetId, uint256 drawnIndex, uint256 drawnRate);
 
-  event AccrueFees(uint256 indexed assetId, address feeReceiver, uint256 feeShares);
+  /// @notice Emitted when fees are accrued to `feeReceiver`.
+  /// @param assetId The identifier of the asset.
+  /// @param spoke The address of the current feeReceiver.
+  /// @param shares The amount of shares accrued.
+  event AccrueFees(uint256 indexed assetId, address spoke, uint256 shares);
 
   /// @notice Emitted when an asset configuration is updated.
   /// @param assetId The identifier of the asset.
