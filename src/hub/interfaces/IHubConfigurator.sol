@@ -180,12 +180,12 @@ interface IHubConfigurator {
   /// @param hub The address of the Hub contract.
   /// @param assetId The identifier of the asset.
   /// @param spoke The address of the spoke.
-  /// @param riskPremiumThreshold The new risk premium threshold.
+  /// @param maxCollateralRisk The maximum collateral risk of any reserve listed by the given spoke, expressed in BPS.
   function updateSpokeRiskPremiumThreshold(
     address hub,
     uint256 assetId,
     address spoke,
-    uint256 riskPremiumThreshold
+    uint256 maxCollateralRisk
   ) external;
 
   /// @notice Updates the caps of an asset's spoke.

@@ -5,6 +5,7 @@ pragma solidity 0.8.28;
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 
@@ -14,6 +15,7 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 /// @dev Must be granted permission by the Hub.
 contract HubConfigurator is AccessManaged, IHubConfigurator {
   using SafeCast for uint256;
+  using PercentageMath for uint256;
 
   /// @dev Constructor.
   /// @param authority_ The address of the authority contract which manages permissions.
@@ -235,10 +237,11 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
     address hub,
     uint256 assetId,
     address spoke,
-    uint256 riskPremiumThreshold
+    uint256 maxCollateralRisk
   ) external restricted {
     IHub targetHub = IHub(hub);
     IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    uint256 riskPremiumThreshold = _calculateRiskPremiumThreshold(maxCollateralRisk);
     config.riskPremiumThreshold = riskPremiumThreshold.toUint24();
     targetHub.updateSpokeConfig(assetId, spoke, config);
   }
@@ -317,9 +320,17 @@ contract HubConfigurator is AccessManaged, IHubConfigurator {
     hub.updateSpokeConfig(assetId, spoke, config);
   }
 
+  /// @dev Updates the liquidity fee of an asset, without changing the interest rate data.
   function _updateLiquidityFee(IHub hub, uint256 assetId, uint256 liquidityFee) internal {
     IHub.AssetConfig memory config = hub.getAssetConfig(assetId);
     config.liquidityFee = liquidityFee.toUint16();
     hub.updateAssetConfig(assetId, config, new bytes(0));
+  }
+
+  /// @dev Calculates the risk premium threshold from the maximum collateral risk, both expressed in BPS.
+  function _calculateRiskPremiumThreshold(
+    uint256 maxCollateralRisk
+  ) internal pure returns (uint256) {
+    return maxCollateralRisk + PercentageMath.PERCENTAGE_FACTOR;
   }
 }
