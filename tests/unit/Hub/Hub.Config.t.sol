@@ -330,7 +330,7 @@ contract HubConfigTest is HubBase {
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAssetConfig(expectedAssetId, expectedConfig);
     vm.expectEmit(address(hub1));
-    emit IHub.UpdateAsset(expectedAssetId, WadRayMath.RAY, baseVariableBorrowRate.bpsToRay(), 0);
+    emit IHub.UpdateAsset(expectedAssetId, WadRayMath.RAY, baseVariableBorrowRate.bpsToRay());
 
     uint256 assetId = Utils.addAsset(
       hub1,
@@ -485,13 +485,11 @@ contract HubConfigTest is HubBase {
     bool isNewFeeReceiver = newConfig.feeReceiver != _getFeeReceiver(hub1, assetId);
     if (isNewFeeReceiver && !hub1.isSpokeListed(assetId, newConfig.feeReceiver)) {
       if (_calcUnrealizedFees(hub1, assetId) > 0) {
-        uint256 accruedFees = hub1.getAssetAccruedFees(assetId);
         vm.expectEmit(address(hub1));
         emit IHub.MintFeeShares(
           assetId,
           _getFeeReceiver(hub1, assetId),
-          hub1.previewAddByAssets(assetId, accruedFees),
-          accruedFees
+          _getAccruedFeeShares(hub1, assetId)
         );
       }
       vm.expectEmit(address(hub1));
@@ -534,8 +532,7 @@ contract HubConfigTest is HubBase {
         drawn: drawn,
         deficit: 0,
         swept: 0
-      }),
-      isNewFeeReceiver ? 0 : hub1.getAssetAccruedFees(assetId)
+      })
     );
     vm.expectEmit(address(hub1));
     emit IHub.UpdateAssetConfig(assetId, newConfig);
@@ -596,7 +593,7 @@ contract HubConfigTest is HubBase {
     address oldFeeReceiver = config.feeReceiver;
     config.feeReceiver = makeAddr('newFeeReceiver');
 
-    uint256 expectedFeeReceiverAddedAssets = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
+    uint256 expectedFeeReceiverAddedAssets = _getFeeReceiverAddedAssets(hub1, assetId);
     assertTrue(expectedFeeReceiverAddedAssets > 0, 'no fees');
 
     test_updateAssetConfig_fuzz(assetId, config);
@@ -753,14 +750,14 @@ contract HubConfigTest is HubBase {
     _drawLiquidity(assetId, amount, true);
 
     IHub.AssetConfig memory config = hub1.getAssetConfig(assetId);
-    uint256 expectedFeeReceiverAddedAssets = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
+    uint256 expectedFeeReceiverAddedAssets = _getFeeReceiverAddedAssets(hub1, assetId);
     assertTrue(expectedFeeReceiverAddedAssets > 0, 'no fees');
 
     config.liquidityFee = liquidityFee;
     test_updateAssetConfig_fuzz(assetId, config);
 
     assertEq(_calcUnrealizedFees(hub1, assetId), 0);
-    assertEq(_getExpectedFeeReceiverAddedAssets(hub1, assetId), expectedFeeReceiverAddedAssets);
+    assertEq(_getFeeReceiverAddedAssets(hub1, assetId), expectedFeeReceiverAddedAssets);
   }
 
   /// No fees accrued whe updating liquidity fee from zero to non-zero
@@ -796,11 +793,11 @@ contract HubConfigTest is HubBase {
     _addLiquidity(assetId, amount);
     _drawLiquidity(assetId, amount, true);
 
-    uint256 expectedFeeReceiverAddedAssets = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
+    uint256 expectedFeeReceiverAddedAssets = _getFeeReceiverAddedAssets(hub1, assetId);
     assertTrue(expectedFeeReceiverAddedAssets > 0, 'no fees');
 
     skip(365 days);
-    uint256 futureFees = _getExpectedFeeReceiverAddedAssets(hub1, assetId);
+    uint256 futureFees = _getFeeReceiverAddedAssets(hub1, assetId);
     rewind(365 days);
 
     AssetInterestRateStrategy newIrStrategy = new AssetInterestRateStrategy(address(hub1));

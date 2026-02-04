@@ -2170,6 +2170,22 @@ abstract contract Base is Test {
     return (currentDrawnDebt - initialDrawnDebt).percentMulUp(userRiskPremium);
   }
 
+  /// @dev Calculate expected total debt (drawn + premium) based on specified borrow rate and risk premium
+  function _calculateExpectedTotalDebt(
+    uint256 initialDrawnDebt,
+    uint96 borrowRate,
+    uint40 startTime,
+    uint256 userRiskPremium
+  ) internal view returns (uint256) {
+    uint256 drawnDebt = _calculateExpectedDrawnDebt(initialDrawnDebt, borrowRate, startTime);
+    uint256 premiumDebt = _calculateExpectedPremiumDebt(
+      initialDrawnDebt,
+      drawnDebt,
+      userRiskPremium
+    );
+    return drawnDebt + premiumDebt;
+  }
+
   /// @dev Helper function to get asset drawn debt
   function getAssetDrawnDebt(uint256 assetId) internal view returns (uint256) {
     (uint256 drawn, ) = hub1.getAssetOwed(assetId);
@@ -2180,6 +2196,19 @@ abstract contract Base is Test {
   function _calculateBurntInterest(IHub hub, uint256 assetId) internal view returns (uint256) {
     return
       hub.getAddedAssets(assetId) - hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId));
+  }
+
+  /// @dev Helper function to withdraw fees from the treasury spoke
+  function withdrawLiquidityFees(uint256 assetId, uint256 amount) internal {
+    uint256 fees = hub1.getSpokeAddedAssets(assetId, address(treasurySpoke));
+    if (amount > fees) {
+      amount = fees;
+    }
+    if (amount == 0) {
+      return; // nothing to withdraw
+    }
+    vm.prank(TREASURY_ADMIN);
+    treasurySpoke.withdraw(assetId, amount, address(treasurySpoke));
   }
 
   function _calculatePremiumDebt(
@@ -2980,19 +3009,38 @@ abstract contract Base is Test {
       );
   }
 
-  function _getExpectedFeeReceiverAddedAssets(
-    IHub hub,
-    uint256 assetId
-  ) internal view returns (uint256) {
-    uint256 expectedFees = hub.getAsset(assetId).realizedFees + _calcUnrealizedFees(hub, assetId);
-    assertEq(expectedFees, hub.getAssetAccruedFees(assetId), 'asset accrued fees');
-    return hub.getSpokeAddedAssets(assetId, hub.getAsset(assetId).feeReceiver) + expectedFees;
+  function _calcUnrealizedFeeShares(IHub hub, uint256 assetId) internal view returns (uint256) {
+    uint256 unrealizedFees = _calcUnrealizedFees(hub, assetId);
+    return
+      unrealizedFees.toSharesDown(
+        hub.getAddedAssets(assetId) - unrealizedFees,
+        hub.getAddedShares(assetId)
+      );
+  }
+
+  function _getFeeReceiverAddedAssets(IHub hub, uint256 assetId) internal view returns (uint256) {
+    address feeReceiver = hub.getAsset(assetId).feeReceiver;
+    return hub.getSpokeAddedAssets(assetId, feeReceiver);
+  }
+
+  function _getFeeReceiverAddedShares(IHub hub, uint256 assetId) internal view returns (uint256) {
+    address feeReceiver = hub.getAsset(assetId).feeReceiver;
+    return hub.getSpokeAddedShares(assetId, feeReceiver);
   }
 
   function _getAddedAssetsWithFees(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.getAddedAssets(assetId) + _calcUnrealizedFees(hub, assetId);
+  }
+
+  function _getAccruedFees(IHub hub, uint256 assetId) internal view returns (uint256) {
+    return hub.previewRemoveByShares(assetId, _getAccruedFeeShares(hub, assetId));
+  }
+
+  /// @dev Helper to get unrealized/accrued fee shares
+  function _getAccruedFeeShares(IHub hub, uint256 assetId) internal view returns (uint256) {
+    address feeReceiver = hub.getAsset(assetId).feeReceiver;
+    // subtract added shares already added by fee receiver
     return
-      hub.getAddedAssets(assetId) +
-      hub.getAsset(assetId).realizedFees +
-      _calcUnrealizedFees(hub, assetId);
+      _getFeeReceiverAddedShares(hub, assetId) - hub.getSpoke(assetId, feeReceiver).addedShares;
   }
 }

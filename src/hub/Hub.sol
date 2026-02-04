@@ -108,7 +108,6 @@ contract Hub is IHub, AccessManaged {
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
-      realizedFees: 0,
       reinvestmentController: address(0),
       feeReceiver: feeReceiver,
       liquidityFee: 0
@@ -125,7 +124,7 @@ contract Hub is IHub, AccessManaged {
         reinvestmentController: address(0)
       })
     );
-    emit UpdateAsset(assetId, drawnIndex, drawnRate, 0);
+    emit UpdateAsset(assetId, drawnIndex, drawnRate);
 
     return assetId;
   }
@@ -600,12 +599,6 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getAssetAccruedFees(uint256 assetId) external view returns (uint256) {
-    Asset storage asset = _assets[assetId];
-    return asset.realizedFees; // todo fix
-  }
-
-  /// @inheritdoc IHub
   function getAssetSwept(uint256 assetId) external view returns (uint256) {
     return _assets[assetId].swept;
   }
@@ -622,11 +615,20 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHubBase
   function getSpokeAddedAssets(uint256 assetId, address spoke) external view returns (uint256) {
-    return _assets[assetId].toAddedAssetsDown(_spokes[assetId][spoke].addedShares);
+    IHub.Asset storage asset = _assets[assetId];
+    if (spoke == asset.feeReceiver) {
+      return
+        asset.toAddedAssetsDown(_spokes[assetId][spoke].addedShares + asset.unrealizedFeeShares());
+    }
+    return asset.toAddedAssetsDown(_spokes[assetId][spoke].addedShares);
   }
 
   /// @inheritdoc IHubBase
   function getSpokeAddedShares(uint256 assetId, address spoke) external view returns (uint256) {
+    IHub.Asset storage asset = _assets[assetId];
+    if (spoke == asset.feeReceiver) {
+      return _spokes[assetId][spoke].addedShares + asset.unrealizedFeeShares();
+    }
     return _spokes[assetId][spoke].addedShares;
   }
 
@@ -780,8 +782,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
-    uint256 fees = asset.realizedFees;
-    uint120 shares = asset.toAddedSharesDown(fees).toUint120();
+    uint120 shares = asset.unrealizedFeeShares().toUint120();
     if (shares == 0) {
       return 0;
     }
@@ -792,8 +793,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.addedShares += shares;
     feeReceiverSpoke.addedShares += shares;
-    asset.realizedFees = 0;
-    emit MintFeeShares(assetId, feeReceiver, shares, fees);
+    emit MintFeeShares(assetId, feeReceiver, shares);
 
     return shares;
   }
