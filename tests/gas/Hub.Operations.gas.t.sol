@@ -316,6 +316,8 @@ contract HubOperations_Gas_Tests is Base {
 
     uint256 deficitRay = hub1.getAssetDeficitRay(daiAssetId);
 
+    skip(100);
+
     vm.prank(address(spoke1));
     hub1.eliminateDeficit(daiAssetId, deficitRay.fromRayUp(), address(spoke1));
     vm.snapshotGasLastCall('Hub.Operations', 'eliminateDeficit: full');
