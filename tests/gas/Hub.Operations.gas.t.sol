@@ -15,10 +15,24 @@ contract HubOperations_Gas_Tests is Base {
   }
 
   function test_add() public {
+    // make sure there are already drawn asset prior to add
+    vm.startPrank(address(spoke2));
+    tokenList.dai.transferFrom(alice, address(hub1), 1000e18);
+    hub1.add(daiAssetId, 1000e18);
+    vm.stopPrank();
+    vm.startPrank(address(spoke1));
+    tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
+    hub1.add(usdxAssetId, 1000e6);
+    skip(100);
+    hub1.draw(daiAssetId, 500e18, alice);
+    vm.stopPrank();
+
     vm.startPrank(address(spoke1));
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
     hub1.add(usdxAssetId, 1000e6);
     vm.snapshotGasLastCall('Hub.Operations', 'add');
+
+    skip(100);
 
     vm.startSnapshotGas('Hub.Operations', 'add: with transfer');
     tokenList.usdx.transferFrom(alice, address(hub1), 1000e6);
@@ -181,6 +195,11 @@ contract HubOperations_Gas_Tests is Base {
   }
 
   function test_refreshPremium() public {
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
+
+    skip(100);
+
     uint256 premiumShares = hub1.previewDrawByAssets(daiAssetId, 500e18);
     int256 premiumOffsetRay = _calculatePremiumAssetsRay(hub1, daiAssetId, premiumShares)
       .toInt256();
@@ -198,9 +217,6 @@ contract HubOperations_Gas_Tests is Base {
         premiumOffsetRay
       )
     });
-
-    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 1000e18, alice);
-    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 500e18, alice);
 
     vm.prank(address(spoke1));
     hub1.refreshPremium(daiAssetId, premiumDelta);
@@ -284,6 +300,8 @@ contract HubOperations_Gas_Tests is Base {
     vm.prank(address(spoke1));
     hub1.reportDeficit(daiAssetId, drawnDebt, premiumDelta);
     vm.snapshotGasLastCall('Hub.Operations', 'reportDeficit');
+
+    skip(100);
 
     vm.prank(address(spoke1));
     hub1.eliminateDeficit(daiAssetId, 100e18, address(spoke1));
