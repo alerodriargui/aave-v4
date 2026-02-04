@@ -35,8 +35,8 @@ library EIP712Hash {
         let update := add(add(list, 0x20), mul(i, 0x40))
 
         mstore(0, POSITION_MANAGER_UPDATE)
-        mstore(0x20, shr(96, shl(96, calldataload(update)))) // positionManager
-        mstore(0x40, iszero(iszero(calldataload(add(update, 0x20))))) // approve
+        mstore(0x20, shr(96, shl(96, calldataload(update)))) // params.updates[i].positionManager
+        mstore(0x40, iszero(iszero(calldataload(add(update, 0x20))))) // params.updates[i].approve
 
         mstore(add(m, mul(i, 0x20)), keccak256(0, 0x60))
       }
