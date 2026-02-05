@@ -92,7 +92,8 @@ library AssetLogic {
     return totalShares;
   }
 
-  /// @notice Returns both totalAddedAssets and totalAddedShares with a single getFee() call.
+  /// @notice Returns both total added assets and shares for the specified asset.
+  /// @dev Uses only a single getFee() call.
   function getTotalAssetsAndShares(
     IHub.Asset storage asset,
     uint256 drawnIndex,
@@ -100,7 +101,7 @@ library AssetLogic {
   ) internal view returns (uint256, uint256) {
     (uint256 feeAmount, uint256 feeShares) = asset.getFee(drawnIndex, previousIndex);
 
-    uint256 projectedRealizedFees = feeShares > 0 ? 0 : feeAmount;
+    uint256 realizedFees = feeShares > 0 ? 0 : feeAmount;
 
     uint256 aggregatedOwedRay = _calculateAggregatedOwedRay({
       drawnShares: asset.drawnShares,
@@ -113,7 +114,7 @@ library AssetLogic {
     uint256 totalAssets = asset.liquidity +
       asset.swept +
       aggregatedOwedRay.fromRayUp() -
-      projectedRealizedFees;
+      realizedFees;
 
     uint256 totalShares = asset.addedShares + feeShares;
 
