@@ -3,7 +3,7 @@
   "borrow: second action, same reserve": "169471",
   "liquidationCall (receiveShares): full": "295585",
   "liquidationCall (receiveShares): partial": "295303",
-  "liquidationCall (reportDeficit): full": "352249",
+  "liquidationCall (reportDeficit): full": "350771",
   "liquidationCall: full": "305077",
   "liquidationCall: partial": "304795",
   "permitReserve + repay (multicall)": "164506",

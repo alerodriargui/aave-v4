@@ -822,7 +822,7 @@ abstract contract Spoke is
     if (newRiskPremium == 0 && positionStatus.riskPremium == 0) {
       return;
     }
-    positionStatus.riskPremium = newRiskPremium.toUint24();
+    positionStatus.setUserRiskPremium(user, newRiskPremium.toUint24());
 
     uint256 reserveId = _reserveCount;
     while ((reserveId = positionStatus.nextBorrowing(reserveId)) != PositionStatusMap.NOT_FOUND) {
@@ -842,8 +842,6 @@ abstract contract Spoke is
       userPosition.applyPremiumDelta(premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
     }
-
-    emit UpdateUserRiskPremium(user, newRiskPremium);
   }
 
   function _notifyReportDeficit(address user) internal {

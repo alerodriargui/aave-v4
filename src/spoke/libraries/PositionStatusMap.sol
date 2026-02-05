@@ -250,4 +250,15 @@ library PositionStatusMap {
       ret := and(word, shr(sub(256, shl(1, mod(reserveCount, 128))), COLLATERAL_MASK))
     }
   }
+
+  function setUserRiskPremium(
+    ISpoke.PositionStatus storage positionStatus,
+    address user,
+    uint24 riskPremium
+  ) internal {
+    if (positionStatus.riskPremium != riskPremium) {
+      positionStatus.riskPremium = riskPremium;
+      emit ISpoke.UpdateUserRiskPremium(user, riskPremium);
+    }
+  }
 }

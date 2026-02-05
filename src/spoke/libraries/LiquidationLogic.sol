@@ -259,7 +259,7 @@ library LiquidationLogic {
     address user
   ) external {
     ISpoke.PositionStatus storage userPositionStatus = positionStatus[user];
-    userPositionStatus.riskPremium = 0;
+    userPositionStatus.setUserRiskPremium(user, 0);
 
     uint256 reserveId = reserveCount;
     while (
@@ -288,8 +288,6 @@ library LiquidationLogic {
 
       emit ISpoke.ReportDeficit(reserveId, user, deficitShares, premiumDelta);
     }
-
-    emit ISpoke.UpdateUserRiskPremium(user, 0);
   }
 
   /// @notice Calculates the liquidation bonus at a given health factor.
