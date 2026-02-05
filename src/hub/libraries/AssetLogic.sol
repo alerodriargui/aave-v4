@@ -78,38 +78,18 @@ library AssetLogic {
 
   /// @notice Returns the total added assets for the specified asset.
   function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.totalAddedAssets(asset.getDrawnIndex());
+    uint256 previousIndex = asset.drawnIndex;
+    uint256 drawnIndex = asset.getDrawnIndex(previousIndex);
+    (uint256 totalAssets, ) = asset.getTotalAssetsAndShares(drawnIndex, previousIndex);
+    return totalAssets;
   }
 
-  /// @notice Returns the total added assets for the specified asset at specified drawnIndex.
-  function totalAddedAssets(
-    IHub.Asset storage asset,
-    uint256 drawnIndex
-  ) internal view returns (uint256) {
-    uint256 aggregatedOwedRay = _calculateAggregatedOwedRay({
-      drawnShares: asset.drawnShares,
-      premiumShares: asset.premiumShares,
-      premiumOffsetRay: asset.premiumOffsetRay,
-      deficitRay: asset.deficitRay,
-      drawnIndex: drawnIndex
-    });
-
-    return asset.liquidity + asset.swept + aggregatedOwedRay.fromRayUp() - asset.realizedFees;
-  }
-
-  /// @notice Returns the total added assets for the specified asset.
+  /// @notice Returns the total added shares for the specified asset.
   function totalAddedShares(IHub.Asset storage asset) internal view returns (uint256) {
-    return asset.addedShares + asset.unrealizedFeeShares();
-  }
-
-  /// @notice Returns the total added shares for the specified asset at specified indices.
-  function totalAddedShares(
-    IHub.Asset storage asset,
-    uint256 drawnIndex,
-    uint256 previousIndex
-  ) internal view returns (uint256) {
-    (, uint256 feeShares) = asset.getFee(drawnIndex, previousIndex);
-    return asset.addedShares + feeShares;
+    uint256 previousIndex = asset.drawnIndex;
+    uint256 drawnIndex = asset.getDrawnIndex(previousIndex);
+    (, uint256 totalShares) = asset.getTotalAssetsAndShares(drawnIndex, previousIndex);
+    return totalShares;
   }
 
   /// @notice Returns both totalAddedAssets and totalAddedShares with a single getFee() call.
