@@ -179,7 +179,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation_partial() public {
-    _liquidationSetup();
+    _liquidationSetup(85_00);
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, false);
@@ -188,7 +188,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation_full() public {
-    _liquidationSetup();
+    _liquidationSetup(85_00);
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
@@ -198,7 +198,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation_receiveShares_partial() public {
-    _liquidationSetup();
+    _liquidationSetup(85_00);
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, 100_000e18, true);
@@ -208,11 +208,21 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
   }
 
   function test_liquidation_receiveShares_full() public {
-    _liquidationSetup();
+    _liquidationSetup(85_00);
 
     vm.startPrank(bob);
     spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, true);
     vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (receiveShares): full');
+
+    vm.stopPrank();
+  }
+
+  function test_liquidation_reportDeficit_full() public {
+    _liquidationSetup(45_00);
+
+    vm.startPrank(bob);
+    spoke.liquidationCall(reserveId.usdx, reserveId.dai, alice, UINT256_MAX, false);
+    vm.snapshotGasLastCall(NAMESPACE, 'liquidationCall (reportDeficit): full');
 
     vm.stopPrank();
   }
@@ -378,7 +388,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     vm.stopPrank();
   }
 
-  function _liquidationSetup() internal {
+  function _liquidationSetup(uint256 pricePercentage) internal {
     _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 105_00);
     _updateLiquidationFee(spoke, _usdxReserveId(spoke), 10_00);
 
@@ -396,7 +406,7 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
       reserveId.dai,
       reserveId.usdx,
       1.05e18,
-      85_00
+      pricePercentage
     );
 
     skip(100);
@@ -406,11 +416,6 @@ contract SpokeOperations_Gas_Tests is SpokeBase {
     } else {
       assertGt(userAccountData.riskPremium, 0); // rp after borrow should be non zero
     }
-    vm.mockCallRevert(
-      address(hub1),
-      abi.encodeWithSelector(IHubBase.reportDeficit.selector),
-      'deficit'
-    );
   }
 }
 
