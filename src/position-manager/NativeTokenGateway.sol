@@ -159,7 +159,7 @@ contract NativeTokenGateway is INativeTokenGateway, PositionManagerBase, Reentra
     require(amount > 0, InvalidAmount());
   }
 
-  function _isMulticallAllowed() internal pure override returns (bool) {
+  function _multicallEnabled() internal pure override returns (bool) {
     return false;
   }
 

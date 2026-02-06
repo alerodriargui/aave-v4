@@ -11,7 +11,7 @@ contract PositionManagerBaseWrapper is PositionManagerBase {
     return address(_getReserveUnderlying(spoke, reserveId));
   }
 
-  function _isMulticallAllowed() internal pure override returns (bool) {
+  function _multicallEnabled() internal pure override returns (bool) {
     return true;
   }
 

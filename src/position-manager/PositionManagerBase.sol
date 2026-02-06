@@ -101,7 +101,7 @@ abstract contract PositionManagerBase is
   function multicall(
     bytes[] calldata data
   ) public override(Multicall, IMulticall) returns (bytes[] memory) {
-    require(_isMulticallAllowed(), UnsupportedAction());
+    require(_multicallEnabled(), UnsupportedAction());
     return super.multicall(data);
   }
 
@@ -120,8 +120,10 @@ abstract contract PositionManagerBase is
     return ISpoke(spoke).getReserve(reserveId).underlying;
   }
 
-  function _isMulticallAllowed() internal pure virtual returns (bool);
+  /// @dev Flag to enable multicall usage. Needs to be set by the inheriting contracts.
+  function _multicallEnabled() internal pure virtual returns (bool);
 
+  /// @dev Flag to enable the spoke registry, is set to false all Spokes are considered registered. Needs to be set by the inheriting contracts.
   function _isSpokeRegistryActive() internal pure virtual returns (bool);
 
   function _rescueGuardian() internal view override returns (address) {

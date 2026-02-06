@@ -273,7 +273,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     }
   }
 
-  function _isMulticallAllowed() internal pure override returns (bool) {
+  function _multicallEnabled() internal pure override returns (bool) {
     return true;
   }
 

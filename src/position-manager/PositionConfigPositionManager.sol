@@ -189,7 +189,7 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
       });
   }
 
-  function _isMulticallAllowed() internal pure override returns (bool) {
+  function _multicallEnabled() internal pure override returns (bool) {
     return true;
   }
 
