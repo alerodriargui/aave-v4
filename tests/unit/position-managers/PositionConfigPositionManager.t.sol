@@ -573,4 +573,34 @@ contract PositionConfigPositionManagerTest is SpokeBase {
     vm.prank(bob);
     positionManager.updateUserDynamicConfigOnBehalfOf(address(spoke2), alice);
   }
+
+  function test_multicall() public {
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeWithSignature(
+      'setGlobalPermission(address,address,bool)',
+      address(spoke1),
+      bob,
+      true
+    );
+    calls[1] = abi.encodeWithSignature(
+      'setGlobalPermission(address,address,bool)',
+      address(spoke1),
+      carol,
+      true
+    );
+
+    vm.prank(alice);
+    positionManager.multicall(calls);
+
+    IPositionConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
+      .getConfigPermissions(address(spoke1), bob, alice);
+    assertTrue(permissions.canSetUsingAsCollateral);
+    assertTrue(permissions.canUpdateUserRiskPremium);
+    assertTrue(permissions.canUpdateUserDynamicConfig);
+
+    permissions = positionManager.getConfigPermissions(address(spoke1), carol, alice);
+    assertTrue(permissions.canSetUsingAsCollateral);
+    assertTrue(permissions.canUpdateUserRiskPremium);
+    assertTrue(permissions.canUpdateUserDynamicConfig);
+  }
 }

@@ -47,6 +47,14 @@ contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionMana
     return ISpokeBase(spoke).repay(reserveId, repayAmount, onBehalfOf);
   }
 
+  function _isMulticallAllowed() internal pure override returns (bool) {
+    return true;
+  }
+
+  function _isSpokeRegistryActive() internal pure override returns (bool) {
+    return true;
+  }
+
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
     return ('SupplyRepayPositionManager', '1');
   }

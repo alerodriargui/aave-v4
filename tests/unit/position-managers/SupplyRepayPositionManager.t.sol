@@ -319,4 +319,45 @@ contract SupplyRepayPositionManagerTest is SpokeBase {
     vm.prank(bob);
     positionManager.repayOnBehalfOf(address(spoke2), reserveId, 100e18, alice);
   }
+
+  function test_multicall() public {
+    uint256 amount = 100e18;
+
+    vm.prank(carol);
+    spoke1.setUserPositionManager(address(positionManager), true);
+
+    vm.prank(bob);
+    tokenList.dai.approve(address(positionManager), UINT256_MAX);
+
+    uint256 aliceSuppliedAmountBefore = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice);
+    uint256 carolSuppliedAmountBefore = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), carol);
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeWithSignature(
+      'supplyOnBehalfOf(address,uint256,uint256,address)',
+      address(spoke1),
+      _daiReserveId(spoke1),
+      amount,
+      alice
+    );
+    calls[1] = abi.encodeWithSignature(
+      'supplyOnBehalfOf(address,uint256,uint256,address)',
+      address(spoke1),
+      _daiReserveId(spoke1),
+      amount,
+      carol
+    );
+
+    vm.prank(bob);
+    positionManager.multicall(calls);
+
+    assertEq(
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice),
+      aliceSuppliedAmountBefore + amount
+    );
+    assertEq(
+      spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), carol),
+      carolSuppliedAmountBefore + amount
+    );
+  }
 }

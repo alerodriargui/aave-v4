@@ -6,6 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract PositionManagerBaseTest is SpokeBase {
   PositionManagerBaseWrapper public positionManager;
+  PositionManagerFalseFlags public positionManager2;
   uint256 public alicePk;
 
   function setUp() public virtual override {
@@ -13,9 +14,12 @@ contract PositionManagerBaseTest is SpokeBase {
 
     (alice, alicePk) = makeAddrAndKey('alice');
     positionManager = new PositionManagerBaseWrapper(address(ADMIN));
+    positionManager2 = new PositionManagerFalseFlags(address(ADMIN));
 
-    vm.prank(SPOKE_ADMIN);
+    vm.startPrank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);
+    spoke1.updatePositionManager(address(positionManager2), true);
+    vm.stopPrank();
   }
 
   function test_constructor() public view {
@@ -222,6 +226,38 @@ contract PositionManagerBaseTest is SpokeBase {
     vm.expectRevert(IPositionManagerBase.InvalidAddress.selector);
     vm.prank(ADMIN);
     positionManager.registerSpoke(address(0), true);
+  }
+
+  function test_registerSpoke_revertsWith_UnsupportedAction() public {
+    vm.expectRevert(IPositionManagerBase.UnsupportedAction.selector);
+    vm.prank(ADMIN);
+    positionManager2.registerSpoke(address(spoke1), true);
+  }
+
+  function test_isSpokeRegistered_fuzz(address newSpoke) public view {
+    assertTrue(positionManager2.isSpokeRegistered(newSpoke));
+  }
+
+  function test_multicall_revertsWith_UnsupportedAction() public {
+    bytes[] memory calls = new bytes[](1);
+    calls[0] = abi.encodeWithSignature('randomFunction()');
+
+    vm.expectRevert(IPositionManagerBase.UnsupportedAction.selector);
+    positionManager2.multicall(calls);
+  }
+
+  function test_multicall() public {
+    address spoke2 = makeAddr('spoke2');
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeWithSignature('registerSpoke(address,bool)', address(spoke1), true);
+    calls[1] = abi.encodeWithSignature('registerSpoke(address,bool)', address(spoke2), true);
+
+    vm.prank(ADMIN);
+    positionManager.multicall(calls);
+
+    assertTrue(positionManager.isSpokeRegistered(address(spoke1)));
+    assertTrue(positionManager.isSpokeRegistered(address(spoke2)));
   }
 
   function test_renouncePositionManagerRole() public {

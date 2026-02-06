@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 
 import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
-contract PositionManagerBaseWrapper is PositionManagerBase {
+contract PositionManagerFalseFlags is PositionManagerBase {
   constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
 
   function getReserveUnderlying(address spoke, uint256 reserveId) external view returns (address) {
@@ -12,14 +12,14 @@ contract PositionManagerBaseWrapper is PositionManagerBase {
   }
 
   function _isMulticallAllowed() internal pure override returns (bool) {
-    return true;
+    return false;
   }
 
   function _isSpokeRegistryActive() internal pure override returns (bool) {
-    return true;
+    return false;
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
-    return ('PositionManagerBaseWrapper', '1');
+    return ('PositionManagerFalseFlags', '1');
   }
 }

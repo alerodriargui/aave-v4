@@ -5,7 +5,6 @@ pragma solidity 0.8.28;
 import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/ReentrancyGuardTransient.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {IMulticall, Multicall} from 'src/utils/Multicall.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
@@ -36,13 +35,6 @@ contract NativeTokenGateway is INativeTokenGateway, PositionManagerBase, Reentra
 
   /// @dev Unsupported fallback function.
   fallback() external payable {
-    revert UnsupportedAction();
-  }
-
-  /// @dev Unsupported multicall function.
-  function multicall(
-    bytes[] calldata
-  ) external pure override(IMulticall, Multicall) returns (bytes[] memory) {
     revert UnsupportedAction();
   }
 
@@ -165,6 +157,14 @@ contract NativeTokenGateway is INativeTokenGateway, PositionManagerBase, Reentra
   function _validateParams(address underlying, uint256 amount) internal view {
     require(NATIVE_WRAPPER == underlying, NotNativeWrappedAsset());
     require(amount > 0, InvalidAmount());
+  }
+
+  function _isMulticallAllowed() internal pure override returns (bool) {
+    return false;
+  }
+
+  function _isSpokeRegistryActive() internal pure override returns (bool) {
+    return true;
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

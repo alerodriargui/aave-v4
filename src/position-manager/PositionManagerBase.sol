@@ -6,7 +6,7 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
-import {Multicall} from 'src/utils/Multicall.sol';
+import {IMulticall, Multicall} from 'src/utils/Multicall.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
@@ -26,7 +26,7 @@ abstract contract PositionManagerBase is
 
   /// @notice Modifier that checks if the specified spoke is registered.
   modifier onlyRegisteredSpoke(address spoke) {
-    _isSpokeRegistered(spoke);
+    require(_isSpokeRegistered(spoke), SpokeNotRegistered());
     _;
   }
 
@@ -36,6 +36,7 @@ abstract contract PositionManagerBase is
 
   /// @inheritdoc IPositionManagerBase
   function registerSpoke(address spoke, bool registered) external onlyOwner {
+    require(_isSpokeRegistryActive(), UnsupportedAction());
     require(spoke != address(0), InvalidAddress());
     _registeredSpokes[spoke] = registered;
     emit SpokeRegistered(spoke, registered);
@@ -96,20 +97,32 @@ abstract contract PositionManagerBase is
     ISpoke(spoke).renouncePositionManagerRole(user);
   }
 
+  /// @inheritdoc IMulticall
+  function multicall(
+    bytes[] calldata data
+  ) public override(Multicall, IMulticall) returns (bytes[] memory) {
+    require(_isMulticallAllowed(), UnsupportedAction());
+    return super.multicall(data);
+  }
+
   /// @inheritdoc IPositionManagerBase
   function isSpokeRegistered(address spoke) external view returns (bool) {
-    return _registeredSpokes[spoke];
+    return _isSpokeRegistered(spoke);
   }
 
   /// @dev Verifies the specified spoke is registered.
-  function _isSpokeRegistered(address spoke) internal view {
-    require(_registeredSpokes[spoke], SpokeNotRegistered());
+  function _isSpokeRegistered(address spoke) internal view returns (bool) {
+    return _registeredSpokes[spoke] || !_isSpokeRegistryActive();
   }
 
   /// @return The underlying asset for `reserveId` on the specified spoke.
   function _getReserveUnderlying(address spoke, uint256 reserveId) internal view returns (address) {
     return ISpoke(spoke).getReserve(reserveId).underlying;
   }
+
+  function _isMulticallAllowed() internal pure virtual returns (bool);
+
+  function _isSpokeRegistryActive() internal pure virtual returns (bool);
 
   function _rescueGuardian() internal view override returns (address) {
     return owner();

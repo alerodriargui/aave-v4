@@ -862,6 +862,38 @@ contract AllowancePositionManagerTest is SpokeBase {
     positionManager.borrowOnBehalfOf(address(spoke2), 1, 100e18, alice);
   }
 
+  function test_multicall() public {
+    uint256 amount = 100e18;
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeWithSignature(
+      'approveWithdraw(address,uint256,address,uint256)',
+      address(spoke1),
+      _daiReserveId(spoke1),
+      bob,
+      amount
+    );
+    calls[1] = abi.encodeWithSignature(
+      'delegateCredit(address,uint256,address,uint256)',
+      address(spoke1),
+      _daiReserveId(spoke1),
+      bob,
+      amount
+    );
+
+    vm.prank(alice);
+    positionManager.multicall(calls);
+
+    assertEq(
+      positionManager.withdrawAllowance(address(spoke1), _daiReserveId(spoke1), alice, bob),
+      amount
+    );
+    assertEq(
+      positionManager.creditDelegation(address(spoke1), _daiReserveId(spoke1), alice, bob),
+      amount
+    );
+  }
+
   function _withdrawPermitData(
     address spender,
     address onBehalfOf,

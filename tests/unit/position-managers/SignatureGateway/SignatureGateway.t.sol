@@ -264,4 +264,34 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
+
+  function test_multicall() public {
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, deadline);
+    p.reserveId = reserveId;
+    p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+
+    ISignatureGateway.SetUsingAsCollateral memory p2 = _setAsCollateralData(
+      spoke1,
+      alice,
+      deadline
+    );
+    (uint192 nonceKey, uint64 nonce) = _unpackNonce(p.nonce);
+    unchecked {
+      ++nonce;
+    }
+    p2.nonce = _packNonce(nonceKey, nonce);
+    p2.reserveId = reserveId;
+    bytes memory signature2 = _sign(alicePk, _getTypedDataHash(gateway, p2));
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeCall(gateway.supplyWithSig, (p, signature));
+    calls[1] = abi.encodeCall(gateway.setUsingAsCollateralWithSig, (p2, signature2));
+
+    gateway.multicall(calls);
+  }
 }

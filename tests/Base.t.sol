@@ -105,6 +105,7 @@ import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
+import {PositionManagerFalseFlags} from 'tests/mocks/PositionManagerFalseFlags.sol';
 import {MockNoncesKeyed} from 'tests/mocks/MockNoncesKeyed.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
