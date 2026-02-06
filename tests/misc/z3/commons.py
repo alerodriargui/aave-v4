@@ -30,6 +30,10 @@ def mulDivUp(a, num, den):
     return (a * num + den - 1) / den
 
 
+def divDown(a, b):
+    return a / b
+
+
 def divUp(a, b):
     return (a + b - 1) / b
 
@@ -52,6 +56,14 @@ def fromRayUp(a):
 
 def toRay(a):
     return a * RAY
+
+
+def percentMulDown(a, b):
+    return (a * b) / PERCENTAGE_FACTOR
+
+
+def percentMulUp(a, b):
+    return (a * b + PERCENTAGE_FACTOR - 1) / PERCENTAGE_FACTOR
 
 
 def toAddedSharesDown(assets, totalAddedAssets, addedShares):
