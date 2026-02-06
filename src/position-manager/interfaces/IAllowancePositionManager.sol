@@ -79,7 +79,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   );
 
   /// @notice Approves a spender to withdraw assets from the specified reserve.
-  /// @dev Grants unlimited and inifinite allowance if amount is type(uint256).max.
+  /// @dev If `amount` is the maximum `uint256`, the allowance is not updated on `withdrawOnBehalfOf`. This is semantically equivalent to an infinite approval.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param spender The address of the spender to receive the allowance.
@@ -100,7 +100,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Approves a credit delegation allowance for a spender.
-  /// @dev Grants unlimited and inifinite allowance if amount is type(uint256).max.
+  /// @dev If `amount` is the maximum `uint256`, the allowance is not updated on `borrowOnBehalfOf`. This is semantically equivalent to an infinite approval.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param spender The address of the spender to receive the allowance.
