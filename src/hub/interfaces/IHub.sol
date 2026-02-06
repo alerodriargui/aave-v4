@@ -29,7 +29,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev deficitRay The amount of outstanding bad debt across all spokes, expressed in asset units and scaled by RAY.
   struct Asset {
     uint120 liquidity;
-    uint120 realizedFees;
+    uint120 effectiveMintedFees;
     uint8 decimals;
     //
     uint120 addedShares;
@@ -54,6 +54,8 @@ interface IHub is IHubBase, IAccessManaged {
     address feeReceiver;
     //
     uint200 deficitRay;
+    //
+    uint120 aggregatedOwedAtLastFeeUpdate;
   }
 
   /// @notice Asset configuration. Subset of the `Asset` struct.
@@ -110,13 +112,7 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @param drawnIndex The new drawn index of the asset.
   /// @param drawnRate The new drawn rate of the asset.
-  /// @param accruedFees The accrued fees of the asset since the last mint.
-  event UpdateAsset(
-    uint256 indexed assetId,
-    uint256 drawnIndex,
-    uint256 drawnRate,
-    uint256 accruedFees
-  );
+  event UpdateAsset(uint256 indexed assetId, uint256 drawnIndex, uint256 drawnRate);
 
   /// @notice Emitted when an asset configuration is updated.
   /// @param assetId The identifier of the asset.
@@ -133,18 +129,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param spoke The address of the spoke.
   /// @param config The new spoke configuration struct.
   event UpdateSpokeConfig(uint256 indexed assetId, address indexed spoke, SpokeConfig config);
-
-  /// @notice Emitted when fees are minted to the fee receiver spoke.
-  /// @param assetId The identifier of the asset.
-  /// @param feeReceiver The address of the current fee receiver spoke.
-  /// @param shares The amount of shares minted.
-  /// @param assets The amount of assets used to mint the shares.
-  event MintFeeShares(
-    uint256 indexed assetId,
-    address indexed feeReceiver,
-    uint256 shares,
-    uint256 assets
-  );
 
   /// @notice Emitted when an amount of liquidity is invested by the reinvestment controller.
   /// @param assetId The identifier of the asset.
@@ -298,12 +282,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   function setInterestRateData(uint256 assetId, bytes calldata irData) external;
 
-  /// @notice Mints shares to the fee receiver from accrued fees.
-  /// @dev No op when fees are worth less than one share.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of shares minted.
-  function mintFeeShares(uint256 assetId) external returns (uint256);
-
   /// @notice Eliminates deficit by removing supplied shares of caller spoke.
   /// @dev Only callable by active and authorized spokes.
   /// @param assetId The identifier of the asset.
@@ -362,12 +340,6 @@ interface IHub is IHubBase, IAccessManaged {
   /// @param assetId The identifier of the asset.
   /// @return The asset configuration struct.
   function getAssetConfig(uint256 assetId) external view returns (AssetConfig memory);
-
-  /// @notice Returns the accrued fees for the asset, expressed in asset units.
-  /// @dev Accrued fees are excluded from total added assets.
-  /// @param assetId The identifier of the asset.
-  /// @return The amount of accrued fees.
-  function getAssetAccruedFees(uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the amount of liquidity swept by the reinvestment controller for the specified asset.
   /// @param assetId The identifier of the asset.

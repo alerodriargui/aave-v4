@@ -88,12 +88,14 @@ library AssetLogic {
       drawnIndex: drawnIndex
     });
 
-    return
-      asset.liquidity +
-      asset.swept +
-      aggregatedOwedRay.fromRayUp() -
-      asset.realizedFees -
-      asset.getUnrealizedFees(drawnIndex);
+    (, , uint256 unmintedFees) = asset.getMintFeeSharesInfo(drawnIndex);
+
+    return asset.liquidity + asset.swept + aggregatedOwedRay.fromRayUp() - unmintedFees;
+  }
+
+  function totalAddedShares(IHub.Asset storage asset) internal view returns (uint256) {
+    (uint256 shares, , ) = asset.getMintFeeSharesInfo(asset.getDrawnIndex());
+    return asset.addedShares + shares;
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -101,7 +103,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsUp(asset.totalAddedAssets(), asset.addedShares);
+    return shares.toAssetsUp(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding down.
@@ -109,7 +111,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 shares
   ) internal view returns (uint256) {
-    return shares.toAssetsDown(asset.totalAddedAssets(), asset.addedShares);
+    return shares.toAssetsDown(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
   /// @notice Converts an amount of added assets to the equivalent amount of shares, rounding up.
@@ -117,7 +119,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesUp(asset.totalAddedAssets(), asset.addedShares);
+    return assets.toSharesUp(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
   /// @notice Converts an amount of added assets to the equivalent amount of shares, rounding down.
@@ -125,7 +127,7 @@ library AssetLogic {
     IHub.Asset storage asset,
     uint256 assets
   ) internal view returns (uint256) {
-    return assets.toSharesDown(asset.totalAddedAssets(), asset.addedShares);
+    return assets.toSharesDown(asset.totalAddedAssets(), asset.totalAddedShares());
   }
 
   /// @notice Updates the drawn rate of a specified asset.
@@ -143,7 +145,7 @@ library AssetLogic {
     });
     asset.drawnRate = newDrawnRate.toUint96();
 
-    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate, asset.realizedFees);
+    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate);
   }
 
   /// @notice Accrues interest and fees for the specified asset.
@@ -153,7 +155,9 @@ library AssetLogic {
     }
 
     uint256 drawnIndex = asset.getDrawnIndex();
-    asset.realizedFees += asset.getUnrealizedFees(drawnIndex).toUint120();
+    (uint256 shares, uint256 effectiveMintedFees, ) = asset.getMintFeeSharesInfo(drawnIndex);
+    asset.addedShares += shares.toUint120();
+    asset.effectiveMintedFees = effectiveMintedFees.toUint120();
     asset.drawnIndex = drawnIndex.toUint120();
     asset.lastUpdateTimestamp = block.timestamp.toUint40();
   }
@@ -171,6 +175,54 @@ library AssetLogic {
       previousIndex.rayMulUp(
         MathUtils.calculateLinearInterest(asset.drawnRate, lastUpdateTimestamp)
       );
+  }
+
+  function getMintFeeSharesInfo(
+    IHub.Asset storage asset,
+    uint256 drawnIndex
+  ) internal view returns (uint256, uint256, uint256) {
+    uint256 rawFees = getRawFees(asset, drawnIndex);
+    uint256 feesToMint = rawFees - asset.effectiveMintedFees;
+    if (feesToMint == 0) {
+      return (0, 0, 0);
+    }
+
+    uint256 aggregatedOwedRay = _calculateAggregatedOwedRay({
+      drawnShares: asset.drawnShares,
+      premiumShares: asset.premiumShares,
+      premiumOffsetRay: asset.premiumOffsetRay,
+      deficitRay: asset.deficitRay,
+      drawnIndex: drawnIndex
+    });
+
+    uint256 shares = feesToMint.toSharesDown(
+      asset.liquidity + asset.swept + aggregatedOwedRay - feesToMint,
+      asset.addedShares
+    );
+    uint256 effectiveMintedFees = shares.toAssetsUp(
+      asset.liquidity + asset.swept + aggregatedOwedRay - feesToMint,
+      asset.addedShares
+    );
+    uint256 unmintedFees = rawFees - asset.effectiveMintedFees - effectiveMintedFees;
+
+    return (shares, effectiveMintedFees, unmintedFees);
+  }
+
+  function getRawFees(
+    IHub.Asset storage asset,
+    uint256 drawnIndex
+  ) internal view returns (uint256) {
+    uint256 aggregatedOwedRay = _calculateAggregatedOwedRay({
+      drawnShares: asset.drawnShares,
+      premiumShares: asset.premiumShares,
+      premiumOffsetRay: asset.premiumOffsetRay,
+      deficitRay: asset.deficitRay,
+      drawnIndex: drawnIndex
+    });
+
+    return
+      (aggregatedOwedRay.fromRayUp() - asset.aggregatedOwedAtLastFeeUpdate.fromRayUp())
+        .percentMulDown(asset.liquidityFee);
   }
 
   /// @notice Calculates the amount of fees derived from the index growth due to interest accrual.
