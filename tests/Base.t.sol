@@ -387,7 +387,7 @@ abstract contract Base is Test {
     selectors[2] = IHubConfigurator.updateFeeConfig.selector;
     selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
     selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
-    selectors[5] = IHubConfigurator.freezeAsset.selector;
+    selectors[5] = IHubConfigurator.resetAssetCaps.selector;
     selectors[6] = IHubConfigurator.deactivateAsset.selector;
     selectors[7] = IHubConfigurator.haltAsset.selector;
     selectors[8] = IHubConfigurator.addSpoke.selector;
@@ -400,7 +400,7 @@ abstract contract Base is Test {
     selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
     selectors[16] = IHubConfigurator.deactivateSpoke.selector;
     selectors[17] = IHubConfigurator.haltSpoke.selector;
-    selectors[18] = IHubConfigurator.freezeSpoke.selector;
+    selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
     selectors[19] = IHubConfigurator.updateInterestRateData.selector;
     selectors[20] = IHubConfigurator.addAsset.selector;
     selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
@@ -420,7 +420,7 @@ abstract contract Base is Test {
     IAccessManager(manager).grantRole(Roles.SPOKE_ADMIN_ROLE, spokeConfigurator, 0);
 
     // Set up SpokeConfigurator function permissions - all functions callable by SPOKE_CONFIGURATOR_ROLE
-    bytes4[] memory selectors = new bytes4[](23);
+    bytes4[] memory selectors = new bytes4[](25);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
@@ -443,7 +443,9 @@ abstract contract Base is Test {
     selectors[19] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
     selectors[20] = ISpokeConfigurator.pauseAllReserves.selector;
     selectors[21] = ISpokeConfigurator.freezeAllReserves.selector;
-    selectors[22] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[22] = ISpokeConfigurator.pauseReserve.selector;
+    selectors[23] = ISpokeConfigurator.freezeReserve.selector;
+    selectors[24] = ISpokeConfigurator.updatePositionManager.selector;
     IAccessManager(manager).setTargetFunctionRole(
       spokeConfigurator,
       selectors,

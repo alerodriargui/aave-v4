@@ -670,15 +670,15 @@ contract HubConfiguratorTest is HubBase {
     assertEq(hub1.getAssetConfig(_assetId), expectedConfig);
   }
 
-  function test_freezeAsset_revertsWith_AccessManagedUnauthorized() public {
+  function test_resetAssetCaps_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.freezeAsset(address(hub1), _assetId);
+    hubConfigurator.resetAssetCaps(address(hub1), _assetId);
   }
 
-  function test_freezeAsset() public {
+  function test_resetAssetCaps() public {
     for (uint256 i; i < spokeAddresses.length; i++) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
       spokeConfig.addCap = 0;
@@ -692,7 +692,7 @@ contract HubConfiguratorTest is HubBase {
     }
 
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.freezeAsset(address(hub1), _assetId);
+    hubConfigurator.resetAssetCaps(address(hub1), _assetId);
 
     for (uint256 i; i < spokeAddresses.length; i++) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(_assetId, spokeAddresses[i]);
@@ -1084,15 +1084,15 @@ contract HubConfiguratorTest is HubBase {
     }
   }
 
-  function test_freezeSpoke_revertsWith_AccessManagedUnauthorized() public {
+  function test_resetSpokeCaps_revertsWith_AccessManagedUnauthorized() public {
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, alice)
     );
     vm.prank(alice);
-    hubConfigurator.freezeSpoke(address(hub1), address(spoke3));
+    hubConfigurator.resetSpokeCaps(address(hub1), address(spoke3));
   }
 
-  function test_freezeSpoke() public {
+  function test_resetSpokeCaps() public {
     /// @dev Spoke3 is listed on hub1 on 4 assets: dai, weth, wbtc, usdx
     assertGt(hub1.getAssetCount(), 4, 'hub1 has less than 4 assets listed');
 
@@ -1115,7 +1115,7 @@ contract HubConfiguratorTest is HubBase {
     }
 
     vm.prank(HUB_CONFIGURATOR);
-    hubConfigurator.freezeSpoke(address(hub1), address(spoke3));
+    hubConfigurator.resetSpokeCaps(address(hub1), address(spoke3));
 
     for (uint256 assetId = 0; assetId < 4; ++assetId) {
       IHub.SpokeConfig memory spokeConfig = hub1.getSpokeConfig(assetId, address(spoke3));
