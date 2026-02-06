@@ -90,6 +90,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest, Hu
       expectedAmountToLiquidator = hub.previewRemoveByShares(assetId, params.sharesToLiquidator);
     }
     uint256 expectedAmountRemoved = hub.previewRemoveByShares(assetId, params.sharesToLiquidate);
+    uint256 initialTreasuryShares = hub.getSpokeAddedShares(assetId, address(treasurySpoke));
 
     _expectCalls(params);
     LiquidationLogic.LiquidateCollateralResult memory result = liquidationLogicWrapper
@@ -119,7 +120,7 @@ contract LiquidationLogicLiquidateCollateralTest is LiquidationLogicBaseTest, Hu
     assertEq(asset.balanceOf(address(hub)), initialHubBalance - expectedAmountToLiquidator);
     assertEq(
       hub.getSpokeAddedShares(assetId, address(treasurySpoke)),
-      params.sharesToLiquidate - params.sharesToLiquidator
+      initialTreasuryShares + params.sharesToLiquidate - params.sharesToLiquidator
     );
   }
 
