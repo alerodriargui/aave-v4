@@ -29,11 +29,11 @@ interface IHub is IHubBase, IAccessManaged {
   /// @dev feeReceiver The address of the fee receiver spoke.
   struct Asset {
     uint120 liquidity;
-    uint120 swept;
+    uint120 realizedFees;
     uint8 decimals;
     //
     uint120 addedShares;
-    uint120 realizedFees;
+    uint120 swept;
     //
     int200 premiumOffsetRay;
     //

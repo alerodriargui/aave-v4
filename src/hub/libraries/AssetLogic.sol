@@ -76,24 +76,7 @@ library AssetLogic {
     return asset.drawn(drawnIndex) + asset.premium(drawnIndex);
   }
 
-  /// @notice Returns the total added assets for the specified asset.
-  function totalAddedAssets(IHub.Asset storage asset) internal view returns (uint256) {
-    uint256 previousIndex = asset.drawnIndex;
-    uint256 drawnIndex = asset.getDrawnIndex(previousIndex);
-    (uint256 totalAssets, ) = asset.getTotalAssetsAndShares(drawnIndex, previousIndex);
-    return totalAssets;
-  }
-
-  /// @notice Returns the total added shares for the specified asset.
-  function totalAddedShares(IHub.Asset storage asset) internal view returns (uint256) {
-    uint256 previousIndex = asset.drawnIndex;
-    uint256 drawnIndex = asset.getDrawnIndex(previousIndex);
-    (, uint256 totalShares) = asset.getTotalAssetsAndShares(drawnIndex, previousIndex);
-    return totalShares;
-  }
-
   /// @notice Returns both total added assets and shares for the specified asset.
-  /// @dev Uses only a single getFee() call.
   function getTotalAssetsAndShares(
     IHub.Asset storage asset,
     uint256 drawnIndex,
