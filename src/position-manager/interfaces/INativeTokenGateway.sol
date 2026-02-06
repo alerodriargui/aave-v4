@@ -15,9 +15,6 @@ interface INativeTokenGateway is IPositionManagerBase {
   /// @notice Thrown when the native amount sent does not match the given amount parameter.
   error NativeAmountMismatch();
 
-  /// @notice Thrown when trying to call an unsupported action or sending native assets to this contract directly.
-  error UnsupportedAction();
-
   /// @notice Wraps the native asset and supplies to a specified registered `spoke`.
   /// @dev Contract must be an active & approved user position manager of the caller.
   /// @param spoke The address of the registered `spoke`.

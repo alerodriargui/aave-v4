@@ -45,19 +45,31 @@ interface IPositionConfigPositionManager is IPositionManagerBase {
   /// @param spoke The address of the spoke.
   /// @param caller The address of the caller.
   /// @param permission The new permission status.
-  function setUsingAsCollateralPermission(address spoke, address caller, bool permission) external;
+  function setCanUpdateUsingAsCollateralPermission(
+    address spoke,
+    address caller,
+    bool permission
+  ) external;
 
   /// @notice Sets the user risk premium permission for a caller.
   /// @param spoke The address of the spoke.
   /// @param caller The address of the caller.
   /// @param permission The new permission status.
-  function setUserRiskPremiumPermission(address spoke, address caller, bool permission) external;
+  function setCanUpdateUserRiskPremiumPermission(
+    address spoke,
+    address caller,
+    bool permission
+  ) external;
 
   /// @notice Sets the user dynamic config permission for a caller.
   /// @param spoke The address of the spoke.
   /// @param caller The address of the caller.
   /// @param permission The new permission status.
-  function setUserDynamicConfigPermission(address spoke, address caller, bool permission) external;
+  function setCanUpdateUserDynamicConfigPermission(
+    address spoke,
+    address caller,
+    bool permission
+  ) external;
 
   /// @notice Renounces the global permission given by the owner.
   /// @param spoke The address of the spoke.
@@ -67,17 +79,17 @@ interface IPositionConfigPositionManager is IPositionManagerBase {
   /// @notice Renounces the using as collateral permission given by the owner.
   /// @param spoke The address of the spoke.
   /// @param owner The address of the owner.
-  function renounceUsingAsCollateralPermission(address spoke, address owner) external;
+  function renounceCanUpdateUsingAsCollateralPermission(address spoke, address owner) external;
 
   /// @notice Renounces the user risk premium permission given by the owner.
   /// @param spoke The address of the spoke.
   /// @param owner The address of the owner.
-  function renounceUserRiskPremiumPermission(address spoke, address owner) external;
+  function renounceCanUpdateUserRiskPremiumPermission(address spoke, address owner) external;
 
   /// @notice Renounces the user dynamic config permission given by the owner.
   /// @param spoke The address of the spoke.
   /// @param owner The address of the owner.
-  function renounceUserDynamicConfigPermission(address spoke, address owner) external;
+  function renounceCanUpdateUserDynamicConfigPermission(address spoke, address owner) external;
 
   /// @notice Sets the using as collateral status on behalf of a user for a specified reserve.
   /// @dev The `msg.sender` must have the permission to perform this action on behalf of the user.

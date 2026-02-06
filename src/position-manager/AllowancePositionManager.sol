@@ -5,9 +5,9 @@ pragma solidity 0.8.28;
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
-import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {IAllowancePositionManager} from 'src/position-manager/interfaces/IAllowancePositionManager.sol';
+import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
 /// @title AllowancePositionManager
 /// @author Aave Labs
@@ -17,9 +17,11 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
   using MathUtils for uint256;
   using EIP712Hash for *;
 
+  /// @dev Map of spoke and reserveId to owner to spender to withdraw allowance.
   mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
     private _withdrawAllowances;
 
+  /// @dev Map of spoke and reserveId to owner to spender to credit delegation.
   mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
     private _creditDelegations;
 

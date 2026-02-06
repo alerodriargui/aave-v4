@@ -46,6 +46,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
 
   /// @notice Thrown when the withdraw allowance is insufficient.
   error InsufficientWithdrawAllowance(uint256 allowance, uint256 required);
+
   /// @notice Thrown when the credit delegation allowance is insufficient.
   error InsufficientCreditDelegation(uint256 allowance, uint256 required);
 
@@ -78,6 +79,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   );
 
   /// @notice Approves a spender to withdraw assets from the specified reserve.
+  /// @dev Grants unlimited and inifinite allowance if amount is type(uint256).max.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param spender The address of the spender to receive the allowance.
@@ -89,7 +91,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
     uint256 amount
   ) external;
 
-  /// @notice Approves a spender to withdraw assets from the specified reserve on the connected Spoke using an EIP712-typed intent
+  /// @notice Approves a spender to withdraw from the specified reserve using an EIP712-typed intent.
   /// @param params The structured WithdrawPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
   function approveWithdrawWithSig(
@@ -98,6 +100,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Approves a credit delegation allowance for a spender.
+  /// @dev Grants unlimited and inifinite allowance if amount is type(uint256).max.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param spender The address of the spender to receive the allowance.
@@ -109,7 +112,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
     uint256 amount
   ) external;
 
-  /// @notice Approves a credit delegation allowance for a spender using an EIP712-typed intent.
+  /// @notice Approves a spender to borrow from the specified reserve using an EIP712-typed intent.
   /// @param params The structured CreditDelegationPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
   function delegateCreditWithSig(

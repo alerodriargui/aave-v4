@@ -846,7 +846,7 @@ contract NativeTokenGatewayTest is SpokeBase {
   function test_receive_revertsWith_UnsupportedAction() public {
     deal(address(this), 1 ether);
 
-    vm.expectRevert(INativeTokenGateway.UnsupportedAction.selector);
+    vm.expectRevert(IPositionManagerBase.UnsupportedAction.selector);
     (bool success, ) = address(nativeTokenGateway).call{value: 1 ether}(new bytes(0));
     assertTrue(success);
   }
@@ -856,7 +856,7 @@ contract NativeTokenGatewayTest is SpokeBase {
 
     bytes memory invalidCall = abi.encode('invalidFunction()');
 
-    vm.expectRevert(INativeTokenGateway.UnsupportedAction.selector);
+    vm.expectRevert(IPositionManagerBase.UnsupportedAction.selector);
     (bool success, ) = address(nativeTokenGateway).call{value: 1 ether}(invalidCall);
     assertTrue(success);
   }
@@ -865,7 +865,7 @@ contract NativeTokenGatewayTest is SpokeBase {
     bytes[] memory calls = new bytes[](1);
     calls[0] = abi.encodeWithSignature('randomFunction()');
 
-    vm.expectRevert(INativeTokenGateway.UnsupportedAction.selector);
+    vm.expectRevert(IPositionManagerBase.UnsupportedAction.selector);
     nativeTokenGateway.multicall(calls);
   }
 

@@ -3,9 +3,9 @@
 pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {ISupplyRepayPositionManager} from 'src/position-manager/interfaces/ISupplyRepayPositionManager.sol';
+import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
 /// @title SupplyRepayPositionManager
 /// @author Aave Labs
@@ -24,9 +24,9 @@ contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionMana
     uint256 amount,
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
-    IERC20 asset = IERC20(_getReserveUnderlying(spoke, reserveId));
-    asset.safeTransferFrom(msg.sender, address(this), amount);
-    asset.forceApprove(spoke, amount);
+    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
+    underlying.safeTransferFrom(msg.sender, address(this), amount);
+    underlying.forceApprove(spoke, amount);
     return ISpokeBase(spoke).supply(reserveId, amount, onBehalfOf);
   }
 
@@ -37,13 +37,13 @@ contract SupplyRepayPositionManager is ISupplyRepayPositionManager, PositionMana
     uint256 amount,
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
-    IERC20 asset = IERC20(_getReserveUnderlying(spoke, reserveId));
+    IERC20 underlying = IERC20(_getReserveUnderlying(spoke, reserveId));
 
     uint256 userTotalDebt = ISpokeBase(spoke).getUserTotalDebt(reserveId, onBehalfOf);
     uint256 repayAmount = amount > userTotalDebt ? userTotalDebt : amount;
 
-    asset.safeTransferFrom(msg.sender, address(this), repayAmount);
-    asset.forceApprove(spoke, repayAmount);
+    underlying.safeTransferFrom(msg.sender, address(this), repayAmount);
+    underlying.forceApprove(spoke, repayAmount);
     return ISpokeBase(spoke).repay(reserveId, repayAmount, onBehalfOf);
   }
 

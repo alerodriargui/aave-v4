@@ -111,9 +111,9 @@ contract PositionConfigPositionManagerTest is SpokeBase {
 
   function test_setGlobalPermission_removePreviousPermissions() public {
     vm.prank(alice);
-    positionManager.setUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
     vm.prank(alice);
-    positionManager.setUserDynamicConfigPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, true);
 
     IPositionConfigPositionManager.ConfigPermissionValues memory permissions = positionManager
       .getConfigPermissions(address(spoke1), bob, alice);
@@ -145,7 +145,7 @@ contract PositionConfigPositionManagerTest is SpokeBase {
     positionManager.setGlobalPermission(address(spoke2), bob, true);
   }
 
-  function test_setUsingAsCollateralPermission() public {
+  function test_setCanUpdateUsingAsCollateralPermission() public {
     assertFalse(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canSetUsingAsCollateral
     );
@@ -159,16 +159,16 @@ contract PositionConfigPositionManagerTest is SpokeBase {
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
 
     assertTrue(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canSetUsingAsCollateral
     );
   }
 
-  function test_setUsingAsCollateralPermission_remove() public {
+  function test_setCanUpdateUsingAsCollateralPermission_remove() public {
     vm.prank(alice);
-    positionManager.setUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
     assertTrue(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canSetUsingAsCollateral
     );
@@ -183,20 +183,20 @@ contract PositionConfigPositionManagerTest is SpokeBase {
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setUsingAsCollateralPermission(address(spoke1), bob, false);
+    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, false);
 
     assertFalse(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canSetUsingAsCollateral
     );
   }
 
-  function test_setUsingAsCollateralPermission_revertsWith_SpokeNotRegistered() public {
+  function test_setCanUpdateUsingAsCollateralPermission_revertsWith_SpokeNotRegistered() public {
     vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(alice);
-    positionManager.setUsingAsCollateralPermission(address(spoke2), bob, true);
+    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke2), bob, true);
   }
 
-  function test_setUserRiskPremiumPermission() public {
+  function test_setCanUpdateUserRiskPremiumPermission() public {
     assertFalse(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserRiskPremium
     );
@@ -210,16 +210,16 @@ contract PositionConfigPositionManagerTest is SpokeBase {
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setUserRiskPremiumPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUserRiskPremiumPermission(address(spoke1), bob, true);
 
     assertTrue(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserRiskPremium
     );
   }
 
-  function test_setUserRiskPremiumPermission_remove() public {
+  function test_setCanUpdateUserRiskPremiumPermission_remove() public {
     vm.prank(alice);
-    positionManager.setUserRiskPremiumPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUserRiskPremiumPermission(address(spoke1), bob, true);
     assertTrue(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserRiskPremium
     );
@@ -234,20 +234,20 @@ contract PositionConfigPositionManagerTest is SpokeBase {
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setUserRiskPremiumPermission(address(spoke1), bob, false);
+    positionManager.setCanUpdateUserRiskPremiumPermission(address(spoke1), bob, false);
 
     assertFalse(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserRiskPremium
     );
   }
 
-  function test_setUserRiskPremiumPermission_revertsWith_SpokeNotRegistered() public {
+  function test_setCanUpdateUserRiskPremiumPermission_revertsWith_SpokeNotRegistered() public {
     vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(alice);
-    positionManager.setUserRiskPremiumPermission(address(spoke2), bob, true);
+    positionManager.setCanUpdateUserRiskPremiumPermission(address(spoke2), bob, true);
   }
 
-  function test_setUserDynamicConfigPermission() public {
+  function test_setCanUpdateUserDynamicConfigPermission() public {
     assertFalse(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserDynamicConfig
     );
@@ -261,16 +261,16 @@ contract PositionConfigPositionManagerTest is SpokeBase {
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setUserDynamicConfigPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, true);
 
     assertTrue(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserDynamicConfig
     );
   }
 
-  function test_setUserDynamicConfigPermission_remove() public {
+  function test_setCanUpdateUserDynamicConfigPermission_remove() public {
     vm.prank(alice);
-    positionManager.setUserDynamicConfigPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, true);
     assertTrue(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserDynamicConfig
     );
@@ -285,17 +285,17 @@ contract PositionConfigPositionManagerTest is SpokeBase {
       newPermissions
     );
     vm.prank(alice);
-    positionManager.setUserDynamicConfigPermission(address(spoke1), bob, false);
+    positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, false);
 
     assertFalse(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserDynamicConfig
     );
   }
 
-  function test_setUserDynamicConfigPermission_revertsWith_SpokeNotRegistered() public {
+  function test_setCanUpdateUserDynamicConfigPermission_revertsWith_SpokeNotRegistered() public {
     vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(alice);
-    positionManager.setUserDynamicConfigPermission(address(spoke2), bob, true);
+    positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke2), bob, true);
   }
 
   function test_renounceGlobalPermission() public {
@@ -332,9 +332,9 @@ contract PositionConfigPositionManagerTest is SpokeBase {
     positionManager.renounceGlobalPermission(address(spoke2), alice);
   }
 
-  function test_renounceUsingAsCollateralPermission() public {
+  function test_renounceCanUpdateUsingAsCollateralPermission() public {
     vm.prank(alice);
-    positionManager.setUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
 
     assertTrue(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canSetUsingAsCollateral
@@ -350,22 +350,24 @@ contract PositionConfigPositionManagerTest is SpokeBase {
       newPermissions
     );
     vm.prank(bob);
-    positionManager.renounceUsingAsCollateralPermission(address(spoke1), alice);
+    positionManager.renounceCanUpdateUsingAsCollateralPermission(address(spoke1), alice);
 
     assertFalse(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canSetUsingAsCollateral
     );
   }
 
-  function test_renounceUsingAsCollateralPermission_revertsWith_SpokeNotRegistered() public {
+  function test_renounceCanUpdateUsingAsCollateralPermission_revertsWith_SpokeNotRegistered()
+    public
+  {
     vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(bob);
-    positionManager.renounceUsingAsCollateralPermission(address(spoke2), alice);
+    positionManager.renounceCanUpdateUsingAsCollateralPermission(address(spoke2), alice);
   }
 
-  function test_renounceUserRiskPremiumPermission() public {
+  function test_renounceCanUpdateUserRiskPremiumPermission() public {
     vm.prank(alice);
-    positionManager.setUserRiskPremiumPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUserRiskPremiumPermission(address(spoke1), bob, true);
 
     assertTrue(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserRiskPremium
@@ -381,22 +383,22 @@ contract PositionConfigPositionManagerTest is SpokeBase {
       newPermissions
     );
     vm.prank(bob);
-    positionManager.renounceUserRiskPremiumPermission(address(spoke1), alice);
+    positionManager.renounceCanUpdateUserRiskPremiumPermission(address(spoke1), alice);
 
     assertFalse(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserRiskPremium
     );
   }
 
-  function test_renounceUserRiskPremiumPermission_revertsWith_SpokeNotRegistered() public {
+  function test_renounceCanUpdateUserRiskPremiumPermission_revertsWith_SpokeNotRegistered() public {
     vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(bob);
-    positionManager.renounceUserRiskPremiumPermission(address(spoke2), alice);
+    positionManager.renounceCanUpdateUserRiskPremiumPermission(address(spoke2), alice);
   }
 
-  function test_renounceUserDynamicConfigPermission() public {
+  function test_renounceCanUpdateUserDynamicConfigPermission() public {
     vm.prank(alice);
-    positionManager.setUserDynamicConfigPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, true);
 
     assertTrue(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserDynamicConfig
@@ -412,17 +414,19 @@ contract PositionConfigPositionManagerTest is SpokeBase {
       newPermissions
     );
     vm.prank(bob);
-    positionManager.renounceUserDynamicConfigPermission(address(spoke1), alice);
+    positionManager.renounceCanUpdateUserDynamicConfigPermission(address(spoke1), alice);
 
     assertFalse(
       positionManager.getConfigPermissions(address(spoke1), bob, alice).canUpdateUserDynamicConfig
     );
   }
 
-  function test_renounceUserDynamicConfigPermission_revertsWith_SpokeNotRegistered() public {
+  function test_renounceCanUpdateUserDynamicConfigPermission_revertsWith_SpokeNotRegistered()
+    public
+  {
     vm.expectRevert(IPositionManagerBase.SpokeNotRegistered.selector);
     vm.prank(bob);
-    positionManager.renounceUserDynamicConfigPermission(address(spoke2), alice);
+    positionManager.renounceCanUpdateUserDynamicConfigPermission(address(spoke2), alice);
   }
 
   function test_setUsingAsCollateralOnBehalfOf_fuzz_withPermission(
@@ -432,7 +436,7 @@ contract PositionConfigPositionManagerTest is SpokeBase {
     reserveId = bound(reserveId, 1, spoke1.getReserveCount() - 1);
 
     vm.prank(alice);
-    positionManager.setUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
 
     vm.prank(alice);
     spoke1.setUsingAsCollateral(reserveId, !useAsCollateral, alice);
@@ -502,7 +506,7 @@ contract PositionConfigPositionManagerTest is SpokeBase {
 
   function test_updateUserRiskPremiumOnBehalfOf_withPermission() public {
     vm.prank(alice);
-    positionManager.setUserRiskPremiumPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUserRiskPremiumPermission(address(spoke1), bob, true);
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, 100e18, alice);
     Utils.borrow(spoke1, _daiReserveId(spoke1), alice, 75e18, alice);
@@ -540,7 +544,7 @@ contract PositionConfigPositionManagerTest is SpokeBase {
 
   function test_updateUserDynamicConfigOnBehalfOf_withPermission() public {
     vm.prank(alice);
-    positionManager.setUserDynamicConfigPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, true);
 
     vm.expectEmit(address(spoke1));
     emit ISpoke.RefreshAllUserDynamicConfig(alice);

@@ -21,11 +21,12 @@ abstract contract PositionManagerBase is
   Rescuable,
   Multicall
 {
+  /// @dev Map of registered spokes.
   mapping(address => bool) internal _registeredSpokes;
 
   /// @notice Modifier that checks if the specified spoke is registered.
   modifier onlyRegisteredSpoke(address spoke) {
-    _isSpokeValid(spoke);
+    _isSpokeRegistered(spoke);
     _;
   }
 
@@ -34,10 +35,10 @@ abstract contract PositionManagerBase is
   constructor(address initialOwner_) Ownable(initialOwner_) {}
 
   /// @inheritdoc IPositionManagerBase
-  function registerSpoke(address spoke, bool active) external onlyOwner {
+  function registerSpoke(address spoke, bool registered) external onlyOwner {
     require(spoke != address(0), InvalidAddress());
-    _registeredSpokes[spoke] = active;
-    emit SpokeRegistered(spoke, active);
+    _registeredSpokes[spoke] = registered;
+    emit SpokeRegistered(spoke, registered);
   }
 
   /// @inheritdoc IPositionManagerBase
@@ -101,7 +102,7 @@ abstract contract PositionManagerBase is
   }
 
   /// @dev Verifies the specified spoke is registered.
-  function _isSpokeValid(address spoke) internal view {
+  function _isSpokeRegistered(address spoke) internal view {
     require(_registeredSpokes[spoke], SpokeNotRegistered());
   }
 
@@ -110,7 +111,6 @@ abstract contract PositionManagerBase is
     return ISpoke(spoke).getReserve(reserveId).underlying;
   }
 
-  /// @dev The `owner()` is the allowed caller for Rescuable methods.
   function _rescueGuardian() internal view override returns (address) {
     return owner();
   }

@@ -11,13 +11,16 @@ import {IRescuable} from 'src/interfaces/IRescuable.sol';
 /// @notice Base interface for position managers.
 interface IPositionManagerBase is IIntentConsumer, IRescuable, IMulticall {
   /// @notice Emitted when a spoke is registered or deregistered.
-  event SpokeRegistered(address indexed spoke, bool active);
+  event SpokeRegistered(address indexed spoke, bool registered);
 
   /// @notice Thrown when the specified address is invalid.
   error InvalidAddress();
 
   /// @notice Thrown when the specified amount is invalid.
   error InvalidAmount();
+
+  /// @notice Thrown when trying to call an unsupported action on this position manager.
+  error UnsupportedAction();
 
   /// @notice Thrown when the specified spoke is not registered.
   error SpokeNotRegistered();
@@ -60,17 +63,17 @@ interface IPositionManagerBase is IIntentConsumer, IRescuable, IMulticall {
     bytes32 permitS
   ) external;
 
-  /// @notice Allows contract to renounce its position manager role for `user`.
+  /// @notice Allows contract to renounce its position manager role for the specified user.
   /// @dev Only authorized caller to invoke this method.
-  /// @param spoke The address of the registered `spoke`.
+  /// @param spoke The address of the registered Spoke.
   /// @param user The address of the user to renounce the position manager role for.
   function renouncePositionManagerRole(address spoke, address user) external;
 
-  /// @notice Permissioned operation to register or deregister a spoke.
+  /// @notice Register or deregister a spoke.
   /// @dev Only owner to invoke this method.
-  /// @param spoke The address of the `spoke`.
-  /// @param active `true` to register, `false` to deregister.
-  function registerSpoke(address spoke, bool active) external;
+  /// @param spoke The address of the Spoke.
+  /// @param registered `true` to register, `false` to deregister.
+  function registerSpoke(address spoke, bool registered) external;
 
   /// @notice Returns whether the specified spoke is registered.
   /// @param spoke The address of the `spoke`.

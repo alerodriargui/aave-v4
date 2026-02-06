@@ -3,13 +3,12 @@
 pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
-import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
+import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
 /// @title SignatureGateway
 /// @author Aave Labs

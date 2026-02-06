@@ -23,6 +23,7 @@ interface ISupplyRepayPositionManager is IPositionManagerBase {
   ) external returns (uint256, uint256);
 
   /// @notice Executes a repay on behalf of a user.
+  /// @dev If the amount exceeds the user's current debt, the entire debt is repaid.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to repay.

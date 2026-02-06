@@ -3,12 +3,12 @@
 pragma solidity 0.8.28;
 
 import {ConfigPermissionsMap} from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
-import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {
   IPositionConfigPositionManager,
   ConfigPermissions
 } from 'src/position-manager/interfaces/IPositionConfigPositionManager.sol';
+import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
 /// @title PositionConfigPositionManager
 /// @author Aave Labs
@@ -39,7 +39,7 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
   }
 
   /// @inheritdoc IPositionConfigPositionManager
-  function setUsingAsCollateralPermission(
+  function setCanUpdateUsingAsCollateralPermission(
     address spoke,
     address caller,
     bool permission
@@ -54,7 +54,7 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
   }
 
   /// @inheritdoc IPositionConfigPositionManager
-  function setUserRiskPremiumPermission(
+  function setCanUpdateUserRiskPremiumPermission(
     address spoke,
     address caller,
     bool permission
@@ -69,7 +69,7 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
   }
 
   /// @inheritdoc IPositionConfigPositionManager
-  function setUserDynamicConfigPermission(
+  function setCanUpdateUserDynamicConfigPermission(
     address spoke,
     address caller,
     bool permission
@@ -98,7 +98,7 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
   }
 
   /// @inheritdoc IPositionConfigPositionManager
-  function renounceUsingAsCollateralPermission(
+  function renounceCanUpdateUsingAsCollateralPermission(
     address spoke,
     address owner
   ) external onlyRegisteredSpoke(spoke) {
@@ -112,7 +112,7 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
   }
 
   /// @inheritdoc IPositionConfigPositionManager
-  function renounceUserRiskPremiumPermission(
+  function renounceCanUpdateUserRiskPremiumPermission(
     address spoke,
     address owner
   ) external onlyRegisteredSpoke(spoke) {
@@ -126,7 +126,7 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
   }
 
   /// @inheritdoc IPositionConfigPositionManager
-  function renounceUserDynamicConfigPermission(
+  function renounceCanUpdateUserDynamicConfigPermission(
     address spoke,
     address owner
   ) external onlyRegisteredSpoke(spoke) {

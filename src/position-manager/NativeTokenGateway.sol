@@ -6,18 +6,19 @@ import {ReentrancyGuardTransient} from 'src/dependencies/openzeppelin/Reentrancy
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {IMulticall, Multicall} from 'src/utils/Multicall.sol';
-import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {INativeWrapper} from 'src/position-manager/interfaces/INativeWrapper.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
+import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
 /// @title NativeTokenGateway
 /// @author Aave Labs
-/// @notice Gateway to interact with a spoke using the native coin of a chain.
+/// @notice Gateway to interact with a spoke using the native token of a chain.
 /// @dev Contract must be an active & approved user position manager in order to execute spoke actions on a user's behalf.
 contract NativeTokenGateway is INativeTokenGateway, PositionManagerBase, ReentrancyGuardTransient {
   using SafeERC20 for IERC20;
 
+  /// @inheritdoc INativeTokenGateway
   address public immutable NATIVE_WRAPPER;
 
   /// @dev Constructor.

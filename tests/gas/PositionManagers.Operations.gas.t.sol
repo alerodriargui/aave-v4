@@ -288,22 +288,22 @@ contract PositionConfigPositionManager_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'setGlobalPermission');
   }
 
-  function test_setUsingAsCollateralPermission() public {
+  function test_setCanUpdateUsingAsCollateralPermission() public {
     vm.prank(alice);
-    positionManager.setUsingAsCollateralPermission(address(spoke1), bob, true);
-    vm.snapshotGasLastCall(NAMESPACE, 'setUsingAsCollateralPermission');
+    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
+    vm.snapshotGasLastCall(NAMESPACE, 'setCanUpdateUsingAsCollateralPermission');
   }
 
-  function test_setUserRiskPremiumPermission() public {
+  function test_setCanUpdateUserRiskPremiumPermission() public {
     vm.prank(alice);
-    positionManager.setUserRiskPremiumPermission(address(spoke1), bob, true);
-    vm.snapshotGasLastCall(NAMESPACE, 'setUserRiskPremiumPermission');
+    positionManager.setCanUpdateUserRiskPremiumPermission(address(spoke1), bob, true);
+    vm.snapshotGasLastCall(NAMESPACE, 'setCanUpdateUserRiskPremiumPermission');
   }
 
-  function test_setUserDynamicConfigPermission() public {
+  function test_setCanUpdateUserDynamicConfigPermission() public {
     vm.prank(alice);
-    positionManager.setUserDynamicConfigPermission(address(spoke1), bob, true);
-    vm.snapshotGasLastCall(NAMESPACE, 'setUserDynamicConfigPermission');
+    positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, true);
+    vm.snapshotGasLastCall(NAMESPACE, 'setCanUpdateUserDynamicConfigPermission');
   }
 
   function test_renounceGlobalPermission() public {
@@ -315,31 +315,31 @@ contract PositionConfigPositionManager_Gas_Tests is SpokeBase {
     vm.snapshotGasLastCall(NAMESPACE, 'renounceGlobalPermission');
   }
 
-  function test_renounceUsingAsCollateralPermission() public {
+  function test_renounceCanUpdateUsingAsCollateralPermission() public {
     vm.prank(alice);
-    positionManager.setUsingAsCollateralPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUsingAsCollateralPermission(address(spoke1), bob, true);
 
     vm.prank(bob);
-    positionManager.renounceUsingAsCollateralPermission(address(spoke1), alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'renounceUsingAsCollateralPermission');
+    positionManager.renounceCanUpdateUsingAsCollateralPermission(address(spoke1), alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'renounceCanUpdateUsingAsCollateralPermission');
   }
 
-  function test_renounceUserRiskPremiumPermission() public {
+  function test_renounceCanUpdateUserRiskPremiumPermission() public {
     vm.prank(alice);
-    positionManager.setUserRiskPremiumPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUserRiskPremiumPermission(address(spoke1), bob, true);
 
     vm.prank(bob);
-    positionManager.renounceUserRiskPremiumPermission(address(spoke1), alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'renounceUserRiskPremiumPermission');
+    positionManager.renounceCanUpdateUserRiskPremiumPermission(address(spoke1), alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'renounceCanUpdateUserRiskPremiumPermission');
   }
 
-  function test_renounceUserDynamicConfigPermission() public {
+  function test_renounceCanUpdateUserDynamicConfigPermission() public {
     vm.prank(alice);
-    positionManager.setUserDynamicConfigPermission(address(spoke1), bob, true);
+    positionManager.setCanUpdateUserDynamicConfigPermission(address(spoke1), bob, true);
 
     vm.prank(bob);
-    positionManager.renounceUserDynamicConfigPermission(address(spoke1), alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'renounceUserDynamicConfigPermission');
+    positionManager.renounceCanUpdateUserDynamicConfigPermission(address(spoke1), alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'renounceCanUpdateUserDynamicConfigPermission');
   }
 
   function test_setUsingAsCollateralOnBehalfOf_fuzz_withGlobalPermission() public {
