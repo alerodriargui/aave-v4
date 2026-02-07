@@ -19,7 +19,7 @@ library EIP712Hash {
   function hash(
     ISpoke.SetUserPositionManagers calldata params
   ) internal pure returns (bytes32 digest) {
-    assembly ('memory-safe') {
+    assembly {
       // retrieve fmp; note: memory will be left dirtied
       let m := mload(0x40)
 
