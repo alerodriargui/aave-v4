@@ -255,7 +255,13 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     uint256 currentAllowance = _withdrawAllowances[spoke][reserveId][owner][spender];
     require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
     if (currentAllowance != type(uint256).max) {
-      _withdrawAllowances[spoke][reserveId][owner][spender] = currentAllowance.uncheckedSub(amount);
+      _updateWithdrawAllowance({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: owner,
+        spender: spender,
+        newAllowance: currentAllowance.uncheckedSub(amount)
+      });
     }
   }
 
@@ -269,7 +275,13 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     uint256 currentAllowance = _creditDelegations[spoke][reserveId][owner][spender];
     require(currentAllowance >= amount, InsufficientCreditDelegation(currentAllowance, amount));
     if (currentAllowance != type(uint256).max) {
-      _creditDelegations[spoke][reserveId][owner][spender] = currentAllowance.uncheckedSub(amount);
+      _updateCreditDelegation({
+        spoke: spoke,
+        reserveId: reserveId,
+        owner: owner,
+        spender: spender,
+        newCreditDelegation: currentAllowance.uncheckedSub(amount)
+      });
     }
   }
 
