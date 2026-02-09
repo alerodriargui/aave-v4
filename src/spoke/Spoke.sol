@@ -268,7 +268,7 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external virtual nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _getSpokeStorage()._userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _getSpokeStorage()._positionStatus[onBehalfOf];
@@ -294,41 +294,54 @@ abstract contract Spoke is
     uint256 reserveId,
     uint256 amount,
     address onBehalfOf
-  ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
+  ) external virtual nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _getSpokeStorage()._userPositions[onBehalfOf][reserveId];
+    PositionStatus storage positionStatus = _getSpokeStorage()._positionStatus[onBehalfOf];
     _validateRepay(reserve.flags);
 
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
-    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
-      .calculateRestoreAmount(drawnIndex, amount);
-    uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
-
-    IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
-      drawnSharesTaken: restoredShares,
-      drawnIndex: drawnIndex,
-      riskPremium: _getSpokeStorage()._positionStatus[onBehalfOf].riskPremium,
-      restoredPremiumRay: premiumDebtRayRestored
-    });
-
-    uint256 totalDebtRestored = drawnDebtRestored + premiumDebtRayRestored.fromRayUp();
-    IERC20(reserve.underlying).safeTransferFrom(
-      msg.sender,
-      address(reserve.hub),
-      totalDebtRestored
+    (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = _calculateRestoreAmount(
+      userPosition,
+      drawnIndex,
+      amount
     );
-    reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
 
-    userPosition.applyPremiumDelta(premiumDelta);
+    IHubBase.PremiumDelta memory premiumDelta = _calculatePremiumDelta(
+      userPosition,
+      drawnDebtRestored.rayDivDown(drawnIndex),
+      drawnIndex,
+      positionStatus.riskPremium,
+      premiumDebtRayRestored
+    );
+
+    {
+      uint256 totalDebtRestored = drawnDebtRestored + premiumDebtRayRestored.fromRayUp();
+      IERC20(reserve.underlying).safeTransferFrom(
+        msg.sender,
+        address(reserve.hub),
+        totalDebtRestored
+      );
+      reserve.hub.restore(reserve.assetId, drawnDebtRestored, premiumDelta);
+    }
+
+    _applyPremiumDelta(userPosition, premiumDelta);
+    uint256 restoredShares = drawnDebtRestored.rayDivDown(drawnIndex);
     userPosition.drawnShares -= restoredShares.toUint120();
     if (userPosition.drawnShares == 0) {
-      PositionStatus storage positionStatus = _getSpokeStorage()._positionStatus[onBehalfOf];
       positionStatus.setBorrowing(reserveId, false);
     }
 
-    emit Repay(reserveId, msg.sender, onBehalfOf, restoredShares, totalDebtRestored, premiumDelta);
+    emit Repay(
+      reserveId,
+      msg.sender,
+      onBehalfOf,
+      restoredShares,
+      drawnDebtRestored + premiumDebtRayRestored.fromRayUp(),
+      premiumDelta
+    );
 
-    return (restoredShares, totalDebtRestored);
+    return (restoredShares, drawnDebtRestored + premiumDebtRayRestored.fromRayUp());
   }
 
   /// @inheritdoc ISpokeBase
@@ -338,7 +351,7 @@ abstract contract Spoke is
     address user,
     uint256 debtToCover,
     bool receiveShares
-  ) external nonReentrant {
+  ) external virtual nonReentrant {
     Reserve storage collateralReserve = _getReserve(collateralReserveId);
     Reserve storage debtReserve = _getReserve(debtReserveId);
     DynamicReserveConfig storage collateralDynConfig = _getSpokeStorage()._dynamicConfig[
@@ -347,9 +360,10 @@ abstract contract Spoke is
     UserAccountData memory userAccountData = _calculateUserAccountData(user);
 
     uint256 drawnIndex = debtReserve.hub.getAssetDrawnIndex(debtReserve.assetId);
-    (uint256 drawnDebt, uint256 premiumDebtRay) = _getSpokeStorage()
-      ._userPositions[user][debtReserveId]
-      .getDebt(drawnIndex);
+    (uint256 drawnDebt, uint256 premiumDebtRay) = _getUserDebt(
+      _getSpokeStorage()._userPositions[user][debtReserveId],
+      drawnIndex
+    );
 
     LiquidationLogic.LiquidateUserParams memory params = LiquidationLogic.LiquidateUserParams({
       collateralReserveId: collateralReserveId,
@@ -412,7 +426,7 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function updateUserRiskPremium(address onBehalfOf) external nonReentrant {
+  function updateUserRiskPremium(address onBehalfOf) external virtual nonReentrant {
     if (!_isPositionManager({user: onBehalfOf, manager: msg.sender})) {
       _checkCanCall(msg.sender, msg.data);
     }
@@ -580,10 +594,14 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpokeBase
-  function getUserDebt(uint256 reserveId, address user) external view returns (uint256, uint256) {
+  function getUserDebt(
+    uint256 reserveId,
+    address user
+  ) external view virtual returns (uint256, uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _getSpokeStorage()._userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+    (uint256 drawnDebt, uint256 premiumDebtRay) = _getUserDebtFromHub(
+      userPosition,
       reserve.hub,
       reserve.assetId
     );
@@ -591,10 +609,14 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpokeBase
-  function getUserTotalDebt(uint256 reserveId, address user) external view returns (uint256) {
+  function getUserTotalDebt(
+    uint256 reserveId,
+    address user
+  ) external view virtual returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _getSpokeStorage()._userPositions[user][reserveId];
-    (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+    (uint256 drawnDebt, uint256 premiumDebtRay) = _getUserDebtFromHub(
+      userPosition,
       reserve.hub,
       reserve.assetId
     );
@@ -602,10 +624,13 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpokeBase
-  function getUserPremiumDebtRay(uint256 reserveId, address user) external view returns (uint256) {
+  function getUserPremiumDebtRay(
+    uint256 reserveId,
+    address user
+  ) external view virtual returns (uint256) {
     Reserve storage reserve = _getReserve(reserveId);
     UserPosition storage userPosition = _getSpokeStorage()._userPositions[user][reserveId];
-    (, uint256 premiumDebtRay) = userPosition.getDebt(reserve.hub, reserve.assetId);
+    (, uint256 premiumDebtRay) = _getUserDebtFromHub(userPosition, reserve.hub, reserve.assetId);
     return premiumDebtRay;
   }
 
@@ -619,7 +644,7 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function getUserLastRiskPremium(address user) external view returns (uint256) {
+  function getUserLastRiskPremium(address user) external view virtual returns (uint256) {
     return _getSpokeStorage()._positionStatus[user].riskPremium;
   }
 
@@ -642,10 +667,9 @@ abstract contract Spoke is
         liquidationBonusFactor: _getSpokeStorage()._liquidationConfig.liquidationBonusFactor,
         healthFactor: healthFactor,
         maxLiquidationBonus: _getSpokeStorage()
-          ._dynamicConfig[reserveId][
-            _getSpokeStorage()._userPositions[user][reserveId].dynamicConfigKey
-          ]
-          .maxLiquidationBonus
+        ._dynamicConfig[reserveId][
+          _getSpokeStorage()._userPositions[user][reserveId].dynamicConfigKey
+        ].maxLiquidationBonus
       });
   }
 
@@ -660,7 +684,7 @@ abstract contract Spoke is
   }
 
   /// @inheritdoc ISpoke
-  function getLiquidationLogic() external pure returns (address) {
+  function getLiquidationLogic() external pure virtual returns (address) {
     return address(LiquidationLogic);
   }
 
@@ -700,7 +724,7 @@ abstract contract Spoke is
   function _processUserAccountData(
     address user,
     bool refreshConfig
-  ) internal returns (UserAccountData memory accountData) {
+  ) internal virtual returns (UserAccountData memory accountData) {
     PositionStatus storage positionStatus = _getSpokeStorage()._positionStatus[user];
 
     uint256 reserveId = _getSpokeStorage()._reserveCount;
@@ -721,12 +745,11 @@ abstract contract Spoke is
 
       if (collateral) {
         uint256 collateralFactor = _getSpokeStorage()
-          ._dynamicConfig[reserveId][
-            refreshConfig
-              ? (userPosition.dynamicConfigKey = reserve.dynamicConfigKey)
-              : userPosition.dynamicConfigKey
-          ]
-          .collateralFactor;
+        ._dynamicConfig[reserveId][
+          refreshConfig
+            ? (userPosition.dynamicConfigKey = reserve.dynamicConfigKey)
+            : userPosition.dynamicConfigKey
+        ].collateralFactor;
         if (collateralFactor > 0) {
           uint256 suppliedShares = userPosition.suppliedShares;
           if (suppliedShares > 0) {
@@ -748,7 +771,8 @@ abstract contract Spoke is
       }
 
       if (borrowing) {
-        (uint256 drawnDebt, uint256 premiumDebtRay) = userPosition.getDebt(
+        (uint256 drawnDebt, uint256 premiumDebtRay) = _getUserDebtFromHub(
+          userPosition,
           reserve.hub,
           reserve.assetId
         );
@@ -778,11 +802,22 @@ abstract contract Spoke is
         .fromBpsDown();
     }
 
+    accountData.riskPremium = _calculateUserRiskPremium(collateralInfo, accountData.totalDebtValue);
+
+    return accountData;
+  }
+
+  /// @notice Calculates the user's risk premium based on collateral info and debt value.
+  /// @dev Override in child contracts to return 0 for risk-free spokes.
+  function _calculateUserRiskPremium(
+    KeyValueList.List memory collateralInfo,
+    uint256 totalDebtValue
+  ) internal view virtual returns (uint256 riskPremium) {
     // sort by collateral risk in ASC, collateral value in DESC
     collateralInfo.sortByKey();
 
     // runs until either the collateral or debt is exhausted
-    uint256 debtValueLeftToCover = accountData.totalDebtValue;
+    uint256 debtValueLeftToCover = totalDebtValue;
 
     for (uint256 index = 0; index < collateralInfo.length(); ++index) {
       if (debtValueLeftToCover == 0) {
@@ -791,15 +826,13 @@ abstract contract Spoke is
 
       (uint256 collateralRisk, uint256 userCollateralValue) = collateralInfo.get(index);
       userCollateralValue = userCollateralValue.min(debtValueLeftToCover);
-      accountData.riskPremium += userCollateralValue * collateralRisk;
+      riskPremium += userCollateralValue * collateralRisk;
       debtValueLeftToCover = debtValueLeftToCover.uncheckedSub(userCollateralValue);
     }
 
-    if (debtValueLeftToCover < accountData.totalDebtValue) {
-      accountData.riskPremium /= accountData.totalDebtValue.uncheckedSub(debtValueLeftToCover);
+    if (debtValueLeftToCover < totalDebtValue) {
+      riskPremium /= totalDebtValue.uncheckedSub(debtValueLeftToCover);
     }
-
-    return accountData;
   }
 
   function _refreshDynamicConfig(address user, uint256 reserveId) internal {
@@ -811,7 +844,7 @@ abstract contract Spoke is
 
   /// @notice Refreshes premium for borrowed reserves of `user` with `newRiskPremium`.
   /// @dev Skips the refresh if the user risk premium remains zero.
-  function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal {
+  function _notifyRiskPremiumUpdate(address user, uint256 newRiskPremium) internal virtual {
     PositionStatus storage positionStatus = _getSpokeStorage()._positionStatus[user];
     if (newRiskPremium == 0 && positionStatus.riskPremium == 0) {
       return;
@@ -825,15 +858,16 @@ abstract contract Spoke is
       uint256 assetId = reserve.assetId;
       IHubBase hub = reserve.hub;
 
-      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
-        drawnSharesTaken: 0,
-        drawnIndex: hub.getAssetDrawnIndex(assetId),
-        riskPremium: newRiskPremium,
-        restoredPremiumRay: 0
-      });
+      IHubBase.PremiumDelta memory premiumDelta = _calculatePremiumDelta(
+        userPosition,
+        0,
+        hub.getAssetDrawnIndex(assetId),
+        newRiskPremium,
+        0
+      );
 
       hub.refreshPremium(assetId, premiumDelta);
-      userPosition.applyPremiumDelta(premiumDelta);
+      _applyPremiumDelta(userPosition, premiumDelta);
       emit RefreshPremiumDebt(reserveId, user, premiumDelta);
     }
     emit UpdateUserRiskPremium(user, newRiskPremium);
@@ -842,7 +876,7 @@ abstract contract Spoke is
   /// @notice Reports deficits for all debt reserves of the user, including the reserve being repaid during liquidation.
   /// @dev Deficit validation should already have occurred during liquidation.
   /// @dev It clears the user position, setting drawn debt, premium debt, and risk premium to zero.
-  function _reportDeficit(address user) internal {
+  function _reportDeficit(address user) internal virtual {
     PositionStatus storage positionStatus = _getSpokeStorage()._positionStatus[user];
 
     uint256 reserveId = _getSpokeStorage()._reserveCount;
@@ -853,18 +887,19 @@ abstract contract Spoke is
       uint256 assetId = reserve.assetId;
 
       uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-      (uint256 drawnDebtReported, uint256 premiumDebtRay) = userPosition.getDebt(drawnIndex);
+      (uint256 drawnDebtReported, uint256 premiumDebtRay) = _getUserDebt(userPosition, drawnIndex);
       uint256 deficitShares = drawnDebtReported.rayDivDown(drawnIndex);
 
-      IHubBase.PremiumDelta memory premiumDelta = userPosition.calculatePremiumDelta({
-        drawnSharesTaken: deficitShares,
-        drawnIndex: drawnIndex,
-        riskPremium: 0,
-        restoredPremiumRay: premiumDebtRay
-      });
+      IHubBase.PremiumDelta memory premiumDelta = _calculatePremiumDelta(
+        userPosition,
+        deficitShares,
+        drawnIndex,
+        0,
+        premiumDebtRay
+      );
 
       hub.reportDeficit(assetId, drawnDebtReported, premiumDelta);
-      userPosition.applyPremiumDelta(premiumDelta);
+      _applyPremiumDelta(userPosition, premiumDelta);
       userPosition.drawnShares -= deficitShares.toUint120();
       positionStatus.setBorrowing(reserveId, false);
 
@@ -876,6 +911,65 @@ abstract contract Spoke is
     Reserve storage reserve = _getSpokeStorage()._reserves[reserveId];
     require(address(reserve.hub) != address(0), ReserveNotListed());
     return reserve;
+  }
+
+  // ============ Virtual Debt Calculation Wrappers ============
+  // These can be overridden by child contracts (e.g., RiskFreeSpoke) to customize debt calculations
+
+  /// @notice Returns the user's debt for a given position.
+  /// @dev Override in child contracts to customize debt calculation (e.g., RiskFreeSpoke returns 0 premium).
+  function _getUserDebt(
+    UserPosition storage userPosition,
+    uint256 drawnIndex
+  ) internal view virtual returns (uint256 drawnDebt, uint256 premiumDebtRay) {
+    return userPosition.getDebt(drawnIndex);
+  }
+
+  /// @notice Returns the user's debt by fetching the drawn index from the hub.
+  /// @dev Override in child contracts to customize debt calculation.
+  function _getUserDebtFromHub(
+    UserPosition storage userPosition,
+    IHubBase hub,
+    uint256 assetId
+  ) internal view virtual returns (uint256 drawnDebt, uint256 premiumDebtRay) {
+    return userPosition.getDebt(hub, assetId);
+  }
+
+  /// @notice Calculates the restore amounts for drawn and premium debt.
+  /// @dev Override in child contracts to customize restore calculation.
+  function _calculateRestoreAmount(
+    UserPosition storage userPosition,
+    uint256 drawnIndex,
+    uint256 amount
+  ) internal view virtual returns (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) {
+    return userPosition.calculateRestoreAmount(drawnIndex, amount);
+  }
+
+  /// @notice Calculates the premium delta for hub operations.
+  /// @dev Override in child contracts to return zero premium delta.
+  function _calculatePremiumDelta(
+    UserPosition storage userPosition,
+    uint256 drawnSharesTaken,
+    uint256 drawnIndex,
+    uint256 riskPremium,
+    uint256 restoredPremiumRay
+  ) internal view virtual returns (IHubBase.PremiumDelta memory) {
+    return
+      userPosition.calculatePremiumDelta({
+        drawnSharesTaken: drawnSharesTaken,
+        drawnIndex: drawnIndex,
+        riskPremium: riskPremium,
+        restoredPremiumRay: restoredPremiumRay
+      });
+  }
+
+  /// @notice Applies premium delta to user position.
+  /// @dev Override in child contracts to skip premium application.
+  function _applyPremiumDelta(
+    UserPosition storage userPosition,
+    IHubBase.PremiumDelta memory premiumDelta
+  ) internal virtual {
+    userPosition.applyPremiumDelta(premiumDelta);
   }
 
   /// @dev CollateralFactor of historical config keys cannot be 0, which allows liquidations to proceed.
@@ -933,7 +1027,7 @@ abstract contract Spoke is
       config.collateralFactor < PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus >= PercentageMath.PERCENTAGE_FACTOR &&
         config.maxLiquidationBonus.percentMulUp(config.collateralFactor) <
-          PercentageMath.PERCENTAGE_FACTOR,
+        PercentageMath.PERCENTAGE_FACTOR,
       InvalidCollateralFactorAndMaxLiquidationBonus()
     );
     require(config.liquidationFee <= PercentageMath.PERCENTAGE_FACTOR, InvalidLiquidationFee());

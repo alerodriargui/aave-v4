@@ -7,7 +7,7 @@ import {IExtSload} from 'src/interfaces/IExtSload.sol';
 /// @title ExtSload
 /// @author Aave Labs
 /// @notice This allows the source contract to make its state available to external contracts.
-abstract contract ExtSload is IExtSload {
+contract ExtSload is IExtSload {
   /// @inheritdoc IExtSload
   function extSload(bytes32 slot) external view returns (bytes32 ret) {
     assembly ('memory-safe') {
@@ -32,6 +32,15 @@ abstract contract ExtSload is IExtSload {
         input := add(input, 0x20)
       }
       return(0x00, end) // return abi-encoded dynamic array
+    }
+  }
+
+  function extSloads2(bytes32[] calldata slots) external view returns (bytes32[] memory ret) {
+    ret = new bytes32[](slots.length);
+    for (uint i = 0; i < slots.length; i++) {
+      assembly ('memory-safe') {
+        mstore(add(ret, add(32, mul(i, 32))), sload(calldataload(add(slots.offset, mul(i, 32)))))
+      }
     }
   }
 }
