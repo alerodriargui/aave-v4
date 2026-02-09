@@ -285,7 +285,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   error Unauthorized();
 
   /// @notice Thrown if a config key is uninitialized when updating a dynamic reserve config.
-  error ConfigKeyUninitialized();
+  error DynamicConfigKeyUninitialized();
 
   /// @notice Thrown for an invalid zero address.
   error InvalidAddress();
@@ -378,7 +378,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Updates the dynamic reserve config for a given reserve at the specified key.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Reverts with `ConfigKeyUninitialized` if the config key has not been initialized yet.
+  /// @dev Reverts with `DynamicConfigKeyUninitialized` if the config key has not been initialized yet.
   /// @dev Reverts with `InvalidCollateralFactor` if the collateral factor is 0.
   /// @param reserveId The identifier of the reserve.
   /// @param dynamicConfigKey The key of the config to update.
@@ -440,7 +440,7 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
 
   /// @notice Allows consuming a permit signature for the given reserve's underlying asset.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
-  /// @dev Spender is the corresponding Hub of the given reserve.
+  /// @dev The Spoke must be configured as the spender.
   /// @param reserveId The identifier of the reserve.
   /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
   /// @param value The amount of the underlying asset to permit.
@@ -461,6 +461,13 @@ interface ISpoke is ISpokeBase, IAccessManaged, IIntentConsumer, IExtSload, IMul
   /// @notice Returns the number of listed reserves on the spoke.
   /// @dev Count includes reserves that are not currently active.
   function getReserveCount() external view returns (uint256);
+
+  /// @notice Returns the reserve identifier for a given assetId in a Hub.
+  /// @dev It reverts if no reserve is associated with the given assetId.
+  /// @param hub The address of the Hub.
+  /// @param assetId The identifier of the asset on the Hub.
+  /// @return The identifier of the reserve.
+  function getReserveId(address hub, uint256 assetId) external view returns (uint256);
 
   /// @notice Returns the reserve struct data in storage.
   /// @dev It reverts if the reserve associated with the given reserve identifier is not listed.
