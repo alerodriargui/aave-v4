@@ -91,6 +91,7 @@ import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
+import {IRiskFreeSpokeInstance} from 'tests/mocks/IRiskFreeSpokeInstance.sol';
 import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
 
 abstract contract Base is Test {
@@ -2269,6 +2270,31 @@ abstract contract Base is Test {
       oracle: address(oracle),
       proxyAdminOwner: proxyAdminOwner,
       initData: abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
+    });
+
+    oracle.setSpoke(address(spoke));
+    vm.stopPrank();
+
+    assertEq(spoke.ORACLE(), address(oracle));
+    assertEq(oracle.SPOKE(), address(spoke));
+
+    return (spoke, oracle);
+  }
+
+  function _deployRiskFreeSpokeWithOracle(
+    address proxyAdminOwner,
+    address _accessManager,
+    string memory _oracleDesc
+  ) internal pausePrank returns (ISpoke, IAaveOracle) {
+    address deployer = makeAddr('deployer');
+
+    vm.startPrank(deployer);
+    IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
+
+    ISpoke spoke = DeployUtils.deployRiskFreeSpoke({
+      oracle: address(oracle),
+      proxyAdminOwner: proxyAdminOwner,
+      initData: abi.encodeCall(IRiskFreeSpokeInstance.initialize, (_accessManager))
     });
 
     oracle.setSpoke(address(spoke));

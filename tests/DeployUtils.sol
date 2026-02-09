@@ -7,6 +7,7 @@ import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/Transpa
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
+import {IRiskFreeSpokeInstance} from 'tests/mocks/IRiskFreeSpokeInstance.sol';
 import {Create2Utils} from 'tests/Create2Utils.sol';
 
 library DeployUtils {
@@ -89,5 +90,35 @@ library DeployUtils {
 
   function _getHubInitCode(address authority) internal view returns (bytes memory) {
     return abi.encodePacked(vm.getCode('src/hub/Hub.sol:Hub'), abi.encode(authority));
+  }
+
+  // RiskFreeSpoke deployment functions
+
+  function deployRiskFreeSpokeImplementation(address oracle) internal returns (IRiskFreeSpokeInstance) {
+    return deployRiskFreeSpokeImplementation(oracle, '');
+  }
+
+  function deployRiskFreeSpokeImplementation(
+    address oracle,
+    bytes32 salt
+  ) internal returns (IRiskFreeSpokeInstance spoke) {
+    Create2Utils.loadCreate2Factory();
+    return IRiskFreeSpokeInstance(Create2Utils.create2Deploy(salt, _getRiskFreeSpokeInstanceInitCode(oracle)));
+  }
+
+  function deployRiskFreeSpoke(
+    address oracle,
+    address proxyAdminOwner,
+    bytes memory initData
+  ) internal returns (ISpoke) {
+    return ISpoke(_proxify(address(deployRiskFreeSpokeImplementation(oracle)), proxyAdminOwner, initData));
+  }
+
+  function _getRiskFreeSpokeInstanceInitCode(address oracle) internal view returns (bytes memory) {
+    return
+      abi.encodePacked(
+        vm.getCode('src/spoke/instances/RiskFreeSpokeInstance.sol:RiskFreeSpokeInstance'),
+        abi.encode(oracle)
+      );
   }
 }
