@@ -304,6 +304,23 @@ contract SupplyRepayPositionManagerTest is SpokeBase {
     assertEq(tokenList.dai.allowance(address(positionManager), address(hub1)), 0);
   }
 
+  function test_repayOnBehalfOf_maxRepay_revertsWith_InvalidRepayAmount() public {
+    uint256 aliceSupplyAmount = 1000e18;
+    uint256 bobSupplyAmount = 150e18;
+    uint256 borrowAmount = 100e18;
+
+    Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
+    Utils.supply(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
+    Utils.borrow(spoke1, _daiReserveId(spoke1), alice, borrowAmount, alice);
+
+    vm.prank(bob);
+    tokenList.dai.approve(address(positionManager), UINT256_MAX);
+
+    vm.expectRevert(ISupplyRepayPositionManager.InvalidRepayAmount.selector);
+    vm.prank(bob);
+    positionManager.repayOnBehalfOf(address(spoke1), _daiReserveId(spoke1), UINT256_MAX, alice);
+  }
+
   function test_repayOnBehalfOf_revertsWith_ReserveNotListed() public {
     uint256 reserveId = _randomInvalidReserveId(spoke1);
 
