@@ -54,6 +54,22 @@ def toRay(a):
     return a * RAY
 
 
+def percentMulDown(a, b):
+    return (a * b) / PERCENTAGE_FACTOR
+
+
+def percentMulUp(a, b):
+    return (a * b + PERCENTAGE_FACTOR - 1) / PERCENTAGE_FACTOR
+
+
+def fromBpsDown(a):
+    return a / PERCENTAGE_FACTOR
+
+
+def fromBpsUp(a):
+    return (a + PERCENTAGE_FACTOR - 1) / PERCENTAGE_FACTOR
+
+
 def toAddedSharesDown(assets, totalAddedAssets, addedShares):
     return mulDivDown(
         assets, addedShares + VIRTUAL_SHARES, totalAddedAssets + VIRTUAL_ASSETS
