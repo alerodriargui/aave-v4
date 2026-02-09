@@ -14,6 +14,7 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @title PositionManagerBase
 /// @author Aave Labs
 /// @notice Base implementation for position manager common functionalities.
+/// @dev Multicall is only enabled if the inheriting contract allows it with _multicallEnabled().
 abstract contract PositionManagerBase is
   IPositionManagerBase,
   IntentConsumer,
@@ -36,7 +37,6 @@ abstract contract PositionManagerBase is
 
   /// @inheritdoc IPositionManagerBase
   function registerSpoke(address spoke, bool registered) external onlyOwner {
-    require(_isSpokeRegistryActive(), UnsupportedAction());
     require(spoke != address(0), InvalidAddress());
     _registeredSpokes[spoke] = registered;
     emit SpokeRegistered(spoke, registered);
@@ -93,7 +93,6 @@ abstract contract PositionManagerBase is
 
   /// @inheritdoc IPositionManagerBase
   function renouncePositionManagerRole(address spoke, address user) external onlyOwner {
-    require(user != address(0), InvalidAddress());
     ISpoke(spoke).renouncePositionManagerRole(user);
   }
 
@@ -112,7 +111,7 @@ abstract contract PositionManagerBase is
 
   /// @dev Verifies the specified spoke is registered.
   function _isSpokeRegistered(address spoke) internal view returns (bool) {
-    return _registeredSpokes[spoke] || !_isSpokeRegistryActive();
+    return _registeredSpokes[spoke];
   }
 
   /// @return The underlying asset for `reserveId` on the specified spoke.
@@ -122,9 +121,6 @@ abstract contract PositionManagerBase is
 
   /// @dev Flag to enable multicall usage. Needs to be set by the inheriting contracts.
   function _multicallEnabled() internal pure virtual returns (bool);
-
-  /// @dev Flag to enable the spoke registry, is set to false all Spokes are considered registered. Needs to be set by the inheriting contracts.
-  function _isSpokeRegistryActive() internal pure virtual returns (bool);
 
   function _rescueGuardian() internal view override returns (address) {
     return owner();

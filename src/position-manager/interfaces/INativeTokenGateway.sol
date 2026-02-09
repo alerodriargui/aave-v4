@@ -82,5 +82,5 @@ interface INativeTokenGateway is IPositionManagerBase {
   ) external payable returns (uint256, uint256);
 
   /// @notice Returns the address of the Native Wrapper.
-  function NATIVE_WRAPPER() external view returns (address);
+  function NATIVE_TOKEN_WRAPPER() external view returns (address);
 }

@@ -16,126 +16,126 @@ import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol'
 contract PositionConfigPositionManager is IPositionConfigPositionManager, PositionManagerBase {
   using ConfigPermissionsMap for ConfigPermissions;
 
-  mapping(address spoke => mapping(address owner => mapping(address caller => ConfigPermissions)))
+  mapping(address spoke => mapping(address delegator => mapping(address delegatee => ConfigPermissions)))
     private _config;
 
   /// @dev Constructor.
-  /// @param initialOwner_ The address of the initial owner.
+  /// @param initialOwner_ The address of the initial delegator.
   constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
 
   /// @inheritdoc IPositionConfigPositionManager
   function setGlobalPermission(
     address spoke,
-    address caller,
+    address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][msg.sender][caller];
+    ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
     ConfigPermissions newPermissions = oldPermissions.setFullPermissions(permission);
-    _config[spoke][msg.sender][caller] = newPermissions;
+    _config[spoke][msg.sender][delegatee] = newPermissions;
 
     if (!oldPermissions.eq(newPermissions)) {
-      emit ConfigPermissionsUpdated(spoke, msg.sender, caller, newPermissions);
+      emit ConfigPermissionsUpdated(spoke, msg.sender, delegatee, newPermissions);
     }
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function setCanUpdateUsingAsCollateralPermission(
     address spoke,
-    address caller,
+    address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][msg.sender][caller];
+    ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
     ConfigPermissions newPermissions = oldPermissions.setCanSetUsingAsCollateral(permission);
-    _config[spoke][msg.sender][caller] = newPermissions;
+    _config[spoke][msg.sender][delegatee] = newPermissions;
 
     if (!oldPermissions.eq(newPermissions)) {
-      emit ConfigPermissionsUpdated(spoke, msg.sender, caller, newPermissions);
+      emit ConfigPermissionsUpdated(spoke, msg.sender, delegatee, newPermissions);
     }
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function setCanUpdateUserRiskPremiumPermission(
     address spoke,
-    address caller,
+    address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][msg.sender][caller];
+    ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserRiskPremium(permission);
-    _config[spoke][msg.sender][caller] = newPermissions;
+    _config[spoke][msg.sender][delegatee] = newPermissions;
 
     if (!oldPermissions.eq(newPermissions)) {
-      emit ConfigPermissionsUpdated(spoke, msg.sender, caller, newPermissions);
+      emit ConfigPermissionsUpdated(spoke, msg.sender, delegatee, newPermissions);
     }
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function setCanUpdateUserDynamicConfigPermission(
     address spoke,
-    address caller,
+    address delegatee,
     bool permission
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][msg.sender][caller];
+    ConfigPermissions oldPermissions = _config[spoke][msg.sender][delegatee];
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserDynamicConfig(permission);
-    _config[spoke][msg.sender][caller] = newPermissions;
+    _config[spoke][msg.sender][delegatee] = newPermissions;
 
     if (!oldPermissions.eq(newPermissions)) {
-      emit ConfigPermissionsUpdated(spoke, msg.sender, caller, newPermissions);
+      emit ConfigPermissionsUpdated(spoke, msg.sender, delegatee, newPermissions);
     }
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function renounceGlobalPermission(
     address spoke,
-    address owner
+    address delegator
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][owner][msg.sender];
+    ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
     ConfigPermissions newPermissions = oldPermissions.setFullPermissions(false);
-    _config[spoke][owner][msg.sender] = newPermissions;
+    _config[spoke][delegator][msg.sender] = newPermissions;
 
     if (!oldPermissions.eq(newPermissions)) {
-      emit ConfigPermissionsUpdated(spoke, owner, msg.sender, newPermissions);
+      emit ConfigPermissionsUpdated(spoke, delegator, msg.sender, newPermissions);
     }
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function renounceCanUpdateUsingAsCollateralPermission(
     address spoke,
-    address owner
+    address delegator
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][owner][msg.sender];
+    ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
     ConfigPermissions newPermissions = oldPermissions.setCanSetUsingAsCollateral(false);
-    _config[spoke][owner][msg.sender] = newPermissions;
+    _config[spoke][delegator][msg.sender] = newPermissions;
 
     if (!oldPermissions.eq(newPermissions)) {
-      emit ConfigPermissionsUpdated(spoke, owner, msg.sender, newPermissions);
+      emit ConfigPermissionsUpdated(spoke, delegator, msg.sender, newPermissions);
     }
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function renounceCanUpdateUserRiskPremiumPermission(
     address spoke,
-    address owner
+    address delegator
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][owner][msg.sender];
+    ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserRiskPremium(false);
-    _config[spoke][owner][msg.sender] = newPermissions;
+    _config[spoke][delegator][msg.sender] = newPermissions;
 
     if (!oldPermissions.eq(newPermissions)) {
-      emit ConfigPermissionsUpdated(spoke, owner, msg.sender, newPermissions);
+      emit ConfigPermissionsUpdated(spoke, delegator, msg.sender, newPermissions);
     }
   }
 
   /// @inheritdoc IPositionConfigPositionManager
   function renounceCanUpdateUserDynamicConfigPermission(
     address spoke,
-    address owner
+    address delegator
   ) external onlyRegisteredSpoke(spoke) {
-    ConfigPermissions oldPermissions = _config[spoke][owner][msg.sender];
+    ConfigPermissions oldPermissions = _config[spoke][delegator][msg.sender];
     ConfigPermissions newPermissions = oldPermissions.setCanUpdateUserDynamicConfig(false);
-    _config[spoke][owner][msg.sender] = newPermissions;
+    _config[spoke][delegator][msg.sender] = newPermissions;
 
     if (!oldPermissions.eq(newPermissions)) {
-      emit ConfigPermissionsUpdated(spoke, owner, msg.sender, newPermissions);
+      emit ConfigPermissionsUpdated(spoke, delegator, msg.sender, newPermissions);
     }
   }
 
@@ -177,10 +177,10 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
   /// @inheritdoc IPositionConfigPositionManager
   function getConfigPermissions(
     address spoke,
-    address caller,
+    address delegatee,
     address onBehalfOf
   ) external view returns (ConfigPermissionValues memory) {
-    ConfigPermissions permissions = _config[spoke][onBehalfOf][caller];
+    ConfigPermissions permissions = _config[spoke][onBehalfOf][delegatee];
     return
       ConfigPermissionValues({
         canSetUsingAsCollateral: permissions.canSetUsingAsCollateral(),
@@ -190,10 +190,6 @@ contract PositionConfigPositionManager is IPositionConfigPositionManager, Positi
   }
 
   function _multicallEnabled() internal pure override returns (bool) {
-    return true;
-  }
-
-  function _isSpokeRegistryActive() internal pure override returns (bool) {
     return true;
   }
 

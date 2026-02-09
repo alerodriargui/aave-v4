@@ -6,7 +6,7 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract PositionManagerBaseTest is SpokeBase {
   PositionManagerBaseWrapper public positionManager;
-  PositionManagerFalseFlags public positionManager2;
+  PositionManagerNoMulticall public positionManager2;
   uint256 public alicePk;
 
   function setUp() public virtual override {
@@ -14,7 +14,7 @@ contract PositionManagerBaseTest is SpokeBase {
 
     (alice, alicePk) = makeAddrAndKey('alice');
     positionManager = new PositionManagerBaseWrapper(address(ADMIN));
-    positionManager2 = new PositionManagerFalseFlags(address(ADMIN));
+    positionManager2 = new PositionManagerNoMulticall(address(ADMIN));
 
     vm.startPrank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);
@@ -228,16 +228,6 @@ contract PositionManagerBaseTest is SpokeBase {
     positionManager.registerSpoke(address(0), true);
   }
 
-  function test_registerSpoke_revertsWith_UnsupportedAction() public {
-    vm.expectRevert(IPositionManagerBase.UnsupportedAction.selector);
-    vm.prank(ADMIN);
-    positionManager2.registerSpoke(address(spoke1), true);
-  }
-
-  function test_isSpokeRegistered_fuzz(address newSpoke) public view {
-    assertTrue(positionManager2.isSpokeRegistered(newSpoke));
-  }
-
   function test_multicall_revertsWith_UnsupportedAction() public {
     bytes[] memory calls = new bytes[](1);
     calls[0] = abi.encodeWithSignature('randomFunction()');
@@ -254,7 +244,10 @@ contract PositionManagerBaseTest is SpokeBase {
     calls[1] = abi.encodeWithSignature('registerSpoke(address,bool)', address(spoke2), true);
 
     vm.prank(ADMIN);
-    positionManager.multicall(calls);
+    bytes[] memory res = positionManager.multicall(calls);
+
+    assertEq(res[0].length, 0);
+    assertEq(res[1].length, 0);
 
     assertTrue(positionManager.isSpokeRegistered(address(spoke1)));
     assertTrue(positionManager.isSpokeRegistered(address(spoke2)));
@@ -287,18 +280,5 @@ contract PositionManagerBaseTest is SpokeBase {
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, user));
     vm.prank(user);
     positionManager.renouncePositionManagerRole(address(spoke1), user);
-  }
-
-  function test_renouncePositionManagerRole_revertsWith_InvalidAddress() public {
-    address user = vm.randomAddress();
-
-    vm.prank(user);
-    spoke1.setUserPositionManager(address(positionManager), true);
-    vm.prank(ADMIN);
-    positionManager.registerSpoke(address(spoke1), true);
-
-    vm.expectRevert(IPositionManagerBase.InvalidAddress.selector);
-    vm.prank(ADMIN);
-    positionManager.renouncePositionManagerRole(address(spoke1), address(0));
   }
 }

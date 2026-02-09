@@ -206,10 +206,6 @@ contract SignatureGateway is ISignatureGateway, PositionManagerBase {
     return true;
   }
 
-  function _isSpokeRegistryActive() internal pure override returns (bool) {
-    return true;
-  }
-
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
     return ('SignatureGateway', '1');
   }

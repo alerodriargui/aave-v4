@@ -105,7 +105,7 @@ import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionStatusMapWrapper} from 'tests/mocks/PositionStatusMapWrapper.sol';
 import {RescuableWrapper} from 'tests/mocks/RescuableWrapper.sol';
 import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
-import {PositionManagerFalseFlags} from 'tests/mocks/PositionManagerFalseFlags.sol';
+import {PositionManagerNoMulticall} from 'tests/mocks/PositionManagerNoMulticall.sol';
 import {MockNoncesKeyed} from 'tests/mocks/MockNoncesKeyed.sol';
 import {MockSpoke} from 'tests/mocks/MockSpoke.sol';
 import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
@@ -3106,13 +3106,18 @@ abstract contract Base is Test {
 
   function _assertNonceIncrement(
     INoncesKeyed verifier,
-    address user,
+    address who,
     uint256 prevKeyNonce
   ) internal view {
-    (uint192 nonceKey, uint64 nonce) = _unpackNonce(prevKeyNonce);
+    (uint192 currentKey, ) = _unpackNonce(prevKeyNonce);
+    assertEq(verifier.nonces(who, currentKey), _getNextNoncePacked(prevKeyNonce));
+  }
+
+  function _getNextNoncePacked(uint256 currentKeyNonce) internal pure returns (uint256) {
+    (uint192 nonceKey, uint64 nonce) = _unpackNonce(currentKeyNonce);
     // prettier-ignore
     unchecked { ++nonce; }
-    assertEq(verifier.nonces(user, nonceKey), _packNonce(nonceKey, nonce));
+    return _packNonce(nonceKey, nonce);
   }
 
   /// @dev Pack key and nonce into a keyNonce

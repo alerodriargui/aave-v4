@@ -332,6 +332,8 @@ contract SupplyRepayPositionManagerTest is SpokeBase {
     uint256 aliceSuppliedAmountBefore = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice);
     uint256 carolSuppliedAmountBefore = spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), carol);
 
+    uint256 expectedShares = hub1.previewAddByAssets(daiAssetId, amount);
+
     bytes[] memory calls = new bytes[](2);
     calls[0] = abi.encodeWithSignature(
       'supplyOnBehalfOf(address,uint256,uint256,address)',
@@ -349,7 +351,15 @@ contract SupplyRepayPositionManagerTest is SpokeBase {
     );
 
     vm.prank(bob);
-    positionManager.multicall(calls);
+    bytes[] memory res = positionManager.multicall(calls);
+
+    (uint256 aliceShares, uint256 aliceAmount) = abi.decode(res[0], (uint256, uint256));
+    (uint256 carolShares, uint256 carolAmount) = abi.decode(res[1], (uint256, uint256));
+
+    assertEq(aliceAmount, amount);
+    assertEq(carolAmount, amount);
+    assertEq(aliceShares, expectedShares);
+    assertEq(carolShares, expectedShares);
 
     assertEq(
       spoke1.getUserSuppliedAssets(_daiReserveId(spoke1), alice),

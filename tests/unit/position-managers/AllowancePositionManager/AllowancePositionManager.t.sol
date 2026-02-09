@@ -634,7 +634,10 @@ contract AllowancePositionManagerTest is AllowancePositionManagerBaseTest {
     );
 
     vm.prank(alice);
-    positionManager.multicall(calls);
+    bytes[] memory res = positionManager.multicall(calls);
+
+    assertEq(res[0].length, 0);
+    assertEq(res[1].length, 0);
 
     assertEq(
       positionManager.withdrawAllowance(address(spoke1), _daiReserveId(spoke1), alice, bob),
