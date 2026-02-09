@@ -108,7 +108,7 @@ contract Hub is IHub, AccessManaged {
       decimals: decimals,
       drawnRate: drawnRate.toUint96(),
       irStrategy: irStrategy,
-      realizedFees: 0,
+      realizedFeesBps: 0,
       reinvestmentController: address(0),
       feeReceiver: feeReceiver,
       liquidityFee: 0
@@ -600,9 +600,9 @@ contract Hub is IHub, AccessManaged {
   }
 
   /// @inheritdoc IHub
-  function getAssetAccruedFees(uint256 assetId) external view returns (uint256) {
+  function getAssetAccruedFeesBps(uint256 assetId) external view returns (uint256) {
     Asset storage asset = _assets[assetId];
-    return asset.realizedFees + asset.getUnrealizedFees(asset.getDrawnIndex());
+    return asset.realizedFeesBps + asset.getUnrealizedFeesBps(asset.getDrawnIndex());
   }
 
   /// @inheritdoc IHub
@@ -781,7 +781,7 @@ contract Hub is IHub, AccessManaged {
   }
 
   function _mintFeeShares(Asset storage asset, uint256 assetId) internal returns (uint256) {
-    uint256 fees = asset.realizedFees;
+    uint256 fees = asset.realizedFeesBps.fromBpsDown();
     uint120 shares = asset.toAddedSharesDown(fees).toUint120();
     if (shares == 0) {
       return 0;
@@ -793,7 +793,7 @@ contract Hub is IHub, AccessManaged {
 
     asset.addedShares += shares;
     feeReceiverSpoke.addedShares += shares;
-    asset.realizedFees = 0;
+    asset.realizedFeesBps = 0;
     emit MintFeeShares(assetId, feeReceiver, shares, fees);
 
     return shares;

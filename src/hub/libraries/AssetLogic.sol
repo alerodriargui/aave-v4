@@ -92,8 +92,7 @@ library AssetLogic {
       asset.liquidity +
       asset.swept +
       aggregatedOwedRay.fromRayUp() -
-      asset.realizedFees -
-      asset.getUnrealizedFees(drawnIndex);
+      (asset.realizedFeesBps + asset.getUnrealizedFeesBps(drawnIndex)).fromBpsUp();
   }
 
   /// @notice Converts an amount of shares to the equivalent amount of added assets, rounding up.
@@ -135,7 +134,7 @@ library AssetLogic {
     uint256 newDrawnRate = asset.getDrawnRate(assetId, drawnIndex);
     asset.drawnRate = newDrawnRate.toUint96();
 
-    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate, asset.realizedFees);
+    emit IHub.UpdateAsset(assetId, drawnIndex, newDrawnRate, asset.realizedFeesBps);
   }
 
   /// @notice Accrues interest and fees for the specified asset.
@@ -145,7 +144,7 @@ library AssetLogic {
     }
 
     uint256 drawnIndex = asset.getDrawnIndex();
-    asset.realizedFees += asset.getUnrealizedFees(drawnIndex).toUint120();
+    asset.realizedFeesBps += asset.getUnrealizedFeesBps(drawnIndex).toUint120();
     asset.drawnIndex = drawnIndex.toUint120();
     asset.lastUpdateTimestamp = block.timestamp.toUint40();
   }
@@ -185,7 +184,7 @@ library AssetLogic {
 
   /// @notice Calculates the amount of fees derived from the index growth due to interest accrual.
   /// @param drawnIndex The current drawn index.
-  function getUnrealizedFees(
+  function getUnrealizedFeesBps(
     IHub.Asset storage asset,
     uint256 drawnIndex
   ) internal view returns (uint256) {
@@ -221,9 +220,7 @@ library AssetLogic {
     });
 
     return
-      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()).percentMulDown(
-        liquidityFee
-      );
+      (aggregatedOwedRayAfter.fromRayUp() - aggregatedOwedRayBefore.fromRayUp()) * liquidityFee;
   }
 
   /// @notice Calculates the aggregated owed amount for a specified asset, expressed in asset units and scaled by RAY.

@@ -77,7 +77,16 @@ library PercentageMath {
   }
 
   /// @notice Truncates number from BPS precision, rounding down.
-  function fromBpsDown(uint256 value) internal pure returns (uint256) {
-    return value / PERCENTAGE_FACTOR;
+  /// @return b = floor(a / PERCENTAGE_FACTOR)
+  function fromBpsDown(uint256 a) internal pure returns (uint256 b) {
+    return a / PERCENTAGE_FACTOR;
+  }
+
+  /// @notice Truncates number from BPS precision, rounding up.
+  /// @return b = ceil(a / PERCENTAGE_FACTOR)
+  function fromBpsUp(uint256 a) internal pure returns (uint256 b) {
+    assembly ('memory-safe') {
+      b := add(div(a, PERCENTAGE_FACTOR), gt(mod(a, PERCENTAGE_FACTOR), 0))
+    }
   }
 }
