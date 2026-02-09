@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {ConfigPermissions} from 'src/position-manager/interfaces/IPositionConfigPositionManager.sol';
+import {ConfigPermissions} from 'src/position-manager/interfaces/IConfigPositionManager.sol';
 
 /// @title ConfigPermissions Library
 /// @author Aave Labs

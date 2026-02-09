@@ -6,10 +6,10 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 
 type ConfigPermissions is uint8;
 
-/// @title IPositionConfigPositionManager
+/// @title IConfigPositionManager
 /// @author Aave Labs
 /// @notice Interface for position manager handling position configuration actions on behalf of an user.
-interface IPositionConfigPositionManager is IPositionManagerBase {
+interface IConfigPositionManager is IPositionManagerBase {
   /// @notice Struct to hold the config permission values.
   /// @dev canSetUsingAsCollateral: Whether the delegatee can set using as collateral on behalf of the user.
   /// @dev canUpdateUserRiskPremium: Whether the delegatee can update user risk premium on behalf of the user.

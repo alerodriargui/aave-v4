@@ -262,16 +262,16 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
 }
 
 /// forge-config: default.isolate = true
-contract PositionConfigPositionManager_Gas_Tests is SpokeBase {
-  string internal NAMESPACE = 'PositionConfigPositionManager.Operations';
+contract ConfigPositionManager_Gas_Tests is SpokeBase {
+  string internal NAMESPACE = 'ConfigPositionManager.Operations';
 
-  PositionConfigPositionManager public positionManager;
+  ConfigPositionManager public positionManager;
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
 
-    positionManager = new PositionConfigPositionManager(address(ADMIN));
+    positionManager = new ConfigPositionManager(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
     spoke1.updatePositionManager(address(positionManager), true);

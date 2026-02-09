@@ -84,9 +84,9 @@ import {
   IAllowancePositionManager
 } from 'src/position-manager/AllowancePositionManager.sol';
 import {
-  PositionConfigPositionManager,
-  IPositionConfigPositionManager
-} from 'src/position-manager/PositionConfigPositionManager.sol';
+  ConfigPositionManager,
+  IConfigPositionManager
+} from 'src/position-manager/ConfigPositionManager.sol';
 import {
   ConfigPermissions,
   ConfigPermissionsMap
