@@ -907,7 +907,7 @@ abstract contract Spoke is
   }
 
   /// @notice Returns whether `manager` is active & approved positionManager for `user`.
-  function _isPositionManager(address user, address manager) internal view returns (bool) {
+  function _isPositionManager(address user, address manager) internal view virtual returns (bool) {
     if (user == manager) return true;
     PositionManagerConfig storage config = _positionManager[manager];
     return config.active && config.approval[user];
