@@ -26,7 +26,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
     uint256 deadline;
   }
 
-  /// @notice Structured parameters for credit delegation intent.
+  /// @notice Structured parameters for borrow permit intent.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
@@ -34,7 +34,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @param amount The amount of allowance.
   /// @param nonce The key-prefixed nonce for the signature.
   /// @param deadline The deadline for the intent.
-  struct CreditDelegationPermit {
+  struct BorrowPermit {
     address spoke;
     uint256 reserveId;
     address owner;
@@ -47,8 +47,8 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @notice Thrown when the withdraw allowance is insufficient.
   error InsufficientWithdrawAllowance(uint256 allowance, uint256 required);
 
-  /// @notice Thrown when the credit delegation allowance is insufficient.
-  error InsufficientCreditDelegation(uint256 allowance, uint256 required);
+  /// @notice Thrown when the borrow allowance is insufficient.
+  error InsufficientBorrowAllowance(uint256 allowance, uint256 required);
 
   /// @notice Emitted when owner approves spender to withdraw amount for reserveId on their behalf.
   /// @param spoke The address of the spoke.
@@ -69,8 +69,8 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
-  /// @param amount The amount of credit delegation.
-  event CreditDelegation(
+  /// @param amount The amount of allowance.
+  event BorrowApproval(
     address indexed spoke,
     uint256 indexed reserveId,
     address indexed owner,
@@ -79,7 +79,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   );
 
   /// @notice Approves a spender to withdraw assets from the specified reserve.
-  /// @dev If `amount` is the maximum `uint256`, the allowance is not updated on `withdrawOnBehalfOf`. This is semantically equivalent to an infinite approval.
+  /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param spender The address of the spender to receive the allowance.
@@ -99,13 +99,13 @@ interface IAllowancePositionManager is IPositionManagerBase {
     bytes calldata signature
   ) external;
 
-  /// @notice Approves a credit delegation allowance for a spender.
-  /// @dev If `amount` is the maximum `uint256`, the allowance is not updated on `borrowOnBehalfOf`. This is semantically equivalent to an infinite approval.
+  /// @notice Approves a borrow allowance for a spender.
+  /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param spender The address of the spender to receive the allowance.
   /// @param amount The amount of allowance.
-  function delegateCredit(
+  function approveBorrow(
     address spoke,
     uint256 reserveId,
     address spender,
@@ -113,12 +113,9 @@ interface IAllowancePositionManager is IPositionManagerBase {
   ) external;
 
   /// @notice Approves a spender to borrow from the specified reserve using an EIP712-typed intent.
-  /// @param params The structured CreditDelegationPermit parameters.
+  /// @param params The structured BorrowPermit parameters.
   /// @param signature The EIP712-compliant signature bytes.
-  function delegateCreditWithSig(
-    CreditDelegationPermit calldata params,
-    bytes calldata signature
-  ) external;
+  function approveBorrowWithSig(BorrowPermit calldata params, bytes calldata signature) external;
 
   /// @notice Renounces the withdraw allowance given by the owner.
   /// @param spoke The address of the spoke.
@@ -126,11 +123,11 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @param owner The address of the owner.
   function renounceWithdrawAllowance(address spoke, uint256 reserveId, address owner) external;
 
-  /// @notice Renounces the credit delegation allowance given by the owner.
+  /// @notice Renounces the borrow allowance given by the owner.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
-  function renounceCreditDelegation(address spoke, uint256 reserveId, address owner) external;
+  function renounceBorrowAllowance(address spoke, uint256 reserveId, address owner) external;
 
   /// @notice Executes a withdraw on behalf of a user.
   /// @dev The caller must have sufficient withdraw allowance from onBehalfOf.
@@ -149,7 +146,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   ) external returns (uint256, uint256);
 
   /// @notice Executes a borrow on behalf of a user.
-  /// @dev The caller must have sufficient credit delegation allowance from onBehalfOf.
+  /// @dev The caller must have sufficient borrow allowance from onBehalfOf.
   /// @dev The caller receives the borrowed assets.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
@@ -183,7 +180,7 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
   /// @return The amount of credit delegation allowance.
-  function creditDelegation(
+  function borrowAllowance(
     address spoke,
     uint256 reserveId,
     address owner,
@@ -193,6 +190,6 @@ interface IAllowancePositionManager is IPositionManagerBase {
   /// @notice Returns the type hash for the WithdrawPermit intent.
   function WITHDRAW_PERMIT_TYPEHASH() external view returns (bytes32);
 
-  /// @notice Returns the type hash for the CreditDelegationPermit intent.
-  function CREDIT_DELEGATION_PERMIT_TYPEHASH() external view returns (bytes32);
+  /// @notice Returns the type hash for the BorrowPermit intent.
+  function BORROW_PERMIT_TYPEHASH() external view returns (bytes32);
 }

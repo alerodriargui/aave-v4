@@ -41,9 +41,9 @@ library EIP712Hash {
     // keccak256('WithdrawPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
     0x9e6642fd4c06a4c1a5e201f1e41c6b7892fcf06859c796b054c510b80e2a0a3f;
 
-  bytes32 public constant CREDIT_DELEGATION_PERMIT_TYPEHASH =
-    // keccak256('CreditDelegationPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
-    0x14f398520eb6e86dd4ef6446709a28144cc09677185619599016c189b591f76a;
+  bytes32 public constant BORROW_PERMIT_TYPEHASH =
+    // keccak256('BorrowPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)')
+    0x14236ea048da65ffb52a9b32a2c840f24ab374cc31f65faeb7877d22ceca144e;
 
   function hash(ISignatureGateway.Supply calldata params) internal pure returns (bytes32) {
     return
@@ -171,12 +171,12 @@ library EIP712Hash {
   }
 
   function hash(
-    IAllowancePositionManager.CreditDelegationPermit calldata params
+    IAllowancePositionManager.BorrowPermit calldata params
   ) internal pure returns (bytes32) {
     return
       keccak256(
         abi.encode(
-          CREDIT_DELEGATION_PERMIT_TYPEHASH,
+          BORROW_PERMIT_TYPEHASH,
           params.spoke,
           params.reserveId,
           params.owner,

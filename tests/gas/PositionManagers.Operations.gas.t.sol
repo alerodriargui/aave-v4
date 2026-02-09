@@ -153,7 +153,7 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     uint256 borrowAmount = 750e18;
 
     vm.prank(alice);
-    positionManager.delegateCredit(address(spoke1), _daiReserveId(spoke1), bob, borrowAmount);
+    positionManager.approveBorrow(address(spoke1), _daiReserveId(spoke1), bob, borrowAmount);
 
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), alice, aliceSupplyAmount, alice);
     Utils.supplyCollateral(spoke1, _daiReserveId(spoke1), bob, bobSupplyAmount, bob);
@@ -212,8 +212,8 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     uint256 amount = 100e18;
 
     vm.prank(alice);
-    positionManager.delegateCredit(address(spoke1), _daiReserveId(spoke1), bob, amount);
-    vm.snapshotGasLastCall(NAMESPACE, 'delegateCredit');
+    positionManager.approveBorrow(address(spoke1), _daiReserveId(spoke1), bob, amount);
+    vm.snapshotGasLastCall(NAMESPACE, 'approveBorrow');
   }
 
   function test_delegateCreditWithSig() public {
@@ -222,36 +222,35 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
     vm.prank(alice);
     positionManager.useNonce(creditNonceKey);
 
-    IAllowancePositionManager.CreditDelegationPermit memory p = IAllowancePositionManager
-      .CreditDelegationPermit({
-        spoke: address(spoke1),
-        reserveId: _daiReserveId(spoke1),
-        owner: alice,
-        spender: bob,
-        amount: amount,
-        nonce: positionManager.nonces(alice, creditNonceKey),
-        deadline: vm.getBlockTimestamp()
-      });
+    IAllowancePositionManager.BorrowPermit memory p = IAllowancePositionManager.BorrowPermit({
+      spoke: address(spoke1),
+      reserveId: _daiReserveId(spoke1),
+      owner: alice,
+      spender: bob,
+      amount: amount,
+      nonce: positionManager.nonces(alice, creditNonceKey),
+      deadline: vm.getBlockTimestamp()
+    });
     bytes32 digest = _typedDataHash(
       positionManager,
-      vm.eip712HashStruct('CreditDelegationPermit', abi.encode(p))
+      vm.eip712HashStruct('BorrowPermit', abi.encode(p))
     );
     bytes memory signature = _sign(alicePk, digest);
 
     vm.prank(vm.randomAddress());
-    positionManager.delegateCreditWithSig(p, signature);
-    vm.snapshotGasLastCall(NAMESPACE, 'delegateCreditWithSig');
+    positionManager.approveBorrowWithSig(p, signature);
+    vm.snapshotGasLastCall(NAMESPACE, 'approveBorrowWithSig');
   }
 
   function test_renounceCreditDelegation() public {
     uint256 amount = 100e18;
 
     vm.prank(alice);
-    positionManager.delegateCredit(address(spoke1), _daiReserveId(spoke1), bob, amount);
+    positionManager.approveBorrow(address(spoke1), _daiReserveId(spoke1), bob, amount);
 
     vm.prank(bob);
-    positionManager.renounceCreditDelegation(address(spoke1), _daiReserveId(spoke1), alice);
-    vm.snapshotGasLastCall(NAMESPACE, 'renounceCreditDelegation');
+    positionManager.renounceBorrowAllowance(address(spoke1), _daiReserveId(spoke1), alice);
+    vm.snapshotGasLastCall(NAMESPACE, 'renounceBorrowAllowance');
   }
 
   function _typedDataHash(

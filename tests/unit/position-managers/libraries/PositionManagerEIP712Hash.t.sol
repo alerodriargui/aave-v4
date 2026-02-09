@@ -90,15 +90,12 @@ contract PositionManagerEIP712HashTest is Test {
     );
 
     assertEq(
-      PositionManagerEIP712Hash.CREDIT_DELEGATION_PERMIT_TYPEHASH,
+      PositionManagerEIP712Hash.BORROW_PERMIT_TYPEHASH,
       keccak256(
-        'CreditDelegationPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)'
+        'BorrowPermit(address spoke,uint256 reserveId,address owner,address spender,uint256 amount,uint256 nonce,uint256 deadline)'
       )
     );
-    assertEq(
-      PositionManagerEIP712Hash.CREDIT_DELEGATION_PERMIT_TYPEHASH,
-      vm.eip712HashType('CreditDelegationPermit')
-    );
+    assertEq(PositionManagerEIP712Hash.BORROW_PERMIT_TYPEHASH, vm.eip712HashType('BorrowPermit'));
   }
 
   function test_hash_supply_fuzz(ISignatureGateway.Supply calldata params) public pure {
@@ -242,11 +239,11 @@ contract PositionManagerEIP712HashTest is Test {
   }
 
   function test_hash_creditDelegation_fuzz(
-    IAllowancePositionManager.CreditDelegationPermit calldata params
+    IAllowancePositionManager.BorrowPermit calldata params
   ) public pure {
     bytes32 expectedHash = keccak256(
       abi.encode(
-        PositionManagerEIP712Hash.CREDIT_DELEGATION_PERMIT_TYPEHASH,
+        PositionManagerEIP712Hash.BORROW_PERMIT_TYPEHASH,
         params.spoke,
         params.reserveId,
         params.owner,

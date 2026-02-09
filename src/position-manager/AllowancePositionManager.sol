@@ -11,7 +11,7 @@ import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol'
 
 /// @title AllowancePositionManager
 /// @author Aave Labs
-/// @notice Position manager to handle withdraw permit, credit delegation and borrow actions on behalf of users.
+/// @notice Position manager to handle withdraw permit and borrow permit actions on behalf of users.
 contract AllowancePositionManager is IAllowancePositionManager, PositionManagerBase {
   using SafeERC20 for IERC20;
   using MathUtils for uint256;
@@ -21,9 +21,9 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
   mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
     private _withdrawAllowances;
 
-  /// @dev Map of spoke and reserveId to owner to spender to credit delegation.
+  /// @dev Map of spoke and reserveId to owner to spender to borrow allowance.
   mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
-    private _creditDelegations;
+    private _borrowAllowances;
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
@@ -68,13 +68,13 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function delegateCredit(
+  function approveBorrow(
     address spoke,
     uint256 reserveId,
     address spender,
     uint256 amount
   ) external onlyRegisteredSpoke(spoke) {
-    _updateCreditDelegation({
+    _updateBorrowAllowance({
       spoke: spoke,
       reserveId: reserveId,
       owner: msg.sender,
@@ -84,8 +84,8 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function delegateCreditWithSig(
-    CreditDelegationPermit calldata params,
+  function approveBorrowWithSig(
+    BorrowPermit calldata params,
     bytes calldata signature
   ) external onlyRegisteredSpoke(params.spoke) {
     _verifyAndConsumeIntent({
@@ -96,7 +96,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
       signature: signature
     });
 
-    _updateCreditDelegation({
+    _updateBorrowAllowance({
       spoke: params.spoke,
       reserveId: params.reserveId,
       owner: params.owner,
@@ -124,15 +124,15 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function renounceCreditDelegation(
+  function renounceBorrowAllowance(
     address spoke,
     uint256 reserveId,
     address owner
   ) external onlyRegisteredSpoke(spoke) {
-    if (_creditDelegations[spoke][reserveId][owner][msg.sender] == 0) {
+    if (_borrowAllowances[spoke][reserveId][owner][msg.sender] == 0) {
       return;
     }
-    _updateCreditDelegation({
+    _updateBorrowAllowance({
       spoke: spoke,
       reserveId: reserveId,
       owner: owner,
@@ -175,7 +175,7 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address onBehalfOf
   ) external onlyRegisteredSpoke(spoke) returns (uint256, uint256) {
     IERC20 asset = IERC20(_getReserveUnderlying(spoke, reserveId));
-    _spendCreditDelegation({
+    _spendBorrowAllowance({
       spoke: spoke,
       reserveId: reserveId,
       owner: onBehalfOf,
@@ -204,13 +204,13 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function creditDelegation(
+  function borrowAllowance(
     address spoke,
     uint256 reserveId,
     address owner,
     address spender
   ) external view returns (uint256) {
-    return _creditDelegations[spoke][reserveId][owner][spender];
+    return _borrowAllowances[spoke][reserveId][owner][spender];
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -219,8 +219,8 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
   }
 
   /// @inheritdoc IAllowancePositionManager
-  function CREDIT_DELEGATION_PERMIT_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.CREDIT_DELEGATION_PERMIT_TYPEHASH;
+  function BORROW_PERMIT_TYPEHASH() external pure returns (bytes32) {
+    return EIP712Hash.BORROW_PERMIT_TYPEHASH;
   }
 
   function _updateWithdrawAllowance(
@@ -234,15 +234,15 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     emit WithdrawApproval(spoke, reserveId, owner, spender, newAllowance);
   }
 
-  function _updateCreditDelegation(
+  function _updateBorrowAllowance(
     address spoke,
     uint256 reserveId,
     address owner,
     address spender,
     uint256 newCreditDelegation
   ) internal {
-    _creditDelegations[spoke][reserveId][owner][spender] = newCreditDelegation;
-    emit CreditDelegation(spoke, reserveId, owner, spender, newCreditDelegation);
+    _borrowAllowances[spoke][reserveId][owner][spender] = newCreditDelegation;
+    emit BorrowApproval(spoke, reserveId, owner, spender, newCreditDelegation);
   }
 
   function _spendWithdrawAllowance(
@@ -265,17 +265,17 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     }
   }
 
-  function _spendCreditDelegation(
+  function _spendBorrowAllowance(
     address spoke,
     uint256 reserveId,
     address owner,
     address spender,
     uint256 amount
   ) internal {
-    uint256 currentAllowance = _creditDelegations[spoke][reserveId][owner][spender];
-    require(currentAllowance >= amount, InsufficientCreditDelegation(currentAllowance, amount));
+    uint256 currentAllowance = _borrowAllowances[spoke][reserveId][owner][spender];
+    require(currentAllowance >= amount, InsufficientBorrowAllowance(currentAllowance, amount));
     if (currentAllowance != type(uint256).max) {
-      _updateCreditDelegation({
+      _updateBorrowAllowance({
         spoke: spoke,
         reserveId: reserveId,
         owner: owner,
