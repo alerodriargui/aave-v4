@@ -133,8 +133,8 @@ library AssetLogic {
   /// @dev Uses last stored index; asset accrual should have already occurred.
   /// @dev Imprecision from downscaling `deficitRay` does not accumulate.
   function updateDrawnRateAndMintFeeShares(
-    mapping(uint256 assetId => mapping(address spoke => IHub.SpokeData)) storage spokes,
     IHub.Asset storage asset,
+    mapping(uint256 assetId => mapping(address spoke => IHub.SpokeData)) storage spokes,
     uint256 assetId
   ) internal {
     uint256 drawnIndex = asset.drawnIndex;

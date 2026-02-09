@@ -168,7 +168,7 @@ contract Hub is IHub, AccessManaged {
       require(irData.length == 0, InvalidInterestRateStrategy());
     }
 
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     emit UpdateAssetConfig(assetId, config);
   }
@@ -202,7 +202,7 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     asset.accrue();
     IBasicInterestRateStrategy(asset.irStrategy).setInterestRateData(assetId, irData);
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
   }
 
   /// @inheritdoc IHub
@@ -211,7 +211,7 @@ contract Hub is IHub, AccessManaged {
     Asset storage asset = _assets[assetId];
     asset.accrue();
     uint256 feeShares = _mintFeeShares(asset, assetId);
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
     return feeShares;
   }
 
@@ -232,7 +232,7 @@ contract Hub is IHub, AccessManaged {
     spoke.addedShares += shares;
     asset.liquidity = liquidity.toUint120();
 
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     emit Add(assetId, msg.sender, shares, amount);
 
@@ -255,7 +255,7 @@ contract Hub is IHub, AccessManaged {
     spoke.addedShares -= shares;
     asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
 
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -280,7 +280,7 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares += drawnShares;
     asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
 
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     IERC20(asset.underlying).safeTransfer(to, amount);
 
@@ -312,7 +312,7 @@ contract Hub is IHub, AccessManaged {
     require(balance >= liquidity, InsufficientTransferred(liquidity.uncheckedSub(balance)));
     asset.liquidity = liquidity.toUint120();
 
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     emit Restore(assetId, msg.sender, drawnShares, premiumDelta, drawnAmount, premiumAmount);
 
@@ -341,7 +341,7 @@ contract Hub is IHub, AccessManaged {
     asset.deficitRay += deficitAmountRay.toUint200();
     spoke.deficitRay += deficitAmountRay.toUint200();
 
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     emit ReportDeficit(assetId, msg.sender, drawnShares, premiumDelta, deficitAmountRay);
 
@@ -369,7 +369,7 @@ contract Hub is IHub, AccessManaged {
     asset.deficitRay -= deficitAmountRay.toUint200();
     coveredSpoke.deficitRay -= deficitAmountRay.toUint200();
 
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     emit EliminateDeficit(assetId, msg.sender, spoke, shares, deficitAmountRay);
 
@@ -386,7 +386,7 @@ contract Hub is IHub, AccessManaged {
     // no premium change allowed
     require(premiumDelta.restoredPremiumRay == 0, InvalidPremiumChange());
     _applyPremiumDelta(asset, spoke, premiumDelta);
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     emit RefreshPremium(assetId, msg.sender, premiumDelta);
   }
@@ -401,7 +401,7 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     _validatePayFeeShares(sender, shares);
     _transferShares(sender, receiver, shares);
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     emit TransferShares(assetId, msg.sender, feeReceiver, shares);
   }
@@ -415,7 +415,7 @@ contract Hub is IHub, AccessManaged {
     asset.accrue();
     _validateTransferShares(asset, sender, receiver, shares);
     _transferShares(sender, receiver, shares);
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     emit TransferShares(assetId, msg.sender, toSpoke, shares);
   }
@@ -434,7 +434,7 @@ contract Hub is IHub, AccessManaged {
     asset.liquidity = liquidity.uncheckedSub(amount).toUint120();
     asset.swept += amount.toUint120();
 
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     IERC20(asset.underlying).safeTransfer(msg.sender, amount);
 
@@ -455,7 +455,7 @@ contract Hub is IHub, AccessManaged {
     asset.liquidity = liquidity.toUint120();
     asset.swept -= amount.toUint120();
 
-    _spokes.updateDrawnRateAndMintFeeShares(asset, assetId);
+    asset.updateDrawnRateAndMintFeeShares(_spokes, assetId);
 
     emit Reclaim(assetId, msg.sender, amount);
   }
