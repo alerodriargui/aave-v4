@@ -400,11 +400,11 @@ contract HubAddTest is HubBase {
     _assertHubLiquidity(hub1, assetId2, 'hub1.add');
   }
 
-  function test_add_revertsWith_InvalidAmount() public {
+  function test_add_revertsWith_InvalidShares_on_zeroAmount() public {
     uint256 assetId = 0;
     uint256 amount = 0;
 
-    vm.expectRevert(IHub.InvalidAmount.selector);
+    vm.expectRevert(IHub.InvalidShares.selector);
     vm.prank(address(spoke1));
     hub1.add(assetId, amount);
   }
