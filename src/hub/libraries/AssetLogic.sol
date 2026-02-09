@@ -154,11 +154,9 @@ library AssetLogic {
       uint256 totalAdded = liquidity + swept + aggregatedOwedRay.fromRayUp() - fees;
       feeShares = fees.toSharesDown(totalAdded, asset.addedShares).toUint120(); // donated share price
 
-      if (feeShares > 0) {
-        asset.addedShares += feeShares;
-        spokes[assetId][asset.feeReceiver].addedShares += feeShares;
-        asset.realizedFees = 0; // reset and get gas refund of 1990 only when >0 shares minted
-      }
+      asset.addedShares += feeShares;
+      spokes[assetId][asset.feeReceiver].addedShares += feeShares;
+      asset.realizedFees = 0; // reset and get gas refund of 1900; can cache on stack or tstore
     }
 
     uint256 newDrawnRate = IBasicInterestRateStrategy(asset.irStrategy).calculateInterestRate({
