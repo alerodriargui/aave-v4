@@ -803,4 +803,39 @@ contract HubAddTest is HubBase {
       skip(randomizer(1 days, 365 days));
     }
   }
+
+  // add succeeds at the cap boundary when amount rounds down to fewer shares
+  function test_add_addCapBoundary_withRoundingLoss() public {
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addSpoke: address(spoke2),
+      addAmount: 100e18,
+      drawUser: alice,
+      drawSpoke: address(spoke1),
+      drawAmount: 100e18,
+      skipTime: 365 days * 10
+    });
+
+    uint256 existingShares = hub1.getSpokeAddedShares(daiAssetId, address(spoke2));
+
+    // minimumAssetsPerAddedShare + 1: the +1 is truncated by floor rounding, minting exactly 1 share
+    uint256 addAmount = minimumAssetsPerAddedShare(hub1, daiAssetId) + 1;
+    assertEq(hub1.previewAddByAssets(daiAssetId, addAmount), 1);
+
+    uint256 totalAddedAssets = hub1.getAddedAssets(daiAssetId);
+    uint256 totalAddedShares = hub1.getAddedShares(daiAssetId);
+    uint256 postStateAssets = (existingShares + 1).toAssetsUp(totalAddedAssets, totalAddedShares);
+    uint40 newAddCap = ((postStateAssets / 1e18) + 1).toUint40();
+    _updateAddCap(daiAssetId, address(spoke2), newAddCap);
+
+    Utils.add({
+      hub: hub1,
+      assetId: daiAssetId,
+      caller: address(spoke2),
+      amount: addAmount,
+      user: bob
+    });
+  }
 }
