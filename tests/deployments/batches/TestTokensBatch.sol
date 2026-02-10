@@ -6,9 +6,7 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 
 import {WETHDeployProcedure} from 'tests/deployments/procedures/WETHDeployProcedure.sol';
-import {
-  TestnetERC20DeployProcedure
-} from 'tests/deployments/procedures/TestnetERC20DeployProcedure.sol';
+import {TestnetERC20DeployProcedure} from 'tests/deployments/procedures/TestnetERC20DeployProcedure.sol';
 import {TestTypes} from 'tests/utils/TestTypes.sol';
 
 contract TestTokensBatch is WETHDeployProcedure, TestnetERC20DeployProcedure {

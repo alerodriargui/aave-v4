@@ -3,12 +3,8 @@
 pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-import {
-  AaveV4HubConfiguratorDeployProcedure
-} from 'src/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.sol';
-import {
-  AaveV4SpokeConfiguratorDeployProcedure
-} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.sol';
+import {AaveV4HubConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.sol';
+import {AaveV4SpokeConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.sol';
 
 contract AaveV4ConfiguratorBatch is
   AaveV4HubConfiguratorDeployProcedure,

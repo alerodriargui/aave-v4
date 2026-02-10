@@ -2,9 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {
-  AaveV4HubRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 
 contract AaveV4HubRolesProcedureWrapper {
   bool public IS_TEST = true;

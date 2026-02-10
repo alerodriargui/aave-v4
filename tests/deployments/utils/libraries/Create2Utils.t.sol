@@ -8,9 +8,7 @@ import {
   Create2UtilsWrapper
 } from 'tests/mocks/deployments/libraries/Create2UtilsWrapper.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
-import {
-  TransparentUpgradeableProxy
-} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 
 contract Dummy {
   constructor() {}

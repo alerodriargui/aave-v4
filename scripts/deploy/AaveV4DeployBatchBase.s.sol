@@ -5,9 +5,7 @@ pragma solidity ^0.8.0;
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
-import {
-  AaveV4DeployOrchestration
-} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
+import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
 import {Script} from 'forge-std/Script.sol';
 

@@ -2,9 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {
-  AaveV4InterestRateStrategyDeployProcedure
-} from 'src/deployments/procedures/deploy/hub/AaveV4InterestRateStrategyDeployProcedure.sol';
+import {AaveV4InterestRateStrategyDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4InterestRateStrategyDeployProcedure.sol';
 
 contract AaveV4InterestRateStrategyDeployProcedureWrapper is
   AaveV4InterestRateStrategyDeployProcedure

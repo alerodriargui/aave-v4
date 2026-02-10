@@ -10,16 +10,10 @@ import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 
 // orchestration
-import {
-  AaveV4DeployOrchestration
-} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
+import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {WETHDeployProcedure} from 'tests/deployments/procedures/WETHDeployProcedure.sol';
-import {
-  AaveV4SpokeRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
-import {
-  AaveV4HubRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 

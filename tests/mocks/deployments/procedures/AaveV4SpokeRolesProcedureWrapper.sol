@@ -2,9 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {
-  AaveV4SpokeRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 
 contract AaveV4SpokeRolesProcedureWrapper {
   bool public IS_TEST = true;
