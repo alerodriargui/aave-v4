@@ -10,11 +10,8 @@ import {
 contract ConfigPermissionsWrapper {
   using ConfigPermissionsMap for ConfigPermissions;
 
-  function setFullPermissions(
-    ConfigPermissions self,
-    bool status
-  ) external pure returns (ConfigPermissions) {
-    return self.setFullPermissions(status);
+  function setFullPermissions(bool status) external pure returns (ConfigPermissions) {
+    return ConfigPermissionsMap.setFullPermissions(status);
   }
 
   function setCanSetUsingAsCollateral(

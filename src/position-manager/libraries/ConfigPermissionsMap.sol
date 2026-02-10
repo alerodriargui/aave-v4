@@ -17,14 +17,10 @@ library ConfigPermissionsMap {
   /// @dev Mask for the full permissions.
   uint8 internal constant FULL_PERMISSIONS_MASK = 0x7;
 
-  /// @notice Sets the new status for all permissions.
-  /// @param self The current ConfigPermissions.
-  /// @param status The new status for all permissions.
-  /// @return The updated ConfigPermissions.
-  function setFullPermissions(
-    ConfigPermissions self,
-    bool status
-  ) internal pure returns (ConfigPermissions) {
+  /// @notice Creates a ConfigPermissions with all permissions set to the given status.
+  /// @param status The status for all permissions.
+  /// @return The created ConfigPermissions.
+  function setFullPermissions(bool status) internal pure returns (ConfigPermissions) {
     return ConfigPermissions.wrap(status ? FULL_PERMISSIONS_MASK : 0);
   }
 

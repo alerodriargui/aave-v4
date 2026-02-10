@@ -25,9 +25,8 @@ contract ConfigPermissionsTests is Test {
     assertEq(w.FULL_PERMISSIONS_MASK(), FULL_PERMISSIONS_MASK);
   }
 
-  function test_setFullPermissions_fuzz(uint8 rawPermissions, bool status) public view {
-    ConfigPermissions perms = _sanitizePermissions(rawPermissions);
-    ConfigPermissions updatedPerms = w.setFullPermissions(perms, status);
+  function test_setFullPermissions_fuzz(bool status) public view {
+    ConfigPermissions updatedPerms = w.setFullPermissions(status);
 
     uint8 expected = status ? FULL_PERMISSIONS_MASK : 0;
     assertEq(uint8(ConfigPermissions.unwrap(updatedPerms)), expected);
