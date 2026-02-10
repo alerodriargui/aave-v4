@@ -17,13 +17,13 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
   using MathUtils for uint256;
   using EIP712Hash for *;
 
-  /// @dev Map of spoke and reserveId to owner to spender to withdraw allowance.
-  mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
-    private _withdrawAllowances;
+  /// @dev Map of allowance key to withdraw allowance amount.
+  /// @dev The key is the keccak256 hash of abi.encode(spoke, reserveId, owner, spender).
+  mapping(bytes32 key => uint256 amount) private _withdrawAllowances;
 
-  /// @dev Map of spoke and reserveId to owner to spender to borrow allowance.
-  mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
-    private _borrowAllowances;
+  /// @dev Map of allowance key to borrow allowance amount.
+  /// @dev The key is the keccak256 hash of abi.encode(spoke, reserveId, owner, spender).
+  mapping(bytes32 key => uint256 amount) private _borrowAllowances;
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
@@ -111,7 +111,11 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     uint256 reserveId,
     address owner
   ) external onlyRegisteredSpoke(spoke) {
-    if (_withdrawAllowances[spoke][reserveId][owner][msg.sender] == 0) {
+    if (
+      _withdrawAllowances[
+        _allowanceKey({spoke: spoke, reserveId: reserveId, owner: owner, spender: msg.sender})
+      ] == 0
+    ) {
       return;
     }
     _updateWithdrawAllowance({
@@ -129,7 +133,11 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     uint256 reserveId,
     address owner
   ) external onlyRegisteredSpoke(spoke) {
-    if (_borrowAllowances[spoke][reserveId][owner][msg.sender] == 0) {
+    if (
+      _borrowAllowances[
+        _allowanceKey({spoke: spoke, reserveId: reserveId, owner: owner, spender: msg.sender})
+      ] == 0
+    ) {
       return;
     }
     _updateBorrowAllowance({
@@ -200,7 +208,10 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address owner,
     address spender
   ) external view returns (uint256) {
-    return _withdrawAllowances[spoke][reserveId][owner][spender];
+    return
+      _withdrawAllowances[
+        _allowanceKey({spoke: spoke, reserveId: reserveId, owner: owner, spender: spender})
+      ];
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -210,7 +221,10 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address owner,
     address spender
   ) external view returns (uint256) {
-    return _borrowAllowances[spoke][reserveId][owner][spender];
+    return
+      _borrowAllowances[
+        _allowanceKey({spoke: spoke, reserveId: reserveId, owner: owner, spender: spender})
+      ];
   }
 
   /// @inheritdoc IAllowancePositionManager
@@ -230,7 +244,9 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address spender,
     uint256 newAllowance
   ) internal {
-    _withdrawAllowances[spoke][reserveId][owner][spender] = newAllowance;
+    _withdrawAllowances[
+      _allowanceKey({spoke: spoke, reserveId: reserveId, owner: owner, spender: spender})
+    ] = newAllowance;
     emit WithdrawApproval(spoke, reserveId, owner, spender, newAllowance);
   }
 
@@ -241,7 +257,9 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address spender,
     uint256 newCreditDelegation
   ) internal {
-    _borrowAllowances[spoke][reserveId][owner][spender] = newCreditDelegation;
+    _borrowAllowances[
+      _allowanceKey({spoke: spoke, reserveId: reserveId, owner: owner, spender: spender})
+    ] = newCreditDelegation;
     emit BorrowApproval(spoke, reserveId, owner, spender, newCreditDelegation);
   }
 
@@ -252,7 +270,9 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address spender,
     uint256 amount
   ) internal {
-    uint256 currentAllowance = _withdrawAllowances[spoke][reserveId][owner][spender];
+    uint256 currentAllowance = _withdrawAllowances[
+      _allowanceKey({spoke: spoke, reserveId: reserveId, owner: owner, spender: spender})
+    ];
     require(currentAllowance >= amount, InsufficientWithdrawAllowance(currentAllowance, amount));
     if (currentAllowance != type(uint256).max) {
       _updateWithdrawAllowance({
@@ -272,7 +292,9 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address spender,
     uint256 amount
   ) internal {
-    uint256 currentAllowance = _borrowAllowances[spoke][reserveId][owner][spender];
+    uint256 currentAllowance = _borrowAllowances[
+      _allowanceKey({spoke: spoke, reserveId: reserveId, owner: owner, spender: spender})
+    ];
     require(currentAllowance >= amount, InsufficientBorrowAllowance(currentAllowance, amount));
     if (currentAllowance != type(uint256).max) {
       _updateBorrowAllowance({
@@ -283,6 +305,15 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
         newCreditDelegation: currentAllowance.uncheckedSub(amount)
       });
     }
+  }
+
+  function _allowanceKey(
+    address spoke,
+    uint256 reserveId,
+    address owner,
+    address spender
+  ) internal pure returns (bytes32) {
+    return keccak256(abi.encode(spoke, reserveId, owner, spender));
   }
 
   function _multicallEnabled() internal pure override returns (bool) {
