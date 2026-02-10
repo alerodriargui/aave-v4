@@ -1,14 +1,13 @@
-from z3 import *
+from commons import *
 
 s = Optimize()
 
 UINT256_MAX = IntVal(2**256 - 1)
-RAY = IntVal(10**27)
 SECONDS_PER_YEAR = IntVal(365 * 24 * 60 * 60)
 
 rate = IntVal(2**96 - 1)
 lastUpdateTimestamp = IntVal(1)
-currentTimestamp = Int("currentTimestamp")
+currentTimestamp = Int('currentTimestamp')
 elapsed = currentTimestamp - lastUpdateTimestamp
 
 s.add(elapsed >= 0)
@@ -19,4 +18,4 @@ s.maximize(currentTimestamp)
 
 assert s.check() == sat
 m = s.model()
-print("currentTimestamp max =", m[currentTimestamp])
+print('currentTimestamp max =', m[currentTimestamp])
