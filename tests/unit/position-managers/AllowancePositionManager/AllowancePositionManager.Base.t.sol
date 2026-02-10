@@ -7,12 +7,10 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract AllowancePositionManagerBaseTest is SpokeBase {
   AllowancePositionManager public positionManager;
   TestReturnValues public returnValues;
-  uint256 public alicePk;
 
   function setUp() public virtual override {
     super.setUp();
 
-    (alice, alicePk) = makeAddrAndKey('alice');
     positionManager = new AllowancePositionManager(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);

@@ -95,70 +95,27 @@ contract PositionManagerEIP712HashTest is Test {
     assertEq(EIP712Hash.BORROW_PERMIT_TYPEHASH, vm.eip712HashType('BorrowPermit'));
   }
 
+  // @dev all struct params should be hashed & placed in the same order as the typehash
   function test_hash_supply_fuzz(ISignatureGateway.Supply calldata params) public pure {
-    bytes32 expectedHash = keccak256(
-      abi.encode(
-        EIP712Hash.SUPPLY_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.amount,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
-    );
-
+    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.SUPPLY_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Supply', abi.encode(params)));
   }
 
   function test_hash_withdraw_fuzz(ISignatureGateway.Withdraw calldata params) public pure {
-    bytes32 expectedHash = keccak256(
-      abi.encode(
-        EIP712Hash.WITHDRAW_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.amount,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
-    );
-
+    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.WITHDRAW_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Withdraw', abi.encode(params)));
   }
 
   function test_hash_borrow_fuzz(ISignatureGateway.Borrow calldata params) public pure {
-    bytes32 expectedHash = keccak256(
-      abi.encode(
-        EIP712Hash.BORROW_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.amount,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
-    );
-
+    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.BORROW_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Borrow', abi.encode(params)));
   }
 
   function test_hash_repay_fuzz(ISignatureGateway.Repay calldata params) public pure {
-    bytes32 expectedHash = keccak256(
-      abi.encode(
-        EIP712Hash.REPAY_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.amount,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
-    );
-
+    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.REPAY_TYPEHASH, params));
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('Repay', abi.encode(params)));
   }
@@ -167,17 +124,8 @@ contract PositionManagerEIP712HashTest is Test {
     ISignatureGateway.SetUsingAsCollateral calldata params
   ) public pure {
     bytes32 expectedHash = keccak256(
-      abi.encode(
-        EIP712Hash.SET_USING_AS_COLLATERAL_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.useAsCollateral,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
+      abi.encode(EIP712Hash.SET_USING_AS_COLLATERAL_TYPEHASH, params)
     );
-
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('SetUsingAsCollateral', abi.encode(params)));
   }
@@ -186,15 +134,8 @@ contract PositionManagerEIP712HashTest is Test {
     ISignatureGateway.UpdateUserRiskPremium calldata params
   ) public pure {
     bytes32 expectedHash = keccak256(
-      abi.encode(
-        EIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH,
-        params.spoke,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
+      abi.encode(EIP712Hash.UPDATE_USER_RISK_PREMIUM_TYPEHASH, params)
     );
-
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('UpdateUserRiskPremium', abi.encode(params)));
   }
@@ -203,15 +144,8 @@ contract PositionManagerEIP712HashTest is Test {
     ISignatureGateway.UpdateUserDynamicConfig calldata params
   ) public pure {
     bytes32 expectedHash = keccak256(
-      abi.encode(
-        EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH,
-        params.spoke,
-        params.onBehalfOf,
-        params.nonce,
-        params.deadline
-      )
+      abi.encode(EIP712Hash.UPDATE_USER_DYNAMIC_CONFIG_TYPEHASH, params)
     );
-
     assertEq(params.hash(), expectedHash);
     assertEq(params.hash(), vm.eip712HashStruct('UpdateUserDynamicConfig', abi.encode(params)));
   }
@@ -219,18 +153,7 @@ contract PositionManagerEIP712HashTest is Test {
   function test_hash_withdrawPermit_fuzz(
     IAllowancePositionManager.WithdrawPermit calldata params
   ) public pure {
-    bytes32 expectedHash = keccak256(
-      abi.encode(
-        EIP712Hash.WITHDRAW_PERMIT_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.owner,
-        params.spender,
-        params.amount,
-        params.nonce,
-        params.deadline
-      )
-    );
+    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.WITHDRAW_PERMIT_TYPEHASH, params));
 
     assertEq(params.hash(), expectedHash);
   }
@@ -238,18 +161,7 @@ contract PositionManagerEIP712HashTest is Test {
   function test_hash_creditDelegation_fuzz(
     IAllowancePositionManager.BorrowPermit calldata params
   ) public pure {
-    bytes32 expectedHash = keccak256(
-      abi.encode(
-        EIP712Hash.BORROW_PERMIT_TYPEHASH,
-        params.spoke,
-        params.reserveId,
-        params.owner,
-        params.spender,
-        params.amount,
-        params.nonce,
-        params.deadline
-      )
-    );
+    bytes32 expectedHash = keccak256(abi.encode(EIP712Hash.BORROW_PERMIT_TYPEHASH, params));
 
     assertEq(params.hash(), expectedHash);
   }

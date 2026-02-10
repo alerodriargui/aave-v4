@@ -1169,11 +1169,6 @@ contract SpokeBase is Base {
       });
   }
 
-  function _sign(uint256 pk, bytes32 digest) internal pure returns (bytes memory) {
-    (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
-    return abi.encodePacked(r, s, v);
-  }
-
   /// @dev Helper to etch spoke's implementation with a new maxUserReservesLimit
   function _updateMaxUserReservesLimit(ISpoke spoke, uint16 newLimit) internal {
     address currentImpl = _getImplementationAddress(address(spoke));

@@ -10,13 +10,11 @@ contract PositionManager_Gas_Tests is SpokeBase {
 
   PositionManagerBaseWrapper public positionManager;
   uint192 internal nonceKey = 0;
-  uint256 public alicePk;
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
 
-    (alice, alicePk) = makeAddrAndKey('alice');
     positionManager = new PositionManagerBaseWrapper(address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);
@@ -110,13 +108,10 @@ contract AllowancePositionManager_Gas_Tests is SpokeBase {
   AllowancePositionManager public positionManager;
   uint192 internal withdrawNonceKey = 0;
   uint192 internal creditNonceKey = 1;
-  uint256 public alicePk;
 
   function setUp() public virtual override {
     deployFixtures();
     initEnvironment();
-
-    (alice, alicePk) = makeAddrAndKey('alice');
 
     positionManager = new AllowancePositionManager(address(ADMIN));
     vm.prank(SPOKE_ADMIN);
