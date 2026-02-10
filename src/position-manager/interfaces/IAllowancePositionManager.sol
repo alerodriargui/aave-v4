@@ -44,12 +44,6 @@ interface IAllowancePositionManager is IPositionManagerBase {
     uint256 deadline;
   }
 
-  /// @notice Thrown when the withdraw allowance is insufficient.
-  error InsufficientWithdrawAllowance(uint256 allowance, uint256 required);
-
-  /// @notice Thrown when the borrow allowance is insufficient.
-  error InsufficientBorrowAllowance(uint256 allowance, uint256 required);
-
   /// @notice Emitted when owner approves spender to withdraw amount for reserveId on their behalf.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
@@ -77,6 +71,12 @@ interface IAllowancePositionManager is IPositionManagerBase {
     address spender,
     uint256 amount
   );
+
+  /// @notice Thrown when the withdraw allowance is insufficient.
+  error InsufficientWithdrawAllowance(uint256 allowance, uint256 required);
+
+  /// @notice Thrown when the borrow allowance is insufficient.
+  error InsufficientBorrowAllowance(uint256 allowance, uint256 required);
 
   /// @notice Approves a spender to withdraw assets from the specified reserve.
   /// @dev Using `type(uint256).max` as the amount results in an infinite approval, so the allowance is never decreased.
