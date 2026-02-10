@@ -32,7 +32,7 @@ interface IConfigPositionManager is IPositionManagerBase {
     ConfigPermissions permissions
   );
 
-  /// @notice Thrown when the delegatee of a function was not given persmission by the user.
+  /// @notice Thrown when the delegatee of a function was not given permission by the user.
   error CallerNotAllowed();
 
   /// @notice Sets the global permission for a delegatee.
