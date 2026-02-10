@@ -39,7 +39,7 @@ jobs:
         run: |
           git clone https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/aave/aave-v4-invariants-corpus.git corpus
           echo "sha=$(git -C corpus rev-parse HEAD)" >> $GITHUB_OUTPUT
-          
+
       - name: Cache corpus
         uses: actions/cache@v4
         with:
@@ -63,7 +63,7 @@ jobs:
       - name: Build contracts (skip if cache hit)
         if: steps.restore-build.outputs.cache-hit != 'true'
         run: forge build tests/invariants/Tester.t.sol --build-info
-  
+
       - name: Cache build artifacts
         if: steps.restore-build.outputs.cache-hit != 'true'
         id: save-build

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {PostconditionsSpec} from "../../protocol-suite/specs/PostconditionsSpec.t.sol";
+import {PostconditionsSpec} from '../../protocol-suite/specs/PostconditionsSpec.t.sol';
 
 /// @title PostconditionsSpec
 /// @notice Postcoditions specification for the protocol
 /// @dev Contains pseudo code and description for the postcondition properties in the protocol
 abstract contract HubPostconditionsSpec is PostconditionsSpec {
-    /*/////////////////////////////////////////////////////////////////////////////////////////////
+  /*/////////////////////////////////////////////////////////////////////////////////////////////
     //                                      PROPERTY TYPES                                       //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -23,5 +23,4 @@ abstract contract HubPostconditionsSpec is PostconditionsSpec {
     ///       - Implemented within each handler function, under the HANDLER-SPECIFIC POSTCONDITIONS section.
 
     /////////////////////////////////////////////////////////////////////////////////////////////*/
-
-    }
+}

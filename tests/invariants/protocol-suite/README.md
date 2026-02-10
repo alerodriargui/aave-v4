@@ -5,6 +5,7 @@ A comprehensive handler-based invariant testing suite for the Aave v4 protocol. 
 ## Overview
 
 The suite tests a complex multi-hub, multi-spoke deployment with:
+
 - **2 Hubs** with distinct interest rate strategies and asset configurations
 - **2 Spokes** with varying risk parameters (conservative vs. aggressive)
 - **Cross-hub liquidity flows** simulating bridge mechanics with different capacity caps
@@ -15,6 +16,7 @@ All protocol actions are monitored by hooks that snapshot state and verify postc
 ## Tooling
 
 Compatible with industry-standard fuzzing tools:
+
 - **Echidna** - battle tested haskell based property-based fuzzer
 - **Medusa** - parallelized, coverage-guided, smart contract fuzzing, powered by go-ethereum
 - **Foundry** - native invariant testing framework
@@ -24,11 +26,13 @@ Compatible with industry-standard fuzzing tools:
 ### Core Components
 
 **Setup Layer** (`Setup.t.sol`, `base/`)
+
 - Deploys 2-hub, 2-spoke architecture with deterministic addresses (CREATE3)
 - Configures distinct collateral factors, liquidation parameters, and interest rate curves
 - Initializes multiple actors with protocol permissions
 
 **Handler Layer** (`handlers/`)
+
 - `SpokeHandler` – user operations (supply, borrow, repay, withdraw, liquidations)
 - `HubHandler` – liquidity management and treasury operations
 - `TreasurySpoke` – fee collection and distribution
@@ -36,12 +40,14 @@ Compatible with industry-standard fuzzing tools:
 - `Simulator Handlers` – price feeds, donation attacks
 
 **Verification Layer** (`hooks/`, `invariants/`)
+
 - Before/after hooks with state snapshots
 - Global and handler-specific postcondition assertions
 - Hub invariants (liquidity accounting, share calculations, interest accrual)
 - Spoke invariants (position tracking, collateralization, debt limits)
 
 **Replay Layer** (`replays/`)
+
 - Minimal reproduction tests for discovered violations
 - Facilitates debugging and regression prevention
 
@@ -72,6 +78,7 @@ make runes-medusa
 ## Advanced Usage
 
 **Echidna Modes:**
+
 ```bash
 make echidna          # Property mode (boolean invariants)
 make echidna-assert   # Assertion mode (require/assert violations)
@@ -79,11 +86,13 @@ make echidna-explore  # Exploration mode (maximize coverage)
 ```
 
 **Foundry:**
+
 ```bash
 make foundry-invariants  # Native Foundry invariant runner
 ```
 
 **Replay Specific Failure:**
+
 ```bash
 forge test --mc ReplayTest_1 -vvv
 ```
@@ -98,4 +107,3 @@ forge test --mc ReplayTest_1 -vvv
 ---
 
 **Note:** This suite complements unit tests by exploring unbounded state spaces and adversarial scenarios that are difficult to anticipate manually.
-

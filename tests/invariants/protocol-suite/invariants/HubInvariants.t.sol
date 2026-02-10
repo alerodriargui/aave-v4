@@ -2,189 +2,203 @@
 pragma solidity ^0.8.19;
 
 // Libraries
-import {WadRayMath} from "src/libraries/math/WadRayMath.sol";
-import {PercentageMath} from "src/libraries/math/PercentageMath.sol";
-import "forge-std/console.sol";
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import 'forge-std/console.sol';
 
 // Interfaces
-import {IHub} from "src/hub/interfaces/IHub.sol";
-import {IERC20} from "src/dependencies/openzeppelin/IERC20.sol";
+import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
 // Contracts
-import {HandlerAggregator} from "../HandlerAggregator.t.sol";
+import {HandlerAggregator} from '../HandlerAggregator.t.sol';
 
 /// @title HubInvariants
 /// @notice Implements Hub Invariants for the protocol
 /// @dev Inherits HandlerAggregator to check actions in assertion testing mode
 abstract contract HubInvariants is HandlerAggregator {
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                          HUB                                             //
-    ///////////////////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                          HUB                                             //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function assert_INV_HUB_A(address hubAddress, uint256 assetId) internal {
-        uint256 assets = IHub(hubAddress).getAddedAssets(assetId);
+  function assert_INV_HUB_A(address hubAddress, uint256 assetId) internal {
+    uint256 assets = IHub(hubAddress).getAddedAssets(assetId);
 
-        if (assets == 0) {
-            assertEq(IHub(hubAddress).getAddedShares(assetId), 0, INV_HUB_A2);
-        }
+    if (assets == 0) {
+      assertEq(IHub(hubAddress).getAddedShares(assetId), 0, INV_HUB_A2);
+    }
+  }
+
+  function assert_INV_HUB_B(address hubAddress, uint256 assetId) internal {
+    // Sum per-spoke values
+    uint256 spokeCount = spokesAddresses.length;
+    uint256 sumDebt;
+
+    for (uint256 i; i < spokeCount; i++) {
+      (uint256 d, uint256 p) = IHub(hubAddress).getSpokeOwed(assetId, spokesAddresses[i]);
+      sumDebt += d + p;
     }
 
-    function assert_INV_HUB_B(address hubAddress, uint256 assetId) internal {
-        // Sum per-spoke values
-        uint256 spokeCount = spokesAddresses.length;
-        uint256 sumDebt;
+    uint256 assetTotal = IHub(hubAddress).getAssetTotalOwed(assetId); // drawn + premium
+    assertGe(sumDebt, assetTotal, INV_HUB_B);
+  }
 
-        for (uint256 i; i < spokeCount; i++) {
-            (uint256 d, uint256 p) = IHub(hubAddress).getSpokeOwed(assetId, spokesAddresses[i]);
-            sumDebt += d + p;
-        }
+  function assert_INV_HUB_C(address hubAddress, uint256 assetId) internal {
+    // Sum per-spoke values
+    uint256 spokeCount = spokesAddresses.length;
 
-        uint256 assetTotal = IHub(hubAddress).getAssetTotalOwed(assetId); // drawn + premium
-        assertGe(sumDebt, assetTotal, INV_HUB_B);
+    uint256 sumDrawnShares;
+    uint256 sumPremDrawnShares;
+    int256 sumPremOffsetRay;
+
+    for (uint256 i; i < spokeCount; i++) {
+      address spoke = spokesAddresses[i];
+      sumDrawnShares += IHub(hubAddress).getSpokeDrawnShares(assetId, spoke);
+      (uint256 premiumDrawnShares, int256 premiumOffsetRay) = IHub(hubAddress).getSpokePremiumData(
+        assetId,
+        spoke
+      );
+      sumPremDrawnShares += premiumDrawnShares;
+      sumPremOffsetRay += premiumOffsetRay;
     }
 
-    function assert_INV_HUB_C(address hubAddress, uint256 assetId) internal {
-        // Sum per-spoke values
-        uint256 spokeCount = spokesAddresses.length;
+    // Asset totals
+    IHub.Asset memory a = IHub(hubAddress).getAsset(assetId);
 
-        uint256 sumDrawnShares;
-        uint256 sumPremDrawnShares;
-        int256 sumPremOffsetRay;
+    // Checks
+    assertEq(sumDrawnShares, a.drawnShares, INV_HUB_C);
+    assertEq(sumPremDrawnShares, a.premiumShares, INV_HUB_C);
+    assertEq(sumPremOffsetRay, a.premiumOffsetRay, INV_HUB_C);
+  }
 
-        for (uint256 i; i < spokeCount; i++) {
-            address spoke = spokesAddresses[i];
-            sumDrawnShares += IHub(hubAddress).getSpokeDrawnShares(assetId, spoke);
-            (uint256 premiumDrawnShares, int256 premiumOffsetRay) = IHub(hubAddress).getSpokePremiumData(assetId, spoke);
-            sumPremDrawnShares += premiumDrawnShares;
-            sumPremOffsetRay += premiumOffsetRay;
-        }
+  function assert_INV_HUB_EF(address hubAddress, uint256 assetId) internal {
+    // Total amounts
+    uint256 totalSuppliedAssets = IHub(hubAddress).getAddedAssets(assetId);
 
-        // Asset totals
-        IHub.Asset memory a = IHub(hubAddress).getAsset(assetId);
+    IHub.Asset memory asset = IHub(hubAddress).getAsset(assetId);
+    uint256 totalDebt = IHub(hubAddress).getAssetTotalOwed(assetId);
+    uint256 accruedFees = IHub(hubAddress).getAssetAccruedFees(assetId);
 
-        // Checks
-        assertEq(sumDrawnShares, a.drawnShares, INV_HUB_C);
-        assertEq(sumPremDrawnShares, a.premiumShares, INV_HUB_C);
-        assertEq(sumPremOffsetRay, a.premiumOffsetRay, INV_HUB_C);
+    // Checks //TODO check todo file INV_HUB_E
+    assertApproxEqAbs(
+      totalSuppliedAssets,
+      IHub(hubAddress).previewRemoveByShares(assetId, IHub(hubAddress).getAddedShares(assetId)),
+      IHub(hubAddress).previewRemoveByShares(assetId, 1), // tolerance of 1 share for rounding
+      INV_HUB_E
+    );
+
+    // totalAddedAssets + fees = liquidity + totalDebt + deficit + swept
+    // Note: uses approx equality due to rounding differences between totalOwed (rounds twice)
+    // and aggregatedOwedRay.fromRayUp() (rounds once)
+    assertApproxEqAbs(
+      (totalSuppliedAssets + accruedFees) * WadRayMath.RAY,
+      asset.liquidity * WadRayMath.RAY +
+        totalDebt * WadRayMath.RAY +
+        asset.deficitRay +
+        asset.swept * WadRayMath.RAY,
+      2 * WadRayMath.RAY, // tolerance of 2 units for rounding
+      INV_HUB_F
+    );
+  }
+
+  function assert_INV_HUB_GH(address hubAddress, uint256 assetId) internal {
+    uint256 spokeCount = allSpokes.length;
+
+    // Sum per-spoke values
+    uint256 totalAddedAssets;
+    uint256 totalAddedShares;
+    for (uint256 i; i < spokeCount; i++) {
+      totalAddedAssets += IHub(hubAddress).getSpokeAddedAssets(assetId, allSpokes[i]);
+      totalAddedShares += IHub(hubAddress).getSpokeAddedShares(assetId, allSpokes[i]);
     }
 
-    function assert_INV_HUB_EF(address hubAddress, uint256 assetId) internal {
-        // Total amounts
-        uint256 totalSuppliedAssets = IHub(hubAddress).getAddedAssets(assetId);
+    // Checks
+    assertApproxEqAbs(
+      totalAddedAssets,
+      IHub(hubAddress).getAddedAssets(assetId),
+      SPOKE_COUNT,
+      INV_HUB_G
+    );
+    assertEq(totalAddedShares, IHub(hubAddress).getAddedShares(assetId), INV_HUB_H);
+  }
 
-        IHub.Asset memory asset = IHub(hubAddress).getAsset(assetId);
-        uint256 totalDebt = IHub(hubAddress).getAssetTotalOwed(assetId);
-        uint256 accruedFees = IHub(hubAddress).getAssetAccruedFees(assetId);
+  function assert_INV_HUB_I(address hubAddress, uint256 assetId) internal {
+    // Get underlying from assetId
+    (address underlying, ) = IHub(hubAddress).getAssetUnderlyingAndDecimals(assetId);
 
-        // Checks //TODO check todo file INV_HUB_E
-        assertApproxEqAbs(
-            totalSuppliedAssets,
-            IHub(hubAddress).previewRemoveByShares(assetId, IHub(hubAddress).getAddedShares(assetId)),
-            IHub(hubAddress).previewRemoveByShares(assetId, 1), // tolerance of 1 share for rounding
-            INV_HUB_E
-        );
+    // Query values
+    uint256 liquidity = IHub(hubAddress).getAssetLiquidity(assetId);
+    uint256 swept = IHub(hubAddress).getAssetSwept(assetId);
+    uint256 underlyingBalance = IERC20(underlying).balanceOf(address(IHub(hubAddress)));
 
-        // totalAddedAssets + fees = liquidity + totalDebt + deficit + swept
-        // Note: uses approx equality due to rounding differences between totalOwed (rounds twice)
-        // and aggregatedOwedRay.fromRayUp() (rounds once)
-        assertApproxEqAbs(
-            (totalSuppliedAssets + accruedFees) * WadRayMath.RAY,
-            asset.liquidity * WadRayMath.RAY + totalDebt * WadRayMath.RAY + asset.deficitRay + asset.swept
-                * WadRayMath.RAY,
-            2 * WadRayMath.RAY, // tolerance of 2 units for rounding
-            INV_HUB_F
-        );
+    // Checks
+    assertGe(underlyingBalance + swept, liquidity, INV_HUB_I);
+  }
+
+  function assert_INV_HUB_K(address hubAddress, uint256 assetId) internal {
+    /// @dev TODO for this check to be meaningful, strategy configuration operations have to be integrated
+    IHub.AssetConfig memory assetConfig = IHub(hubAddress).getAssetConfig(assetId);
+
+    // Checks
+    assertTrue(assetConfig.irStrategy != address(0), INV_HUB_K);
+  }
+
+  function assert_INV_HUB_L(address hubAddress, uint256 assetId) internal {
+    (uint256 premiumShares, int256 premiumOffsetRay) = IHub(hubAddress).getAssetPremiumData(
+      assetId
+    );
+
+    assertGe(
+      int256(IHub(hubAddress).previewRestoreByShares(assetId, premiumShares) * WadRayMath.RAY),
+      premiumOffsetRay,
+      INV_HUB_L
+    );
+  }
+
+  function assert_INV_HUB_O(address hubAddress, uint256 assetId) internal {
+    uint256 spokeCount = allSpokes.length;
+    uint256 totalDeficitRay;
+    for (uint256 i; i < spokeCount; i++) {
+      totalDeficitRay += IHub(hubAddress).getSpokeDeficitRay(assetId, allSpokes[i]);
     }
+    assertEq(totalDeficitRay, IHub(hubAddress).getAssetDeficitRay(assetId), INV_HUB_O);
+  }
 
-    function assert_INV_HUB_GH(address hubAddress, uint256 assetId) internal {
-        uint256 spokeCount = allSpokes.length;
+  function assert_INV_HUB_P(address hubAddress, uint256 assetId) internal {
+    (uint256 premiumShares, int256 premiumOffsetRay) = IHub(hubAddress).getAssetPremiumData(
+      assetId
+    );
+    uint256 drawnIndex = IHub(hubAddress).getAssetDrawnIndex(assetId);
+    assertGe(int256(premiumShares * drawnIndex), premiumOffsetRay, INV_HUB_P);
+  }
 
-        // Sum per-spoke values
-        uint256 totalAddedAssets;
-        uint256 totalAddedShares;
-        for (uint256 i; i < spokeCount; i++) {
-            totalAddedAssets += IHub(hubAddress).getSpokeAddedAssets(assetId, allSpokes[i]);
-            totalAddedShares += IHub(hubAddress).getSpokeAddedShares(assetId, allSpokes[i]);
-        }
+  function assert_INV_HUB_N(address hubAddress, uint256 assetId) internal {
+    IHub.Asset memory asset = IHub(hubAddress).getAsset(assetId);
 
-        // Checks
-        assertApproxEqAbs(totalAddedAssets, IHub(hubAddress).getAddedAssets(assetId), SPOKE_COUNT, INV_HUB_G);
-        assertEq(totalAddedShares, IHub(hubAddress).getAddedShares(assetId), INV_HUB_H);
-    }
+    // Skip if no debt (no interest can accrue)
+    if (asset.drawnShares == 0 && asset.premiumShares == 0) return;
 
-    function assert_INV_HUB_I(address hubAddress, uint256 assetId) internal {
-        // Get underlying from assetId
-        (address underlying,) = IHub(hubAddress).getAssetUnderlyingAndDecimals(assetId);
+    // Get current index (includes unrealized interest) vs stored index
+    uint256 currentIndex = IHub(hubAddress).getAssetDrawnIndex(assetId);
+    uint256 storedIndex = asset.drawnIndex;
 
-        // Query values
-        uint256 liquidity = IHub(hubAddress).getAssetLiquidity(assetId);
-        uint256 swept = IHub(hubAddress).getAssetSwept(assetId);
-        uint256 underlyingBalance = IERC20(underlying).balanceOf(address(IHub(hubAddress)));
+    // Skip if no index growth (no interest accrued)
+    if (currentIndex == storedIndex) return;
 
-        // Checks
-        assertGe(underlyingBalance + swept, liquidity, INV_HUB_I);
-    }
+    // Calculate accrued interest from index growth
+    uint256 indexGrowth = currentIndex - storedIndex;
+    uint256 totalDebtShares = uint256(asset.drawnShares) + uint256(asset.premiumShares);
+    uint256 accruedInterestRay = (totalDebtShares * indexGrowth);
 
-    function assert_INV_HUB_K(address hubAddress, uint256 assetId) internal {
-        /// @dev TODO for this check to be meaningful, strategy configuration operations have to be integrated
-        IHub.AssetConfig memory assetConfig = IHub(hubAddress).getAssetConfig(assetId);
+    // Get unrealized fees
+    uint256 unrealizedFees = IHub(hubAddress).getAssetAccruedFees(assetId) - asset.realizedFees;
 
-        // Checks
-        assertTrue(assetConfig.irStrategy != address(0), INV_HUB_K);
-    }
+    // Invariant: fees × PERCENTAGE_FACTOR × RAY ≈ accruedInterestRay × liquidityFee
+    uint256 lhs = unrealizedFees * PercentageMath.PERCENTAGE_FACTOR * WadRayMath.RAY;
+    uint256 rhs = accruedInterestRay * asset.liquidityFee;
 
-    function assert_INV_HUB_L(address hubAddress, uint256 assetId) internal {
-        (uint256 premiumShares, int256 premiumOffsetRay) = IHub(hubAddress).getAssetPremiumData(assetId);
-
-        assertGe(
-            int256(IHub(hubAddress).previewRestoreByShares(assetId, premiumShares) * WadRayMath.RAY),
-            premiumOffsetRay,
-            INV_HUB_L
-        );
-    }
-
-    function assert_INV_HUB_O(address hubAddress, uint256 assetId) internal {
-        uint256 spokeCount = allSpokes.length;
-        uint256 totalDeficitRay;
-        for (uint256 i; i < spokeCount; i++) {
-            totalDeficitRay += IHub(hubAddress).getSpokeDeficitRay(assetId, allSpokes[i]);
-        }
-        assertEq(totalDeficitRay, IHub(hubAddress).getAssetDeficitRay(assetId), INV_HUB_O);
-    }
-
-    function assert_INV_HUB_P(address hubAddress, uint256 assetId) internal {
-        (uint256 premiumShares, int256 premiumOffsetRay) = IHub(hubAddress).getAssetPremiumData(assetId);
-        uint256 drawnIndex = IHub(hubAddress).getAssetDrawnIndex(assetId);
-        assertGe(int256(premiumShares * drawnIndex), premiumOffsetRay, INV_HUB_P);
-    }
-
-    function assert_INV_HUB_N(address hubAddress, uint256 assetId) internal {
-        IHub.Asset memory asset = IHub(hubAddress).getAsset(assetId);
-
-        // Skip if no debt (no interest can accrue)
-        if (asset.drawnShares == 0 && asset.premiumShares == 0) return;
-
-        // Get current index (includes unrealized interest) vs stored index
-        uint256 currentIndex = IHub(hubAddress).getAssetDrawnIndex(assetId);
-        uint256 storedIndex = asset.drawnIndex;
-
-        // Skip if no index growth (no interest accrued)
-        if (currentIndex == storedIndex) return;
-
-        // Calculate accrued interest from index growth
-        uint256 indexGrowth = currentIndex - storedIndex;
-        uint256 totalDebtShares = uint256(asset.drawnShares) + uint256(asset.premiumShares);
-        uint256 accruedInterestRay = (totalDebtShares * indexGrowth);
-
-        // Get unrealized fees
-        uint256 unrealizedFees = IHub(hubAddress).getAssetAccruedFees(assetId) - asset.realizedFees;
-
-        // Invariant: fees × PERCENTAGE_FACTOR × RAY ≈ accruedInterestRay × liquidityFee
-        uint256 lhs = unrealizedFees * PercentageMath.PERCENTAGE_FACTOR * WadRayMath.RAY;
-        uint256 rhs = accruedInterestRay * asset.liquidityFee;
-
-        // Tolerance: 1 wei rounding scaled up
-        uint256 tolerance = WadRayMath.RAY * PercentageMath.PERCENTAGE_FACTOR;
-        assertApproxEqAbs(lhs, rhs, tolerance, INV_HUB_N);
-    }
+    // Tolerance: 1 wei rounding scaled up
+    uint256 tolerance = WadRayMath.RAY * PercentageMath.PERCENTAGE_FACTOR;
+    assertApproxEqAbs(lhs, rhs, tolerance, INV_HUB_N);
+  }
 }

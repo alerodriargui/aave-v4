@@ -26,7 +26,7 @@ propMaxGas: 1000000000
 testMaxGas: 1000000000
 
 # list of methods to filter
-filterFunctions: [ "Tester.checkPostConditions()" ]
+filterFunctions: ["Tester.checkPostConditions()"]
 # by default, blacklist methods in filterFunctions
 #filterBlacklist: false
 
@@ -39,7 +39,7 @@ stopOnFail: false
 coverage: true
 
 # list of file formats to save coverage reports in; default is all possible formats
-coverageFormats: [ "html" ]
+coverageFormats: ["html"]
 
 #directory to save the corpus; by default is disabled
 corpusDir: "tests/invariants/hub-suite/_corpus/echidna/default/_data/corpus"
@@ -47,9 +47,9 @@ corpusDir: "tests/invariants/hub-suite/_corpus/echidna/default/_data/corpus"
 #mutConsts: [100, 1, 1]
 
 #remappings
-cryticArgs: [ "--compile-libraries=(LiquidationLogic,0xf01)" ]
+cryticArgs: ["--compile-libraries=(LiquidationLogic,0xf01)"]
 
-deployContracts: [ [ "0xf01", "LiquidationLogic" ] ]
+deployContracts: [["0xf01", "LiquidationLogic"]]
 
 # maximum value to send to payable functions
 maxValue: 1e+30 # 100000000000 eth
