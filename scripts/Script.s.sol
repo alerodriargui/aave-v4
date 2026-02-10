@@ -11,9 +11,11 @@ import {TransparentUpgradeableProxy, ITransparentUpgradeableProxy} from 'src/dep
 import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
+import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
+import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
 
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
-import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {AccessManager, IAccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {AaveOracle, IAaveOracle} from 'src/spoke/AaveOracle.sol';
@@ -22,8 +24,8 @@ import {Roles} from 'src/libraries/types/Roles.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
-import {IERC20} from 'forge-std/interfaces/IERC20.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 
 string constant WETH = 'WETH';
 string constant WBTC = 'WBTC';
@@ -45,6 +47,7 @@ string constant USDT = 'USDT';
 contract Deploy is Script, StdAssertions {
   using stdJson for string;
   using SafeCast for *;
+  using SafeERC20 for *;
 
   /// ---------- TOKEN -----------
   struct Token {
@@ -72,15 +75,6 @@ contract Deploy is Script, StdAssertions {
     setUpTokens(); // done for price feed on tokens, use only until it doesn't deploy mock tokens
     load();
 
-    {
-      Hub targetHub = _hub(CORE_HUB).hub;
-      address spoke = address(_spoke(CORE_SPOKE));
-      uint assetId = _assetId(targetHub, address(_token(AAVE).token));
-      IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
-      config.active = true;
-      targetHub.updateSpokeConfig(assetId, spoke, config);
-    }
-
     _process(
       CORE_SPOKE,
       ReserveConfig({
@@ -89,11 +83,42 @@ contract Deploy is Script, StdAssertions {
         collateral: true,
         borrowable: true,
         maxLiquidationBonus: 105_00,
-        collateralRisk: 15_00,
-        collateralFactor: 70_00,
+        collateralRisk: 45_00,
+        collateralFactor: 60_00,
         liquidationFee: 10_00
       })
     );
+    // _update(
+    //   CORE_HUB,
+    //   SpokeListConfig({assetKey: WETH, spokeKey: LST_SPOKE, addCap: 225, drawCap: 100})
+    // );
+    // _update(
+    //   CORE_HUB,
+    //   SpokeListConfig({assetKey: wstETH, spokeKey: LST_SPOKE, addCap: 200, drawCap: 0})
+    // );
+
+    // {
+    //   Hub targetHub = _hub(CORE_HUB).hub;
+    //   address spoke = address(_spoke(CORE_SPOKE));
+    //   uint assetId = _assetId(targetHub, address(_token(AAVE).token));
+    //   IHub.SpokeConfig memory config = targetHub.getSpokeConfig(assetId, spoke);
+    //   config.active = true;
+    //   targetHub.updateSpokeConfig(assetId, spoke, config);
+    // }
+
+    // _process(
+    //   CORE_SPOKE,
+    //   ReserveConfig({
+    //     assetKey: AAVE,
+    //     hubKey: CORE_HUB,
+    //     collateral: true,
+    //     borrowable: true,
+    //     maxLiquidationBonus: 105_00,
+    //     collateralRisk: 15_00,
+    //     collateralFactor: 70_00,
+    //     liquidationFee: 10_00
+    //   })
+    // );
 
     // _process(
     //   FRONTIER_HUB,
@@ -233,7 +258,7 @@ contract Deploy is Script, StdAssertions {
   function _token(string memory key) internal view returns (Token storage) {
     Token storage t = tokens[key];
     require(address(t.token) != address(0), 'token unset');
-    require(address(t.priceFeed) != address(0), 'price feed unset');
+    // require(address(t.priceFeed) != address(0), 'price feed unset');
     return t;
   }
 
@@ -430,8 +455,8 @@ contract Deploy is Script, StdAssertions {
           drawCap: 5_500_000
         }),
         // ----LST_SPOKE-----
-        SpokeListConfig({assetKey: WETH, spokeKey: LST_SPOKE, addCap: 225, drawCap: 0}),
-        SpokeListConfig({assetKey: wstETH, spokeKey: LST_SPOKE, addCap: 200, drawCap: 100}),
+        SpokeListConfig({assetKey: WETH, spokeKey: LST_SPOKE, addCap: 225, drawCap: 100}),
+        SpokeListConfig({assetKey: wstETH, spokeKey: LST_SPOKE, addCap: 200, drawCap: 0}),
         // ----ETHENA_SPOKE-----
         SpokeListConfig({
           assetKey: USDC,
@@ -688,7 +713,7 @@ contract Deploy is Script, StdAssertions {
     {
       string memory spokeKey = 'CORE_SPOKE';
       console.log('-----CORE_SPOKE-----');
-      ReserveConfig[7] memory reserveConf = [
+      ReserveConfig[8] memory reserveConf = [
         ReserveConfig({
           assetKey: WETH,
           hubKey: CORE_HUB,
@@ -757,6 +782,16 @@ contract Deploy is Script, StdAssertions {
           maxLiquidationBonus: 100_00,
           collateralRisk: 0,
           collateralFactor: 83_00,
+          liquidationFee: 10_00
+        }),
+        ReserveConfig({
+          assetKey: AAVE,
+          hubKey: CORE_HUB,
+          collateral: true,
+          borrowable: true,
+          maxLiquidationBonus: 105_00,
+          collateralRisk: 45_00,
+          collateralFactor: 60_00,
           liquidationFee: 10_00
         })
       ];
@@ -968,7 +1003,7 @@ contract Deploy is Script, StdAssertions {
       maxLiquidationBonus: conf.maxLiquidationBonus,
       liquidationFee: conf.liquidationFee
     });
-
+    require(address(t.priceFeed) != address(0), 'price feed unset');
     uint reserveId = spoke.addReserve(address(hub), assetId, t.priceFeed, st, dyn);
 
     assertEq(abi.encode(spoke.getReserveConfig(reserveId)), abi.encode(st));
@@ -1077,6 +1112,30 @@ contract Deploy is Script, StdAssertions {
       })
     );
     IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, address(spoke));
+    assertEq(spokeConfig.addCap, conf.addCap);
+    assertEq(spokeConfig.drawCap, conf.drawCap);
+    assertTrue(spokeConfig.active);
+
+    console.log('addCap\t\t\t\t %e', spokeConfig.addCap);
+    console.log('drawCap\t\t\t\t %e', spokeConfig.drawCap);
+    console.log('active\t\t\t\t', spokeConfig.active);
+    console.log();
+  }
+
+  function _update(string memory hubKey, SpokeListConfig memory conf) internal {
+    console.log('spoke\t\t\t\t\t', conf.spokeKey);
+    console.log('token\t\t\t\t\t', conf.assetKey);
+    Hub hub = _hub(hubKey).hub;
+    ISpoke spoke = _spoke(conf.spokeKey);
+    address token = address(_token(conf.assetKey).token);
+    uint assetId = _assetId(hub, token);
+    IHub.SpokeConfig memory spokeConfig = hub.getSpokeConfig(assetId, address(spoke));
+
+    spokeConfig.addCap = conf.addCap;
+    spokeConfig.drawCap = conf.drawCap;
+    hub.updateSpokeConfig(assetId, address(spoke), spokeConfig);
+
+    spokeConfig = hub.getSpokeConfig(assetId, address(spoke));
     assertEq(spokeConfig.addCap, conf.addCap);
     assertEq(spokeConfig.drawCap, conf.drawCap);
     assertTrue(spokeConfig.active);
@@ -1262,6 +1321,36 @@ contract Deploy is Script, StdAssertions {
     nativeTokenGateway = deploy.readAddress('.nativeTokenGateway');
   }
 
+  function deployConfigurator() external {
+    load();
+    vm.startBroadcast();
+    (, address caller, ) = vm.readCallers();
+
+    HubConfigurator hubConfigurator = new HubConfigurator(caller);
+    SpokeConfigurator spokeConfigurator = new SpokeConfigurator(caller);
+    hubConfigurator.acceptOwnership();
+    spokeConfigurator.acceptOwnership();
+
+    IAccessManager manager = IAccessManager(_hub(PRIME_HUB).hub.authority());
+
+    manager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
+    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, address(spokeConfigurator), 0);
+
+    {
+      string[4] memory keys = [PRIME_HUB, CORE_HUB, ETHENA_HUB, FRONTIER_HUB];
+      for (uint i; i < keys.length; ++i) {
+        assertEq(_hub(keys[i]).hub.authority(), address(manager));
+      }
+    }
+
+    {
+      string[5] memory keys = [PRIME_SPOKE, CORE_SPOKE, LST_SPOKE, ETHENA_SPOKE, FRONTIER_SPOKE];
+      for (uint i; i < keys.length; ++i) {
+        assertEq(_spoke(keys[i]).authority(), address(manager));
+      }
+    }
+  }
+
   function _commit() internal returns (string memory) {
     string[] memory c = new string[](3);
     c[0] = 'git';
@@ -1292,11 +1381,11 @@ contract Deploy is Script, StdAssertions {
       for (uint i; i < keys.length; ++i) {
         ISpoke spoke = _spoke(keys[i]);
         console.log(keys[i]);
-        _run(spoke, _supply);
+        // _run(spoke, _supply);
         // _run(spoke, _withdraw);
         // _run(spoke, _supply);
         // _run(spoke, _borrow);
-        // _run(spoke, _repay);
+        _run(spoke, _repay);
         console.log();
       }
     }
@@ -1334,15 +1423,23 @@ contract Deploy is Script, StdAssertions {
       return;
 
     TestnetERC20 token = TestnetERC20(reserve.underlying);
+    if (_eq(token.symbol(), 'LDO')) {
+      console.log('skipping ldo');
+      return;
+    }
     uint amount = _getAmount(bound(vm.randomUint(), 0.01e8, 100e8), spoke, reserveId, token);
     _mint(token, amount);
 
     console.log('spoke', address(spoke));
     console.log('reserve', reserveId);
-    token.approve(address(spoke), amount);
+    token.forceApprove(address(spoke), amount);
     console.log('approved');
     spoke.supply(reserveId, amount, caller);
     spoke.setUsingAsCollateral(reserveId, true, caller);
+  }
+
+  function _eq(string memory a, string memory b) internal pure returns (bool) {
+    return keccak256(abi.encode(a)) == keccak256(abi.encode(b));
   }
 
   function _withdraw(ISpoke spoke, uint reserveId) internal {
@@ -1363,6 +1460,11 @@ contract Deploy is Script, StdAssertions {
 
     (, address caller, ) = vm.readCallers();
     TestnetERC20 token = TestnetERC20(reserve.underlying);
+    if (_eq(token.symbol(), 'LDO')) {
+      console.log('skipping ldo');
+      return;
+    }
+
     uint amount = bound(vm.randomUint(), 2, 10 ** (token.decimals() - 3));
     if (amount != 0) spoke.borrow(reserveId, amount, caller);
   }
@@ -1373,7 +1475,7 @@ contract Deploy is Script, StdAssertions {
     ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
 
     TestnetERC20 token = TestnetERC20(reserve.underlying);
-    token.approve(address(spoke), amount);
+    token.forceApprove(address(spoke), amount);
     console.log('repay approved');
     _mint(token, amount);
 
