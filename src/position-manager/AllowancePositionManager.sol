@@ -17,11 +17,17 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
   using MathUtils for uint256;
   using EIP712Hash for *;
 
-  /// @dev Map of spoke and reserveId to owner to spender to withdraw allowance.
+  /// @inheritdoc IAllowancePositionManager
+  bytes32 public constant WITHDRAW_PERMIT_TYPEHASH = EIP712Hash.WITHDRAW_PERMIT_TYPEHASH;
+
+  /// @inheritdoc IAllowancePositionManager
+  bytes32 public constant BORROW_PERMIT_TYPEHASH = EIP712Hash.BORROW_PERMIT_TYPEHASH;
+
+  /// @dev Map of withdraw allowances based on the spoke, reserveId, owner and spender.
   mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
     private _withdrawAllowances;
 
-  /// @dev Map of spoke and reserveId to owner to spender to borrow allowance.
+  /// @dev Map of borrow allowances based on the spoke, reserveId, owner and spender.
   mapping(address spoke => mapping(uint256 reserveId => mapping(address owner => mapping(address spender => uint256 amount))))
     private _borrowAllowances;
 
@@ -211,16 +217,6 @@ contract AllowancePositionManager is IAllowancePositionManager, PositionManagerB
     address spender
   ) external view returns (uint256) {
     return _borrowAllowances[spoke][reserveId][owner][spender];
-  }
-
-  /// @inheritdoc IAllowancePositionManager
-  function WITHDRAW_PERMIT_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.WITHDRAW_PERMIT_TYPEHASH;
-  }
-
-  /// @inheritdoc IAllowancePositionManager
-  function BORROW_PERMIT_TYPEHASH() external pure returns (bytes32) {
-    return EIP712Hash.BORROW_PERMIT_TYPEHASH;
   }
 
   function _updateWithdrawAllowance(

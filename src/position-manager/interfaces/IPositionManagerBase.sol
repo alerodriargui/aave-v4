@@ -64,13 +64,11 @@ interface IPositionManagerBase is IIntentConsumer, IRescuable, IMulticall {
   ) external;
 
   /// @notice Allows contract to renounce its position manager role for the specified user.
-  /// @dev Only authorized caller to invoke this method.
   /// @param spoke The address of the registered Spoke.
   /// @param user The address of the user to renounce the position manager role for.
   function renouncePositionManagerRole(address spoke, address user) external;
 
   /// @notice Register or deregister a spoke.
-  /// @dev Only owner to invoke this method.
   /// @param spoke The address of the Spoke.
   /// @param registered `true` to register, `false` to deregister.
   function registerSpoke(address spoke, bool registered) external;

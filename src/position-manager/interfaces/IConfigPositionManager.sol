@@ -33,7 +33,7 @@ interface IConfigPositionManager is IPositionManagerBase {
   );
 
   /// @notice Thrown when the delegatee of a function was not given permission by the user.
-  error CallerNotAllowed();
+  error DelegateeNotAllowed();
 
   /// @notice Sets the global permission for a delegatee.
   /// @param spoke The address of the spoke.

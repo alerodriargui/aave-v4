@@ -14,7 +14,7 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @title PositionManagerBase
 /// @author Aave Labs
 /// @notice Base implementation for position manager common functionalities.
-/// @dev Multicall is only enabled if the inheriting contract allows it with _multicallEnabled().
+/// @dev The `_multicallEnabled()` function must be implemented to specify whether multicall is enabled.
 abstract contract PositionManagerBase is
   IPositionManagerBase,
   IntentConsumer,

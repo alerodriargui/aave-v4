@@ -162,7 +162,7 @@ contract NativeTokenGateway is INativeTokenGateway, PositionManagerBase, Reentra
     require(amount > 0, InvalidAmount());
   }
 
-  /// @dev Multicall is disabled here due to the need for a payable version due to native transfers.
+  /// @dev Multicall is disabled to prevent msg.value reuse across delegatecalls.
   function _multicallEnabled() internal pure override returns (bool) {
     return false;
   }

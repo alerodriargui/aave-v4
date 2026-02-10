@@ -9,7 +9,7 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @notice Interface for position manager handling supply and repay actions on behalf of users.
 interface ISupplyRepayPositionManager is IPositionManagerBase {
   /// @notice Error thrown when the repay amount is not an allowed value.
-  error InvalidRepayAmount();
+  error NoMaxRepayOnBehalfOfAllowed();
 
   /// @notice Executes a supply on behalf of a user.
   /// @param spoke The address of the spoke.
@@ -27,7 +27,7 @@ interface ISupplyRepayPositionManager is IPositionManagerBase {
 
   /// @notice Executes a repay on behalf of a user.
   /// @dev If the amount exceeds the user's current debt, the entire debt is repaid.
-  /// @dev Max repay using `type(uint256).max` to repay the entire debt is not permitted with this method.
+  /// @dev Using `type(uint256).max` to repay the full debt is not allowed with this method.
   /// @param spoke The address of the spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param amount The amount to repay.

@@ -471,7 +471,7 @@ contract ConfigPositionManagerTest is SpokeBase {
   }
 
   function test_setUsingAsCollateralOnBehalfOf_revertsWith_CallerNotAllowed() public {
-    vm.expectRevert(IConfigPositionManager.CallerNotAllowed.selector);
+    vm.expectRevert(IConfigPositionManager.DelegateeNotAllowed.selector);
     vm.prank(bob);
     positionManager.setUsingAsCollateralOnBehalfOf(
       address(spoke1),
@@ -514,7 +514,7 @@ contract ConfigPositionManagerTest is SpokeBase {
   }
 
   function test_updateUserRiskPremiumOnBehalfOf_revertsWith_CallerNotAllowed() public {
-    vm.expectRevert(IConfigPositionManager.CallerNotAllowed.selector);
+    vm.expectRevert(IConfigPositionManager.DelegateeNotAllowed.selector);
     vm.prank(bob);
     positionManager.updateUserRiskPremiumOnBehalfOf(address(spoke1), alice);
   }
@@ -546,7 +546,7 @@ contract ConfigPositionManagerTest is SpokeBase {
   }
 
   function test_updateUserDynamicConfigOnBehalfOf_revertsWith_CallerNotAllowed() public {
-    vm.expectRevert(IConfigPositionManager.CallerNotAllowed.selector);
+    vm.expectRevert(IConfigPositionManager.DelegateeNotAllowed.selector);
     vm.prank(bob);
     positionManager.updateUserDynamicConfigOnBehalfOf(address(spoke1), alice);
   }
