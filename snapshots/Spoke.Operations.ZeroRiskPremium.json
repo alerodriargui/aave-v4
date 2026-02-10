@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "borrow: first": "191325",
   "borrow: second action, same reserve": "171297",
   "liquidationCall (receiveShares): full": "300103",
@@ -30,4 +31,38 @@
   "withdraw: 1 borrow, partial": "161036",
   "withdraw: 2 borrows, partial": "174214",
   "withdraw: non collateral": "106544"
+=======
+  "borrow: first": "190296",
+  "borrow: second action, same reserve": "170162",
+  "liquidationCall (receiveShares): full": "303081",
+  "liquidationCall (receiveShares): partial": "302499",
+  "liquidationCall (reportDeficit): full": "367565",
+  "liquidationCall: full": "320706",
+  "liquidationCall: partial": "320124",
+  "permitReserve + repay (multicall)": "164565",
+  "permitReserve + supply (multicall)": "146745",
+  "permitReserve + supply + enable collateral (multicall)": "161196",
+  "repay: full": "123903",
+  "repay: partial": "128861",
+  "setUserPositionManagersWithSig: disable": "46772",
+  "setUserPositionManagersWithSig: enable": "68684",
+  "supply + enable collateral (multicall)": "141398",
+  "supply: 0 borrows, collateral disabled": "122835",
+  "supply: 0 borrows, collateral enabled": "105806",
+  "supply: second action, same reserve": "105735",
+  "updateUserDynamicConfig: 1 collateral": "74545",
+  "updateUserDynamicConfig: 2 collaterals": "89413",
+  "updateUserRiskPremium: 1 borrow": "95657",
+  "updateUserRiskPremium: 2 borrows": "105337",
+  "usingAsCollateral: 0 borrows, enable": "59616",
+  "usingAsCollateral: 1 borrow, disable": "105701",
+  "usingAsCollateral: 1 borrow, enable": "42504",
+  "usingAsCollateral: 2 borrows, disable": "127250",
+  "usingAsCollateral: 2 borrows, enable": "42516",
+  "withdraw: 0 borrows, full": "127944",
+  "withdraw: 0 borrows, partial": "132840",
+  "withdraw: 1 borrow, partial": "159894",
+  "withdraw: 2 borrows, partial": "174452",
+  "withdraw: non collateral": "105891"
+>>>>>>> 9ae1341d2dbb94ec94172bb151a4595e6fde0fd6
 }

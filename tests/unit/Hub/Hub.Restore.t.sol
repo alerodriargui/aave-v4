@@ -108,7 +108,7 @@ contract HubRestoreTest is HubBase {
   }
 
   function test_restore_revertsWith_SpokeNotActive_whenPaused() public {
-    vm.prank(HUB_CONFIGURATOR_ADMIN);
+    vm.prank(HUB_CONFIGURATOR);
     hubConfigurator.deactivateAsset(address(hub1), daiAssetId);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
@@ -123,8 +123,8 @@ contract HubRestoreTest is HubBase {
     hub1.restore(daiAssetId, 1, premiumDelta);
   }
 
-  function test_restore_revertsWith_SpokePaused() public {
-    _updateSpokePaused(hub1, daiAssetId, address(spoke1), true);
+  function test_restore_revertsWith_SpokeHalted() public {
+    _updateSpokeHalted(hub1, daiAssetId, address(spoke1), true);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
       spoke1,
@@ -133,7 +133,7 @@ contract HubRestoreTest is HubBase {
       0
     );
 
-    vm.expectRevert(IHub.SpokePaused.selector);
+    vm.expectRevert(IHub.SpokeHalted.selector);
     vm.prank(address(spoke1));
     hub1.restore(daiAssetId, 1, premiumDelta);
   }
@@ -172,8 +172,8 @@ contract HubRestoreTest is HubBase {
     vm.stopPrank();
   }
 
-  /// @dev It's possible to restore even when asset is frozen
-  function test_restore_when_asset_frozen() public {
+  /// @dev It's possible to restore even when asset caps are reset
+  function test_restore_when_asset_caps_reset() public {
     uint256 daiAmount = 100e18;
     uint256 drawAmount = daiAmount / 2;
 
@@ -195,9 +195,9 @@ contract HubRestoreTest is HubBase {
       amount: drawAmount
     });
 
-    // Freeze asset
-    vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.freezeAsset(address(hub1), daiAssetId);
+    // Reset asset caps
+    vm.prank(HUB_CONFIGURATOR);
+    hubConfigurator.resetAssetCaps(address(hub1), daiAssetId);
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));
     uint256 drawnRestored = drawn / 2;

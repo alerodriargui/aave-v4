@@ -2,10 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
-import {
-  TransparentUpgradeableProxy
-} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
-import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
+import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 
 library Create2Utils {
   // https://github.com/safe-global/safe-singleton-factory

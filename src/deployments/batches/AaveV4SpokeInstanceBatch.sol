@@ -3,12 +3,8 @@
 pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-import {
-  AaveV4AaveOracleDeployProcedure
-} from 'src/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.sol';
-import {
-  AaveV4SpokeDeployProcedure
-} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol';
+import {AaveV4AaveOracleDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4AaveOracleDeployProcedure.sol';
+import {AaveV4SpokeDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeDeployProcedure.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -22,19 +18,11 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
     address accessManager_,
     uint8 oracleDecimals_,
     string memory oracleDescription_,
+    uint16 maxUserReservesLimit_,
     bytes32 salt_
   ) {
     bytes32 spokeInstanceSalt = keccak256(abi.encodePacked(SALT, salt_, 'spokeInstance'));
-    // starting from contract nonce of 1
-    address predictedOracle = Create2Utils.computeCreateAddress(address(this), 1);
-    address predictedSpokeProxy = _computeSpokeInstanceAddress({
-      spokeProxyAdminOwner: spokeProxyAdminOwner_,
-      accessManager: accessManager_,
-      oracle: predictedOracle,
-      salt: spokeInstanceSalt
-    });
     address aaveOracle = _deployAaveOracle(
-      predictedSpokeProxy,
       oracleDecimals_,
       oracleDescription_,
       keccak256(abi.encodePacked(SALT, salt_, 'aaveOracle'))
@@ -43,11 +31,11 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
       spokeProxyAdminOwner: spokeProxyAdminOwner_,
       accessManager: accessManager_,
       oracle: aaveOracle,
-      salt: spokeInstanceSalt
+      salt: spokeInstanceSalt,
+      maxUserReservesLimit: maxUserReservesLimit_
     });
+    IAaveOracle(aaveOracle).setSpoke(spokeProxy);
 
-    assert(aaveOracle == predictedOracle);
-    assert(spokeProxy == predictedSpokeProxy);
     assert(ISpoke(spokeProxy).ORACLE() == aaveOracle);
     assert(IAaveOracle(aaveOracle).SPOKE() == spokeProxy);
 

@@ -48,6 +48,7 @@ library AaveV4DeployBase {
     uint8 oracleDecimals,
     string memory oracleSuffix,
     string memory label,
+    uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
     AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
@@ -55,6 +56,7 @@ library AaveV4DeployBase {
       accessManager_: accessManager,
       oracleDecimals_: oracleDecimals,
       oracleDescription_: string.concat(label, oracleSuffix),
+      maxUserReservesLimit_: maxUserReservesLimit,
       salt_: salt
     });
     return spokeInstanceBatch.getReport();

@@ -113,13 +113,13 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_supplyWithSig() public {
-    EIP712Types.Supply memory p = EIP712Types.Supply({
+    ISignatureGateway.Supply memory p = ISignatureGateway.Supply({
       spoke: address(spoke1),
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
       onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
     Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
@@ -130,13 +130,13 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_withdrawWithSig() public {
-    EIP712Types.Withdraw memory p = EIP712Types.Withdraw({
+    ISignatureGateway.Withdraw memory p = ISignatureGateway.Withdraw({
       spoke: address(spoke1),
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
       onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -148,13 +148,13 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_borrowWithSig() public {
-    EIP712Types.Borrow memory p = EIP712Types.Borrow({
+    ISignatureGateway.Borrow memory p = ISignatureGateway.Borrow({
       spoke: address(spoke1),
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
       onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 4, alice);
     Utils.borrow(spoke1, p.reserveId, alice, p.amount, alice);
@@ -165,13 +165,13 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_repayWithSig() public {
-    EIP712Types.Repay memory p = EIP712Types.Repay({
+    ISignatureGateway.Repay memory p = ISignatureGateway.Repay({
       spoke: address(spoke1),
       reserveId: _wethReserveId(spoke1),
       amount: 100e18,
       onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     Utils.supplyCollateral(spoke1, p.reserveId, alice, p.amount * 10, alice);
     Utils.borrow(spoke1, p.reserveId, alice, p.amount * 3, alice);
@@ -184,13 +184,13 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_setUsingAsCollateralWithSig() public {
-    EIP712Types.SetUsingAsCollateral memory p = EIP712Types.SetUsingAsCollateral({
+    ISignatureGateway.SetUsingAsCollateral memory p = ISignatureGateway.SetUsingAsCollateral({
       spoke: address(spoke1),
       reserveId: _wethReserveId(spoke1),
       useAsCollateral: true,
       onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     Utils.supply(spoke1, p.reserveId, alice, 1e18, alice);
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
@@ -200,11 +200,11 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_updateUserRiskPremiumWithSig() public {
-    EIP712Types.UpdateUserRiskPremium memory p = EIP712Types.UpdateUserRiskPremium({
+    ISignatureGateway.UpdateUserRiskPremium memory p = ISignatureGateway.UpdateUserRiskPremium({
       spoke: address(spoke1),
-      user: alice,
+      onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -216,11 +216,11 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   }
 
   function test_updateUserDynamicConfigWithSig() public {
-    EIP712Types.UpdateUserDynamicConfig memory p = EIP712Types.UpdateUserDynamicConfig({
+    ISignatureGateway.UpdateUserDynamicConfig memory p = ISignatureGateway.UpdateUserDynamicConfig({
       spoke: address(spoke1),
-      user: alice,
+      onBehalfOf: alice,
       nonce: gateway.nonces(alice, nonceKey),
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
 
@@ -234,19 +234,27 @@ contract SignatureGateway_Gas_Tests is SignatureGatewayBaseTest {
   function test_setSelfAsUserPositionManagerWithSig() public {
     vm.prank(alice);
     spoke1.useNonce(nonceKey);
-    EIP712Types.SetUserPositionManager memory p = EIP712Types.SetUserPositionManager({
-      positionManager: address(gateway),
-      user: alice,
-      approve: true,
+    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
+    updates[0] = ISpoke.PositionManagerUpdate(address(gateway), true);
+    ISpoke.SetUserPositionManagers memory p = ISpoke.SetUserPositionManagers({
+      onBehalfOf: alice,
+      updates: updates,
       nonce: spoke1.nonces(alice, nonceKey), // note: this typed sig is forwarded to spoke
-      deadline: _warpBeforeRandomDeadline()
+      deadline: vm.getBlockTimestamp()
     });
     bytes memory signature = _sign(alicePk, _getTypedDataHash(spoke1, p));
 
     vm.prank(alice);
     spoke1.setUserPositionManager(address(gateway), false);
 
-    gateway.setSelfAsUserPositionManagerWithSig(address(spoke1), p, signature);
+    gateway.setSelfAsUserPositionManagerWithSig({
+      spoke: address(spoke1),
+      onBehalfOf: p.onBehalfOf,
+      approve: p.updates[0].approve,
+      nonce: p.nonce,
+      deadline: p.deadline,
+      signature: signature
+    });
     vm.snapshotGasLastCall(NAMESPACE, 'setSelfAsUserPositionManagerWithSig');
   }
 }

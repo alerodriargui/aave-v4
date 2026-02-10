@@ -5,45 +5,19 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
-import {
-  AaveV4HubConfiguratorDeployProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4HubConfiguratorDeployProcedureWrapper.sol';
-import {
-  AaveV4HubDeployProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4HubDeployProcedureWrapper.sol';
-import {
-  AaveV4InterestRateStrategyDeployProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4InterestRateStrategyDeployProcedureWrapper.sol';
-import {
-  AaveV4NativeTokenGatewayDeployProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4NativeTokenGatewayDeployProcedureWrapper.sol';
-import {
-  AaveV4SignatureGatewayDeployProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4SignatureGatewayDeployProcedureWrapper.sol';
-import {
-  AaveV4AccessManagerEnumerableDeployProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4AccessManagerEnumerableDeployProcedureWrapper.sol';
-import {
-  AaveV4AaveOracleDeployProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4AaveOracleDeployProcedureWrapper.sol';
-import {
-  AaveV4SpokeDeployProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol';
-import {
-  AaveV4TreasurySpokeDeployProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4TreasurySpokeDeployProcedureWrapper.sol';
-import {
-  AaveV4SpokeConfiguratorDeployProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4SpokeConfiguratorDeployProcedureWrapper.sol';
-import {
-  AaveV4AccessManagerRolesProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4AccessManagerRolesProcedureWrapper.sol';
-import {
-  AaveV4SpokeRolesProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4SpokeRolesProcedureWrapper.sol';
-import {
-  AaveV4HubRolesProcedureWrapper
-} from 'tests/mocks/deployments/procedures/AaveV4HubRolesProcedureWrapper.sol';
+import {AaveV4HubConfiguratorDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4HubConfiguratorDeployProcedureWrapper.sol';
+import {AaveV4HubDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4HubDeployProcedureWrapper.sol';
+import {AaveV4InterestRateStrategyDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4InterestRateStrategyDeployProcedureWrapper.sol';
+import {AaveV4NativeTokenGatewayDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4NativeTokenGatewayDeployProcedureWrapper.sol';
+import {AaveV4SignatureGatewayDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4SignatureGatewayDeployProcedureWrapper.sol';
+import {AaveV4AccessManagerEnumerableDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4AccessManagerEnumerableDeployProcedureWrapper.sol';
+import {AaveV4AaveOracleDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4AaveOracleDeployProcedureWrapper.sol';
+import {AaveV4SpokeDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4SpokeDeployProcedureWrapper.sol';
+import {AaveV4TreasurySpokeDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4TreasurySpokeDeployProcedureWrapper.sol';
+import {AaveV4SpokeConfiguratorDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4SpokeConfiguratorDeployProcedureWrapper.sol';
+import {AaveV4AccessManagerRolesProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4AccessManagerRolesProcedureWrapper.sol';
+import {AaveV4SpokeRolesProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4SpokeRolesProcedureWrapper.sol';
+import {AaveV4HubRolesProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4HubRolesProcedureWrapper.sol';
 
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 
@@ -51,6 +25,7 @@ import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
+import {Constants} from 'tests/Constants.sol';
 
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
@@ -69,6 +44,7 @@ contract ProceduresBase is Test, InputUtils {
   address public accessManagerAdmin = makeAddr('accessManagerAdmin');
   uint8 public oracleDecimals = 8;
   string public oracleDescription = 'Oracle Description';
+  uint16 public maxUserReservesLimit = Constants.MAX_ALLOWED_USER_RESERVES_LIMIT;
   address public spoke = makeAddr('spoke');
   address public aaveOracle;
   address public treasurySpoke = makeAddr('treasurySpoke');

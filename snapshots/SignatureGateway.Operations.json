@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "borrowWithSig": "215605",
   "repayWithSig": "188860",
   "setSelfAsUserPositionManagerWithSig": "75390",
@@ -7,4 +8,14 @@
   "updateUserDynamicConfigWithSig": "62769",
   "updateUserRiskPremiumWithSig": "61579",
   "withdrawWithSig": "131696"
+=======
+  "borrowWithSig": "213790",
+  "repayWithSig": "186732",
+  "setSelfAsUserPositionManagerWithSig": "75118",
+  "setUsingAsCollateralWithSig": "85387",
+  "supplyWithSig": "151985",
+  "updateUserDynamicConfigWithSig": "63120",
+  "updateUserRiskPremiumWithSig": "62090",
+  "withdrawWithSig": "130803"
+>>>>>>> 9ae1341d2dbb94ec94172bb151a4595e6fde0fd6
 }

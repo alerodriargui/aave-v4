@@ -14,22 +14,12 @@ import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInsta
 
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 
-import {
-  AaveV4AccessManagerRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
-import {
-  AaveV4HubRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
-import {
-  AaveV4SpokeRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
+import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 
-import {
-  AaveV4HubConfigProcedures
-} from 'src/deployments/procedures/config/AaveV4HubConfigProcedures.sol';
-import {
-  AaveV4SpokeConfigProcedures
-} from 'src/deployments/procedures/config/AaveV4SpokeConfigProcedures.sol';
+import {AaveV4HubConfigProcedures} from 'src/deployments/procedures/config/AaveV4HubConfigProcedures.sol';
+import {AaveV4SpokeConfigProcedures} from 'src/deployments/procedures/config/AaveV4SpokeConfigProcedures.sol';
 
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 
@@ -98,6 +88,7 @@ library AaveV4TestOrchestration {
           oracleDecimals: Constants.ORACLE_DECIMALS,
           oracleSuffix: Constants.ORACLE_SUFFIX,
           label: string.concat('Spoke ', string(abi.encode(i)), Constants.ORACLE_SUFFIX),
+          maxUserReservesLimit: Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
           salt: keccak256(abi.encodePacked(salt, 'spoke-', string(abi.encode(i))))
         });
       report.spokeReports[i].spoke = spokeReport.spokeProxy;

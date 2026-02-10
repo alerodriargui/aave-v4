@@ -14,15 +14,9 @@ import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInsta
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 
-import {
-  AaveV4AccessManagerRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
-import {
-  AaveV4HubRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
-import {
-  AaveV4SpokeRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
+import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
@@ -30,6 +24,7 @@ import {Logger} from 'src/deployments/utils/Logger.sol';
 library AaveV4DeployOrchestration {
   uint8 private constant ORACLE_DECIMALS = 8;
   string private constant ORACLE_SUFFIX = ' (USD)';
+  uint16 private constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max; // TODO : see to make this input in config
 
   function deployAaveV4(
     Logger logger,
@@ -299,6 +294,7 @@ library AaveV4DeployOrchestration {
       oracleDecimals: ORACLE_DECIMALS,
       oracleSuffix: ORACLE_SUFFIX,
       label: label,
+      maxUserReservesLimit: MAX_ALLOWED_USER_RESERVES_LIMIT,
       salt: salt
     });
     return report;
