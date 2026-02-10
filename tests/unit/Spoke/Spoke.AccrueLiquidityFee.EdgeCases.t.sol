@@ -5,6 +5,10 @@ pragma solidity ^0.8.0;
 import 'tests/unit/Spoke/SpokeBase.t.sol';
 
 contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
+  using WadRayMath for uint256;
+  using PercentageMath for uint256;
+  using SafeCast for *;
+
   uint256 public constant MAX_LIQUIDITY_FEE = 100_00;
 
   /// @dev Max liquidity fee with premium debt accrual
@@ -202,5 +206,109 @@ contract SpokeAccrueLiquidityFeeEdgeCasesTest is SpokeBase {
 
       skip(vm.randomUint(0, MAX_SKIP_TIME / count));
     }
+  }
+
+  /// @dev Diagnostic test: traces through the fee calculation step by step.
+  function test_accrueLiquidityFee_feeRoundsToZero_8dec_1second() public {
+    uint256 reserveId = _wbtcReserveId(spoke1);
+    uint256 assetId = spoke1.getReserve(reserveId).assetId;
+
+    // 0.01% liquidity fee (1 BPS)
+    uint256 liquidityFee = 1;
+    updateLiquidityFee(hub1, assetId, liquidityFee);
+
+    // 0 premium
+    _updateCollateralRisk(spoke1, reserveId, 0);
+
+    // 6307.2% borrow rate (fits in uint96)
+    _mockInterestRateBps(6307_00); // Even 6307 works
+
+    // 50 WBTC = 5_000_000_000 units (8 decimals)
+    _backedBorrow(spoke1, alice, reserveId, reserveId, 50e8);
+
+    // Log state before skip
+    _logAssetState(assetId);
+
+    // Advance 1 second & trace fee calculation
+    skip(1);
+    _logFeeCalculationTrace(assetId, liquidityFee);
+
+    // Trigger actual accrual and log result
+    Utils.mintFeeShares(hub1, assetId, ADMIN);
+    _logActualResult(assetId);
+  }
+
+  function _logAssetState(uint256 assetId) internal view {
+    IHub.Asset memory a = hub1.getAsset(assetId);
+    console.log('=== ASSET STATE ===');
+    console.log('decimals:', a.decimals);
+    console.log('liquidityFee (BPS):', a.liquidityFee);
+    console.log('drawnRate (RAY):', a.drawnRate);
+    console.log('drawnIndex (RAY):', a.drawnIndex);
+    console.log('drawnShares:', a.drawnShares);
+    console.log('lastUpdateTimestamp:', a.lastUpdateTimestamp);
+
+    (uint256 drawnDebt, ) = hub1.getAssetOwed(assetId);
+    console.log('drawnDebt (assets):', drawnDebt);
+  }
+
+  function _logFeeCalculationTrace(uint256 assetId, uint256 liquidityFee) internal view {
+    IHub.Asset memory a = hub1.getAsset(assetId);
+    console.log('');
+    console.log('=== FEE CALCULATION TRACE (after skip 1s) ===');
+
+    // Step 1: Linear interest
+    uint256 linearInterest = MathUtils.calculateLinearInterest(
+      uint96(a.drawnRate),
+      uint40(a.lastUpdateTimestamp)
+    );
+    console.log('1. linearInterest (RAY):', linearInterest);
+    console.log('   indexDelta:', linearInterest - WadRayMath.RAY);
+
+    // Step 2: Index
+    uint256 prevIdx = a.drawnIndex;
+    uint256 newIdx = prevIdx.rayMulUp(linearInterest);
+    console.log('2. previousIndex:', prevIdx);
+    console.log('   newDrawnIndex:', newIdx);
+    console.log('   indexGrowth:', newIdx - prevIdx);
+
+    // Step 3 & 4: Aggregated owed before & after
+    _logAggregatedOwed(a, prevIdx, newIdx, liquidityFee);
+  }
+
+  function _logAggregatedOwed(
+    IHub.Asset memory a,
+    uint256 prevIdx,
+    uint256 newIdx,
+    uint256 liquidityFee
+  ) internal pure {
+    // Before
+    uint256 aggOwedRayBefore = a.drawnShares * prevIdx;
+    uint256 aggOwedBefore = aggOwedRayBefore.fromRayUp();
+    console.log('3. aggregatedOwedRayBefore:', aggOwedRayBefore);
+    console.log('   fromRayUp(before):', aggOwedBefore);
+
+    // After
+    uint256 aggOwedRayAfter = a.drawnShares * newIdx;
+    uint256 aggOwedAfter = aggOwedRayAfter.fromRayUp();
+    console.log('4. aggregatedOwedRayAfter:', aggOwedRayAfter);
+    console.log('   fromRayUp(after):', aggOwedAfter);
+
+    // Growth & fee
+    uint256 debtGrowth = aggOwedAfter - aggOwedBefore;
+    uint256 fee = debtGrowth.percentMulDown(liquidityFee);
+    console.log('5. debtGrowth (assets):', debtGrowth);
+    console.log('6. percentMulDown(debtGrowth, liquidityFee)');
+    console.log('   debtGrowth:', debtGrowth, 'liquidityFee:', liquidityFee);
+    console.log('   fee:', fee);
+  }
+
+  function _logActualResult(uint256 assetId) internal view {
+    IHub.Asset memory a = hub1.getAsset(assetId);
+    console.log('');
+    console.log('=== ACTUAL ACCRUAL RESULT ===');
+    console.log('realizedFees:', a.realizedFees);
+    console.log('treasury shares:', hub1.getSpokeAddedShares(assetId, address(treasurySpoke)));
+    console.log('newDrawnIndex:', a.drawnIndex);
   }
 }
