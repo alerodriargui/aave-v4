@@ -20,7 +20,7 @@ contract ConfigPositionManager is IConfigPositionManager, PositionManagerBase {
     private _config;
 
   /// @dev Constructor.
-  /// @param initialOwner_ The address of the initial delegator.
+  /// @param initialOwner_ The address of the initial owner.
   constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
 
   /// @inheritdoc IConfigPositionManager
