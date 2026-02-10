@@ -25,10 +25,7 @@ library ConfigPermissionsMap {
     ConfigPermissions self,
     bool status
   ) internal pure returns (ConfigPermissions) {
-    return
-      ConfigPermissions.wrap(
-        _setStatus(ConfigPermissions.unwrap(self), FULL_PERMISSIONS_MASK, status)
-      );
+    return ConfigPermissions.wrap(status ? FULL_PERMISSIONS_MASK : 0);
   }
 
   /// @notice Sets the new status for the `canSetUsingAsCollateral` permission.
