@@ -2,9 +2,13 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.20;
 
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+
 /// @title MathUtils library
 /// @author Aave Labs
 library MathUtils {
+  using SafeCast for uint256;
+
   uint256 internal constant RAY = 1e27;
   /// @dev Ignoring leap years
   uint256 internal constant SECONDS_PER_YEAR = 365 days;
@@ -50,9 +54,8 @@ library MathUtils {
   }
 
   /// @notice Returns the difference of two unsigned integers as a signed integer.
-  /// @dev Does not ensure the `a` and `b` values are within the range of a signed integer.
   function signedSub(uint256 a, uint256 b) internal pure returns (int256) {
-    return int256(a) - int256(b);
+    return a.toInt256() - b.toInt256();
   }
 
   /// @notice Returns the difference of two unsigned integers.
@@ -68,6 +71,18 @@ library MathUtils {
   function uncheckedExp(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
       return a ** b;
+    }
+  }
+
+  /// @notice Divides `a` by `b`, rounding up.
+  /// @dev Reverts if division by zero.
+  /// @return c = ceil(a / b).
+  function divUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    assembly ('memory-safe') {
+      if iszero(b) {
+        revert(0, 0)
+      }
+      c := add(div(a, b), gt(mod(a, b), 0))
     }
   }
 
