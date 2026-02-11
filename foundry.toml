@@ -1,10 +1,13 @@
 [profile.default]
 fs_permissions = [
-    { access = "read", path = "tests/mocks/JsonBindings.sol" },
-    { access = "read-write", path = "./output/deploy.json" },
+  { access = "read", path = "tests/mocks/JsonBindings.sol" },
+  { access = "read-write", path = "./output/" },
+  { access = "read", path = "config/" },
+  { access = "read", path = "out/" },
 ]
 solc_version = "0.8.28"
 src = 'src'
+script = 'scripts'
 test = 'tests'
 out = 'out'
 libs = ['lib']
@@ -15,7 +18,7 @@ bytecode_hash = "none"
 gas_snapshot_check = false
 ffi = true
 gas_limit = 1099511627776
-dynamic_test_linking = true
+# unchecked_cheatcode_artifacts = true
 
 additional_compiler_profiles = [
   { name = "hub", optimizer = true, via_ir = true, optimizer_runs = 22_300 },
@@ -27,6 +30,7 @@ compilation_restrictions = [
   { paths = "src/hub/Hub.sol", optimizer = true, via_ir = true, optimizer_runs = 22_300 },
   { paths = "src/spoke/instances/SpokeInstance.sol", optimizer = true, via_ir = true, optimizer_runs = 750 },
   { paths = "tests/**", optimizer = true, via_ir = false, optimizer_runs = 444444444444 },
+  { paths = "scripts/**", optimizer = true, via_ir = false, optimizer_runs = 444444444444 },
 ]
 
 [bind_json]
