@@ -2,10 +2,28 @@
 
 Symbolic property proofs for Aave v4 math using the [Z3 SMT solver](https://github.com/Z3Prover/z3).
 
-## Prerequisites
+## Dependencies
 
-- [uv](https://docs.astral.sh/uv/) (Python package manager)
-- Python >= 3.13
+### Required
+
+- **[uv](https://docs.astral.sh/uv/)** - Python package manager
+
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
+
+- **[Python](https://www.python.org/downloads/)** >= 3.13
+
+  ```bash
+  # Verify installation
+  python3 --version
+  ```
+
+### Install Dependencies
+
+```bash
+uv sync
+```
 
 ## Usage
 
