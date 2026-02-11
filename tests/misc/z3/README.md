@@ -116,6 +116,8 @@ maximise(
 | `MAX_COLLATERAL_RISK`                 | 100,000          | Maximum per-collateral risk premium         |
 | `MIN_DRAWN_INDEX` / `MAX_DRAWN_INDEX` | RAY / 100 \* RAY | Drawn index range                           |
 | `MIN_DECIMALS` / `MAX_DECIMALS`       | 6 / 18           | Token decimal range                         |
+| `UINT256_MAX`                         | 2^256 - 1        | Solidity uint256 max value                  |
+| `SECONDS_PER_YEAR`                    | 31,536,000       | Seconds in a year (365 days)                |
 
 ### Math Helpers
 

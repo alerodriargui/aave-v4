@@ -1,8 +1,5 @@
 from commons import *
 
-UINT256_MAX = IntVal(2**256 - 1)
-SECONDS_PER_YEAR = IntVal(365 * 24 * 60 * 60)
-
 rate = IntVal(2**96 - 1)
 lastUpdateTimestamp = IntVal(1)
 currentTimestamp = Int('currentTimestamp')
