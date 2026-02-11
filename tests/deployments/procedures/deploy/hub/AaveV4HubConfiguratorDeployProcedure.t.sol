@@ -17,13 +17,13 @@ contract AaveV4HubConfiguratorDeployProcedureTest is ProceduresBase {
       salt
     );
     assertNotEq(hubConfigurator, address(0));
-    assertEq(Ownable(hubConfigurator).owner(), owner);
+    assertEq(IAccessManaged(hubConfigurator).authority(), owner);
   }
 
   function test_deployHubConfigurator_reverts() public {
-    vm.expectRevert('invalid owner');
+    vm.expectRevert('invalid authority');
     aaveV4HubConfiguratorDeployProcedureWrapper.deployHubConfigurator({
-      owner: address(0),
+      authority: address(0),
       salt: salt
     });
   }

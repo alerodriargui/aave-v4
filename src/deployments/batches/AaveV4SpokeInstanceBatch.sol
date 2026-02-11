@@ -15,21 +15,17 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
 
   constructor(
     address spokeProxyAdminOwner_,
-    address accessManager_,
+    address authority_,
     uint8 oracleDecimals_,
     string memory oracleDescription_,
     uint16 maxUserReservesLimit_,
     bytes32 salt_
   ) {
     bytes32 spokeInstanceSalt = keccak256(abi.encodePacked(SALT, salt_, 'spokeInstance'));
-    address aaveOracle = _deployAaveOracle(
-      oracleDecimals_,
-      oracleDescription_,
-      keccak256(abi.encodePacked(SALT, salt_, 'aaveOracle'))
-    );
+    address aaveOracle = _deployAaveOracle(oracleDecimals_, oracleDescription_);
     (address spokeProxy, address spokeImplementation) = _deployUpgradableSpokeInstance({
       spokeProxyAdminOwner: spokeProxyAdminOwner_,
-      accessManager: accessManager_,
+      authority: authority_,
       oracle: aaveOracle,
       salt: spokeInstanceSalt,
       maxUserReservesLimit: maxUserReservesLimit_

@@ -63,13 +63,13 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
         _logAndAppend(logger, string.concat('Access Manager Admin', message, outcome));
         sanitizedInputs.accessManagerAdmin = deployer;
       }
-      if (inputs.hubConfiguratorOwner == address(0)) {
-        _logAndAppend(logger, string.concat('Hub Configurator Owner', message, outcome));
-        sanitizedInputs.hubConfiguratorOwner = deployer;
+      if (inputs.hubConfiguratorAdmin == address(0)) {
+        _logAndAppend(logger, string.concat('Hub Configurator Admin', message, outcome));
+        sanitizedInputs.hubConfiguratorAdmin = deployer;
       }
-      if (inputs.spokeConfiguratorOwner == address(0)) {
-        _logAndAppend(logger, string.concat('Spoke Configurator Owner', message, outcome));
-        sanitizedInputs.spokeConfiguratorOwner = deployer;
+      if (inputs.spokeConfiguratorAdmin == address(0)) {
+        _logAndAppend(logger, string.concat('Spoke Configurator Admin', message, outcome));
+        sanitizedInputs.spokeConfiguratorAdmin = deployer;
       }
       if (inputs.spokeProxyAdminOwner == address(0)) {
         _logAndAppend(logger, string.concat('Spoke Proxy Admin Owner', message, outcome));

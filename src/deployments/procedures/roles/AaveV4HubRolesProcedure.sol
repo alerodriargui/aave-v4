@@ -34,6 +34,7 @@ library AaveV4HubRolesProcedure {
   function setupHubRoles(address accessManager, address hub) internal {
     setupHubFeeMinterRole(accessManager, hub);
     setupHubConfiguratorRole(accessManager, hub);
+    setupDeficitEliminatorRole(accessManager, hub);
   }
 
   function setupHubFeeMinterRole(address accessManager, address hub) internal {
@@ -50,6 +51,22 @@ library AaveV4HubRolesProcedure {
       selectors,
       Roles.HUB_CONFIGURATOR_ROLE
     );
+  }
+
+  function setupDeficitEliminatorRole(address accessManager, address hub) internal {
+    _validateAccessManagerAndHub(accessManager, hub);
+    bytes4[] memory selectors = getDeficitEliminatorRoleSelectors();
+    IAccessManager(accessManager).setTargetFunctionRole(
+      hub,
+      selectors,
+      Roles.DEFICIT_ELIMINATOR_ROLE
+    );
+  }
+
+  function getDeficitEliminatorRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = IHub.eliminateDeficit.selector;
+    return selectors;
   }
 
   function getHubFeeMinterRoleSelectors() internal pure returns (bytes4[] memory) {

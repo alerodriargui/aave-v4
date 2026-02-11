@@ -177,7 +177,7 @@ contract HubAccessTest is HubBase {
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
     // Now, we change the role responsible for setting interest rate data to SET_INTEREST_RATE role.
-    uint64 SET_INTEREST_RATE_ROLE = 4;
+    uint64 SET_INTEREST_RATE_ROLE = 100;
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
@@ -213,27 +213,27 @@ contract HubAccessTest is HubBase {
     vm.prank(carol);
     hub1.setInterestRateData(daiAssetId, encodedIrData);
 
-    // Alice, Bob, and Carol currently have both HUB_ADMIN and SET_INTEREST_RATE roles.
+    // Alice, Bob, and Carol currently have both HUB_CONFIGURATOR and SET_INTEREST_RATE roles.
     IAccessManager accessManager = IAccessManager(hub1.authority());
-    assertTrue(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, alice));
-    assertTrue(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, bob));
-    assertTrue(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, carol));
+    assertTrue(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, alice));
+    assertTrue(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, bob));
+    assertTrue(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, carol));
 
     assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, alice));
     assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, bob));
     assertTrue(_hasRole(accessManager, SET_INTEREST_RATE_ROLE, carol));
 
-    // We can remove HUB_ADMIN role from Alice, Bob, and Carol.
+    // We can remove HUB_CONFIGURATOR role from Alice, Bob, and Carol.
     vm.startPrank(ADMIN);
-    accessManager.revokeRole(Roles.HUB_FEE_MINTER_ROLE, alice);
-    accessManager.revokeRole(Roles.HUB_FEE_MINTER_ROLE, bob);
-    accessManager.revokeRole(Roles.HUB_FEE_MINTER_ROLE, carol);
+    accessManager.revokeRole(Roles.HUB_CONFIGURATOR_ROLE, alice);
+    accessManager.revokeRole(Roles.HUB_CONFIGURATOR_ROLE, bob);
+    accessManager.revokeRole(Roles.HUB_CONFIGURATOR_ROLE, carol);
     vm.stopPrank();
 
-    // Alice, Bob, and Carol should no longer have HUB_ADMIN role.
-    assertFalse(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, alice));
-    assertFalse(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, bob));
-    assertFalse(_hasRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, carol));
+    // Alice, Bob, and Carol should no longer have HUB_CONFIGURATOR role.
+    assertFalse(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, alice));
+    assertFalse(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, bob));
+    assertFalse(_hasRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, carol));
 
     // Can still call setInterestRateData since they have SET_INTEREST_RATE role.
     vm.prank(alice);

@@ -7,7 +7,7 @@ import {AaveV4SpokeConfiguratorDeployProcedure} from 'src/deployments/procedures
 contract AaveV4SpokeConfiguratorDeployProcedureWrapper is AaveV4SpokeConfiguratorDeployProcedure {
   bool public IS_TEST = true;
 
-  function deploySpokeConfigurator(address owner, bytes32 salt) external returns (address) {
-    return _deploySpokeConfigurator(owner, salt);
+  function deploySpokeConfigurator(address authority, bytes32 salt) external returns (address) {
+    return _deploySpokeConfigurator(authority, salt);
   }
 }

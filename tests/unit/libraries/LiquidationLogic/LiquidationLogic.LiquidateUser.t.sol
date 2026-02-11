@@ -29,11 +29,11 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
   // collateral shares to liquidator = 4800 - 80 = 4720
   function setUp() public override {
     super.setUp();
+    collateralReserveHub = hub1;
     _mockSupplySharePrice(collateralReserveHub, usdxAssetId, 12_500.25e6, 10_000e6);
     (debtReserveHub, ) = _hub2Fixture();
 
     _mockInterestRateBps(debtReserveHub.getAsset(wethAssetId).irStrategy, 5_00);
-    collateralReserveHub = hub1;
 
     // Mock params
     usdxReserveId = _usdxReserveId(spoke1);

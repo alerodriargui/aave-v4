@@ -31,9 +31,9 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     manager = IAccessManager(hub1.authority());
     hubConfigurator = new HubConfigurator(address(manager));
 
-    // Grant HUB_ADMIN_ROLE to hubConfigurator so it can call hub functions
+    // Grant HUB_CONFIGURATOR_ROLE to hubConfigurator so it can call hub functions
     vm.startPrank(ADMIN);
-    manager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
+    manager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(hubConfigurator), 0);
 
     // Grant granular roles to role holders
     manager.grantRole(ASSET_MANAGER_ROLE, ASSET_MANAGER, 0);

@@ -12,13 +12,17 @@ contract AaveV4ConfiguratorBatch is
 {
   BatchReports.ConfiguratorBatchReport internal _report;
 
-  constructor(address hubConfiguratorOwner_, address spokeConfiguratorOwner_, bytes32 salt_) {
+  constructor(
+    address hubConfiguratorAuthority_,
+    address spokeConfiguratorAuthority_,
+    bytes32 salt_
+  ) {
     address hubConfigurator = _deployHubConfigurator(
-      hubConfiguratorOwner_,
+      hubConfiguratorAuthority_,
       keccak256(abi.encodePacked(SALT, salt_, 'hubConfigurator'))
     );
     address spokeConfigurator = _deploySpokeConfigurator(
-      spokeConfiguratorOwner_,
+      spokeConfiguratorAuthority_,
       keccak256(abi.encodePacked(SALT, salt_, 'spokeConfigurator'))
     );
 

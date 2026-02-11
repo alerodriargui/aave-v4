@@ -86,8 +86,6 @@ import {TestTypes} from 'tests/utils/TestTypes.sol';
 // orchestration
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
-
 // mocks
 import {EIP712Types} from 'tests/mocks/EIP712Types.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
@@ -351,8 +349,6 @@ abstract contract Base is BatchTestProcedures {
     report = AaveV4TestOrchestration.deployTestEnv({
       admin: ADMIN,
       treasuryAdmin: TREASURY_ADMIN,
-      hubConfiguratorAdmin: HUB_CONFIGURATOR_ADMIN,
-      spokeConfiguratorAdmin: SPOKE_CONFIGURATOR_ADMIN,
       hubCount: numHubs,
       spokeCount: numSpokes,
       nativeWrapper: address(tokenList.weth),
@@ -395,6 +391,20 @@ abstract contract Base is BatchTestProcedures {
 
     AaveV4TestOrchestration.setRolesTestEnv(report);
     AaveV4TestOrchestration.grantRolesTestEnv(report, ADMIN, HUB_ADMIN, SPOKE_ADMIN);
+
+    // Grant HubConfigurator granular roles to HUB_CONFIGURATOR so it can call
+    // HubConfigurator functions (deactivateAsset, resetAssetCaps, haltAsset, etc.)
+    AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles(
+      report.accessManager,
+      HUB_CONFIGURATOR
+    );
+
+    // Grant SpokeConfigurator granular roles to SPOKE_CONFIGURATOR so it can call
+    // SpokeConfigurator functions (addReserve, updateMaxReserves, freezeReserve, etc.)
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles(
+      report.accessManager,
+      SPOKE_CONFIGURATOR
+    );
 
     IAccessManager(report.accessManager).renounceRole(Roles.DEFAULT_ADMIN_ROLE, address(this));
   }
@@ -688,26 +698,33 @@ abstract contract Base is BatchTestProcedures {
   }
 
   function _loadSpokeInfo(TestTypes.SpokeReserveId[] memory spokeReserveIds) internal {
-    // Persist reserveIds into spokeInfo to mirror manual configureTokenList setup
+    // Persist reserveIds and configs into spokeInfo to mirror manual configureTokenList setup
     for (uint256 i; i < spokeReserveIds.length; ++i) {
       TestTypes.SpokeReserveId memory spokeReserveId = spokeReserveIds[i];
       uint256 reserveId = spokeReserveId.reserveId;
       ISpoke spoke = ISpoke(spokeReserveId.spoke);
       uint256 assetId = spoke.getReserve(reserveId).assetId;
 
+      ReserveInfo storage info;
       if (assetId == wethAssetId) {
-        spokeInfo[spoke].weth.reserveId = reserveId;
+        info = spokeInfo[spoke].weth;
       } else if (assetId == wbtcAssetId) {
-        spokeInfo[spoke].wbtc.reserveId = reserveId;
+        info = spokeInfo[spoke].wbtc;
       } else if (assetId == daiAssetId) {
-        spokeInfo[spoke].dai.reserveId = reserveId;
+        info = spokeInfo[spoke].dai;
       } else if (assetId == usdxAssetId) {
-        spokeInfo[spoke].usdx.reserveId = reserveId;
+        info = spokeInfo[spoke].usdx;
       } else if (assetId == usdyAssetId) {
-        spokeInfo[spoke].usdy.reserveId = reserveId;
+        info = spokeInfo[spoke].usdy;
       } else if (assetId == usdzAssetId) {
-        spokeInfo[spoke].usdz.reserveId = reserveId;
+        info = spokeInfo[spoke].usdz;
+      } else {
+        continue;
       }
+
+      info.reserveId = reserveId;
+      info.reserveConfig = spoke.getReserveConfig(reserveId);
+      info.dynReserveConfig = _getLatestDynamicReserveConfig(spoke, reserveId);
     }
   }
 

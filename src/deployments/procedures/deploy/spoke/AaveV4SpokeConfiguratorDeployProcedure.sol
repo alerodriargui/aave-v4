@@ -6,12 +6,12 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
 
 contract AaveV4SpokeConfiguratorDeployProcedure is AaveV4DeployProcedureBase {
-  function _deploySpokeConfigurator(address owner, bytes32 salt) internal returns (address) {
-    require(owner != address(0), 'invalid owner');
+  function _deploySpokeConfigurator(address authority, bytes32 salt) internal returns (address) {
+    require(authority != address(0), 'invalid authority');
     return
       Create2Utils.create2Deploy(
         salt,
-        abi.encodePacked(type(SpokeConfigurator).creationCode, abi.encode(owner))
+        abi.encodePacked(type(SpokeConfigurator).creationCode, abi.encode(authority))
       );
   }
 }

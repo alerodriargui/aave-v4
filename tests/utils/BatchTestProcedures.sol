@@ -14,8 +14,11 @@ import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4Dep
 import {WETHDeployProcedure} from 'tests/deployments/procedures/WETHDeployProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
+import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
@@ -103,8 +106,8 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       ? inputs.accessManagerAdmin
       : _deployer;
     inputs.hubAdmin = inputs.hubAdmin != address(0) ? inputs.hubAdmin : _deployer;
-    inputs.hubConfiguratorOwner = inputs.hubConfiguratorOwner != address(0)
-      ? inputs.hubConfiguratorOwner
+    inputs.hubConfiguratorAdmin = inputs.hubConfiguratorAdmin != address(0)
+      ? inputs.hubConfiguratorAdmin
       : _deployer;
     inputs.treasurySpokeOwner = inputs.treasurySpokeOwner != address(0)
       ? inputs.treasurySpokeOwner
@@ -113,8 +116,8 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     inputs.spokeProxyAdminOwner = inputs.spokeProxyAdminOwner != address(0)
       ? inputs.spokeProxyAdminOwner
       : _deployer;
-    inputs.spokeConfiguratorOwner = inputs.spokeConfiguratorOwner != address(0)
-      ? inputs.spokeConfiguratorOwner
+    inputs.spokeConfiguratorAdmin = inputs.spokeConfiguratorAdmin != address(0)
+      ? inputs.spokeConfiguratorAdmin
       : _deployer;
     inputs.gatewayOwner = inputs.gatewayOwner != address(0) ? inputs.gatewayOwner : _deployer;
 
@@ -552,21 +555,130 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal view {
-    if (inputs.grantRoles) {
-      if (inputs.hubLabels.length > 0 && inputs.hubConfiguratorOwner != address(0)) {
-        assertEq(
-          Ownable(report.configuratorBatchReport.hubConfigurator).owner(),
-          inputs.hubConfiguratorOwner,
-          'HubConfigurator owner'
-        );
-      }
-      if (inputs.spokeLabels.length > 0 && inputs.spokeConfiguratorOwner != address(0)) {
-        assertEq(
-          Ownable(report.configuratorBatchReport.spokeConfigurator).owner(),
-          inputs.spokeConfiguratorOwner,
-          'SpokeConfigurator owner'
-        );
-      }
+    assertEq(
+      IAccessManaged(report.configuratorBatchReport.hubConfigurator).authority(),
+      report.accessBatchReport.accessManager,
+      'HubConfigurator authority'
+    );
+    assertEq(
+      IAccessManaged(report.configuratorBatchReport.spokeConfigurator).authority(),
+      report.accessBatchReport.accessManager,
+      'SpokeConfigurator authority'
+    );
+
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
+      report.accessBatchReport.accessManager
+    );
+
+    _checkHubConfiguratorBatchRoles(accessManager, report, inputs);
+    _checkSpokeConfiguratorBatchRoles(accessManager, report, inputs);
+  }
+
+  function _checkHubConfiguratorBatchRoles(
+    IAccessManagerEnumerable accessManager,
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    bytes4[] memory adminSelectors = AaveV4HubConfiguratorRolesProcedure
+      .getHubConfiguratorAdminRoleSelectors();
+    bytes4[] memory haltSelectors = AaveV4HubConfiguratorRolesProcedure.getHubHaltRoleSelectors();
+    bytes4[] memory deactivateSelectors = AaveV4HubConfiguratorRolesProcedure
+      .getHubDeactivateRoleSelectors();
+    bytes4[] memory capsResetSelectors = AaveV4HubConfiguratorRolesProcedure
+      .getHubCapsResetRoleSelectors();
+
+    address hc = report.configuratorBatchReport.hubConfigurator;
+
+    for (uint256 i; i < adminSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(hc, adminSelectors[i]),
+        Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+        'HubConfigurator admin selector role mapping'
+      );
+    }
+    for (uint256 i; i < haltSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(hc, haltSelectors[i]),
+        Roles.HUB_HALT_ROLE,
+        'HubConfigurator halt selector role mapping'
+      );
+    }
+    for (uint256 i; i < deactivateSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(hc, deactivateSelectors[i]),
+        Roles.HUB_DEACTIVATE_ROLE,
+        'HubConfigurator deactivate selector role mapping'
+      );
+    }
+    for (uint256 i; i < capsResetSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(hc, capsResetSelectors[i]),
+        Roles.HUB_CAPS_RESET_ROLE,
+        'HubConfigurator capsReset selector role mapping'
+      );
+    }
+
+    // Verify canCall for hub configurator admin
+    if (inputs.grantRoles && inputs.hubLabels.length > 0) {
+      (bool allowed, ) = accessManager.canCall(inputs.hubConfiguratorAdmin, hc, adminSelectors[0]);
+      assertTrue(allowed, 'HubConfigurator admin canCall admin selector');
+      (allowed, ) = accessManager.canCall(inputs.hubConfiguratorAdmin, hc, haltSelectors[0]);
+      assertTrue(allowed, 'HubConfigurator admin canCall halt selector');
+      (allowed, ) = accessManager.canCall(inputs.hubConfiguratorAdmin, hc, deactivateSelectors[0]);
+      assertTrue(allowed, 'HubConfigurator admin canCall deactivate selector');
+      (allowed, ) = accessManager.canCall(inputs.hubConfiguratorAdmin, hc, capsResetSelectors[0]);
+      assertTrue(allowed, 'HubConfigurator admin canCall capsReset selector');
+    }
+  }
+
+  function _checkSpokeConfiguratorBatchRoles(
+    IAccessManagerEnumerable accessManager,
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    bytes4[] memory adminSelectors = AaveV4SpokeConfiguratorRolesProcedure
+      .getSpokeConfiguratorAdminRoleSelectors();
+    bytes4[] memory freezeSelectors = AaveV4SpokeConfiguratorRolesProcedure
+      .getSpokeFreezeRoleSelectors();
+    bytes4[] memory pauseSelectors = AaveV4SpokeConfiguratorRolesProcedure
+      .getSpokePauseRoleSelectors();
+
+    address sc = report.configuratorBatchReport.spokeConfigurator;
+
+    for (uint256 i; i < adminSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(sc, adminSelectors[i]),
+        Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
+        'SpokeConfigurator admin selector role mapping'
+      );
+    }
+    for (uint256 i; i < freezeSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(sc, freezeSelectors[i]),
+        Roles.SPOKE_FREEZE_ROLE,
+        'SpokeConfigurator freeze selector role mapping'
+      );
+    }
+    for (uint256 i; i < pauseSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(sc, pauseSelectors[i]),
+        Roles.SPOKE_PAUSE_ROLE,
+        'SpokeConfigurator pause selector role mapping'
+      );
+    }
+
+    // Verify canCall for spoke configurator admin
+    if (inputs.grantRoles && inputs.spokeLabels.length > 0) {
+      (bool allowed, ) = accessManager.canCall(
+        inputs.spokeConfiguratorAdmin,
+        sc,
+        adminSelectors[0]
+      );
+      assertTrue(allowed, 'SpokeConfigurator admin canCall admin selector');
+      (allowed, ) = accessManager.canCall(inputs.spokeConfiguratorAdmin, sc, freezeSelectors[0]);
+      assertTrue(allowed, 'SpokeConfigurator admin canCall freeze selector');
+      (allowed, ) = accessManager.canCall(inputs.spokeConfiguratorAdmin, sc, pauseSelectors[0]);
+      assertTrue(allowed, 'SpokeConfigurator admin canCall pause selector');
     }
   }
 

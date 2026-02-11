@@ -21,13 +21,13 @@ library AaveV4DeployBase {
   }
 
   function deployConfiguratorBatch(
-    address hubConfiguratorOwner,
-    address spokeConfiguratorOwner,
+    address hubConfiguratorAuthority,
+    address spokeConfiguratorAuthority,
     bytes32 salt
   ) internal returns (BatchReports.ConfiguratorBatchReport memory) {
     AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch(
-      hubConfiguratorOwner,
-      spokeConfiguratorOwner,
+      hubConfiguratorAuthority,
+      spokeConfiguratorAuthority,
       salt
     );
     return configuratorBatch.getReport();
@@ -35,16 +35,16 @@ library AaveV4DeployBase {
 
   function deployHubBatch(
     address treasurySpokeOwner,
-    address accessManager,
+    address authority,
     bytes32 salt
   ) internal returns (BatchReports.HubBatchReport memory) {
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasurySpokeOwner, accessManager, salt);
+    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasurySpokeOwner, authority, salt);
     return hubBatch.getReport();
   }
 
   function deploySpokeInstanceBatch(
     address spokeProxyAdminOwner,
-    address accessManager,
+    address authority,
     uint8 oracleDecimals,
     string memory oracleSuffix,
     string memory label,
@@ -53,7 +53,7 @@ library AaveV4DeployBase {
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
     AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
       spokeProxyAdminOwner_: spokeProxyAdminOwner,
-      accessManager_: accessManager,
+      authority_: authority,
       oracleDecimals_: oracleDecimals,
       oracleDescription_: string.concat(label, oracleSuffix),
       maxUserReservesLimit_: maxUserReservesLimit,

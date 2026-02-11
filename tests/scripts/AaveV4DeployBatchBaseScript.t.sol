@@ -38,11 +38,11 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.spokeLabels = ['spoke1', 'spoke2', 'spoke3'];
     _inputs.accessManagerAdmin = makeAddr('accessManagerAdmin');
     _inputs.hubAdmin = makeAddr('hubAdmin');
-    _inputs.hubConfiguratorOwner = makeAddr('hubConfiguratorOwner');
+    _inputs.hubConfiguratorAdmin = makeAddr('hubConfiguratorAdmin');
     _inputs.treasurySpokeOwner = makeAddr('treasurySpokeOwner');
     _inputs.spokeAdmin = makeAddr('spokeAdmin');
     _inputs.spokeProxyAdminOwner = makeAddr('spokeProxyAdminOwner');
-    _inputs.spokeConfiguratorOwner = makeAddr('spokeConfiguratorOwner');
+    _inputs.spokeConfiguratorAdmin = makeAddr('spokeConfiguratorAdmin');
     _inputs.gatewayOwner = makeAddr('gatewayOwner');
     _inputs.nativeWrapper = address(new WETH9());
     _inputs.grantRoles = true;
@@ -108,10 +108,10 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(sanitized, expected);
   }
 
-  function test_loadWarningsAndSanitizeInputs_withZeroHubConfiguratorOwner_fuzz(
+  function test_loadWarningsAndSanitizeInputs_withZeroHubConfiguratorAdmin_fuzz(
     bool grantRoles
   ) public {
-    _inputs.hubConfiguratorOwner = address(0);
+    _inputs.hubConfiguratorAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _logger,
@@ -120,15 +120,15 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     );
     InputUtils.FullDeployInputs memory expected = _inputs;
     if (grantRoles) {
-      expected.hubConfiguratorOwner = _deployer;
+      expected.hubConfiguratorAdmin = _deployer;
     }
     assertEq(sanitized, expected);
   }
 
-  function test_loadWarningsAndSanitizeInputs_withZeroSpokeConfiguratorOwner_fuzz(
+  function test_loadWarningsAndSanitizeInputs_withZeroSpokeConfiguratorAdmin_fuzz(
     bool grantRoles
   ) public {
-    _inputs.spokeConfiguratorOwner = address(0);
+    _inputs.spokeConfiguratorAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _logger,
@@ -137,7 +137,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     );
     InputUtils.FullDeployInputs memory expected = _inputs;
     if (grantRoles) {
-      expected.spokeConfiguratorOwner = _deployer;
+      expected.spokeConfiguratorAdmin = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -209,10 +209,10 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
   ) public pure {
     assertEq(a.accessManagerAdmin, b.accessManagerAdmin, 'access manager admin');
     assertEq(a.hubAdmin, b.hubAdmin, 'hub admin');
-    assertEq(a.hubConfiguratorOwner, b.hubConfiguratorOwner, 'hub configurator owner');
+    assertEq(a.hubConfiguratorAdmin, b.hubConfiguratorAdmin, 'hub configurator admin');
     assertEq(a.treasurySpokeOwner, b.treasurySpokeOwner, 'treasury spoke owner');
     assertEq(a.spokeProxyAdminOwner, b.spokeProxyAdminOwner, 'spoke proxy admin owner');
-    assertEq(a.spokeConfiguratorOwner, b.spokeConfiguratorOwner, 'spoke configurator owner');
+    assertEq(a.spokeConfiguratorAdmin, b.spokeConfiguratorAdmin, 'spoke configurator admin');
     assertEq(a.spokeAdmin, b.spokeAdmin, 'spoke admin');
     assertEq(a.gatewayOwner, b.gatewayOwner, 'gateway owner');
     assertEq(a.nativeWrapper, b.nativeWrapper, 'native wrapper');

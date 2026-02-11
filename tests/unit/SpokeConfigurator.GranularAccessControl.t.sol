@@ -34,9 +34,9 @@ contract SpokeConfiguratorGranularAccessControlTest is SpokeBase {
     manager = IAccessManager(spoke1.authority());
     spokeConfigurator = new SpokeConfigurator(address(manager));
 
-    // Grant SPOKE_ADMIN_ROLE to spokeConfigurator so it can call spoke functions
+    // Grant SPOKE_CONFIGURATOR_ROLE to spokeConfigurator so it can call spoke functions
     vm.startPrank(ADMIN);
-    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, address(spokeConfigurator), 0);
+    manager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(spokeConfigurator), 0);
 
     // Grant granular roles to role holders
     manager.grantRole(RESERVE_MANAGER_ROLE, RESERVE_MANAGER, 0);

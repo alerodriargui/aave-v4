@@ -17,6 +17,8 @@ import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
+import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 
 import {AaveV4HubConfigProcedures} from 'src/deployments/procedures/config/AaveV4HubConfigProcedures.sol';
 import {AaveV4SpokeConfigProcedures} from 'src/deployments/procedures/config/AaveV4SpokeConfigProcedures.sol';
@@ -52,8 +54,6 @@ library AaveV4TestOrchestration {
   function deployTestEnv(
     address admin,
     address treasuryAdmin,
-    address hubConfiguratorAdmin,
-    address spokeConfiguratorAdmin,
     uint256 hubCount,
     uint256 spokeCount,
     address nativeWrapper,
@@ -71,7 +71,7 @@ library AaveV4TestOrchestration {
     for (uint256 i; i < hubCount; ++i) {
       BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
         treasurySpokeOwner: treasuryAdmin,
-        accessManager: report.accessManager,
+        authority: report.accessManager,
         salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i))))
       });
       report.hubReports[i].hub = hubReport.hub;
@@ -84,7 +84,7 @@ library AaveV4TestOrchestration {
       BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
         .deploySpokeInstanceBatch({
           spokeProxyAdminOwner: admin,
-          accessManager: report.accessManager,
+          authority: report.accessManager,
           oracleDecimals: Constants.ORACLE_DECIMALS,
           oracleSuffix: Constants.ORACLE_SUFFIX,
           label: string.concat('Spoke ', string(abi.encode(i)), Constants.ORACLE_SUFFIX),
@@ -95,11 +95,11 @@ library AaveV4TestOrchestration {
       report.spokeReports[i].aaveOracle = spokeReport.aaveOracle;
     }
 
-    // Deploy Configurator Batches
+    // Deploy Configurator Batches with AccessManager as authority
     BatchReports.ConfiguratorBatchReport memory configuratorReport = AaveV4DeployBase
       .deployConfiguratorBatch({
-        hubConfiguratorOwner: hubConfiguratorAdmin,
-        spokeConfiguratorOwner: spokeConfiguratorAdmin,
+        hubConfiguratorAuthority: report.accessManager,
+        spokeConfiguratorAuthority: report.accessManager,
         salt: keccak256(abi.encodePacked(salt, 'configurator'))
       });
     report.configuratorReport.hubConfigurator = configuratorReport.hubConfigurator;
@@ -152,6 +152,16 @@ library AaveV4TestOrchestration {
     for (uint256 i; i < report.spokeReports.length; ++i) {
       AaveV4SpokeRolesProcedure.setupSpokeRoles(report.accessManager, report.spokeReports[i].spoke);
     }
+
+    // Set Configurator Roles
+    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorRoles(
+      report.accessManager,
+      report.configuratorReport.hubConfigurator
+    );
+    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorRoles(
+      report.accessManager,
+      report.configuratorReport.spokeConfigurator
+    );
   }
 
   function grantRolesTestEnv(
@@ -173,10 +183,17 @@ library AaveV4TestOrchestration {
     AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManager, admin);
     AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManager, hubAdmin);
 
-    // grant Hub Configurator roles
+    // grant Hub Configurator role
     AaveV4HubRolesProcedure.grantHubConfiguratorRole(
       report.accessManager,
       report.configuratorReport.hubConfigurator
+    );
+
+    // grant HubConfigurator Admin roles (allows admin to call HubConfigurator functions)
+    AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles(report.accessManager, admin);
+    AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles(
+      report.accessManager,
+      hubAdmin
     );
   }
 
@@ -189,10 +206,20 @@ library AaveV4TestOrchestration {
     AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManager, admin);
     AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManager, spokeAdmin);
 
-    // grant Spoke Configurator roles
+    // grant Spoke Configurator roles (allows SpokeConfigurator to call Spoke functions)
     AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole(
       report.accessManager,
       report.configuratorReport.spokeConfigurator
+    );
+
+    // grant SpokeConfigurator Admin roles (allows admin to call SpokeConfigurator functions)
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles(
+      report.accessManager,
+      admin
+    );
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles(
+      report.accessManager,
+      spokeAdmin
     );
   }
 

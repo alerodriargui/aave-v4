@@ -9,7 +9,7 @@ contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
 
   function deployUpgradableSpokeInstance(
     address spokeProxyAdminOwner,
-    address accessManager,
+    address authority,
     address oracle,
     uint16 maxUserReservesLimit,
     bytes32 salt
@@ -17,7 +17,7 @@ contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
     return
       _deployUpgradableSpokeInstance(
         spokeProxyAdminOwner,
-        accessManager,
+        authority,
         oracle,
         maxUserReservesLimit,
         salt

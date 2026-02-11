@@ -7,12 +7,11 @@ import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4Deploy
 contract AaveV4AaveOracleDeployProcedure is AaveV4DeployProcedureBase {
   function _deployAaveOracle(
     uint8 decimals_,
-    string memory description_,
-    bytes32 salt_
+    string memory description_
   ) internal returns (address) {
     require(decimals_ > 0, 'invalid oracle decimals');
     require(bytes(description_).length > 0, 'invalid oracle description');
-    // AaveOracle must be deployed via create to compute the predicted address via without inputs
+    // AaveOracle must be deployed via create so deployer can call setSpoke after deployment
     return address(new AaveOracle({decimals_: decimals_, description_: description_}));
   }
 }

@@ -36,7 +36,7 @@ library AaveV4HubConfigProcedures {
     ConfigData.AddAssetParams memory params
   ) internal returns (uint256) {
     return
-      IHubConfigurator(configurator).addAsset(
+      IHubConfigurator(configurator).addAssetWithDecimals(
         params.hub,
         params.underlying,
         params.decimals,

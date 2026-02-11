@@ -10,13 +10,13 @@ import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.so
 contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
   function _deployUpgradableSpokeInstance(
     address spokeProxyAdminOwner,
-    address accessManager,
+    address authority,
     address oracle,
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (address spokeProxy, address spokeImplementation) {
     require(spokeProxyAdminOwner != address(0), 'invalid spoke proxy admin owner');
-    require(accessManager != address(0), 'invalid access manager');
+    require(authority != address(0), 'invalid authority');
     require(oracle != address(0), 'invalid oracle');
     require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
     spokeImplementation = Create2Utils.create2Deploy(
@@ -27,7 +27,7 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
       salt,
       spokeImplementation,
       spokeProxyAdminOwner,
-      abi.encodeCall(ISpokeInstance.initialize, (accessManager))
+      abi.encodeCall(ISpokeInstance.initialize, (authority))
     );
     return (spokeProxy, spokeImplementation);
   }
@@ -37,8 +37,8 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
     address oracle,
     uint16 maxUserReservesLimit,
     address spokeProxyAdminOwner,
-    address accessManager
-  ) internal pure returns (address) {
+    address authority
+  ) internal view returns (address) {
     address spokeImplementation = Create2Utils.computeCreate2Address(
       salt,
       _getSpokeInstanceInitCode(oracle, maxUserReservesLimit)
@@ -48,7 +48,7 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
       abi.encode(
         spokeImplementation,
         spokeProxyAdminOwner,
-        abi.encodeCall(ISpokeInstance.initialize, (accessManager))
+        abi.encodeCall(ISpokeInstance.initialize, (authority))
       )
     );
     return Create2Utils.computeCreate2Address(salt, keccak256(initCode));

@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {AaveV4HubConfiguratorDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4HubConfiguratorDeployProcedureWrapper.sol';
 import {AaveV4HubDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4HubDeployProcedureWrapper.sol';
 import {AaveV4InterestRateStrategyDeployProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4InterestRateStrategyDeployProcedureWrapper.sol';
@@ -18,6 +19,8 @@ import {AaveV4SpokeConfiguratorDeployProcedureWrapper} from 'tests/mocks/deploym
 import {AaveV4AccessManagerRolesProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4AccessManagerRolesProcedureWrapper.sol';
 import {AaveV4SpokeRolesProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4SpokeRolesProcedureWrapper.sol';
 import {AaveV4HubRolesProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4HubRolesProcedureWrapper.sol';
+import {AaveV4HubConfiguratorRolesProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4HubConfiguratorRolesProcedureWrapper.sol';
+import {AaveV4SpokeConfiguratorRolesProcedureWrapper} from 'tests/mocks/deployments/procedures/AaveV4SpokeConfiguratorRolesProcedureWrapper.sol';
 
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 
@@ -54,7 +57,7 @@ contract ProceduresBase is Test, InputUtils {
     _etchCreate2Factory();
 
     accessManager = address(new AccessManagerEnumerable(accessManagerAdmin));
-    aaveOracle = address(new AaveOracle(spoke, oracleDecimals, oracleDescription));
+    aaveOracle = address(new AaveOracle(oracleDecimals, oracleDescription));
     salt = keccak256('testSalt');
   }
 }

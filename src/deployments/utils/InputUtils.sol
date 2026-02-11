@@ -13,11 +13,11 @@ contract InputUtils {
 
   /// @dev accessManagerAdmin The default admin of the access manager.
   /// @dev hubAdmin The admin of the hub.
-  /// @dev hubConfiguratorOwner The admin of the hub configurator.
+  /// @dev hubConfiguratorAdmin The admin granted all hub configurator roles.
   /// @dev treasurySpokeOwner The owner of the treasury spoke.
   /// @dev spokeAdmin The spoke admin.
   /// @dev spokeProxyAdminOwner The owner of the spoke proxyAdmin.
-  /// @dev spokeConfiguratorOwner The admin of the spoke configurator.
+  /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
   /// @dev nativeWrapper The address of the native wrapper.
   /// @dev grantRoles A boolean indicating if roles should be granted.
@@ -27,11 +27,11 @@ contract InputUtils {
   struct FullDeployInputs {
     address accessManagerAdmin;
     address hubAdmin;
-    address hubConfiguratorOwner;
+    address hubConfiguratorAdmin;
     address treasurySpokeOwner;
     address spokeAdmin;
     address spokeProxyAdminOwner;
-    address spokeConfiguratorOwner;
+    address spokeConfiguratorAdmin;
     address gatewayOwner;
     address nativeWrapper;
     bool grantRoles;
@@ -58,11 +58,11 @@ contract InputUtils {
     string memory json = vm.readFile(inputPath);
     inputs.accessManagerAdmin = json.readAddress('.accessManagerAdmin');
     inputs.hubAdmin = json.readAddress('.hubAdmin');
-    inputs.hubConfiguratorOwner = json.readAddress('.hubConfiguratorOwner');
+    inputs.hubConfiguratorAdmin = json.readAddress('.hubConfiguratorAdmin');
     inputs.treasurySpokeOwner = json.readAddress('.treasurySpokeOwner');
     inputs.spokeAdmin = json.readAddress('.spokeAdmin');
     inputs.spokeProxyAdminOwner = json.readAddress('.spokeProxyAdminOwner');
-    inputs.spokeConfiguratorOwner = json.readAddress('.spokeConfiguratorOwner');
+    inputs.spokeConfiguratorAdmin = json.readAddress('.spokeConfiguratorAdmin');
     inputs.gatewayOwner = json.readAddress('.gatewayOwner');
     inputs.nativeWrapper = json.readAddress('.nativeWrapper');
     inputs.grantRoles = json.readBool('.grantRoles');
