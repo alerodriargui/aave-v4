@@ -1,6 +1,6 @@
 {
   "name": "aave-v4",
-  "version": "0.5.9",
+  "version": "0.5.8",
   "scripts": {
     "lint": "prettier . --check",
     "lint:fix": "prettier . --write",
@@ -36,7 +36,8 @@
   },
   "dependencies": {
     "axios": "^1.13.2",
-    "hardhat": "^3.0.9"
+    "hardhat": "^3.0.9",
+    "zod": "^4.3.6"
   },
   "type": "module"
 }
