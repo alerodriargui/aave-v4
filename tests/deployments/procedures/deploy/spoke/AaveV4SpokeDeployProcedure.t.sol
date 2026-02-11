@@ -48,5 +48,14 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
+
+    vm.expectRevert('invalid max user reserves limit');
+    aaveV4SpokeDeployProcedureWrapper.deployUpgradableSpokeInstance({
+      spokeProxyAdminOwner: owner,
+      authority: accessManager,
+      oracle: aaveOracle,
+      maxUserReservesLimit: 0,
+      salt: salt
+    });
   }
 }

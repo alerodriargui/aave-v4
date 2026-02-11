@@ -8,7 +8,8 @@ contract AaveV4AccessBatchTest is BatchBaseTest {
   AaveV4AccessBatch public aaveV4AccessBatch;
   function setUp() public override {
     super.setUp();
-    aaveV4AccessBatch = new AaveV4AccessBatch(admin, salt);
+    bytes32 accessSalt = keccak256('accessBatchSalt');
+    aaveV4AccessBatch = new AaveV4AccessBatch(admin, accessSalt);
   }
 
   function test_getReport() public view {
@@ -21,5 +22,30 @@ contract AaveV4AccessBatchTest is BatchBaseTest {
     );
     assertTrue(hasRole);
     assertEq(executionDelay, 0);
+  }
+
+  function test_revert_zeroAdmin() public {
+    vm.expectRevert('invalid admin');
+    new AaveV4AccessBatch(address(0), keccak256('zeroAdminSalt'));
+  }
+
+  function test_adminRoleMemberTracking() public view {
+    IAccessManagerEnumerable am = IAccessManagerEnumerable(
+      aaveV4AccessBatch.getReport().accessManager
+    );
+    assertEq(am.getRoleMemberCount(Roles.DEFAULT_ADMIN_ROLE), 1);
+    assertEq(am.getRoleMember(Roles.DEFAULT_ADMIN_ROLE, 0), admin);
+  }
+
+  function test_noOtherRolesInitialized() public view {
+    IAccessManagerEnumerable am = IAccessManagerEnumerable(
+      aaveV4AccessBatch.getReport().accessManager
+    );
+    assertEq(am.getRoleCount(), 0);
+  }
+
+  function test_differentSaltProducesDifferentAddress() public {
+    AaveV4AccessBatch newBatch = new AaveV4AccessBatch(admin, keccak256('differentSalt'));
+    assertNotEq(aaveV4AccessBatch.getReport().accessManager, newBatch.getReport().accessManager);
   }
 }
