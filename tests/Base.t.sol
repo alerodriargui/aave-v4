@@ -439,162 +439,12 @@ abstract contract Base is BatchTestProcedures {
 
     tokenList = AaveV4TestOrchestration.deployTestTokens(tokenInputs);
 
-    /*manager.grantRole(Roles.SPOKE_ADMIN_ROLE, ADMIN, 0);
-    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, SPOKE_ADMIN, 0);
-
-    manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
-    manager.grantRole(Roles.USER_POSITION_UPDATER_ROLE, USER_POSITION_UPDATER, 0);
-
-    manager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_CONFIGURATOR, 0);
-    manager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, SPOKE_CONFIGURATOR, 0);
-
-    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, HUB_ADMIN, 0);
-    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, DEFICIT_ELIMINATOR, 0);
-
-    // Grant responsibilities to roles
-    {
-      bytes4[] memory selectors = new bytes4[](7);
-      selectors[0] = ISpoke.updateLiquidationConfig.selector;
-      selectors[1] = ISpoke.addReserve.selector;
-      selectors[2] = ISpoke.updateReserveConfig.selector;
-      selectors[3] = ISpoke.updateDynamicReserveConfig.selector;
-      selectors[4] = ISpoke.addDynamicReserveConfig.selector;
-      selectors[5] = ISpoke.updatePositionManager.selector;
-      selectors[6] = ISpoke.updateReservePriceSource.selector;
-      manager.setTargetFunctionRole(address(spoke), selectors, Roles.SPOKE_ADMIN_ROLE);
-    }
-
-    {
-      bytes4[] memory selectors = new bytes4[](2);
-      selectors[0] = ISpoke.updateUserDynamicConfig.selector;
-      selectors[1] = ISpoke.updateUserRiskPremium.selector;
-      manager.setTargetFunctionRole(address(spoke), selectors, Roles.USER_POSITION_UPDATER_ROLE);
-    }
-
-    {
-      bytes4[] memory selectors = new bytes4[](6);
-      selectors[0] = IHub.addAsset.selector;
-      selectors[1] = IHub.updateAssetConfig.selector;
-      selectors[2] = IHub.addSpoke.selector;
-      selectors[3] = IHub.updateSpokeConfig.selector;
-      selectors[4] = IHub.setInterestRateData.selector;
-      selectors[5] = IHub.mintFeeShares.selector;
-      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.HUB_ADMIN_ROLE);
-    }
-
-    {
-      bytes4[] memory selectors = new bytes4[](1);
-      selectors[0] = IHub.eliminateDeficit.selector;
-      manager.setTargetFunctionRole(address(targetHub), selectors, Roles.DEFICIT_ELIMINATOR_ROLE);
-    }
-
-    setUpHubConfiguratorRoles(HUB_CONFIGURATOR, address(manager));
-    setUpSpokeConfiguratorRoles(SPOKE_CONFIGURATOR, address(manager));
-
-    vm.stopPrank();
-  }
-
-  function setUpHubConfiguratorRoles(address hubConfigurator, address manager) internal {
-    vm.startPrank(ADMIN);
-
-    // Grant HUB_ADMIN_ROLE so the configurator can call hub functions
-    IAccessManager(manager).grantRole(Roles.HUB_ADMIN_ROLE, hubConfigurator, 0);
-
-    // Set up HubConfigurator function permissions - all functions callable by HUB_CONFIGURATOR_ROLE
-    bytes4[] memory selectors = new bytes4[](22);
-    selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
-    selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
-    selectors[2] = IHubConfigurator.updateFeeConfig.selector;
-    selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
-    selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
-    selectors[5] = IHubConfigurator.resetAssetCaps.selector;
-    selectors[6] = IHubConfigurator.deactivateAsset.selector;
-    selectors[7] = IHubConfigurator.haltAsset.selector;
-    selectors[8] = IHubConfigurator.addSpoke.selector;
-    selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
-    selectors[10] = IHubConfigurator.updateSpokeActive.selector;
-    selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
-    selectors[12] = IHubConfigurator.updateSpokeSupplyCap.selector;
-    selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
-    selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
-    selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
-    selectors[16] = IHubConfigurator.deactivateSpoke.selector;
-    selectors[17] = IHubConfigurator.haltSpoke.selector;
-    selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
-    selectors[19] = IHubConfigurator.updateInterestRateData.selector;
-    selectors[20] = IHubConfigurator.addAsset.selector;
-    selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
-    IAccessManager(manager).setTargetFunctionRole(
-      hubConfigurator,
-      selectors,
-      Roles.HUB_CONFIGURATOR_ROLE
-    );
-
-    vm.stopPrank();
-  }
-
-  function setUpSpokeConfiguratorRoles(address spokeConfigurator, address manager) internal {
-    vm.startPrank(ADMIN);
-
-    // Grant SPOKE_ADMIN_ROLE so the configurator can call spoke functions
-    IAccessManager(manager).grantRole(Roles.SPOKE_ADMIN_ROLE, spokeConfigurator, 0);
-
-    // Set up SpokeConfigurator function permissions - all functions callable by SPOKE_CONFIGURATOR_ROLE
-    bytes4[] memory selectors = new bytes4[](25);
-    selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
-    selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
-    selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
-    selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
-    selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
-    selectors[5] = ISpokeConfigurator.updateMaxReserves.selector;
-    selectors[6] = ISpokeConfigurator.addReserve.selector;
-    selectors[7] = ISpokeConfigurator.updatePaused.selector;
-    selectors[8] = ISpokeConfigurator.updateFrozen.selector;
-    selectors[9] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[10] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    selectors[11] = ISpokeConfigurator.updateCollateralRisk.selector;
-    selectors[12] = ISpokeConfigurator.addCollateralFactor.selector;
-    selectors[13] = ISpokeConfigurator.updateCollateralFactor.selector;
-    selectors[14] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    selectors[15] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    selectors[16] = ISpokeConfigurator.addLiquidationFee.selector;
-    selectors[17] = ISpokeConfigurator.updateLiquidationFee.selector;
-    selectors[18] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    selectors[19] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[20] = ISpokeConfigurator.pauseAllReserves.selector;
-    selectors[21] = ISpokeConfigurator.freezeAllReserves.selector;
-    selectors[22] = ISpokeConfigurator.pauseReserve.selector;
-    selectors[23] = ISpokeConfigurator.freezeReserve.selector;
-    selectors[24] = ISpokeConfigurator.updatePositionManager.selector;
-    IAccessManager(manager).setTargetFunctionRole(
-      spokeConfigurator,
-      selectors,
-      Roles.SPOKE_CONFIGURATOR_ROLE
-    );
-
-    vm.stopPrank();
-  }
-
-  function initEnvironment() internal {
-    deployMintAndApproveTokenList();
-    configureTokenList();
-  }
-
-  function deployMintAndApproveTokenList() internal {
-    tokenList = TokenList(
-      new WETH9(),
-      new TestnetERC20('USDX', 'USDX', _decimals.usdx),
-      new TestnetERC20('DAI', 'DAI', _decimals.dai),
-      new TestnetERC20('WBTC', 'WBTC', _decimals.wbtc),
-      new TestnetERC20('USDY', 'USDY', _decimals.usdy),
-      new TestnetERC20('USDZ', 'USDZ', _decimals.usdz)
-    );*/
-
     vm.label(address(tokenList.weth), 'WETH');
     vm.label(address(tokenList.usdx), 'USDX');
     vm.label(address(tokenList.dai), 'DAI');
     vm.label(address(tokenList.wbtc), 'WBTC');
     vm.label(address(tokenList.usdy), 'USDY');
+    vm.label(address(tokenList.usdz), 'USDZ');
 
     MAX_SUPPLY_AMOUNT_USDX = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.usdx.decimals();
     MAX_SUPPLY_AMOUNT_WETH = MAX_SUPPLY_ASSET_UNITS * 10 ** tokenList.weth.decimals();
@@ -1165,11 +1015,8 @@ abstract contract Base is BatchTestProcedures {
       irData: abi.encode(_defaultIrData)
     });
 
-    TestTypes.TestEnvReport memory report = _addFixture('2', assetsList);
-    return (
-      IHub(report.hubReports[0].hub),
-      AssetInterestRateStrategy(report.hubReports[0].irStrategy)
-    );
+    TestTypes.TestHubReport memory report = _addHubFixture('2', assetsList);
+    return (IHub(report.hub), AssetInterestRateStrategy(report.irStrategy));
   }
 
   /* @dev Configures Hub 3 with the following assetIds:
@@ -1205,50 +1052,56 @@ abstract contract Base is BatchTestProcedures {
       irData: abi.encode(_defaultIrData)
     });
 
-    TestTypes.TestEnvReport memory report = _addFixture('3', assetsList);
-    return (
-      IHub(report.hubReports[0].hub),
-      AssetInterestRateStrategy(report.hubReports[0].irStrategy)
-    );
+    TestTypes.TestHubReport memory report = _addHubFixture('3', assetsList);
+    return (IHub(report.hub), AssetInterestRateStrategy(report.irStrategy));
   }
 
-  function _addFixture(
+  function _addHubFixture(
     string memory label,
     FixtureAssetList[] memory assetsList
-  ) internal returns (TestTypes.TestEnvReport memory report) {
-    report = _deployFixtures({numHubs: 1, numSpokes: 0});
-    _setupFixturesRoles(report);
+  ) internal returns (TestTypes.TestHubReport memory report) {
+    report = AaveV4TestOrchestration.deployTestHub(
+      address(accessManager),
+      TREASURY_ADMIN,
+      label,
+      keccak256(abi.encodePacked(label))
+    );
+    _hubs.push(IHub(report.hub));
+    _irStrategies.push(AssetInterestRateStrategy(report.irStrategy));
+    _treasurySpokes.push(ITreasurySpoke(report.treasurySpoke));
+
+    vm.label(report.hub, string.concat('Hub', label));
+    vm.label(report.irStrategy, string.concat('IrStrategy', label));
+    vm.label(report.treasurySpoke, string.concat('TreasurySpoke', label));
 
     ConfigData.AddAssetParams[] memory assetParams = new ConfigData.AddAssetParams[](
       assetsList.length
     );
     for (uint256 i; i < assetsList.length; ++i) {
       assetParams[i] = ConfigData.AddAssetParams({
-        hub: report.hubReports[0].hub,
+        hub: report.hub,
         underlying: address(assetsList[i].underlying),
         decimals: assetsList[i].underlying.decimals(),
-        feeReceiver: report.hubReports[0].treasurySpoke,
+        feeReceiver: report.treasurySpoke,
         liquidityFee: assetsList[i].liquidityFee,
-        irStrategy: report.hubReports[0].irStrategy,
+        irStrategy: report.irStrategy,
         irData: assetsList[i].irData,
         reinvestmentController: assetsList[i].reinvestmentController
       });
     }
 
     vm.startPrank(ADMIN);
-    IAccessManager(report.accessManager).grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
-    IAccessManager(report.accessManager).grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this), 0);
+    accessManager.grantRole(Roles.DEFAULT_ADMIN_ROLE, address(this), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
+
+    AaveV4TestOrchestration.setHubRolesTestEnv(report, address(accessManager));
     vm.stopPrank();
 
     AaveV4TestOrchestration.configureHubsAssets(assetParams);
 
     // Renounce temporary roles
-    IAccessManager(report.accessManager).renounceRole(Roles.HUB_CONFIGURATOR_ROLE, address(this));
-    IAccessManager(report.accessManager).renounceRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this));
-
-    vm.label(report.hubReports[0].hub, string.concat('Hub', label));
-    vm.label(report.hubReports[0].irStrategy, string.concat('IrStrategy', label));
-    vm.label(report.hubReports[0].treasurySpoke, string.concat('TreasurySpoke', label));
+    accessManager.renounceRole(Roles.DEFAULT_ADMIN_ROLE, address(this));
+    accessManager.renounceRole(Roles.HUB_CONFIGURATOR_ROLE, address(this));
 
     return report;
   }

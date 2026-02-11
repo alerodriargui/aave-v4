@@ -117,6 +117,25 @@ library AaveV4TestOrchestration {
     return report;
   }
 
+  function deployTestHub(
+    address accessManager,
+    address treasuryAdmin,
+    string memory label,
+    bytes32 salt
+  ) external returns (TestTypes.TestHubReport memory) {
+    TestTypes.TestHubReport memory report;
+    BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
+      treasurySpokeOwner: treasuryAdmin,
+      authority: accessManager,
+      salt: keccak256(abi.encodePacked(salt, 'hub-', label))
+    });
+    report.hub = hubReport.hub;
+    report.irStrategy = hubReport.irStrategy;
+    report.treasurySpoke = hubReport.treasurySpoke;
+
+    return report;
+  }
+
   function configureHubsSpokes(ConfigData.AddSpokeParams[] memory paramsList) external {
     for (uint256 i; i < paramsList.length; ++i) {
       AaveV4HubConfigProcedures.addSpoke(paramsList[i]);
@@ -162,6 +181,10 @@ library AaveV4TestOrchestration {
       report.accessManager,
       report.configuratorReport.spokeConfigurator
     );
+  }
+
+  function setHubRolesTestEnv(TestTypes.TestHubReport memory report, address accessManager) public {
+    AaveV4HubRolesProcedure.setupHubRoles(accessManager, report.hub);
   }
 
   function grantRolesTestEnv(

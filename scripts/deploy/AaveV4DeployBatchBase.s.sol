@@ -9,6 +9,7 @@ import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4Dep
 
 import {Script} from 'forge-std/Script.sol';
 
+// solhint-disable quotes
 abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   struct Warnings {
     string[] s;
