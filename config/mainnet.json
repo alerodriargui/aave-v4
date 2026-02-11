@@ -1,0 +1,214 @@
+{
+  "defaults": {
+    "spoke": {
+      "oracleDecimals": 8,
+      "maxUserReservesLimit": 128,
+      "liquidationConfig": {
+        "targetHealthFactor": "1050000000000000000",
+        "healthFactorForMaxBonus": "700000000000000000",
+        "liquidationBonusFactor": 2000
+      }
+    },
+    "spokeRegistration": {
+      "riskPremiumThreshold": 100000,
+      "active": true,
+      "halted": false
+    },
+    "reserve": {
+      "receiveSharesEnabled": true,
+      "frozen": false,
+      "paused": false,
+      "liquidationFee": 1000,
+      "maxLiquidationBonus": 10500
+    },
+    "asset": {
+      "liquidityFee": 1000
+    },
+    "tokenize": {
+      "enabled": true
+    }
+  },
+
+  "tokens": {
+    "WETH": {
+      "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "priceFeed": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
+    },
+    "WBTC": {
+      "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "priceFeed": "0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c"
+    },
+    "cbBTC": {
+      "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+      "priceFeed": "0x2665701293fCbEB223D11A08D826563EDcCE423A"
+    },
+    "wstETH": {
+      "address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
+      "priceFeed": "0x0000000000000000000000000000000000000000"
+    },
+    "USDC": {
+      "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "priceFeed": "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6"
+    },
+    "GHO": {
+      "address": "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
+      "priceFeed": "0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC"
+    },
+    "USDS": {
+      "address": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+      "priceFeed": "0xfF30586cD0F29eD462364C7e81375FC0C71219b1"
+    },
+    "AAVE": {
+      "address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+      "priceFeed": "0xbd7F896e60B650C01caf2d7279a1148189A68884"
+    },
+    "MKR": {
+      "address": "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",
+      "priceFeed": "0xec1D1B3b0443256cc3860e24a46F108e699484Aa"
+    },
+    "UNI": {
+      "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
+      "priceFeed": "0x553303d460EE0afB37EdFf9bE42922D8FF63220e"
+    },
+    "sUSDe": {
+      "address": "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497",
+      "priceFeed": "0xFF3BC18cCBd5999CE63E788A1c250a88626aD099"
+    },
+    "PT_sUSDe": {
+      "address": "0x62C6E813b9589C3631Ba0Cdb013acdB8544038B7",
+      "priceFeed": "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D"
+    },
+    "LDO": {
+      "address": "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
+      "priceFeed": "0x0000000000000000000000000000000000000000"
+    },
+    "1INCH": {
+      "address": "0x111111111117dC0aa78b770fA6A738034120C302",
+      "priceFeed": "0xc929ad75B72593967DE83E7F7Cda0493458261D9"
+    },
+    "USDT": {
+      "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "priceFeed": "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D"
+    }
+  },
+
+  "hubs": [
+    { "key": "PRIME_HUB" },
+    { "key": "CORE_HUB" },
+    { "key": "ETHENA_HUB" },
+    { "key": "FRONTIER_HUB" }
+  ],
+
+  "spokes": [
+    { "key": "PRIME_SPOKE", "liquidationConfig": {} },
+    { "key": "CORE_SPOKE", "liquidationConfig": {} },
+    { "key": "LST_SPOKE", "liquidationConfig": { "targetHealthFactor": "1040000000000000000", "healthFactorForMaxBonus": "800000000000000000", "liquidationBonusFactor": 1500 } },
+    { "key": "ETHENA_SPOKE", "liquidationConfig": { "targetHealthFactor": "1030000000000000000", "healthFactorForMaxBonus": "900000000000000000", "liquidationBonusFactor": 1000 } },
+    { "key": "FRONTIER_SPOKE", "liquidationConfig": {} }
+  ],
+
+  "assets": [
+    { "tokenKey": "WETH",  "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9000, "baseVariableBorrowRate": 0, "variableRateSlope1": 270, "variableRateSlope2": 8000 } },
+    { "tokenKey": "wstETH", "hubKey": "PRIME_HUB", "liquidityFee": 500, "irData": { "optimalUsageRatio": 9000, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 8500 } },
+    { "tokenKey": "USDT",  "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+    { "tokenKey": "USDC",  "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+    { "tokenKey": "GHO",   "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+
+    { "tokenKey": "WETH",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9000, "baseVariableBorrowRate": 0, "variableRateSlope1": 270, "variableRateSlope2": 8000 } },
+    { "tokenKey": "wstETH", "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9000, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 8500 } },
+    { "tokenKey": "WBTC",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 8000, "baseVariableBorrowRate": 0, "variableRateSlope1": 400, "variableRateSlope2": 6000 } },
+    { "tokenKey": "cbBTC", "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 8000, "baseVariableBorrowRate": 0, "variableRateSlope1": 400, "variableRateSlope2": 6000 } },
+    { "tokenKey": "AAVE",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 4500, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 30000 } },
+    { "tokenKey": "USDC",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+    { "tokenKey": "USDT",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+    { "tokenKey": "GHO",   "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+
+    { "tokenKey": "PT_sUSDe", "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 4500, "baseVariableBorrowRate": 0, "variableRateSlope1": 1000, "variableRateSlope2": 30000 } },
+    { "tokenKey": "sUSDe", "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9000, "baseVariableBorrowRate": 0, "variableRateSlope1": 625, "variableRateSlope2": 4000 } },
+    { "tokenKey": "USDC",  "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+    { "tokenKey": "USDT",  "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+    { "tokenKey": "GHO",   "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+
+    { "tokenKey": "UNI",   "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 4500, "baseVariableBorrowRate": 0, "variableRateSlope1": 700, "variableRateSlope2": 30000 } },
+    { "tokenKey": "LDO",   "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 4500, "baseVariableBorrowRate": 0, "variableRateSlope1": 700, "variableRateSlope2": 30000 } },
+    { "tokenKey": "1INCH", "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 4500, "baseVariableBorrowRate": 0, "variableRateSlope1": 900, "variableRateSlope2": 30000 } },
+    { "tokenKey": "USDC",  "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+    { "tokenKey": "USDT",  "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+    { "tokenKey": "GHO",   "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } }
+  ],
+
+  "spokeRegistrations": [
+    { "assetKey": "WETH",  "hubKey": "PRIME_HUB", "spokeKey": "PRIME_SPOKE", "addCap": 225, "drawCap": 200 },
+    { "assetKey": "wstETH", "hubKey": "PRIME_HUB", "spokeKey": "PRIME_SPOKE", "addCap": 200, "drawCap": 75 },
+    { "assetKey": "USDT",  "hubKey": "PRIME_HUB", "spokeKey": "PRIME_SPOKE", "addCap": 3000000, "drawCap": 2760000 },
+    { "assetKey": "USDC",  "hubKey": "PRIME_HUB", "spokeKey": "PRIME_SPOKE", "addCap": 3000000, "drawCap": 2760000 },
+    { "assetKey": "GHO",   "hubKey": "PRIME_HUB", "spokeKey": "PRIME_SPOKE", "addCap": 17500000, "drawCap": 15000000 },
+
+    { "assetKey": "WETH",  "hubKey": "CORE_HUB", "spokeKey": "CORE_SPOKE", "addCap": 800, "drawCap": 725 },
+    { "assetKey": "wstETH", "hubKey": "CORE_HUB", "spokeKey": "CORE_SPOKE", "addCap": 45, "drawCap": 15 },
+    { "assetKey": "WBTC",  "hubKey": "CORE_HUB", "spokeKey": "CORE_SPOKE", "addCap": 20, "drawCap": 7 },
+    { "assetKey": "cbBTC", "hubKey": "CORE_HUB", "spokeKey": "CORE_SPOKE", "addCap": 5, "drawCap": 3 },
+    { "assetKey": "AAVE",  "hubKey": "CORE_HUB", "spokeKey": "CORE_SPOKE", "addCap": 9500, "drawCap": 5000 },
+    { "assetKey": "USDC",  "hubKey": "CORE_HUB", "spokeKey": "CORE_SPOKE", "addCap": 3000000, "drawCap": 2760000 },
+    { "assetKey": "USDT",  "hubKey": "CORE_HUB", "spokeKey": "CORE_SPOKE", "addCap": 3000000, "drawCap": 2760000 },
+    { "assetKey": "GHO",   "hubKey": "CORE_HUB", "spokeKey": "CORE_SPOKE", "addCap": 8000000, "drawCap": 5500000 },
+    { "assetKey": "WETH",  "hubKey": "CORE_HUB", "spokeKey": "LST_SPOKE", "addCap": 225, "drawCap": 100 },
+    { "assetKey": "wstETH", "hubKey": "CORE_HUB", "spokeKey": "LST_SPOKE", "addCap": 200, "drawCap": 0 },
+    { "assetKey": "USDC",  "hubKey": "CORE_HUB", "spokeKey": "ETHENA_SPOKE", "addCap": 2000000, "drawCap": 1000000 },
+    { "assetKey": "USDC",  "hubKey": "CORE_HUB", "spokeKey": "FRONTIER_SPOKE", "addCap": 2000000, "drawCap": 1000000 },
+
+    { "assetKey": "PT_sUSDe", "hubKey": "ETHENA_HUB", "spokeKey": "ETHENA_SPOKE", "addCap": 6000000, "drawCap": 0 },
+    { "assetKey": "sUSDe", "hubKey": "ETHENA_HUB", "spokeKey": "ETHENA_SPOKE", "addCap": 5000000, "drawCap": 0 },
+    { "assetKey": "USDC",  "hubKey": "ETHENA_HUB", "spokeKey": "ETHENA_SPOKE", "addCap": 3000000, "drawCap": 2760000 },
+    { "assetKey": "USDT",  "hubKey": "ETHENA_HUB", "spokeKey": "ETHENA_SPOKE", "addCap": 3000000, "drawCap": 2760000 },
+    { "assetKey": "GHO",   "hubKey": "ETHENA_HUB", "spokeKey": "ETHENA_SPOKE", "addCap": 17500000, "drawCap": 15500000 },
+
+    { "assetKey": "UNI",   "hubKey": "FRONTIER_HUB", "spokeKey": "FRONTIER_SPOKE", "addCap": 600000, "drawCap": 0 },
+    { "assetKey": "LDO",   "hubKey": "FRONTIER_HUB", "spokeKey": "FRONTIER_SPOKE", "addCap": 50000000, "drawCap": 0 },
+    { "assetKey": "1INCH", "hubKey": "FRONTIER_HUB", "spokeKey": "FRONTIER_SPOKE", "addCap": 500000, "drawCap": 0 },
+    { "assetKey": "USDC",  "hubKey": "FRONTIER_HUB", "spokeKey": "FRONTIER_SPOKE", "addCap": 3000000, "drawCap": 2760000 },
+    { "assetKey": "USDT",  "hubKey": "FRONTIER_HUB", "spokeKey": "FRONTIER_SPOKE", "addCap": 3000000, "drawCap": 2760000 },
+    { "assetKey": "GHO",   "hubKey": "FRONTIER_HUB", "spokeKey": "FRONTIER_SPOKE", "addCap": 17500000, "drawCap": 15500000 }
+  ],
+
+  "reserves": [
+    { "spokeKey": "PRIME_SPOKE", "hubKey": "PRIME_HUB", "assetKey": "WETH",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 8500 },
+    { "spokeKey": "PRIME_SPOKE", "hubKey": "PRIME_HUB", "assetKey": "wstETH", "collateralRisk": 0, "borrowable": true, "collateralFactor": 8300, "maxLiquidationBonus": 10600 },
+    { "spokeKey": "PRIME_SPOKE", "hubKey": "PRIME_HUB", "assetKey": "USDT",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 8300, "maxLiquidationBonus": 10000 },
+    { "spokeKey": "PRIME_SPOKE", "hubKey": "PRIME_HUB", "assetKey": "USDC",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 8300, "maxLiquidationBonus": 10000 },
+    { "spokeKey": "PRIME_SPOKE", "hubKey": "PRIME_HUB", "assetKey": "GHO",   "collateralRisk": 0, "borrowable": true, "collateralFactor": 8300, "maxLiquidationBonus": 10000 },
+
+    { "spokeKey": "CORE_SPOKE", "hubKey": "CORE_HUB", "assetKey": "WETH",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 8500 },
+    { "spokeKey": "CORE_SPOKE", "hubKey": "CORE_HUB", "assetKey": "wstETH", "collateralRisk": 0, "borrowable": true, "collateralFactor": 8300, "maxLiquidationBonus": 10600 },
+    { "spokeKey": "CORE_SPOKE", "hubKey": "CORE_HUB", "assetKey": "WBTC",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 8300, "maxLiquidationBonus": 10600 },
+    { "spokeKey": "CORE_SPOKE", "hubKey": "CORE_HUB", "assetKey": "cbBTC", "collateralRisk": 0, "borrowable": true, "collateralFactor": 7800 },
+    { "spokeKey": "CORE_SPOKE", "hubKey": "CORE_HUB", "assetKey": "USDT",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 8300, "maxLiquidationBonus": 10000 },
+    { "spokeKey": "CORE_SPOKE", "hubKey": "CORE_HUB", "assetKey": "USDC",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 8300, "maxLiquidationBonus": 10000 },
+    { "spokeKey": "CORE_SPOKE", "hubKey": "CORE_HUB", "assetKey": "GHO",   "collateralRisk": 0, "borrowable": true, "collateralFactor": 8300, "maxLiquidationBonus": 10000 },
+    { "spokeKey": "CORE_SPOKE", "hubKey": "CORE_HUB", "assetKey": "AAVE",  "collateralRisk": 4500, "borrowable": true, "collateralFactor": 6000 },
+
+    { "spokeKey": "LST_SPOKE", "hubKey": "CORE_HUB", "assetKey": "WETH",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 0, "maxLiquidationBonus": 10000, "liquidationFee": 0 },
+    { "spokeKey": "LST_SPOKE", "hubKey": "CORE_HUB", "assetKey": "wstETH", "collateralRisk": 0, "borrowable": false, "collateralFactor": 9300, "maxLiquidationBonus": 10600, "liquidationFee": 1500 },
+
+    { "spokeKey": "ETHENA_SPOKE", "hubKey": "ETHENA_HUB", "assetKey": "PT_sUSDe", "collateralRisk": 800, "borrowable": false, "collateralFactor": 7800 },
+    { "spokeKey": "ETHENA_SPOKE", "hubKey": "ETHENA_HUB", "assetKey": "sUSDe", "collateralRisk": 900, "borrowable": false, "collateralFactor": 8000, "maxLiquidationBonus": 10600 },
+    { "spokeKey": "ETHENA_SPOKE", "hubKey": "ETHENA_HUB", "assetKey": "USDT",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 0, "maxLiquidationBonus": 10000, "liquidationFee": 0 },
+    { "spokeKey": "ETHENA_SPOKE", "hubKey": "ETHENA_HUB", "assetKey": "USDC",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 0, "maxLiquidationBonus": 10000, "liquidationFee": 0 },
+    { "spokeKey": "ETHENA_SPOKE", "hubKey": "ETHENA_HUB", "assetKey": "GHO",   "collateralRisk": 0, "borrowable": true, "collateralFactor": 0, "maxLiquidationBonus": 10000, "liquidationFee": 0 },
+    { "spokeKey": "ETHENA_SPOKE", "hubKey": "CORE_HUB",   "assetKey": "USDC",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 0, "maxLiquidationBonus": 10000, "liquidationFee": 0 },
+
+    { "spokeKey": "FRONTIER_SPOKE", "hubKey": "FRONTIER_HUB", "assetKey": "UNI",   "collateralRisk": 500, "borrowable": false, "collateralFactor": 7800 },
+    { "spokeKey": "FRONTIER_SPOKE", "hubKey": "FRONTIER_HUB", "assetKey": "LDO",   "collateralRisk": 700, "borrowable": false, "collateralFactor": 7800, "maxLiquidationBonus": 10600 },
+    { "spokeKey": "FRONTIER_SPOKE", "hubKey": "FRONTIER_HUB", "assetKey": "1INCH", "collateralRisk": 1000, "borrowable": false, "collateralFactor": 7800 },
+    { "spokeKey": "FRONTIER_SPOKE", "hubKey": "FRONTIER_HUB", "assetKey": "USDT",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 0, "maxLiquidationBonus": 10000, "liquidationFee": 0 },
+    { "spokeKey": "FRONTIER_SPOKE", "hubKey": "FRONTIER_HUB", "assetKey": "USDC",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 0, "maxLiquidationBonus": 10000, "liquidationFee": 0 },
+    { "spokeKey": "FRONTIER_SPOKE", "hubKey": "FRONTIER_HUB", "assetKey": "GHO",   "collateralRisk": 0, "borrowable": true, "collateralFactor": 0, "maxLiquidationBonus": 10000, "liquidationFee": 0 },
+    { "spokeKey": "FRONTIER_SPOKE", "hubKey": "CORE_HUB",     "assetKey": "USDC",  "collateralRisk": 0, "borrowable": true, "collateralFactor": 0, "maxLiquidationBonus": 10000, "liquidationFee": 0 }
+  ],
+
+  "periphery": {
+    "nativeTokenKey": "WETH",
+    "deploySignatureGateway": true,
+    "deployNativeTokenGateway": true
+  }
+}

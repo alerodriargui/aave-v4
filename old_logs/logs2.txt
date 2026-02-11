@@ -1,0 +1,601 @@
+
+== Logs ==
+  -----CORE_HUB-----
+  
+AssetListing
+  token                                  WETH
+  assetId                                0
+  treasury                               0xbbF7c28516CEB9c09527Ff5e770fCC523A0C1b59
+  liquidityFee                           1000
+  irStrategy                             0x11466ebc9C1b8dF600F69CE5a549f43CDB52aa5c
+  irStrategy.optimalUsageRatio   9000
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  270
+  irStrategy.variableRateSlope2  8000
+  
+  token                                  cbBTC
+  assetId                                1
+  treasury                               0xbbF7c28516CEB9c09527Ff5e770fCC523A0C1b59
+  liquidityFee                           5000
+  irStrategy                             0x11466ebc9C1b8dF600F69CE5a549f43CDB52aa5c
+  irStrategy.optimalUsageRatio   8000
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  400
+  irStrategy.variableRateSlope2  6000
+  
+  token                                  WBTC
+  assetId                                2
+  treasury                               0xbbF7c28516CEB9c09527Ff5e770fCC523A0C1b59
+  liquidityFee                           5000
+  irStrategy                             0x11466ebc9C1b8dF600F69CE5a549f43CDB52aa5c
+  irStrategy.optimalUsageRatio   8000
+  irStrategy.baseVariableBorrowRate      30
+  irStrategy.variableRateSlope1  400
+  irStrategy.variableRateSlope2  30000
+  
+  token                                  USDS
+  assetId                                3
+  treasury                               0xbbF7c28516CEB9c09527Ff5e770fCC523A0C1b59
+  liquidityFee                           1000
+  irStrategy                             0x11466ebc9C1b8dF600F69CE5a549f43CDB52aa5c
+  irStrategy.optimalUsageRatio   9200
+  irStrategy.baseVariableBorrowRate      450
+  irStrategy.variableRateSlope1  75
+  irStrategy.variableRateSlope2  3500
+  
+  token                                  USDC
+  assetId                                4
+  treasury                               0xbbF7c28516CEB9c09527Ff5e770fCC523A0C1b59
+  liquidityFee                           1000
+  irStrategy                             0x11466ebc9C1b8dF600F69CE5a549f43CDB52aa5c
+  irStrategy.optimalUsageRatio   9200
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  550
+  irStrategy.variableRateSlope2  3500
+  
+  token                                  GHO
+  assetId                                5
+  treasury                               0xbbF7c28516CEB9c09527Ff5e770fCC523A0C1b59
+  liquidityFee                           500
+  irStrategy                             0x11466ebc9C1b8dF600F69CE5a549f43CDB52aa5c
+  irStrategy.optimalUsageRatio   9200
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  550
+  irStrategy.variableRateSlope2  3500
+  
+  token                                  wstETH
+  assetId                                6
+  treasury                               0xbbF7c28516CEB9c09527Ff5e770fCC523A0C1b59
+  liquidityFee                           500
+  irStrategy                             0x11466ebc9C1b8dF600F69CE5a549f43CDB52aa5c
+  irStrategy.optimalUsageRatio   9000
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  55
+  irStrategy.variableRateSlope2  8500
+  
+  
+SpokeListing
+  spoke                                  CORE_SPOKE
+  token                                  WETH
+  addCap                                 9e4
+  drawCap                                0e0
+  active                                 true
+  
+  spoke                                  CORE_SPOKE
+  token                                  cbBTC
+  addCap                                 1e5
+  drawCap                                0e0
+  active                                 true
+  
+  spoke                                  CORE_SPOKE
+  token                                  WBTC
+  addCap                                 1e5
+  drawCap                                0e0
+  active                                 true
+  
+  spoke                                  CORE_SPOKE
+  token                                  USDS
+  addCap                                 2e6
+  drawCap                                1.8e6
+  active                                 true
+  
+  spoke                                  CORE_SPOKE
+  token                                  USDC
+  addCap                                 3e6
+  drawCap                                2.76e6
+  active                                 true
+  
+  spoke                                  CORE_SPOKE
+  token                                  GHO
+  addCap                                 8e6
+  drawCap                                5.5e6
+  active                                 true
+  
+  spoke                                  CORE_SPOKE
+  token                                  wstETH
+  addCap                                 6e4
+  drawCap                                0e0
+  active                                 true
+  
+  spoke                                  E_MODE_SPOKE
+  token                                  WETH
+  addCap                                 9e4
+  drawCap                                8e4
+  active                                 true
+  
+  spoke                                  E_MODE_SPOKE
+  token                                  wstETH
+  addCap                                 8e4
+  drawCap                                0e0
+  active                                 true
+  
+  spoke                                  ISO_GOV_SPOKE
+  token                                  USDC
+  addCap                                 0e0
+  drawCap                                1e6
+  active                                 true
+  
+  spoke                                  ISO_GOV_SPOKE
+  token                                  GHO
+  addCap                                 0e0
+  drawCap                                2e6
+  active                                 true
+  
+  spoke                                  ISO_STABLE_SPOKE
+  token                                  USDC
+  addCap                                 0e0
+  drawCap                                2e6
+  active                                 true
+  
+  ---------
+  ----- ISO_GOV_HUB -----
+  
+AssetListing
+  token                                  AAVE
+  assetId                                0
+  treasury                               0xC98625B1fFD230416cB6b5426621374985143ACD
+  liquidityFee                           1000
+  irStrategy                             0xbbCE9c052f891C738BB3e1161a0903a050bBb8aD
+  irStrategy.optimalUsageRatio   4500
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  700
+  irStrategy.variableRateSlope2  30000
+  
+  token                                  UNI
+  assetId                                1
+  treasury                               0xC98625B1fFD230416cB6b5426621374985143ACD
+  liquidityFee                           5000
+  irStrategy                             0xbbCE9c052f891C738BB3e1161a0903a050bBb8aD
+  irStrategy.optimalUsageRatio   4500
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  700
+  irStrategy.variableRateSlope2  30000
+  
+  token                                  MKR
+  assetId                                2
+  treasury                               0xC98625B1fFD230416cB6b5426621374985143ACD
+  liquidityFee                           2000
+  irStrategy                             0xbbCE9c052f891C738BB3e1161a0903a050bBb8aD
+  irStrategy.optimalUsageRatio   4500
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  700
+  irStrategy.variableRateSlope2  30000
+  
+  token                                  USDS
+  assetId                                3
+  treasury                               0xC98625B1fFD230416cB6b5426621374985143ACD
+  liquidityFee                           1000
+  irStrategy                             0xbbCE9c052f891C738BB3e1161a0903a050bBb8aD
+  irStrategy.optimalUsageRatio   9200
+  irStrategy.baseVariableBorrowRate      450
+  irStrategy.variableRateSlope1  75
+  irStrategy.variableRateSlope2  3500
+  
+  token                                  USDC
+  assetId                                4
+  treasury                               0xC98625B1fFD230416cB6b5426621374985143ACD
+  liquidityFee                           1000
+  irStrategy                             0xbbCE9c052f891C738BB3e1161a0903a050bBb8aD
+  irStrategy.optimalUsageRatio   9200
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  550
+  irStrategy.variableRateSlope2  3500
+  
+  token                                  GHO
+  assetId                                5
+  treasury                               0xC98625B1fFD230416cB6b5426621374985143ACD
+  liquidityFee                           1000
+  irStrategy                             0xbbCE9c052f891C738BB3e1161a0903a050bBb8aD
+  irStrategy.optimalUsageRatio   9200
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  550
+  irStrategy.variableRateSlope2  3500
+  
+  
+SpokeListing
+  spoke                                  ISO_GOV_SPOKE
+  token                                  AAVE
+  addCap                                 9e4
+  drawCap                                0e0
+  active                                 true
+  
+  spoke                                  ISO_GOV_SPOKE
+  token                                  UNI
+  addCap                                 2e7
+  drawCap                                0e0
+  active                                 true
+  
+  spoke                                  ISO_GOV_SPOKE
+  token                                  MKR
+  addCap                                 2e7
+  drawCap                                0e0
+  active                                 true
+  
+  spoke                                  ISO_GOV_SPOKE
+  token                                  USDS
+  addCap                                 2e7
+  drawCap                                1.8e7
+  active                                 true
+  
+  spoke                                  ISO_GOV_SPOKE
+  token                                  USDC
+  addCap                                 3e6
+  drawCap                                2.76e6
+  active                                 true
+  
+  spoke                                  ISO_GOV_SPOKE
+  token                                  GHO
+  addCap                                 8e6
+  drawCap                                5.5e6
+  active                                 true
+  
+  ---------
+  ----- ISO_STABLE_HUB -----
+  
+AssetListing
+  token                                  USDC
+  assetId                                0
+  treasury                               0x4B643A17BB9Bc4186617fD4F29A75Ae4350F6e53
+  liquidityFee                           1000
+  irStrategy                             0xa5ea1c565fd011897233CA97b610B3f167253BBB
+  irStrategy.optimalUsageRatio   9200
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  550
+  irStrategy.variableRateSlope2  3500
+  
+  token                                  sUSDe
+  assetId                                1
+  treasury                               0x4B643A17BB9Bc4186617fD4F29A75Ae4350F6e53
+  liquidityFee                           1000
+  irStrategy                             0xa5ea1c565fd011897233CA97b610B3f167253BBB
+  irStrategy.optimalUsageRatio   9000
+  irStrategy.baseVariableBorrowRate      0
+  irStrategy.variableRateSlope1  550
+  irStrategy.variableRateSlope2  8500
+  
+  
+SpokeListing
+  spoke                                  ISO_STABLE_SPOKE
+  token                                  USDC
+  addCap                                 5e6
+  drawCap                                4.76e6
+  active                                 true
+  
+  spoke                                  ISO_STABLE_SPOKE
+  token                                  sUSDe
+  addCap                                 5e6
+  drawCap                                0e0
+  active                                 true
+  
+  ---------
+  -----CORE_SPOKE-----
+  
+ReserveListing
+  hub                                    CORE_HUB
+  token                                  WETH
+  reserveId                              0
+  assetId                                0
+  frozen                                 false
+  paused                                 false
+  borrowable                             false
+  collateralRisk                         0
+  maxLiquidationBonus                    10500
+  liquidationFee                         1000
+  collateralFactor                       8500
+  price feed                             0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
+  price                                  4.30758749579e11
+  
+  hub                                    CORE_HUB
+  token                                  cbBTC
+  reserveId                              1
+  assetId                                1
+  frozen                                 false
+  paused                                 false
+  borrowable                             false
+  collateralRisk                         450
+  maxLiquidationBonus                    10750
+  liquidationFee                         1000
+  collateralFactor                       7800
+  price feed                             0x2665701293fCbEB223D11A08D826563EDcCE423A
+  price                                  1.100029056371e13
+  
+  hub                                    CORE_HUB
+  token                                  WBTC
+  reserveId                              2
+  assetId                                2
+  frozen                                 false
+  paused                                 false
+  borrowable                             false
+  collateralRisk                         500
+  maxLiquidationBonus                    10500
+  liquidationFee                         1000
+  collateralFactor                       7800
+  price feed                             0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c
+  price                                  1.0963047724e13
+  
+  hub                                    CORE_HUB
+  token                                  USDS
+  reserveId                              3
+  assetId                                3
+  frozen                                 false
+  paused                                 false
+  borrowable                             true
+  collateralRisk                         0
+  maxLiquidationBonus                    10000
+  liquidationFee                         1000
+  collateralFactor                       0
+  price feed                             0xfF30586cD0F29eD462364C7e81375FC0C71219b1
+  price                                  9.9975798e7
+  
+  hub                                    CORE_HUB
+  token                                  USDC
+  reserveId                              4
+  assetId                                4
+  frozen                                 false
+  paused                                 false
+  borrowable                             true
+  collateralRisk                         0
+  maxLiquidationBonus                    10000
+  liquidationFee                         1000
+  collateralFactor                       0
+  price feed                             0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6
+  price                                  9.9985209e7
+  
+  hub                                    CORE_HUB
+  token                                  GHO
+  reserveId                              5
+  assetId                                5
+  frozen                                 false
+  paused                                 false
+  borrowable                             true
+  collateralRisk                         0
+  maxLiquidationBonus                    10000
+  liquidationFee                         1000
+  collateralFactor                       0
+  price feed                             0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC
+  price                                  9.9950838e7
+  
+  hub                                    CORE_HUB
+  token                                  wstETH
+  reserveId                              6
+  assetId                                6
+  frozen                                 false
+  paused                                 false
+  borrowable                             false
+  collateralRisk                         300
+  maxLiquidationBonus                    10600
+  liquidationFee                         1000
+  collateralFactor                       8300
+  price feed                             0x8b5fe37A8023529A2CA64cbFB41E1D62B9D7D8F0
+  price                                  5.5042920674e11
+  
+  -----E_MODE_SPOKE-----
+  
+ReserveListing
+  hub                                    CORE_HUB
+  token                                  WETH
+  reserveId                              0
+  assetId                                0
+  frozen                                 false
+  paused                                 false
+  borrowable                             true
+  collateralRisk                         0
+  maxLiquidationBonus                    10000
+  liquidationFee                         1000
+  collateralFactor                       0
+  price feed                             0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
+  price                                  4.30758749579e11
+  
+  hub                                    CORE_HUB
+  token                                  wstETH
+  reserveId                              1
+  assetId                                6
+  frozen                                 false
+  paused                                 false
+  borrowable                             false
+  collateralRisk                         300
+  maxLiquidationBonus                    10600
+  liquidationFee                         1000
+  collateralFactor                       9300
+  price feed                             0x8b5fe37A8023529A2CA64cbFB41E1D62B9D7D8F0
+  price                                  5.5042920674e11
+  
+  -----ISO_GOV_SPOKE-----
+  
+ReserveListing
+  hub                                    ISO_GOV_HUB
+  token                                  AAVE
+  reserveId                              0
+  assetId                                0
+  frozen                                 false
+  paused                                 false
+  borrowable                             false
+  collateralRisk                         2000
+  maxLiquidationBonus                    10750
+  liquidationFee                         1000
+  collateralFactor                       7600
+  price feed                             0xbd7F896e60B650C01caf2d7279a1148189A68884
+  price                                  3.0953974129e10
+  
+  hub                                    ISO_GOV_HUB
+  token                                  UNI
+  reserveId                              1
+  assetId                                1
+  frozen                                 false
+  paused                                 false
+  borrowable                             false
+  collateralRisk                         2500
+  maxLiquidationBonus                    10500
+  liquidationFee                         1000
+  collateralFactor                       7400
+  price feed                             0x553303d460EE0afB37EdFf9bE42922D8FF63220e
+  price                                  9.24456e8
+  
+  hub                                    ISO_GOV_HUB
+  token                                  MKR
+  reserveId                              2
+  assetId                                2
+  frozen                                 false
+  paused                                 false
+  borrowable                             false
+  collateralRisk                         3000
+  maxLiquidationBonus                    10850
+  liquidationFee                         1000
+  collateralFactor                       7000
+  price feed                             0xec1D1B3b0443256cc3860e24a46F108e699484Aa
+  price                                  1.74707073012e11
+  
+  hub                                    ISO_GOV_HUB
+  token                                  USDS
+  reserveId                              3
+  assetId                                3
+  frozen                                 false
+  paused                                 false
+  borrowable                             true
+  collateralRisk                         0
+  maxLiquidationBonus                    10000
+  liquidationFee                         1000
+  collateralFactor                       0
+  price feed                             0xfF30586cD0F29eD462364C7e81375FC0C71219b1
+  price                                  9.9975798e7
+  
+  hub                                    ISO_GOV_HUB
+  token                                  USDC
+  reserveId                              4
+  assetId                                4
+  frozen                                 false
+  paused                                 false
+  borrowable                             true
+  collateralRisk                         1000
+  maxLiquidationBonus                    10000
+  liquidationFee                         1000
+  collateralFactor                       8000
+  price feed                             0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6
+  price                                  9.9985209e7
+  
+  hub                                    ISO_GOV_HUB
+  token                                  GHO
+  reserveId                              5
+  assetId                                5
+  frozen                                 false
+  paused                                 false
+  borrowable                             true
+  collateralRisk                         850
+  maxLiquidationBonus                    10000
+  liquidationFee                         1000
+  collateralFactor                       8250
+  price feed                             0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC
+  price                                  9.9950838e7
+  
+  hub                                    CORE_HUB
+  token                                  USDC
+  reserveId                              6
+  assetId                                4
+  frozen                                 false
+  paused                                 false
+  borrowable                             true
+  collateralRisk                         0
+  maxLiquidationBonus                    10000
+  liquidationFee                         1000
+  collateralFactor                       0
+  price feed                             0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6
+  price                                  9.9985209e7
+  
+  hub                                    CORE_HUB
+  token                                  GHO
+  reserveId                              7
+  assetId                                5
+  frozen                                 false
+  paused                                 false
+  borrowable                             true
+  collateralRisk                         0
+  maxLiquidationBonus                    10000
+  liquidationFee                         1000
+  collateralFactor                       0
+  price feed                             0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC
+  price                                  9.9950838e7
+  
+  -----ISO_STABLE_SPOKE-----
+  
+ReserveListing
+  hub                                    ISO_STABLE_HUB
+  token                                  USDC
+  reserveId                              0
+  assetId                                0
+  frozen                                 false
+  paused                                 false
+  borrowable                             true
+  collateralRisk                         1000
+  maxLiquidationBonus                    10000
+  liquidationFee                         1000
+  collateralFactor                       9500
+  price feed                             0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6
+  price                                  9.9985209e7
+  
+  hub                                    ISO_STABLE_HUB
+  token                                  sUSDe
+  reserveId                              1
+  assetId                                1
+  frozen                                 false
+  paused                                 false
+  borrowable                             false
+  collateralRisk                         800
+  maxLiquidationBonus                    10850
+  liquidationFee                         1000
+  collateralFactor                       7500
+  price feed                             0xFF3BC18cCBd5999CE63E788A1c250a88626aD099
+  price                                  1.19381625e8
+  
+  hub                                    CORE_HUB
+  token                                  USDC
+  reserveId                              2
+  assetId                                4
+  frozen                                 false
+  paused                                 false
+  borrowable                             true
+  collateralRisk                         0
+  maxLiquidationBonus                    10000
+  liquidationFee                         1000
+  collateralFactor                       0
+  price feed                             0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6
+  price                                  9.9985209e7
+  
+  0x7E7c3EDCa4D39D0aFBD468Dec89cdEaF0AC770d3 CORE_HUB
+  0xA5f18dFE4f0380b6C40411D7Ddb2c04034276805 ISO_GOV_HUB
+  0x4BB8658261CCF575Cb6148a257BE34b36D3D057f ISO_STABLE_HUB
+  0x89914a22E30CDf88A06e801E407ca82520210a79 CORE_SPOKE
+  0xBf0c5c03e3D9059ef51F18B9DE48C741dc339672 E_MODE_SPOKE
+  0xc2C1Da9815f7aFa00Fe49d5B8b5fBeE454FF1caA ISO_GOV_SPOKE
+  0xCc51b78aFF1d1c483Ff303bd687EFF42B993ee95 ISO_STABLE_SPOKE
+  0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 WETH
+  0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf cbBTC
+  0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599 WBTC
+  0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0 wstETH
+  0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 USDC
+  0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f GHO
+  0xdC035D45d973E3EC169d2276DDab16f1e407384F USDS
+  0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9 AAVE
+  0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2 MKR
+  0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984 UNI
+  0x9D39A5DE30e57443BfF2A8307A4256c8797A3497 sUSDe
+  {"commit":"9f0876504f49c0f53ef2a0f2885969283ce0f179","hub":{"CORE_HUB":"0x7E7c3EDCa4D39D0aFBD468Dec89cdEaF0AC770d3","ISO_GOV_HUB":"0xA5f18dFE4f0380b6C40411D7Ddb2c04034276805","ISO_STABLE_HUB":"0x4BB8658261CCF575Cb6148a257BE34b36D3D057f"},"irStrategy":{"CORE_HUB":"0x11466ebc9C1b8dF600F69CE5a549f43CDB52aa5c","ISO_GOV_HUB":"0xbbCE9c052f891C738BB3e1161a0903a050bBb8aD","ISO_STABLE_HUB":"0xa5ea1c565fd011897233CA97b610B3f167253BBB"},"spoke":{"CORE_SPOKE":"0x89914a22E30CDf88A06e801E407ca82520210a79","E_MODE_SPOKE":"0xBf0c5c03e3D9059ef51F18B9DE48C741dc339672","ISO_GOV_SPOKE":"0xc2C1Da9815f7aFa00Fe49d5B8b5fBeE454FF1caA","ISO_STABLE_SPOKE":"0xCc51b78aFF1d1c483Ff303bd687EFF42B993ee95"},"token":{"AAVE":"0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9","GHO":"0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f","MKR":"0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2","UNI":"0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984","USDC":"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","USDS":"0xdC035D45d973E3EC169d2276DDab16f1e407384F","WBTC":"0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599","WETH":"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","cbBTC":"0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf","sUSDe":"0x9D39A5DE30e57443BfF2A8307A4256c8797A3497","wstETH":"0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"}}

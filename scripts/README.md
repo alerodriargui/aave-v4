@@ -17,6 +17,8 @@ forge script scripts/LibraryPreCompile.s.sol \
   --rpc-url http://127.0.0.1:8545 \
   --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \
   --unlocked
+  --slow
+  --legacy
   --offline
 
 # 3. Run the full deployment
@@ -25,6 +27,8 @@ forge script scripts/Script.s.sol:Deploy \
   --rpc-url http://127.0.0.1:8545 \
   -s "run()" \
   --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \
+  --slow
+  --legacy
   --unlocked
   --offline
 ```
