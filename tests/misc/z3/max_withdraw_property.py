@@ -28,10 +28,10 @@ balanceAssets = previewRedeem(balanceShares, totalAddedAssets, totalAddedShares)
 result = min(balanceAssets, maxRemovableAssets)
 sharesBurned = previewWithdraw(result, totalAddedAssets, totalAddedShares)
 
-s.add(0 <= totalAddedAssets, totalAddedAssets <= 10**30)
-s.add(0 <= totalAddedShares, totalAddedShares <= 10**30)
-s.add(0 <= maxRemovableAssets, maxRemovableAssets <= 10**30)
-s.add(0 <= balanceShares, balanceShares <= 10**30)
+s.add(0 <= totalAddedAssets, totalAddedAssets <= MAX_SUPPLY_AMOUNT)
+s.add(0 <= totalAddedShares, totalAddedShares <= MAX_SUPPLY_AMOUNT)
+s.add(0 <= maxRemovableAssets, maxRemovableAssets <= MAX_SUPPLY_AMOUNT)
+s.add(0 <= balanceShares, balanceShares <= MAX_SUPPLY_AMOUNT)
 # maxRemovableAssets is just liquidity, which is part of totalAddedAssets
 s.add(maxRemovableAssets <= totalAddedAssets)
 

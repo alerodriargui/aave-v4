@@ -13,9 +13,9 @@ realizedPremium = Int('realizedPremium')
 s = Solver()
 
 s.add(RAY <= index, index <= 100 * RAY)
-s.add(0 <= premiumShares, premiumShares <= 10**30)
-s.add(0 <= premiumOffset, premiumOffset <= 10**30)
-s.add(0 <= realizedPremium, realizedPremium <= 10**30)
+s.add(0 <= premiumShares, premiumShares <= MAX_SUPPLY_AMOUNT)
+s.add(0 <= premiumOffset, premiumOffset <= MAX_SUPPLY_AMOUNT)
+s.add(0 <= realizedPremium, realizedPremium <= MAX_SUPPLY_AMOUNT)
 s.add(rayMulDown(premiumShares, index) >= premiumOffset)
 
 # choose user's old position
@@ -28,7 +28,7 @@ s.add(0 <= accrued, accrued <= rayMulUp(premiumShares, index) - premiumOffset)
 
 # user's new position
 ps_new = Int('ps_new')
-s.add(0 <= ps_new, ps_new <= 10**30)
+s.add(0 <= ps_new, ps_new <= MAX_SUPPLY_AMOUNT)
 po_new = rayMulDown(ps_new, index)
 
 # replace user's old position with the new one

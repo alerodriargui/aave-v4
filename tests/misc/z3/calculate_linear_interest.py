@@ -1,7 +1,5 @@
 from commons import *
 
-s = Optimize()
-
 UINT256_MAX = IntVal(2**256 - 1)
 SECONDS_PER_YEAR = IntVal(365 * 24 * 60 * 60)
 
@@ -10,12 +8,13 @@ lastUpdateTimestamp = IntVal(1)
 currentTimestamp = Int('currentTimestamp')
 elapsed = currentTimestamp - lastUpdateTimestamp
 
-s.add(elapsed >= 0)
-s.add(rate * elapsed <= UINT256_MAX)
-s.add(RAY + ((rate * elapsed) / SECONDS_PER_YEAR) <= UINT256_MAX)
-
-s.maximize(currentTimestamp)
-
-assert s.check() == sat
-m = s.model()
-print('currentTimestamp max =', m[currentTimestamp])
+maximise(
+    currentTimestamp,
+    'Maximum currentTimestamp for calculateLinearInterest',
+    assumptions=[
+        elapsed >= 0,
+        rate * elapsed <= UINT256_MAX,
+        RAY + ((rate * elapsed) / SECONDS_PER_YEAR) <= UINT256_MAX,
+    ],
+    variables=[(currentTimestamp, 'currentTimestamp')],
+)

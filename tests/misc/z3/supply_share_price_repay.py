@@ -4,7 +4,7 @@ from commons import *
 s = Solver()
 
 premiumRayBefore = Int('premiumRayBefore')
-s.add(0 <= premiumRayBefore, premiumRayBefore <= 10**30)
+s.add(0 <= premiumRayBefore, premiumRayBefore <= MAX_SUPPLY_AMOUNT)
 premiumRestoredRay = Int('premiumRestoredRay')
 s.add(0 <= premiumRestoredRay, premiumRestoredRay <= premiumRayBefore)
 

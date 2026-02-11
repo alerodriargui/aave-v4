@@ -9,8 +9,8 @@ index2 = Int('index2')
 s = Solver()
 
 s.add(RAY <= index1, index1 < index2, index2 <= 100 * RAY)
-s.add(0 <= base, base <= 10**30)
-s.add(0 <= premium, premium <= 10**30)
+s.add(0 <= base, base <= MAX_SUPPLY_AMOUNT)
+s.add(0 <= premium, premium <= MAX_SUPPLY_AMOUNT)
 
 trueLiquidityGrowth = (
     rayMulUp(base, index2)

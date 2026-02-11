@@ -11,13 +11,13 @@ def totalAddedAssets(drawnShares, premiumDebtRay, deficitRay, drawnIndex):
 s = Solver()
 
 drawnShares = Int('drawnShares')
-s.add(1 <= drawnShares, drawnShares <= 10**30)
+s.add(1 <= drawnShares, drawnShares <= MAX_SUPPLY_AMOUNT)
 drawnIndex = Int('drawnIndex')
 s.add(RAY <= drawnIndex, drawnIndex < 100 * RAY)
 premiumDebtRay = Int('premiumDebtRay')
-s.add(0 <= premiumDebtRay, premiumDebtRay <= 10**30)
+s.add(0 <= premiumDebtRay, premiumDebtRay <= MAX_SUPPLY_AMOUNT)
 deficitRay = Int('deficitRay')
-s.add(0 <= deficitRay, deficitRay <= 10**30)
+s.add(0 <= deficitRay, deficitRay <= MAX_SUPPLY_AMOUNT)
 
 deficitDrawnShares = Int('deficitDrawnShares')
 s.add(0 <= deficitDrawnShares, deficitDrawnShares <= drawnShares)

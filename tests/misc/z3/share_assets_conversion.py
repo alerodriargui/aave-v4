@@ -4,11 +4,12 @@ from commons import *
 s = Solver()
 
 totalAddedAssets = Int('totalAddedAssets')
-s.add(0 <= totalAddedAssets, totalAddedAssets <= 10**30)
+s.add(0 <= totalAddedAssets, totalAddedAssets <= MAX_SUPPLY_AMOUNT)
 totalAddedShares = Int('totalAddedShares')
 s.add(
     totalAddedAssets >= totalAddedShares,
-    totalAddedAssets + VIRTUAL_ASSETS < (totalAddedShares + VIRTUAL_SHARES) * 100,
+    totalAddedAssets + VIRTUAL_ASSETS
+    < (totalAddedShares + VIRTUAL_SHARES) * MAX_SUPPLY_PRICE,
 )
 suppliedShares = Int('suppliedShares')
 s.add(0 <= suppliedShares, suppliedShares <= totalAddedShares)

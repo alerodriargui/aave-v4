@@ -2,8 +2,6 @@
 # for any number of users, given any individual risk premium <= MAX_COLLATERAL_RISK.
 from commons import *
 
-MAX_COLLATERAL_RISK = IntVal(1000_00)
-
 # ∀ drawnShares_i ≥ 1, ∀ riskPremium_i ≤ MAX_COLLATERAL_RISK,
 # we want to minimize RISK_PREMIUM_THRESHOLD such that:
 # Σ ⌈(drawnShares_i × riskPremium_i) / PERCENTAGE_FACTOR⌉ ≤ ⌈((Σ drawnShares_i) × RISK_PREMIUM_THRESHOLD) / PERCENTAGE_FACTOR⌉
@@ -31,7 +29,7 @@ N = Int('numberOfUsers')
 s = Solver()
 
 s.add(1 <= N)
-s.add(0 <= drawnShares, drawnShares <= 10**30)
+s.add(0 <= drawnShares, drawnShares <= MAX_SUPPLY_AMOUNT)
 s.add(0 <= riskPremium, riskPremium <= MAX_COLLATERAL_RISK)
 
 totalDrawn = N * drawnShares

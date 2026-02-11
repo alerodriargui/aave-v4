@@ -66,16 +66,16 @@ drawnIndex3 = Int('drawnIndex3')
 s.add(drawnIndex2 <= drawnIndex3, drawnIndex3 < 100 * RAY)
 
 drawnShares = Int('drawnShares')
-s.add(1 <= drawnShares, drawnShares <= 10**30)
+s.add(1 <= drawnShares, drawnShares <= MAX_SUPPLY_AMOUNT)
 premiumShares = Int('premiumShares')
-s.add(0 <= premiumShares, premiumShares <= 10**30)
+s.add(0 <= premiumShares, premiumShares <= MAX_SUPPLY_AMOUNT)
 premiumOffsetRay = premiumShares * RAY
 realizedPremiumRay = Int('realizedPremiumRay')
-s.add(0 <= realizedPremiumRay, realizedPremiumRay <= 10**30)
+s.add(0 <= realizedPremiumRay, realizedPremiumRay <= MAX_SUPPLY_AMOUNT)
 liquiditySwept = Int('liquiditySwept')
-s.add(0 <= liquiditySwept, liquiditySwept <= 10**30)
+s.add(0 <= liquiditySwept, liquiditySwept <= MAX_SUPPLY_AMOUNT)
 deficitRay = Int('deficitRay')
-s.add(0 <= deficitRay, deficitRay <= 10**30)
+s.add(0 <= deficitRay, deficitRay <= MAX_SUPPLY_AMOUNT)
 
 # T1: accrue
 feeAmount1 = unrealizedFeeAmount(

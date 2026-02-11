@@ -16,6 +16,7 @@ MAX_DECIMALS = IntVal(18)
 MIN_DRAWN_INDEX = RAY
 MAX_DRAWN_INDEX = 100 * RAY
 MAX_SUPPLY_PRICE = IntVal(100)
+MAX_COLLATERAL_RISK = IntVal(1000_00)
 
 MIN_LIQUIDATION_BONUS = PERCENTAGE_FACTOR
 MAX_LIQUIDATION_BONUS = PERCENTAGE_FACTOR * PERCENTAGE_FACTOR - 1
@@ -148,6 +149,31 @@ def proveSatisfiable(s, propertyDescription, property, assumptions=[], variables
             print(f'{variableName}: {m.eval(variable)}')
     elif result == unsat:
         print('❌ Property is unsatisfiable.')
+    elif result == unknown:
+        print('❓ Timed out or unknown.')
+
+    print('=' * len(propertyDescriptionOutput))
+
+
+def maximise(expression, propertyDescription, assumptions=[], variables=[]):
+    propertyDescriptionOutput = f'-- MAXIMISE: {propertyDescription} --'
+    print('=' * len(propertyDescriptionOutput))
+    print(propertyDescriptionOutput)
+
+    s = Optimize()
+    for assumption in assumptions:
+        s.add(assumption)
+
+    s.maximize(expression)
+
+    result = s.check()
+    if result == sat:
+        m = s.model()
+        print(f'✅ Maximum found: {m.eval(expression)}')
+        for variable, variableName in variables:
+            print(f'{variableName}: {m.eval(variable)}')
+    elif result == unsat:
+        print('❌ Unsatisfiable (no maximum).')
     elif result == unknown:
         print('❓ Timed out or unknown.')
 
