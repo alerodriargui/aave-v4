@@ -6,7 +6,7 @@ Modular deployment libraries for Aave V4. Each library is a self-contained phase
 
 ```bash
 # 1. Start anvil
-anvil
+anvil --fork-url $RPC_MAINNET
 
 # 2. Deploy LiquidationLogic library (required before main deploy)
 forge script scripts/LibraryPreCompile.s.sol \
@@ -57,14 +57,15 @@ bun scripts/generate-config.ts "configIn/v4 initial config.xlsx" config/generate
 
 The script expects a workbook with 4 sheets:
 
-| Sheet | Contents |
-|-------|----------|
-| `Hub Assets` | Master asset list: columns Asset, Hub, Category. One row per (token, hub) pair. |
-| `Prime` | Spoke reserve matrix for PRIME_HUB: spoke definitions (name, e-mode, credit line) + collateral/borrowable grid |
-| `Core` | Spoke reserve matrix for CORE_HUB (same format) |
-| `Plus` | Spoke reserve matrix for PLUS_HUB (same format) |
+| Sheet        | Contents                                                                                                       |
+| ------------ | -------------------------------------------------------------------------------------------------------------- |
+| `Hub Assets` | Master asset list: columns Asset, Hub, Category. One row per (token, hub) pair.                                |
+| `Prime`      | Spoke reserve matrix for PRIME_HUB: spoke definitions (name, e-mode, credit line) + collateral/borrowable grid |
+| `Core`       | Spoke reserve matrix for CORE_HUB (same format)                                                                |
+| `Plus`       | Spoke reserve matrix for PLUS_HUB (same format)                                                                |
 
 Each spoke sheet has two sections:
+
 1. **Spoke definitions** — rows with Spokes / e-Mode / Credit Line From columns, listing which spokes exist for that hub
 2. **Reserve matrix** — Hub + Assets columns, then (Collateral, Borrowable) column pairs per spoke, marked with "X"
 
@@ -72,16 +73,16 @@ Each spoke sheet has two sections:
 
 From the parsed data, the script builds a complete config JSON:
 
-| Section | Source |
-|---------|--------|
-| `tokens` | `TOKEN_REGISTRY` — hardcoded mainnet addresses + Chainlink price feeds for all 22 tokens |
-| `hubs` | Fixed: `[PRIME_HUB, CORE_HUB, PLUS_HUB]` |
-| `spokes` | Deduplicated from all 3 spoke sheets, with liquidation config profiles per spoke type |
-| `assets` | One per unique (tokenKey, hubKey) from Hub Assets sheet + cross-hub entries from reserve matrix |
-| `spokeRegistrations` | One per (tokenKey, hubKey, spokeKey) from reserve matrix, with estimated supply/borrow caps |
-| `reserves` | One per (spokeKey, hubKey, tokenKey), with profile-based risk parameters |
-| `defaults` | Mirrors `ConfigReader.sol` defaults (liquidation config, spoke registration, reserve, tokenize) |
-| `periphery` | `{ nativeTokenKey: "WETH", deploySignatureGateway: true, deployNativeTokenGateway: true }` |
+| Section              | Source                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------- |
+| `tokens`             | `TOKEN_REGISTRY` — hardcoded mainnet addresses + Chainlink price feeds for all 22 tokens        |
+| `hubs`               | Fixed: `[PRIME_HUB, CORE_HUB, PLUS_HUB]`                                                        |
+| `spokes`             | Deduplicated from all 3 spoke sheets, with liquidation config profiles per spoke type           |
+| `assets`             | One per unique (tokenKey, hubKey) from Hub Assets sheet + cross-hub entries from reserve matrix |
+| `spokeRegistrations` | One per (tokenKey, hubKey, spokeKey) from reserve matrix, with estimated supply/borrow caps     |
+| `reserves`           | One per (spokeKey, hubKey, tokenKey), with profile-based risk parameters                        |
+| `defaults`           | Mirrors `ConfigReader.sol` defaults (liquidation config, spoke registration, reserve, tokenize) |
+| `periphery`          | `{ nativeTokenKey: "WETH", deploySignatureGateway: true, deployNativeTokenGateway: true }`      |
 
 ### Key Normalization
 
@@ -95,17 +96,18 @@ Excel names are mapped to config keys:
 
 Reserve parameters are assigned by profile rather than per-asset, based on token category and spoke context:
 
-| Profile | CF | Risk | MaxLiqBonus | Used for |
-|---------|----|------|-------------|----------|
-| `stable_col_bor` | 8300 | 0 | 10000 | Stablecoin collateral+borrowable |
-| `stable_bor_only` | 0 | 0 | 10000 | Stablecoin borrow-only |
-| `eth_col_bor` | 8500 | 0 | default | WETH collateral+borrowable |
-| `emode_lst_col` | 9300 | 0 | 10600 | LST in e-mode spoke (liqFee=1500) |
-| `ethena_col` | 8000 | 900 | 10600 | sUSDe/USDe collateral-only |
+| Profile           | CF   | Risk | MaxLiqBonus | Used for                          |
+| ----------------- | ---- | ---- | ----------- | --------------------------------- |
+| `stable_col_bor`  | 8300 | 0    | 10000       | Stablecoin collateral+borrowable  |
+| `stable_bor_only` | 0    | 0    | 10000       | Stablecoin borrow-only            |
+| `eth_col_bor`     | 8500 | 0    | default     | WETH collateral+borrowable        |
+| `emode_lst_col`   | 9300 | 0    | 10600       | LST in e-mode spoke (liqFee=1500) |
+| `ethena_col`      | 8000 | 900  | 10600       | sUSDe/USDe collateral-only        |
 
 IR strategy profiles (stablecoin, eth, lst, btc, gov, gold, ethena_yield, ethena_pt) determine interest rate parameters per asset.
 
 Cap estimates are heuristic-based by category:
+
 - Major stables: addCap=3M, drawCap=2.76M
 - GHO: addCap=17.5M, drawCap=15M
 - WETH (main): addCap=800, drawCap=725
@@ -140,39 +142,39 @@ bun test scripts/validate-config.test.ts
 
 ### Error Codes
 
-| Code | Check |
-|------|-------|
-| `SCHEMA` | Zod schema violation (wrong type, missing required field) |
-| `E1` | `tokenKey`/`assetKey` not found in `tokens` |
-| `E2` | `hubKey` not found in `hubs` |
-| `E3` | `spokeKey` not found in `spokes` |
-| `E4` | Duplicate asset (same tokenKey+hubKey) |
-| `E5` | Duplicate spoke registration |
-| `E6` | Duplicate reserve |
-| `E7` | Spoke registration references non-existent asset |
-| `E8` | Reserve references non-existent asset |
-| `E9` | Reserve without matching spoke registration |
-| `E10` | `collateralFactor >= 10000` |
-| `E11` | `maxLiquidationBonus < 10000` |
-| `E12` | `percentMulUp(maxLiquidationBonus, collateralFactor) >= 10000` |
-| `E13` | `liquidationFee > 10000` |
-| `E14` | `liquidityFee > 10000` |
-| `E15` | `collateralRisk > 100000` |
-| `E16` | `optimalUsageRatio > 10000` |
-| `E17` | `periphery.nativeTokenKey` not in tokens |
-| `E18` | `borrowable=true` but `drawCap=0` |
-| `E19` | `tokenize.drawCap != 0` (tokenization spokes are supply-only) |
-| `E20` | Unknown key in any object (via Zod strict mode) |
+| Code     | Check                                                          |
+| -------- | -------------------------------------------------------------- |
+| `SCHEMA` | Zod schema violation (wrong type, missing required field)      |
+| `E1`     | `tokenKey`/`assetKey` not found in `tokens`                    |
+| `E2`     | `hubKey` not found in `hubs`                                   |
+| `E3`     | `spokeKey` not found in `spokes`                               |
+| `E4`     | Duplicate asset (same tokenKey+hubKey)                         |
+| `E5`     | Duplicate spoke registration                                   |
+| `E6`     | Duplicate reserve                                              |
+| `E7`     | Spoke registration references non-existent asset               |
+| `E8`     | Reserve references non-existent asset                          |
+| `E9`     | Reserve without matching spoke registration                    |
+| `E10`    | `collateralFactor >= 10000`                                    |
+| `E11`    | `maxLiquidationBonus < 10000`                                  |
+| `E12`    | `percentMulUp(maxLiquidationBonus, collateralFactor) >= 10000` |
+| `E13`    | `liquidationFee > 10000`                                       |
+| `E14`    | `liquidityFee > 10000`                                         |
+| `E15`    | `collateralRisk > 100000`                                      |
+| `E16`    | `optimalUsageRatio > 10000`                                    |
+| `E17`    | `periphery.nativeTokenKey` not in tokens                       |
+| `E18`    | `borrowable=true` but `drawCap=0`                              |
+| `E19`    | `tokenize.drawCap != 0` (tokenization spokes are supply-only)  |
+| `E20`    | Unknown key in any object (via Zod strict mode)                |
 
 ### Warning Codes
 
-| Code | Check |
-|------|-------|
+| Code | Check                                                                             |
+| ---- | --------------------------------------------------------------------------------- |
 | `W2` | `collateralFactor > 0` but `addCap=0` (collateral enabled but no supply possible) |
-| `W3` | `drawCap > 0` but reserve `borrowable=false` |
-| `W4` | `collateralFactor=0` and `borrowable=false` (reserve serves no purpose) |
-| `W6` | Spoke registration exists but no reserve on the spoke |
-| `W7` | Token with mock price feed (`0x0`) used in reserves |
+| `W3` | `drawCap > 0` but reserve `borrowable=false`                                      |
+| `W4` | `collateralFactor=0` and `borrowable=false` (reserve serves no purpose)           |
+| `W6` | Spoke registration exists but no reserve on the spoke                             |
+| `W7` | Token with mock price feed (`0x0`) used in reserves                               |
 
 ### Test Suite (`scripts/validate-config.test.ts`)
 
@@ -221,27 +223,27 @@ All libraries use `internal` functions with `DeployReport storage` as the first 
 
 ## Files
 
-| File | Public Functions | Purpose |
-|------|-----------------|---------|
-| `Deploy.s.sol` | `run`, `load` | Entry point contract (`DeployV4`). `run()` for full deployment, `load()` for restoring state from deploy.json |
-| `DeployTypes.sol` | — | `DeployReport` struct, sub-report structs (`HubReport`, `SpokeReport`, `TokenReport`, `TokenizationReport`), `DeployReportLib` finder/push helpers |
-| `DeployInfra.sol` | `setUpTokens`, `deployInfrastructure` | Tokens (+ mock feeds for `priceFeed=0x0`), AccessManager, spokes (AaveOracle + SpokeInstance via CREATE2), hubs (Hub via CREATE2 + TreasurySpoke + AssetInterestRateStrategy) |
-| `DeployMarket.sol` | `configureMarkets` | Asset listing (`hub.addAsset` + IR data), spoke registration (`hub.addSpoke` with SpokeConfig), tokenization spoke deployment (ERC4626 vaults via TransparentUpgradeableProxy) |
+| File                  | Public Functions                                                       | Purpose                                                                                                                                                                                    |
+| --------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Deploy.s.sol`        | `run`, `load`                                                          | Entry point contract (`DeployV4`). `run()` for full deployment, `load()` for restoring state from deploy.json                                                                              |
+| `DeployTypes.sol`     | —                                                                      | `DeployReport` struct, sub-report structs (`HubReport`, `SpokeReport`, `TokenReport`, `TokenizationReport`), `DeployReportLib` finder/push helpers                                         |
+| `DeployInfra.sol`     | `setUpTokens`, `deployInfrastructure`                                  | Tokens (+ mock feeds for `priceFeed=0x0`), AccessManager, spokes (AaveOracle + SpokeInstance via CREATE2), hubs (Hub via CREATE2 + TreasurySpoke + AssetInterestRateStrategy)              |
+| `DeployMarket.sol`    | `configureMarkets`                                                     | Asset listing (`hub.addAsset` + IR data), spoke registration (`hub.addSpoke` with SpokeConfig), tokenization spoke deployment (ERC4626 vaults via TransparentUpgradeableProxy)             |
 | `DeployPeriphery.sol` | `setUpRoles`, `setUpReserves`, `deployGateways`, `deployConfigurators` | AccessManager role mappings, reserve listing + liquidation configs, SignatureGateway + NativeTokenGateway + PM registration, HubConfigurator + SpokeConfigurator with Level 1+2 role setup |
-| `ReportIO.sol` | `writeReport`, `readReport` | Serialize `DeployReport` → JSON (`writeReport`), restore from `deploy.json` + config JSON (`readReport`) |
+| `ReportIO.sol`        | `writeReport`, `readReport`                                            | Serialize `DeployReport` → JSON (`writeReport`), restore from `deploy.json` + config JSON (`readReport`)                                                                                   |
 
 ### Supporting Files (in `scripts/`)
 
-| File | Purpose |
-|------|---------|
-| `ConfigReader.sol` | Library for reading `config/<network>.json` with 3-level default resolution (per-item → `defaults` section → hardcoded constant) |
-| `DeployLogger.sol` | Dual-output logging: console + JSONL file (`output/deploy.log.jsonl`). Each event is a JSON object with `ts`, `event`, `data` fields |
-| `DeployReader.sol` | Library for reading `output/deploy.json` addresses via `stdJson`. Functions: `admin`, `accessManager`, `hub(key)`, `spoke(key)`, `oracle(key)`, `token(key)`, `tokenized(key)`, etc. |
-| `ScriptUtils.sol` | Shared utilities: `strEq()` (string equality), `assetId(hub, token)` (linear scan), `slice()`, `commit()` (git hash via FFI) |
-| `SpokeDeployUtils.sol` | SpokeInstance deployment via CREATE2 with LiquidationLogic library linking. Also manages `FOUNDRY_LIBRARIES` in `.env` |
-| `LibraryPreCompile.s.sol` | Prerequisite script: deploys LiquidationLogic via CREATE2, writes `FOUNDRY_LIBRARIES` to `.env` |
-| `validate-config.ts` | TypeScript + Zod config validator: schema validation, referential integrity, constraint violations, warnings |
-| `generate-config.ts` | TypeScript Excel→JSON generator: parses `configIn/*.xlsx` spreadsheet and produces a validated `config/generated.json` |
+| File                      | Purpose                                                                                                                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ConfigReader.sol`        | Library for reading `config/<network>.json` with 3-level default resolution (per-item → `defaults` section → hardcoded constant)                                                     |
+| `DeployLogger.sol`        | Dual-output logging: console + JSONL file (`output/deploy.log.jsonl`). Each event is a JSON object with `ts`, `event`, `data` fields                                                 |
+| `DeployReader.sol`        | Library for reading `output/deploy.json` addresses via `stdJson`. Functions: `admin`, `accessManager`, `hub(key)`, `spoke(key)`, `oracle(key)`, `token(key)`, `tokenized(key)`, etc. |
+| `ScriptUtils.sol`         | Shared utilities: `strEq()` (string equality), `assetId(hub, token)` (linear scan), `slice()`, `commit()` (git hash via FFI)                                                         |
+| `SpokeDeployUtils.sol`    | SpokeInstance deployment via CREATE2 with LiquidationLogic library linking. Also manages `FOUNDRY_LIBRARIES` in `.env`                                                               |
+| `LibraryPreCompile.s.sol` | Prerequisite script: deploys LiquidationLogic via CREATE2, writes `FOUNDRY_LIBRARIES` to `.env`                                                                                      |
+| `validate-config.ts`      | TypeScript + Zod config validator: schema validation, referential integrity, constraint violations, warnings                                                                         |
+| `generate-config.ts`      | TypeScript Excel→JSON generator: parses `configIn/*.xlsx` spreadsheet and produces a validated `config/generated.json`                                                               |
 
 ## DeployReport
 
@@ -256,10 +258,10 @@ struct DeployReport {
   address hubConfigurator;
   address spokeConfigurator;
   string commit;
-  HubReport[] hubs;                // key, hub, treasury, irStrategy
-  SpokeReport[] spokes;            // key, spoke, oracle
-  TokenReport[] tokens;             // key, token, priceFeed
-  TokenizationReport[] tokenized;   // key, spoke (ERC4626 vault)
+  HubReport[] hubs; // key, hub, treasury, irStrategy
+  SpokeReport[] spokes; // key, spoke, oracle
+  TokenReport[] tokens; // key, token, priceFeed
+  TokenizationReport[] tokenized; // key, spoke (ERC4626 vault)
 }
 ```
 
@@ -267,13 +269,13 @@ struct DeployReport {
 
 ## Config Toolchain
 
-| Tool | Purpose |
-|------|---------|
-| `config/mainnet.json` | Hand-authored reference config for mainnet |
-| `config/generated.json` | Machine-generated config from Excel spreadsheet |
-| `scripts/generate-config.ts` | Parses `configIn/*.xlsx` → validated JSON config. Usage: `bun scripts/generate-config.ts [xlsx-path] [output-path]` |
-| `scripts/validate-config.ts` | Zod schema + referential integrity + constraint validation. Usage: `bun scripts/validate-config.ts [config-path]` |
-| `scripts/ConfigReader.sol` | Solidity library for reading config JSON at deploy time. 3-level default resolution: per-item field → `defaults.*` section → hardcoded constant |
+| Tool                         | Purpose                                                                                                                                         |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `config/mainnet.json`        | Hand-authored reference config for mainnet                                                                                                      |
+| `config/generated.json`      | Machine-generated config from Excel spreadsheet                                                                                                 |
+| `scripts/generate-config.ts` | Parses `configIn/*.xlsx` → validated JSON config. Usage: `bun scripts/generate-config.ts [xlsx-path] [output-path]`                             |
+| `scripts/validate-config.ts` | Zod schema + referential integrity + constraint validation. Usage: `bun scripts/validate-config.ts [config-path]`                               |
+| `scripts/ConfigReader.sol`   | Solidity library for reading config JSON at deploy time. 3-level default resolution: per-item field → `defaults.*` section → hardcoded constant |
 
 ### Config Schema Overview
 
@@ -294,19 +296,24 @@ Full schema documentation is in `CLAUDE.md`.
 
 ## Environment Variables
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `CONFIG_PATH` | `config/mainnet.json` | Path to deployment configuration JSON |
-| `DEPLOY_PATH` | `./output/deploy.json` | Path for deploy report output / input |
-| `LOG_PATH` | `output/deploy.log.jsonl` | Path for structured JSONL deploy log |
+| Variable      | Default                   | Purpose                               |
+| ------------- | ------------------------- | ------------------------------------- |
+| `CONFIG_PATH` | `config/mainnet.json`     | Path to deployment configuration JSON |
+| `DEPLOY_PATH` | `./output/deploy.json`    | Path for deploy report output / input |
+| `LOG_PATH`    | `output/deploy.log.jsonl` | Path for structured JSONL deploy log  |
 
 ## Load Existing Deployment
 
 ```solidity
 function load() public {
-    string memory json = vm.readFile(vm.envOr('CONFIG_PATH', string('config/mainnet.json')));
-    string memory deployPath = vm.envOr('DEPLOY_PATH', string('./output/deploy.json'));
-    ReportIO.readReport(report, deployPath, json);
+  string memory json = vm.readFile(
+    vm.envOr("CONFIG_PATH", string("config/mainnet.json"))
+  );
+  string memory deployPath = vm.envOr(
+    "DEPLOY_PATH",
+    string("./output/deploy.json")
+  );
+  ReportIO.readReport(report, deployPath, json);
 }
 ```
 
@@ -324,25 +331,25 @@ function load() public {
 
 ### 17 Test Functions
 
-| Test | Validates |
-|------|-----------|
-| `test_hubAssets` | Asset listings, decimals, feeReceiver, irStrategy, liquidityFee, all IR parameters |
-| `test_spokeRegistrations` | Spoke-to-hub registrations: addCap, drawCap, riskPremiumThreshold, active, halted |
-| `test_treasurySpokeRegistrations` | Treasury auto-registration on every hub asset (addCap=max, drawCap=0) |
-| `test_reserves` | Reserve data, ReserveConfig (borrowable, collateralRisk, paused, frozen, receiveSharesEnabled), DynamicReserveConfig (collateralFactor, maxLiquidationBonus, liquidationFee) |
-| `test_liquidationConfigs` | Per-spoke liquidation parameters: targetHealthFactor, healthFactorForMaxBonus, liquidationBonusFactor |
-| `test_spokeImmutables` | Spoke immutable properties: MAX_USER_RESERVES_LIMIT, ORACLE address |
-| `test_oracleSetup` | Oracle↔spoke linkage, oracle decimals, per-reserve price sources (skips mock feeds), price > 0 |
-| `test_positionManagers` | SignatureGateway and NativeTokenGateway registered as active position managers on each spoke |
-| `test_accessControlRoles` | Admin has HUB_ADMIN + SPOKE_ADMIN; configurators have their respective admin roles |
-| `test_accessControlHubSelectors` | 6 Hub selectors → HUB_ADMIN_ROLE, eliminateDeficit → DEFICIT_ELIMINATOR_ROLE |
-| `test_accessControlSpokeSelectors` | 7 Spoke selectors → SPOKE_ADMIN_ROLE, 2 selectors → USER_POSITION_UPDATER_ROLE |
-| `test_accessControlConfiguratorSelectors` | 22 HubConfigurator selectors → HUB_CONFIGURATOR_ROLE, 25 SpokeConfigurator selectors → SPOKE_CONFIGURATOR_ROLE |
-| `test_tokenizationSpokes` | ERC4626 vault registration, hub/assetId references, ERC20 name/symbol, SpokeConfig (drawCap=0, riskPremiumThreshold=0) |
-| `test_hubAssetCounts` | On-chain asset count per hub matches config |
-| `test_spokeCountsPerAsset` | Spoke count per (hub, asset) pair matches expected (treasury + spoke registrations + tokenization spokes) |
-| `test_reserveCountsPerSpoke` | Reserve count per spoke matches config |
-| `test_authority` | All hubs, spokes, and configurators point to the same AccessManager |
+| Test                                      | Validates                                                                                                                                                                    |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `test_hubAssets`                          | Asset listings, decimals, feeReceiver, irStrategy, liquidityFee, all IR parameters                                                                                           |
+| `test_spokeRegistrations`                 | Spoke-to-hub registrations: addCap, drawCap, riskPremiumThreshold, active, halted                                                                                            |
+| `test_treasurySpokeRegistrations`         | Treasury auto-registration on every hub asset (addCap=max, drawCap=0)                                                                                                        |
+| `test_reserves`                           | Reserve data, ReserveConfig (borrowable, collateralRisk, paused, frozen, receiveSharesEnabled), DynamicReserveConfig (collateralFactor, maxLiquidationBonus, liquidationFee) |
+| `test_liquidationConfigs`                 | Per-spoke liquidation parameters: targetHealthFactor, healthFactorForMaxBonus, liquidationBonusFactor                                                                        |
+| `test_spokeImmutables`                    | Spoke immutable properties: MAX_USER_RESERVES_LIMIT, ORACLE address                                                                                                          |
+| `test_oracleSetup`                        | Oracle↔spoke linkage, oracle decimals, per-reserve price sources (skips mock feeds), price > 0                                                                               |
+| `test_positionManagers`                   | SignatureGateway and NativeTokenGateway registered as active position managers on each spoke                                                                                 |
+| `test_accessControlRoles`                 | Admin has HUB_ADMIN + SPOKE_ADMIN; configurators have their respective admin roles                                                                                           |
+| `test_accessControlHubSelectors`          | 6 Hub selectors → HUB_ADMIN_ROLE, eliminateDeficit → DEFICIT_ELIMINATOR_ROLE                                                                                                 |
+| `test_accessControlSpokeSelectors`        | 7 Spoke selectors → SPOKE_ADMIN_ROLE, 2 selectors → USER_POSITION_UPDATER_ROLE                                                                                               |
+| `test_accessControlConfiguratorSelectors` | 22 HubConfigurator selectors → HUB_CONFIGURATOR_ROLE, 25 SpokeConfigurator selectors → SPOKE_CONFIGURATOR_ROLE                                                               |
+| `test_tokenizationSpokes`                 | ERC4626 vault registration, hub/assetId references, ERC20 name/symbol, SpokeConfig (drawCap=0, riskPremiumThreshold=0)                                                       |
+| `test_hubAssetCounts`                     | On-chain asset count per hub matches config                                                                                                                                  |
+| `test_spokeCountsPerAsset`                | Spoke count per (hub, asset) pair matches expected (treasury + spoke registrations + tokenization spokes)                                                                    |
+| `test_reserveCountsPerSpoke`              | Reserve count per spoke matches config                                                                                                                                       |
+| `test_authority`                          | All hubs, spokes, and configurators point to the same AccessManager                                                                                                          |
 
 ### Running
 
@@ -368,11 +375,11 @@ Never use `forge build --force` — full recompilation is extremely slow due to 
 
 Tokens with `priceFeed: "0x0000...0000"` in config JSON get mock Chainlink feeds deployed at runtime by `DeployInfra._deployMockPriceFeeds()`. Currently hardcoded for:
 
-| Token | Mock Price | Note |
-|-------|-----------|------|
+| Token  | Mock Price           | Note    |
+| ------ | -------------------- | ------- |
 | wstETH | 550429206740 (8 dec) | ~$5,504 |
-| LDO | 85721424 (8 dec) | ~$0.86 |
-| rsETH | 202154210329 (8 dec) | ~$2,022 |
+| LDO    | 85721424 (8 dec)     | ~$0.86  |
+| rsETH  | 202154210329 (8 dec) | ~$2,022 |
 
 Remove mock entries when real Chainlink feeds are available.
 
