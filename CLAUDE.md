@@ -2,6 +2,11 @@
 
 Keep this file up to date as the deployment script evolves.
 
+## Build Notes
+
+- **Never use `forge build --force`** — full recompilation is extremely slow due to via-IR compilation. Forge's incremental compilation handles changes correctly; just run `forge build` or `forge test` directly.
+- **DeployValidation tests**: Run with `--rpc-url anvil --offline`. Use `CONFIG_PATH` env var to point at the right config.
+
 ## Overview
 
 JSON-driven deployment system for Aave V4. All configuration lives in `config/<network>.json`, read by `scripts/Script.s.sol` at runtime via Foundry's `stdJson`. The config path defaults to `config/mainnet.json` and can be overridden with `CONFIG_PATH` env var.
@@ -18,6 +23,8 @@ JSON-driven deployment system for Aave V4. All configuration lives in `config/<n
 | `scripts/ScriptUtils.sol` | Shared utility library: `strEq()`, `assetId()`, `slice()`, `commit()` |
 | `scripts/DeployLogger.sol` | Dual-output logging library (console2 + JSONL file) |
 | `scripts/validate-config.ts` | TypeScript + Zod config validator — schema validation, referential integrity, constraint violations, warnings |
+| `scripts/generate-config.ts` | TypeScript Excel→JSON generator: parses `configIn/*.xlsx` → validated `config/generated.json` |
+| `scripts/DeployReader.sol` | Library for reading `output/deploy.json` addresses via `stdJson` (mirrors ConfigReader pattern) |
 | `scripts/deploy/Deploy.s.sol` | Modular deploy entry point (`DeployV4` contract): `run()` for full deployment, `load()` for restoring state |
 | `scripts/deploy/DeployTypes.sol` | `DeployReport` struct, sub-report structs (`HubReport`, `SpokeReport`, `TokenReport`, `TokenizationReport`), `DeployReportLib` finder helpers |
 | `scripts/deploy/DeployInfra.sol` | Library: AccessManager, tokens (+ mock feeds), spokes (oracle + SpokeInstance), hubs (Hub + TreasurySpoke + IRStrategy) |
@@ -26,9 +33,8 @@ JSON-driven deployment system for Aave V4. All configuration lives in `config/<n
 | `scripts/deploy/ReportIO.sol` | Library: serialize `DeployReport` → JSON (`writeReport`), deserialize JSON → `DeployReport` (`readReport`) |
 | `tests/DeployUtils.sol` | Hub deployment via `vm.getCode` + CREATE2, `proxify()` for TransparentUpgradeableProxy |
 | `tests/Create2Utils.sol` | CREATE2 factory wrapper (safe-global at `0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7`) |
-| `tests/DeployReader.sol` | Library for reading `output/deploy.json` addresses via `stdJson` (mirrors ConfigReader pattern) |
-| `tests/DeployValidation.t.sol` | Post-deployment validation: 13 test functions verify on-chain state matches config |
-| `output/deploy.json` | Written by `logAddy()` — all deployed addresses + git commit hash |
+| `tests/DeployValidation.t.sol` | Post-deployment validation: 17 test functions verify on-chain state matches config |
+| `output/deploy.json` | Written by `ReportIO.writeReport()` — all deployed addresses + git commit hash |
 
 ## Data Model
 
@@ -345,7 +351,7 @@ If redeploying on a persistent fork without resetting, the CREATE2 contracts wil
 
 ## Mock Price Feeds
 
-Tokens with `priceFeed: "0x0000...0000"` in JSON get mock Chainlink feeds deployed at runtime. Currently hardcoded in `_deployMockPriceFeeds()` for wstETH and LDO. Remove when real feeds are available.
+Tokens with `priceFeed: "0x0000...0000"` in JSON get mock Chainlink feeds deployed at runtime. Currently hardcoded in `_deployMockPriceFeeds()` for wstETH, LDO, and rsETH. Remove when real feeds are available.
 
 ## Hub-Spoke Architecture
 
@@ -439,7 +445,7 @@ AccessManager (single instance)
 
 `tests/DeployValidation.t.sol` validates that on-chain state matches the source configuration. It reads expected values from `config/<network>.json` (via `ConfigReader`) and deployed addresses from `output/deploy.json` (via `DeployReader`), then calls view functions on every deployed contract to assert correctness.
 
-### What It Validates (13 tests)
+### What It Validates (17 tests)
 
 | Test | Validates |
 |------|-----------|
@@ -448,6 +454,7 @@ AccessManager (single instance)
 | `test_treasurySpokeRegistrations` | Treasury auto-registration on every hub asset (addCap=max, drawCap=0) |
 | `test_reserves` | Reserve data, ReserveConfig (borrowable, collateralRisk, paused, frozen, receiveSharesEnabled), DynamicReserveConfig (collateralFactor, maxLiquidationBonus, liquidationFee) |
 | `test_liquidationConfigs` | Per-spoke liquidation parameters: targetHealthFactor, healthFactorForMaxBonus, liquidationBonusFactor |
+| `test_spokeImmutables` | Spoke immutable properties: MAX_USER_RESERVES_LIMIT, ORACLE address |
 | `test_oracleSetup` | Oracle↔spoke linkage, oracle decimals, per-reserve price sources (skips mock feeds), price > 0 |
 | `test_positionManagers` | SignatureGateway and NativeTokenGateway registered as active position managers on each spoke |
 | `test_accessControlRoles` | Admin has HUB_ADMIN + SPOKE_ADMIN; configurators have their respective admin roles |
@@ -455,11 +462,14 @@ AccessManager (single instance)
 | `test_accessControlSpokeSelectors` | 7 Spoke selectors → SPOKE_ADMIN_ROLE, 2 selectors → USER_POSITION_UPDATER_ROLE |
 | `test_accessControlConfiguratorSelectors` | 22 HubConfigurator selectors → HUB_CONFIGURATOR_ROLE, 25 SpokeConfigurator selectors → SPOKE_CONFIGURATOR_ROLE |
 | `test_tokenizationSpokes` | ERC4626 vault registration, hub/assetId references, ERC20 name/symbol, SpokeConfig (drawCap=0, riskPremiumThreshold=0) |
+| `test_hubAssetCounts` | On-chain asset count per hub matches config |
+| `test_spokeCountsPerAsset` | Spoke count per (hub, asset) pair matches expected (treasury + spoke registrations + tokenization spokes) |
+| `test_reserveCountsPerSpoke` | Reserve count per spoke matches config |
 | `test_authority` | All hubs, spokes, and configurators point to the same AccessManager |
 
-### Helper Library: `tests/DeployReader.sol`
+### Helper Library: `scripts/DeployReader.sol`
 
-Stateless library for reading `output/deploy.json`. Mirrors the `ConfigReader` pattern. Functions: `admin`, `accessManager`, `signatureGateway`, `nativeTokenGateway`, `hubConfigurator`, `spokeConfigurator`, `hub(hubKey)`, `irStrategy(hubKey)`, `treasury(hubKey)`, `spoke(spokeKey)`, `oracle(spokeKey)`, `token(tokenKey)`, `tokenized(tsKey)`.
+Stateless library for reading `output/deploy.json`. Mirrors the `ConfigReader` pattern. Functions: `admin`, `accessManager`, `signatureGateway`, `nativeTokenGateway`, `hubConfigurator`, `spokeConfigurator`, `hub(hubKey)`, `irStrategy(hubKey)`, `treasury(hubKey)`, `spoke(spokeKey)`, `oracle(spokeKey)`, `token(tokenKey)`, `tokenized(tsKey)`, `keyExists(path)`.
 
 ### Running
 

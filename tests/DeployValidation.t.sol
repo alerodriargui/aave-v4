@@ -40,6 +40,12 @@ contract DeployValidation is Test {
   address internal _hubConfiguratorAddr;
   address internal _spokeConfiguratorAddr;
 
+  // Cached spoke-count data: avoids O(n^2) JSON re-parsing in test_spokeCountsPerAsset
+  // key = keccak256(abi.encodePacked(hubKey, underlying))
+  mapping(bytes32 => uint256) internal _expectedSpokeCount;
+  // key = keccak256(abi.encodePacked(hubKey, underlying, spokeAddr))
+  mapping(bytes32 => bool) internal _knownSpoke;
+
   function setUp() public {
     string memory configPath = vm.envOr('CONFIG_PATH', string('config/mainnet.json'));
     string memory deployPath = vm.envOr('DEPLOY_PATH', string('output/deploy.json'));
@@ -52,6 +58,50 @@ contract DeployValidation is Test {
     _nativeGateway = _deploy.nativeTokenGateway();
     _hubConfiguratorAddr = _deploy.hubConfigurator();
     _spokeConfiguratorAddr = _deploy.spokeConfigurator();
+
+    _cacheSpokeCountData();
+  }
+
+  /// @dev Pre-compute expected spoke counts and known spoke sets by scanning config once.
+  function _cacheSpokeCountData() internal {
+    // Treasury is always registered → start each (hub, asset) pair at count=1
+    for (uint256 hi; _config.hubExists(hi); hi++) {
+      string memory hubKey = _config.hubKey(hi);
+      address hubAddr = _deploy.hub(hubKey);
+      address treasuryAddr = _deploy.treasury(hubKey);
+      IHub hub = IHub(hubAddr);
+      uint256 assetCount = hub.getAssetCount();
+
+      for (uint256 assetId; assetId < assetCount; assetId++) {
+        address underlying = hub.getAsset(assetId).underlying;
+        bytes32 pairKey = keccak256(abi.encodePacked(hubKey, underlying));
+        _expectedSpokeCount[pairKey] = 1; // treasury
+        _knownSpoke[keccak256(abi.encodePacked(hubKey, underlying, treasuryAddr))] = true;
+      }
+    }
+
+    // Spoke registrations
+    for (uint256 ri; _config.spokeRegExists(ri); ri++) {
+      ConfigReader.SpokeRegConfig memory reg = _config.readSpokeReg(ri);
+      address underlying = _deploy.token(reg.assetKey);
+      address spokeAddr = _deploy.spoke(reg.spokeKey);
+      bytes32 pairKey = keccak256(abi.encodePacked(reg.hubKey, underlying));
+      _expectedSpokeCount[pairKey]++;
+      _knownSpoke[keccak256(abi.encodePacked(reg.hubKey, underlying, spokeAddr))] = true;
+    }
+
+    // Tokenization spokes
+    for (uint256 ai; _config.assetExists(ai); ai++) {
+      ConfigReader.AssetConfig memory asset = _config.readAsset(ai);
+      if (!asset.tokenizeEnabled) continue;
+      address underlying = _deploy.token(asset.tokenKey);
+      string memory hubPrefix = ConfigReader.trimEnd(asset.hubKey, 4);
+      string memory tsKey = string.concat(asset.tokenKey, '_', hubPrefix);
+      address tsAddr = _deploy.tokenized(tsKey);
+      bytes32 pairKey = keccak256(abi.encodePacked(asset.hubKey, underlying));
+      _expectedSpokeCount[pairKey]++;
+      _knownSpoke[keccak256(abi.encodePacked(asset.hubKey, underlying, tsAddr))] = true;
+    }
   }
 
   // ==================== Helpers ====================
@@ -627,63 +677,6 @@ contract DeployValidation is Test {
     }
   }
 
-  function _countExpectedSpokes(
-    string memory hubKey,
-    address underlying
-  ) internal view returns (uint256 count) {
-    count = 1; // treasury is always registered
-
-    for (uint256 ri; _config.spokeRegExists(ri); ri++) {
-      ConfigReader.SpokeRegConfig memory reg = _config.readSpokeReg(ri);
-      if (ScriptUtils.strEq(reg.hubKey, hubKey) && _deploy.token(reg.assetKey) == underlying) {
-        count++;
-      }
-    }
-
-    for (uint256 ai; _config.assetExists(ai); ai++) {
-      ConfigReader.AssetConfig memory asset = _config.readAsset(ai);
-      if (
-        ScriptUtils.strEq(asset.hubKey, hubKey) &&
-        _deploy.token(asset.tokenKey) == underlying &&
-        asset.tokenizeEnabled
-      ) {
-        count++;
-      }
-    }
-  }
-
-  function _isKnownSpoke(
-    string memory hubKey,
-    address underlying,
-    address spokeAddr
-  ) internal view returns (bool) {
-    if (spokeAddr == _deploy.treasury(hubKey)) return true;
-
-    for (uint256 ri; _config.spokeRegExists(ri); ri++) {
-      ConfigReader.SpokeRegConfig memory reg = _config.readSpokeReg(ri);
-      if (
-        ScriptUtils.strEq(reg.hubKey, hubKey) &&
-        _deploy.token(reg.assetKey) == underlying &&
-        _deploy.spoke(reg.spokeKey) == spokeAddr
-      ) return true;
-    }
-
-    for (uint256 ai; _config.assetExists(ai); ai++) {
-      ConfigReader.AssetConfig memory asset = _config.readAsset(ai);
-      if (
-        ScriptUtils.strEq(asset.hubKey, hubKey) &&
-        _deploy.token(asset.tokenKey) == underlying &&
-        asset.tokenizeEnabled
-      ) {
-        string memory hubPrefix = ConfigReader.trimEnd(asset.hubKey, 4);
-        string memory tsKey = string.concat(asset.tokenKey, '_', hubPrefix);
-        if (_deploy.tokenized(tsKey) == spokeAddr) return true;
-      }
-    }
-
-    return false;
-  }
-
   function test_spokeCountsPerAsset() public view {
     for (uint256 hi; _config.hubExists(hi); hi++) {
       string memory hubKey = _config.hubKey(hi);
@@ -693,17 +686,20 @@ contract DeployValidation is Test {
       for (uint256 assetId; assetId < assetCount; assetId++) {
         address underlying = hub.getAsset(assetId).underlying;
         string memory label = string.concat(hubKey, ':asset', vm.toString(assetId));
+        bytes32 pairKey = keccak256(abi.encodePacked(hubKey, underlying));
 
         assertEq(
           hub.getSpokeCount(assetId),
-          _countExpectedSpokes(hubKey, underlying),
+          _expectedSpokeCount[pairKey],
           string.concat(label, ': spoke count')
         );
 
         uint256 spokeCount = hub.getSpokeCount(assetId);
         for (uint256 si; si < spokeCount; si++) {
+          address spokeAddr = hub.getSpokeAddress(assetId, si);
+          bytes32 spokeKey = keccak256(abi.encodePacked(hubKey, underlying, spokeAddr));
           assertTrue(
-            _isKnownSpoke(hubKey, underlying, hub.getSpokeAddress(assetId, si)),
+            _knownSpoke[spokeKey],
             string.concat(label, ': unknown spoke at index ', vm.toString(si))
           );
         }

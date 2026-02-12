@@ -189,9 +189,10 @@ contract Seed is Script {
     if (balance >= amount) return;
     uint256 left = amount - balance;
 
-    address[2] memory whales = [
+    address[3] memory whales = [
       0x000000000004444c5dc75cB358380D2e3dE08A90,
-      0x52Aa899454998Be5b000Ad077a46Bbe360F4e497
+      0x52Aa899454998Be5b000Ad077a46Bbe360F4e497,
+      tokenAddr
     ];
     for (uint256 i; i < whales.length; ++i) {
       address whale = whales[i];
@@ -205,6 +206,8 @@ contract Seed is Script {
       }
     }
 
-    revert('_mintTokens: no whale with sufficient balance');
+    revert(
+      string.concat('_mintTokens: no whale with sufficient balance for ', vm.toString(tokenAddr))
+    );
   }
 }
