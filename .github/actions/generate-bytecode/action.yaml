@@ -1,0 +1,9 @@
+name: "Generate bytecode binaries"
+description: "Generate Hub and SpokeInstance bytecode binaries"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate
+      shell: bash
+      run: forge script scripts/utils/GenerateBytecodeScript.s.sol
