@@ -3,7 +3,11 @@ src = 'src'
 test = 'tests'
 out = 'out'
 libs = ['lib']
-fs_permissions = [{ access = "read", path = "tests/mocks/JsonBindings.sol" }]
+fs_permissions = [
+  { access = "read", path = "tests/mocks/JsonBindings.sol" },
+  { access = "read-write", path = "./tests/bin" },
+  { access = "read", path = "out/" }
+]
 solc_version = "0.8.28"
 evm_version = "cancun"
 optimizer = true
