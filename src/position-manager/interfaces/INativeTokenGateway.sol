@@ -2,21 +2,18 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
+import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
 /// @title INativeTokenGateway
 /// @author Aave Labs
 /// @notice Abstracts actions to the protocol involving the native token.
 /// @dev Must be set as `PositionManager` on the spoke for the user.
-interface INativeTokenGateway is IGatewayBase {
+interface INativeTokenGateway is IPositionManagerBase {
   /// @notice Thrown when the underlying asset is not the wrapped native asset.
   error NotNativeWrappedAsset();
 
   /// @notice Thrown when the native amount sent does not match the given amount parameter.
   error NativeAmountMismatch();
-
-  /// @notice Thrown when trying to call an unsupported action or sending native assets to this contract directly.
-  error UnsupportedAction();
 
   /// @notice Wraps the native asset and supplies to a specified registered `spoke`.
   /// @dev Contract must be an active & approved user position manager of the caller.
@@ -85,5 +82,5 @@ interface INativeTokenGateway is IGatewayBase {
   ) external payable returns (uint256, uint256);
 
   /// @notice Returns the address of the Native Wrapper.
-  function NATIVE_WRAPPER() external view returns (address);
+  function NATIVE_TOKEN_WRAPPER() external view returns (address);
 }

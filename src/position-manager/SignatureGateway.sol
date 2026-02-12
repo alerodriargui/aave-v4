@@ -3,14 +3,12 @@
 pragma solidity 0.8.28;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
-import {IERC20Permit} from 'src/dependencies/openzeppelin/IERC20Permit.sol';
 import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
-import {GatewayBase} from 'src/position-manager/GatewayBase.sol';
-import {IntentConsumer} from 'src/utils/IntentConsumer.sol';
-import {Multicall} from 'src/utils/Multicall.sol';
+import {EIP712Hash} from 'src/position-manager/libraries/EIP712Hash.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGateway.sol';
+import {PositionManagerBase} from 'src/position-manager/PositionManagerBase.sol';
 
 /// @title SignatureGateway
 /// @author Aave Labs
@@ -18,7 +16,7 @@ import {ISignatureGateway} from 'src/position-manager/interfaces/ISignatureGatew
 /// @dev Contract must be an active & approved user position manager to execute spoke actions on user's behalf.
 /// @dev Uses keyed-nonces where each key's namespace nonce is consumed sequentially. Intents bundled through
 /// multicall can be executed independently in order of signed nonce & deadline; does not guarantee batch atomicity.
-contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Multicall {
+contract SignatureGateway is ISignatureGateway, PositionManagerBase {
   using SafeERC20 for IERC20;
   using EIP712Hash for *;
 
@@ -48,7 +46,7 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
 
   /// @dev Constructor.
   /// @param initialOwner_ The address of the initial owner.
-  constructor(address initialOwner_) GatewayBase(initialOwner_) {}
+  constructor(address initialOwner_) PositionManagerBase(initialOwner_) {}
 
   /// @inheritdoc ISignatureGateway
   function supplyWithSig(
@@ -204,53 +202,8 @@ contract SignatureGateway is ISignatureGateway, GatewayBase, IntentConsumer, Mul
     ISpoke(params.spoke).updateUserDynamicConfig(params.onBehalfOf);
   }
 
-  /// @inheritdoc ISignatureGateway
-  function setSelfAsUserPositionManagerWithSig(
-    address spoke,
-    address onBehalfOf,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
-    bytes calldata signature
-  ) external onlyRegisteredSpoke(spoke) {
-    ISpoke.PositionManagerUpdate[] memory updates = new ISpoke.PositionManagerUpdate[](1);
-    updates[0] = ISpoke.PositionManagerUpdate({positionManager: address(this), approve: approve});
-    try
-      ISpoke(spoke).setUserPositionManagersWithSig(
-        ISpoke.SetUserPositionManagers({
-          onBehalfOf: onBehalfOf,
-          updates: updates,
-          nonce: nonce,
-          deadline: deadline
-        }),
-        signature
-      )
-    {} catch {}
-  }
-
-  /// @inheritdoc ISignatureGateway
-  function permitReserve(
-    address spoke,
-    uint256 reserveId,
-    address onBehalfOf,
-    uint256 value,
-    uint256 deadline,
-    uint8 permitV,
-    bytes32 permitR,
-    bytes32 permitS
-  ) external onlyRegisteredSpoke(spoke) {
-    address underlying = _getReserveUnderlying(spoke, reserveId);
-    try
-      IERC20Permit(underlying).permit({
-        owner: onBehalfOf,
-        spender: address(this),
-        value: value,
-        deadline: deadline,
-        v: permitV,
-        r: permitR,
-        s: permitS
-      })
-    {} catch {}
+  function _multicallEnabled() internal pure override returns (bool) {
+    return true;
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {

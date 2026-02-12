@@ -2,14 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IMulticall} from 'src/interfaces/IMulticall.sol';
-import {IIntentConsumer} from 'src/interfaces/IIntentConsumer.sol';
-import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
+import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
 /// @title ISignatureGateway
 /// @author Aave Labs
 /// @notice Minimal interface for protocol actions involving signed intents.
-interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
+interface ISignatureGateway is IPositionManagerBase {
   /// @notice Intent data to supply assets to a reserve.
   /// @param spoke The address of the registered spoke.
   /// @param reserveId The identifier of the reserve.
@@ -189,47 +187,6 @@ interface ISignatureGateway is IGatewayBase, IIntentConsumer, IMulticall {
   function updateUserDynamicConfigWithSig(
     UpdateUserDynamicConfig calldata params,
     bytes calldata signature
-  ) external;
-
-  /// @notice Facilitates setting this gateway as user position manager on the specified registered `spoke`
-  /// with a typed signature from `onBehalfOf`.
-  /// @dev The signature is consumed on the the specified registered `spoke`.
-  /// @dev The given data is passed to the `spoke` for the signature to be verified.
-  /// @param spoke The address of the registered spoke.
-  /// @param onBehalfOf The address of the user on whose behalf this gateway can act.
-  /// @param approve True to approve the gateway, false to revoke approval.
-  /// @param nonce The key-prefixed nonce for the signature.
-  /// @param deadline The deadline for the intent.
-  /// @param signature The EIP712-typed signed bytes for the intent.
-  function setSelfAsUserPositionManagerWithSig(
-    address spoke,
-    address onBehalfOf,
-    bool approve,
-    uint256 nonce,
-    uint256 deadline,
-    bytes calldata signature
-  ) external;
-
-  /// @notice Facilitates consuming a permit for the given reserve's underlying asset on the specified registered `spoke`.
-  /// @dev The given data is passed to the underlying asset for the signature to be verified.
-  /// @dev The SignatureGateway must be configured as the spender.
-  /// @param spoke The address of the spoke.
-  /// @param reserveId The identifier of the reserve.
-  /// @param onBehalfOf The address of the user on whose behalf the permit is being used.
-  /// @param value The amount of the underlying asset to permit.
-  /// @param deadline The deadline for the permit.
-  /// @param permitV The V component of the permit signature.
-  /// @param permitR The R component of the permit signature.
-  /// @param permitS The S component of the permit signature.
-  function permitReserve(
-    address spoke,
-    uint256 reserveId,
-    address onBehalfOf,
-    uint256 value,
-    uint256 deadline,
-    uint8 permitV,
-    bytes32 permitR,
-    bytes32 permitS
   ) external;
 
   /// @notice Returns the type hash for the Supply intent.

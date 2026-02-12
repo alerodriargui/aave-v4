@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import 'tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol';
+import 'tests/unit/position-managers/SignatureGateway/SignatureGateway.Base.t.sol';
 
 contract SignatureGatewayTest is SignatureGatewayBaseTest {
   using SafeCast for *;
@@ -43,10 +43,10 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
   }
 
   function test_renouncePositionManagerRole() public {
-    address who = vm.randomAddress();
-    vm.expectCall(address(spoke1), abi.encodeCall(ISpoke.renouncePositionManagerRole, (who)));
+    address user = vm.randomAddress();
+    vm.expectCall(address(spoke1), abi.encodeCall(ISpoke.renouncePositionManagerRole, (user)));
     vm.prank(ADMIN);
-    gateway.renouncePositionManagerRole(address(spoke1), who);
+    gateway.renouncePositionManagerRole(address(spoke1), user);
   }
 
   function test_supplyWithSig() public {
@@ -261,6 +261,46 @@ contract SignatureGatewayTest is SignatureGatewayBaseTest {
     });
 
     _assertNonceIncrement(ISignatureGateway(address(spoke1)), alice, p.nonce); // note: nonce consumed on spoke
+    _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
+    _assertGatewayHasNoActivePosition(spoke1, gateway);
+  }
+
+  function test_multicall() public {
+    uint256 deadline = _warpBeforeRandomDeadline();
+    uint256 reserveId = _daiReserveId(spoke1);
+
+    ISignatureGateway.Supply memory p = _supplyData(spoke1, alice, deadline);
+    p.reserveId = reserveId;
+    p.nonce = _burnRandomNoncesAtKey(gateway, p.onBehalfOf);
+    bytes memory signature = _sign(alicePk, _getTypedDataHash(gateway, p));
+    Utils.approve(spoke1, p.reserveId, alice, address(gateway), p.amount);
+
+    uint256 expectedShares = _hub(spoke1, reserveId).previewAddByAssets(
+      _reserveAssetId(spoke1, reserveId),
+      p.amount
+    );
+
+    ISignatureGateway.SetUsingAsCollateral memory p2 = _setAsCollateralData(
+      spoke1,
+      alice,
+      deadline
+    );
+    p2.nonce = _getNextNoncePacked(p.nonce);
+    p2.reserveId = reserveId;
+    bytes memory signature2 = _sign(alicePk, _getTypedDataHash(gateway, p2));
+
+    bytes[] memory calls = new bytes[](2);
+    calls[0] = abi.encodeCall(gateway.supplyWithSig, (p, signature));
+    calls[1] = abi.encodeCall(gateway.setUsingAsCollateralWithSig, (p2, signature2));
+
+    bytes[] memory res = gateway.multicall(calls);
+
+    (uint256 returnedShares, uint256 returnedAmount) = abi.decode(res[0], (uint256, uint256));
+    assertEq(returnedShares, expectedShares);
+    assertEq(returnedAmount, p.amount);
+    assertEq(res[1].length, 0); // setUsingAsCollateralWithSig has no return values
+
+    _assertNonceIncrement(gateway, alice, p2.nonce);
     _assertGatewayHasNoBalanceOrAllowance(spoke1, gateway, alice);
     _assertGatewayHasNoActivePosition(spoke1, gateway);
   }
