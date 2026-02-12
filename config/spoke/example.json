@@ -1,0 +1,41 @@
+{
+  "reserves": [
+    {
+      "underlying": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "priceFeed": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+      "reserveConfig": {
+        "collateralRisk": 5000,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": true
+      },
+      "dynamicConfig": {
+        "collateralFactor": 8000,
+        "maxLiquidationBonus": 10500,
+        "liquidationFee": 100
+      }
+    },
+    {
+      "underlying": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "priceFeed": "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6",
+      "reserveConfig": {
+        "collateralRisk": 3000,
+        "paused": false,
+        "frozen": false,
+        "borrowable": true,
+        "receiveSharesEnabled": true
+      },
+      "dynamicConfig": {
+        "collateralFactor": 8500,
+        "maxLiquidationBonus": 10400,
+        "liquidationFee": 100
+      }
+    }
+  ],
+  "liquidationConfig": {
+    "targetHealthFactor": "1100000000000000000",
+    "healthFactorForMaxBonus": "950000000000000000",
+    "liquidationBonusFactor": 10000
+  }
+}
