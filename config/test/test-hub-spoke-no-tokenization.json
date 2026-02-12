@@ -1,0 +1,125 @@
+{
+  "infrastructure": {
+    "accessManagerAdmin": "0x0000000000000000000000000000000000000001",
+    "hubConfiguratorAdmin": "0x0000000000000000000000000000000000000002",
+    "spokeConfiguratorAdmin": "0x0000000000000000000000000000000000000003",
+    "treasurySpokeOwner": "0x0000000000000000000000000000000000000004",
+    "spokeProxyAdminOwner": "0x0000000000000000000000000000000000000005",
+    "salt": "basic-v1"
+  },
+  "defaults": {
+    "spoke": {
+      "oracleDecimals": 8,
+      "maxUserReservesLimit": 128,
+      "liquidationConfig": {
+        "targetHealthFactor": "1050000000000000000",
+        "healthFactorForMaxBonus": "700000000000000000",
+        "liquidationBonusFactor": 2000
+      }
+    },
+    "spokeRegistration": {
+      "riskPremiumThreshold": 100000,
+      "active": true,
+      "halted": false
+    },
+    "reserve": {
+      "receiveSharesEnabled": true,
+      "frozen": false,
+      "paused": false,
+      "liquidationFee": 1000,
+      "maxLiquidationBonus": 10500
+    },
+    "asset": {
+      "liquidityFee": 1000
+    },
+    "tokenize": {
+      "enabled": false
+    }
+  },
+  "tokens": {
+    "WETH": {
+      "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "priceFeed": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
+    },
+    "USDC": {
+      "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "priceFeed": "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6"
+    }
+  },
+  "hubs": [
+    { "key": "PRIME_HUB" }
+  ],
+  "spokes": [
+    {
+      "key": "PRIME_SPOKE",
+      "liquidationConfig": {
+        "targetHealthFactor": "1100000000000000000",
+        "healthFactorForMaxBonus": "950000000000000000",
+        "liquidationBonusFactor": 10000
+      }
+    }
+  ],
+  "assets": [
+    {
+      "tokenKey": "WETH",
+      "hubKey": "PRIME_HUB",
+      "irData": {
+        "optimalUsageRatio": 9000,
+        "baseVariableBorrowRate": 100,
+        "variableRateSlope1": 700,
+        "variableRateSlope2": 30000
+      }
+    },
+    {
+      "tokenKey": "USDC",
+      "hubKey": "PRIME_HUB",
+      "liquidityFee": 500,
+      "irData": {
+        "optimalUsageRatio": 9200,
+        "baseVariableBorrowRate": 0,
+        "variableRateSlope1": 550,
+        "variableRateSlope2": 40000
+      }
+    }
+  ],
+  "spokeRegistrations": [
+    {
+      "assetKey": "WETH",
+      "hubKey": "PRIME_HUB",
+      "spokeKey": "PRIME_SPOKE",
+      "addCap": 225,
+      "drawCap": 200
+    },
+    {
+      "assetKey": "USDC",
+      "hubKey": "PRIME_HUB",
+      "spokeKey": "PRIME_SPOKE",
+      "addCap": 500000,
+      "drawCap": 400000
+    }
+  ],
+  "reserves": [
+    {
+      "spokeKey": "PRIME_SPOKE",
+      "assetKey": "WETH",
+      "hubKey": "PRIME_HUB",
+      "borrowable": true,
+      "collateralRisk": 5000,
+      "collateralFactor": 8000
+    },
+    {
+      "spokeKey": "PRIME_SPOKE",
+      "assetKey": "USDC",
+      "hubKey": "PRIME_HUB",
+      "borrowable": true,
+      "collateralRisk": 3000,
+      "collateralFactor": 8500,
+      "maxLiquidationBonus": 10400
+    }
+  ],
+  "periphery": {
+    "nativeTokenKey": "WETH",
+    "deploySignatureGateway": false,
+    "deployNativeTokenGateway": false
+  }
+}

@@ -1,0 +1,193 @@
+{
+  "infrastructure": {
+    "accessManagerAdmin": "0x0000000000000000000000000000000000000001",
+    "hubConfiguratorAdmin": "0x0000000000000000000000000000000000000002",
+    "spokeConfiguratorAdmin": "0x0000000000000000000000000000000000000003",
+    "treasurySpokeOwner": "0x0000000000000000000000000000000000000004",
+    "spokeProxyAdminOwner": "0x0000000000000000000000000000000000000005",
+    "salt": "multi-hub-v1"
+  },
+  "defaults": {
+    "spoke": {
+      "oracleDecimals": 8,
+      "maxUserReservesLimit": 128,
+      "liquidationConfig": {
+        "targetHealthFactor": "1050000000000000000",
+        "healthFactorForMaxBonus": "700000000000000000",
+        "liquidationBonusFactor": 2000
+      }
+    },
+    "spokeRegistration": {
+      "riskPremiumThreshold": 100000,
+      "active": true,
+      "halted": false
+    },
+    "reserve": {
+      "receiveSharesEnabled": true,
+      "frozen": false,
+      "paused": false,
+      "liquidationFee": 1000,
+      "maxLiquidationBonus": 10500
+    },
+    "asset": {
+      "liquidityFee": 1000
+    },
+    "tokenize": {
+      "enabled": false
+    }
+  },
+  "tokens": {
+    "WETH": {
+      "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "priceFeed": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
+    },
+    "USDC": {
+      "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "priceFeed": "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6"
+    },
+    "DAI": {
+      "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+      "priceFeed": "0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9"
+    }
+  },
+  "hubs": [
+    { "key": "PRIME_HUB" },
+    { "key": "CORE_HUB" }
+  ],
+  "spokes": [
+    {
+      "key": "PRIME_SPOKE",
+      "liquidationConfig": {
+        "targetHealthFactor": "1100000000000000000",
+        "healthFactorForMaxBonus": "950000000000000000",
+        "liquidationBonusFactor": 10000
+      }
+    },
+    {
+      "key": "CORE_SPOKE",
+      "oracleDecimals": 8,
+      "maxUserReservesLimit": 64,
+      "liquidationConfig": {
+        "targetHealthFactor": "1150000000000000000",
+        "healthFactorForMaxBonus": "900000000000000000",
+        "liquidationBonusFactor": 8000
+      }
+    }
+  ],
+  "assets": [
+    {
+      "tokenKey": "WETH",
+      "hubKey": "PRIME_HUB",
+      "irData": {
+        "optimalUsageRatio": 9000,
+        "baseVariableBorrowRate": 100,
+        "variableRateSlope1": 700,
+        "variableRateSlope2": 30000
+      }
+    },
+    {
+      "tokenKey": "USDC",
+      "hubKey": "PRIME_HUB",
+      "liquidityFee": 500,
+      "irData": {
+        "optimalUsageRatio": 9200,
+        "baseVariableBorrowRate": 0,
+        "variableRateSlope1": 550,
+        "variableRateSlope2": 40000
+      }
+    },
+    {
+      "tokenKey": "WETH",
+      "hubKey": "CORE_HUB",
+      "liquidityFee": 800,
+      "irData": {
+        "optimalUsageRatio": 8000,
+        "baseVariableBorrowRate": 200,
+        "variableRateSlope1": 600,
+        "variableRateSlope2": 50000
+      }
+    },
+    {
+      "tokenKey": "DAI",
+      "hubKey": "CORE_HUB",
+      "liquidityFee": 400,
+      "irData": {
+        "optimalUsageRatio": 9500,
+        "baseVariableBorrowRate": 0,
+        "variableRateSlope1": 400,
+        "variableRateSlope2": 60000
+      }
+    }
+  ],
+  "spokeRegistrations": [
+    {
+      "assetKey": "WETH",
+      "hubKey": "PRIME_HUB",
+      "spokeKey": "PRIME_SPOKE",
+      "addCap": 225,
+      "drawCap": 200
+    },
+    {
+      "assetKey": "USDC",
+      "hubKey": "PRIME_HUB",
+      "spokeKey": "PRIME_SPOKE",
+      "addCap": 500000,
+      "drawCap": 400000
+    },
+    {
+      "assetKey": "WETH",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "CORE_SPOKE",
+      "addCap": 100,
+      "drawCap": 80
+    },
+    {
+      "assetKey": "DAI",
+      "hubKey": "CORE_HUB",
+      "spokeKey": "CORE_SPOKE",
+      "addCap": 1000000,
+      "drawCap": 800000
+    }
+  ],
+  "reserves": [
+    {
+      "spokeKey": "PRIME_SPOKE",
+      "assetKey": "WETH",
+      "hubKey": "PRIME_HUB",
+      "borrowable": true,
+      "collateralRisk": 5000,
+      "collateralFactor": 8000
+    },
+    {
+      "spokeKey": "PRIME_SPOKE",
+      "assetKey": "USDC",
+      "hubKey": "PRIME_HUB",
+      "borrowable": true,
+      "collateralRisk": 3000,
+      "collateralFactor": 8500,
+      "maxLiquidationBonus": 10400
+    },
+    {
+      "spokeKey": "CORE_SPOKE",
+      "assetKey": "WETH",
+      "hubKey": "CORE_HUB",
+      "borrowable": true,
+      "collateralRisk": 4000,
+      "collateralFactor": 7000
+    },
+    {
+      "spokeKey": "CORE_SPOKE",
+      "assetKey": "DAI",
+      "hubKey": "CORE_HUB",
+      "borrowable": true,
+      "collateralRisk": 2000,
+      "collateralFactor": 9000,
+      "maxLiquidationBonus": 10300
+    }
+  ],
+  "periphery": {
+    "nativeTokenKey": "WETH",
+    "deploySignatureGateway": false,
+    "deployNativeTokenGateway": false
+  }
+}

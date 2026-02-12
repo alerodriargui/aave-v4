@@ -1,0 +1,59 @@
+{
+  "infrastructure": {
+    "accessManagerAdmin": "0x0000000000000000000000000000000000000001",
+    "hubConfiguratorAdmin": "0x0000000000000000000000000000000000000002",
+    "spokeConfiguratorAdmin": "0x0000000000000000000000000000000000000003",
+    "treasurySpokeOwner": "0x0000000000000000000000000000000000000004",
+    "spokeProxyAdminOwner": "0x0000000000000000000000000000000000000005",
+    "salt": "asset-listing-v1"
+  },
+  "defaults": {
+    "asset": { "liquidityFee": 1000 },
+    "tokenize": { "enabled": true, "addCap": 1099511627775 }
+  },
+  "tokens": {
+    "WETH": {
+      "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "priceFeed": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
+    },
+    "USDC": {
+      "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "priceFeed": "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6"
+    }
+  },
+  "hubs": [],
+  "spokes": [],
+  "assets": [
+    {
+      "tokenKey": "WETH",
+      "hubKey": "EXISTING_HUB",
+      "irData": {
+        "optimalUsageRatio": 9000,
+        "baseVariableBorrowRate": 100,
+        "variableRateSlope1": 700,
+        "variableRateSlope2": 30000
+      }
+    },
+    {
+      "tokenKey": "USDC",
+      "hubKey": "EXISTING_HUB",
+      "liquidityFee": 500,
+      "irData": {
+        "optimalUsageRatio": 9200,
+        "baseVariableBorrowRate": 0,
+        "variableRateSlope1": 550,
+        "variableRateSlope2": 40000
+      },
+      "tokenize": {
+        "enabled": false
+      }
+    }
+  ],
+  "spokeRegistrations": [],
+  "reserves": [],
+  "periphery": {
+    "nativeTokenKey": "WETH",
+    "deploySignatureGateway": false,
+    "deployNativeTokenGateway": false
+  }
+}
