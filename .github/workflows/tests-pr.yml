@@ -25,7 +25,7 @@ jobs:
         uses: bgd-labs/github-workflows/.github/actions/foundry-size@main
 
       - name: Run Generate bytecode
-        uses: aave/aave-v4/.github/actions/foundry-size@main
+        uses: aave/aave-v4/.github/actions/generate-bytecode@main
 
       - name: Run Gas report
         uses: bgd-labs/github-workflows/.github/actions/foundry-gas-report@main
