@@ -24,9 +24,6 @@ jobs:
       - name: Run Forge size
         uses: bgd-labs/github-workflows/.github/actions/foundry-size@main
 
-      - name: Run Generate bytecode
-        uses: ./.github/actions/generate-bytecode
-
       - name: Run Gas report
         uses: bgd-labs/github-workflows/.github/actions/foundry-gas-report@main
 
