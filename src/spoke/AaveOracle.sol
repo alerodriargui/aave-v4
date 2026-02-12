@@ -81,7 +81,7 @@ contract AaveOracle is IAaveOracle {
     AggregatorV3Interface source = _sources[reserveId];
     require(address(source) != address(0), InvalidSource(reserveId));
 
-    (, int256 price, , , ) = source.latestRoundData();
+    int256 price = source.latestAnswer();
     require(price > 0, InvalidPrice(reserveId));
 
     return uint256(price);

@@ -78,4 +78,9 @@ contract UnitPriceFeed is AggregatorV3Interface {
   function decimals() external view returns (uint8) {
     return DECIMALS;
   }
+
+  /// @inheritdoc AggregatorV3Interface
+  function latestAnswer() external view returns (int256) {
+    return UNITS;
+  }
 }

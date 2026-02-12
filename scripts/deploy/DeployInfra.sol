@@ -35,7 +35,11 @@ library DeployInfra {
   function setUpTokens(DeployReport storage report, string memory json) internal {
     string[] memory tokenKeys = json.tokenKeys();
     for (uint256 i; i < tokenKeys.length; ++i) {
-      report.pushToken(tokenKeys[i], json.tokenAddress(tokenKeys[i]), json.tokenPriceFeed(tokenKeys[i]));
+      report.pushToken(
+        tokenKeys[i],
+        json.tokenAddress(tokenKeys[i]),
+        json.tokenPriceFeed(tokenKeys[i])
+      );
     }
     _deployMockPriceFeeds(report);
   }
@@ -53,9 +57,16 @@ library DeployInfra {
 
   // ==================== Private: Spokes ====================
 
-  function _deploySpokes(DeployReport storage report, string memory json, address deployer) private {
+  function _deploySpokes(
+    DeployReport storage report,
+    string memory json,
+    address deployer
+  ) private {
     address liquidationLogic = SpokeDeployUtils._getLiquidationLogicAddress();
-    require(liquidationLogic.code.length > 0, 'LiquidationLogic not deployed. Run LibraryPreCompile first.');
+    require(
+      liquidationLogic.code.length > 0,
+      'LiquidationLogic not deployed. Run LibraryPreCompile first.'
+    );
 
     for (uint256 si = 0; json.spokeExists(si); si++) {
       ConfigReader.SpokeDeployConfig memory sc = json.readSpoke(si);
@@ -98,7 +109,7 @@ library DeployInfra {
   // ==================== Private: Mock Feeds ====================
 
   /// @dev Deploy mock Chainlink feeds for tokens with priceFeed == address(0).
-  ///      Currently hardcoded for wstETH and LDO. Remove when real feeds are available.
+  ///      Currently hardcoded for wstETH, LDO, and rsETH. Remove when real feeds are available.
   function _deployMockPriceFeeds(DeployReport storage report) private {
     for (uint256 i; i < report.tokens.length; ++i) {
       if (report.tokens[i].priceFeed != address(0)) continue;
@@ -107,6 +118,8 @@ library DeployInfra {
         report.tokens[i].priceFeed = address(new MockPriceFeed(8, 'wstETH', 550429206740));
       } else if (ScriptUtils.strEq(report.tokens[i].key, 'LDO')) {
         report.tokens[i].priceFeed = address(new MockPriceFeed(8, 'LDO', 85721424));
+      } else if (ScriptUtils.strEq(report.tokens[i].key, 'rsETH')) {
+        report.tokens[i].priceFeed = address(new MockPriceFeed(8, 'rsETH', 202154210329)); // ~$2,000
       }
     }
   }
