@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import {Script, stdJson, console2 as console} from 'forge-std/Script.sol';
 import {StdAssertions} from 'forge-std/StdAssertions.sol';
-import {StdCheats} from 'forge-std/StdCheats.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
@@ -33,14 +32,16 @@ import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 import {ConfigReader} from './ConfigReader.sol';
+import {DeployReader} from './DeployReader.sol';
 import {ScriptUtils} from './ScriptUtils.sol';
 import {DeployLogger} from './DeployLogger.sol';
 
-contract Deploy is Script, StdAssertions, StdCheats {
+contract Deploy is Script, StdAssertions {
   using stdJson for string;
   using SafeCast for *;
   using SafeERC20 for *;
   using ConfigReader for string;
+  using DeployReader for string;
 
   // ==================== JSON Config ====================
 
@@ -106,14 +107,6 @@ contract Deploy is Script, StdAssertions, StdCheats {
     periphery();
     _deployConfigurators();
     logAddy();
-  }
-
-  function debug() public {
-    vm.startBroadcast();
-    _loadConfig();
-    setUpTokens();
-    load();
-    // Add debug operations here
   }
 
   // ==================== Config Loading ====================
@@ -635,65 +628,49 @@ contract Deploy is Script, StdAssertions, StdCheats {
       _spokeKeys.push(_json.spokeKey(si));
     }
 
-    ACCESS_MANAGER = AccessManager(deploy.readAddress('.accessManager'));
+    ADMIN = deploy.admin();
+    ACCESS_MANAGER = AccessManager(deploy.accessManager());
     vm.label(address(ACCESS_MANAGER), 'AccessManager');
 
     for (uint i; i < _hubKeys.length; ++i) {
-      hubs[_hubKeys[i]].hub = IHub(deploy.readAddress(string.concat('.hub.', _hubKeys[i])));
-      hubs[_hubKeys[i]].irStrategy = AssetInterestRateStrategy(
-        deploy.readAddress(string.concat('.irStrategy.', _hubKeys[i]))
-      );
-      hubs[_hubKeys[i]].treasury = TreasurySpoke(
-        deploy.readAddress(string.concat('.treasury.', _hubKeys[i]))
-      );
-      console.log(address(hubs[_hubKeys[i]].hub), _hubKeys[i]);
-      vm.label(address(hubs[_hubKeys[i]].hub), _hubKeys[i]);
+      string memory key = _hubKeys[i];
+      hubs[key].hub = IHub(deploy.hub(key));
+      hubs[key].irStrategy = AssetInterestRateStrategy(deploy.irStrategy(key));
+      hubs[key].treasury = TreasurySpoke(deploy.treasury(key));
+      console.log(address(hubs[key].hub), key);
+      vm.label(address(hubs[key].hub), key);
     }
 
     for (uint i; i < _spokeKeys.length; ++i) {
-      spokes[_spokeKeys[i]].spoke = ISpoke(
-        deploy.readAddress(string.concat('.spoke.', _spokeKeys[i]))
-      );
-      spokes[_spokeKeys[i]].oracle = deploy.readAddress(string.concat('.oracle.', _spokeKeys[i]));
-      console.log(address(spokes[_spokeKeys[i]].spoke), _spokeKeys[i]);
-      vm.label(address(spokes[_spokeKeys[i]].spoke), _spokeKeys[i]);
+      string memory key = _spokeKeys[i];
+      spokes[key].spoke = ISpoke(deploy.spoke(key));
+      spokes[key].oracle = deploy.oracle(key);
+      console.log(address(spokes[key].spoke), key);
+      vm.label(address(spokes[key].spoke), key);
     }
 
     // Load tokenization spokes
-    {
-      for (uint ai = 0; _json.assetExists(ai); ai++) {
-        ConfigReader.AssetConfig memory asset = _json.readAsset(ai);
-        if (asset.tokenizeEnabled) {
-          string memory hubPrefix = ConfigReader.trimEnd(asset.hubKey, 4);
-          string memory tsKey = string.concat(asset.tokenKey, '_', hubPrefix);
-          _tokenizationSpokeKeys.push(tsKey);
-          tokenizationSpokes[tsKey] = deploy.readAddress(string.concat('.tokenized.', tsKey));
-          console.log(tokenizationSpokes[tsKey], string.concat('TOKENIZED_', tsKey));
-          vm.label(tokenizationSpokes[tsKey], string.concat('TOKENIZED_', tsKey));
-        }
-      }
+    for (uint ai = 0; _json.assetExists(ai); ai++) {
+      ConfigReader.AssetConfig memory asset = _json.readAsset(ai);
+      if (!asset.tokenizeEnabled) continue;
+      string memory hubPrefix = ConfigReader.trimEnd(asset.hubKey, 4);
+      string memory tsKey = string.concat(asset.tokenKey, '_', hubPrefix);
+      _tokenizationSpokeKeys.push(tsKey);
+      tokenizationSpokes[tsKey] = deploy.tokenized(tsKey);
+      console.log(tokenizationSpokes[tsKey], string.concat('TOKENIZED_', tsKey));
+      vm.label(tokenizationSpokes[tsKey], string.concat('TOKENIZED_', tsKey));
     }
 
-    signatureGateway = deploy.readAddress('.signatureGateway');
-    nativeTokenGateway = deploy.readAddress('.nativeTokenGateway');
-    hubConfigurator = deploy.readAddress('.hubConfigurator');
-    spokeConfigurator = deploy.readAddress('.spokeConfigurator');
+    signatureGateway = deploy.signatureGateway();
+    nativeTokenGateway = deploy.nativeTokenGateway();
+    hubConfigurator = deploy.hubConfigurator();
+    spokeConfigurator = deploy.spokeConfigurator();
 
-    ADMIN = deploy.readAddress('.admin');
     hubSetup = true;
     tokenSetup = true;
   }
 
   // ==================== Configurator Deployment ====================
-
-  function deployConfigurator() external {
-    _loadConfig();
-    setUpTokens();
-    load();
-    vm.startBroadcast();
-    _deployConfigurators();
-    logAddy();
-  }
 
   function _deployConfigurators() internal {
     hubConfigurator = address(new HubConfigurator(address(ACCESS_MANAGER)));
@@ -775,109 +752,6 @@ contract Deploy is Script, StdAssertions, StdCheats {
     for (uint i; i < _spokeKeys.length; ++i) {
       assertEq(_spoke(_spokeKeys[i]).authority(), address(ACCESS_MANAGER));
     }
-  }
-
-  // ==================== Seed (testing) ====================
-
-  function seed() public {
-    vm.startBroadcast();
-    _loadConfig();
-    setUpTokens();
-    load();
-    {
-      for (uint i; i < _spokeKeys.length; ++i) {
-        ISpoke spoke = _spoke(_spokeKeys[i]);
-        console.log(_spokeKeys[i]);
-        _run(spoke, _repay);
-        console.log();
-      }
-    }
-  }
-
-  function _run(ISpoke spoke, function(ISpoke, uint) internal _action) internal {
-    uint reserveCount = spoke.getReserveCount();
-    for (uint i; i < reserveCount; ++i) _action(spoke, i);
-  }
-
-  function _supply(ISpoke spoke, uint reserveId) internal {
-    (, address caller, ) = vm.readCallers();
-    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-    if (IHub(address(reserve.hub)).getSpokeConfig(reserve.assetId, address(spoke)).addCap == 0)
-      return;
-
-    TestnetERC20 token = TestnetERC20(reserve.underlying);
-    if (ScriptUtils.strEq(token.symbol(), 'LDO')) {
-      console.log('skipping ldo');
-      return;
-    }
-    uint amount = _getAmount(bound(vm.randomUint(), 0.01e8, 100e8), spoke, reserveId, token);
-    _mint(token, amount);
-
-    console.log('spoke', address(spoke));
-    console.log('reserve', reserveId);
-    token.forceApprove(address(spoke), amount);
-    console.log('approved');
-    spoke.supply(reserveId, amount, caller);
-    spoke.setUsingAsCollateral(reserveId, true, caller);
-  }
-
-  function _withdraw(ISpoke spoke, uint reserveId) internal {
-    (, address caller, ) = vm.readCallers();
-    uint amount = bound(vm.randomUint(), 0, spoke.getUserSuppliedAssets(reserveId, caller));
-    if (amount != 0) spoke.withdraw(reserveId, amount, caller);
-
-    (bool usingAsCollateral, ) = spoke.getUserReserveStatus(reserveId, caller);
-    if (usingAsCollateral) {
-      spoke.setUsingAsCollateral(reserveId, false, caller);
-      spoke.setUsingAsCollateral(reserveId, true, caller);
-    }
-  }
-
-  function _borrow(ISpoke spoke, uint reserveId) internal {
-    if (!spoke.getReserveConfig(reserveId).borrowable) return;
-    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-
-    (, address caller, ) = vm.readCallers();
-    TestnetERC20 token = TestnetERC20(reserve.underlying);
-    if (ScriptUtils.strEq(token.symbol(), 'LDO')) {
-      console.log('skipping ldo');
-      return;
-    }
-
-    uint amount = bound(vm.randomUint(), 2, 10 ** (token.decimals() - 3));
-    if (amount != 0) spoke.borrow(reserveId, amount, caller);
-  }
-
-  function _repay(ISpoke spoke, uint reserveId) internal {
-    (, address caller, ) = vm.readCallers();
-    uint amount = (spoke.getUserTotalDebt(reserveId, caller) * 3) / 5;
-    ISpoke.Reserve memory reserve = spoke.getReserve(reserveId);
-
-    TestnetERC20 token = TestnetERC20(reserve.underlying);
-    token.forceApprove(address(spoke), amount);
-    console.log('repay approved');
-    _mint(token, amount);
-
-    if (amount != 0) spoke.repay(reserveId, amount, caller);
-  }
-
-  function _getAmount(
-    uint targetPrice,
-    ISpoke spoke,
-    uint reserveId,
-    TestnetERC20 token
-  ) internal view returns (uint) {
-    uint currentPrice = IAaveOracle(spoke.ORACLE()).getReservePrice(reserveId);
-    return (targetPrice * (10 ** token.decimals())) / currentPrice;
-  }
-
-  function _mint(TestnetERC20 token, uint amount) internal {
-    (, address caller, ) = vm.readCallers();
-    deal(address(token), caller, token.balanceOf(caller) + amount);
-  }
-
-  function _mint(address token, uint amount) internal {
-    _mint(TestnetERC20(token), amount);
   }
 
   // ==================== Utilities ====================

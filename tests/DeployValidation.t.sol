@@ -18,7 +18,7 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {ConfigReader} from 'scripts/ConfigReader.sol';
 import {ScriptUtils} from 'scripts/ScriptUtils.sol';
-import {DeployReader} from 'tests/DeployReader.sol';
+import {DeployReader} from 'scripts/DeployReader.sol';
 
 /// @title DeployValidation
 /// @notice Validates deployed Aave V4 state against expected configuration.
