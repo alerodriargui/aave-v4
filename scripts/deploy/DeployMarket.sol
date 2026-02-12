@@ -42,7 +42,10 @@ library DeployMarket {
     }
   }
 
-  function _processAsset(DeployReport storage report, ConfigReader.AssetConfig memory conf) private {
+  function _processAsset(
+    DeployReport storage report,
+    ConfigReader.AssetConfig memory conf
+  ) private {
     HubReport storage hubRpt = report.findHub(conf.hubKey);
     IHub hub = IHub(hubRpt.hub);
     address token = report.findToken(conf.tokenKey).token;
@@ -55,11 +58,11 @@ library DeployMarket {
       abi.encode(conf.irData)
     );
 
-    // require( // fix later
-    //   abi.encode(IAssetInterestRateStrategy(hubRpt.irStrategy).getInterestRateData(aid)) ==
-    //     abi.encode(conf.irData),
-    //   'IR data mismatch'
-    // );
+    require(
+      keccak256(abi.encode(IAssetInterestRateStrategy(hubRpt.irStrategy).getInterestRateData(aid))) ==
+        keccak256(abi.encode(conf.irData)),
+      'IR data mismatch'
+    );
 
     {
       IHub.AssetConfig memory assetConfig = hub.getAssetConfig(aid);
@@ -83,7 +86,10 @@ library DeployMarket {
     }
   }
 
-  function _processSpokeReg(DeployReport storage report, ConfigReader.SpokeRegConfig memory conf) private {
+  function _processSpokeReg(
+    DeployReport storage report,
+    ConfigReader.SpokeRegConfig memory conf
+  ) private {
     IHub hub = report.hubAddress(conf.hubKey);
     address spokeAddr = report.findSpoke(conf.spokeKey).spoke;
     address token = report.findToken(conf.assetKey).token;
@@ -137,13 +143,23 @@ library DeployMarket {
       address impl = address(new TokenizationSpokeInstance(hubRpt.hub, aid));
       string memory shareName = string.concat(hubPrefix, ' ', asset.tokenKey);
       string memory shareSymbol = string.concat('t', asset.tokenKey, '-', hubPrefix);
-      ts = DeployUtils.proxify(impl, deployer, abi.encodeCall(TokenizationSpokeInstance.initialize, (shareName, shareSymbol)));
+      ts = DeployUtils.proxify(
+        impl,
+        deployer,
+        abi.encodeCall(TokenizationSpokeInstance.initialize, (shareName, shareSymbol))
+      );
     }
 
     hub.addSpoke(
       aid,
       ts,
-      IHub.SpokeConfig({addCap: asset.tokenizeAddCap, drawCap: 0, riskPremiumThreshold: 0, active: true, halted: false})
+      IHub.SpokeConfig({
+        addCap: asset.tokenizeAddCap,
+        drawCap: 0,
+        riskPremiumThreshold: 0,
+        active: true,
+        halted: false
+      })
     );
 
     report.pushTokenized(tsKey, ts);

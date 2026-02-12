@@ -15,7 +15,15 @@ JSON-driven deployment system for Aave V4. All configuration lives in `config/<n
 | `scripts/SpokeDeployUtils.sol` | Spoke deployment library + FfiUtils for `FOUNDRY_LIBRARIES` .env management |
 | `scripts/LibraryPreCompile.s.sol` | Preprocessing script: deploys LiquidationLogic, writes `FOUNDRY_LIBRARIES` to `.env` |
 | `scripts/ConfigReader.sol` | Library for reading `config/<network>.json` with 3-level default resolution via `stdJson` |
+| `scripts/ScriptUtils.sol` | Shared utility library: `strEq()`, `assetId()`, `slice()`, `commit()` |
+| `scripts/DeployLogger.sol` | Dual-output logging library (console2 + JSONL file) |
 | `scripts/validate-config.ts` | TypeScript + Zod config validator — schema validation, referential integrity, constraint violations, warnings |
+| `scripts/deploy/Deploy.s.sol` | Modular deploy entry point (`DeployV4` contract): `run()` for full deployment, `load()` for restoring state |
+| `scripts/deploy/DeployTypes.sol` | `DeployReport` struct, sub-report structs (`HubReport`, `SpokeReport`, `TokenReport`, `TokenizationReport`), `DeployReportLib` finder helpers |
+| `scripts/deploy/DeployInfra.sol` | Library: AccessManager, tokens (+ mock feeds), spokes (oracle + SpokeInstance), hubs (Hub + TreasurySpoke + IRStrategy) |
+| `scripts/deploy/DeployMarket.sol` | Library: asset listing, spoke registration, tokenization spoke deployment |
+| `scripts/deploy/DeployPeriphery.sol` | Library: AccessManager roles, reserves + liquidation configs, gateways + PM registration, configurator deployment |
+| `scripts/deploy/ReportIO.sol` | Library: serialize `DeployReport` → JSON (`writeReport`), deserialize JSON → `DeployReport` (`readReport`) |
 | `tests/DeployUtils.sol` | Hub deployment via `vm.getCode` + CREATE2, `proxify()` for TransparentUpgradeableProxy |
 | `tests/Create2Utils.sol` | CREATE2 factory wrapper (safe-global at `0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7`) |
 | `tests/DeployReader.sol` | Library for reading `output/deploy.json` addresses via `stdJson` (mirrors ConfigReader pattern) |
@@ -36,6 +44,29 @@ A **Reserve** on a Spoke points to exactly one (hub, assetId) pair. The spoke mu
 
 ## Deployment Order (`run()`)
 
+### Modular script (`scripts/deploy/Deploy.s.sol:DeployV4`)
+
+```
+DeployInfra.setUpTokens          — populate tokens + mock feeds
+DeployInfra.deployInfrastructure — AccessManager, spokes (oracle + SpokeInstance), hubs (Hub + TreasurySpoke + IRStrategy)
+DeployPeriphery.setUpRoles       — AccessManager selector→role mappings for all hubs/spokes
+DeployMarket.configureMarkets    — asset listing, spoke registration, tokenization spokes
+DeployPeriphery.setUpReserves    — reserves + liquidation configs
+DeployPeriphery.deployGateways   — SignatureGateway + NativeTokenGateway + PM registration
+DeployPeriphery.deployConfigurators — HubConfigurator + SpokeConfigurator + Level 1+2 role setup
+ReportIO.writeReport             — serialize to output/deploy.json
+```
+
+```bash
+# Full deployment on local anvil
+forge script scripts/deploy/Deploy.s.sol:DeployV4 \
+  --broadcast --rpc-url anvil -s "run()" \
+  --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \
+  --unlocked --slow --legacy --offline
+```
+
+### Legacy script (`scripts/Script.s.sol:Deploy`)
+
 ```
 _loadConfig → setUpTokens → setUpHubs → setUpReserves → periphery → _deployConfigurators → logAddy
                                │
@@ -48,13 +79,24 @@ _loadConfig → setUpTokens → setUpHubs → setUpReserves → periphery → _d
 
 ## Script Entry Points
 
+### `scripts/deploy/Deploy.s.sol:DeployV4` (modular)
+
 | Function | Selector | Purpose |
 |----------|----------|---------|
-| `run()` | default | Full fresh deployment: spokes, hubs, assets, spoke regs, reserves, liquidation configs, periphery, configurators, output |
+| `run()` | default | Full fresh deployment using modular libraries |
+| `load()` | public | Restore `DeployReport` from `output/deploy.json` |
+
+### `scripts/Script.s.sol:Deploy` (legacy)
+
+| Function | Selector | Purpose |
+|----------|----------|---------|
+| `run()` | default | Full fresh deployment (monolithic) |
 | `debug()` | `-s "debug()"` | Load existing deployment from `output/deploy.json`, add manual operations in function body |
 | `seed()` | `-s "seed()"` | Load deployment, run supply/borrow/repay operations for testing |
 | `deployConfigurator()` | `-s "deployConfigurator()"` | Standalone: load existing deployment, deploy HubConfigurator + SpokeConfigurator with full role setup |
 | `load()` | internal | Restore all state from `output/deploy.json` into memory (used by debug/seed/deployConfigurator) |
+
+Always use `--rpc-url anvil --offline` for local deployments. The `anvil` network is configured in `foundry.toml`.
 
 ## Config Schema (`config/<network>.json`)
 

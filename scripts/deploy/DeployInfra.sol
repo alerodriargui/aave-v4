@@ -76,6 +76,7 @@ library DeployInfra {
 
       report.pushSpoke(sc.key, address(spoke), address(oracle));
       DeployLogger.logSpokeDeployed(sc.key, address(spoke));
+      DeployLogger.logOracleDeployed(sc.key, address(oracle), address(spoke));
     }
   }
 

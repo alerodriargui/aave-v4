@@ -245,8 +245,7 @@ contract DeployValidation is Test {
   function test_liquidationConfigs() public view {
     for (uint256 i; _config.spokeExists(i); i++) {
       string memory spokeKey = _config.spokeKey(i);
-      (ISpoke.LiquidationConfig memory expected, bool exists) = _config.readLiquidationConfig(i);
-      if (!exists) continue;
+      ISpoke.LiquidationConfig memory expected = _config.readLiquidationConfig(i);
 
       address spokeAddr = _deploy.spoke(spokeKey);
       ISpoke.LiquidationConfig memory actual = ISpoke(spokeAddr).getLiquidationConfig();
@@ -266,6 +265,23 @@ contract DeployValidation is Test {
         expected.liquidationBonusFactor,
         string.concat(spokeKey, ': liquidationBonusFactor')
       );
+    }
+  }
+
+  // ==================== Test: Spoke Immutables ====================
+
+  function test_spokeImmutables() public view {
+    for (uint256 i; _config.spokeExists(i); i++) {
+      ConfigReader.SpokeDeployConfig memory sc = _config.readSpoke(i);
+      address spokeAddr = _deploy.spoke(sc.key);
+      address oracleAddr = _deploy.oracle(sc.key);
+
+      assertEq(
+        ISpoke(spokeAddr).MAX_USER_RESERVES_LIMIT(),
+        sc.maxUserReservesLimit,
+        string.concat(sc.key, ': MAX_USER_RESERVES_LIMIT')
+      );
+      assertEq(ISpoke(spokeAddr).ORACLE(), oracleAddr, string.concat(sc.key, ': ORACLE'));
     }
   }
 
@@ -301,14 +317,13 @@ contract DeployValidation is Test {
       uint256 assetId = ScriptUtils.assetId(hub, tokenAddr);
       uint256 reserveId = spoke.getReserveId(hubAddr, assetId);
 
-      // Check price source (skip mock feeds where config has address(0))
+      // Check price source
       address configPriceFeed = _config.tokenPriceFeed(res.assetKey);
+      address onChainSource = IAaveOracle(oracleAddr).getReserveSource(reserveId);
       if (configPriceFeed != address(0)) {
-        assertEq(
-          IAaveOracle(oracleAddr).getReserveSource(reserveId),
-          configPriceFeed,
-          string.concat(label, ': priceSource')
-        );
+        assertEq(onChainSource, configPriceFeed, string.concat(label, ': priceSource'));
+      } else {
+        assertTrue(onChainSource != address(0), string.concat(label, ': mock feed not deployed'));
       }
 
       // Price must be valid regardless
@@ -328,31 +343,44 @@ contract DeployValidation is Test {
 
     for (uint256 i; _config.spokeExists(i); i++) {
       ConfigReader.SpokeDeployConfig memory sc = _config.readSpoke(i);
-      if (!sc.registerOnPositionManagers) continue;
-
       address spokeAddr = _deploy.spoke(sc.key);
       ISpoke spoke = ISpoke(spokeAddr);
 
-      if (deploySigGw) {
-        assertTrue(
-          spoke.isPositionManagerActive(_sigGateway),
-          string.concat(sc.key, ': sigGateway not active PM')
-        );
-        assertTrue(
-          IGatewayBase(_sigGateway).isSpokeRegistered(spokeAddr),
-          string.concat(sc.key, ': not registered on sigGateway')
-        );
-      }
+      if (sc.registerOnPositionManagers) {
+        if (deploySigGw) {
+          assertTrue(
+            spoke.isPositionManagerActive(_sigGateway),
+            string.concat(sc.key, ': sigGateway not active PM')
+          );
+          assertTrue(
+            IGatewayBase(_sigGateway).isSpokeRegistered(spokeAddr),
+            string.concat(sc.key, ': not registered on sigGateway')
+          );
+        }
 
-      if (deployNativeGw) {
-        assertTrue(
-          spoke.isPositionManagerActive(_nativeGateway),
-          string.concat(sc.key, ': nativeGateway not active PM')
-        );
-        assertTrue(
-          IGatewayBase(_nativeGateway).isSpokeRegistered(spokeAddr),
-          string.concat(sc.key, ': not registered on nativeGateway')
-        );
+        if (deployNativeGw) {
+          assertTrue(
+            spoke.isPositionManagerActive(_nativeGateway),
+            string.concat(sc.key, ': nativeGateway not active PM')
+          );
+          assertTrue(
+            IGatewayBase(_nativeGateway).isSpokeRegistered(spokeAddr),
+            string.concat(sc.key, ': not registered on nativeGateway')
+          );
+        }
+      } else {
+        if (deploySigGw) {
+          assertFalse(
+            spoke.isPositionManagerActive(_sigGateway),
+            string.concat(sc.key, ': sigGateway should not be active PM')
+          );
+        }
+        if (deployNativeGw) {
+          assertFalse(
+            spoke.isPositionManagerActive(_nativeGateway),
+            string.concat(sc.key, ': nativeGateway should not be active PM')
+          );
+        }
       }
     }
   }
@@ -528,11 +556,17 @@ contract DeployValidation is Test {
   function test_tokenizationSpokes() public view {
     for (uint256 i; _config.assetExists(i); i++) {
       ConfigReader.AssetConfig memory asset = _config.readAsset(i);
-      if (!asset.tokenizeEnabled) continue;
-
       string memory hubPrefix = ConfigReader.trimEnd(asset.hubKey, 4);
       string memory tsKey = string.concat(asset.tokenKey, '_', hubPrefix);
       string memory label = string.concat('tokenized:', tsKey);
+
+      if (!asset.tokenizeEnabled) {
+        assertFalse(
+          _deploy.keyExists(string.concat('.tokenized.', tsKey)),
+          string.concat(label, ': should not be deployed')
+        );
+        continue;
+      }
 
       address tsAddr = _deploy.tokenized(tsKey);
       assertTrue(tsAddr != address(0), string.concat(label, ': zero address'));
@@ -568,6 +602,132 @@ contract DeployValidation is Test {
       // Hub/assetId references
       assertEq(ITokenizationSpoke(tsAddr).hub(), hubAddr, string.concat(label, ': hub()'));
       assertEq(ITokenizationSpoke(tsAddr).assetId(), assetId, string.concat(label, ': assetId()'));
+    }
+  }
+
+  // ==================== Test: Completeness Counts ====================
+
+  function test_hubAssetCounts() public view {
+    for (uint256 hi; _config.hubExists(hi); hi++) {
+      string memory hubKey = _config.hubKey(hi);
+      address hubAddr = _deploy.hub(hubKey);
+      IHub hub = IHub(hubAddr);
+
+      uint256 expectedCount;
+      for (uint256 i; _config.assetExists(i); i++) {
+        ConfigReader.AssetConfig memory asset = _config.readAsset(i);
+        if (ScriptUtils.strEq(asset.hubKey, hubKey)) expectedCount++;
+      }
+
+      assertEq(
+        hub.getAssetCount(),
+        expectedCount,
+        string.concat(hubKey, ': asset count')
+      );
+    }
+  }
+
+  function _countExpectedSpokes(
+    string memory hubKey,
+    address underlying
+  ) internal view returns (uint256 count) {
+    count = 1; // treasury is always registered
+
+    for (uint256 ri; _config.spokeRegExists(ri); ri++) {
+      ConfigReader.SpokeRegConfig memory reg = _config.readSpokeReg(ri);
+      if (ScriptUtils.strEq(reg.hubKey, hubKey) && _deploy.token(reg.assetKey) == underlying) {
+        count++;
+      }
+    }
+
+    for (uint256 ai; _config.assetExists(ai); ai++) {
+      ConfigReader.AssetConfig memory asset = _config.readAsset(ai);
+      if (
+        ScriptUtils.strEq(asset.hubKey, hubKey) &&
+        _deploy.token(asset.tokenKey) == underlying &&
+        asset.tokenizeEnabled
+      ) {
+        count++;
+      }
+    }
+  }
+
+  function _isKnownSpoke(
+    string memory hubKey,
+    address underlying,
+    address spokeAddr
+  ) internal view returns (bool) {
+    if (spokeAddr == _deploy.treasury(hubKey)) return true;
+
+    for (uint256 ri; _config.spokeRegExists(ri); ri++) {
+      ConfigReader.SpokeRegConfig memory reg = _config.readSpokeReg(ri);
+      if (
+        ScriptUtils.strEq(reg.hubKey, hubKey) &&
+        _deploy.token(reg.assetKey) == underlying &&
+        _deploy.spoke(reg.spokeKey) == spokeAddr
+      ) return true;
+    }
+
+    for (uint256 ai; _config.assetExists(ai); ai++) {
+      ConfigReader.AssetConfig memory asset = _config.readAsset(ai);
+      if (
+        ScriptUtils.strEq(asset.hubKey, hubKey) &&
+        _deploy.token(asset.tokenKey) == underlying &&
+        asset.tokenizeEnabled
+      ) {
+        string memory hubPrefix = ConfigReader.trimEnd(asset.hubKey, 4);
+        string memory tsKey = string.concat(asset.tokenKey, '_', hubPrefix);
+        if (_deploy.tokenized(tsKey) == spokeAddr) return true;
+      }
+    }
+
+    return false;
+  }
+
+  function test_spokeCountsPerAsset() public view {
+    for (uint256 hi; _config.hubExists(hi); hi++) {
+      string memory hubKey = _config.hubKey(hi);
+      IHub hub = IHub(_deploy.hub(hubKey));
+      uint256 assetCount = hub.getAssetCount();
+
+      for (uint256 assetId; assetId < assetCount; assetId++) {
+        address underlying = hub.getAsset(assetId).underlying;
+        string memory label = string.concat(hubKey, ':asset', vm.toString(assetId));
+
+        assertEq(
+          hub.getSpokeCount(assetId),
+          _countExpectedSpokes(hubKey, underlying),
+          string.concat(label, ': spoke count')
+        );
+
+        uint256 spokeCount = hub.getSpokeCount(assetId);
+        for (uint256 si; si < spokeCount; si++) {
+          assertTrue(
+            _isKnownSpoke(hubKey, underlying, hub.getSpokeAddress(assetId, si)),
+            string.concat(label, ': unknown spoke at index ', vm.toString(si))
+          );
+        }
+      }
+    }
+  }
+
+  function test_reserveCountsPerSpoke() public view {
+    for (uint256 si; _config.spokeExists(si); si++) {
+      string memory spokeKey = _config.spokeKey(si);
+      address spokeAddr = _deploy.spoke(spokeKey);
+      ISpoke spoke = ISpoke(spokeAddr);
+
+      uint256 expectedCount;
+      for (uint256 ri; _config.reserveExists(ri); ri++) {
+        ConfigReader.ReserveConfig memory res = _config.readReserve(ri);
+        if (ScriptUtils.strEq(res.spokeKey, spokeKey)) expectedCount++;
+      }
+
+      assertEq(
+        spoke.getReserveCount(),
+        expectedCount,
+        string.concat(spokeKey, ': reserve count')
+      );
     }
   }
 

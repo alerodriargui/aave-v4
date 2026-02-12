@@ -274,6 +274,15 @@ library DeployLogger {
     );
   }
 
+  function logOracleDeployed(string memory spokeKey, address oracleAddr, address spokeAddr) internal {
+    _writeLine(
+      _wrap(
+        'oracleDeployed',
+        string.concat(_str('key', spokeKey), ',', _addr('oracle', oracleAddr), ',', _addr('spoke', spokeAddr))
+      )
+    );
+  }
+
   function logTokenizationSpokeDeployed(string memory tsKey, address tsAddr) internal {
     // console.log(tsAddr, string.concat('TOKENIZED_', tsKey));
     _writeLine(

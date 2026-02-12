@@ -287,14 +287,14 @@ library ConfigReader {
   function readLiquidationConfig(
     string memory json,
     uint i
-  ) internal view returns (ISpoke.LiquidationConfig memory lc, bool exists) {
+  ) internal view returns (ISpoke.LiquidationConfig memory) {
     return _readLiquidationConfig(json, i, false);
   }
 
   function readLiquidationConfigStrict(
     string memory json,
     uint i
-  ) internal view returns (ISpoke.LiquidationConfig memory lc, bool exists) {
+  ) internal view returns (ISpoke.LiquidationConfig memory) {
     return _readLiquidationConfig(json, i, true);
   }
 
@@ -302,29 +302,37 @@ library ConfigReader {
     string memory json,
     uint i,
     bool strict
-  ) private view returns (ISpoke.LiquidationConfig memory lc, bool exists) {
+  ) private view returns (ISpoke.LiquidationConfig memory lc) {
     string memory lcBase = string.concat('.spokes[', vm.toString(i), '].liquidationConfig');
-    exists = json.keyExists(lcBase);
-    if (!exists) return (lc, false);
+    bool exists = json.keyExists(lcBase);
+    if (!exists && strict) revert('liquidationConfig: missing (strict)');
+    string memory defBase = '.defaults.spoke.liquidationConfig';
+    if (!exists) {
+      return ISpoke.LiquidationConfig({
+        targetHealthFactor: json.readUintOr(string.concat(defBase, '.targetHealthFactor'), DEFAULT_TARGET_HEALTH_FACTOR).toUint128(),
+        healthFactorForMaxBonus: json.readUintOr(string.concat(defBase, '.healthFactorForMaxBonus'), DEFAULT_HEALTH_FACTOR_FOR_MAX_BONUS).toUint64(),
+        liquidationBonusFactor: json.readUintOr(string.concat(defBase, '.liquidationBonusFactor'), DEFAULT_LIQUIDATION_BONUS_FACTOR).toUint16()
+      });
+    }
     lc = ISpoke.LiquidationConfig({
       targetHealthFactor: _resolveUint(
         json,
         string.concat(lcBase, '.targetHealthFactor'),
-        '.defaults.spoke.liquidationConfig.targetHealthFactor',
+        string.concat(defBase, '.targetHealthFactor'),
         DEFAULT_TARGET_HEALTH_FACTOR,
         strict
       ).toUint128(),
       healthFactorForMaxBonus: _resolveUint(
         json,
         string.concat(lcBase, '.healthFactorForMaxBonus'),
-        '.defaults.spoke.liquidationConfig.healthFactorForMaxBonus',
+        string.concat(defBase, '.healthFactorForMaxBonus'),
         DEFAULT_HEALTH_FACTOR_FOR_MAX_BONUS,
         strict
       ).toUint64(),
       liquidationBonusFactor: _resolveUint(
         json,
         string.concat(lcBase, '.liquidationBonusFactor'),
-        '.defaults.spoke.liquidationConfig.liquidationBonusFactor',
+        string.concat(defBase, '.liquidationBonusFactor'),
         DEFAULT_LIQUIDATION_BONUS_FACTOR,
         strict
       ).toUint16()
