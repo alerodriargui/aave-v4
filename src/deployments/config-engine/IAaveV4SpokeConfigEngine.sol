@@ -7,6 +7,10 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 /// @title IAaveV4SpokeConfigEngine
 /// @author Aave Labs
 /// @notice Interface for the Spoke configuration engine.
+/// @dev This engine is STATELESS and designed to be used via DELEGATECALL.
+///      All functions receive spoke, spokeConfigurator, and hub addresses as parameters.
+///      When called via DELEGATECALL, the caller's context is used — so the
+///      caller (payload or executor) must hold the appropriate AccessManager roles.
 interface IAaveV4SpokeConfigEngine {
   /// @notice Parameters for listing a new reserve on the Spoke.
   /// @param underlying The underlying asset address used to resolve assetId via hub.getAssetId().
@@ -46,21 +50,45 @@ interface IAaveV4SpokeConfigEngine {
 
   /// @notice Lists new reserves on the Spoke via the SpokeConfigurator.
   /// @dev Resolves assetId for each reserve via hub.getAssetId(underlying).
+  /// @param spoke The Spoke contract address.
+  /// @param spokeConfigurator The SpokeConfigurator contract address.
+  /// @param hub The Hub contract address (used to resolve asset IDs).
   /// @param reserves The array of reserve listing parameters.
   /// @return reserveIds The array of newly created reserve IDs.
   function listReserves(
+    address spoke,
+    address spokeConfigurator,
+    address hub,
     ReserveListing[] calldata reserves
   ) external returns (uint256[] memory reserveIds);
 
   /// @notice Updates the spoke-wide liquidation configuration via the SpokeConfigurator.
+  /// @param spoke The Spoke contract address.
+  /// @param spokeConfigurator The SpokeConfigurator contract address.
   /// @param input The liquidation configuration input.
-  function updateLiquidationConfig(LiquidationConfigInput calldata input) external;
+  function updateLiquidationConfig(
+    address spoke,
+    address spokeConfigurator,
+    LiquidationConfigInput calldata input
+  ) external;
 
   /// @notice Updates existing reserve configurations on the Spoke.
+  /// @param spoke The Spoke contract address.
+  /// @param spokeConfigurator The SpokeConfigurator contract address.
   /// @param updates The array of reserve configuration updates.
-  function updateReserves(ReserveConfigUpdate[] calldata updates) external;
+  function updateReserves(
+    address spoke,
+    address spokeConfigurator,
+    ReserveConfigUpdate[] calldata updates
+  ) external;
 
   /// @notice Updates dynamic reserve configurations on the Spoke.
+  /// @param spoke The Spoke contract address.
+  /// @param spokeConfigurator The SpokeConfigurator contract address.
   /// @param updates The array of dynamic config updates.
-  function updateDynamicConfigs(DynamicConfigUpdate[] calldata updates) external;
+  function updateDynamicConfigs(
+    address spoke,
+    address spokeConfigurator,
+    DynamicConfigUpdate[] calldata updates
+  ) external;
 }

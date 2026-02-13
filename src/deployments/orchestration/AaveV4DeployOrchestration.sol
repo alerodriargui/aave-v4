@@ -24,7 +24,6 @@ import {Logger} from 'src/deployments/utils/Logger.sol';
 library AaveV4DeployOrchestration {
   uint8 private constant ORACLE_DECIMALS = 8;
   string private constant ORACLE_SUFFIX = ' (USD)';
-  uint16 private constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max; // TODO : see to make this input in config
 
   function deployAaveV4(
     Logger logger,

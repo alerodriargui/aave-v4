@@ -18,28 +18,81 @@ library ConfigReader {
 
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
-  // ==================== Default Constants ====================
+  // ==================== Hub-Side Default Constants ====================
+  // These defaults apply to Hub and HubConfigurator operations.
 
-  uint16 internal constant DEFAULT_LIQUIDITY_FEE = 1000;
+  // Asset liquidityFee in BPS — set via HubConfigurator.updateLiquidityFee()
+  uint16 internal constant DEFAULT_LIQUIDITY_FEE = 10_00;
+
+  // Whether to deploy an ERC-4626 tokenization spoke — set during HubConfigurator.addSpoke()
   bool internal constant DEFAULT_TOKENIZE_ENABLED = true;
+
+  // Supply cap for tokenization spoke — set during HubConfigurator.addSpoke()
   uint40 internal constant DEFAULT_TOKENIZE_ADD_CAP = type(uint40).max;
+
+  // ==================== Hub-Side Spoke Registration Defaults ====================
+  // These defaults apply to spoke registration on the hub (IHub.SpokeConfig).
+
+  // Risk premium threshold in ppm — set via HubConfigurator.updateSpokeRiskPremiumThreshold()
+  uint24 internal constant DEFAULT_SPOKE_REGISTRATION_RISK_PREMIUM_THRESHOLD = 200_000;
+
+  // Whether the spoke registration is active — set via HubConfigurator.updateSpokeActive()
+  bool internal constant DEFAULT_SPOKE_REGISTRATION_ACTIVE = true;
+
+  // Whether the spoke registration is halted — set via HubConfigurator.updateSpokeHalted()
+  bool internal constant DEFAULT_SPOKE_REGISTRATION_HALTED = false;
+
+  // ==================== Spoke-Side Default Constants ====================
+  // These defaults apply to Spoke and SpokeConfigurator operations.
+
+  // Oracle decimal precision — set during spoke deployment
   uint8 internal constant DEFAULT_ORACLE_DECIMALS = 8;
+
+  // Maximum number of user reserves per spoke — set via SpokeConfigurator.updateMaxReserves()
   uint16 internal constant DEFAULT_MAX_USER_RESERVES_LIMIT = 128;
+
+  // Whether to register the spoke on position managers — set during spoke deployment
   bool internal constant DEFAULT_REGISTER_ON_POSITION_MANAGERS = true;
-  uint24 internal constant DEFAULT_RISK_PREMIUM_THRESHOLD = 100_000;
-  bool internal constant DEFAULT_SPOKE_REG_ACTIVE = true;
-  bool internal constant DEFAULT_SPOKE_REG_HALTED = false;
-  uint32 internal constant DEFAULT_MAX_LIQUIDATION_BONUS = 10500;
-  uint16 internal constant DEFAULT_RESERVE_LIQUIDATION_FEE = 1000;
+
+  // ==================== Spoke-Side Reserve Default Constants ====================
+  // These defaults apply to reserve configuration on spokes (SpokeConfigurator).
+
+  // Max liquidation bonus in BPS — set via SpokeConfigurator.updateDynamicReserveConfig()
+  uint32 internal constant DEFAULT_MAX_LIQUIDATION_BONUS = 105_00;
+
+  // Liquidation fee in BPS — set via SpokeConfigurator.updateDynamicReserveConfig()
+  uint16 internal constant DEFAULT_RESERVE_LIQUIDATION_FEE = 10_00;
+
+  // Whether the reserve accepts share transfers — set via SpokeConfigurator.updateReserveConfig()
   bool internal constant DEFAULT_RECEIVE_SHARES_ENABLED = true;
+
+  // Whether the reserve is frozen — set via SpokeConfigurator.updateReserveConfig()
   bool internal constant DEFAULT_FROZEN = false;
+
+  // Whether the reserve is paused — set via SpokeConfigurator.updateReserveConfig()
   bool internal constant DEFAULT_PAUSED = false;
+
+  // ==================== Spoke-Side Liquidation Config Defaults ====================
+  // These defaults apply to per-spoke liquidation config (SpokeConfigurator).
+
+  // Target health factor after liquidation — set via SpokeConfigurator.updateLiquidationConfig()
   uint128 internal constant DEFAULT_TARGET_HEALTH_FACTOR = 1.05e18;
+
+  // Health factor threshold for maximum bonus — set via SpokeConfigurator.updateLiquidationConfig()
   uint64 internal constant DEFAULT_HEALTH_FACTOR_FOR_MAX_BONUS = 0.7e18;
-  uint16 internal constant DEFAULT_LIQUIDATION_BONUS_FACTOR = 2000;
+
+  // Liquidation bonus scaling factor in BPS — set via SpokeConfigurator.updateLiquidationConfig()
+  uint16 internal constant DEFAULT_LIQUIDATION_BONUS_FACTOR = 20_00;
 
   // ==================== Structs ====================
 
+  /// @notice Asset configuration for listing on a hub.
+  /// @param tokenKey Key referencing the token in the tokens registry (e.g., "WETH")
+  /// @param hubKey Key referencing which hub to list this asset on (e.g., "PRIME_HUB")
+  /// @param liquidityFee Fee in BPS charged on borrow interest, routed to fee receiver
+  /// @param irData Interest rate model parameters (optimal ratio, base rate, slopes)
+  /// @param tokenizeEnabled Whether to deploy an ERC-4626 tokenization spoke for this asset
+  /// @param tokenizeAddCap Supply cap for the tokenization spoke
   struct AssetConfig {
     string tokenKey;
     string hubKey;
@@ -49,6 +102,11 @@ library ConfigReader {
     uint40 tokenizeAddCap;
   }
 
+  /// @notice Spoke deployment configuration.
+  /// @param key Unique identifier for this spoke (e.g., "PRIME_SPOKE")
+  /// @param oracleDecimals Decimal precision for the spoke's oracle
+  /// @param maxUserReservesLimit Maximum number of reserves a user can hold on this spoke
+  /// @param registerOnPositionManagers Whether to register with position managers on deploy
   struct SpokeDeployConfig {
     string key;
     uint8 oracleDecimals;
@@ -56,7 +114,16 @@ library ConfigReader {
     bool registerOnPositionManagers;
   }
 
-  struct SpokeRegConfig {
+  /// @notice Spoke registration configuration — registers a spoke on a hub for a given asset.
+  /// @param assetKey Token key (must match an asset listed on the hub)
+  /// @param hubKey Hub key this registration connects to
+  /// @param spokeKey Spoke key that will be registered
+  /// @param addCap Maximum supply cap the spoke can add to the hub
+  /// @param drawCap Maximum amount the spoke can draw from the hub
+  /// @param riskPremiumThreshold Risk premium threshold in ppm
+  /// @param active Whether the spoke registration is active
+  /// @param halted Whether the spoke registration is halted (emergency)
+  struct SpokeRegistrationConfig {
     string assetKey;
     string hubKey;
     string spokeKey;
@@ -67,6 +134,18 @@ library ConfigReader {
     bool halted;
   }
 
+  /// @notice Reserve configuration on a spoke — lending/borrowing parameters.
+  /// @param spokeKey Spoke key where this reserve lives
+  /// @param assetKey Token key for this reserve's underlying asset
+  /// @param hubKey Hub key this reserve's asset is listed on
+  /// @param borrowable Whether the reserve allows borrowing
+  /// @param maxLiquidationBonus Maximum liquidation bonus in BPS (e.g., 10500 = 105%)
+  /// @param collateralRisk Risk weight for this collateral in BPS
+  /// @param collateralFactor Loan-to-value ratio in BPS (e.g., 8000 = 80%)
+  /// @param liquidationFee Fee in BPS taken during liquidation
+  /// @param receiveSharesEnabled Whether the reserve accepts share transfers
+  /// @param frozen Whether the reserve is frozen (no new supply/borrow)
+  /// @param paused Whether the reserve is paused (no operations)
   struct ReserveConfig {
     string spokeKey;
     string assetKey;
@@ -81,7 +160,15 @@ library ConfigReader {
     bool paused;
   }
 
-  /// @notice Infrastructure addresses for deployment.
+  /// @notice Infrastructure addresses and configuration for deployment.
+  /// @param accessManagerAdmin Admin of the AccessManager (DEFAULT_ADMIN_ROLE holder)
+  /// @param hubConfiguratorAdmin Admin for HubConfigurator granular roles
+  /// @param spokeConfiguratorAdmin Admin for SpokeConfigurator granular roles
+  /// @param treasurySpokeOwner Owner of the treasury spoke (fee receiver)
+  /// @param spokeProxyAdminOwner Owner of spoke proxy admin contracts
+  /// @param gatewayOwner Owner of gateway contracts (optional, defaults to address(0))
+  /// @param nativeWrapper Address of the native token wrapper (optional, defaults to address(0))
+  /// @param salt Deployment salt string for deterministic CREATE2 addresses
   struct InfrastructureConfig {
     address accessManagerAdmin;
     address hubConfiguratorAdmin;
@@ -138,7 +225,7 @@ library ConfigReader {
     return json.keyExists(string.concat('.assets[', vm.toString(i), ']'));
   }
 
-  function spokeRegExists(string memory json, uint i) internal view returns (bool) {
+  function spokeRegistrationExists(string memory json, uint i) internal view returns (bool) {
     return json.keyExists(string.concat('.spokeRegistrations[', vm.toString(i), ']'));
   }
 
@@ -305,25 +392,28 @@ library ConfigReader {
 
   // ==================== Spoke Registration Reader ====================
 
-  function readSpokeReg(string memory json, uint i) internal view returns (SpokeRegConfig memory) {
-    return _readSpokeReg(json, i, false);
-  }
-
-  function readSpokeRegStrict(
+  function readSpokeRegistration(
     string memory json,
     uint i
-  ) internal view returns (SpokeRegConfig memory) {
-    return _readSpokeReg(json, i, true);
+  ) internal view returns (SpokeRegistrationConfig memory) {
+    return _readSpokeRegistration(json, i, false);
   }
 
-  function _readSpokeReg(
+  function readSpokeRegistrationStrict(
+    string memory json,
+    uint i
+  ) internal view returns (SpokeRegistrationConfig memory) {
+    return _readSpokeRegistration(json, i, true);
+  }
+
+  function _readSpokeRegistration(
     string memory json,
     uint i,
     bool strict
-  ) private view returns (SpokeRegConfig memory) {
+  ) private view returns (SpokeRegistrationConfig memory) {
     string memory base = string.concat('.spokeRegistrations[', vm.toString(i), ']');
     return
-      SpokeRegConfig({
+      SpokeRegistrationConfig({
         assetKey: json.readString(string.concat(base, '.assetKey')),
         hubKey: json.readString(string.concat(base, '.hubKey')),
         spokeKey: json.readString(string.concat(base, '.spokeKey')),
@@ -333,21 +423,21 @@ library ConfigReader {
           json,
           string.concat(base, '.riskPremiumThreshold'),
           '.defaults.spokeRegistration.riskPremiumThreshold',
-          DEFAULT_RISK_PREMIUM_THRESHOLD,
+          DEFAULT_SPOKE_REGISTRATION_RISK_PREMIUM_THRESHOLD,
           strict
         ).toUint24(),
         active: _resolveBool(
           json,
           string.concat(base, '.active'),
           '.defaults.spokeRegistration.active',
-          DEFAULT_SPOKE_REG_ACTIVE,
+          DEFAULT_SPOKE_REGISTRATION_ACTIVE,
           strict
         ),
         halted: _resolveBool(
           json,
           string.concat(base, '.halted'),
           '.defaults.spokeRegistration.halted',
-          DEFAULT_SPOKE_REG_HALTED,
+          DEFAULT_SPOKE_REGISTRATION_HALTED,
           strict
         )
       });
@@ -490,11 +580,14 @@ library ConfigReader {
 
   // ==================== String Utilities ====================
 
+  /// @notice Trims the last n bytes from a string. Reverts if n >= string length.
   function trimEnd(string memory str, uint n) internal pure returns (string memory) {
     bytes memory b = bytes(str);
     require(b.length > n);
     bytes memory result = new bytes(b.length - n);
-    for (uint j; j < result.length; j++) result[j] = b[j];
+    for (uint j; j < result.length; j++) {
+      result[j] = b[j];
+    }
     return string(result);
   }
 }

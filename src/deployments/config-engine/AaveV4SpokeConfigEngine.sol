@@ -11,22 +11,15 @@ import {IAaveV4SpokeConfigEngine} from 'src/deployments/config-engine/IAaveV4Spo
 /// @author Aave Labs
 /// @notice Stateless engine for Spoke-side configuration: listing reserves, updating liquidation
 ///         config, and updating reserve/dynamic configs.
+/// @dev This contract is STATELESS and designed to be called via DELEGATECALL.
+///      When used via DELEGATECALL, the calling contract's context (address, roles) is used.
+///      The caller must hold the appropriate AccessManager roles (e.g., SPOKE_CONFIGURATOR_ADMIN_ROLE).
 contract AaveV4SpokeConfigEngine is IAaveV4SpokeConfigEngine {
-  address public immutable SPOKE;
-  address public immutable SPOKE_CONFIGURATOR;
-  address public immutable HUB;
-
-  constructor(address spoke_, address spokeConfigurator_, address hub_) {
-    require(spoke_ != address(0), 'invalid spoke');
-    require(spokeConfigurator_ != address(0), 'invalid spoke configurator');
-    require(hub_ != address(0), 'invalid hub');
-    SPOKE = spoke_;
-    SPOKE_CONFIGURATOR = spokeConfigurator_;
-    HUB = hub_;
-  }
-
   /// @inheritdoc IAaveV4SpokeConfigEngine
   function listReserves(
+    address spoke,
+    address spokeConfigurator,
+    address hub,
     ReserveListing[] calldata reserves
   ) external returns (uint256[] memory reserveIds) {
     uint256 len = reserves.length;
@@ -36,11 +29,11 @@ contract AaveV4SpokeConfigEngine is IAaveV4SpokeConfigEngine {
       ReserveListing calldata reserve = reserves[i];
 
       // Resolve assetId from underlying address
-      uint256 assetId = IHub(HUB).getAssetId(reserve.underlying);
+      uint256 assetId = IHub(hub).getAssetId(reserve.underlying);
 
-      reserveIds[i] = ISpokeConfigurator(SPOKE_CONFIGURATOR).addReserve(
-        SPOKE,
-        HUB,
+      reserveIds[i] = ISpokeConfigurator(spokeConfigurator).addReserve(
+        spoke,
+        hub,
         assetId,
         reserve.priceFeed,
         reserve.config,
@@ -50,32 +43,40 @@ contract AaveV4SpokeConfigEngine is IAaveV4SpokeConfigEngine {
   }
 
   /// @inheritdoc IAaveV4SpokeConfigEngine
-  function updateLiquidationConfig(LiquidationConfigInput calldata input) external {
-    ISpokeConfigurator(SPOKE_CONFIGURATOR).updateLiquidationConfig(SPOKE, input.config);
+  function updateLiquidationConfig(
+    address spoke,
+    address spokeConfigurator,
+    LiquidationConfigInput calldata input
+  ) external {
+    ISpokeConfigurator(spokeConfigurator).updateLiquidationConfig(spoke, input.config);
   }
 
   /// @inheritdoc IAaveV4SpokeConfigEngine
-  function updateReserves(ReserveConfigUpdate[] calldata updates) external {
+  function updateReserves(
+    address spoke,
+    address spokeConfigurator,
+    ReserveConfigUpdate[] calldata updates
+  ) external {
     for (uint256 i; i < updates.length; i++) {
       ReserveConfigUpdate calldata update = updates[i];
       if (update.config.paused) {
-        ISpokeConfigurator(SPOKE_CONFIGURATOR).updatePaused(SPOKE, update.reserveId, true);
+        ISpokeConfigurator(spokeConfigurator).updatePaused(spoke, update.reserveId, true);
       }
       if (update.config.frozen) {
-        ISpokeConfigurator(SPOKE_CONFIGURATOR).updateFrozen(SPOKE, update.reserveId, true);
+        ISpokeConfigurator(spokeConfigurator).updateFrozen(spoke, update.reserveId, true);
       }
-      ISpokeConfigurator(SPOKE_CONFIGURATOR).updateBorrowable(
-        SPOKE,
+      ISpokeConfigurator(spokeConfigurator).updateBorrowable(
+        spoke,
         update.reserveId,
         update.config.borrowable
       );
-      ISpokeConfigurator(SPOKE_CONFIGURATOR).updateReceiveSharesEnabled(
-        SPOKE,
+      ISpokeConfigurator(spokeConfigurator).updateReceiveSharesEnabled(
+        spoke,
         update.reserveId,
         update.config.receiveSharesEnabled
       );
-      ISpokeConfigurator(SPOKE_CONFIGURATOR).updateCollateralRisk(
-        SPOKE,
+      ISpokeConfigurator(spokeConfigurator).updateCollateralRisk(
+        spoke,
         update.reserveId,
         update.config.collateralRisk
       );
@@ -83,10 +84,14 @@ contract AaveV4SpokeConfigEngine is IAaveV4SpokeConfigEngine {
   }
 
   /// @inheritdoc IAaveV4SpokeConfigEngine
-  function updateDynamicConfigs(DynamicConfigUpdate[] calldata updates) external {
+  function updateDynamicConfigs(
+    address spoke,
+    address spokeConfigurator,
+    DynamicConfigUpdate[] calldata updates
+  ) external {
     for (uint256 i; i < updates.length; i++) {
-      ISpokeConfigurator(SPOKE_CONFIGURATOR).updateDynamicReserveConfig(
-        SPOKE,
+      ISpokeConfigurator(spokeConfigurator).updateDynamicReserveConfig(
+        spoke,
         updates[i].reserveId,
         updates[i].dynamicConfigKey,
         updates[i].config
