@@ -67,64 +67,123 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
 
     FullDeployInputs memory sanitizedInputs = inputs;
     bool hadWarnings = false;
-    if (inputs.grantRoles) {
-      _logAndAppend(logger, string.concat('Roles are being set'));
+
+    // ==================== Deployment Summary ====================
+    logger.log('========== DEPLOYMENT SUMMARY ==========');
+
+    // Hubs
+    if (inputs.hubLabels.length > 0) {
+      logger.log(string.concat('Hubs to deploy: ', vm.toString(inputs.hubLabels.length)));
+      for (uint256 i; i < inputs.hubLabels.length; i++) {
+        logger.log(string.concat('  - ', inputs.hubLabels[i]));
+      }
+    } else {
+      _logAndAppend(logger, 'No hubs will be deployed');
       hadWarnings = true;
-      if (inputs.accessManagerAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Access Manager Admin', message, outcome));
-        sanitizedInputs.accessManagerAdmin = deployer;
-      }
-      if (inputs.hubConfiguratorAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Hub Configurator Admin', message, outcome));
-        sanitizedInputs.hubConfiguratorAdmin = deployer;
-      }
-      if (inputs.spokeConfiguratorAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Spoke Configurator Admin', message, outcome));
-        sanitizedInputs.spokeConfiguratorAdmin = deployer;
-      }
-      if (inputs.spokeProxyAdminOwner == address(0)) {
-        _logAndAppend(logger, string.concat('Spoke Proxy Admin Owner', message, outcome));
-        sanitizedInputs.spokeProxyAdminOwner = deployer;
-      }
-      if (inputs.treasurySpokeOwner == address(0)) {
-        _logAndAppend(logger, string.concat('Treasury Spoke Owner', message, outcome));
-        sanitizedInputs.treasurySpokeOwner = deployer;
-      }
-      if (inputs.spokeAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Spoke Admin', message, outcome));
-        sanitizedInputs.spokeAdmin = deployer;
-      }
-      if (inputs.hubAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Hub Admin', message, outcome));
-        sanitizedInputs.hubAdmin = deployer;
-      }
     }
-    if (inputs.hubLabels.length == 0) {
-      _logAndAppend(logger, string.concat('Hub will not be deployed'));
+
+    // Spokes
+    if (inputs.spokeLabels.length > 0) {
+      logger.log(string.concat('Spokes to deploy: ', vm.toString(inputs.spokeLabels.length)));
+      for (uint256 i; i < inputs.spokeLabels.length; i++) {
+        logger.log(string.concat('  - ', inputs.spokeLabels[i]));
+        // Flag default values on per-spoke config
+        if (inputs.spokeMaxReservesLimits[i] == ConfigReader.DEFAULT_MAX_USER_RESERVES_LIMIT) {
+          _logAndAppend(
+            logger,
+            string.concat(inputs.spokeLabels[i], ': maxUserReservesLimit using default (128)')
+          );
+          hadWarnings = true;
+        }
+        if (inputs.spokeOracleDecimals[i] == ConfigReader.DEFAULT_ORACLE_DECIMALS) {
+          _logAndAppend(
+            logger,
+            string.concat(inputs.spokeLabels[i], ': oracleDecimals using default (8)')
+          );
+          hadWarnings = true;
+        }
+        if (
+          keccak256(bytes(inputs.spokeOracleDescriptions[i])) ==
+          keccak256(bytes(string.concat(inputs.spokeLabels[i], ConfigReader.DEFAULT_ORACLE_SUFFIX)))
+        ) {
+          _logAndAppend(
+            logger,
+            string.concat(inputs.spokeLabels[i], ': oracleSuffix using default " (USD)"')
+          );
+          hadWarnings = true;
+        }
+      }
+    } else {
+      _logAndAppend(logger, 'No spokes will be deployed');
       hadWarnings = true;
-      sanitizedInputs.hubLabels = new string[](0);
     }
-    if (inputs.spokeLabels.length == 0) {
-      _logAndAppend(logger, string.concat('Spoke will not be deployed'));
-      hadWarnings = true;
-      sanitizedInputs.spokeLabels = new string[](0);
-    }
+
+    // Gateways
     if (inputs.nativeWrapper == address(0)) {
       _logAndAppend(
         logger,
         string.concat(
           'Native wrapper',
           message,
-          "; NativeTokenGateway & SignatureGateway will not be deployed'"
+          '; NativeTokenGateway & SignatureGateway will not be deployed'
         )
       );
       hadWarnings = true;
-      sanitizedInputs.nativeWrapper = address(0);
+    } else {
+      logger.log('Gateways: NativeTokenGateway + SignatureGateway will be deployed');
+    }
+
+    // Roles
+    if (inputs.grantRoles) {
+      logger.log('Roles: will be granted during deployment');
+    } else {
+      logger.log('Roles: deferred (not granted during deployment)');
+    }
+
+    logger.log('========================================');
+
+    // ==================== Zero Address Sanitization ====================
+    if (inputs.grantRoles) {
+      if (inputs.accessManagerAdmin == address(0)) {
+        _logAndAppend(logger, string.concat('Access Manager Admin', message, outcome));
+        sanitizedInputs.accessManagerAdmin = deployer;
+        hadWarnings = true;
+      }
+      if (inputs.hubConfiguratorAdmin == address(0)) {
+        _logAndAppend(logger, string.concat('Hub Configurator Admin', message, outcome));
+        sanitizedInputs.hubConfiguratorAdmin = deployer;
+        hadWarnings = true;
+      }
+      if (inputs.spokeConfiguratorAdmin == address(0)) {
+        _logAndAppend(logger, string.concat('Spoke Configurator Admin', message, outcome));
+        sanitizedInputs.spokeConfiguratorAdmin = deployer;
+        hadWarnings = true;
+      }
+      if (inputs.spokeProxyAdminOwner == address(0)) {
+        _logAndAppend(logger, string.concat('Spoke Proxy Admin Owner', message, outcome));
+        sanitizedInputs.spokeProxyAdminOwner = deployer;
+        hadWarnings = true;
+      }
+      if (inputs.treasurySpokeOwner == address(0)) {
+        _logAndAppend(logger, string.concat('Treasury Spoke Owner', message, outcome));
+        sanitizedInputs.treasurySpokeOwner = deployer;
+        hadWarnings = true;
+      }
+      if (inputs.spokeAdmin == address(0)) {
+        _logAndAppend(logger, string.concat('Spoke Admin', message, outcome));
+        sanitizedInputs.spokeAdmin = deployer;
+        hadWarnings = true;
+      }
+      if (inputs.hubAdmin == address(0)) {
+        _logAndAppend(logger, string.concat('Hub Admin', message, outcome));
+        sanitizedInputs.hubAdmin = deployer;
+        hadWarnings = true;
+      }
     }
     if (inputs.gatewayOwner == address(0)) {
       _logAndAppend(logger, string.concat('Gateway owner', message, outcome));
-      hadWarnings = true;
       sanitizedInputs.gatewayOwner = deployer;
+      hadWarnings = true;
     }
     if (hadWarnings) {
       _executeUserPrompt();
