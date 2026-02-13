@@ -2,20 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Script} from 'forge-std/Script.sol';
+import 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
 
-import {ConfigReader} from 'scripts/ConfigReader.sol';
+import 'scripts/deploy/helpers/AaveV4HubDeployHelper.sol';
+import 'scripts/deploy/helpers/AaveV4SpokeDeployHelper.sol';
+
 import {SpokeDeployUtils} from 'scripts/SpokeDeployUtils.sol';
-import {AaveV4HubDeployHelper} from 'scripts/deploy/helpers/AaveV4HubDeployHelper.sol';
-import {AaveV4SpokeDeployHelper} from 'scripts/deploy/helpers/AaveV4SpokeDeployHelper.sol';
-
-import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
-import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
-import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
-import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
-import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
-import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
@@ -25,51 +17,45 @@ import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/
 /// @title AaveV4FullDeployScript
 /// @notice Deploy script that reads a unified JSON config and:
 ///   1. Deploys all contracts via AaveV4DeployOrchestration (if hubs/spokes are defined)
-///   2. Lists assets on hubs via HubConfigEngine (if assets are defined)
-///   3. Registers spokes on hubs via HubConfigEngine (if spokeRegistrations are defined)
-///   4. Configures reserves on spokes via SpokeConfigEngine (if reserves are defined)
+///   2. Lists assets on hubs via HubConfigurator (if assets are defined)
+///   3. Registers spokes on hubs via HubConfigurator (if spokeRegistrations are defined)
+///   4. Configures reserves on spokes via SpokeConfigurator (if reserves are defined)
 ///   5. Grants permanent roles and transfers admin to the final admin address
 ///
 ///   Each step is conditional — if the JSON section is empty, that step is skipped.
-///   Admin handoff is deferred until after all config engine operations complete.
-///   If no config engine operations are needed, handoff happens right after contract deployment.
+///   Follows V3 pattern: deployer gets temporary admin roles to call configurators
+///   directly during the config phase, then those roles are revoked before handoff.
 ///
 ///   Hub-side and spoke-side logic is inherited from AaveV4HubDeployHelper and
 ///   AaveV4SpokeDeployHelper respectively, which can also be used independently
 ///   for partial deployments (e.g., adding spokes to an existing hub).
 contract AaveV4FullDeployScript is
-  Script,
-  InputUtils,
+  AaveV4DeployBatchBaseScript,
   AaveV4HubDeployHelper,
   AaveV4SpokeDeployHelper
 {
   using ConfigReader for string;
 
-  string internal constant OUTPUT_DIR = 'output/reports/deployments/';
+  constructor(
+    string memory inputFileName_,
+    string memory outputFileName_
+  ) AaveV4DeployBatchBaseScript(inputFileName_, outputFileName_) {}
 
-  string internal _configPath;
-  string internal _outputFileName;
-
-  constructor(string memory configPath_, string memory outputFileName_) {
-    _configPath = configPath_;
-    _outputFileName = outputFileName_;
-  }
-
-  function run() external {
+  function run() external override {
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
 
-    string memory json = vm.readFile(_configPath);
+    string memory json = vm.readFile(string.concat(INPUT_PATH, _inputFileName));
     ConfigReader.InfrastructureConfig memory infra = json.readInfrastructure();
 
     (, address deployer, ) = vm.readCallers();
 
     logger.log('CHAIN ID', block.chainid);
-    logger.log('Config', _configPath);
+    logger.log('Config', string.concat(INPUT_PATH, _inputFileName));
 
     // ==================== Step 1: Deploy contracts ====================
     // Deployer retains DEFAULT_ADMIN_ROLE throughout. Roles are granted
-    // explicitly at the end once all config engine operations are complete.
+    // explicitly at the end once all configuration operations are complete.
 
     uint256 hubCount;
     while (json.hubExists(hubCount)) {
@@ -83,7 +69,7 @@ contract AaveV4FullDeployScript is
     OrchestrationReports.FullDeploymentReport memory report;
     bool didDeploy = hubCount > 0 || spokeCount > 0;
 
-    // Count config engine items upfront to determine handoff timing
+    // Count config items upfront to determine handoff timing
     uint256 assetCount;
     while (json.assetExists(assetCount)) {
       assetCount++;
@@ -97,7 +83,7 @@ contract AaveV4FullDeployScript is
       reserveCount++;
     }
 
-    bool needsConfigEngine = assetCount > 0 || spokeRegistrationCount > 0 || reserveCount > 0;
+    bool needsConfig = assetCount > 0 || spokeRegistrationCount > 0 || reserveCount > 0;
 
     if (didDeploy) {
       // Verify LiquidationLogic is linked when deploying spokes.
@@ -106,14 +92,14 @@ contract AaveV4FullDeployScript is
         _requireLiquidationLogicLinked();
       }
 
-      // If config engine ops are needed, defer role grants (deployer stays admin).
+      // If config ops are needed, defer role grants (deployer stays admin).
       // If NOT needed, grant roles immediately during deploy (handoff in orchestration).
-      InputUtils.FullDeployInputs memory inputs = _buildDeployInputs(
+      FullDeployInputs memory inputs = _buildDeployInputs(
         json,
         infra,
         hubCount,
         spokeCount,
-        !needsConfigEngine // grantRoles: true only if no config engine ops
+        !needsConfig // grantRoles: true only if no config ops
       );
 
       logger.log('...Starting Aave V4 Contract Deployment...');
@@ -121,22 +107,29 @@ contract AaveV4FullDeployScript is
 
       report = AaveV4DeployOrchestration.deployAaveV4(logger, deployer, inputs);
 
-      // If no config engine ops, handoff already happened in orchestration — done.
-      if (!needsConfigEngine) {
+      // If no config ops, handoff already happened in orchestration — done.
+      if (!needsConfig) {
         vm.stopBroadcast();
         logger.writeJsonReportMarket(report);
         _writeAdminInfo(logger, infra);
-        logger.log('...Full Deployment Completed (no config engine ops)...');
+        logger.log('...Full Deployment Completed (no config ops)...');
+        logger.log('...Saving Logs...');
         logger.save({fileName: _outputFileName, withTimestamp: true});
         return;
       }
 
-      // Config engine ops needed — deployer still has DEFAULT_ADMIN_ROLE.
-      // Grant configurator contract roles so config engine path works:
-      //   ConfigEngine → HubConfigurator → Hub  (needs HUB_CONFIGURATOR_ROLE on HubConfigurator contract)
-      //   ConfigEngine → SpokeConfigurator → Spoke  (needs SPOKE_CONFIGURATOR_ROLE on SpokeConfigurator contract)
+      // Config ops needed — deployer still has DEFAULT_ADMIN_ROLE.
+      // Grant structural configurator contract roles (HubConfigurator→role 5, SpokeConfigurator→role 6)
+      // and temporary deployer admin roles for the config phase.
       address accessManager = report.accessBatchReport.accessManager;
       _grantConfiguratorContractRoles(logger, report);
+      _grantDeployerTempRoles(
+        logger,
+        IAccessManager(accessManager),
+        deployer,
+        hubCount,
+        spokeCount
+      );
 
       // Continue broadcast for config steps below
     } else {
@@ -165,9 +158,18 @@ contract AaveV4FullDeployScript is
       _configureReserves(json, report, reserveCount, spokeCount, hubCount);
     }
 
-    // ==================== Step 5: Grant permanent roles + admin handoff ====================
+    // ==================== Step 5: Revoke deployer temp roles + permanent handoff ====================
 
     if (didDeploy) {
+      address accessManager = report.accessBatchReport.accessManager;
+      _revokeDeployerTempRoles(
+        logger,
+        IAccessManager(accessManager),
+        deployer,
+        hubCount,
+        spokeCount
+      );
+
       logger.log('...Granting permanent roles and transferring admin...');
       _grantPermanentRolesAndHandoff(logger, report, infra, deployer, hubCount, spokeCount);
     }
@@ -181,70 +183,74 @@ contract AaveV4FullDeployScript is
     }
     _writeAdminInfo(logger, infra);
     logger.log('...Full Deployment Completed...');
+    logger.log('...Saving Logs...');
     logger.save({fileName: _outputFileName, withTimestamp: true});
-  }
-
-  // ==================== Internal: Deploy Inputs ====================
-
-  function _buildDeployInputs(
-    string memory json,
-    ConfigReader.InfrastructureConfig memory infra,
-    uint256 hubCount,
-    uint256 spokeCount,
-    bool grantRoles
-  ) internal view returns (InputUtils.FullDeployInputs memory inputs) {
-    string[] memory hubLabels = new string[](hubCount);
-    for (uint256 i; i < hubCount; i++) {
-      hubLabels[i] = json.hubKey(i);
-    }
-
-    string[] memory spokeLabels = new string[](spokeCount);
-    for (uint256 i; i < spokeCount; i++) {
-      spokeLabels[i] = json.spokeKey(i);
-    }
-
-    inputs = InputUtils.FullDeployInputs({
-      accessManagerAdmin: infra.accessManagerAdmin,
-      hubAdmin: infra.hubConfiguratorAdmin,
-      hubConfiguratorAdmin: infra.hubConfiguratorAdmin,
-      treasurySpokeOwner: infra.treasurySpokeOwner,
-      spokeAdmin: infra.spokeConfiguratorAdmin,
-      spokeProxyAdminOwner: infra.spokeProxyAdminOwner,
-      spokeConfiguratorAdmin: infra.spokeConfiguratorAdmin,
-      gatewayOwner: infra.gatewayOwner,
-      nativeWrapper: infra.nativeWrapper,
-      grantRoles: grantRoles,
-      hubLabels: hubLabels,
-      spokeLabels: spokeLabels,
-      salt: keccak256(bytes(infra.salt))
-    });
   }
 
   // ==================== Internal: Configurator Contract Roles ====================
 
-  /// @dev Grants roles that allow Configurator contracts to call Hub/Spoke.
-  ///      These are needed for the config engine call path to work:
-  ///      ConfigEngine → HubConfigurator (needs role 9) → Hub (HubConfigurator has role 5)
-  ///      ConfigEngine → SpokeConfigurator (needs role 13) → Spoke (SpokeConfigurator has role 6)
+  /// @dev Grants structural roles that allow Configurator contracts to call Hub/Spoke.
+  ///      HubConfigurator needs HUB_CONFIGURATOR_ROLE (5) to call Hub functions.
+  ///      SpokeConfigurator needs SPOKE_CONFIGURATOR_ROLE (6) to call Spoke functions.
   function _grantConfiguratorContractRoles(
     MetadataLogger logger,
     OrchestrationReports.FullDeploymentReport memory report
   ) internal {
     address accessManager = report.accessBatchReport.accessManager;
 
-    // HubConfigurator needs HUB_CONFIGURATOR_ROLE to call Hub functions
     logger.log('...Granting Hub Configurator contract role...');
     AaveV4HubRolesProcedure.grantHubConfiguratorRole({
       accessManager: accessManager,
       admin: report.configuratorBatchReport.hubConfigurator
     });
 
-    // SpokeConfigurator needs SPOKE_CONFIGURATOR_ROLE to call Spoke functions
     logger.log('...Granting Spoke Configurator contract role...');
     AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole({
       accessManager: accessManager,
       admin: report.configuratorBatchReport.spokeConfigurator
     });
+  }
+
+  // ==================== Internal: Deployer Temporary Roles ====================
+
+  /// @dev Grants the deployer temporary admin roles on the configurators so it can
+  ///      call HubConfigurator/SpokeConfigurator directly during the config phase.
+  ///      These roles are revoked after configuration is complete (V3 pattern).
+  function _grantDeployerTempRoles(
+    MetadataLogger logger,
+    IAccessManager accessManager,
+    address deployer,
+    uint256 hubCount,
+    uint256 spokeCount
+  ) internal {
+    logger.log('...Granting deployer temporary configurator admin roles...');
+    if (hubCount > 0) {
+      accessManager.grantRole(Roles.HUB_CONFIGURATOR_ADMIN_ROLE, deployer, 0);
+    }
+    if (spokeCount > 0) {
+      accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE, deployer, 0);
+      accessManager.grantRole(Roles.SPOKE_FREEZE_ROLE, deployer, 0);
+      accessManager.grantRole(Roles.SPOKE_PAUSE_ROLE, deployer, 0);
+    }
+  }
+
+  /// @dev Revokes the deployer's temporary admin roles after configuration is complete.
+  function _revokeDeployerTempRoles(
+    MetadataLogger logger,
+    IAccessManager accessManager,
+    address deployer,
+    uint256 hubCount,
+    uint256 spokeCount
+  ) internal {
+    logger.log('...Revoking deployer temporary configurator admin roles...');
+    if (hubCount > 0) {
+      accessManager.revokeRole(Roles.HUB_CONFIGURATOR_ADMIN_ROLE, deployer);
+    }
+    if (spokeCount > 0) {
+      accessManager.revokeRole(Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE, deployer);
+      accessManager.revokeRole(Roles.SPOKE_FREEZE_ROLE, deployer);
+      accessManager.revokeRole(Roles.SPOKE_PAUSE_ROLE, deployer);
+    }
   }
 
   // ==================== Internal: Permanent Role Grants + Handoff ====================
@@ -306,9 +312,6 @@ contract AaveV4FullDeployScript is
   // ==================== Internal: Library Linking Check ====================
 
   /// @dev Verifies that LiquidationLogic has been pre-deployed and FOUNDRY_LIBRARIES is set.
-  ///      SpokeInstance (via-ir compiled) links LiquidationLogic as an external library.
-  ///      Without FOUNDRY_LIBRARIES, vm.getCode('SpokeInstance') returns unlinked bytecode
-  ///      with placeholder bytes, resulting in a non-functional contract.
   function _requireLiquidationLogicLinked() internal {
     bool envExists = SpokeDeployUtils._librariesPathExists();
     require(
@@ -338,5 +341,8 @@ contract AaveV4FullDeployScript is
 
 /// @notice Default concrete deploy script reading from config/deploy.json
 contract AaveV4FullDeployDefaultScript is AaveV4FullDeployScript {
-  constructor() AaveV4FullDeployScript('config/deploy.json', 'AaveV4FullDeploy.json') {}
+  string internal constant INPUT_FILE = 'deploy.json';
+  string internal constant OUTPUT_FILE = 'AaveV4FullDeploy.json';
+
+  constructor() AaveV4FullDeployScript(INPUT_FILE, OUTPUT_FILE) {}
 }

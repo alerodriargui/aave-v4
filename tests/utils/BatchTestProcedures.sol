@@ -121,7 +121,42 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       : _deployer;
     inputs.gatewayOwner = inputs.gatewayOwner != address(0) ? inputs.gatewayOwner : _deployer;
 
+    // Sync parallel arrays with spokeLabels length
+    inputs.hubLabels = _hubLabels;
+    inputs.spokeLabels = _spokeLabels;
+    inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(_spokeLabels.length);
+    inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(_spokeLabels.length);
+    inputs.spokeOracleDescriptions = _defaultSpokeOracleDescriptions(_spokeLabels);
+    inputs.nativeWrapper = _weth9;
+
     return inputs;
+  }
+
+  function _defaultSpokeMaxReservesLimits(
+    uint256 count
+  ) internal pure returns (uint16[] memory limits) {
+    limits = new uint16[](count);
+    for (uint256 i; i < count; i++) {
+      limits[i] = Constants.MAX_ALLOWED_USER_RESERVES_LIMIT;
+    }
+  }
+
+  function _defaultSpokeOracleDecimals(
+    uint256 count
+  ) internal pure returns (uint8[] memory decimals) {
+    decimals = new uint8[](count);
+    for (uint256 i; i < count; i++) {
+      decimals[i] = Constants.ORACLE_DECIMALS;
+    }
+  }
+
+  function _defaultSpokeOracleDescriptions(
+    string[] memory labels
+  ) internal pure returns (string[] memory descriptions) {
+    descriptions = new string[](labels.length);
+    for (uint256 i; i < labels.length; i++) {
+      descriptions[i] = string.concat(labels[i], ' (USD)');
+    }
   }
 
   function _checkFullReport(

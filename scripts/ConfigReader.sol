@@ -51,6 +51,9 @@ library ConfigReader {
   // Maximum number of user reserves per spoke — set via SpokeConfigurator.updateMaxReserves()
   uint16 internal constant DEFAULT_MAX_USER_RESERVES_LIMIT = 128;
 
+  // Oracle description suffix appended to the spoke label — set during spoke deployment
+  string internal constant DEFAULT_ORACLE_SUFFIX = ' (USD)';
+
   // Whether to register the spoke on position managers — set during spoke deployment
   bool internal constant DEFAULT_REGISTER_ON_POSITION_MANAGERS = true;
 
@@ -105,11 +108,13 @@ library ConfigReader {
   /// @notice Spoke deployment configuration.
   /// @param key Unique identifier for this spoke (e.g., "PRIME_SPOKE")
   /// @param oracleDecimals Decimal precision for the spoke's oracle
+  /// @param oracleSuffix Suffix appended to spoke label for oracle description
   /// @param maxUserReservesLimit Maximum number of reserves a user can hold on this spoke
   /// @param registerOnPositionManagers Whether to register with position managers on deploy
   struct SpokeDeployConfig {
     string key;
     uint8 oracleDecimals;
+    string oracleSuffix;
     uint16 maxUserReservesLimit;
     bool registerOnPositionManagers;
   }
@@ -208,6 +213,20 @@ library ConfigReader {
     if (strict) return json.readBool(path);
     if (json.keyExists(path)) return json.readBool(path);
     if (bytes(defaultPath).length > 0) return json.readBoolOr(defaultPath, fallback_);
+    return fallback_;
+  }
+
+  function _resolveString(
+    string memory json,
+    string memory path,
+    string memory defaultPath,
+    string memory fallback_,
+    bool strict
+  ) private view returns (string memory) {
+    if (strict) return json.readString(path);
+    if (json.keyExists(path)) return json.readString(path);
+    if (bytes(defaultPath).length > 0 && json.keyExists(defaultPath))
+      return json.readString(defaultPath);
     return fallback_;
   }
 
@@ -373,6 +392,13 @@ library ConfigReader {
           DEFAULT_ORACLE_DECIMALS,
           strict
         ).toUint8(),
+        oracleSuffix: _resolveString(
+          json,
+          string.concat(base, '.oracleSuffix'),
+          '.defaults.spoke.oracleSuffix',
+          DEFAULT_ORACLE_SUFFIX,
+          strict
+        ),
         maxUserReservesLimit: _resolveUint(
           json,
           string.concat(base, '.maxUserReservesLimit'),

@@ -5,6 +5,7 @@ import {Test} from 'forge-std/Test.sol';
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {Constants} from 'tests/Constants.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
@@ -36,6 +37,9 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
 
     _inputs.hubLabels = ['hub1', 'hub2', 'hub3'];
     _inputs.spokeLabels = ['spoke1', 'spoke2', 'spoke3'];
+    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(3);
+    _inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(3);
+    _inputs.spokeOracleDescriptions = _defaultSpokeOracleDescriptions(_inputs.spokeLabels);
     _inputs.accessManagerAdmin = makeAddr('accessManagerAdmin');
     _inputs.hubAdmin = makeAddr('hubAdmin');
     _inputs.hubConfiguratorAdmin = makeAddr('hubConfiguratorAdmin');
@@ -220,5 +224,32 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.hubLabels, b.hubLabels, 'hub labels');
     assertEq(a.spokeLabels, b.spokeLabels, 'spoke labels');
     assertEq(abi.encode(a), abi.encode(b));
+  }
+
+  function _defaultSpokeMaxReservesLimits(
+    uint256 count
+  ) internal pure returns (uint16[] memory limits) {
+    limits = new uint16[](count);
+    for (uint256 i; i < count; i++) {
+      limits[i] = Constants.MAX_ALLOWED_USER_RESERVES_LIMIT;
+    }
+  }
+
+  function _defaultSpokeOracleDecimals(
+    uint256 count
+  ) internal pure returns (uint8[] memory decimals) {
+    decimals = new uint8[](count);
+    for (uint256 i; i < count; i++) {
+      decimals[i] = Constants.ORACLE_DECIMALS;
+    }
+  }
+
+  function _defaultSpokeOracleDescriptions(
+    string[] memory labels
+  ) internal pure returns (string[] memory descriptions) {
+    descriptions = new string[](labels.length);
+    for (uint256 i; i < labels.length; i++) {
+      descriptions[i] = string.concat(labels[i], ' (USD)');
+    }
   }
 }

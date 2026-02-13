@@ -22,9 +22,6 @@ import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 
 library AaveV4DeployOrchestration {
-  uint8 private constant ORACLE_DECIMALS = 8;
-  string private constant ORACLE_SUFFIX = ' (USD)';
-
   function deployAaveV4(
     Logger logger,
     address deployer,
@@ -71,13 +68,12 @@ library AaveV4DeployOrchestration {
     });
 
     // Deploy Spoke Instance Batches
-    report.spokeInstanceBatchReports = _deploySpokes({
-      logger: logger,
-      spokeProxyAdminOwner: deployInputs.spokeProxyAdminOwner,
-      authority: report.accessBatchReport.accessManager,
-      spokeLabels: deployInputs.spokeLabels,
-      rootSalt: rootSalt
-    });
+    report.spokeInstanceBatchReports = _deploySpokes(
+      logger,
+      report.accessBatchReport.accessManager,
+      deployInputs,
+      rootSalt
+    );
 
     // Deploy Gateways Batch if native wrapper is not zero address
     if (deployInputs.nativeWrapper != address(0)) {
@@ -263,20 +259,22 @@ library AaveV4DeployOrchestration {
 
   function _deploySpokes(
     Logger logger,
-    address spokeProxyAdminOwner,
     address authority,
-    string[] memory spokeLabels,
+    InputUtils.FullDeployInputs memory inputs,
     bytes32 rootSalt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
-    uint256 spokeCount = spokeLabels.length;
+    uint256 spokeCount = inputs.spokeLabels.length;
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
       spokeBatchReports[i] = _deploySpoke({
         logger: logger,
-        spokeProxyAdminOwner: spokeProxyAdminOwner,
+        spokeProxyAdminOwner: inputs.spokeProxyAdminOwner,
         authority: authority,
-        label: spokeLabels[i],
-        salt: keccak256(abi.encode(rootSalt, 'spoke', spokeLabels[i]))
+        label: inputs.spokeLabels[i],
+        maxUserReservesLimit: inputs.spokeMaxReservesLimits[i],
+        oracleDecimals: inputs.spokeOracleDecimals[i],
+        oracleDescription: inputs.spokeOracleDescriptions[i],
+        salt: keccak256(abi.encode(rootSalt, 'spoke', inputs.spokeLabels[i]))
       });
     }
     logger.log('');
@@ -288,6 +286,9 @@ library AaveV4DeployOrchestration {
     address spokeProxyAdminOwner,
     address authority,
     string memory label,
+    uint16 maxUserReservesLimit,
+    uint8 oracleDecimals,
+    string memory oracleDescription,
     bytes32 salt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport memory) {
     OrchestrationReports.SpokeDeploymentReport memory spokeReport;
@@ -297,7 +298,9 @@ library AaveV4DeployOrchestration {
       logger: logger,
       spokeProxyAdminOwner: spokeProxyAdminOwner,
       authority: authority,
-      label: label,
+      oracleDecimals: oracleDecimals,
+      oracleDescription: oracleDescription,
+      maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
 
@@ -319,17 +322,18 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address spokeProxyAdminOwner,
     address authority,
-    string memory label,
+    uint8 oracleDecimals,
+    string memory oracleDescription,
+    uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
     logger.log('...Deploying AaveV4SpokeInstanceBatch...');
     report = AaveV4DeployBase.deploySpokeInstanceBatch({
       spokeProxyAdminOwner: spokeProxyAdminOwner,
       authority: authority,
-      oracleDecimals: ORACLE_DECIMALS,
-      oracleSuffix: ORACLE_SUFFIX,
-      label: label,
-      maxUserReservesLimit: MAX_ALLOWED_USER_RESERVES_LIMIT,
+      oracleDecimals: oracleDecimals,
+      oracleDescription: oracleDescription,
+      maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
     return report;

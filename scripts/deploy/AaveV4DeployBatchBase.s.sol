@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {ConfigReader} from 'scripts/ConfigReader.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
@@ -11,6 +12,8 @@ import {Script} from 'forge-std/Script.sol';
 
 // solhint-disable quotes
 abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
+  using ConfigReader for string;
+
   struct Warnings {
     string[] s;
   }
@@ -29,10 +32,17 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   function run() external virtual {
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
-    FullDeployInputs memory inputs = loadFullDeployInputs(
-      string.concat(INPUT_PATH, _inputFileName)
-    );
+
+    string memory json = vm.readFile(string.concat(INPUT_PATH, _inputFileName));
+    ConfigReader.InfrastructureConfig memory infra = json.readInfrastructure();
     (, address deployer, ) = vm.readCallers();
+
+    uint256 hubCount;
+    while (json.hubExists(hubCount)) hubCount++;
+    uint256 spokeCount;
+    while (json.spokeExists(spokeCount)) spokeCount++;
+
+    FullDeployInputs memory inputs = _buildDeployInputs(json, infra, hubCount, spokeCount, true);
     inputs = _loadWarningsAndSanitizeInputs(logger, inputs, deployer);
 
     logger.log('CHAIN ID', block.chainid);

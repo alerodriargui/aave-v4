@@ -46,8 +46,7 @@ library AaveV4DeployBase {
     address spokeProxyAdminOwner,
     address authority,
     uint8 oracleDecimals,
-    string memory oracleSuffix,
-    string memory label,
+    string memory oracleDescription,
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
@@ -55,7 +54,7 @@ library AaveV4DeployBase {
       spokeProxyAdminOwner_: spokeProxyAdminOwner,
       authority_: authority,
       oracleDecimals_: oracleDecimals,
-      oracleDescription_: string.concat(label, oracleSuffix),
+      oracleDescription_: oracleDescription,
       maxUserReservesLimit_: maxUserReservesLimit,
       salt_: salt
     });

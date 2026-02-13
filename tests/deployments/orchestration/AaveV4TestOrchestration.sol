@@ -86,8 +86,11 @@ library AaveV4TestOrchestration {
           spokeProxyAdminOwner: admin,
           authority: report.accessManager,
           oracleDecimals: Constants.ORACLE_DECIMALS,
-          oracleSuffix: Constants.ORACLE_SUFFIX,
-          label: string.concat('Spoke ', string(abi.encode(i)), Constants.ORACLE_SUFFIX),
+          oracleDescription: string.concat(
+            'Spoke ',
+            string(abi.encode(i)),
+            Constants.ORACLE_SUFFIX
+          ),
           maxUserReservesLimit: Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
           salt: keccak256(abi.encodePacked(salt, 'spoke-', string(abi.encode(i))))
         });
