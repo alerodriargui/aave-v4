@@ -17,7 +17,11 @@
         "liquidationBonusFactor": 10000
       }
     },
-    "spokeRegistration": { "riskPremiumThreshold": 100000, "active": true, "halted": false },
+    "spokeRegistration": {
+      "riskPremiumThreshold": 100000,
+      "active": true,
+      "halted": false
+    },
     "reserve": {
       "receiveSharesEnabled": true,
       "frozen": false,

@@ -51,9 +51,7 @@
       "priceFeed": "0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c"
     }
   },
-  "hubs": [
-    { "key": "PRIME_HUB" }
-  ],
+  "hubs": [{ "key": "PRIME_HUB" }],
   "spokes": [
     {
       "key": "PRIME_SPOKE",

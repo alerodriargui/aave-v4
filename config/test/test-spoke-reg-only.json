@@ -8,7 +8,11 @@
     "salt": "spoke-reg-v1"
   },
   "defaults": {
-    "spokeRegistration": { "riskPremiumThreshold": 100000, "active": true, "halted": false },
+    "spokeRegistration": {
+      "riskPremiumThreshold": 100000,
+      "active": true,
+      "halted": false
+    },
     "reserve": {
       "receiveSharesEnabled": true,
       "frozen": false,

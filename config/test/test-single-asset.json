@@ -10,8 +10,18 @@
   "defaults": {
     "asset": { "liquidityFee": 1000 },
     "tokenize": { "enabled": false },
-    "spokeRegistration": { "riskPremiumThreshold": 100000, "active": true, "halted": false },
-    "reserve": { "receiveSharesEnabled": true, "frozen": false, "paused": false, "liquidationFee": 1000, "maxLiquidationBonus": 10500 }
+    "spokeRegistration": {
+      "riskPremiumThreshold": 100000,
+      "active": true,
+      "halted": false
+    },
+    "reserve": {
+      "receiveSharesEnabled": true,
+      "frozen": false,
+      "paused": false,
+      "liquidationFee": 1000,
+      "maxLiquidationBonus": 10500
+    }
   },
   "tokens": {
     "WETH": {
@@ -19,9 +29,7 @@
       "priceFeed": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
     }
   },
-  "hubs": [
-    { "key": "SINGLE_HUB" }
-  ],
+  "hubs": [{ "key": "SINGLE_HUB" }],
   "spokes": [
     {
       "key": "SINGLE_SPOKE",
