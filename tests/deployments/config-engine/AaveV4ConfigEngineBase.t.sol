@@ -75,9 +75,11 @@ abstract contract AaveV4ConfigEngineBaseTest is Test, InputUtils {
     accessManager = accessBatch.getReport().accessManager;
 
     // Deploy Hub + IR Strategy + TreasurySpoke
+    bytes memory hubBytecode = vm.getCode('src/hub/Hub.sol:Hub');
     AaveV4HubBatch hubBatch = new AaveV4HubBatch(
       admin,
       accessManager,
+      hubBytecode,
       keccak256(abi.encode(salt, 'hub'))
     );
     BatchReports.HubBatchReport memory hubReport = hubBatch.getReport();
@@ -86,9 +88,11 @@ abstract contract AaveV4ConfigEngineBaseTest is Test, InputUtils {
     treasurySpoke = hubReport.treasurySpoke;
 
     // Deploy Spoke (proxy + impl) + Oracle
+    bytes memory spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
     AaveV4SpokeInstanceBatch spokeBatch = new AaveV4SpokeInstanceBatch(
       admin,
       accessManager,
+      spokeBytecode,
       8,
       'Test Oracle',
       128,

@@ -2,170 +2,210 @@
 
 Infrastructure for deploying and configuring the Aave V4 hub-and-spoke protocol.
 
-## Deploy Scripts
+## Deployment & Configuration Flows
 
-Two deploy scripts share a common base and a single JSON config format (`config/template.json`):
+There are three paths for deploying and configuring Aave V4, depending on whether you need contracts only, contracts with initial configuration, or post-deployment changes via governance.
 
-```
-InputUtils                         struct + _buildDeployInputs() + _etchCreate2Factory()
-  |
-  +-- AaveV4DeployBatchBaseScript  Script + ConfigReader + warnings/sanitize + deploy-only run()
-        |
-        +-- AaveV4DeployBatchScript          concrete, deploy-only (contracts + roles)
-        |
-        +-- AaveV4FullDeployScript           override run() with deploy + config phase
-              |
-              +-- AaveV4FullDeployDefaultScript  concrete (reads config/deploy.json)
-```
+### Flow 1: Contracts Only (`AaveV4DeployBatchScript`)
 
-### Deploy-Only Path (`AaveV4DeployBatchScript`)
-
-Deploys all contracts and grants roles in a single orchestration call. No asset listing, spoke registration, or reserve configuration.
+Deploys all smart contracts and grants permanent roles. No assets are listed, no spokes are registered, no reserves are configured. Configuration is expected to happen later via governance payloads (Flow 3).
 
 ```
-JSON --ConfigReader--> _buildDeployInputs() --> FullDeployInputs
-                                                      |
-                                 AaveV4DeployOrchestration.deployAaveV4(grantRoles=true)
-                                                      |
-                         +--------+----------+--------+--------+---------+
-                         |        |          |        |        |         |
-                       Access  Configurator  Hubs   Spokes  Gateways  Roles
-                       Batch     Batch      (N)     (N)     Batch    (granted)
+config/deploy.json
+       |
+  ConfigReader → _buildDeployInputs(grantRoles=true) → FullDeployInputs
+       |
+  AaveV4DeployOrchestration.deployAaveV4()
+       |
+       ├─ AccessBatch            → AccessManager
+       ├─ ConfiguratorBatch      → HubConfigurator + SpokeConfigurator
+       ├─ Setup selector→role mappings on AccessManager
+       ├─ HubBatch × N           → Hub + IRStrategy + TreasurySpoke (per hub)
+       │    └─ Setup hub selector→role mappings
+       ├─ SpokeInstanceBatch × N → SpokeProxy + SpokeImpl + AaveOracle (per spoke)
+       │    └─ Setup spoke selector→role mappings
+       ├─ GatewayBatch           → NativeTokenGateway + SignatureGateway (if nativeWrapper set)
+       └─ Grant permanent roles:
+            ├─ hubAdmin → HUB_CONFIGURATOR_ROLE + HUB_FEE_MINTER_ROLE
+            ├─ HubConfigurator contract → HUB_CONFIGURATOR_ROLE
+            ├─ hubConfiguratorAdmin → all HubConfigurator granular roles (9-12)
+            ├─ spokeAdmin → SPOKE_CONFIGURATOR_ROLE + SPOKE_POSITION_UPDATER_ROLE
+            ├─ SpokeConfigurator contract → SPOKE_CONFIGURATOR_ROLE
+            ├─ spokeConfiguratorAdmin → all SpokeConfigurator granular roles (13-15)
+            └─ Replace DEFAULT_ADMIN_ROLE: deployer → accessManagerAdmin
 ```
 
-**When to use:** You only need the contracts deployed and roles assigned. Configuration (listing assets, registering spokes, configuring reserves) will be done later via governance payloads or separate transactions.
-
-**Steps:**
+**When to use:** You only need contracts deployed and roles assigned. Assets, spoke registrations, and reserves will be configured later via governance payloads.
 
 ```bash
-# 1. Create config/deploy.json from config/template.json (fill in infrastructure section, hubs, spokes)
+# 1. Create config/deploy.json (fill in infrastructure, hubs, spokes sections)
 cp config/template.json config/deploy.json
-# Edit config/deploy.json with your addresses and deployment parameters
 
 # 2. If deploying spokes, pre-deploy LiquidationLogic
 forge script scripts/LibraryPreCompile.s.sol --broadcast --fork-url $RPC --ffi
 
-# 3. Run deploy
+# 3. Deploy
 forge script scripts/deploy/AaveV4DeployBatch.s.sol --broadcast --fork-url $RPC
 ```
 
-**What happens:**
+### Flow 2: Contracts + Direct Configuration (`AaveV4FullDeployScript`)
 
-1. Reads `config/deploy.json` via ConfigReader
-2. Builds `FullDeployInputs` (with per-spoke `maxUserReservesLimit` from JSON)
-3. Warns about zero addresses, prompts user to confirm
-4. Calls `AaveV4DeployOrchestration.deployAaveV4()` with `grantRoles=true`
-5. Orchestration deploys all batches, sets up selector-role mappings, and grants admin roles
-6. Transfers `DEFAULT_ADMIN_ROLE` to the final admin
-7. Writes deployment report to `output/reports/deployments/`
-
-### Full Deploy Path (`AaveV4FullDeployScript`)
-
-Deploys contracts, then configures them (list assets, register spokes, configure reserves) in a single transaction. Follows the V3 pattern where the deployer gets temporary admin roles during configuration, then revokes them.
+Deploys all contracts, then configures them by calling HubConfigurator and SpokeConfigurator directly — no config engine or payload is involved. The deployer gets temporary admin roles for the configuration phase (V3 pattern), then those roles are revoked and permanent roles are granted.
 
 ```
-JSON --ConfigReader--> _buildDeployInputs() --> FullDeployInputs
-                                                      |
-                                 AaveV4DeployOrchestration.deployAaveV4(grantRoles=false)
-                                                      |
-                         +--------+----------+--------+--------+
-                         |        |          |        |        |
-                       Access  Configurator  Hubs   Spokes  Gateways
-                       Batch     Batch      (N)     (N)     Batch
-                                                      |
-                                            (deployer keeps DEFAULT_ADMIN_ROLE)
-                                                      |
-                                 Grant configurator contract roles (5, 6)
-                                 Grant deployer temp roles (9, 13, 14, 15)
-                                                      |
-                                 +--------------------+--------------------+
-                                 |                    |                    |
-                          List assets           Register spokes     Configure reserves
-                          on hubs               on hubs             on spokes
-                          (HubConfigurator)      (HubConfigurator)   (SpokeConfigurator)
-                                                      |
-                                 Revoke deployer temp roles (9, 13, 14, 15)
-                                 Grant permanent admin roles
-                                 Transfer DEFAULT_ADMIN_ROLE to final admin
+config/deploy.json
+       |
+  ConfigReader → _buildDeployInputs(grantRoles=false) → FullDeployInputs
+       |
+  Step 1: AaveV4DeployOrchestration.deployAaveV4()
+       |  (same contract deployment as Flow 1, but roles NOT granted yet)
+       |
+  Step 2: Grant structural + deployer temporary roles
+       |  ├─ HubConfigurator → HUB_CONFIGURATOR_ROLE (5)
+       |  ├─ SpokeConfigurator → SPOKE_CONFIGURATOR_ROLE (6)
+       |  └─ deployer → temp roles (9, 13, 14, 15)
+       |
+  Step 3: Deployer calls configurators directly (no payload, no config engine)
+       |  ├─ HubConfigurator.addAsset()           — list assets on hubs
+       |  ├─ HubConfigurator.addSpoke()           — register spokes on hubs
+       |  │    └─ optionally CREATE2-deploy TokenizationSpokeInstance
+       |  ├─ SpokeConfigurator.updateMaxReserves() — set per-spoke max reserves
+       |  ├─ SpokeConfigurator.addReserve()        — configure reserves on spokes
+       |  └─ SpokeConfigurator.updateLiquidationConfig() — set liquidation params
+       |
+  Step 4: Revoke deployer temp roles (9, 13, 14, 15)
+       |
+  Step 5: Grant permanent roles + transfer DEFAULT_ADMIN_ROLE to final admin
 ```
 
-**When to use:** You want a complete market deployment in one shot — contracts, configuration, and role handoff all in a single transaction.
-
-**Steps:**
+**When to use:** Complete greenfield deployment — contracts, configuration, and role handoff in a single transaction.
 
 ```bash
 # 1. Create config/deploy.json with ALL sections filled in:
-#    infrastructure, hubs, spokes, assets, spokeRegistrations, reserves
+#    infrastructure, hubs, spokes, tokens, assets, spokeRegistrations, reserves
 cp config/template.json config/deploy.json
-# Edit config/deploy.json
 
 # 2. If deploying spokes, pre-deploy LiquidationLogic
 forge script scripts/LibraryPreCompile.s.sol --broadcast --fork-url $RPC --ffi
 
-# 3. Run full deploy
+# 3. Full deploy
 forge script scripts/deploy/AaveV4FullDeploy.s.sol:AaveV4FullDeployDefaultScript \
   --broadcast --fork-url $RPC
 ```
 
-**What happens:**
+If no config sections are defined (empty assets/spokeRegistrations/reserves), falls back to Flow 1 behavior with `grantRoles=true`.
 
-1. Reads JSON, counts hubs/spokes/assets/spokeRegistrations/reserves
-2. If config ops exist: deploys with `grantRoles=false` (deployer stays admin)
-3. Grants structural roles (HubConfigurator->role 5, SpokeConfigurator->role 6)
-4. Grants deployer temporary configurator admin roles (9, 13, 14, 15)
-5. **Config phase** — deployer calls configurators directly:
-   - Lists assets on hubs via `HubConfigurator`
-   - Registers spokes on hubs via `HubConfigurator`
-   - Configures reserves on spokes via `SpokeConfigurator`
-6. Revokes deployer temporary roles
-7. Grants permanent admin roles to addresses from config
-8. Transfers `DEFAULT_ADMIN_ROLE` from deployer to final admin
-9. Writes deployment report
+### Flow 3: Governance Payload (`AaveV4Payload`)
 
-If no config ops are defined (empty assets/spokeRegistrations/reserves arrays), falls back to the deploy-only behavior with `grantRoles=true`.
+Post-deployment parameter changes via governance proposals. Uses the config engine + DELEGATECALL pattern — no deploy scripts involved. The governance executor (which holds AccessManager roles) calls `payload.execute()`, which delegates to stateless config engines that route calls through the configurators.
 
-### Deploy Script Comparison
+```
+Governance / Timelock
+       |
+       | calls execute()
+       v
+  AaveV4Payload (per-proposal contract, extends AaveV4PayloadBase)
+       |
+       ├─ _executeHubPayload()                     hub operations first:
+       │    ├─ newAssetListings()       → DELEGATECALL HubConfigEngine.listAssets()
+       │    ├─ newSpokeListings()       → DELEGATECALL HubConfigEngine.addSpokes()
+       │    ├─ assetLiquidityFeeUpdates()→ DELEGATECALL HubConfigEngine.updateAssetLiquidityFees()
+       │    ├─ assetIRDataUpdates()     → DELEGATECALL HubConfigEngine.updateAssetIRData()
+       │    ├─ assetIRStrategyUpdates() → DELEGATECALL HubConfigEngine.updateAssetIRStrategies()
+       │    ├─ assetFeeReceiverUpdates()→ DELEGATECALL HubConfigEngine.updateAssetFeeReceivers()
+       │    ├─ reinvestmentControllerUpdates()→ DELEGATECALL HubConfigEngine.updateReinvestmentControllers()
+       │    ├─ spokeCapUpdates()        → DELEGATECALL HubConfigEngine.updateSpokeCaps()
+       │    ├─ spokeActiveUpdates()     → DELEGATECALL HubConfigEngine.updateSpokeActive()
+       │    ├─ spokeHaltedUpdates()     → DELEGATECALL HubConfigEngine.updateSpokeHalted()
+       │    └─ spokeRiskPremiumUpdates()→ DELEGATECALL HubConfigEngine.updateSpokeRiskPremiumThresholds()
+       │
+       └─ _executeSpokePayload()                   then spoke operations:
+            ├─ newReserveListings()     → DELEGATECALL SpokeConfigEngine.listReserves()
+            ├─ liquidationConfig()      → DELEGATECALL SpokeConfigEngine.updateLiquidationConfig()
+            ├─ reserveConfigUpdates()   → DELEGATECALL SpokeConfigEngine.updateReserves()
+            └─ dynamicConfigUpdates()   → DELEGATECALL SpokeConfigEngine.updateDynamicConfigs()
+       |
+       v
+  HubConfigurator / SpokeConfigurator (AccessManaged) → Hub / Spoke
+```
 
-| Feature                 | DeployBatch (deploy-only)            | FullDeploy (deploy+config)  |
-| ----------------------- | ------------------------------------ | --------------------------- |
-| Contract deployment     | Yes                                  | Yes                         |
-| Role grants             | In orchestration (`grantRoles=true`) | After config phase          |
-| List assets on hubs     | No                                   | Yes (via HubConfigurator)   |
-| Register spokes on hubs | No                                   | Yes (via HubConfigurator)   |
-| Configure reserves      | No                                   | Yes (via SpokeConfigurator) |
-| Deployer temp roles     | Not needed                           | Granted then revoked        |
-| Warnings/user prompt    | Yes                                  | Inherited (can override)    |
-| Config JSON required    | `infrastructure`, `hubs`, `spokes`   | All sections                |
+**When to use:** Any configuration change after initial deployment — listing new assets, updating fees, adding reserves, changing liquidation parameters, toggling spoke active/halted, etc.
+
+**How it works:** DELEGATECALL preserves `msg.sender` (the governance executor), which holds the AccessManager roles needed to call HubConfigurator/SpokeConfigurator. The config engines are stateless — all state lives in the payload contract's immutables. Override only the hooks you need; unused hooks return empty arrays and are skipped.
+
+```solidity
+contract MyProposal is AaveV4Payload {
+  constructor() AaveV4Payload(
+    HUB_CONFIG_ENGINE, SPOKE_CONFIG_ENGINE,
+    HUB, HUB_CONFIGURATOR, SPOKE, SPOKE_CONFIGURATOR, SALT
+  ) {}
+
+  // Hub hooks (override what you need)
+  function newAssetListings() public pure override returns (AssetListing[] memory) { ... }
+  function newSpokeListings() public pure override returns (SpokeListing[] memory) { ... }
+  function spokeCapUpdates() public pure override returns (SpokeCapUpdate[] memory) { ... }
+
+  // Spoke hooks (override what you need)
+  function newReserveListings() public pure override returns (ReserveListing[] memory) { ... }
+  function liquidationConfig() public pure override returns (LiquidationConfigInput memory) { ... }
+  function reserveConfigUpdates() public pure override returns (ReserveConfigUpdate[] memory) { ... }
+}
+```
+
+### Flow Comparison
+
+| Concern                | Flow 1: Contracts Only       | Flow 2: Contracts + Config          | Flow 3: Governance Payload        |
+| ---------------------- | ---------------------------- | ----------------------------------- | --------------------------------- |
+| When                   | Initial deployment           | Initial greenfield deployment       | Post-deployment changes           |
+| Who                    | Deployer EOA                 | Deployer EOA                        | Governance / Timelock             |
+| Contracts deployed     | Yes                          | Yes                                 | No (already deployed)             |
+| Assets/reserves config | No                           | Yes (direct configurator calls)     | Yes (via config engine + payload) |
+| Config engine used     | No                           | No                                  | Yes (DELEGATECALL)                |
+| Roles                  | Granted immediately          | Deployer temp → revoked → permanent | Governance holds permanent roles  |
+| Config format          | JSON (ConfigReader)          | JSON (ConfigReader)                 | Solidity (payload hooks)          |
+| JSON sections needed   | infrastructure, hubs, spokes | All sections                        | N/A                               |
 
 ## Deployment Order
 
-A full Aave V4 deployment proceeds in this order:
+A full Aave V4 deployment (Flow 2) proceeds in this order:
 
 ```
 1. LiquidationLogic library (external library, must be pre-deployed)
 2. AccessManager + AccessManagerEnumerable          (AaveV4AccessBatch)
 3. HubConfigurator + SpokeConfigurator              (AaveV4ConfiguratorBatch)
-4. Configure selector->role mappings on AccessManager
+4. Configure selector→role mappings on AccessManager
 5. Hub(s) + InterestRateStrategy + TreasurySpoke    (AaveV4HubBatch, per hub)
 6. SpokeInstance(s) + AaveOracle                    (AaveV4SpokeInstanceBatch, per spoke)
 7. Deploy periphery (gateways)                      (AaveV4GatewayBatch)
-8. Grant roles
-9. List assets on hub(s)                            (via HubConfigurator)
-10. Register spokes on hub(s)                       (via HubConfigurator)
-11. Configure reserves on spoke(s)                  (via SpokeConfigurator)
-12. Set liquidation config on spoke(s)
-13. Transfer admin roles to governance
+8. Grant structural + deployer temp roles
+9. List assets on hub(s)                            (deployer → HubConfigurator)
+10. Register spokes on hub(s)                       (deployer → HubConfigurator)
+11. Configure reserves on spoke(s)                  (deployer → SpokeConfigurator)
+12. Set liquidation config on spoke(s)              (deployer → SpokeConfigurator)
+13. Revoke deployer temp roles
+14. Grant permanent admin roles
+15. Transfer DEFAULT_ADMIN_ROLE to governance
 ```
 
-Steps 1-8 are handled by the orchestration. Steps 8-13 can happen in-band (FullDeploy) or later (governance payloads).
+Flow 1 covers steps 1-7 then jumps to 14-15. Flow 3 handles steps 9-12 (and equivalent updates) via governance after deployment.
 
 ### LiquidationLogic Pre-deployment
 
-The `LiquidationLogic` library is an external library linked into `SpokeInstance`. It **must** be deployed before the spoke batch. The bytecode placeholder appears in SpokeInstance and must be linked at deploy time.
+`LiquidationLogic` is an external Solidity library used by `Spoke.sol` (via `SpokeInstance`). Because it has `public`/`external` functions, the compiler emits it as a separate contract that `SpokeInstance` calls via `DELEGATECALL` at runtime. When Solidity compiles `SpokeInstance`, it leaves placeholder references (`__$<hash>$__`) in the bytecode where the library address should go. You cannot deploy `SpokeInstance` until those placeholders are replaced with a real on-chain address.
 
-In tests, `dynamic_test_linking = true` in `foundry.toml` handles this automatically.
+This requires a **two-step deploy** because Foundry needs to re-compile with the library address baked into the bytecode, which can only happen on the next invocation:
 
-For production deployments, run the pre-compile step first:
+**Step 1 — `LibraryPreCompile.s.sol`** (separate transaction):
+
+1. `SpokeDeployUtils.deployLiquidationLogic()` gets the library bytecode via `vm.getCode()` and deploys it via CREATE2 with `salt=0`
+2. Writes `FOUNDRY_LIBRARIES=src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic:0x<address>` to `.env` via FFI
+3. On re-run: if the library is already deployed (has code), skips. If `FOUNDRY_LIBRARIES` exists but the library isn't deployed (wrong chain/fork), deletes the stale entry and asks you to run again
+
+**Step 2 — Main deploy script** (next invocation):
+
+1. Foundry reads `.env` at startup, sees `FOUNDRY_LIBRARIES`, and at compile time replaces all `__$<hash>$__` placeholders in `SpokeInstance`'s bytecode with the library address
+2. `_requireLiquidationLogicLinked()` in `AaveV4FullDeployScript` verifies both: (a) `FOUNDRY_LIBRARIES` exists in `.env`, and (b) the address has code on-chain
+3. `AaveV4SpokeInstanceBatch` deploys `SpokeInstance` with fully linked bytecode
 
 ```bash
 # Step 1: Deploy LiquidationLogic and set FOUNDRY_LIBRARIES in .env
@@ -173,34 +213,15 @@ forge script scripts/LibraryPreCompile.s.sol --broadcast --fork-url $RPC --ffi
 
 # Step 2: Run the main deploy script (Foundry auto-links via FOUNDRY_LIBRARIES)
 forge script scripts/deploy/AaveV4FullDeploy.s.sol --broadcast --fork-url $RPC --ffi
+
+# Or via Makefile:
+make deploy-precompile CHAIN=<chain>
+make deploy-full CHAIN=<chain>
 ```
 
-The `LibraryPreCompile` script deploys LiquidationLogic via CREATE2 and writes the `FOUNDRY_LIBRARIES` env var to `.env`. This causes Foundry to link the library into SpokeInstance at compile time. The main deploy script verifies this was done before deploying spokes.
+**In tests:** `dynamic_test_linking = true` in `foundry.toml` tells Foundry to auto-deploy external libraries during test execution, so no `LibraryPreCompile` step is needed.
 
-## Post-Deployment: Config Engine & Governance Payloads
-
-After initial deployment, ongoing configuration changes go through the **config engine + payload** pattern (same as V3):
-
-```
-Governance / Timelock
-       |
-       | calls execute()
-       v
-  AaveV4Payload                             <-- per-proposal contract
-       |
-       | delegates to engines
-       v
-  AaveV4HubConfigEngine / SpokeConfigEngine <-- stateless libraries
-       |
-       | calls configurator
-       v
-  HubConfigurator / SpokeConfigurator       <-- AccessManaged
-       |
-       v
-  Hub / Spoke                               <-- protocol contracts
-```
-
-The config engine is a **stateless library** that routes calls through the configurator contracts. Governance payloads inherit from `AaveV4HubPayload` or `AaveV4SpokePayload` and override virtual hooks to define what changes to make. When `execute()` is called, the payload base invokes the config engine with data from the hooks. The config engine needs the caller to have the appropriate roles on AccessManager.
+## Config Engines
 
 ### AaveV4HubConfigEngine
 
@@ -243,41 +264,6 @@ Stateless engine for Spoke-side configuration. All calls route through `SpokeCon
 - `SPOKE_CONFIGURATOR_ADMIN_ROLE` (13) — for listing and admin-level reserve updates
 - `SPOKE_FREEZE_ROLE` (14) — for `updateFrozen` on reserves
 - `SPOKE_PAUSE_ROLE` (15) — for `updatePaused` on reserves
-
-### Governance Payloads
-
-`AaveV4Payload` is a unified abstract contract for creating governance proposals that can include both hub and spoke operations. It extends `AaveV4PayloadBase` (`execute()` → `_preExecute()` → `_executePayload()` → `_postExecute()`).
-
-Hub operations execute first, then spoke operations. Override only the hooks you need — unused hooks return empty arrays and are skipped.
-
-```solidity
-contract MyProposal is AaveV4Payload {
-  constructor() AaveV4Payload(
-    HUB_CONFIG_ENGINE, SPOKE_CONFIG_ENGINE,
-    HUB, HUB_CONFIGURATOR, SPOKE, SPOKE_CONFIGURATOR, SALT
-  ) {}
-
-  // Hub hooks (override what you need)
-  function newAssetListings() public pure override returns (AssetListing[] memory) { ... }
-  function newSpokeListings() public pure override returns (SpokeListing[] memory) { ... }
-  function spokeCapUpdates() public pure override returns (SpokeCapUpdate[] memory) { ... }
-
-  // Spoke hooks (override what you need)
-  function newReserveListings() public pure override returns (ReserveListing[] memory) { ... }
-  function liquidationConfig() public pure override returns (LiquidationConfigInput memory) { ... }
-  function reserveConfigUpdates() public pure override returns (ReserveConfigUpdate[] memory) { ... }
-}
-```
-
-### Deploy Scripts vs Config Engine
-
-| Concern       | Deploy Scripts (initial)  | Config Engine (ongoing)        |
-| ------------- | ------------------------- | ------------------------------ |
-| When          | Initial market deployment | Post-deployment changes        |
-| Who           | Deployer EOA              | Governance / Timelock          |
-| How           | Direct configurator calls | Via payload + engine           |
-| Roles         | Deployer gets temp roles  | Governance has permanent roles |
-| Config format | JSON (ConfigReader)       | Solidity (payload hooks)       |
 
 ## Architecture
 

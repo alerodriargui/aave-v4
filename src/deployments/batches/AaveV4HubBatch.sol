@@ -14,8 +14,17 @@ contract AaveV4HubBatch is
 {
   BatchReports.HubBatchReport internal _report;
 
-  constructor(address treasurySpokeOwner_, address authority_, bytes32 salt_) {
-    address hub = _deployHub(authority_, keccak256(abi.encodePacked(SALT, salt_, 'hub')));
+  constructor(
+    address treasurySpokeOwner_,
+    address authority_,
+    bytes memory hubBytecode_,
+    bytes32 salt_
+  ) {
+    address hub = _deployHub(
+      authority_,
+      hubBytecode_,
+      keccak256(abi.encodePacked(SALT, salt_, 'hub'))
+    );
     address irStrategy = _deployInterestRateStrategy(
       hub,
       keccak256(abi.encodePacked(SALT, salt_, 'irStrategy'))

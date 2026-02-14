@@ -10,7 +10,15 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
 
   function setUp() public override {
     super.setUp();
-    spokeBatch = new AaveV4SpokeInstanceBatch(admin, accessManager, 8, 'Test', 128, salt);
+    spokeBatch = new AaveV4SpokeInstanceBatch(
+      admin,
+      accessManager,
+      spokeBytecode,
+      8,
+      'Test',
+      128,
+      salt
+    );
     report = spokeBatch.getReport();
   }
 
@@ -39,12 +47,12 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
 
   function test_revert_zeroAuthority() public {
     vm.expectRevert('invalid authority');
-    new AaveV4SpokeInstanceBatch(admin, address(0), 8, 'Test', 128, salt);
+    new AaveV4SpokeInstanceBatch(admin, address(0), spokeBytecode, 8, 'Test', 128, salt);
   }
 
   function test_revert_zeroSpokeProxyAdminOwner() public {
     vm.expectRevert('invalid spoke proxy admin owner');
-    new AaveV4SpokeInstanceBatch(address(0), accessManager, 8, 'Test', 128, salt);
+    new AaveV4SpokeInstanceBatch(address(0), accessManager, spokeBytecode, 8, 'Test', 128, salt);
   }
 
   function test_revert_zeroOracleDecimals() public {
@@ -52,6 +60,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     new AaveV4SpokeInstanceBatch(
       admin,
       accessManager,
+      spokeBytecode,
       0,
       'Test',
       128,
@@ -61,7 +70,15 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
 
   function test_revert_emptyOracleDescription() public {
     vm.expectRevert('invalid oracle description');
-    new AaveV4SpokeInstanceBatch(admin, accessManager, 8, '', 128, keccak256('emptyDescSalt'));
+    new AaveV4SpokeInstanceBatch(
+      admin,
+      accessManager,
+      spokeBytecode,
+      8,
+      '',
+      128,
+      keccak256('emptyDescSalt')
+    );
   }
 
   function test_revert_zeroMaxUserReservesLimit() public {
@@ -69,6 +86,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     new AaveV4SpokeInstanceBatch(
       admin,
       accessManager,
+      spokeBytecode,
       8,
       'Test',
       0,
@@ -80,6 +98,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     AaveV4SpokeInstanceBatch newBatch = new AaveV4SpokeInstanceBatch(
       admin,
       accessManager,
+      spokeBytecode,
       8,
       'Test',
       128,

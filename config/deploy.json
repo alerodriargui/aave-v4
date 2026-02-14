@@ -1,0 +1,90 @@
+{
+  "infrastructure": {
+    "accessManagerAdmin": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "hubConfiguratorAdmin": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "spokeConfiguratorAdmin": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "treasurySpokeOwner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "spokeProxyAdminOwner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "gatewayOwner": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "nativeWrapper": "0x0000000000000000000000000000000000000000",
+    "salt": "local-test-v1"
+  },
+  "defaults": {
+    "spoke": {
+      "oracleDecimals": 8,
+      "maxUserReservesLimit": 128,
+      "liquidationConfig": {
+        "targetHealthFactor": "1050000000000000000",
+        "healthFactorForMaxBonus": "700000000000000000",
+        "liquidationBonusFactor": 2000
+      }
+    },
+    "spokeRegistration": {
+      "riskPremiumThreshold": 100000,
+      "active": true,
+      "halted": false
+    },
+    "reserve": {
+      "receiveSharesEnabled": true,
+      "frozen": false,
+      "paused": false,
+      "liquidationFee": 1000,
+      "maxLiquidationBonus": 10500
+    },
+    "asset": {
+      "liquidityFee": 1000
+    },
+    "tokenize": {
+      "enabled": true,
+      "addCap": 1099511627775
+    }
+  },
+  "tokens": {
+    "WETH": {
+      "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "priceFeed": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"
+    }
+  },
+  "hubs": [{ "key": "PRIME_HUB" }],
+  "spokes": [
+    {
+      "key": "PRIME_SPOKE"
+    }
+  ],
+  "assets": [
+    {
+      "tokenKey": "WETH",
+      "hubKey": "PRIME_HUB",
+      "irData": {
+        "optimalUsageRatio": 9000,
+        "baseVariableBorrowRate": 100,
+        "variableRateSlope1": 700,
+        "variableRateSlope2": 30000
+      }
+    }
+  ],
+  "spokeRegistrations": [
+    {
+      "assetKey": "WETH",
+      "hubKey": "PRIME_HUB",
+      "spokeKey": "PRIME_SPOKE",
+      "addCap": 1000,
+      "drawCap": 800
+    }
+  ],
+  "reserves": [
+    {
+      "spokeKey": "PRIME_SPOKE",
+      "assetKey": "WETH",
+      "hubKey": "PRIME_HUB",
+      "borrowable": true,
+      "collateralRisk": 5000,
+      "collateralFactor": 8000
+    }
+  ],
+  "periphery": {
+    "nativeTokenKey": "WETH",
+    "deploySignatureGateway": false,
+    "deployNativeTokenGateway": false
+  }
+}

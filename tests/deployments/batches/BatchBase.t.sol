@@ -28,10 +28,15 @@ contract BatchBaseTest is Test, InputUtils {
   bytes32 public salt;
   address public accessManager;
   address public nativeWrapper;
+  bytes internal hubBytecode;
+  bytes internal spokeBytecode;
 
   function setUp() public virtual {
     salt = keccak256('testSalt');
     _etchCreate2Factory();
+
+    hubBytecode = vm.getCode('src/hub/Hub.sol:Hub');
+    spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
 
     // used Hub, Spoke, Configurator batches
     AaveV4AccessBatch accessBatch = new AaveV4AccessBatch(admin, salt);

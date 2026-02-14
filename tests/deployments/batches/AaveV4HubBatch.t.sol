@@ -10,7 +10,7 @@ contract AaveV4HubBatchTest is BatchBaseTest {
 
   function setUp() public override {
     super.setUp();
-    hubBatch = new AaveV4HubBatch(admin, accessManager, salt);
+    hubBatch = new AaveV4HubBatch(admin, accessManager, hubBytecode, salt);
     report = hubBatch.getReport();
   }
 
@@ -36,16 +36,21 @@ contract AaveV4HubBatchTest is BatchBaseTest {
 
   function test_revert_zeroAuthority() public {
     vm.expectRevert('invalid authority');
-    new AaveV4HubBatch(admin, address(0), salt);
+    new AaveV4HubBatch(admin, address(0), hubBytecode, salt);
   }
 
   function test_revert_zeroTreasurySpokeOwner() public {
     vm.expectRevert('invalid owner');
-    new AaveV4HubBatch(address(0), accessManager, keccak256('zeroOwnerSalt'));
+    new AaveV4HubBatch(address(0), accessManager, hubBytecode, keccak256('zeroOwnerSalt'));
   }
 
   function test_differentSaltProducesDifferentAddress() public {
-    AaveV4HubBatch newBatch = new AaveV4HubBatch(admin, accessManager, keccak256('differentSalt'));
+    AaveV4HubBatch newBatch = new AaveV4HubBatch(
+      admin,
+      accessManager,
+      hubBytecode,
+      keccak256('differentSalt')
+    );
     assertNotEq(report.hub, newBatch.getReport().hub);
   }
 }

@@ -147,6 +147,8 @@ contract InputUtilsTest is Test, InputUtils {
         spokeConfiguratorAdmin: address(7),
         gatewayOwner: address(8),
         nativeWrapper: address(9),
+        deployNativeTokenGateway: true,
+        deploySignatureGateway: true,
         grantRoles: true,
         hubLabels: hubLabels,
         spokeLabels: spokeLabels,

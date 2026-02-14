@@ -70,14 +70,17 @@ contract ConfigProceduresBase is Test, InputUtils {
     AaveV4AccessBatch accessBatch = new AaveV4AccessBatch(admin, salt);
     accessManager = accessBatch.getReport().accessManager;
 
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasuryAdmin, accessManager, salt);
+    bytes memory hubBytecode = vm.getCode('src/hub/Hub.sol:Hub');
+    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasuryAdmin, accessManager, hubBytecode, salt);
     hub = hubBatch.getReport().hub;
     irStrategy = hubBatch.getReport().irStrategy;
     treasurySpoke = hubBatch.getReport().treasurySpoke;
 
+    bytes memory spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
     AaveV4SpokeInstanceBatch spokeBatch = new AaveV4SpokeInstanceBatch(
       admin,
       accessManager,
+      spokeBytecode,
       8,
       'Test (USD)',
       128,

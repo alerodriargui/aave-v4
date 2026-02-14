@@ -68,10 +68,12 @@ library AaveV4TestOrchestration {
     report.accessManager = AaveV4DeployBase.deployAccessBatch(admin, salt).accessManager;
 
     // Deploy Hub Batches
+    bytes memory hubBytecode = vm.getCode('src/hub/Hub.sol:Hub');
     for (uint256 i; i < hubCount; ++i) {
       BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
         treasurySpokeOwner: treasuryAdmin,
         authority: report.accessManager,
+        hubBytecode: hubBytecode,
         salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i))))
       });
       report.hubReports[i].hub = hubReport.hub;
@@ -80,11 +82,13 @@ library AaveV4TestOrchestration {
     }
 
     // Deploy Spoke Instance Batches
+    bytes memory spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
     for (uint256 i; i < spokeCount; ++i) {
       BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
         .deploySpokeInstanceBatch({
           spokeProxyAdminOwner: admin,
           authority: report.accessManager,
+          spokeBytecode: spokeBytecode,
           oracleDecimals: Constants.ORACLE_DECIMALS,
           oracleDescription: string.concat(
             'Spoke ',
@@ -112,6 +116,8 @@ library AaveV4TestOrchestration {
     BatchReports.GatewaysBatchReport memory gatewaysReport = AaveV4DeployBase.deployGatewaysBatch({
       owner: admin,
       nativeWrapper: nativeWrapper,
+      deployNativeTokenGateway: true,
+      deploySignatureGateway: true,
       salt: keccak256(abi.encodePacked(salt, 'gateways'))
     });
     report.gatewaysReport.signatureGateway = gatewaysReport.signatureGateway;
@@ -127,9 +133,11 @@ library AaveV4TestOrchestration {
     bytes32 salt
   ) external returns (TestTypes.TestHubReport memory) {
     TestTypes.TestHubReport memory report;
+    bytes memory hubBytecode = vm.getCode('src/hub/Hub.sol:Hub');
     BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
       treasurySpokeOwner: treasuryAdmin,
       authority: accessManager,
+      hubBytecode: hubBytecode,
       salt: keccak256(abi.encodePacked(salt, 'hub-', label))
     });
     report.hub = hubReport.hub;

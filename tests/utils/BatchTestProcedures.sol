@@ -67,9 +67,12 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   }
 
   function checkedV4Deployment() public {
+    bytes memory hubBytecode = vm.getCode('src/hub/Hub.sol:Hub');
+    bytes memory spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
+
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(_logger, _deployer, _inputs);
+      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
     vm.stopPrank();
     _checkDeployment(report, _inputs);
     _checkRoles(report, _inputs);
@@ -128,6 +131,8 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(_spokeLabels.length);
     inputs.spokeOracleDescriptions = _defaultSpokeOracleDescriptions(_spokeLabels);
     inputs.nativeWrapper = _weth9;
+    inputs.deployNativeTokenGateway = true;
+    inputs.deploySignatureGateway = true;
 
     return inputs;
   }
@@ -163,11 +168,14 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal pure {
-    if (inputs.nativeWrapper != address(0)) {
+    if (inputs.deployNativeTokenGateway) {
       assertNotEq(report.gatewaysBatchReport.nativeGateway, address(0), 'NativeGateway');
-      assertNotEq(report.gatewaysBatchReport.signatureGateway, address(0), 'SignatureGateway');
     } else {
       assertEq(report.gatewaysBatchReport.nativeGateway, address(0), 'Zero NativeGateway');
+    }
+    if (inputs.deploySignatureGateway) {
+      assertNotEq(report.gatewaysBatchReport.signatureGateway, address(0), 'SignatureGateway');
+    } else {
       assertEq(report.gatewaysBatchReport.signatureGateway, address(0), 'Zero SignatureGateway');
     }
 
@@ -721,12 +729,14 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal view {
-    if (inputs.nativeWrapper != address(0)) {
+    if (inputs.deployNativeTokenGateway) {
       assertEq(
         Ownable(report.gatewaysBatchReport.nativeGateway).owner(),
         inputs.gatewayOwner,
         'NativeGateway owner'
       );
+    }
+    if (inputs.deploySignatureGateway) {
       assertEq(
         Ownable(report.gatewaysBatchReport.signatureGateway).owner(),
         inputs.gatewayOwner,

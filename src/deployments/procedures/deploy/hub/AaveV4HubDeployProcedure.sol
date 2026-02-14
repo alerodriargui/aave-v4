@@ -6,12 +6,19 @@ import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4Deploy
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 contract AaveV4HubDeployProcedure is AaveV4DeployProcedureBase {
-  function _deployHub(address authority, bytes32 salt) internal returns (address) {
+  function _deployHub(
+    address authority,
+    bytes memory hubBytecode,
+    bytes32 salt
+  ) internal returns (address) {
     require(authority != address(0), 'invalid authority');
-    return Create2Utils.create2Deploy(salt, _getHubInitCode(authority));
+    return Create2Utils.create2Deploy(salt, _getHubInitCode(hubBytecode, authority));
   }
 
-  function _getHubInitCode(address authority) internal view returns (bytes memory) {
-    return abi.encodePacked(vm.getCode('src/hub/Hub.sol:Hub'), abi.encode(authority));
+  function _getHubInitCode(
+    bytes memory hubBytecode,
+    address authority
+  ) internal pure returns (bytes memory) {
+    return abi.encodePacked(hubBytecode, abi.encode(authority));
   }
 }

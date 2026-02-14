@@ -49,7 +49,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     logger.log('...Starting Aave V4 Batch Deployment...');
     vm.startBroadcast(deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(logger, deployer, inputs);
+      .deployAaveV4(logger, deployer, inputs, _getHubBytecode(), _getSpokeBytecode());
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
     logger.log('...Batch Deployment Completed...');
@@ -118,19 +118,23 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
       hadWarnings = true;
     }
 
-    // Gateways
-    if (inputs.nativeWrapper == address(0)) {
-      _logAndAppend(
-        logger,
-        string.concat(
-          'Native wrapper',
-          message,
-          '; NativeTokenGateway & SignatureGateway will not be deployed'
-        )
-      );
-      hadWarnings = true;
+    // NativeTokenGateway
+    if (inputs.deployNativeTokenGateway) {
+      if (inputs.nativeWrapper == address(0)) {
+        _logAndAppend(logger, 'deployNativeTokenGateway is true but nativeWrapper is zero address');
+        hadWarnings = true;
+      } else {
+        logger.log('NativeTokenGateway will be deployed');
+      }
     } else {
-      logger.log('Gateways: NativeTokenGateway + SignatureGateway will be deployed');
+      logger.log('NativeTokenGateway: skipped (deployNativeTokenGateway is false)');
+    }
+
+    // SignatureGateway
+    if (inputs.deploySignatureGateway) {
+      logger.log('SignatureGateway will be deployed');
+    } else {
+      logger.log('SignatureGateway: skipped (deploySignatureGateway is false)');
     }
 
     // Roles
@@ -198,6 +202,14 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     if (keccak256(bytes(ack)) != keccak256(bytes('y'))) {
       revert('User did not acknowledge warnings. Please try again.');
     }
+  }
+
+  function _getHubBytecode() internal view returns (bytes memory) {
+    return vm.getCode('src/hub/Hub.sol:Hub');
+  }
+
+  function _getSpokeBytecode() internal view returns (bytes memory) {
+    return vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
   }
 
   function _logAndAppend(MetadataLogger logger, string memory warning) internal virtual {

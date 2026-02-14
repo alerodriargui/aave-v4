@@ -49,6 +49,8 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.spokeConfiguratorAdmin = makeAddr('spokeConfiguratorAdmin');
     _inputs.gatewayOwner = makeAddr('gatewayOwner');
     _inputs.nativeWrapper = address(new WETH9());
+    _inputs.deployNativeTokenGateway = true;
+    _inputs.deploySignatureGateway = true;
     _inputs.grantRoles = true;
 
     _logger = new MetadataLogger('dummy/path');
@@ -220,6 +222,8 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.spokeAdmin, b.spokeAdmin, 'spoke admin');
     assertEq(a.gatewayOwner, b.gatewayOwner, 'gateway owner');
     assertEq(a.nativeWrapper, b.nativeWrapper, 'native wrapper');
+    assertEq(a.deployNativeTokenGateway, b.deployNativeTokenGateway, 'deploy native token gateway');
+    assertEq(a.deploySignatureGateway, b.deploySignatureGateway, 'deploy signature gateway');
     assertEq(a.grantRoles, b.grantRoles, 'grant roles');
     assertEq(a.hubLabels, b.hubLabels, 'hub labels');
     assertEq(a.spokeLabels, b.spokeLabels, 'spoke labels');

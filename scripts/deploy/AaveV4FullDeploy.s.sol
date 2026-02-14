@@ -105,7 +105,13 @@ contract AaveV4FullDeployScript is
       logger.log('...Starting Aave V4 Contract Deployment...');
       vm.startBroadcast(deployer);
 
-      report = AaveV4DeployOrchestration.deployAaveV4(logger, deployer, inputs);
+      report = AaveV4DeployOrchestration.deployAaveV4(
+        logger,
+        deployer,
+        inputs,
+        _getHubBytecode(),
+        _getSpokeBytecode()
+      );
 
       // If no config ops, handoff already happened in orchestration — done.
       if (!needsConfig) {
@@ -316,7 +322,7 @@ contract AaveV4FullDeployScript is
     bool envExists = SpokeDeployUtils._librariesPathExists();
     require(
       envExists,
-      'FOUNDRY_LIBRARIES not set. Run: forge script scripts/LibraryPreCompile.s.sol --broadcast --fork-url $RPC --ffi'
+      'FOUNDRY_LIBRARIES not set. Run: forge script scripts/LibraryPreCompile.s.sol'
     );
 
     address lib = SpokeDeployUtils._getLiquidationLogicAddress();

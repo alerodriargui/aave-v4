@@ -29,7 +29,9 @@ contract InputUtils {
   /// @dev spokeProxyAdminOwner The owner of the spoke proxyAdmin.
   /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
-  /// @dev nativeWrapper The address of the native wrapper.
+  /// @dev nativeWrapper The address of the native wrapper (required when deployNativeTokenGateway is true).
+  /// @dev deployNativeTokenGateway Whether to deploy the NativeTokenGateway (from periphery config).
+  /// @dev deploySignatureGateway Whether to deploy the SignatureGateway (from periphery config).
   /// @dev grantRoles A boolean indicating if roles should be granted.
   /// @dev hubLabels An array of hub labels; the number of hub labels defines the number of hubs to deploy.
   /// @dev spokeLabels An array of spoke labels; the number of spoke labels defines the number of spokes to deploy.
@@ -47,6 +49,8 @@ contract InputUtils {
     address spokeConfiguratorAdmin;
     address gatewayOwner;
     address nativeWrapper;
+    bool deployNativeTokenGateway;
+    bool deploySignatureGateway;
     bool grantRoles;
     string[] hubLabels;
     string[] spokeLabels;
@@ -96,6 +100,8 @@ contract InputUtils {
       spokeConfiguratorAdmin: infra.spokeConfiguratorAdmin,
       gatewayOwner: infra.gatewayOwner,
       nativeWrapper: infra.nativeWrapper,
+      deployNativeTokenGateway: json.deployNativeTokenGateway(),
+      deploySignatureGateway: json.deploySignatureGateway(),
       grantRoles: grantRoles,
       hubLabels: hubLabels,
       spokeLabels: spokeLabels,
