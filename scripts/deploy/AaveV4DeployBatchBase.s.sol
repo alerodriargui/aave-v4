@@ -14,7 +14,7 @@ import {Script} from 'forge-std/Script.sol';
 abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   using ConfigReader for string;
 
-  struct Warnings {
+  struct Lines {
     string[] s;
   }
 
@@ -22,7 +22,8 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
   string internal _inputFileName;
   string internal _outputFileName;
-  Warnings internal _warnings;
+  Lines internal _promptLines;
+  Lines internal _summaryLines;
 
   constructor(string memory inputFileName_, string memory outputFileName_) {
     _inputFileName = inputFileName_;
@@ -43,7 +44,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     while (json.spokeExists(spokeCount)) spokeCount++;
 
     FullDeployInputs memory inputs = _buildDeployInputs(json, infra, hubCount, spokeCount, true);
-    inputs = _loadWarningsAndSanitizeInputs(logger, inputs, deployer);
+    inputs = _loadWarningsAndSanitizeInputs(inputs, deployer);
 
     logger.log('CHAIN ID', block.chainid);
     logger.log('...Starting Aave V4 Batch Deployment...');
@@ -52,13 +53,13 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
       .deployAaveV4(logger, deployer, inputs, _getHubBytecode(), _getSpokeBytecode());
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
+    _logDeploySummary(logger);
     logger.log('...Batch Deployment Completed...');
     logger.log('...Saving Logs...');
     logger.save({fileName: _outputFileName, withTimestamp: true});
   }
 
   function _loadWarningsAndSanitizeInputs(
-    MetadataLogger logger,
     FullDeployInputs memory inputs,
     address deployer
   ) internal virtual returns (FullDeployInputs memory) {
@@ -66,141 +67,120 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     string memory outcome = '; defaulting to deployer';
 
     FullDeployInputs memory sanitizedInputs = inputs;
-    bool hadWarnings = false;
 
     // ==================== Deployment Summary ====================
-    logger.log('========== DEPLOYMENT SUMMARY ==========');
+    _appendSummary('========== DEPLOYMENT SUMMARY ==========');
 
     // Hubs
     if (inputs.hubLabels.length > 0) {
-      logger.log(string.concat('Hubs to deploy: ', vm.toString(inputs.hubLabels.length)));
+      _appendSummary(string.concat('Hubs to deploy: ', vm.toString(inputs.hubLabels.length)));
       for (uint256 i; i < inputs.hubLabels.length; i++) {
-        logger.log(string.concat('  - ', inputs.hubLabels[i]));
+        _appendSummary(string.concat('  - ', inputs.hubLabels[i]));
       }
     } else {
-      _logAndAppend(logger, 'No hubs will be deployed');
-      hadWarnings = true;
+      _logWarning('No hubs will be deployed');
     }
 
     // Spokes
     if (inputs.spokeLabels.length > 0) {
-      logger.log(string.concat('Spokes to deploy: ', vm.toString(inputs.spokeLabels.length)));
+      _appendSummary(string.concat('Spokes to deploy: ', vm.toString(inputs.spokeLabels.length)));
       for (uint256 i; i < inputs.spokeLabels.length; i++) {
-        logger.log(string.concat('  - ', inputs.spokeLabels[i]));
+        _appendSummary(string.concat('  - ', inputs.spokeLabels[i]));
         // Flag default values on per-spoke config
         if (inputs.spokeMaxReservesLimits[i] == ConfigReader.DEFAULT_MAX_USER_RESERVES_LIMIT) {
-          _logAndAppend(
-            logger,
+          _logWarning(
             string.concat(inputs.spokeLabels[i], ': maxUserReservesLimit using default (128)')
           );
-          hadWarnings = true;
         }
         if (inputs.spokeOracleDecimals[i] == ConfigReader.DEFAULT_ORACLE_DECIMALS) {
-          _logAndAppend(
-            logger,
-            string.concat(inputs.spokeLabels[i], ': oracleDecimals using default (8)')
-          );
-          hadWarnings = true;
+          _logWarning(string.concat(inputs.spokeLabels[i], ': oracleDecimals using default (8)'));
         }
         if (
           keccak256(bytes(inputs.spokeOracleDescriptions[i])) ==
           keccak256(bytes(string.concat(inputs.spokeLabels[i], ConfigReader.DEFAULT_ORACLE_SUFFIX)))
         ) {
-          _logAndAppend(
-            logger,
+          _logWarning(
             string.concat(inputs.spokeLabels[i], ': oracleSuffix using default " (USD)"')
           );
-          hadWarnings = true;
         }
       }
     } else {
-      _logAndAppend(logger, 'No spokes will be deployed');
-      hadWarnings = true;
+      _logWarning('No spokes will be deployed');
     }
 
     // NativeTokenGateway
     if (inputs.deployNativeTokenGateway) {
       if (inputs.nativeWrapper == address(0)) {
-        _logAndAppend(logger, 'deployNativeTokenGateway is true but nativeWrapper is zero address');
-        hadWarnings = true;
+        _logWarning('deployNativeTokenGateway is true but nativeWrapper is zero address');
       } else {
-        logger.log('NativeTokenGateway will be deployed');
+        _appendSummary('NativeTokenGateway will be deployed');
       }
     } else {
-      logger.log('NativeTokenGateway: skipped (deployNativeTokenGateway is false)');
+      _appendSummary('NativeTokenGateway: skipped (deployNativeTokenGateway is false)');
     }
 
     // SignatureGateway
     if (inputs.deploySignatureGateway) {
-      logger.log('SignatureGateway will be deployed');
+      _appendSummary('SignatureGateway will be deployed');
     } else {
-      logger.log('SignatureGateway: skipped (deploySignatureGateway is false)');
+      _appendSummary('SignatureGateway: skipped (deploySignatureGateway is false)');
     }
 
     // Roles
     if (inputs.grantRoles) {
-      logger.log('Roles: will be granted during deployment');
+      _appendSummary('Roles: will be granted during deployment');
     } else {
-      logger.log('Roles: deferred (not granted during deployment)');
+      _appendSummary('Roles: deferred (not granted during deployment)');
     }
 
-    logger.log('========================================');
+    _appendSummary('========================================');
 
     // ==================== Zero Address Sanitization ====================
     if (inputs.grantRoles) {
       if (inputs.accessManagerAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Access Manager Admin', message, outcome));
+        _logWarning(string.concat('Access Manager Admin', message, outcome));
         sanitizedInputs.accessManagerAdmin = deployer;
-        hadWarnings = true;
       }
       if (inputs.hubConfiguratorAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Hub Configurator Admin', message, outcome));
+        _logWarning(string.concat('Hub Configurator Admin', message, outcome));
         sanitizedInputs.hubConfiguratorAdmin = deployer;
-        hadWarnings = true;
       }
       if (inputs.spokeConfiguratorAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Spoke Configurator Admin', message, outcome));
+        _logWarning(string.concat('Spoke Configurator Admin', message, outcome));
         sanitizedInputs.spokeConfiguratorAdmin = deployer;
-        hadWarnings = true;
       }
       if (inputs.spokeProxyAdminOwner == address(0)) {
-        _logAndAppend(logger, string.concat('Spoke Proxy Admin Owner', message, outcome));
+        _logWarning(string.concat('Spoke Proxy Admin Owner', message, outcome));
         sanitizedInputs.spokeProxyAdminOwner = deployer;
-        hadWarnings = true;
       }
       if (inputs.treasurySpokeOwner == address(0)) {
-        _logAndAppend(logger, string.concat('Treasury Spoke Owner', message, outcome));
+        _logWarning(string.concat('Treasury Spoke Owner', message, outcome));
         sanitizedInputs.treasurySpokeOwner = deployer;
-        hadWarnings = true;
       }
       if (inputs.spokeAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Spoke Admin', message, outcome));
+        _logWarning(string.concat('Spoke Admin', message, outcome));
         sanitizedInputs.spokeAdmin = deployer;
-        hadWarnings = true;
       }
       if (inputs.hubAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Hub Admin', message, outcome));
+        _logWarning(string.concat('Hub Admin', message, outcome));
         sanitizedInputs.hubAdmin = deployer;
-        hadWarnings = true;
       }
     }
     if (inputs.gatewayOwner == address(0)) {
-      _logAndAppend(logger, string.concat('Gateway owner', message, outcome));
+      _logWarning(string.concat('Gateway owner', message, outcome));
       sanitizedInputs.gatewayOwner = deployer;
-      hadWarnings = true;
     }
-    if (hadWarnings) {
-      _executeUserPrompt();
-    }
+
+    _executeUserPrompt();
     return sanitizedInputs;
   }
 
   function _executeUserPrompt() internal virtual {
     string memory ack = vm.prompt(
-      string.concat(_joinWarnings(_warnings), "\nEnter 'y' to continue")
+      string.concat(_joinLines(_promptLines), "\nEnter 'y' to continue")
     );
     if (keccak256(bytes(ack)) != keccak256(bytes('y'))) {
-      revert('User did not acknowledge warnings. Please try again.');
+      revert('User did not acknowledge. Please try again.');
     }
   }
 
@@ -212,18 +192,28 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     return vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
   }
 
-  function _logAndAppend(MetadataLogger logger, string memory warning) internal virtual {
-    warning = string.concat('WARNING: ', warning);
-    logger.log(warning);
-    _warnings.s.push(warning);
+  function _appendSummary(string memory line) internal virtual {
+    _promptLines.s.push(line);
+    _summaryLines.s.push(line);
   }
 
-  function _joinWarnings(Warnings storage warnings) internal view virtual returns (string memory) {
-    uint256 n = warnings.s.length;
+  function _logWarning(string memory warning) internal virtual {
+    _promptLines.s.push(string.concat('WARNING: ', warning));
+  }
+
+  /// @dev Writes the deployment summary to the logger (called after deployment).
+  function _logDeploySummary(MetadataLogger logger) internal virtual {
+    for (uint256 i; i < _summaryLines.s.length; i++) {
+      logger.log(_summaryLines.s[i]);
+    }
+  }
+
+  function _joinLines(Lines storage lines) internal view virtual returns (string memory) {
+    uint256 n = lines.s.length;
     if (n == 0) return '';
-    string memory out = warnings.s[0];
+    string memory out = lines.s[0];
     for (uint256 i = 1; i < n; i++) {
-      out = string.concat(out, '\n', warnings.s[i]);
+      out = string.concat(out, '\n', lines.s[i]);
     }
     return string.concat(out, '\n');
   }

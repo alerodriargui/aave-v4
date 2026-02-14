@@ -85,22 +85,25 @@ contract AaveV4FullDeployScript is
 
     bool needsConfig = assetCount > 0 || spokeRegistrationCount > 0 || reserveCount > 0;
 
+    // If config ops are needed, defer role grants (deployer stays admin).
+    // If NOT needed, grant roles immediately during deploy (handoff in orchestration).
+    FullDeployInputs memory inputs = _buildDeployInputs(
+      json,
+      infra,
+      hubCount,
+      spokeCount,
+      !needsConfig // grantRoles: true only if no config ops
+    );
+
+    // Show deployment summary and prompt user before proceeding
+    inputs = _loadWarningsAndSanitizeInputs(inputs, deployer);
+
     if (didDeploy) {
       // Verify LiquidationLogic is linked when deploying spokes.
       // Run `forge script scripts/LibraryPreCompile.s.sol --broadcast --fork-url $RPC --ffi` first.
       if (spokeCount > 0) {
         _requireLiquidationLogicLinked();
       }
-
-      // If config ops are needed, defer role grants (deployer stays admin).
-      // If NOT needed, grant roles immediately during deploy (handoff in orchestration).
-      FullDeployInputs memory inputs = _buildDeployInputs(
-        json,
-        infra,
-        hubCount,
-        spokeCount,
-        !needsConfig // grantRoles: true only if no config ops
-      );
 
       logger.log('...Starting Aave V4 Contract Deployment...');
       vm.startBroadcast(deployer);
@@ -118,6 +121,7 @@ contract AaveV4FullDeployScript is
         vm.stopBroadcast();
         logger.writeJsonReportMarket(report);
         _writeAdminInfo(logger, infra);
+        _logDeploySummary(logger);
         logger.log('...Full Deployment Completed (no config ops)...');
         logger.log('...Saving Logs...');
         logger.save({fileName: _outputFileName, withTimestamp: true});
@@ -188,6 +192,7 @@ contract AaveV4FullDeployScript is
       logger.writeJsonReportMarket(report);
     }
     _writeAdminInfo(logger, infra);
+    _logDeploySummary(logger);
     logger.log('...Full Deployment Completed...');
     logger.log('...Saving Logs...');
     logger.save({fileName: _outputFileName, withTimestamp: true});

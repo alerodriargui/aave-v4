@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
-import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Constants} from 'tests/Constants.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
@@ -12,15 +11,14 @@ contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
   constructor() AaveV4DeployBatchBaseScript('in.json', 'out.json') {}
 
   function loadWarningsAndSanitizeInputs(
-    MetadataLogger logger,
     InputUtils.FullDeployInputs memory inputs,
     address deployer
   ) public returns (InputUtils.FullDeployInputs memory) {
-    return _loadWarningsAndSanitizeInputs(logger, inputs, deployer);
+    return _loadWarningsAndSanitizeInputs(inputs, deployer);
   }
 
-  function logAndAppend(MetadataLogger logger, string memory warning) public {
-    _logAndAppend(logger, warning);
+  function logWarning(string memory warning) public {
+    _logWarning(warning);
   }
 
   function _executeUserPrompt() internal override {}
@@ -29,7 +27,6 @@ contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
 contract AaveV4DeployBatchBaseScriptTest is Test {
   AaveV4DeployBatchBaseScriptHarness internal _harness;
   InputUtils.FullDeployInputs internal _inputs;
-  MetadataLogger internal _logger;
   address internal _deployer;
 
   function setUp() public {
@@ -53,14 +50,12 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.deploySignatureGateway = true;
     _inputs.grantRoles = true;
 
-    _logger = new MetadataLogger('dummy/path');
     _deployer = makeAddr('deployer');
   }
 
   function test_loadWarningsAndSanitizeInputs() public {
     InputUtils.FullDeployInputs memory expected = _inputs;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -73,7 +68,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.accessManagerAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -88,7 +82,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.hubAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -103,7 +96,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.spokeAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -120,7 +112,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.hubConfiguratorAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -137,7 +128,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.spokeConfiguratorAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -154,7 +144,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.spokeProxyAdminOwner = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -172,7 +161,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.treasurySpokeOwner = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -187,7 +175,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.gatewayOwner = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -200,7 +187,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.nativeWrapper = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
