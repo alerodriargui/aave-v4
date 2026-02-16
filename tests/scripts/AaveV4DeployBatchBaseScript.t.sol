@@ -8,7 +8,7 @@ import {Constants} from 'tests/Constants.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
-  constructor() AaveV4DeployBatchBaseScript('in.json', 'out.json') {}
+  constructor() AaveV4DeployBatchBaseScript('out.json') {}
 
   function loadWarningsAndSanitizeInputs(
     InputUtils.FullDeployInputs memory inputs,
@@ -19,6 +19,10 @@ contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
 
   function logWarning(string memory warning) public {
     _logWarning(warning);
+  }
+
+  function _getDeployInputs() internal pure override returns (InputUtils.FullDeployInputs memory) {
+    revert('not implemented');
   }
 
   function _executeUserPrompt() internal override {}

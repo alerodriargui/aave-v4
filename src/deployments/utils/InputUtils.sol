@@ -4,11 +4,8 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Vm.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
-import {ConfigReader} from 'scripts/ConfigReader.sol';
 
 contract InputUtils {
-  using ConfigReader for string;
-
   Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
 
   /// @notice Pre-computed salts for each deployment batch, derived from a single root salt.
@@ -58,58 +55,6 @@ contract InputUtils {
     uint8[] spokeOracleDecimals;
     string[] spokeOracleDescriptions;
     bytes32 salt;
-  }
-
-  /// @notice Builds FullDeployInputs from a ConfigReader-format JSON string.
-  /// @param json The raw JSON string (ConfigReader format).
-  /// @param infra The infrastructure config parsed from JSON.
-  /// @param hubCount Number of hubs defined in the JSON.
-  /// @param spokeCount Number of spokes defined in the JSON.
-  /// @param grantRoles Whether the orchestration should grant roles immediately.
-  function _buildDeployInputs(
-    string memory json,
-    ConfigReader.InfrastructureConfig memory infra,
-    uint256 hubCount,
-    uint256 spokeCount,
-    bool grantRoles
-  ) internal view returns (FullDeployInputs memory inputs) {
-    string[] memory hubLabels = new string[](hubCount);
-    for (uint256 i; i < hubCount; i++) {
-      hubLabels[i] = json.hubKey(i);
-    }
-
-    string[] memory spokeLabels = new string[](spokeCount);
-    uint16[] memory limits = new uint16[](spokeCount);
-    uint8[] memory oracleDecimals = new uint8[](spokeCount);
-    string[] memory oracleDescriptions = new string[](spokeCount);
-    for (uint256 i; i < spokeCount; i++) {
-      ConfigReader.SpokeDeployConfig memory cfg = json.readSpoke(i);
-      spokeLabels[i] = cfg.key;
-      limits[i] = cfg.maxUserReservesLimit;
-      oracleDecimals[i] = cfg.oracleDecimals;
-      oracleDescriptions[i] = string.concat(cfg.key, cfg.oracleSuffix);
-    }
-
-    inputs = FullDeployInputs({
-      accessManagerAdmin: infra.accessManagerAdmin,
-      hubAdmin: infra.hubConfiguratorAdmin,
-      hubConfiguratorAdmin: infra.hubConfiguratorAdmin,
-      treasurySpokeOwner: infra.treasurySpokeOwner,
-      spokeAdmin: infra.spokeConfiguratorAdmin,
-      spokeProxyAdminOwner: infra.spokeProxyAdminOwner,
-      spokeConfiguratorAdmin: infra.spokeConfiguratorAdmin,
-      gatewayOwner: infra.gatewayOwner,
-      nativeWrapper: infra.nativeWrapper,
-      deployNativeTokenGateway: json.deployNativeTokenGateway(),
-      deploySignatureGateway: json.deploySignatureGateway(),
-      grantRoles: grantRoles,
-      hubLabels: hubLabels,
-      spokeLabels: spokeLabels,
-      spokeMaxReservesLimits: limits,
-      spokeOracleDecimals: oracleDecimals,
-      spokeOracleDescriptions: oracleDescriptions,
-      salt: keccak256(bytes(infra.salt))
-    });
   }
 
   /// @notice Computes all derived salts from the deploy inputs, mirroring orchestration logic.

@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
-import {ConfigReader} from 'scripts/ConfigReader.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
@@ -12,21 +11,16 @@ import {Script} from 'forge-std/Script.sol';
 
 // solhint-disable quotes
 abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
-  using ConfigReader for string;
-
   struct Lines {
     string[] s;
   }
 
-  string internal constant INPUT_PATH = 'config/';
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
-  string internal _inputFileName;
   string internal _outputFileName;
   Lines internal _promptLines;
   Lines internal _summaryLines;
 
-  constructor(string memory inputFileName_, string memory outputFileName_) {
-    _inputFileName = inputFileName_;
+  constructor(string memory outputFileName_) {
     _outputFileName = outputFileName_;
   }
 
@@ -34,16 +28,9 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
 
-    string memory json = vm.readFile(string.concat(INPUT_PATH, _inputFileName));
-    ConfigReader.InfrastructureConfig memory infra = json.readInfrastructure();
     (, address deployer, ) = vm.readCallers();
 
-    uint256 hubCount;
-    while (json.hubExists(hubCount)) hubCount++;
-    uint256 spokeCount;
-    while (json.spokeExists(spokeCount)) spokeCount++;
-
-    FullDeployInputs memory inputs = _buildDeployInputs(json, infra, hubCount, spokeCount, true);
+    FullDeployInputs memory inputs = _getDeployInputs();
     inputs = _loadWarningsAndSanitizeInputs(inputs, deployer);
 
     logger.log('CHAIN ID', block.chainid);
@@ -58,6 +45,9 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     logger.log('...Saving Logs...');
     logger.save({fileName: _outputFileName, withTimestamp: true});
   }
+
+  /// @dev Override to provide deployment inputs from any source (hardcoded, env vars, JSON, etc).
+  function _getDeployInputs() internal virtual returns (FullDeployInputs memory);
 
   function _loadWarningsAndSanitizeInputs(
     FullDeployInputs memory inputs,
@@ -86,23 +76,6 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
       _appendSummary(string.concat('Spokes to deploy: ', vm.toString(inputs.spokeLabels.length)));
       for (uint256 i; i < inputs.spokeLabels.length; i++) {
         _appendSummary(string.concat('  - ', inputs.spokeLabels[i]));
-        // Flag default values on per-spoke config
-        if (inputs.spokeMaxReservesLimits[i] == ConfigReader.DEFAULT_MAX_USER_RESERVES_LIMIT) {
-          _logWarning(
-            string.concat(inputs.spokeLabels[i], ': maxUserReservesLimit using default (128)')
-          );
-        }
-        if (inputs.spokeOracleDecimals[i] == ConfigReader.DEFAULT_ORACLE_DECIMALS) {
-          _logWarning(string.concat(inputs.spokeLabels[i], ': oracleDecimals using default (8)'));
-        }
-        if (
-          keccak256(bytes(inputs.spokeOracleDescriptions[i])) ==
-          keccak256(bytes(string.concat(inputs.spokeLabels[i], ConfigReader.DEFAULT_ORACLE_SUFFIX)))
-        ) {
-          _logWarning(
-            string.concat(inputs.spokeLabels[i], ': oracleSuffix using default " (USD)"')
-          );
-        }
       }
     } else {
       _logWarning('No spokes will be deployed');
