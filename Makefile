@@ -43,9 +43,3 @@ deploy-contracts :;
 	FOUNDRY_PROFILE=${CHAIN} forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
 	--rpc-url ${CHAIN} --account ${ACCOUNT} --slow \
 	--broadcast
-
-# Flow 2: Deploy contracts + configure assets/reserves + role handoff (all-in-one)
-deploy-full :;
-	FOUNDRY_PROFILE=${CHAIN} forge script scripts/deploy/AaveV4FullDeploy.s.sol:AaveV4FullDeployDefaultScript \
-	--rpc-url ${CHAIN} --account ${ACCOUNT} --slow \
-	--broadcast
