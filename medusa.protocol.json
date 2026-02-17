@@ -5,7 +5,7 @@
     "timeout": 0,
     "testLimit": 0,
     "callSequenceLength": 100,
-    "corpusDirectory": "tests/invariants/protocol-suite/_corpus/medusa",
+    "corpusDirectory": "invariants/protocol-suite/_corpus/medusa",
     "coverageEnabled": true,
     "deploymentOrder": [
       "Tester"
@@ -73,14 +73,14 @@
       "codeSizeCheckDisabled": true,
       "cheatCodes": {
         "cheatCodesEnabled": true,
-        "enableFFI": false
+        "enableFFI": true
       }
     }
   },
   "compilation": {
     "platform": "crytic-compile",
     "platformConfig": {
-      "target": "tests/invariants/protocol-suite/Tester.t.sol",
+      "target": "invariants/protocol-suite/Tester.t.sol",
       "solcVersion": "",
       "exportDirectory": "",
       "args": [

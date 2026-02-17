@@ -23,15 +23,15 @@ import {MockPriceFeedSimulator} from '../shared/mocks/MockPriceFeedSimulator.sol
 // Contracts
 import {BaseTest} from './base/BaseTest.t.sol';
 import {DeployUtils} from 'tests/DeployUtils.sol';
-import {
-  AssetInterestRateStrategy,
-  IAssetInterestRateStrategy
-} from 'src/hub/AssetInterestRateStrategy.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
+import {Hub} from 'src/hub/Hub.sol';
+import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
+import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 
 /// @notice Setup contract for the invariant test Suite, inherited by Tester
 contract Setup is BaseTest {
@@ -76,7 +76,7 @@ contract Setup is BaseTest {
     accessManager = new AccessManager(admin);
 
     // Hub 1
-    hub1 = DeployUtils.deployHub(address(accessManager), 'hub1');
+    hub1 = new Hub(address(accessManager));
     irStrategy1 = new AssetInterestRateStrategy(address(hub1));
     hubInfo[address(hub1)] = HubInfo({
       treasurySpoke: address(treasurySpoke1),
@@ -85,7 +85,7 @@ contract Setup is BaseTest {
     hubAddresses.push(address(hub1));
 
     // Hub 2
-    hub2 = DeployUtils.deployHub(address(accessManager), 'hub2');
+    hub2 = new Hub(address(accessManager));
     irStrategy2 = new AssetInterestRateStrategy(address(hub2));
     hubInfo[address(hub2)] = HubInfo({
       treasurySpoke: address(treasurySpoke2),
@@ -132,12 +132,12 @@ contract Setup is BaseTest {
     vm.startPrank(deployer);
     IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
 
-    ISpoke spoke = DeployUtils.deploySpoke(
-      address(oracle),
-      'spoke1',
-      Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
-      proxyAdminOwner,
-      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
+    ISpoke spoke = ISpoke(
+      DeployUtils.proxify(
+        address(new SpokeInstance(address(oracle), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)),
+        proxyAdminOwner,
+        abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
+      )
     );
 
     oracle.setSpoke(address(spoke));

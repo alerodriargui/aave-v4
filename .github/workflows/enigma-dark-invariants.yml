@@ -58,11 +58,11 @@ jobs:
           path: |
             out
             cache
-          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml', 'tests/invariants/**/*.sol') }}
+          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml', 'invariants/**/*.sol') }}
 
       - name: Build contracts (skip if cache hit)
         if: steps.restore-build.outputs.cache-hit != 'true'
-        run: forge build tests/invariants/Tester.t.sol --build-info
+        run: forge build invariants/Tester.t.sol --build-info
 
       - name: Cache build artifacts
         if: steps.restore-build.outputs.cache-hit != 'true'
@@ -72,7 +72,7 @@ jobs:
           path: |
             out
             cache
-          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml', 'tests/invariants/**/*.sol') }}
+          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml', 'invariants/**/*.sol') }}
 
   echidna:
     name: Echidna-Invariants (${{ matrix.mode }}) Enigma-Dark
@@ -101,12 +101,12 @@ jobs:
           path: |
             out
             cache
-          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml', 'tests/invariants/**/*.sol') }}
+          key: ${{ runner.os }}-foundry-${{ hashFiles('foundry.toml', 'invariants/**/*.sol') }}
 
       - name: Run Echidna ${{ matrix.mode == 'property' && 'Property' || 'Assertion' }} Mode
         uses: crytic/echidna-action@v2
         with:
           files: .
           contract: Tester
-          config: tests/invariants/_config/echidna_config_ci.yaml
+          config: invariants/_config/echidna_config_ci.yaml
           test-mode: ${{ matrix.mode == 'assertion' && 'assertion' || '' }}

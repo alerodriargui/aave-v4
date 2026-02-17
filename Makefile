@@ -32,35 +32,35 @@ coverage :
 
 # Echidna
 echidna:
-	echidna tests/invariants/protocol-suite/Tester.t.sol --contract Tester --config ./tests/invariants/protocol-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna invariants/protocol-suite/Tester.t.sol --contract Tester --config ./invariants/protocol-suite/_config/echidna_config.yaml
 echidna-assert:
-	echidna tests/invariants/protocol-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./tests/invariants/protocol-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna invariants/protocol-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./invariants/protocol-suite/_config/echidna_config.yaml
 echidna-explore:
-	echidna tests/invariants/protocol-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./tests/invariants/protocol-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna invariants/protocol-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./invariants/protocol-suite/_config/echidna_config.yaml
 
 echidna-hub:
-	echidna tests/invariants/hub-suite/Tester.t.sol --contract Tester --config ./tests/invariants/hub-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna invariants/hub-suite/Tester.t.sol --contract Tester --config ./invariants/hub-suite/_config/echidna_config.yaml
 echidna-hub-assert:
-	echidna tests/invariants/hub-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./tests/invariants/hub-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna invariants/hub-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./invariants/hub-suite/_config/echidna_config.yaml
 echidna-hub-explore:
-	echidna tests/invariants/hub-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./tests/invariants/hub-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna invariants/hub-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./invariants/hub-suite/_config/echidna_config.yaml
 
 # Medusa
 medusa:
-	medusa fuzz --config ./medusa.protocol.json
+	FOUNDRY_PROFILE=invariant medusa fuzz --config ./medusa.protocol.json
 medusa-hub:
-	medusa fuzz --config ./medusa.hub.json
+	FOUNDRY_PROFILE=invariant medusa fuzz --config ./medusa.hub.json
 
 foundry-invariants:
-	forge test --mc TesterFoundry -vvv 
+	FOUNDRY_PROFILE=invariant forge test --mc TesterFoundry -vvv 
 
 # Results
 runes-echidna:
-	runes convert ./tests/invariants/protocol-suite/_corpus/echidna/default/_data/corpus/reproducers --output ./tests/invariants/protocol-suite/replays
+	runes convert ./invariants/protocol-suite/_corpus/echidna/default/_data/corpus/reproducers --output ./invariants/protocol-suite/replays
 runes-medusa:
-	runes convert ./tests/invariants/protocol-suite/_corpus/medusa/ --output ./tests/invariants/protocol-suite/replays
+	runes convert ./invariants/protocol-suite/_corpus/medusa/ --output ./invariants/protocol-suite/replays
 
 runes-echidna-hub:
-	runes convert ./tests/invariants/hub-suite/_corpus/echidna/default/_data/corpus/reproducers --output ./tests/invariants/hub-suite/replays
+	runes convert ./invariants/hub-suite/_corpus/echidna/default/_data/corpus/reproducers --output ./invariants/hub-suite/replays
 runes-medusa-hub:
-	runes convert ./tests/invariants/hub-suite/_corpus/medusa/ --output ./tests/invariants/hub-suite/replays
+	runes convert ./invariants/hub-suite/_corpus/medusa/ --output ./invariants/hub-suite/replays
