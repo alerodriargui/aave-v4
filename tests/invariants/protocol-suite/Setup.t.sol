@@ -23,12 +23,15 @@ import {MockPriceFeedSimulator} from '../shared/mocks/MockPriceFeedSimulator.sol
 // Contracts
 import {BaseTest} from './base/BaseTest.t.sol';
 import {DeployUtils} from 'tests/DeployUtils.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
-import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
-import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
+import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
+import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
 
 /// @notice Setup contract for the invariant test Suite, inherited by Tester
 contract Setup is BaseTest {
@@ -73,7 +76,7 @@ contract Setup is BaseTest {
     accessManager = new AccessManager(admin);
 
     // Hub 1
-    hub1 = DeployUtils.deployHub(address(accessManager));
+    hub1 = DeployUtils.deployHub(address(accessManager), 'hub1');
     irStrategy1 = new AssetInterestRateStrategy(address(hub1));
     hubInfo[address(hub1)] = HubInfo({
       treasurySpoke: address(treasurySpoke1),
@@ -82,7 +85,7 @@ contract Setup is BaseTest {
     hubAddresses.push(address(hub1));
 
     // Hub 2
-    hub2 = DeployUtils.deployHub(address(accessManager));
+    hub2 = DeployUtils.deployHub(address(accessManager), 'hub2');
     irStrategy2 = new AssetInterestRateStrategy(address(hub2));
     hubInfo[address(hub2)] = HubInfo({
       treasurySpoke: address(treasurySpoke2),
@@ -99,8 +102,8 @@ contract Setup is BaseTest {
     allSpokes.push(address(treasurySpoke2));
 
     // Configurators
-    hubConfigurator = new HubConfigurator(admin);
-    spokeConfigurator = new SpokeConfigurator(admin);
+    hubConfigurator = new HubConfigurator(address(accessManager));
+    spokeConfigurator = new SpokeConfigurator(address(accessManager));
     _setUpConfiguratorRoles();
 
     vm.label(address(accessManager), 'accessManager');
@@ -131,6 +134,7 @@ contract Setup is BaseTest {
 
     ISpoke spoke = DeployUtils.deploySpoke(
       address(oracle),
+      'spoke1',
       Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
       proxyAdminOwner,
       abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
@@ -542,7 +546,7 @@ contract Setup is BaseTest {
 
     // Grant responsibilities to spokes
     {
-      bytes4[] memory selectors = new bytes4[](6);
+      bytes4[] memory selectors = new bytes4[](7);
       selectors[0] = ISpoke.updateLiquidationConfig.selector;
       selectors[1] = ISpoke.updateReserveConfig.selector;
       selectors[2] = ISpoke.updateDynamicReserveConfig.selector;
@@ -560,6 +564,73 @@ contract Setup is BaseTest {
       selectors[1] = IHub.setInterestRateData.selector;
       accessManager.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_ADMIN_ROLE);
       accessManager.setTargetFunctionRole(address(hub2), selectors, Roles.HUB_ADMIN_ROLE);
+    }
+
+    {
+      bytes4[] memory selectors = new bytes4[](22);
+      selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
+      selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
+      selectors[2] = IHubConfigurator.updateFeeConfig.selector;
+      selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
+      selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
+      selectors[5] = IHubConfigurator.resetAssetCaps.selector;
+      selectors[6] = IHubConfigurator.deactivateAsset.selector;
+      selectors[7] = IHubConfigurator.haltAsset.selector;
+      selectors[8] = IHubConfigurator.addSpoke.selector;
+      selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
+      selectors[10] = IHubConfigurator.updateSpokeActive.selector;
+      selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
+      selectors[12] = IHubConfigurator.updateSpokeSupplyCap.selector;
+      selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
+      selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
+      selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
+      selectors[16] = IHubConfigurator.deactivateSpoke.selector;
+      selectors[17] = IHubConfigurator.haltSpoke.selector;
+      selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
+      selectors[19] = IHubConfigurator.updateInterestRateData.selector;
+      selectors[20] = IHubConfigurator.addAsset.selector;
+      selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
+
+      accessManager.setTargetFunctionRole(
+        address(hubConfigurator),
+        selectors,
+        accessManager.PUBLIC_ROLE()
+      );
+    }
+
+    {
+      bytes4[] memory selectors = new bytes4[](25);
+      selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
+      selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
+      selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
+      selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
+      selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
+      selectors[5] = ISpokeConfigurator.updateMaxReserves.selector;
+      selectors[6] = ISpokeConfigurator.addReserve.selector;
+      selectors[7] = ISpokeConfigurator.updatePaused.selector;
+      selectors[8] = ISpokeConfigurator.updateFrozen.selector;
+      selectors[9] = ISpokeConfigurator.updateBorrowable.selector;
+      selectors[10] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+      selectors[11] = ISpokeConfigurator.updateCollateralRisk.selector;
+      selectors[12] = ISpokeConfigurator.addCollateralFactor.selector;
+      selectors[13] = ISpokeConfigurator.updateCollateralFactor.selector;
+      selectors[14] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+      selectors[15] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+      selectors[16] = ISpokeConfigurator.addLiquidationFee.selector;
+      selectors[17] = ISpokeConfigurator.updateLiquidationFee.selector;
+      selectors[18] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+      selectors[19] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+      selectors[20] = ISpokeConfigurator.pauseAllReserves.selector;
+      selectors[21] = ISpokeConfigurator.freezeAllReserves.selector;
+      selectors[22] = ISpokeConfigurator.pauseReserve.selector;
+      selectors[23] = ISpokeConfigurator.freezeReserve.selector;
+      selectors[24] = ISpokeConfigurator.updatePositionManager.selector;
+
+      accessManager.setTargetFunctionRole(
+        address(spokeConfigurator),
+        selectors,
+        accessManager.PUBLIC_ROLE()
+      );
     }
   }
 

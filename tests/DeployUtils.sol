@@ -47,6 +47,23 @@ library DeployUtils {
       );
   }
 
+  function deploySpoke(
+    address oracle,
+    bytes32 implSalt,
+    uint16 maxUserReservesLimit,
+    address proxyAdminOwner,
+    bytes memory initData
+  ) internal returns (ISpoke) {
+    return
+      ISpoke(
+        proxify(
+          address(deploySpokeImplementation(oracle, maxUserReservesLimit, implSalt)),
+          proxyAdminOwner,
+          initData
+        )
+      );
+  }
+
   function getDeterministicSpokeInstanceAddress(
     address oracle,
     uint16 maxUserReservesLimit
