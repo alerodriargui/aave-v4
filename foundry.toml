@@ -11,7 +11,7 @@ optimizer_runs = 444444444444
 bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
-dynamic_test_linking = true
+dynamic_test_linking = false # https://github.com/crytic/crytic-compile/issues/651#issuecomment-3813020679
 
 additional_compiler_profiles = [
   { name = "hub", optimizer = true, via_ir = true, optimizer_runs = 22_300 },
