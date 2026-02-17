@@ -68,8 +68,8 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   }
 
   function checkedV4Deployment() public {
-    bytes memory hubBytecode = vm.getCode('src/hub/Hub.sol:Hub');
-    bytes memory spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
+    bytes memory hubBytecode = _getHubBytecode();
+    bytes memory spokeBytecode = _getSpokeBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
@@ -762,5 +762,13 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     if (lib.code.length == 0) {
       vm.etch(lib, vm.getDeployedCode('src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic'));
     }
+  }
+
+  function _getHubBytecode() internal view returns (bytes memory) {
+    return vm.getCode('src/hub/Hub.sol:Hub');
+  }
+
+  function _getSpokeBytecode() internal view returns (bytes memory) {
+    return vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
   }
 }
