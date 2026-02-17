@@ -15,6 +15,9 @@ Modular lending protocol with a **hub-and-spoke architecture**. The Hub is an im
 - **GatewayBase** (`src/position-manager/GatewayBase.sol`) — Base for user-facing gateways (spoke registration, position manager delegation).
 - **NativeTokenGateway** (`src/position-manager/NativeTokenGateway.sol`) — ETH ↔ WETH wrapping gateway.
 - **SignatureGateway** (`src/position-manager/SignatureGateway.sol`) — EIP712 meta-transaction gateway for gasless operations.
+- **AssetInterestRateStrategy** (`src/hub/AssetInterestRateStrategy.sol`) — Per-asset interest rate model used by Hub.
+- **SpokeStorage** (`src/spoke/SpokeStorage.sol`) — Storage layout for upgradeable Spoke (inherited by Spoke.sol).
+- **TokenizationSpokeInstance** (`src/spoke/instances/TokenizationSpokeInstance.sol`) — Concrete upgradeable TokenizationSpoke implementation.
 - **AccessManagerEnumerable** (`src/access/AccessManagerEnumerable.sol`) — OZ AccessManager with role enumeration.
 
 ### Key relationships
@@ -35,9 +38,9 @@ Gateways ┘  AaveOracle (Chainlink)
 ### Key concepts
 
 - **Drawn debt** = principal borrowed from Hub. Accrues at Hub's base rate.
-- **Premium debt** = extra interest from user's collateral quality (Risk Premium). Calculated as `premiumShares.toAssetsUp(drawnIndex) + premiumOffsetRay.fromRayUp()` (offset can be negative).
+- **Premium debt** = extra interest from user's collateral quality (Risk Premium). Full-precision formula: `(premiumShares * drawnIndex) - premiumOffsetRay` (result in asset-units-in-Ray). See `Premium.calculatePremiumRay()`.
 - **Dynamic config keys** = versioned risk parameters (CF, LB, LF). New positions bind to latest key; old positions keep their key until a risk-increasing action rebinds them.
-- **Share-based accounting** = all positions stored as shares. Debt share price is index-based (`drawnShares × drawnIndex`). Supply share price is `totalAddedAssets / addedShares` where `totalAddedAssets = liquidity + swept + aggregatedOwed - realizedFees - unrealizedFees` (see `AssetLogic.totalAddedAssets`). Both prices should only increase.
+- **Share-based accounting** = all positions stored as shares. Debt share price is index-based (`drawnShares × drawnIndex`). Supply share price is `totalAddedAssets / addedShares` where `totalAddedAssets = liquidity + swept + aggregatedOwed - realizedFees - unrealizedFees` (see `AssetLogic.totalAddedAssets`). Both prices should only increase. Supply share conversions use virtual offsets (`VIRTUAL_ASSETS` and `VIRTUAL_SHARES`, both 1e6) in `SharesMath.sol` to mitigate first-depositor share inflation attacks.
 
 ## Precision
 
@@ -55,23 +58,23 @@ Always use explicit rounding directions — never rely on implicit truncation. U
 
 ```
 src/
-├── hub/                    # Hub core + configurator + interest rate strategy
+├── hub/                    # Hub core, configurator, rate strategy
 │   ├── libraries/          # AssetLogic, SharesMath, Premium
 │   └── interfaces/
-├── spoke/                  # Spoke core + configurator + oracle + tokenization + treasury
-│   ├── instances/          # SpokeInstance, TokenizationSpokeInstance (concrete impls)
+├── spoke/                  # Spoke core, configurator, oracle, vault, treasury
+│   ├── instances/          # SpokeInstance, TokenizationSpokeInstance
 │   ├── libraries/          # LiquidationLogic, UserPositionUtils, UserPositionDebt,
 │   │                       # PositionStatusMap, ReserveFlagsMap, SpokeUtils, EIP712Hash
 │   └── interfaces/
-├── position-manager/       # GatewayBase, NativeTokenGateway, SignatureGateway
-│   ├── libraries/          # EIP712 hash for gateways
+├── position-manager/       # Gateways (Native, Signature)
+│   ├── libraries/          # EIP712 hash helpers
 │   └── interfaces/
 ├── libraries/math/         # WadRayMath, PercentageMath, MathUtils
-├── libraries/types/        # Shared type definitions
+├── libraries/types/        # Shared type definitions (Roles)
 ├── utils/                  # Multicall, ExtSload, IntentConsumer, NoncesKeyed, Rescuable
 ├── access/                 # AccessManagerEnumerable
-├── interfaces/             # Top-level interfaces (IMulticall, INoncesKeyed, etc.)
-└── dependencies/           # Vendored: openzeppelin, solady, chainlink, weth
+├── interfaces/             # Top-level interfaces
+└── dependencies/           # Vendored: OZ, solady, chainlink, weth
 
 tests/
 ├── Base.t.sol              # Root test base (~3300 lines). Deploys everything. Inherit from this.
@@ -88,7 +91,6 @@ tests/
 │   └── libraries/
 ├── gas/                    # Gas snapshot tests (Hub, Spoke, TokenizationSpoke, Gateways)
 ├── mocks/                  # TestnetERC20, MockPriceFeed, EIP712Types, etc.
-└── invariant/
 
 snapshots/                  # Gas snapshots (forge snapshot output)
 scripts/                    # Deployment scripts
@@ -153,33 +155,17 @@ Mostly ignore files in `snapshots/` directory. Only reference them when evaluati
 
 ## Using Cast
 
-Use Cast for blockchain utilities and quick operations rather than writing custom scripts.
-
-**Use Cast for:**
-
-- Quick keccak256 hashing of function signatures or data
-- Reading contract state, storage slots, balances
-- Sending simple transactions
-- Converting between data formats (hex, decimal, wei, ether)
-- ENS lookups and resolution
-- Getting blockchain data (gas price, nonce, block info)
-- Debugging transactions with traces
-- Computing contract addresses before deployment
-
-**Write custom code when:**
-
-- Building complex multi-step interactions
-- Implementing business logic
-- Creating reusable libraries or contracts
-- Needing programmatic control flow
+Use Cast for quick blockchain utilities rather than writing custom scripts. Use `cast --help` and `cast <subcommand> --help` for full reference (no internet assumed).
 
 ```bash
 cast keccak "transfer(address,uint256)"        # hash function sig
 cast sig "transfer(address,uint256)"           # 4-byte selector
 cast 4byte 0xa9059cbb                          # reverse lookup selector
+cast call <addr> "balanceOf(address)" <who>    # read contract state
+cast run <txhash> --trace                      # debug failed tx
 ```
 
-Best practices: Use Cast for prototyping before writing scripts. Verify contract state after deployments. Debug failed txs with `cast run`. Prefer Cast for one-offs. Chain Cast commands with shell scripting for workflows.
+Best practices: Use Cast for prototyping before writing scripts. Prefer Cast for one-offs. Chain Cast commands with shell scripting for workflows.
 
 ## Testing guidelines
 
@@ -200,11 +186,11 @@ Test names: `test_FeatureName_SpecificScenario_ExpectedOutcome()`
 
 ### Test abstractions — always use them
 
-`Base.t.sol` deploys the full environment (hub, spokes, oracle, treasury, access manager, tokens, reserves). **New tests should inherit from `Base`** (or from `SpokeBase` for spoke tests). Never write standalone test contracts — always use the existing hierarchy and its 150+ helper functions.
+`Base.t.sol` deploys the full environment (hub, spokes, oracle, treasury, access manager, tokens, reserves). **New tests should inherit from `Base`** (or from `SpokeBase` for spoke tests). Never write standalone test contracts — always use the existing hierarchy and its 200+ helper functions.
 
 ```
 Test (forge-std)
-  └── Base (tests/Base.t.sol)          — deploys everything, 150+ helpers
+  └── Base (tests/Base.t.sol)          — deploys everything, 200+ helpers
        └── SpokeBase (tests/unit/Spoke/SpokeBase.t.sol) — spoke-specific helpers
             └── Your spoke/hub/library test
        └── SignatureGatewayBaseTest (tests/unit/misc/SignatureGateway/SignatureGateway.Base.t.sol)
