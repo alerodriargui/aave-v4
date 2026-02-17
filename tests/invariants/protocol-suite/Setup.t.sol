@@ -19,6 +19,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {Actor} from '../shared/utils/Actor.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockPriceFeedSimulator} from '../shared/mocks/MockPriceFeedSimulator.sol';
+import {MockCreate2Factory} from '../shared/mocks/MockCreate2Factory.sol';
 
 // Contracts
 import {BaseTest} from './base/BaseTest.t.sol';
@@ -32,6 +33,7 @@ import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {SpokeConfigurator, ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
+import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 
 /// @notice Setup contract for the invariant test Suite, inherited by Tester
 contract Setup is BaseTest {
