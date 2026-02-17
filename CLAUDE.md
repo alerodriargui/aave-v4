@@ -133,6 +133,7 @@ Mostly ignore files in `snapshots/` directory. Only reference them when evaluati
 - **External/public functions**: Define the function signature in the interface. Document it there with `/// @notice`, `/// @dev`, `/// @param`, `/// @return`. In the implementation, use `/// @inheritdoc IInterfaceName` — do not duplicate docs.
 - **Struct fields**: Use `/// @notice` for the struct, then `/// @dev fieldName Description` per field. Always note precision/units (e.g., "expressed in asset units and scaled by RAY").
 - **Internal/private helpers** (in contracts or libraries): Add `/// @dev` comments when they add value — explain why, constraints, or non-obvious behavior. Do not document every parameter mechanically.
+- **Error handling**: Use `require` with custom errors (e.g., `require(condition, CustomError())`), never string messages.
 - **General**: Avoid unnecessary comments. Keep code clean and to the point. Follow the surrounding convention in whatever file you're editing.
 
 ## Agent workflow
@@ -143,15 +144,18 @@ Mostly ignore files in `snapshots/` directory. Only reference them when evaluati
 
 ## Security checklist
 
-- Review every change with an adversarial mindset
-- Favor the simplest design that meets requirements
-- After coding, ask: "What new attack surface did I introduce?"
-- Reject any change that raises security risk without strong justification
+- Review every change with an adversarial mindset. After coding, ask: "What new attack surface did I introduce?"
+- Favor the simplest design that meets requirements. Reject changes that raise security risk without strong justification
 - Guard core invariants: supply share price monotonically increases, protocol remains solvent
-- Think about rounding exploitability — can an attacker profit by repeatedly rounding in their favour? Consider ERC4626-style share inflation attacks on exchange rates
-- Consider how flash loans or large borrows can manipulate state (prices, indices, liquidity) within a single transaction
-- Think about flow of funds end-to-end: where do tokens move, who gains, who loses
-- Use `require` with custom errors (e.g., `require(condition, CustomError())`), never string messages
+- Rounding exploitability — can an attacker profit by repeated rounding? Consider share inflation attacks on exchange rates
+- Flash loans / large borrows — can they manipulate state (prices, indices, liquidity) within a single tx?
+- Flow of funds — where do tokens move, who gains, who loses?
+- Griefing — can an attacker force another user into a bad state (block liquidations, inflate gas, trap funds) without profit?
+- Donation attacks — can someone send tokens directly to a contract to manipulate share prices, bypassing accounting?
+- Reentrancy via external calls (token transfers, callbacks) — follow checks-effects-interactions
+- Access control — verify every new external/public function has correct guards (`onlySpoke`, `restricted`, role checks)
+- Storage layout — Spoke is upgradeable. Never reorder/remove/insert storage vars in `SpokeStorage.sol`. Append only
+- Hub↔Spoke consistency — changes to one must preserve the other's assumptions. Verify both sides of cross-contract flows
 
 ## Using Cast
 
