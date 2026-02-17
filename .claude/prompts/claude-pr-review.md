@@ -67,18 +67,19 @@ Every PR must preserve these. Violations are always blockers.
 
 Always use explicit rounding direction helpers — never rely on implicit Solidity truncation.
 
-| Operation | Conversion | Helper | Direction | Why |
-|---|---|---|---|---|
-| Supply/add | assets → shares | `toAddedSharesDown` | Down | User gets fewer shares per asset deposited |
-| Withdraw/remove | assets → shares | `toAddedSharesUp` | Up | User burns more shares per asset withdrawn |
-| Borrow/draw | assets → shares | `toDrawnSharesUp` | Up | User incurs more debt shares per asset borrowed |
-| Repay/restore | assets → shares | `toDrawnSharesDown` | Down | User retires fewer debt shares per asset repaid |
-| Premium → assets | Ray → asset units | `fromRayUp()` | Up | Premium debt rounds up when leaving Ray precision |
-| Fee calculation | interest × fee rate | `percentMulDown` | Down | Conservative for protocol fee claims |
-| Health factor | collateral value | rounds down | Down | Understates collateral to protect protocol |
-| Health factor | debt value | rounds up | Up | Overstates debt to protect protocol |
+| Operation        | Conversion          | Helper              | Direction | Why                                               |
+| ---------------- | ------------------- | ------------------- | --------- | ------------------------------------------------- |
+| Supply/add       | assets → shares     | `toAddedSharesDown` | Down      | User gets fewer shares per asset deposited        |
+| Withdraw/remove  | assets → shares     | `toAddedSharesUp`   | Up        | User burns more shares per asset withdrawn        |
+| Borrow/draw      | assets → shares     | `toDrawnSharesUp`   | Up        | User incurs more debt shares per asset borrowed   |
+| Repay/restore    | assets → shares     | `toDrawnSharesDown` | Down      | User retires fewer debt shares per asset repaid   |
+| Premium → assets | Ray → asset units   | `fromRayUp()`       | Up        | Premium debt rounds up when leaving Ray precision |
+| Fee calculation  | interest × fee rate | `percentMulDown`    | Down      | Conservative for protocol fee claims              |
+| Health factor    | collateral value    | rounds down         | Down      | Understates collateral to protect protocol        |
+| Health factor    | debt value          | rounds up           | Up        | Overstates debt to protect protocol               |
 
 **Red flags:**
+
 - Wrong direction helper for the operation (e.g., `toDrawnSharesDown` in a borrow path)
 - Implicit truncation: `(amount * rate) / FACTOR` instead of `percentMulDown`/`percentMulUp`
 - Missing rounding on Ray-to-asset conversion (raw division by 1e27 instead of `fromRayUp`)
@@ -110,23 +111,53 @@ For any PR that changes token movements, trace who gains and who loses.
 
 **Reference flows:**
 
-| Operation | Token movement | Share accounting |
-|---|---|---|
-| **Supply** | User →`safeTransferFrom`→ Hub | Hub mints `addedShares` (spoke + asset level) |
-| **Withdraw** | Hub →`safeTransfer`→ recipient | Hub burns `addedShares` |
-| **Borrow** | Hub →`safeTransfer`→ recipient | Hub mints `drawnShares` |
-| **Repay** | User →`safeTransferFrom`→ Hub | Hub burns `drawnShares`, adjusts premium delta, increases `liquidity` |
-| **Liquidation (debt side)** | Liquidator →`safeTransferFrom`→ Hub | Hub restores drawn + premium via `Hub.restore()` |
-| **Liquidation (collateral side)** | Hub →shares or tokens→ liquidator | User's `suppliedShares` decrease. Fee shares go to fee receiver via `payFeeShares` |
-| **Deficit** | No token movement | `deficitRay` increases at hub + spoke level. User position cleared. |
-| **Fee minting** | No token movement | `realizedFees` converted to `addedShares` for fee receiver spoke |
+| Operation                         | Token movement                      | Share accounting                                                                   |
+| --------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------- |
+| **Supply**                        | User →`safeTransferFrom`→ Hub       | Hub mints `addedShares` (spoke + asset level)                                      |
+| **Withdraw**                      | Hub →`safeTransfer`→ recipient      | Hub burns `addedShares`                                                            |
+| **Borrow**                        | Hub →`safeTransfer`→ recipient      | Hub mints `drawnShares`                                                            |
+| **Repay**                         | User →`safeTransferFrom`→ Hub       | Hub burns `drawnShares`, adjusts premium delta, increases `liquidity`              |
+| **Liquidation (debt side)**       | Liquidator →`safeTransferFrom`→ Hub | Hub restores drawn + premium via `Hub.restore()`                                   |
+| **Liquidation (collateral side)** | Hub →shares or tokens→ liquidator   | User's `suppliedShares` decrease. Fee shares go to fee receiver via `payFeeShares` |
+| **Deficit**                       | No token movement                   | `deficitRay` increases at hub + spoke level. User position cleared.                |
+| **Fee minting**                   | No token movement                   | `realizedFees` converted to `addedShares` for fee receiver spoke                   |
 
 **Key questions for any fund-flow change:**
+
 - Who gains tokens? Who loses tokens? Does it net to zero?
 - Can the `amount` parameter be manipulated to extract more value than intended?
 - Are `safeTransferFrom`/`safeTransfer` calls paired correctly with share accounting? (Hub verifies balance after `add`/`restore`.)
 - Does a new path bypass the Hub's balance verification (`require(balance >= liquidity)`)?
 - In liquidation: does the split between liquidator collateral, protocol fee shares, and debt restored maintain the priority order (protocol > liquidator > borrower)?
+
+## Gas Review
+
+Gas issues are rarely blockers — flag them as suggestions unless the impact is severe. Never sacrifice correctness or readability for gas.
+
+**Storage access:**
+
+- Repeated `SLOAD` of the same storage variable in a function — cache it in a local. Common: `asset.drawnIndex`, `asset.liquidity`, `userPosition.suppliedShares`.
+- Unnecessary `SSTORE` — writing the same value back, or writing to storage that will be overwritten later in the same call.
+- Storage packing — if a new field fits in an existing slot (e.g., adjacent `uint128`s), note it. Don't restructure existing layout for marginal gains.
+
+**Computation:**
+
+- Redundant `accrue()` calls — Hub functions call `accrue()` at the top. If the caller also accrues, the second call is a no-op but still pays for the timestamp check and storage reads.
+- Redundant share-to-asset conversions — computing the same conversion multiple times with the same index. Cache the result.
+- Unnecessary Ray/Wad precision — if a value is only used for comparison (not arithmetic), converting to higher precision and back wastes gas.
+
+**Contract size:**
+
+- `SpokeInstance` and `Hub` are close to the **24KB contract size limit**. Flag any change that adds non-trivial code to these contracts. Check with `forge build --sizes | grep <Contract>`.
+- Prefer library functions over inline code in size-constrained contracts.
+- Internal functions in the contract itself don't reduce size (they're still compiled in). Moving logic to a library with `internal` functions and `using for` does.
+
+**Calldata vs memory:**
+
+- External function parameters that are only read should use `calldata` not `memory`.
+- Structs passed through internal call chains that don't need mutation can stay `calldata`.
+
+**These are never blockers unless they cause a contract size limit breach.** Approve with a suggestion.
 
 ## Decision Framework
 
