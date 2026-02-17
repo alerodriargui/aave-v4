@@ -22,6 +22,7 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {Constants} from 'tests/Constants.sol';
 
@@ -742,6 +743,24 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         inputs.gatewayOwner,
         'SignatureGateway owner'
       );
+    }
+  }
+
+  function _etchSetup() internal {
+    _etchCreate2Factory();
+    _etchLiquidationLogicLibrary();
+  }
+
+  /// @dev Workaround for Foundry's `dynamic_test_linking` not deploying the LiquidationLogic
+  ///      library at the address it pre-links into consumer bytecodes (SpokeInstance, etc.).
+  ///      Hardcode Foundry's pre-linked deterministic address. If it changes
+  ///      (e.g. after a Foundry upgrade), find the new one by:
+  ///      - Running a failing liquidation test with `forge test -vvvv` and looking for:
+  ///        "delegatecall to <ADDRESS> (unlinked library)"
+  function _etchLiquidationLogicLibrary() internal {
+    address lib = address(0x5e14175873D9038DC68cB2319d00c173Dc09ad03);
+    if (lib.code.length == 0) {
+      vm.etch(lib, vm.getDeployedCode('src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic'));
     }
   }
 }

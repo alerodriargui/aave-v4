@@ -58,7 +58,6 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
 
     FullDeployInputs memory sanitizedInputs = inputs;
 
-    // ==================== Deployment Summary ====================
     _appendSummary('========== DEPLOYMENT SUMMARY ==========');
 
     // Hubs

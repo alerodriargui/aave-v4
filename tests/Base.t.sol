@@ -313,7 +313,7 @@ abstract contract Base is BatchTestProcedures {
     });
 
   function setUp() public virtual override {
-    _etchCreate2Factory();
+    _etchSetup();
     _initTokenList();
     _setupFixtures();
   }
