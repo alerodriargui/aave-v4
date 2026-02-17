@@ -14,69 +14,70 @@ contract FeeSharesMinterBase is Ownable {
     uint256 minUnrealizedFeePercent; // 1e4 = 100% (basis points)
   }
 
-  IHub public immutable HUB;
+  mapping(address => mapping(uint256 => MintConfig)) internal _configs;
+  mapping(address => mapping(uint256 => uint256)) public lastMintTime;
 
-  mapping(uint256 => MintConfig) internal _configs;
-  mapping(uint256 => uint256) public lastMintTime;
-
-  event ConfigUpdated(uint256 indexed assetId, MintConfig config);
+  event ConfigUpdated(address indexed hub, uint256 indexed assetId, MintConfig config);
 
   error ConditionsNotMet();
 
   /// @dev Constructor.
   /// @param owner The owner of the contract.
-  /// @param hub The hub contract.
-  constructor(address owner, IHub hub) Ownable(owner) {
-    HUB = hub;
-  }
+  constructor(address owner) Ownable(owner) {}
 
   /// @notice Sets the automation configuration for a specific asset.
+  /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.
   /// @param config The new configuration.
-  function setConfig(uint256 assetId, MintConfig memory config) external onlyOwner {
-    _configs[assetId] = config;
-    emit ConfigUpdated(assetId, config);
+  function setConfig(address hub, uint256 assetId, MintConfig memory config) external onlyOwner {
+    _configs[hub][assetId] = config;
+    emit ConfigUpdated(hub, assetId, config);
   }
 
   /// @notice Executes the fee minting if conditions are met.
+  /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.
-  function execute(uint256 assetId) external {
-    if (!_checkExecute(assetId)) {
+  function execute(address hub, uint256 assetId) external {
+    if (!_checkExecute(hub, assetId)) {
       revert ConditionsNotMet();
     }
 
-    lastMintTime[assetId] = block.timestamp;
-    HUB.mintFeeShares(assetId);
+    lastMintTime[hub][assetId] = block.timestamp;
+    IHub(hub).mintFeeShares(assetId);
   }
 
   /// @notice Returns the automation configuration for a specific asset.
+  /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.
   /// @return The configuration struct.
-  function getConfig(uint256 assetId) external view returns (MintConfig memory) {
-    return _configs[assetId];
+  function getConfig(address hub, uint256 assetId) external view returns (MintConfig memory) {
+    return _configs[hub][assetId];
   }
 
   /// @notice Checks if the conditions to mint fee shares are met.
+  /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.
   /// @return True if conditions are met, false otherwise.
-  function checkExecute(uint256 assetId) external view returns (bool) {
-    return _checkExecute(assetId);
+  function checkExecute(address hub, uint256 assetId) external view returns (bool) {
+    return _checkExecute(hub, assetId);
   }
 
   /// @dev Internal function to check execution conditions.
+  /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.
   /// @return True if conditions are met, false otherwise.
-  function _checkExecute(uint256 assetId) internal view returns (bool) {
-    MintConfig memory config = _configs[assetId];
+  function _checkExecute(address hub, uint256 assetId) internal view returns (bool) {
+    MintConfig memory config = _configs[hub][assetId];
 
     // Check mint interval
-    if (block.timestamp - lastMintTime[assetId] < config.minTimeInterval) {
+    if (block.timestamp - lastMintTime[hub][assetId] < config.minTimeInterval) {
       return false;
     }
 
-    uint256 accruedFees = HUB.getAssetAccruedFees(assetId);
+    IHub hubContract = IHub(hub);
+    uint256 accruedFees = hubContract.getAssetAccruedFees(assetId);
 
-    uint256 totalAddedAssets = HUB.getAddedAssets(assetId);
+    uint256 totalAddedAssets = hubContract.getAddedAssets(assetId);
     if (totalAddedAssets == 0) return false;
 
     // Check if accruedFees / totalAddedAssets >= minUnrealizedFeePercent (in bps)
@@ -85,7 +86,7 @@ contract FeeSharesMinterBase is Ownable {
     }
 
     // Ensure at least 1 fee share is minted
-    uint256 expectedShares = HUB.previewAddByAssets(assetId, accruedFees);
+    uint256 expectedShares = hubContract.previewAddByAssets(assetId, accruedFees);
     if (expectedShares < 1) {
       return false;
     }

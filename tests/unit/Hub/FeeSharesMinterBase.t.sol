@@ -9,7 +9,7 @@ contract FeeSharesMinterBaseTest is HubBase {
 
   function setUp() public override {
     super.setUp();
-    minter = new FeeSharesMinterBase(ADMIN, hub1);
+    minter = new FeeSharesMinterBase(ADMIN);
 
     // Grant minter the HUB_ADMIN_ROLE so it can call mintFeeShares
     vm.prank(ADMIN);
@@ -24,7 +24,7 @@ contract FeeSharesMinterBaseTest is HubBase {
 
     vm.prank(bob);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, bob));
-    minter.setConfig(daiAssetId, config);
+    minter.setConfig(address(hub1), daiAssetId, config);
   }
 
   function test_execute_success() public {
@@ -33,7 +33,7 @@ contract FeeSharesMinterBaseTest is HubBase {
       minUnrealizedFeePercent: 10 // 0.1%
     });
     vm.prank(ADMIN);
-    minter.setConfig(daiAssetId, config);
+    minter.setConfig(address(hub1), daiAssetId, config);
 
     // Generate fees
     // Add 1000 DAI, borrow 100 DAI
@@ -49,12 +49,15 @@ contract FeeSharesMinterBaseTest is HubBase {
       skipTime: 365 days // Skip enough time for interval and fee accrual
     });
 
-    assertTrue(minter.checkExecute(daiAssetId), 'Should be executable');
+    assertTrue(minter.checkExecute(address(hub1), daiAssetId), 'Should be executable');
 
-    minter.execute(daiAssetId);
+    minter.execute(address(hub1), daiAssetId);
 
-    assertEq(minter.lastMintTime(daiAssetId), block.timestamp);
-    assertFalse(minter.checkExecute(daiAssetId), 'Should not be executable immediately after');
+    assertEq(minter.lastMintTime(address(hub1), daiAssetId), block.timestamp);
+    assertFalse(
+      minter.checkExecute(address(hub1), daiAssetId),
+      'Should not be executable immediately after'
+    );
   }
 
   function test_execute_revertsWith_TimeIntervalNotMet() public {
@@ -63,7 +66,7 @@ contract FeeSharesMinterBaseTest is HubBase {
       minUnrealizedFeePercent: 0
     });
     vm.prank(ADMIN);
-    minter.setConfig(daiAssetId, config);
+    minter.setConfig(address(hub1), daiAssetId, config);
 
     _addAndDrawLiquidity({
       hub: hub1,
@@ -77,12 +80,12 @@ contract FeeSharesMinterBaseTest is HubBase {
       skipTime: 8 days
     });
 
-    minter.execute(daiAssetId); // Success, sets lastMintTime = block.timestamp
+    minter.execute(address(hub1), daiAssetId); // Success, sets lastMintTime = block.timestamp
 
     vm.warp(block.timestamp + 1 days); // Only 1 day passed, config needs 7
 
     vm.expectRevert(FeeSharesMinterBase.ConditionsNotMet.selector);
-    minter.execute(daiAssetId);
+    minter.execute(address(hub1), daiAssetId);
   }
 
   function test_execute_revertsWith_MinShareNotMet() public {
@@ -91,7 +94,7 @@ contract FeeSharesMinterBaseTest is HubBase {
       minUnrealizedFeePercent: 0
     });
     vm.prank(ADMIN);
-    minter.setConfig(daiAssetId, config);
+    minter.setConfig(address(hub1), daiAssetId, config);
 
     // Add liquidity but NO borrow -> No fees
     Utils.add(hub1, daiAssetId, address(spoke1), 1000e18, bob);
@@ -101,10 +104,10 @@ contract FeeSharesMinterBaseTest is HubBase {
     uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
     assertEq(accruedFees, 0, 'No fees should be accrued');
 
-    assertFalse(minter.checkExecute(daiAssetId));
+    assertFalse(minter.checkExecute(address(hub1), daiAssetId));
 
     vm.expectRevert(FeeSharesMinterBase.ConditionsNotMet.selector);
-    minter.execute(daiAssetId);
+    minter.execute(address(hub1), daiAssetId);
   }
 
   function test_execute_revertsWith_PercentThresholdNotMet() public {
@@ -113,7 +116,7 @@ contract FeeSharesMinterBaseTest is HubBase {
       minUnrealizedFeePercent: 5000 // 50% threshold
     });
     vm.prank(ADMIN);
-    minter.setConfig(daiAssetId, config);
+    minter.setConfig(address(hub1), daiAssetId, config);
 
     _addAndDrawLiquidity({
       hub: hub1,
@@ -127,10 +130,10 @@ contract FeeSharesMinterBaseTest is HubBase {
       skipTime: 1 days
     });
 
-    assertFalse(minter.checkExecute(daiAssetId));
+    assertFalse(minter.checkExecute(address(hub1), daiAssetId));
 
     vm.expectRevert(FeeSharesMinterBase.ConditionsNotMet.selector);
-    minter.execute(daiAssetId);
+    minter.execute(address(hub1), daiAssetId);
   }
 
   function test_execute_largeScalePrecision() public {
@@ -145,7 +148,7 @@ contract FeeSharesMinterBaseTest is HubBase {
       minUnrealizedFeePercent: 1 // 1 BPS
     });
     vm.prank(ADMIN);
-    minter.setConfig(daiAssetId, config);
+    minter.setConfig(address(hub1), daiAssetId, config);
 
     // Mock Hub calls to simulate this exact state
     vm.mockCall(
@@ -165,7 +168,7 @@ contract FeeSharesMinterBaseTest is HubBase {
       abi.encode(100e18) // Just needs to be >= 1
     );
 
-    assertTrue(minter.checkExecute(daiAssetId), 'Should pass at exactly 1 bps');
+    assertTrue(minter.checkExecute(address(hub1), daiAssetId), 'Should pass at exactly 1 bps');
 
     // Test just below 1 bps
     vm.mockCall(
@@ -180,6 +183,6 @@ contract FeeSharesMinterBaseTest is HubBase {
       abi.encode(100e18)
     );
 
-    assertFalse(minter.checkExecute(daiAssetId), 'Should fail just below 1 bps');
+    assertFalse(minter.checkExecute(address(hub1), daiAssetId), 'Should fail just below 1 bps');
   }
 }
