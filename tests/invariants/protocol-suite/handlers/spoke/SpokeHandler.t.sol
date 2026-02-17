@@ -298,7 +298,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       assertLe(
         liquidationVars.debtLiquidated,
         defaultVarsBefore
-        .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator]
+          .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator]
           .totalDebt,
         HSPOST_SP_LIQ_A
       );
@@ -318,7 +318,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       if (liquidationVars.totalDebtValueBefore < Constants.DUST_LIQUIDATION_THRESHOLD) {
         assertEq(
           defaultVarsAfter
-          .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(i)]
+            .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(i)]
             .totalDebt,
           0,
           HSPOST_SP_LIQ_C
@@ -329,21 +329,24 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
       assertLt(
         defaultVarsBefore
-        .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)].healthFactor,
+          .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)]
+          .healthFactor,
         Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         HSPOST_SP_LIQ_E
       );
 
       if (
         defaultVarsAfter
-        .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(i)]
+          .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(i)]
           .totalDebt > 0
       ) {
         assertGt(
           defaultVarsAfter
-          .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)].healthFactor,
+            .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)]
+            .healthFactor,
           defaultVarsBefore
-          .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)].healthFactor,
+            .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)]
+            .healthFactor,
           HSPOST_SP_LIQ_G
         );
       }

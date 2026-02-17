@@ -137,12 +137,14 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
         for (uint256 j; j < spokeReserveIds[userInfo.spoke].length; j++) {
           (
             _defaultVars
-            .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user].drawnDebt,
+              .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
+              .drawnDebt,
             _defaultVars
-            .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user].premiumDebt
+              .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
+              .premiumDebt
           ) = ISpoke(userInfo.spoke).getUserDebt(spokeReserveIds[userInfo.spoke][j], userInfo.user);
           _defaultVars
-          .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
+            .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
             .totalDebt = ISpoke(userInfo.spoke).getUserTotalDebt(
             spokeReserveIds[userInfo.spoke][j],
             userInfo.user
