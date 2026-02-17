@@ -80,7 +80,7 @@ abstract contract SpokeInvariants is HandlerAggregator {
   function assert_INV_SP_D(address spoke, address user) internal {
     ISpoke.UserAccountData memory d = ISpoke(spoke).getUserAccountData(user);
     if (d.totalCollateralValue == 0) {
-      assertEq(d.totalDebtValue, 0, INV_SP_D);
+      assertEq(d.totalDebtValueRay, 0, INV_SP_D); // todo fix
     }
   }
 

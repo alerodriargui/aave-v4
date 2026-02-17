@@ -9,18 +9,17 @@ import {Actor} from '../shared/utils/Actor.sol';
 import 'forge-std/console.sol';
 
 // Interfaces
-import {IHub} from 'src/hub/Hub.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 // Test Contracts
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 
 // Contracts
 import {BaseTest} from './base/BaseTest.t.sol';
+import {DeployUtils} from 'tests/DeployUtils.sol';
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
-import {Hub} from 'src/hub/Hub.sol';
-import {Spoke} from 'src/spoke/Spoke.sol';
 import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
 
 /// @notice Setup contract for the invariant test Suite, inherited by Tester
@@ -69,7 +68,7 @@ contract Setup is BaseTest {
     accessManager = new AccessManager(admin);
 
     // Hub 1
-    hub = new Hub(address(accessManager));
+    hub = DeployUtils.deployHub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub));
 
     // Configurators
@@ -187,7 +186,7 @@ contract Setup is BaseTest {
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
     hub.addSpoke(
@@ -198,7 +197,7 @@ contract Setup is BaseTest {
         drawCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 3,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
     hub.addSpoke(
@@ -209,7 +208,7 @@ contract Setup is BaseTest {
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
 
@@ -222,7 +221,7 @@ contract Setup is BaseTest {
         drawCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 2,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
     hub.addSpoke(
@@ -233,7 +232,7 @@ contract Setup is BaseTest {
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
 
@@ -246,7 +245,7 @@ contract Setup is BaseTest {
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
     hub.addSpoke(
@@ -257,7 +256,7 @@ contract Setup is BaseTest {
         drawCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 2,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
     hub.addSpoke(
@@ -268,7 +267,7 @@ contract Setup is BaseTest {
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
 

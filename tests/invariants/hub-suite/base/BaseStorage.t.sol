@@ -3,11 +3,11 @@ pragma solidity ^0.8.19;
 
 // Contracts
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
-import {IHub} from 'src/hub/Hub.sol';
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 // Utils
 import {Actor} from '../../shared/utils/Actor.sol';

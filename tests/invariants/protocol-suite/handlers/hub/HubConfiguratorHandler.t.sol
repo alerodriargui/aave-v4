@@ -51,11 +51,11 @@ contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
     hubConfigurator.updateSpokeRiskPremiumThreshold(hub, assetId, spoke, riskPremiumThreshold);
   }
 
-  function updateSpokePaused(bool paused, uint8 i, uint8 j, uint8 k) external setup {
+  function updateSpokeHalted(bool halted, uint8 i, uint8 j, uint8 k) external setup {
     address hub = _getRandomHub(i);
     uint256 assetId = _getRandomHubAssetId(hub, j);
     address spoke = _getRandomSpoke(k);
-    hubConfigurator.updateSpokePaused(hub, assetId, spoke, paused);
+    hubConfigurator.updateSpokeHalted(hub, assetId, spoke, halted);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -10,9 +10,10 @@ import 'forge-std/console.sol';
 
 // Interfaces
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
-import {ISpoke} from 'src/spoke/Spoke.sol';
-import {ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
-import {IHub} from 'src/hub/Hub.sol';
+import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 // Test Contracts
 import {Actor} from '../shared/utils/Actor.sol';
@@ -21,14 +22,10 @@ import {MockPriceFeedSimulator} from '../shared/mocks/MockPriceFeedSimulator.sol
 
 // Contracts
 import {BaseTest} from './base/BaseTest.t.sol';
-import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
-import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
+import {DeployUtils} from 'tests/DeployUtils.sol';
+import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
-import {Hub} from 'src/hub/Hub.sol';
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
-import {SpokeInstance} from 'src/spoke/instances/SpokeInstance.sol';
-import {Spoke} from 'src/spoke/Spoke.sol';
-import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
@@ -76,7 +73,7 @@ contract Setup is BaseTest {
     accessManager = new AccessManager(admin);
 
     // Hub 1
-    hub1 = new Hub(address(accessManager));
+    hub1 = DeployUtils.deployHub(address(accessManager));
     irStrategy1 = new AssetInterestRateStrategy(address(hub1));
     hubInfo[address(hub1)] = HubInfo({
       treasurySpoke: address(treasurySpoke1),
@@ -85,7 +82,7 @@ contract Setup is BaseTest {
     hubAddresses.push(address(hub1));
 
     // Hub 2
-    hub2 = new Hub(address(accessManager));
+    hub2 = DeployUtils.deployHub(address(accessManager));
     irStrategy2 = new AssetInterestRateStrategy(address(hub2));
     hubInfo[address(hub2)] = HubInfo({
       treasurySpoke: address(treasurySpoke2),
@@ -121,51 +118,34 @@ contract Setup is BaseTest {
     vm.label(address(oracle2), 'oracle2');
   }
 
-  /// @notice Deploy a spoke with an oracle using CREATE3
+  /// @notice Deploy a spoke with an oracle
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
     address _accessManager,
     string memory _oracleDesc
   ) internal returns (ISpoke, IAaveOracle) {
-    bytes32 salt = keccak256(abi.encodePacked(_oracleDesc));
-    address predictedSpoke = CREATE3.predictDeterministicAddress(salt, admin);
+    address deployer = _makeAddr('deployer');
 
-    // Deploy oracle with predicted spoke address
-    IAaveOracle oracle = new AaveOracle(predictedSpoke, uint8(8), _oracleDesc);
+    vm.startPrank(deployer);
+    IAaveOracle oracle = new AaveOracle(8, _oracleDesc);
 
-    // Deploy spoke implementation with oracle address
-    address spokeImpl = address(new SpokeInstance(address(oracle)));
-
-    // Deploy spoke proxy using CREATE3
-    bytes memory proxyCreationCode = abi.encodePacked(
-      type(TransparentUpgradeableProxy).creationCode,
-      abi.encode(spokeImpl, proxyAdminOwner, abi.encodeCall(Spoke.initialize, (_accessManager)))
+    ISpoke spoke = DeployUtils.deploySpoke(
+      address(oracle),
+      Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+      proxyAdminOwner,
+      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
     );
-    address spokeProxy = CREATE3.deployDeterministic(proxyCreationCode, salt);
-    ISpoke spoke = ISpoke(spokeProxy);
 
-    assertEq(address(spoke), predictedSpoke, 'predictedSpoke mismatch');
-    assertEq(spoke.ORACLE(), address(oracle), 'spoke.ORACLE() mismatch');
-    assertEq(oracle.SPOKE(), address(spoke), 'oracle.SPOKE() mismatch');
+    oracle.setSpoke(address(spoke));
+    vm.stopPrank();
+
+    assertEq(spoke.ORACLE(), address(oracle));
+    assertEq(oracle.SPOKE(), address(spoke));
 
     spokesAddresses.push(address(spoke));
     allSpokes.push(address(spoke));
 
     return (spoke, oracle);
-  }
-
-  /// @notice Proxify an implementation contract using TransparentUpgradeableProxy
-  function _proxify(
-    address impl,
-    address proxyAdminOwner,
-    bytes memory initData
-  ) internal returns (address) {
-    TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-      impl,
-      proxyAdminOwner,
-      initData
-    );
-    return address(proxy);
   }
 
   function _deployMockPriceFeed(ISpoke spoke, uint256 price) internal returns (address) {
@@ -304,7 +284,6 @@ contract Setup is BaseTest {
       paused: false,
       frozen: false,
       borrowable: true,
-      liquidatable: true,
       receiveSharesEnabled: true,
       collateralRisk: 30_00
     });
@@ -318,7 +297,6 @@ contract Setup is BaseTest {
       paused: false,
       frozen: false,
       borrowable: true,
-      liquidatable: true,
       receiveSharesEnabled: true,
       collateralRisk: 20_00
     });
@@ -333,7 +311,6 @@ contract Setup is BaseTest {
       paused: false,
       frozen: false,
       borrowable: true,
-      liquidatable: true,
       receiveSharesEnabled: true,
       collateralRisk: 10_00
     });
@@ -347,7 +324,6 @@ contract Setup is BaseTest {
       paused: false,
       frozen: false,
       borrowable: true,
-      liquidatable: true,
       receiveSharesEnabled: true,
       collateralRisk: 15_00
     });
@@ -474,7 +450,7 @@ contract Setup is BaseTest {
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
     hub2.addSpoke(
@@ -485,7 +461,7 @@ contract Setup is BaseTest {
         drawCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 3,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
     hub1.addSpoke(
@@ -496,7 +472,7 @@ contract Setup is BaseTest {
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
     hub2.addSpoke(
@@ -507,7 +483,7 @@ contract Setup is BaseTest {
         drawCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 2,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
 
@@ -520,7 +496,7 @@ contract Setup is BaseTest {
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
     hub1.addSpoke(
@@ -531,7 +507,7 @@ contract Setup is BaseTest {
         drawCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 2,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
     hub2.addSpoke(
@@ -542,7 +518,7 @@ contract Setup is BaseTest {
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
     hub1.addSpoke(
@@ -553,7 +529,7 @@ contract Setup is BaseTest {
         drawCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 3,
         riskPremiumThreshold: Constants.MAX_RISK_PREMIUM_THRESHOLD,
         active: true,
-        paused: false
+        halted: false
       })
     );
   }

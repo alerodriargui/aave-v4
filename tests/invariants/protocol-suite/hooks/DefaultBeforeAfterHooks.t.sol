@@ -137,14 +137,12 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
         for (uint256 j; j < spokeReserveIds[userInfo.spoke].length; j++) {
           (
             _defaultVars
-              .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
-              .drawnDebt,
+            .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user].drawnDebt,
             _defaultVars
-              .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
-              .premiumDebt
+            .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user].premiumDebt
           ) = ISpoke(userInfo.spoke).getUserDebt(spokeReserveIds[userInfo.spoke][j], userInfo.user);
           _defaultVars
-            .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
+          .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
             .totalDebt = ISpoke(userInfo.spoke).getUserTotalDebt(
             spokeReserveIds[userInfo.spoke][j],
             userInfo.user
@@ -299,9 +297,9 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
 
   function assert_GPOST_SP_E(address spoke, uint256 reserveId, address user) internal {
     // latest reserve key
-    uint24 latestKey = ISpoke(spoke).getReserve(reserveId).dynamicConfigKey;
+    uint32 latestKey = ISpoke(spoke).getReserve(reserveId).dynamicConfigKey;
     // user-stored key
-    uint24 userKey = ISpoke(spoke).getUserPosition(reserveId, user).dynamicConfigKey;
+    uint32 userKey = ISpoke(spoke).getUserPosition(reserveId, user).dynamicConfigKey;
 
     // Read the cached signature of the current action
     bytes4 signature = currentActionSignature;

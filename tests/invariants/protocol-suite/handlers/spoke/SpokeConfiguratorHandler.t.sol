@@ -40,10 +40,10 @@ contract SpokeConfiguratorHandler is BaseHandler, ISpokeConfiguratorHandler {
     spokeConfigurator.updateLiquidationBonusFactor(spoke, liquidationBonusFactor);
   }
 
-  function updatePaused(bool paused, uint8 i, uint8 j) external setup {
+  function updatePaused(bool halted, uint8 i, uint8 j) external setup {
     address spoke = _getRandomSpoke(i);
     uint256 reserveId = _getRandomReserveId(spoke, j);
-    spokeConfigurator.updatePaused(spoke, reserveId, paused);
+    spokeConfigurator.updatePaused(spoke, reserveId, halted);
   }
 
   function updateFrozen(bool frozen, uint8 i, uint8 j) external setup {

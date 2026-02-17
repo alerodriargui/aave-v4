@@ -52,10 +52,10 @@ contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
     );
   }
 
-  function updateSpokePaused(bool paused, uint8 i, uint8 j) external setup {
+  function updateSpokeHalted(bool halted, uint8 i, uint8 j) external setup {
     uint256 assetId = _getRandomBaseAssetId(i);
     address spoke = _getRandomActor(j);
-    hubConfigurator.updateSpokePaused(address(hub), assetId, spoke, paused);
+    hubConfigurator.updateSpokeHalted(address(hub), assetId, spoke, halted);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -40,7 +40,7 @@ contract ReplayTest1 is Invariants, Setup {
   function test_replay_1_add() public {
     _setUpActor(USER3);
     _delay(67960);
-    Tester.updateSpokePaused(true, 26, 105);
+    Tester.updateSpokeHalted(true, 26, 105);
     _delay(289607);
     Tester.add(1524785992, 171);
   }

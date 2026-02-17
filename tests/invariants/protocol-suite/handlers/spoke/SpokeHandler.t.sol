@@ -2,11 +2,13 @@
 pragma solidity ^0.8.19;
 
 // Interfaces
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeHandler} from '../interfaces/ISpokeHandler.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
 // Libraries
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {Constants} from 'tests/Constants.sol';
 import 'forge-std/console.sol';
 
@@ -14,13 +16,11 @@ import 'forge-std/console.sol';
 import {Actor} from '../../../shared/utils/Actor.sol';
 import {BaseHandler} from '../../base/BaseHandler.t.sol';
 
-// Contracts
-import {Spoke} from 'src/spoke/Spoke.sol';
-import {IHub} from 'src/hub/interfaces/IHub.sol';
-
 /// @title SpokeHandler
 /// @notice Handler test contract for a set of actions
 contract SpokeHandler is BaseHandler, ISpokeHandler {
+  using WadRayMath for uint256;
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                      STATE VARIABLES                                      //
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _before();
     (success, returnData) = actor.proxy(
       spoke,
-      abi.encodeCall(Spoke.supply, (reserveId, amount, onBehalfOf))
+      abi.encodeCall(ISpokeBase.supply, (reserveId, amount, onBehalfOf))
     );
 
     if (success) {
@@ -100,7 +100,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _before();
     (success, returnData) = actor.proxy(
       spoke,
-      abi.encodeCall(Spoke.withdraw, (reserveId, amount, onBehalfOf))
+      abi.encodeCall(ISpokeBase.withdraw, (reserveId, amount, onBehalfOf))
     );
 
     // Implemented outside the success check to assert success
@@ -139,7 +139,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _before();
     (success, returnData) = actor.proxy(
       spoke,
-      abi.encodeCall(Spoke.borrow, (reserveId, amount, onBehalfOf))
+      abi.encodeCall(ISpokeBase.borrow, (reserveId, amount, onBehalfOf))
     );
 
     if (success) {
@@ -171,7 +171,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _before();
     (success, returnData) = actor.proxy(
       spoke,
-      abi.encodeCall(Spoke.repay, (reserveId, amount, onBehalfOf))
+      abi.encodeCall(ISpokeBase.repay, (reserveId, amount, onBehalfOf))
     );
 
     if (success) {
@@ -223,7 +223,8 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
     liquidationVars.totalDebtValueBefore = ISpoke(liquidationVars.spoke)
       .getUserAccountData(_getRandomActor(i))
-      .totalDebtValue;
+      .totalDebtValueRay
+      .fromRayUp(); // todo fix
     liquidationVars.reserveDebtBefore = ISpoke(liquidationVars.spoke).getReserveTotalDebt(
       liquidationVars.debtReserveId
     );
@@ -262,7 +263,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     (success, returnData) = actor.proxy(
       liquidationVars.spoke,
       abi.encodeCall(
-        Spoke.liquidationCall,
+        ISpokeBase.liquidationCall,
         (
           liquidationVars.collateralReserveId,
           liquidationVars.debtReserveId,
@@ -297,7 +298,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       assertLe(
         liquidationVars.debtLiquidated,
         defaultVarsBefore
-          .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator]
+        .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator]
           .totalDebt,
         HSPOST_SP_LIQ_A
       );
@@ -317,7 +318,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       if (liquidationVars.totalDebtValueBefore < Constants.DUST_LIQUIDATION_THRESHOLD) {
         assertEq(
           defaultVarsAfter
-            .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(i)]
+          .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(i)]
             .totalDebt,
           0,
           HSPOST_SP_LIQ_C
@@ -328,24 +329,21 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
       assertLt(
         defaultVarsBefore
-          .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)]
-          .healthFactor,
+        .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)].healthFactor,
         Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         HSPOST_SP_LIQ_E
       );
 
       if (
         defaultVarsAfter
-          .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(i)]
+        .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(i)]
           .totalDebt > 0
       ) {
         assertGt(
           defaultVarsAfter
-            .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)]
-            .healthFactor,
+          .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)].healthFactor,
           defaultVarsBefore
-            .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)]
-            .healthFactor,
+          .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)].healthFactor,
           HSPOST_SP_LIQ_G
         );
       }
@@ -381,7 +379,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _before();
     (success, returnData) = actor.proxy(
       spoke,
-      abi.encodeCall(Spoke.setUsingAsCollateral, (reserveId, usingAsCollateral, onBehalfOf))
+      abi.encodeCall(ISpoke.setUsingAsCollateral, (reserveId, usingAsCollateral, onBehalfOf))
     );
 
     if (success) {
@@ -407,7 +405,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _before();
     (success, returnData) = actor.proxy(
       spoke,
-      abi.encodeCall(Spoke.updateUserRiskPremium, (onBehalfOf))
+      abi.encodeCall(ISpoke.updateUserRiskPremium, (onBehalfOf))
     );
 
     if (success) {
@@ -433,7 +431,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _before();
     (success, returnData) = actor.proxy(
       spoke,
-      abi.encodeCall(Spoke.updateUserDynamicConfig, (onBehalfOf))
+      abi.encodeCall(ISpoke.updateUserDynamicConfig, (onBehalfOf))
     );
 
     if (success) {

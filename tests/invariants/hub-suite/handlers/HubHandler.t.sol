@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 // Interfaces
 import {IERC20} from 'forge-std/interfaces/IERC20.sol';
-import {IHub, IHubBase} from 'src/hub/Hub.sol';
+import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {IHubHandler} from './interfaces/IHubHandler.sol';
 
 // Libraries
