@@ -39,7 +39,7 @@ contract BatchBaseTest is Test, InputUtils {
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
 
     // used Hub, Spoke, Configurator batches
-    AaveV4AccessBatch accessBatch = new AaveV4AccessBatch(admin, salt);
+    AaveV4AccessBatch accessBatch = new AaveV4AccessBatch({admin_: admin, salt_: salt});
     accessManager = accessBatch.getReport().accessManager;
 
     // used by Gateway batch

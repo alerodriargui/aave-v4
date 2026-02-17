@@ -9,7 +9,7 @@ contract AaveV4AccessBatchTest is BatchBaseTest {
   function setUp() public override {
     super.setUp();
     bytes32 accessSalt = keccak256('accessBatchSalt');
-    aaveV4AccessBatch = new AaveV4AccessBatch(admin, accessSalt);
+    aaveV4AccessBatch = new AaveV4AccessBatch({admin_: admin, salt_: accessSalt});
   }
 
   function test_getReport() public view {
@@ -26,7 +26,7 @@ contract AaveV4AccessBatchTest is BatchBaseTest {
 
   function test_revert_zeroAdmin() public {
     vm.expectRevert('invalid admin');
-    new AaveV4AccessBatch(address(0), keccak256('zeroAdminSalt'));
+    new AaveV4AccessBatch({admin_: address(0), salt_: keccak256('zeroAdminSalt')});
   }
 
   function test_adminRoleMemberTracking() public view {
@@ -45,7 +45,10 @@ contract AaveV4AccessBatchTest is BatchBaseTest {
   }
 
   function test_differentSaltProducesDifferentAddress() public {
-    AaveV4AccessBatch newBatch = new AaveV4AccessBatch(admin, keccak256('differentSalt'));
+    AaveV4AccessBatch newBatch = new AaveV4AccessBatch({
+      admin_: admin,
+      salt_: keccak256('differentSalt')
+    });
     assertNotEq(aaveV4AccessBatch.getReport().accessManager, newBatch.getReport().accessManager);
   }
 }

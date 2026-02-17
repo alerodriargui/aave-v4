@@ -10,7 +10,11 @@ contract AaveV4ConfiguratorBatchTest is BatchBaseTest {
 
   function setUp() public override {
     super.setUp();
-    configuratorBatch = new AaveV4ConfiguratorBatch(accessManager, accessManager, salt);
+    configuratorBatch = new AaveV4ConfiguratorBatch({
+      hubConfiguratorAuthority_: accessManager,
+      spokeConfiguratorAuthority_: accessManager,
+      salt_: salt
+    });
     report = configuratorBatch.getReport();
   }
 
@@ -29,20 +33,28 @@ contract AaveV4ConfiguratorBatchTest is BatchBaseTest {
 
   function test_revert_zeroHubConfiguratorAuthority() public {
     vm.expectRevert('invalid authority');
-    new AaveV4ConfiguratorBatch(address(0), accessManager, salt);
+    new AaveV4ConfiguratorBatch({
+      hubConfiguratorAuthority_: address(0),
+      spokeConfiguratorAuthority_: accessManager,
+      salt_: salt
+    });
   }
 
   function test_revert_zeroSpokeConfiguratorAuthority() public {
     vm.expectRevert('invalid authority');
-    new AaveV4ConfiguratorBatch(accessManager, address(0), keccak256('zeroSpokeCfgSalt'));
+    new AaveV4ConfiguratorBatch({
+      hubConfiguratorAuthority_: accessManager,
+      spokeConfiguratorAuthority_: address(0),
+      salt_: keccak256('zeroSpokeCfgSalt')
+    });
   }
 
   function test_differentSaltProducesDifferentAddress() public {
-    AaveV4ConfiguratorBatch newBatch = new AaveV4ConfiguratorBatch(
-      accessManager,
-      accessManager,
-      keccak256('differentSalt')
-    );
+    AaveV4ConfiguratorBatch newBatch = new AaveV4ConfiguratorBatch({
+      hubConfiguratorAuthority_: accessManager,
+      spokeConfiguratorAuthority_: accessManager,
+      salt_: keccak256('differentSalt')
+    });
     assertNotEq(report.hubConfigurator, newBatch.getReport().hubConfigurator);
   }
 }

@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 
 import {WETHDeployProcedure} from 'tests/deployments/procedures/WETHDeployProcedure.sol';
 import {TestnetERC20DeployProcedure} from 'tests/deployments/procedures/TestnetERC20DeployProcedure.sol';
