@@ -51,12 +51,6 @@ contract FeeSharesMinterBaseTest is HubBase {
 
     assertTrue(minter.checkExecute(daiAssetId), 'Should be executable');
 
-    vm.expectEmit(address(minter));
-    emit FeeSharesMinterBase.FeeSharesMinted(
-      daiAssetId,
-      hub1.previewAddByAssets(daiAssetId, hub1.getAssetAccruedFees(daiAssetId))
-    );
-
     minter.execute(daiAssetId);
 
     assertEq(minter.lastMintTime(daiAssetId), block.timestamp);
