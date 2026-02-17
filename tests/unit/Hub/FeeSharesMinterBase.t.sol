@@ -39,7 +39,7 @@ contract FeeSharesMinterBaseTest is HubBase {
     minter.setConfig(address(hub1), daiAssetId, config);
 
     // Generate fees
-    // Add 1000 DAI, borrow 100 DAI
+    // Add 1000 DAI, borrow 900 DAI
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: daiAssetId,
