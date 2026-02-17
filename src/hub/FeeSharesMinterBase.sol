@@ -2,17 +2,22 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
+import {Ownable2Step} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {Rescuable} from 'src/utils/Rescuable.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title FeeSharesMinterBase
 /// @author Aave Labs
 /// @notice Contract to mint fee shares on the Hub when specific conditions are met.
-contract FeeSharesMinterBase is Ownable {
+contract FeeSharesMinterBase is Ownable2Step, Rescuable {
   struct MintConfig {
     uint256 minTimeInterval;
-    uint256 minUnrealizedFeePercent; // 1e4 = 100% (basis points)
+    uint16 minUnrealizedFeePercent; // 1e4 = 100% (basis points)
   }
+
+  uint256 public constant MAX_BPS = 1e4;
+  uint256 public constant MAX_TIME_INTERVAL = 365 days;
 
   mapping(address => mapping(uint256 => MintConfig)) internal _configs;
   mapping(address => mapping(uint256 => uint256)) public lastMintTime;
@@ -20,6 +25,7 @@ contract FeeSharesMinterBase is Ownable {
   event ConfigUpdated(address indexed hub, uint256 indexed assetId, MintConfig config);
 
   error ConditionsNotMet();
+  error InvalidConfig();
 
   /// @dev Constructor.
   /// @param owner The owner of the contract.
@@ -30,6 +36,10 @@ contract FeeSharesMinterBase is Ownable {
   /// @param assetId The identifier of the asset.
   /// @param config The new configuration.
   function setConfig(address hub, uint256 assetId, MintConfig memory config) external onlyOwner {
+    require(
+      config.minUnrealizedFeePercent <= MAX_BPS && config.minTimeInterval <= MAX_TIME_INTERVAL,
+      InvalidConfig()
+    );
     _configs[hub][assetId] = config;
     emit ConfigUpdated(hub, assetId, config);
   }
@@ -38,9 +48,7 @@ contract FeeSharesMinterBase is Ownable {
   /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.
   function execute(address hub, uint256 assetId) external {
-    if (!_checkExecute(hub, assetId)) {
-      revert ConditionsNotMet();
-    }
+    require(_checkExecute(hub, assetId), ConditionsNotMet());
 
     lastMintTime[hub][assetId] = block.timestamp;
     IHub(hub).mintFeeShares(assetId);
@@ -66,7 +74,7 @@ contract FeeSharesMinterBase is Ownable {
   /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.
   /// @return True if conditions are met, false otherwise.
-  function _checkExecute(address hub, uint256 assetId) internal view returns (bool) {
+  function _checkExecute(address hub, uint256 assetId) internal view virtual returns (bool) {
     MintConfig memory config = _configs[hub][assetId];
 
     // Check mint interval
@@ -81,16 +89,21 @@ contract FeeSharesMinterBase is Ownable {
     if (totalAddedAssets == 0) return false;
 
     // Check if accruedFees / totalAddedAssets >= minUnrealizedFeePercent (in bps)
-    if ((accruedFees * 10000) / totalAddedAssets < config.minUnrealizedFeePercent) {
+    if ((accruedFees * MAX_BPS) / totalAddedAssets < config.minUnrealizedFeePercent) {
       return false;
     }
 
     // Ensure at least 1 fee share is minted
     uint256 expectedShares = hubContract.previewAddByAssets(assetId, accruedFees);
-    if (expectedShares < 1) {
+    if (expectedShares == 0) {
       return false;
     }
 
     return true;
+  }
+
+  /// @inheritdoc Rescuable
+  function _rescueGuardian() internal view override returns (address) {
+    return owner();
   }
 }
