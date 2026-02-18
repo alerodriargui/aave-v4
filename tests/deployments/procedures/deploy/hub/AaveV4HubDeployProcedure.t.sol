@@ -12,13 +12,17 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
   }
 
   function test_deployHub() public {
-    address hub = aaveV4HubDeployProcedureWrapper.deployHub(accessManager, salt);
+    address hub = aaveV4HubDeployProcedureWrapper.deployHub(accessManager, hubBytecode, salt);
     assertNotEq(hub, address(0));
     assertEq(IHub(hub).authority(), accessManager);
   }
 
   function test_deployHub_reverts() public {
     vm.expectRevert('invalid authority');
-    aaveV4HubDeployProcedureWrapper.deployHub({authority: address(0), salt: salt});
+    aaveV4HubDeployProcedureWrapper.deployHub({
+      authority: address(0),
+      hubBytecode: hubBytecode,
+      salt: salt
+    });
   }
 }

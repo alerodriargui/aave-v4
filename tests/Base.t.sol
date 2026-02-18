@@ -313,7 +313,7 @@ abstract contract Base is BatchTestProcedures {
     });
 
   function setUp() public virtual override {
-    _etchCreate2Factory();
+    _etchSetup();
     _initTokenList();
     _setupFixtures();
   }
@@ -352,6 +352,8 @@ abstract contract Base is BatchTestProcedures {
       hubCount: numHubs,
       spokeCount: numSpokes,
       nativeWrapper: address(tokenList.weth),
+      hubBytecode: _getHubBytecode(),
+      spokeBytecode: _getSpokeBytecode(),
       salt: keccak256(abi.encodePacked(vm.randomBytes(32)))
     });
     for (uint256 i; i < numHubs; ++i) {
@@ -1063,6 +1065,7 @@ abstract contract Base is BatchTestProcedures {
     report = AaveV4TestOrchestration.deployTestHub(
       address(accessManager),
       TREASURY_ADMIN,
+      _getHubBytecode(),
       label,
       keccak256(abi.encodePacked(label))
     );

@@ -10,7 +10,12 @@ contract AaveV4HubBatchTest is BatchBaseTest {
 
   function setUp() public override {
     super.setUp();
-    hubBatch = new AaveV4HubBatch(admin, accessManager, salt);
+    hubBatch = new AaveV4HubBatch({
+      treasurySpokeOwner_: admin,
+      authority_: accessManager,
+      hubBytecode_: hubBytecode,
+      salt_: salt
+    });
     report = hubBatch.getReport();
   }
 
@@ -36,16 +41,31 @@ contract AaveV4HubBatchTest is BatchBaseTest {
 
   function test_revert_zeroAuthority() public {
     vm.expectRevert('invalid authority');
-    new AaveV4HubBatch(admin, address(0), salt);
+    new AaveV4HubBatch({
+      treasurySpokeOwner_: admin,
+      authority_: address(0),
+      hubBytecode_: hubBytecode,
+      salt_: salt
+    });
   }
 
   function test_revert_zeroTreasurySpokeOwner() public {
     vm.expectRevert('invalid owner');
-    new AaveV4HubBatch(address(0), accessManager, keccak256('zeroOwnerSalt'));
+    new AaveV4HubBatch({
+      treasurySpokeOwner_: address(0),
+      authority_: accessManager,
+      hubBytecode_: hubBytecode,
+      salt_: keccak256('zeroOwnerSalt')
+    });
   }
 
   function test_differentSaltProducesDifferentAddress() public {
-    AaveV4HubBatch newBatch = new AaveV4HubBatch(admin, accessManager, keccak256('differentSalt'));
+    AaveV4HubBatch newBatch = new AaveV4HubBatch({
+      treasurySpokeOwner_: admin,
+      authority_: accessManager,
+      hubBytecode_: hubBytecode,
+      salt_: keccak256('differentSalt')
+    });
     assertNotEq(report.hub, newBatch.getReport().hub);
   }
 }

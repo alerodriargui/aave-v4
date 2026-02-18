@@ -22,14 +22,12 @@ import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 
 library AaveV4DeployOrchestration {
-  uint8 private constant ORACLE_DECIMALS = 8;
-  string private constant ORACLE_SUFFIX = ' (USD)';
-  uint16 private constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max; // TODO : see to make this input in config
-
   function deployAaveV4(
     Logger logger,
     address deployer,
-    InputUtils.FullDeployInputs memory deployInputs
+    InputUtils.FullDeployInputs memory deployInputs,
+    bytes memory hubBytecode,
+    bytes memory spokeBytecode
   ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
     bytes32 rootSalt = keccak256(abi.encode(deployInputs.salt));
 
@@ -68,24 +66,27 @@ library AaveV4DeployOrchestration {
       treasurySpokeOwner: deployInputs.treasurySpokeOwner,
       authority: report.accessBatchReport.accessManager,
       hubLabels: deployInputs.hubLabels,
+      hubBytecode: hubBytecode,
       rootSalt: rootSalt
     });
 
     // Deploy Spoke Instance Batches
-    report.spokeInstanceBatchReports = _deploySpokes({
-      logger: logger,
-      spokeProxyAdminOwner: deployInputs.spokeProxyAdminOwner,
-      authority: report.accessBatchReport.accessManager,
-      spokeLabels: deployInputs.spokeLabels,
-      rootSalt: rootSalt
-    });
+    report.spokeInstanceBatchReports = _deploySpokes(
+      logger,
+      report.accessBatchReport.accessManager,
+      deployInputs,
+      spokeBytecode,
+      rootSalt
+    );
 
-    // Deploy Gateways Batch if native wrapper is not zero address
-    if (deployInputs.nativeWrapper != address(0)) {
+    // Deploy Gateways Batch if either gateway flag is enabled
+    if (deployInputs.deployNativeTokenGateway || deployInputs.deploySignatureGateway) {
       report.gatewaysBatchReport = _deployGatewayBatch({
         logger: logger,
         gatewayOwner: deployInputs.gatewayOwner,
         nativeWrapper: deployInputs.nativeWrapper,
+        deployNativeTokenGateway: deployInputs.deployNativeTokenGateway,
+        deploySignatureGateway: deployInputs.deploySignatureGateway,
         salt: keccak256(abi.encode(rootSalt, 'gateways'))
       });
     }
@@ -218,6 +219,7 @@ library AaveV4DeployOrchestration {
     address treasurySpokeOwner,
     address authority,
     string[] memory hubLabels,
+    bytes memory hubBytecode,
     bytes32 rootSalt
   ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubBatchReports) {
     uint256 hubCount = hubLabels.length;
@@ -228,6 +230,7 @@ library AaveV4DeployOrchestration {
         treasurySpokeOwner: treasurySpokeOwner,
         authority: authority,
         label: hubLabels[i],
+        hubBytecode: hubBytecode,
         salt: keccak256(abi.encode(rootSalt, 'hub', hubLabels[i]))
       });
     }
@@ -240,6 +243,7 @@ library AaveV4DeployOrchestration {
     address treasurySpokeOwner,
     address authority,
     string memory label,
+    bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (OrchestrationReports.HubDeploymentReport memory) {
     OrchestrationReports.HubDeploymentReport memory hubReport;
@@ -248,6 +252,7 @@ library AaveV4DeployOrchestration {
       logger: logger,
       treasurySpokeOwner: treasurySpokeOwner,
       authority: authority,
+      hubBytecode: hubBytecode,
       salt: salt
     });
 
@@ -264,20 +269,24 @@ library AaveV4DeployOrchestration {
 
   function _deploySpokes(
     Logger logger,
-    address spokeProxyAdminOwner,
     address authority,
-    string[] memory spokeLabels,
+    InputUtils.FullDeployInputs memory inputs,
+    bytes memory spokeBytecode,
     bytes32 rootSalt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
-    uint256 spokeCount = spokeLabels.length;
+    uint256 spokeCount = inputs.spokeLabels.length;
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
       spokeBatchReports[i] = _deploySpoke({
         logger: logger,
-        spokeProxyAdminOwner: spokeProxyAdminOwner,
+        spokeProxyAdminOwner: inputs.spokeProxyAdminOwner,
         authority: authority,
-        label: spokeLabels[i],
-        salt: keccak256(abi.encode(rootSalt, 'spoke', spokeLabels[i]))
+        label: inputs.spokeLabels[i],
+        spokeBytecode: spokeBytecode,
+        maxUserReservesLimit: inputs.spokeMaxReservesLimits[i],
+        oracleDecimals: inputs.spokeOracleDecimals[i],
+        oracleDescription: inputs.spokeOracleDescriptions[i],
+        salt: keccak256(abi.encode(rootSalt, 'spoke', inputs.spokeLabels[i]))
       });
     }
     logger.log('');
@@ -289,6 +298,10 @@ library AaveV4DeployOrchestration {
     address spokeProxyAdminOwner,
     address authority,
     string memory label,
+    bytes memory spokeBytecode,
+    uint16 maxUserReservesLimit,
+    uint8 oracleDecimals,
+    string memory oracleDescription,
     bytes32 salt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport memory) {
     OrchestrationReports.SpokeDeploymentReport memory spokeReport;
@@ -298,7 +311,10 @@ library AaveV4DeployOrchestration {
       logger: logger,
       spokeProxyAdminOwner: spokeProxyAdminOwner,
       authority: authority,
-      label: label,
+      spokeBytecode: spokeBytecode,
+      oracleDecimals: oracleDecimals,
+      oracleDescription: oracleDescription,
+      maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
 
@@ -320,17 +336,20 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address spokeProxyAdminOwner,
     address authority,
-    string memory label,
+    bytes memory spokeBytecode,
+    uint8 oracleDecimals,
+    string memory oracleDescription,
+    uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
     logger.log('...Deploying AaveV4SpokeInstanceBatch...');
     report = AaveV4DeployBase.deploySpokeInstanceBatch({
       spokeProxyAdminOwner: spokeProxyAdminOwner,
       authority: authority,
-      oracleDecimals: ORACLE_DECIMALS,
-      oracleSuffix: ORACLE_SUFFIX,
-      label: label,
-      maxUserReservesLimit: MAX_ALLOWED_USER_RESERVES_LIMIT,
+      spokeBytecode: spokeBytecode,
+      oracleDecimals: oracleDecimals,
+      oracleDescription: oracleDescription,
+      maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
     return report;
@@ -340,12 +359,14 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address treasurySpokeOwner,
     address authority,
+    bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (BatchReports.HubBatchReport memory report) {
     logger.log('...Deploying HubBatch...');
     report = AaveV4DeployBase.deployHubBatch({
       treasurySpokeOwner: treasurySpokeOwner,
       authority: authority,
+      hubBytecode: hubBytecode,
       salt: salt
     });
     return report;
@@ -355,16 +376,20 @@ library AaveV4DeployOrchestration {
     Logger logger,
     address gatewayOwner,
     address nativeWrapper,
+    bool deployNativeTokenGateway,
+    bool deploySignatureGateway,
     bytes32 salt
   ) internal returns (BatchReports.GatewaysBatchReport memory report) {
     logger.log('...Deploying GatewayBatch...');
     report = AaveV4DeployBase.deployGatewaysBatch({
       owner: gatewayOwner,
       nativeWrapper: nativeWrapper,
+      deployNativeTokenGateway: deployNativeTokenGateway,
+      deploySignatureGateway: deploySignatureGateway,
       salt: salt
     });
-    logger.log('NativeTokenGateway', report.nativeGateway);
-    logger.log('SignatureGateway', report.signatureGateway);
+    if (deployNativeTokenGateway) logger.log('NativeTokenGateway', report.nativeGateway);
+    if (deploySignatureGateway) logger.log('SignatureGateway', report.signatureGateway);
     return report;
   }
 

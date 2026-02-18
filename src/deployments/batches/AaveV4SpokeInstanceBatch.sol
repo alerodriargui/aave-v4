@@ -16,6 +16,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
   constructor(
     address spokeProxyAdminOwner_,
     address authority_,
+    bytes memory spokeBytecode_,
     uint8 oracleDecimals_,
     string memory oracleDescription_,
     uint16 maxUserReservesLimit_,
@@ -27,6 +28,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
       spokeProxyAdminOwner: spokeProxyAdminOwner_,
       authority: authority_,
       oracle: aaveOracle,
+      spokeBytecode: spokeBytecode_,
       salt: spokeInstanceSalt,
       maxUserReservesLimit: maxUserReservesLimit_
     });

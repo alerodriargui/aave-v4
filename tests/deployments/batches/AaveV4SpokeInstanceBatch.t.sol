@@ -10,7 +10,15 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
 
   function setUp() public override {
     super.setUp();
-    spokeBatch = new AaveV4SpokeInstanceBatch(admin, accessManager, 8, 'Test', 128, salt);
+    spokeBatch = new AaveV4SpokeInstanceBatch({
+      spokeProxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeBytecode_: spokeBytecode,
+      oracleDecimals_: 8,
+      oracleDescription_: 'Test',
+      maxUserReservesLimit_: 128,
+      salt_: salt
+    });
     report = spokeBatch.getReport();
   }
 
@@ -39,52 +47,79 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
 
   function test_revert_zeroAuthority() public {
     vm.expectRevert('invalid authority');
-    new AaveV4SpokeInstanceBatch(admin, address(0), 8, 'Test', 128, salt);
+    new AaveV4SpokeInstanceBatch({
+      spokeProxyAdminOwner_: admin,
+      authority_: address(0),
+      spokeBytecode_: spokeBytecode,
+      oracleDecimals_: 8,
+      oracleDescription_: 'Test',
+      maxUserReservesLimit_: 128,
+      salt_: salt
+    });
   }
 
   function test_revert_zeroSpokeProxyAdminOwner() public {
     vm.expectRevert('invalid spoke proxy admin owner');
-    new AaveV4SpokeInstanceBatch(address(0), accessManager, 8, 'Test', 128, salt);
+    new AaveV4SpokeInstanceBatch({
+      spokeProxyAdminOwner_: address(0),
+      authority_: accessManager,
+      spokeBytecode_: spokeBytecode,
+      oracleDecimals_: 8,
+      oracleDescription_: 'Test',
+      maxUserReservesLimit_: 128,
+      salt_: salt
+    });
   }
 
   function test_revert_zeroOracleDecimals() public {
     vm.expectRevert('invalid oracle decimals');
-    new AaveV4SpokeInstanceBatch(
-      admin,
-      accessManager,
-      0,
-      'Test',
-      128,
-      keccak256('zeroDecimalsSalt')
-    );
+    new AaveV4SpokeInstanceBatch({
+      spokeProxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeBytecode_: spokeBytecode,
+      oracleDecimals_: 0,
+      oracleDescription_: 'Test',
+      maxUserReservesLimit_: 128,
+      salt_: keccak256('zeroDecimalsSalt')
+    });
   }
 
   function test_revert_emptyOracleDescription() public {
     vm.expectRevert('invalid oracle description');
-    new AaveV4SpokeInstanceBatch(admin, accessManager, 8, '', 128, keccak256('emptyDescSalt'));
+    new AaveV4SpokeInstanceBatch({
+      spokeProxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeBytecode_: spokeBytecode,
+      oracleDecimals_: 8,
+      oracleDescription_: '',
+      maxUserReservesLimit_: 128,
+      salt_: keccak256('emptyDescSalt')
+    });
   }
 
   function test_revert_zeroMaxUserReservesLimit() public {
     vm.expectRevert('invalid max user reserves limit');
-    new AaveV4SpokeInstanceBatch(
-      admin,
-      accessManager,
-      8,
-      'Test',
-      0,
-      keccak256('zeroMaxReservesSalt')
-    );
+    new AaveV4SpokeInstanceBatch({
+      spokeProxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeBytecode_: spokeBytecode,
+      oracleDecimals_: 8,
+      oracleDescription_: 'Test',
+      maxUserReservesLimit_: 0,
+      salt_: keccak256('zeroMaxReservesSalt')
+    });
   }
 
   function test_differentSaltProducesDifferentAddress() public {
-    AaveV4SpokeInstanceBatch newBatch = new AaveV4SpokeInstanceBatch(
-      admin,
-      accessManager,
-      8,
-      'Test',
-      128,
-      keccak256('differentSalt')
-    );
+    AaveV4SpokeInstanceBatch newBatch = new AaveV4SpokeInstanceBatch({
+      spokeProxyAdminOwner_: admin,
+      authority_: accessManager,
+      spokeBytecode_: spokeBytecode,
+      oracleDecimals_: 8,
+      oracleDescription_: 'Test',
+      maxUserReservesLimit_: 128,
+      salt_: keccak256('differentSalt')
+    });
     assertNotEq(report.spokeProxy, newBatch.getReport().spokeProxy);
   }
 }

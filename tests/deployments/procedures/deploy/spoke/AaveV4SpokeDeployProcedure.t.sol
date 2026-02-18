@@ -13,7 +13,14 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
 
   function test_deployUpgradableSpokeInstance() public {
     (address spokeProxy, address spokeImplementation) = aaveV4SpokeDeployProcedureWrapper
-      .deployUpgradableSpokeInstance(owner, accessManager, aaveOracle, maxUserReservesLimit, salt);
+      .deployUpgradableSpokeInstance(
+        owner,
+        accessManager,
+        aaveOracle,
+        spokeBytecode,
+        maxUserReservesLimit,
+        salt
+      );
     assertNotEq(spokeProxy, address(0));
     assertNotEq(spokeImplementation, address(0));
     assertEq(Ownable(ProxyHelper.getProxyAdmin(spokeProxy)).owner(), owner);
@@ -27,6 +34,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       spokeProxyAdminOwner: address(0),
       authority: accessManager,
       oracle: aaveOracle,
+      spokeBytecode: spokeBytecode,
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
@@ -36,6 +44,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       spokeProxyAdminOwner: owner,
       authority: address(0),
       oracle: aaveOracle,
+      spokeBytecode: spokeBytecode,
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
@@ -45,6 +54,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       spokeProxyAdminOwner: owner,
       authority: accessManager,
       oracle: address(0),
+      spokeBytecode: spokeBytecode,
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
@@ -54,6 +64,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
       spokeProxyAdminOwner: owner,
       authority: accessManager,
       oracle: aaveOracle,
+      spokeBytecode: spokeBytecode,
       maxUserReservesLimit: 0,
       salt: salt
     });

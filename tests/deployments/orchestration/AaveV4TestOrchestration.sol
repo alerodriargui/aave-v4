@@ -57,6 +57,8 @@ library AaveV4TestOrchestration {
     uint256 hubCount,
     uint256 spokeCount,
     address nativeWrapper,
+    bytes memory hubBytecode,
+    bytes memory spokeBytecode,
     bytes32 salt
   ) external returns (TestTypes.TestEnvReport memory) {
     TestTypes.TestEnvReport memory report;
@@ -72,6 +74,7 @@ library AaveV4TestOrchestration {
       BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
         treasurySpokeOwner: treasuryAdmin,
         authority: report.accessManager,
+        hubBytecode: hubBytecode,
         salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i))))
       });
       report.hubReports[i].hub = hubReport.hub;
@@ -85,9 +88,13 @@ library AaveV4TestOrchestration {
         .deploySpokeInstanceBatch({
           spokeProxyAdminOwner: admin,
           authority: report.accessManager,
+          spokeBytecode: spokeBytecode,
           oracleDecimals: Constants.ORACLE_DECIMALS,
-          oracleSuffix: Constants.ORACLE_SUFFIX,
-          label: string.concat('Spoke ', string(abi.encode(i)), Constants.ORACLE_SUFFIX),
+          oracleDescription: string.concat(
+            'Spoke ',
+            string(abi.encode(i)),
+            Constants.ORACLE_SUFFIX
+          ),
           maxUserReservesLimit: Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
           salt: keccak256(abi.encodePacked(salt, 'spoke-', string(abi.encode(i))))
         });
@@ -109,6 +116,8 @@ library AaveV4TestOrchestration {
     BatchReports.GatewaysBatchReport memory gatewaysReport = AaveV4DeployBase.deployGatewaysBatch({
       owner: admin,
       nativeWrapper: nativeWrapper,
+      deployNativeTokenGateway: true,
+      deploySignatureGateway: true,
       salt: keccak256(abi.encodePacked(salt, 'gateways'))
     });
     report.gatewaysReport.signatureGateway = gatewaysReport.signatureGateway;
@@ -120,6 +129,7 @@ library AaveV4TestOrchestration {
   function deployTestHub(
     address accessManager,
     address treasuryAdmin,
+    bytes memory hubBytecode,
     string memory label,
     bytes32 salt
   ) external returns (TestTypes.TestHubReport memory) {
@@ -127,6 +137,7 @@ library AaveV4TestOrchestration {
     BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
       treasurySpokeOwner: treasuryAdmin,
       authority: accessManager,
+      hubBytecode: hubBytecode,
       salt: keccak256(abi.encodePacked(salt, 'hub-', label))
     });
     report.hub = hubReport.hub;

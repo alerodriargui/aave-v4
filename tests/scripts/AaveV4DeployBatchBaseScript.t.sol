@@ -3,23 +3,26 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
-import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {Constants} from 'tests/Constants.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
-  constructor() AaveV4DeployBatchBaseScript('in.json', 'out.json') {}
+  constructor() AaveV4DeployBatchBaseScript('out.json') {}
 
   function loadWarningsAndSanitizeInputs(
-    MetadataLogger logger,
     InputUtils.FullDeployInputs memory inputs,
     address deployer
   ) public returns (InputUtils.FullDeployInputs memory) {
-    return _loadWarningsAndSanitizeInputs(logger, inputs, deployer);
+    return _loadWarningsAndSanitizeInputs(inputs, deployer);
   }
 
-  function logAndAppend(MetadataLogger logger, string memory warning) public {
-    _logAndAppend(logger, warning);
+  function logWarning(string memory warning) public {
+    _logWarning(warning);
+  }
+
+  function _getDeployInputs() internal pure override returns (InputUtils.FullDeployInputs memory) {
+    revert('not implemented');
   }
 
   function _executeUserPrompt() internal override {}
@@ -28,7 +31,6 @@ contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
 contract AaveV4DeployBatchBaseScriptTest is Test {
   AaveV4DeployBatchBaseScriptHarness internal _harness;
   InputUtils.FullDeployInputs internal _inputs;
-  MetadataLogger internal _logger;
   address internal _deployer;
 
   function setUp() public {
@@ -36,6 +38,9 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
 
     _inputs.hubLabels = ['hub1', 'hub2', 'hub3'];
     _inputs.spokeLabels = ['spoke1', 'spoke2', 'spoke3'];
+    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(3);
+    _inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(3);
+    _inputs.spokeOracleDescriptions = _defaultSpokeOracleDescriptions(_inputs.spokeLabels);
     _inputs.accessManagerAdmin = makeAddr('accessManagerAdmin');
     _inputs.hubAdmin = makeAddr('hubAdmin');
     _inputs.hubConfiguratorAdmin = makeAddr('hubConfiguratorAdmin');
@@ -45,16 +50,16 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.spokeConfiguratorAdmin = makeAddr('spokeConfiguratorAdmin');
     _inputs.gatewayOwner = makeAddr('gatewayOwner');
     _inputs.nativeWrapper = address(new WETH9());
+    _inputs.deployNativeTokenGateway = true;
+    _inputs.deploySignatureGateway = true;
     _inputs.grantRoles = true;
 
-    _logger = new MetadataLogger('dummy/path');
     _deployer = makeAddr('deployer');
   }
 
   function test_loadWarningsAndSanitizeInputs() public {
     InputUtils.FullDeployInputs memory expected = _inputs;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -67,7 +72,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.accessManagerAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -82,7 +86,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.hubAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -97,7 +100,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.spokeAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -114,7 +116,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.hubConfiguratorAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -131,7 +132,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.spokeConfiguratorAdmin = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -148,7 +148,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.spokeProxyAdminOwner = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -166,7 +165,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.treasurySpokeOwner = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -181,7 +179,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.gatewayOwner = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -194,7 +191,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.nativeWrapper = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _logger,
       _inputs,
       _deployer
     );
@@ -216,9 +212,38 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.spokeAdmin, b.spokeAdmin, 'spoke admin');
     assertEq(a.gatewayOwner, b.gatewayOwner, 'gateway owner');
     assertEq(a.nativeWrapper, b.nativeWrapper, 'native wrapper');
+    assertEq(a.deployNativeTokenGateway, b.deployNativeTokenGateway, 'deploy native token gateway');
+    assertEq(a.deploySignatureGateway, b.deploySignatureGateway, 'deploy signature gateway');
     assertEq(a.grantRoles, b.grantRoles, 'grant roles');
     assertEq(a.hubLabels, b.hubLabels, 'hub labels');
     assertEq(a.spokeLabels, b.spokeLabels, 'spoke labels');
     assertEq(abi.encode(a), abi.encode(b));
+  }
+
+  function _defaultSpokeMaxReservesLimits(
+    uint256 count
+  ) internal pure returns (uint16[] memory limits) {
+    limits = new uint16[](count);
+    for (uint256 i; i < count; i++) {
+      limits[i] = Constants.MAX_ALLOWED_USER_RESERVES_LIMIT;
+    }
+  }
+
+  function _defaultSpokeOracleDecimals(
+    uint256 count
+  ) internal pure returns (uint8[] memory decimals) {
+    decimals = new uint8[](count);
+    for (uint256 i; i < count; i++) {
+      decimals[i] = Constants.ORACLE_DECIMALS;
+    }
+  }
+
+  function _defaultSpokeOracleDescriptions(
+    string[] memory labels
+  ) internal pure returns (string[] memory descriptions) {
+    descriptions = new string[](labels.length);
+    for (uint256 i; i < labels.length; i++) {
+      descriptions[i] = string.concat(labels[i], ' (USD)');
+    }
   }
 }

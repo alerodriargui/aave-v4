@@ -7,7 +7,11 @@ import {AaveV4HubDeployProcedure} from 'src/deployments/procedures/deploy/hub/Aa
 contract AaveV4HubDeployProcedureWrapper is AaveV4HubDeployProcedure {
   bool public IS_TEST = true;
 
-  function deployHub(address authority, bytes32 salt) external returns (address) {
-    return _deployHub(authority, salt);
+  function deployHub(
+    address authority,
+    bytes memory hubBytecode,
+    bytes32 salt
+  ) external returns (address) {
+    return _deployHub(authority, hubBytecode, salt);
   }
 }

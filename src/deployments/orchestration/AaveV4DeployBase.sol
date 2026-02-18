@@ -36,26 +36,28 @@ library AaveV4DeployBase {
   function deployHubBatch(
     address treasurySpokeOwner,
     address authority,
+    bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (BatchReports.HubBatchReport memory) {
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasurySpokeOwner, authority, salt);
+    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasurySpokeOwner, authority, hubBytecode, salt);
     return hubBatch.getReport();
   }
 
   function deploySpokeInstanceBatch(
     address spokeProxyAdminOwner,
     address authority,
+    bytes memory spokeBytecode,
     uint8 oracleDecimals,
-    string memory oracleSuffix,
-    string memory label,
+    string memory oracleDescription,
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
     AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
       spokeProxyAdminOwner_: spokeProxyAdminOwner,
       authority_: authority,
+      spokeBytecode_: spokeBytecode,
       oracleDecimals_: oracleDecimals,
-      oracleDescription_: string.concat(label, oracleSuffix),
+      oracleDescription_: oracleDescription,
       maxUserReservesLimit_: maxUserReservesLimit,
       salt_: salt
     });
@@ -65,11 +67,15 @@ library AaveV4DeployBase {
   function deployGatewaysBatch(
     address owner,
     address nativeWrapper,
+    bool deployNativeTokenGateway,
+    bool deploySignatureGateway,
     bytes32 salt
   ) internal returns (BatchReports.GatewaysBatchReport memory) {
     AaveV4GatewayBatch gatewayBatch = new AaveV4GatewayBatch({
       owner_: owner,
       nativeWrapper_: nativeWrapper,
+      deployNativeTokenGateway_: deployNativeTokenGateway,
+      deploySignatureGateway_: deploySignatureGateway,
       salt_: salt
     });
     return gatewayBatch.getReport();

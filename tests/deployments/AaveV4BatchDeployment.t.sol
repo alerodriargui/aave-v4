@@ -18,9 +18,14 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       spokeAdmin: makeAddr('spokeAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
       nativeWrapper: _weth9,
+      deployNativeTokenGateway: true,
+      deploySignatureGateway: true,
       grantRoles: true,
       hubLabels: _hubLabels,
       spokeLabels: _spokeLabels,
+      spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(_spokeLabels.length),
+      spokeOracleDecimals: _defaultSpokeOracleDecimals(_spokeLabels.length),
+      spokeOracleDescriptions: _defaultSpokeOracleDescriptions(_spokeLabels),
       salt: bytes32(0)
     });
   }
@@ -34,8 +39,21 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     checkedV4Deployment();
   }
 
-  function testAaveV4BatchDeployment_withoutNativeGateway() public {
-    _inputs.nativeWrapper = address(0);
+  function testAaveV4BatchDeployment_withoutGateways() public {
+    _inputs.deployNativeTokenGateway = false;
+    _inputs.deploySignatureGateway = false;
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withoutNativeTokenGateway() public {
+    _inputs.deployNativeTokenGateway = false;
+    _inputs.deploySignatureGateway = true;
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withoutSignatureGateway() public {
+    _inputs.deployNativeTokenGateway = true;
+    _inputs.deploySignatureGateway = false;
     checkedV4Deployment();
   }
 
@@ -46,6 +64,9 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
   function testAaveV4BatchDeployment_withoutSpokes() public {
     _inputs.spokeLabels = new string[](0);
+    _inputs.spokeMaxReservesLimits = new uint16[](0);
+    _inputs.spokeOracleDecimals = new uint8[](0);
+    _inputs.spokeOracleDescriptions = new string[](0);
     checkedV4Deployment();
   }
 
@@ -109,6 +130,9 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _inputs.grantRoles = grantRoles;
     if (withoutSpokes) {
       _inputs.spokeLabels = new string[](0);
+      _inputs.spokeMaxReservesLimits = new uint16[](0);
+      _inputs.spokeOracleDecimals = new uint8[](0);
+      _inputs.spokeOracleDescriptions = new string[](0);
     }
 
     (bool isExpectedError, bytes memory errorMessage) = _getExpectedError();
@@ -139,13 +163,16 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     address deployer,
     bool withoutHubs,
     bool withoutSpokes,
-    bool withoutNativeWrapper
+    bool withoutGateways
   ) public {
     deployInputs.grantRoles = false;
-    if (withoutNativeWrapper) {
-      deployInputs.nativeWrapper = address(0);
+    deployInputs.nativeWrapper = _inputs.nativeWrapper;
+    if (withoutGateways) {
+      deployInputs.deployNativeTokenGateway = false;
+      deployInputs.deploySignatureGateway = false;
     } else {
-      deployInputs.nativeWrapper = _inputs.nativeWrapper;
+      deployInputs.deployNativeTokenGateway = true;
+      deployInputs.deploySignatureGateway = true;
     }
     if (withoutHubs) {
       deployInputs.hubLabels = new string[](0);
@@ -154,8 +181,14 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     }
     if (withoutSpokes) {
       deployInputs.spokeLabels = new string[](0);
+      deployInputs.spokeMaxReservesLimits = new uint16[](0);
+      deployInputs.spokeOracleDecimals = new uint8[](0);
+      deployInputs.spokeOracleDescriptions = new string[](0);
     } else {
       deployInputs.spokeLabels = _inputs.spokeLabels;
+      deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
+      deployInputs.spokeOracleDecimals = _inputs.spokeOracleDecimals;
+      deployInputs.spokeOracleDescriptions = _inputs.spokeOracleDescriptions;
     }
     _deployer = deployer;
     _inputs = deployInputs;
@@ -174,15 +207,17 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     address deployer,
     bool withoutHubs,
     bool withoutSpokes,
-    bool withoutNativeWrapper
+    bool withoutGateways
   ) public {
     deployInputs.grantRoles = true;
-    if (withoutNativeWrapper) {
-      deployInputs.nativeWrapper = address(0);
-    } else {
-      deployInputs.nativeWrapper = _inputs.nativeWrapper;
-    }
     deployInputs.nativeWrapper = _inputs.nativeWrapper;
+    if (withoutGateways) {
+      deployInputs.deployNativeTokenGateway = false;
+      deployInputs.deploySignatureGateway = false;
+    } else {
+      deployInputs.deployNativeTokenGateway = true;
+      deployInputs.deploySignatureGateway = true;
+    }
     if (withoutHubs) {
       deployInputs.hubLabels = new string[](0);
     } else {
@@ -190,8 +225,14 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     }
     if (withoutSpokes) {
       deployInputs.spokeLabels = new string[](0);
+      deployInputs.spokeMaxReservesLimits = new uint16[](0);
+      deployInputs.spokeOracleDecimals = new uint8[](0);
+      deployInputs.spokeOracleDescriptions = new string[](0);
     } else {
       deployInputs.spokeLabels = _inputs.spokeLabels;
+      deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
+      deployInputs.spokeOracleDecimals = _inputs.spokeOracleDecimals;
+      deployInputs.spokeOracleDescriptions = _inputs.spokeOracleDescriptions;
     }
     _deployer = deployer;
     _inputs = deployInputs;
@@ -232,8 +273,11 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     // deployer is initial admin for access manager
     if (_deployer == address(0)) return (true, bytes('invalid admin'));
 
-    // gateways only when native wrapper is set
-    if (_inputs.nativeWrapper != address(0) && _inputs.gatewayOwner == address(0)) {
+    // gateways require a valid owner when enabled
+    if (
+      (_inputs.deployNativeTokenGateway || _inputs.deploySignatureGateway) &&
+      _inputs.gatewayOwner == address(0)
+    ) {
       return (true, bytes('invalid owner'));
     }
 

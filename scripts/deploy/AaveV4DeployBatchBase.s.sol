@@ -11,44 +11,45 @@ import {Script} from 'forge-std/Script.sol';
 
 // solhint-disable quotes
 abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
-  struct Warnings {
+  struct Lines {
     string[] s;
   }
 
-  string internal constant INPUT_PATH = 'config/';
   string internal constant OUTPUT_DIR = 'output/reports/deployments/';
-  string internal _inputFileName;
   string internal _outputFileName;
-  Warnings internal _warnings;
+  Lines internal _promptLines;
+  Lines internal _summaryLines;
 
-  constructor(string memory inputFileName_, string memory outputFileName_) {
-    _inputFileName = inputFileName_;
+  constructor(string memory outputFileName_) {
     _outputFileName = outputFileName_;
   }
 
   function run() external virtual {
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
-    FullDeployInputs memory inputs = loadFullDeployInputs(
-      string.concat(INPUT_PATH, _inputFileName)
-    );
+
     (, address deployer, ) = vm.readCallers();
-    inputs = _loadWarningsAndSanitizeInputs(logger, inputs, deployer);
+
+    FullDeployInputs memory inputs = _getDeployInputs();
+    inputs = _loadWarningsAndSanitizeInputs(inputs, deployer);
 
     logger.log('CHAIN ID', block.chainid);
     logger.log('...Starting Aave V4 Batch Deployment...');
     vm.startBroadcast(deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(logger, deployer, inputs);
+      .deployAaveV4(logger, deployer, inputs, _getHubBytecode(), _getSpokeBytecode());
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
+    _logDeploySummary(logger);
     logger.log('...Batch Deployment Completed...');
     logger.log('...Saving Logs...');
     logger.save({fileName: _outputFileName, withTimestamp: true});
   }
 
+  /// @dev Override to provide deployment inputs from any source (hardcoded, env vars, JSON, etc).
+  function _getDeployInputs() internal virtual returns (FullDeployInputs memory);
+
   function _loadWarningsAndSanitizeInputs(
-    MetadataLogger logger,
     FullDeployInputs memory inputs,
     address deployer
   ) internal virtual returns (FullDeployInputs memory) {
@@ -56,93 +57,135 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     string memory outcome = '; defaulting to deployer';
 
     FullDeployInputs memory sanitizedInputs = inputs;
-    bool hadWarnings = false;
+
+    _appendSummary('========== DEPLOYMENT SUMMARY ==========');
+
+    // Hubs
+    if (inputs.hubLabels.length > 0) {
+      _appendSummary(string.concat('Hubs to deploy: ', vm.toString(inputs.hubLabels.length)));
+      for (uint256 i; i < inputs.hubLabels.length; i++) {
+        _appendSummary(string.concat('  - ', inputs.hubLabels[i]));
+      }
+    } else {
+      _logWarning('No hubs will be deployed');
+    }
+
+    // Spokes
+    if (inputs.spokeLabels.length > 0) {
+      _appendSummary(string.concat('Spokes to deploy: ', vm.toString(inputs.spokeLabels.length)));
+      for (uint256 i; i < inputs.spokeLabels.length; i++) {
+        _appendSummary(string.concat('  - ', inputs.spokeLabels[i]));
+      }
+    } else {
+      _logWarning('No spokes will be deployed');
+    }
+
+    // NativeTokenGateway
+    if (inputs.deployNativeTokenGateway) {
+      if (inputs.nativeWrapper == address(0)) {
+        _logWarning('deployNativeTokenGateway is true but nativeWrapper is zero address');
+      } else {
+        _appendSummary('NativeTokenGateway will be deployed');
+      }
+    } else {
+      _appendSummary('NativeTokenGateway: skipped (deployNativeTokenGateway is false)');
+    }
+
+    // SignatureGateway
+    if (inputs.deploySignatureGateway) {
+      _appendSummary('SignatureGateway will be deployed');
+    } else {
+      _appendSummary('SignatureGateway: skipped (deploySignatureGateway is false)');
+    }
+
+    // Roles
     if (inputs.grantRoles) {
-      _logAndAppend(logger, string.concat('Roles are being set'));
-      hadWarnings = true;
+      _appendSummary('Roles: will be granted during deployment');
+    } else {
+      _appendSummary('Roles: deferred (not granted during deployment)');
+    }
+
+    _appendSummary('========================================');
+
+    // ==================== Zero Address Sanitization ====================
+    if (inputs.grantRoles) {
       if (inputs.accessManagerAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Access Manager Admin', message, outcome));
+        _logWarning(string.concat('Access Manager Admin', message, outcome));
         sanitizedInputs.accessManagerAdmin = deployer;
       }
       if (inputs.hubConfiguratorAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Hub Configurator Admin', message, outcome));
+        _logWarning(string.concat('Hub Configurator Admin', message, outcome));
         sanitizedInputs.hubConfiguratorAdmin = deployer;
       }
       if (inputs.spokeConfiguratorAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Spoke Configurator Admin', message, outcome));
+        _logWarning(string.concat('Spoke Configurator Admin', message, outcome));
         sanitizedInputs.spokeConfiguratorAdmin = deployer;
       }
       if (inputs.spokeProxyAdminOwner == address(0)) {
-        _logAndAppend(logger, string.concat('Spoke Proxy Admin Owner', message, outcome));
+        _logWarning(string.concat('Spoke Proxy Admin Owner', message, outcome));
         sanitizedInputs.spokeProxyAdminOwner = deployer;
       }
       if (inputs.treasurySpokeOwner == address(0)) {
-        _logAndAppend(logger, string.concat('Treasury Spoke Owner', message, outcome));
+        _logWarning(string.concat('Treasury Spoke Owner', message, outcome));
         sanitizedInputs.treasurySpokeOwner = deployer;
       }
       if (inputs.spokeAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Spoke Admin', message, outcome));
+        _logWarning(string.concat('Spoke Admin', message, outcome));
         sanitizedInputs.spokeAdmin = deployer;
       }
       if (inputs.hubAdmin == address(0)) {
-        _logAndAppend(logger, string.concat('Hub Admin', message, outcome));
+        _logWarning(string.concat('Hub Admin', message, outcome));
         sanitizedInputs.hubAdmin = deployer;
       }
     }
-    if (inputs.hubLabels.length == 0) {
-      _logAndAppend(logger, string.concat('Hub will not be deployed'));
-      hadWarnings = true;
-      sanitizedInputs.hubLabels = new string[](0);
-    }
-    if (inputs.spokeLabels.length == 0) {
-      _logAndAppend(logger, string.concat('Spoke will not be deployed'));
-      hadWarnings = true;
-      sanitizedInputs.spokeLabels = new string[](0);
-    }
-    if (inputs.nativeWrapper == address(0)) {
-      _logAndAppend(
-        logger,
-        string.concat(
-          'Native wrapper',
-          message,
-          "; NativeTokenGateway & SignatureGateway will not be deployed'"
-        )
-      );
-      hadWarnings = true;
-      sanitizedInputs.nativeWrapper = address(0);
-    }
     if (inputs.gatewayOwner == address(0)) {
-      _logAndAppend(logger, string.concat('Gateway owner', message, outcome));
-      hadWarnings = true;
+      _logWarning(string.concat('Gateway owner', message, outcome));
       sanitizedInputs.gatewayOwner = deployer;
     }
-    if (hadWarnings) {
-      _executeUserPrompt();
-    }
+
+    _executeUserPrompt();
     return sanitizedInputs;
   }
 
   function _executeUserPrompt() internal virtual {
     string memory ack = vm.prompt(
-      string.concat(_joinWarnings(_warnings), "\nEnter 'y' to continue")
+      string.concat(_joinLines(_promptLines), "\nEnter 'y' to continue")
     );
     if (keccak256(bytes(ack)) != keccak256(bytes('y'))) {
-      revert('User did not acknowledge warnings. Please try again.');
+      revert('User did not acknowledge. Please try again.');
     }
   }
 
-  function _logAndAppend(MetadataLogger logger, string memory warning) internal virtual {
-    warning = string.concat('WARNING: ', warning);
-    logger.log(warning);
-    _warnings.s.push(warning);
+  function _getHubBytecode() internal view returns (bytes memory) {
+    return vm.getCode('src/hub/Hub.sol:Hub');
   }
 
-  function _joinWarnings(Warnings storage warnings) internal view virtual returns (string memory) {
-    uint256 n = warnings.s.length;
+  function _getSpokeBytecode() internal view returns (bytes memory) {
+    return vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
+  }
+
+  function _appendSummary(string memory line) internal virtual {
+    _promptLines.s.push(line);
+    _summaryLines.s.push(line);
+  }
+
+  function _logWarning(string memory warning) internal virtual {
+    _promptLines.s.push(string.concat('WARNING: ', warning));
+  }
+
+  /// @dev Writes the deployment summary to the logger (called after deployment).
+  function _logDeploySummary(MetadataLogger logger) internal virtual {
+    for (uint256 i; i < _summaryLines.s.length; i++) {
+      logger.log(_summaryLines.s[i]);
+    }
+  }
+
+  function _joinLines(Lines storage lines) internal view virtual returns (string memory) {
+    uint256 n = lines.s.length;
     if (n == 0) return '';
-    string memory out = warnings.s[0];
+    string memory out = lines.s[0];
     for (uint256 i = 1; i < n; i++) {
-      out = string.concat(out, '\n', warnings.s[i]);
+      out = string.concat(out, '\n', lines.s[i]);
     }
     return string.concat(out, '\n');
   }

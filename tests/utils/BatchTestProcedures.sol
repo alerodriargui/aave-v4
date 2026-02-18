@@ -22,6 +22,7 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {Constants} from 'tests/Constants.sol';
 
@@ -67,9 +68,12 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   }
 
   function checkedV4Deployment() public {
+    bytes memory hubBytecode = _getHubBytecode();
+    bytes memory spokeBytecode = _getSpokeBytecode();
+
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(_logger, _deployer, _inputs);
+      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
     vm.stopPrank();
     _checkDeployment(report, _inputs);
     _checkRoles(report, _inputs);
@@ -121,18 +125,58 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       : _deployer;
     inputs.gatewayOwner = inputs.gatewayOwner != address(0) ? inputs.gatewayOwner : _deployer;
 
+    // Sync parallel arrays with spokeLabels length
+    inputs.hubLabels = _hubLabels;
+    inputs.spokeLabels = _spokeLabels;
+    inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(_spokeLabels.length);
+    inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(_spokeLabels.length);
+    inputs.spokeOracleDescriptions = _defaultSpokeOracleDescriptions(_spokeLabels);
+    inputs.nativeWrapper = _weth9;
+    inputs.deployNativeTokenGateway = true;
+    inputs.deploySignatureGateway = true;
+
     return inputs;
+  }
+
+  function _defaultSpokeMaxReservesLimits(
+    uint256 count
+  ) internal pure returns (uint16[] memory limits) {
+    limits = new uint16[](count);
+    for (uint256 i; i < count; i++) {
+      limits[i] = Constants.MAX_ALLOWED_USER_RESERVES_LIMIT;
+    }
+  }
+
+  function _defaultSpokeOracleDecimals(
+    uint256 count
+  ) internal pure returns (uint8[] memory decimals) {
+    decimals = new uint8[](count);
+    for (uint256 i; i < count; i++) {
+      decimals[i] = Constants.ORACLE_DECIMALS;
+    }
+  }
+
+  function _defaultSpokeOracleDescriptions(
+    string[] memory labels
+  ) internal pure returns (string[] memory descriptions) {
+    descriptions = new string[](labels.length);
+    for (uint256 i; i < labels.length; i++) {
+      descriptions[i] = string.concat(labels[i], ' (USD)');
+    }
   }
 
   function _checkFullReport(
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal pure {
-    if (inputs.nativeWrapper != address(0)) {
+    if (inputs.deployNativeTokenGateway) {
       assertNotEq(report.gatewaysBatchReport.nativeGateway, address(0), 'NativeGateway');
-      assertNotEq(report.gatewaysBatchReport.signatureGateway, address(0), 'SignatureGateway');
     } else {
       assertEq(report.gatewaysBatchReport.nativeGateway, address(0), 'Zero NativeGateway');
+    }
+    if (inputs.deploySignatureGateway) {
+      assertNotEq(report.gatewaysBatchReport.signatureGateway, address(0), 'SignatureGateway');
+    } else {
       assertEq(report.gatewaysBatchReport.signatureGateway, address(0), 'Zero SignatureGateway');
     }
 
@@ -686,17 +730,45 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal view {
-    if (inputs.nativeWrapper != address(0)) {
+    if (inputs.deployNativeTokenGateway) {
       assertEq(
         Ownable(report.gatewaysBatchReport.nativeGateway).owner(),
         inputs.gatewayOwner,
         'NativeGateway owner'
       );
+    }
+    if (inputs.deploySignatureGateway) {
       assertEq(
         Ownable(report.gatewaysBatchReport.signatureGateway).owner(),
         inputs.gatewayOwner,
         'SignatureGateway owner'
       );
     }
+  }
+
+  function _etchSetup() internal {
+    _etchCreate2Factory();
+    _etchLiquidationLogicLibrary();
+  }
+
+  /// @dev Workaround for Foundry's `dynamic_test_linking` not deploying the LiquidationLogic
+  ///      library at the address it pre-links into consumer bytecodes (SpokeInstance, etc.).
+  ///      Hardcode Foundry's pre-linked deterministic address. If it changes
+  ///      (e.g. after a Foundry upgrade), find the new one by:
+  ///      - Running a failing liquidation test with `forge test -vvvv` and looking for:
+  ///        "delegatecall to <ADDRESS> (unlinked library)"
+  function _etchLiquidationLogicLibrary() internal {
+    address lib = address(0x5e14175873D9038DC68cB2319d00c173Dc09ad03);
+    if (lib.code.length == 0) {
+      vm.etch(lib, vm.getDeployedCode('src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic'));
+    }
+  }
+
+  function _getHubBytecode() internal view returns (bytes memory) {
+    return vm.getCode('src/hub/Hub.sol:Hub');
+  }
+
+  function _getSpokeBytecode() internal view returns (bytes memory) {
+    return vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
   }
 }

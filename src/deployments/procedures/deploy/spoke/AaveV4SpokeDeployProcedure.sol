@@ -12,6 +12,7 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
     address spokeProxyAdminOwner,
     address authority,
     address oracle,
+    bytes memory spokeBytecode,
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (address spokeProxy, address spokeImplementation) {
@@ -21,7 +22,7 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
     require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
     spokeImplementation = Create2Utils.create2Deploy(
       salt,
-      _getSpokeInstanceInitCode(oracle, maxUserReservesLimit)
+      _getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit)
     );
     spokeProxy = Create2Utils.proxify(
       salt,
@@ -34,14 +35,15 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
 
   function _computeSpokeInstanceAddress(
     bytes32 salt,
+    bytes memory spokeBytecode,
     address oracle,
     uint16 maxUserReservesLimit,
     address spokeProxyAdminOwner,
     address authority
-  ) internal view returns (address) {
+  ) internal pure returns (address) {
     address spokeImplementation = Create2Utils.computeCreate2Address(
       salt,
-      _getSpokeInstanceInitCode(oracle, maxUserReservesLimit)
+      _getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit)
     );
     bytes memory initCode = abi.encodePacked(
       type(TransparentUpgradeableProxy).creationCode,
@@ -55,13 +57,10 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
   }
 
   function _getSpokeInstanceInitCode(
+    bytes memory spokeBytecode,
     address oracle,
     uint16 maxUserReservesLimit
-  ) internal view returns (bytes memory) {
-    return
-      abi.encodePacked(
-        vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
-        abi.encode(oracle, maxUserReservesLimit)
-      );
+  ) internal pure returns (bytes memory) {
+    return abi.encodePacked(spokeBytecode, abi.encode(oracle, maxUserReservesLimit));
   }
 }
