@@ -145,6 +145,9 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
       _logWarning(string.concat('Gateway owner', message, outcome));
       sanitizedInputs.gatewayOwner = deployer;
     }
+    if (inputs.salt == bytes32(0)) {
+      _logWarning('salt is zero');
+    }
 
     _executeUserPrompt();
     return sanitizedInputs;
