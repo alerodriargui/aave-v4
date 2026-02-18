@@ -21,7 +21,7 @@ contract MetadataLogger is Logger {
       });
       hubEntries[1] = Logger.AddressEntry({
         label: 'InterestRateStrategy',
-        value: report.hubBatchReports[i].report.hub
+        value: report.hubBatchReports[i].report.irStrategy
       });
       hubEntries[2] = Logger.AddressEntry({
         label: 'TreasurySpoke',
