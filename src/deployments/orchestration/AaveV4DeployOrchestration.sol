@@ -388,8 +388,12 @@ library AaveV4DeployOrchestration {
       deploySignatureGateway: deploySignatureGateway,
       salt: salt
     });
-    if (deployNativeTokenGateway) logger.log('NativeTokenGateway', report.nativeGateway);
-    if (deploySignatureGateway) logger.log('SignatureGateway', report.signatureGateway);
+    if (deployNativeTokenGateway) {
+      logger.log('NativeTokenGateway', report.nativeGateway);
+    }
+    if (deploySignatureGateway) {
+      logger.log('SignatureGateway', report.signatureGateway);
+    }
     return report;
   }
 
