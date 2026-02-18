@@ -256,13 +256,8 @@ library AaveV4DeployOrchestration {
       salt: salt
     });
 
-    logger.log(label);
-    logger.log('  Hub', hubReport.report.hub);
-    logger.log('  InterestRateStrategy', hubReport.report.irStrategy);
-    logger.log('  TreasurySpoke', hubReport.report.treasurySpoke);
-
-    logger.log('...Setting Hub roles...');
-    AaveV4HubRolesProcedure.setupHubRoles(authority, hubReport.report.hub);
+    _logHubReport(logger, hubReport.report, label);
+    _setupHubRoles(logger, hubReport.report, authority);
 
     return hubReport;
   }
@@ -395,6 +390,26 @@ library AaveV4DeployOrchestration {
       logger.log('SignatureGateway', report.signatureGateway);
     }
     return report;
+  }
+
+  function _logHubReport(
+    Logger logger,
+    BatchReports.HubBatchReport memory report,
+    string memory label
+  ) internal {
+    logger.log(label);
+    logger.log('  Hub', report.hub);
+    logger.log('  InterestRateStrategy', report.irStrategy);
+    logger.log('  TreasurySpoke', report.treasurySpoke);
+  }
+
+  function _setupHubRoles(
+    Logger logger,
+    BatchReports.HubBatchReport memory report,
+    address authority
+  ) internal {
+    logger.log('...Setting Hub roles...');
+    AaveV4HubRolesProcedure.setupHubRoles(authority, report.hub);
   }
 
   function _generateFullReport(
