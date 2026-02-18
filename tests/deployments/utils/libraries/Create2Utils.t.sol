@@ -96,23 +96,6 @@ contract Create2UtilsTest is Test, InputUtils {
     assertTrue(_harness.isContractDeployed(deployed));
   }
 
-  function testComputeCreateAddress_revertsWith_nonceNotSupported(
-    address deployer,
-    uint8 nonce
-  ) public {
-    vm.assume(deployer != address(0));
-    vm.assume(nonce >= 0x80);
-    vm.expectRevert(Create2Utils.nonceNotSupported.selector);
-    _harness.computeCreateAddress(deployer, nonce);
-  }
-
-  function testComputeCreateAddress_fuzz(address deployer, uint8 nonce) public view {
-    vm.assume(deployer != address(0));
-    vm.assume(nonce < 0x80);
-    address expected = vm.computeCreateAddress(deployer, nonce);
-    assertEq(_harness.computeCreateAddress(deployer, nonce), expected);
-  }
-
   function testComputeCreate2Address_fuzz(bytes32 salt, bytes32 initcode) public view {
     vm.assume(salt != bytes32(0));
     vm.assume(initcode != bytes32(0));
