@@ -26,14 +26,11 @@ contract AaveV4GatewayBatch is
       nativeGateway = _deployNativeTokenGateway({
         nativeWrapper: nativeWrapper_,
         owner: owner_,
-        salt: keccak256(abi.encodePacked(SALT, salt_, 'nativeGateway'))
+        salt: salt_
       });
     }
     if (deploySignatureGateway_) {
-      signatureGateway = _deploySignatureGateway(
-        owner_,
-        keccak256(abi.encodePacked(SALT, salt_, 'signatureGateway'))
-      );
+      signatureGateway = _deploySignatureGateway(owner_, salt_);
     }
 
     _report = BatchReports.GatewaysBatchReport({

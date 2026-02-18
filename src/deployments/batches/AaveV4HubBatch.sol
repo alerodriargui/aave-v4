@@ -20,20 +20,9 @@ contract AaveV4HubBatch is
     bytes memory hubBytecode_,
     bytes32 salt_
   ) {
-    address hub = _deployHub(
-      authority_,
-      hubBytecode_,
-      keccak256(abi.encodePacked(SALT, salt_, 'hub'))
-    );
-    address irStrategy = _deployInterestRateStrategy(
-      hub,
-      keccak256(abi.encodePacked(SALT, salt_, 'irStrategy'))
-    );
-    address treasurySpoke = _deployTreasurySpoke(
-      treasurySpokeOwner_,
-      hub,
-      keccak256(abi.encodePacked(SALT, salt_, 'treasurySpoke'))
-    );
+    address hub = _deployHub(authority_, hubBytecode_, salt_);
+    address irStrategy = _deployInterestRateStrategy(hub, salt_);
+    address treasurySpoke = _deployTreasurySpoke(treasurySpokeOwner_, hub, salt_);
 
     _report = BatchReports.HubBatchReport({
       hub: hub,

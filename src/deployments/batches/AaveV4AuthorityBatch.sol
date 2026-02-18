@@ -9,10 +9,7 @@ contract AaveV4AuthorityBatch is AaveV4AccessManagerEnumerableDeployProcedure {
   BatchReports.AuthorityBatchReport internal _report;
 
   constructor(address admin_, bytes32 salt_) {
-    address accessManager = _deployAccessManagerEnumerable(
-      admin_,
-      keccak256(abi.encodePacked(SALT, salt_, 'accessManager'))
-    );
+    address accessManager = _deployAccessManagerEnumerable(admin_, salt_);
     _report = BatchReports.AuthorityBatchReport({accessManager: accessManager});
   }
 

@@ -9,7 +9,7 @@ import {ITokenizationSpokeInstance} from 'src/deployments/utils/interfaces/IToke
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 
 contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
-  function _deployUpgradableTokenizationSpokeInstance(
+  function _deployUpgradeableTokenizationSpokeInstance(
     address hub,
     uint256 assetId,
     address spokeProxyAdminOwner,

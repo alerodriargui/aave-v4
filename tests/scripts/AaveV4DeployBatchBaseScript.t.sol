@@ -227,6 +227,16 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(sanitized, expected);
   }
 
+  function test_loadWarningsAndSanitizeInputs_withZeroSalt() public {
+    _inputs.salt = bytes32(0);
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    assertEq(sanitized, expected);
+  }
+
   function assertEq(
     InputUtils.FullDeployInputs memory a,
     InputUtils.FullDeployInputs memory b
@@ -245,6 +255,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.grantRoles, b.grantRoles, 'grant roles');
     assertEq(a.hubLabels, b.hubLabels, 'hub labels');
     assertEq(a.spokeLabels, b.spokeLabels, 'spoke labels');
+    assertEq(a.salt, b.salt, 'salt');
     assertEq(abi.encode(a), abi.encode(b));
   }
 

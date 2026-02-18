@@ -22,6 +22,8 @@ import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 
 library AaveV4DeployOrchestration {
+  bytes32 public constant SALT = keccak256('AAVE_V4');
+
   function deployAaveV4(
     Logger logger,
     address deployer,
@@ -29,7 +31,7 @@ library AaveV4DeployOrchestration {
     bytes memory hubBytecode,
     bytes memory spokeBytecode
   ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
-    bytes32 rootSalt = keccak256(abi.encode(deployInputs.salt));
+    bytes32 salt = _deriveSalt(deployInputs.salt);
 
     // Deploy Access Batch
     // initialize with deployer as access manager admin
@@ -37,7 +39,7 @@ library AaveV4DeployOrchestration {
     report.authorityBatchReport = _deployAuthorityBatch({
       logger: logger,
       accessManagerAdmin: initialAdmin,
-      salt: rootSalt
+      salt: salt
     });
 
     // Deploy Configurator Batch with AccessManager as authority
@@ -45,7 +47,7 @@ library AaveV4DeployOrchestration {
       logger: logger,
       hubConfiguratorAuthority: report.authorityBatchReport.accessManager,
       spokeConfiguratorAuthority: report.authorityBatchReport.accessManager,
-      salt: keccak256(abi.encode(rootSalt, 'config'))
+      salt: salt
     });
 
     // Setup Configurator Roles
@@ -67,7 +69,7 @@ library AaveV4DeployOrchestration {
       authority: report.authorityBatchReport.accessManager,
       hubLabels: deployInputs.hubLabels,
       hubBytecode: hubBytecode,
-      rootSalt: rootSalt
+      salt: salt
     });
 
     // Deploy Spoke Instance Batches
@@ -76,7 +78,7 @@ library AaveV4DeployOrchestration {
       report.authorityBatchReport.accessManager,
       deployInputs,
       spokeBytecode,
-      rootSalt
+      salt
     );
 
     // Deploy Gateways Batch if either gateway flag is enabled
@@ -87,7 +89,7 @@ library AaveV4DeployOrchestration {
         nativeWrapper: deployInputs.nativeWrapper,
         deployNativeTokenGateway: deployInputs.deployNativeTokenGateway,
         deploySignatureGateway: deployInputs.deploySignatureGateway,
-        salt: keccak256(abi.encode(rootSalt, 'gateways'))
+        salt: salt
       });
     }
 
@@ -220,7 +222,7 @@ library AaveV4DeployOrchestration {
     address authority,
     string[] memory hubLabels,
     bytes memory hubBytecode,
-    bytes32 rootSalt
+    bytes32 salt
   ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubBatchReports) {
     uint256 hubCount = hubLabels.length;
     hubBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
@@ -231,7 +233,7 @@ library AaveV4DeployOrchestration {
         authority: authority,
         label: hubLabels[i],
         hubBytecode: hubBytecode,
-        salt: keccak256(abi.encode(rootSalt, 'hub', hubLabels[i]))
+        salt: keccak256(abi.encode(salt, 'hub', hubLabels[i]))
       });
     }
     logger.log('');
@@ -267,7 +269,7 @@ library AaveV4DeployOrchestration {
     address authority,
     InputUtils.FullDeployInputs memory inputs,
     bytes memory spokeBytecode,
-    bytes32 rootSalt
+    bytes32 salt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
     uint256 spokeCount = inputs.spokeLabels.length;
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
@@ -281,7 +283,7 @@ library AaveV4DeployOrchestration {
         maxUserReservesLimit: inputs.spokeMaxReservesLimits[i],
         oracleDecimals: inputs.spokeOracleDecimals[i],
         oracleDescription: inputs.spokeOracleDescriptions[i],
-        salt: keccak256(abi.encode(rootSalt, 'spoke', inputs.spokeLabels[i]))
+        salt: keccak256(abi.encode(salt, 'spoke', inputs.spokeLabels[i]))
       });
     }
     logger.log('');
@@ -436,5 +438,9 @@ library AaveV4DeployOrchestration {
     report.spokeInstanceBatchReports = spokeBatchReports;
     report.gatewaysBatchReport = gatewaysBatchReport;
     return report;
+  }
+
+  function _deriveSalt(bytes32 salt_) internal pure returns (bytes32) {
+    return keccak256(abi.encodePacked(SALT, salt_));
   }
 }

@@ -8,7 +8,7 @@ import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/Transpa
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 
 contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
-  function _deployUpgradableSpokeInstance(
+  function _deployUpgradeableSpokeInstance(
     address spokeProxyAdminOwner,
     address authority,
     address oracle,

@@ -8,7 +8,7 @@ contract AaveV4AuthorityBatchTest is BatchBaseTest {
   AaveV4AuthorityBatch public aaveV4AuthorityBatch;
   function setUp() public override {
     super.setUp();
-    bytes32 accessSalt = keccak256('accessBatchSalt');
+    bytes32 accessSalt = keccak256('authorityBatchSalt');
     aaveV4AuthorityBatch = new AaveV4AuthorityBatch({admin_: admin, salt_: accessSalt});
   }
 
