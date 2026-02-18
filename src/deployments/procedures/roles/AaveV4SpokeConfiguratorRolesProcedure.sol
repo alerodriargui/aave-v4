@@ -80,26 +80,25 @@ library AaveV4SpokeConfiguratorRolesProcedure {
   }
 
   function getSpokeConfiguratorAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](19);
+    bytes4[] memory selectors = new bytes4[](18);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
     selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
     selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
-    selectors[5] = ISpokeConfigurator.updateMaxReserves.selector;
-    selectors[6] = ISpokeConfigurator.addReserve.selector;
-    selectors[7] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[8] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    selectors[9] = ISpokeConfigurator.updateCollateralRisk.selector;
-    selectors[10] = ISpokeConfigurator.addCollateralFactor.selector;
-    selectors[11] = ISpokeConfigurator.updateCollateralFactor.selector;
-    selectors[12] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    selectors[13] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    selectors[14] = ISpokeConfigurator.addLiquidationFee.selector;
-    selectors[15] = ISpokeConfigurator.updateLiquidationFee.selector;
-    selectors[16] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    selectors[17] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[18] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[5] = ISpokeConfigurator.addReserve.selector;
+    selectors[6] = ISpokeConfigurator.updateBorrowable.selector;
+    selectors[7] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[8] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[9] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[10] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[11] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[12] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[13] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[14] = ISpokeConfigurator.updateLiquidationFee.selector;
+    selectors[15] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[16] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectors[17] = ISpokeConfigurator.updatePositionManager.selector;
     return selectors;
   }
 

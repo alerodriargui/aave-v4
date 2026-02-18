@@ -85,26 +85,25 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_getSpokeConfiguratorAdminRoleSelectors() public view {
     bytes4[] memory selectors = wrapper.getSpokeConfiguratorAdminRoleSelectors();
-    assertEq(selectors.length, 19);
+    assertEq(selectors.length, 18);
     assertEq(selectors[0], ISpokeConfigurator.updateReservePriceSource.selector);
     assertEq(selectors[1], ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector);
     assertEq(selectors[2], ISpokeConfigurator.updateHealthFactorForMaxBonus.selector);
     assertEq(selectors[3], ISpokeConfigurator.updateLiquidationBonusFactor.selector);
     assertEq(selectors[4], ISpokeConfigurator.updateLiquidationConfig.selector);
-    assertEq(selectors[5], ISpokeConfigurator.updateMaxReserves.selector);
-    assertEq(selectors[6], ISpokeConfigurator.addReserve.selector);
-    assertEq(selectors[7], ISpokeConfigurator.updateBorrowable.selector);
-    assertEq(selectors[8], ISpokeConfigurator.updateReceiveSharesEnabled.selector);
-    assertEq(selectors[9], ISpokeConfigurator.updateCollateralRisk.selector);
-    assertEq(selectors[10], ISpokeConfigurator.addCollateralFactor.selector);
-    assertEq(selectors[11], ISpokeConfigurator.updateCollateralFactor.selector);
-    assertEq(selectors[12], ISpokeConfigurator.addMaxLiquidationBonus.selector);
-    assertEq(selectors[13], ISpokeConfigurator.updateMaxLiquidationBonus.selector);
-    assertEq(selectors[14], ISpokeConfigurator.addLiquidationFee.selector);
-    assertEq(selectors[15], ISpokeConfigurator.updateLiquidationFee.selector);
-    assertEq(selectors[16], ISpokeConfigurator.addDynamicReserveConfig.selector);
-    assertEq(selectors[17], ISpokeConfigurator.updateDynamicReserveConfig.selector);
-    assertEq(selectors[18], ISpokeConfigurator.updatePositionManager.selector);
+    assertEq(selectors[5], ISpokeConfigurator.addReserve.selector);
+    assertEq(selectors[6], ISpokeConfigurator.updateBorrowable.selector);
+    assertEq(selectors[7], ISpokeConfigurator.updateReceiveSharesEnabled.selector);
+    assertEq(selectors[8], ISpokeConfigurator.updateCollateralRisk.selector);
+    assertEq(selectors[9], ISpokeConfigurator.addCollateralFactor.selector);
+    assertEq(selectors[10], ISpokeConfigurator.updateCollateralFactor.selector);
+    assertEq(selectors[11], ISpokeConfigurator.addMaxLiquidationBonus.selector);
+    assertEq(selectors[12], ISpokeConfigurator.updateMaxLiquidationBonus.selector);
+    assertEq(selectors[13], ISpokeConfigurator.addLiquidationFee.selector);
+    assertEq(selectors[14], ISpokeConfigurator.updateLiquidationFee.selector);
+    assertEq(selectors[15], ISpokeConfigurator.addDynamicReserveConfig.selector);
+    assertEq(selectors[16], ISpokeConfigurator.updateDynamicReserveConfig.selector);
+    assertEq(selectors[17], ISpokeConfigurator.updatePositionManager.selector);
   }
 
   function test_getSpokeFreezeRoleSelectors() public view {
