@@ -312,17 +312,8 @@ library AaveV4DeployOrchestration {
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
-
-    logger.log(label);
-    logger.log('  SpokeInstance Proxy', spokeReport.report.spokeProxy);
-    logger.log('  SpokeInstance Implementation', spokeReport.report.spokeImplementation);
-    logger.log('  AaveOracle', spokeReport.report.aaveOracle);
-
-    logger.log('...Setting Spoke roles...');
-    AaveV4SpokeRolesProcedure.setupSpokeRoles({
-      accessManager: authority,
-      spoke: spokeReport.report.spokeProxy
-    });
+    _logSpokeReport(logger, spokeReport.report, label);
+    _setupSpokeRoles(logger, spokeReport.report, authority);
 
     return spokeReport;
   }
@@ -392,11 +383,31 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
+  function _logSpokeReport(
+    Logger logger,
+    BatchReports.SpokeInstanceBatchReport memory report,
+    string memory label
+  ) internal pure {
+    logger.log(label);
+    logger.log('  SpokeInstance Proxy', report.spokeProxy);
+    logger.log('  SpokeInstance Implementation', report.spokeImplementation);
+    logger.log('  AaveOracle', report.aaveOracle);
+  }
+
+  function _setupSpokeRoles(
+    Logger logger,
+    BatchReports.SpokeInstanceBatchReport memory report,
+    address authority
+  ) internal {
+    logger.log('...Setting Spoke roles...');
+    AaveV4SpokeRolesProcedure.setupSpokeRoles(authority, report.spokeProxy);
+  }
+
   function _logHubReport(
     Logger logger,
     BatchReports.HubBatchReport memory report,
     string memory label
-  ) internal {
+  ) internal pure {
     logger.log(label);
     logger.log('  Hub', report.hub);
     logger.log('  InterestRateStrategy', report.irStrategy);
