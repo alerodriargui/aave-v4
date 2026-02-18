@@ -50,7 +50,7 @@ library AaveV4HubConfiguratorRolesProcedure {
     });
   }
 
-  function setupHubConfiguratorRoles(address accessManager, address hubConfigurator) internal {
+  function setupHubConfiguratorAllRoles(address accessManager, address hubConfigurator) internal {
     setupHubConfiguratorAdminRole(accessManager, hubConfigurator);
     setupHubHaltRole(accessManager, hubConfigurator);
     setupHubDeactivateRole(accessManager, hubConfigurator);

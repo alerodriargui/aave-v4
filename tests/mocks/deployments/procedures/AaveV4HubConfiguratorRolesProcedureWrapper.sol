@@ -27,8 +27,11 @@ contract AaveV4HubConfiguratorRolesProcedureWrapper {
     AaveV4HubConfiguratorRolesProcedure.grantHubCapsResetRole(accessManager, admin);
   }
 
-  function setupHubConfiguratorRoles(address accessManager, address hubConfigurator) external {
-    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorRoles(accessManager, hubConfigurator);
+  function setupHubConfiguratorAllRoles(address accessManager, address hubConfigurator) external {
+    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles(
+      accessManager,
+      hubConfigurator
+    );
   }
 
   function setupHubConfiguratorAdminRole(address accessManager, address hubConfigurator) external {

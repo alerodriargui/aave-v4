@@ -47,15 +47,18 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     wrapper.grantHubCapsResetRole({accessManager: accessManager, admin: address(0)});
   }
 
-  function test_setupHubConfiguratorRoles_reverts() public {
+  function test_setupHubConfiguratorAllRoles_reverts() public {
     vm.expectRevert('invalid access manager');
-    wrapper.setupHubConfiguratorRoles({
+    wrapper.setupHubConfiguratorAllRoles({
       accessManager: address(0),
       hubConfigurator: hubConfigurator
     });
 
     vm.expectRevert('invalid hub configurator');
-    wrapper.setupHubConfiguratorRoles({accessManager: accessManager, hubConfigurator: address(0)});
+    wrapper.setupHubConfiguratorAllRoles({
+      accessManager: accessManager,
+      hubConfigurator: address(0)
+    });
   }
 
   function test_setupHubConfiguratorAdminRole_reverts() public {

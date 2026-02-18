@@ -184,7 +184,7 @@ library AaveV4TestOrchestration {
     }
 
     // Set Configurator Roles
-    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorRoles(
+    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles(
       report.accessManager,
       report.configuratorReport.hubConfigurator
     );

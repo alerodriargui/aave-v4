@@ -52,7 +52,7 @@ library AaveV4DeployOrchestration {
 
     // Setup Configurator Roles
     logger.log('...Setting HubConfigurator roles...');
-    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorRoles(
+    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles(
       report.authorityBatchReport.accessManager,
       report.configuratorBatchReport.hubConfigurator
     );
