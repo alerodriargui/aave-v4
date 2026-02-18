@@ -8,7 +8,7 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 
-import {AaveV4AccessBatch} from 'src/deployments/batches/AaveV4AccessBatch.sol';
+import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 
@@ -67,7 +67,7 @@ library AaveV4TestOrchestration {
     report.spokeReports = new TestTypes.TestSpokeReport[](spokeCount);
 
     // Deploy Access Batch
-    report.accessManager = AaveV4DeployBase.deployAccessBatch(admin, salt).accessManager;
+    report.accessManager = AaveV4DeployBase.deployAuthorityBatch(admin, salt).accessManager;
 
     // Deploy Hub Batches
     for (uint256 i; i < hubCount; ++i) {

@@ -13,7 +13,7 @@ import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
-import {AaveV4AccessBatch} from 'src/deployments/batches/AaveV4AccessBatch.sol';
+import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
@@ -48,7 +48,7 @@ contract BatchBaseTest is Test, InputUtils {
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
 
     // used Hub, Spoke, Configurator batches
-    AaveV4AccessBatch accessBatch = new AaveV4AccessBatch({admin_: admin, salt_: salt});
+    AaveV4AuthorityBatch accessBatch = new AaveV4AuthorityBatch({admin_: admin, salt_: salt});
     accessManager = accessBatch.getReport().accessManager;
 
     // used by Gateway batch

@@ -71,7 +71,7 @@ Orchestration (AaveV4DeployOrchestration.sol)
       -> Create2Utils (deterministic CREATE2 deployment)
 ```
 
-**Batches**: `AaveV4AccessBatch`, `AaveV4HubBatch`, `AaveV4SpokeInstanceBatch`, `AaveV4ConfiguratorBatch`, `AaveV4GatewayBatch`. Each deploys in its constructor and exposes `getReport()`.
+**Batches**: `AaveV4AuthorityBatch`, `AaveV4HubBatch`, `AaveV4SpokeInstanceBatch`, `AaveV4ConfiguratorBatch`, `AaveV4GatewayBatch`. Each deploys in its constructor and exposes `getReport()`.
 
 **Config procedures**: `AaveV4HubConfigProcedures` (addAsset, addSpoke) and `AaveV4SpokeConfigProcedures` (addReserve, updateLiquidationConfig) wrap configurator calls.
 

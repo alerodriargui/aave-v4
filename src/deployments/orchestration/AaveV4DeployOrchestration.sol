@@ -6,7 +6,7 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
-import {AaveV4AccessBatch} from 'src/deployments/batches/AaveV4AccessBatch.sol';
+import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
@@ -34,7 +34,7 @@ library AaveV4DeployOrchestration {
     // Deploy Access Batch
     // initialize with deployer as access manager admin
     address initialAdmin = deployer;
-    report.accessBatchReport = _deployAccessBatch({
+    report.authorityBatchReport = _deployAuthorityBatch({
       logger: logger,
       accessManagerAdmin: initialAdmin,
       salt: rootSalt
@@ -43,20 +43,20 @@ library AaveV4DeployOrchestration {
     // Deploy Configurator Batch with AccessManager as authority
     report.configuratorBatchReport = _deployConfiguratorBatch({
       logger: logger,
-      hubConfiguratorAuthority: report.accessBatchReport.accessManager,
-      spokeConfiguratorAuthority: report.accessBatchReport.accessManager,
+      hubConfiguratorAuthority: report.authorityBatchReport.accessManager,
+      spokeConfiguratorAuthority: report.authorityBatchReport.accessManager,
       salt: keccak256(abi.encode(rootSalt, 'config'))
     });
 
     // Setup Configurator Roles
     logger.log('...Setting HubConfigurator roles...');
     AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorRoles(
-      report.accessBatchReport.accessManager,
+      report.authorityBatchReport.accessManager,
       report.configuratorBatchReport.hubConfigurator
     );
     logger.log('...Setting SpokeConfigurator roles...');
     AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorRoles(
-      report.accessBatchReport.accessManager,
+      report.authorityBatchReport.accessManager,
       report.configuratorBatchReport.spokeConfigurator
     );
 
@@ -64,7 +64,7 @@ library AaveV4DeployOrchestration {
     report.hubBatchReports = _deployHubs({
       logger: logger,
       treasurySpokeOwner: deployInputs.treasurySpokeOwner,
-      authority: report.accessBatchReport.accessManager,
+      authority: report.authorityBatchReport.accessManager,
       hubLabels: deployInputs.hubLabels,
       hubBytecode: hubBytecode,
       rootSalt: rootSalt
@@ -73,7 +73,7 @@ library AaveV4DeployOrchestration {
     // Deploy Spoke Instance Batches
     report.spokeInstanceBatchReports = _deploySpokes(
       logger,
-      report.accessBatchReport.accessManager,
+      report.authorityBatchReport.accessManager,
       deployInputs,
       spokeBytecode,
       rootSalt
@@ -113,7 +113,7 @@ library AaveV4DeployOrchestration {
       if (deployInputs.accessManagerAdmin != initialAdmin) {
         logger.log('...Granting AccessManager Root Admin role...');
         AaveV4AccessManagerRolesProcedure.replaceDefaultAdminRole({
-          accessManager: report.accessBatchReport.accessManager,
+          accessManager: report.authorityBatchReport.accessManager,
           adminToAdd: deployInputs.accessManagerAdmin,
           adminToRemove: initialAdmin
         });
@@ -122,7 +122,7 @@ library AaveV4DeployOrchestration {
 
     return
       _generateFullReport(
-        report.accessBatchReport,
+        report.authorityBatchReport,
         report.configuratorBatchReport,
         report.hubBatchReports,
         report.spokeInstanceBatchReports,
@@ -138,19 +138,19 @@ library AaveV4DeployOrchestration {
   ) internal {
     logger.log('...Granting Hub Admin role...');
     AaveV4HubRolesProcedure.grantHubAdminRole({
-      accessManager: report.accessBatchReport.accessManager,
+      accessManager: report.authorityBatchReport.accessManager,
       admin: hubAdmin
     });
 
     logger.log('...Granting Hub Configurator roles...');
     AaveV4HubRolesProcedure.grantHubConfiguratorRole({
-      accessManager: report.accessBatchReport.accessManager,
+      accessManager: report.authorityBatchReport.accessManager,
       admin: report.configuratorBatchReport.hubConfigurator
     });
 
     logger.log('...Granting HubConfigurator Admin roles...');
     AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles({
-      accessManager: report.accessBatchReport.accessManager,
+      accessManager: report.authorityBatchReport.accessManager,
       admin: hubConfiguratorAdmin
     });
   }
@@ -163,31 +163,31 @@ library AaveV4DeployOrchestration {
   ) internal {
     logger.log('...Granting Spoke Admin role...');
     AaveV4SpokeRolesProcedure.grantSpokeAdminRole({
-      accessManager: report.accessBatchReport.accessManager,
+      accessManager: report.authorityBatchReport.accessManager,
       admin: spokeAdmin
     });
 
     logger.log('...Granting Spoke Configurator roles...');
     AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole({
-      accessManager: report.accessBatchReport.accessManager,
+      accessManager: report.authorityBatchReport.accessManager,
       admin: report.configuratorBatchReport.spokeConfigurator
     });
 
     logger.log('...Granting SpokeConfigurator Admin roles...');
     AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles({
-      accessManager: report.accessBatchReport.accessManager,
+      accessManager: report.authorityBatchReport.accessManager,
       admin: spokeConfiguratorAdmin
     });
   }
 
-  function _deployAccessBatch(
+  function _deployAuthorityBatch(
     Logger logger,
     address accessManagerAdmin,
     bytes32 salt
-  ) internal returns (BatchReports.AccessBatchReport memory report) {
-    logger.log('...Deploying AccessBatch...');
+  ) internal returns (BatchReports.AuthorityBatchReport memory report) {
+    logger.log('...Deploying AuthorityBatch...');
 
-    report = AaveV4DeployBase.deployAccessBatch({admin: accessManagerAdmin, salt: salt});
+    report = AaveV4DeployBase.deployAuthorityBatch({admin: accessManagerAdmin, salt: salt});
 
     logger.log('AccessManager', report.accessManager);
     logger.log('');
@@ -424,13 +424,13 @@ library AaveV4DeployOrchestration {
   }
 
   function _generateFullReport(
-    BatchReports.AccessBatchReport memory accessBatchReport,
+    BatchReports.AuthorityBatchReport memory authorityBatchReport,
     BatchReports.ConfiguratorBatchReport memory configuratorBatchReport,
     OrchestrationReports.HubDeploymentReport[] memory hubBatchReports,
     OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports,
     BatchReports.GatewaysBatchReport memory gatewaysBatchReport
   ) internal pure returns (OrchestrationReports.FullDeploymentReport memory report) {
-    report.accessBatchReport = accessBatchReport;
+    report.authorityBatchReport = authorityBatchReport;
     report.configuratorBatchReport = configuratorBatchReport;
     report.hubBatchReports = hubBatchReports;
     report.spokeInstanceBatchReports = spokeBatchReports;

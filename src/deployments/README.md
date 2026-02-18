@@ -17,7 +17,7 @@ config/deploy.json
        |
   AaveV4DeployOrchestration.deployAaveV4()
        |
-       ├─ AccessBatch            → AccessManager
+       ├─ AuthorityBatch            → AccessManager
        ├─ ConfiguratorBatch      → HubConfigurator + SpokeConfigurator
        ├─ Setup selector→role mappings on AccessManager
        ├─ HubBatch × N           → Hub + IRStrategy + TreasurySpoke (per hub)
@@ -171,7 +171,7 @@ A full Aave V4 deployment (Flow 2) proceeds in this order:
 
 ```
 1. LiquidationLogic library (external library, must be pre-deployed)
-2. AccessManager + AccessManagerEnumerable          (AaveV4AccessBatch)
+2. AccessManager + AccessManagerEnumerable          (AaveV4AuthorityBatch)
 3. HubConfigurator + SpokeConfigurator              (AaveV4ConfiguratorBatch)
 4. Configure selector→role mappings on AccessManager
 5. Hub(s) + InterestRateStrategy + TreasurySpoke    (AaveV4HubBatch, per hub)
@@ -279,7 +279,7 @@ scripts/deploy/
 
 src/deployments/
   batches/                    Batch constructors -- deploy related contracts together
-    AaveV4AccessBatch           AccessManager, AccessManagerEnumerable
+    AaveV4AuthorityBatch           AccessManager, AccessManagerEnumerable
     AaveV4ConfiguratorBatch     HubConfigurator, SpokeConfigurator
     AaveV4HubBatch              Hub, InterestRateStrategy, TreasurySpoke
     AaveV4SpokeInstanceBatch    SpokeInstance (proxy), AaveOracle
@@ -392,7 +392,7 @@ config/deploy.json
        v
   AaveV4DeployOrchestration.deployAaveV4()
        |
-       +-- deployAccessBatch()         --> AccessManager
+       +-- deployAuthorityBatch()         --> AccessManager
        +-- deployConfiguratorBatch()   --> HubConfigurator, SpokeConfigurator
        +-- setupConfiguratorRoles()    --> selector->role mappings
        +-- deployHubs(hubLabels)       --> Hub[], IRStrategy[], TreasurySpoke[]

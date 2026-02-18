@@ -59,7 +59,6 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     FullDeployInputs memory sanitizedInputs = inputs;
 
     _appendSummary('========== DEPLOYMENT SUMMARY ==========');
-
     // Hubs
     if (inputs.hubLabels.length > 0) {
       _appendSummary(string.concat('Hubs to deploy: ', vm.toString(inputs.hubLabels.length)));
@@ -137,6 +136,10 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
         _logWarning(string.concat('Hub Admin', message, outcome));
         sanitizedInputs.hubAdmin = deployer;
       }
+    } else {
+      _logWarning('Roles: deferred (not granted during deployment)');
+      sanitizedInputs.treasurySpokeOwner = deployer;
+      sanitizedInputs.spokeProxyAdminOwner = deployer;
     }
     if (inputs.gatewayOwner == address(0)) {
       _logWarning(string.concat('Gateway owner', message, outcome));
@@ -148,11 +151,13 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   }
 
   function _executeUserPrompt() internal virtual {
-    string memory ack = vm.prompt(
-      string.concat(_joinLines(_promptLines), "\nEnter 'y' to continue")
-    );
-    if (keccak256(bytes(ack)) != keccak256(bytes('y'))) {
-      revert('User did not acknowledge. Please try again.');
+    if (_promptLines.s.length > 0) {
+      string memory ack = vm.prompt(
+        string.concat(_joinLines(_promptLines), "\nEnter 'y' to continue")
+      );
+      if (keccak256(bytes(ack)) != keccak256(bytes('y'))) {
+        revert('User did not acknowledge. Please try again.');
+      }
     }
   }
 

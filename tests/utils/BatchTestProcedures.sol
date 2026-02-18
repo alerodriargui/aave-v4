@@ -93,7 +93,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     FullDeployInputs memory inputs
   ) internal view {
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
-      report.accessBatchReport.accessManager
+      report.authorityBatchReport.accessManager
     );
     _checkAccessManagerRoles(accessManager, inputs);
     _checkSpokeRoles(accessManager, report, inputs);
@@ -180,7 +180,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       assertEq(report.gatewaysBatchReport.signatureGateway, address(0), 'Zero SignatureGateway');
     }
 
-    assertNotEq(report.accessBatchReport.accessManager, address(0), 'AccessManager');
+    assertNotEq(report.authorityBatchReport.accessManager, address(0), 'AccessManager');
     assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
     assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
     for (uint256 i = 0; i < report.hubBatchReports.length; i++) {
@@ -211,7 +211,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         .spokeInstanceBatchReports[i];
       _checkSpokeDeployment({
         report: spokeReport,
-        accessManager: report.accessBatchReport.accessManager,
+        accessManager: report.authorityBatchReport.accessManager,
         label: label
       });
       _checkOracleDeployment({report: spokeReport, label: label});
@@ -272,7 +272,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
 
       _checkHubDeployment({
         report: hubReport,
-        accessManager: report.accessBatchReport.accessManager,
+        accessManager: report.authorityBatchReport.accessManager,
         label: label
       });
       _checkInterestRateStrategyDeployment({report: hubReport, label: label});
@@ -601,17 +601,17 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   ) internal view {
     assertEq(
       IAccessManaged(report.configuratorBatchReport.hubConfigurator).authority(),
-      report.accessBatchReport.accessManager,
+      report.authorityBatchReport.accessManager,
       'HubConfigurator authority'
     );
     assertEq(
       IAccessManaged(report.configuratorBatchReport.spokeConfigurator).authority(),
-      report.accessBatchReport.accessManager,
+      report.authorityBatchReport.accessManager,
       'SpokeConfigurator authority'
     );
 
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
-      report.accessBatchReport.accessManager
+      report.authorityBatchReport.accessManager
     );
 
     _checkHubConfiguratorBatchRoles(accessManager, report, inputs);
