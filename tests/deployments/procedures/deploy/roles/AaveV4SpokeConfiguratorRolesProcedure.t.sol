@@ -16,37 +16,37 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_grantSpokeConfiguratorAdminRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.grantSpokeConfiguratorAdminRole({accessManager: address(0), admin: admin});
 
-    vm.expectRevert('invalid admin');
+    vm.expectRevert('zero address');
     wrapper.grantSpokeConfiguratorAdminRole({accessManager: accessManager, admin: address(0)});
   }
 
   function test_grantSpokeFreezeRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.grantSpokeFreezeRole({accessManager: address(0), admin: admin});
 
-    vm.expectRevert('invalid admin');
+    vm.expectRevert('zero address');
     wrapper.grantSpokeFreezeRole({accessManager: accessManager, admin: address(0)});
   }
 
   function test_grantSpokePauseRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.grantSpokePauseRole({accessManager: address(0), admin: admin});
 
-    vm.expectRevert('invalid admin');
+    vm.expectRevert('zero address');
     wrapper.grantSpokePauseRole({accessManager: accessManager, admin: address(0)});
   }
 
   function test_setupSpokeConfiguratorRoles_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.setupSpokeConfiguratorRoles({
       accessManager: address(0),
       spokeConfigurator: spokeConfigurator
     });
 
-    vm.expectRevert('invalid spoke configurator');
+    vm.expectRevert('zero address');
     wrapper.setupSpokeConfiguratorRoles({
       accessManager: accessManager,
       spokeConfigurator: address(0)
@@ -54,13 +54,13 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupSpokeConfiguratorAdminRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.setupSpokeConfiguratorAdminRole({
       accessManager: address(0),
       spokeConfigurator: spokeConfigurator
     });
 
-    vm.expectRevert('invalid spoke configurator');
+    vm.expectRevert('zero address');
     wrapper.setupSpokeConfiguratorAdminRole({
       accessManager: accessManager,
       spokeConfigurator: address(0)
@@ -68,19 +68,71 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupSpokeFreezeRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.setupSpokeFreezeRole({accessManager: address(0), spokeConfigurator: spokeConfigurator});
 
-    vm.expectRevert('invalid spoke configurator');
+    vm.expectRevert('zero address');
     wrapper.setupSpokeFreezeRole({accessManager: accessManager, spokeConfigurator: address(0)});
   }
 
   function test_setupSpokePauseRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.setupSpokePauseRole({accessManager: address(0), spokeConfigurator: spokeConfigurator});
 
-    vm.expectRevert('invalid spoke configurator');
+    vm.expectRevert('zero address');
     wrapper.setupSpokePauseRole({accessManager: accessManager, spokeConfigurator: address(0)});
+  }
+
+  function test_grantSpokeConfiguratorAllRoles() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantSpokeConfiguratorAllRoles({accessManager: accessManager, admin: admin});
+
+    (bool hasAdmin, ) = IAccessManager(accessManager).hasRole(
+      Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
+      admin
+    );
+    assertTrue(hasAdmin);
+
+    (bool hasFreeze, ) = IAccessManager(accessManager).hasRole(Roles.SPOKE_FREEZE_ROLE, admin);
+    assertTrue(hasFreeze);
+
+    (bool hasPause, ) = IAccessManager(accessManager).hasRole(Roles.SPOKE_PAUSE_ROLE, admin);
+    assertTrue(hasPause);
+  }
+
+  function test_setupSpokeConfiguratorRoles() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.setupSpokeConfiguratorRoles({
+      accessManager: accessManager,
+      spokeConfigurator: spokeConfigurator
+    });
+
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        spokeConfigurator,
+        ISpokeConfigurator.addReserve.selector
+      ),
+      Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        spokeConfigurator,
+        ISpokeConfigurator.updateFrozen.selector
+      ),
+      Roles.SPOKE_FREEZE_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        spokeConfigurator,
+        ISpokeConfigurator.updatePaused.selector
+      ),
+      Roles.SPOKE_PAUSE_ROLE
+    );
+  }
+
+  function _grantAdminToWrapper(address _wrapper) internal {
+    vm.prank(accessManagerAdmin);
+    IAccessManager(accessManager).grantRole(Roles.DEFAULT_ADMIN_ROLE, _wrapper, 0);
   }
 
   function test_getSpokeConfiguratorAdminRoleSelectors() public view {

@@ -94,8 +94,8 @@ contract SpokeMultipleHubBase is SpokeBase {
     hubSelectors[2] = IHub.addSpoke.selector;
     hubSelectors[3] = IHub.updateSpokeConfig.selector;
 
-    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.HUB_FEE_MINTER_ROLE);
-    accessManager.setTargetFunctionRole(address(newHub), hubSelectors, Roles.HUB_FEE_MINTER_ROLE);
+    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.HUB_CONFIGURATOR_ROLE);
+    accessManager.setTargetFunctionRole(address(newHub), hubSelectors, Roles.HUB_CONFIGURATOR_ROLE);
     vm.stopPrank();
   }
 }

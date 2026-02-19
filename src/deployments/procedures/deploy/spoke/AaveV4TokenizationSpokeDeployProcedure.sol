@@ -36,30 +36,6 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
 
     return (tokenizationSpokeProxy, tokenizationSpokeImplementation);
   }
-
-  function _computeTokenizationSpokeInstanceAddress(
-    bytes32 salt,
-    address hub,
-    uint256 assetId,
-    address spokeProxyAdminOwner,
-    string memory shareName,
-    string memory shareSymbol
-  ) internal pure returns (address) {
-    address tokenizationSpokeImplementation = Create2Utils.computeCreate2Address(
-      salt,
-      _getTokenizationSpokeInstanceInitCode(hub, assetId)
-    );
-    bytes memory initCode = abi.encodePacked(
-      type(TransparentUpgradeableProxy).creationCode,
-      abi.encode(
-        tokenizationSpokeImplementation,
-        spokeProxyAdminOwner,
-        abi.encodeCall(ITokenizationSpokeInstance.initialize, (shareName, shareSymbol))
-      )
-    );
-    return Create2Utils.computeCreate2Address(salt, keccak256(initCode));
-  }
-
   function _getTokenizationSpokeInstanceInitCode(
     address hub,
     uint256 assetId

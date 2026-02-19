@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
+import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
 library AaveV4AccessManagerRolesProcedure {
   /// @notice The adminToRemove must be the current default admin, otherwise the procedure will revert.
@@ -13,9 +13,9 @@ library AaveV4AccessManagerRolesProcedure {
     address adminToAdd,
     address adminToRemove
   ) internal {
-    require(accessManager != address(0), 'invalid access manager');
-    require(adminToAdd != address(0), 'invalid admin to add');
-    require(adminToRemove != address(0), 'invalid admin to remove');
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(adminToAdd);
+    RolesValidation.validateNonZeroAddress(adminToRemove);
     IAccessManager(accessManager).grantRole({
       roleId: Roles.DEFAULT_ADMIN_ROLE,
       account: adminToAdd,

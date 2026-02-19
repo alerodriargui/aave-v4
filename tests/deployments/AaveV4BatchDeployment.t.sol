@@ -75,7 +75,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _inputs.accessManagerAdmin = address(0);
     _inputs.grantRoles = true;
 
-    vm.expectRevert('invalid admin to add');
+    vm.expectRevert('zero address');
     this.checkedV4Deployment();
   }
 
@@ -93,7 +93,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _inputs.grantRoles = grantRoles;
 
     if (grantRoles && _inputs.hubLabels.length > 0) {
-      vm.expectRevert('invalid admin');
+      vm.expectRevert('zero address');
       this.checkedV4Deployment();
     } else {
       checkedV4Deployment();
@@ -151,7 +151,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _inputs.grantRoles = grantRoles;
 
     if (grantRoles && _inputs.spokeLabels.length > 0) {
-      vm.expectRevert('invalid admin');
+      vm.expectRevert('zero address');
       this.checkedV4Deployment();
     } else {
       checkedV4Deployment();
@@ -162,7 +162,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _inputs.hubAdmin = address(0);
     _inputs.grantRoles = true;
 
-    vm.expectRevert('invalid admin');
+    vm.expectRevert('zero address');
     this.checkedV4Deployment();
   }
 
@@ -177,7 +177,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _inputs.spokeAdmin = address(0);
     _inputs.grantRoles = true;
 
-    vm.expectRevert('invalid admin');
+    vm.expectRevert('zero address');
     this.checkedV4Deployment();
   }
 
@@ -360,25 +360,18 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       return (true, bytes('invalid owner'));
     }
 
-    // 5. roles
     if (_inputs.grantRoles) {
-      // hub roles granted first
-      if (_inputs.hubLabels.length > 0 && _inputs.hubAdmin == address(0)) {
-        return (true, bytes('invalid admin'));
-      }
-      if (_inputs.hubLabels.length > 0 && _inputs.hubConfiguratorAdmin == address(0)) {
-        return (true, bytes('invalid admin'));
-      }
-      // spoke roles granted next
-      if (_inputs.spokeLabels.length > 0 && _inputs.spokeAdmin == address(0)) {
-        return (true, bytes('invalid admin'));
-      }
-      if (_inputs.spokeLabels.length > 0 && _inputs.spokeConfiguratorAdmin == address(0)) {
-        return (true, bytes('invalid admin'));
-      }
-      // access manager admin replaced last
-      if (_inputs.accessManagerAdmin == address(0)) {
-        return (true, bytes('invalid admin to add'));
+      bool hasHubs = _inputs.hubLabels.length > 0;
+      bool hasSpokes = _inputs.spokeLabels.length > 0;
+
+      if (
+        (hasHubs &&
+          (_inputs.hubAdmin == address(0) || _inputs.hubConfiguratorAdmin == address(0))) ||
+        (hasSpokes &&
+          (_inputs.spokeAdmin == address(0) || _inputs.spokeConfiguratorAdmin == address(0))) ||
+        _inputs.accessManagerAdmin == address(0)
+      ) {
+        return (true, bytes('zero address'));
       }
     }
   }

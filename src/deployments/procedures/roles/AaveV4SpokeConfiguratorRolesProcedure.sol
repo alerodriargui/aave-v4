@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
+import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
 library AaveV4SpokeConfiguratorRolesProcedure {
@@ -14,7 +15,8 @@ library AaveV4SpokeConfiguratorRolesProcedure {
   }
 
   function grantSpokeConfiguratorAdminRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({
       roleId: Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
       account: admin,
@@ -23,7 +25,8 @@ library AaveV4SpokeConfiguratorRolesProcedure {
   }
 
   function grantSpokeFreezeRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({
       roleId: Roles.SPOKE_FREEZE_ROLE,
       account: admin,
@@ -32,7 +35,8 @@ library AaveV4SpokeConfiguratorRolesProcedure {
   }
 
   function grantSpokePauseRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({
       roleId: Roles.SPOKE_PAUSE_ROLE,
       account: admin,
@@ -50,7 +54,8 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     address accessManager,
     address spokeConfigurator
   ) internal {
-    _validateAccessManagerAndSpokeConfigurator(accessManager, spokeConfigurator);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(spokeConfigurator);
     bytes4[] memory selectors = getSpokeConfiguratorAdminRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(
       spokeConfigurator,
@@ -60,7 +65,8 @@ library AaveV4SpokeConfiguratorRolesProcedure {
   }
 
   function setupSpokeFreezeRole(address accessManager, address spokeConfigurator) internal {
-    _validateAccessManagerAndSpokeConfigurator(accessManager, spokeConfigurator);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(spokeConfigurator);
     bytes4[] memory selectors = getSpokeFreezeRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(
       spokeConfigurator,
@@ -70,7 +76,8 @@ library AaveV4SpokeConfiguratorRolesProcedure {
   }
 
   function setupSpokePauseRole(address accessManager, address spokeConfigurator) internal {
-    _validateAccessManagerAndSpokeConfigurator(accessManager, spokeConfigurator);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(spokeConfigurator);
     bytes4[] memory selectors = getSpokePauseRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(
       spokeConfigurator,
@@ -116,18 +123,5 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     selectors[1] = ISpokeConfigurator.pauseAllReserves.selector;
     selectors[2] = ISpokeConfigurator.pauseReserve.selector;
     return selectors;
-  }
-
-  function _validateAccessManagerAndSpokeConfigurator(
-    address accessManager,
-    address spokeConfigurator
-  ) private pure {
-    require(accessManager != address(0), 'invalid access manager');
-    require(spokeConfigurator != address(0), 'invalid spoke configurator');
-  }
-
-  function _validateAccessManagerAndAdmin(address accessManager, address admin) private pure {
-    require(accessManager != address(0), 'invalid access manager');
-    require(admin != address(0), 'invalid admin');
   }
 }

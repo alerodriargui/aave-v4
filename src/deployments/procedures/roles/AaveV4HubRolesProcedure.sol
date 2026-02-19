@@ -2,9 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
+import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 library AaveV4HubRolesProcedure {
@@ -14,7 +14,8 @@ library AaveV4HubRolesProcedure {
   }
 
   function grantHubFeeMinterRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({
       roleId: Roles.HUB_FEE_MINTER_ROLE,
       account: admin,
@@ -23,7 +24,8 @@ library AaveV4HubRolesProcedure {
   }
 
   function grantHubConfiguratorRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({
       roleId: Roles.HUB_CONFIGURATOR_ROLE,
       account: admin,
@@ -38,13 +40,15 @@ library AaveV4HubRolesProcedure {
   }
 
   function setupHubFeeMinterRole(address accessManager, address hub) internal {
-    _validateAccessManagerAndHub(accessManager, hub);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(hub);
     bytes4[] memory selectors = getHubFeeMinterRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(hub, selectors, Roles.HUB_FEE_MINTER_ROLE);
   }
 
   function setupHubConfiguratorRole(address accessManager, address hub) internal {
-    _validateAccessManagerAndHub(accessManager, hub);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(hub);
     bytes4[] memory selectors = getHubConfiguratorRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(
       hub,
@@ -54,7 +58,8 @@ library AaveV4HubRolesProcedure {
   }
 
   function setupDeficitEliminatorRole(address accessManager, address hub) internal {
-    _validateAccessManagerAndHub(accessManager, hub);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(hub);
     bytes4[] memory selectors = getDeficitEliminatorRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(
       hub,
@@ -83,15 +88,5 @@ library AaveV4HubRolesProcedure {
     selectors[3] = IHub.updateSpokeConfig.selector;
     selectors[4] = IHub.setInterestRateData.selector;
     return selectors;
-  }
-
-  function _validateAccessManagerAndHub(address accessManager, address hub) private pure {
-    require(accessManager != address(0), 'invalid access manager');
-    require(hub != address(0), 'invalid hub');
-  }
-
-  function _validateAccessManagerAndAdmin(address accessManager, address admin) private pure {
-    require(accessManager != address(0), 'invalid access manager');
-    require(admin != address(0), 'invalid admin');
   }
 }

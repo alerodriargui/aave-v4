@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
+import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 
 library AaveV4HubConfiguratorRolesProcedure {
@@ -15,7 +16,8 @@ library AaveV4HubConfiguratorRolesProcedure {
   }
 
   function grantHubConfiguratorAdminRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({
       roleId: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
       account: admin,
@@ -24,7 +26,8 @@ library AaveV4HubConfiguratorRolesProcedure {
   }
 
   function grantHubHaltRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({
       roleId: Roles.HUB_HALT_ROLE,
       account: admin,
@@ -33,7 +36,8 @@ library AaveV4HubConfiguratorRolesProcedure {
   }
 
   function grantHubDeactivateRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({
       roleId: Roles.HUB_DEACTIVATE_ROLE,
       account: admin,
@@ -42,7 +46,8 @@ library AaveV4HubConfiguratorRolesProcedure {
   }
 
   function grantHubCapsResetRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({
       roleId: Roles.HUB_CAPS_RESET_ROLE,
       account: admin,
@@ -58,7 +63,8 @@ library AaveV4HubConfiguratorRolesProcedure {
   }
 
   function setupHubConfiguratorAdminRole(address accessManager, address hubConfigurator) internal {
-    _validateAccessManagerAndHubConfigurator(accessManager, hubConfigurator);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(hubConfigurator);
     bytes4[] memory selectors = getHubConfiguratorAdminRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(
       hubConfigurator,
@@ -68,7 +74,8 @@ library AaveV4HubConfiguratorRolesProcedure {
   }
 
   function setupHubHaltRole(address accessManager, address hubConfigurator) internal {
-    _validateAccessManagerAndHubConfigurator(accessManager, hubConfigurator);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(hubConfigurator);
     bytes4[] memory selectors = getHubHaltRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(
       hubConfigurator,
@@ -78,7 +85,8 @@ library AaveV4HubConfiguratorRolesProcedure {
   }
 
   function setupHubDeactivateRole(address accessManager, address hubConfigurator) internal {
-    _validateAccessManagerAndHubConfigurator(accessManager, hubConfigurator);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(hubConfigurator);
     bytes4[] memory selectors = getHubDeactivateRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(
       hubConfigurator,
@@ -88,7 +96,8 @@ library AaveV4HubConfiguratorRolesProcedure {
   }
 
   function setupHubCapsResetRole(address accessManager, address hubConfigurator) internal {
-    _validateAccessManagerAndHubConfigurator(accessManager, hubConfigurator);
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(hubConfigurator);
     bytes4[] memory selectors = getHubCapsResetRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(
       hubConfigurator,
@@ -137,18 +146,5 @@ library AaveV4HubConfiguratorRolesProcedure {
     selectors[0] = IHubConfigurator.resetAssetCaps.selector;
     selectors[1] = IHubConfigurator.resetSpokeCaps.selector;
     return selectors;
-  }
-
-  function _validateAccessManagerAndHubConfigurator(
-    address accessManager,
-    address hubConfigurator
-  ) private pure {
-    require(accessManager != address(0), 'invalid access manager');
-    require(hubConfigurator != address(0), 'invalid hub configurator');
-  }
-
-  function _validateAccessManagerAndAdmin(address accessManager, address admin) private pure {
-    require(accessManager != address(0), 'invalid access manager');
-    require(admin != address(0), 'invalid admin');
   }
 }

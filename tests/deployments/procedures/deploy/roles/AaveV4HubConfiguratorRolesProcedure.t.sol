@@ -16,45 +16,45 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_grantHubConfiguratorAdminRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.grantHubConfiguratorAdminRole({accessManager: address(0), admin: admin});
 
-    vm.expectRevert('invalid admin');
+    vm.expectRevert('zero address');
     wrapper.grantHubConfiguratorAdminRole({accessManager: accessManager, admin: address(0)});
   }
 
   function test_grantHubHaltRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.grantHubHaltRole({accessManager: address(0), admin: admin});
 
-    vm.expectRevert('invalid admin');
+    vm.expectRevert('zero address');
     wrapper.grantHubHaltRole({accessManager: accessManager, admin: address(0)});
   }
 
   function test_grantHubDeactivateRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.grantHubDeactivateRole({accessManager: address(0), admin: admin});
 
-    vm.expectRevert('invalid admin');
+    vm.expectRevert('zero address');
     wrapper.grantHubDeactivateRole({accessManager: accessManager, admin: address(0)});
   }
 
   function test_grantHubCapsResetRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.grantHubCapsResetRole({accessManager: address(0), admin: admin});
 
-    vm.expectRevert('invalid admin');
+    vm.expectRevert('zero address');
     wrapper.grantHubCapsResetRole({accessManager: accessManager, admin: address(0)});
   }
 
   function test_setupHubConfiguratorAllRoles_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.setupHubConfiguratorAllRoles({
       accessManager: address(0),
       hubConfigurator: hubConfigurator
     });
 
-    vm.expectRevert('invalid hub configurator');
+    vm.expectRevert('zero address');
     wrapper.setupHubConfiguratorAllRoles({
       accessManager: accessManager,
       hubConfigurator: address(0)
@@ -62,13 +62,13 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupHubConfiguratorAdminRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.setupHubConfiguratorAdminRole({
       accessManager: address(0),
       hubConfigurator: hubConfigurator
     });
 
-    vm.expectRevert('invalid hub configurator');
+    vm.expectRevert('zero address');
     wrapper.setupHubConfiguratorAdminRole({
       accessManager: accessManager,
       hubConfigurator: address(0)
@@ -76,27 +76,92 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupHubHaltRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.setupHubHaltRole({accessManager: address(0), hubConfigurator: hubConfigurator});
 
-    vm.expectRevert('invalid hub configurator');
+    vm.expectRevert('zero address');
     wrapper.setupHubHaltRole({accessManager: accessManager, hubConfigurator: address(0)});
   }
 
   function test_setupHubDeactivateRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.setupHubDeactivateRole({accessManager: address(0), hubConfigurator: hubConfigurator});
 
-    vm.expectRevert('invalid hub configurator');
+    vm.expectRevert('zero address');
     wrapper.setupHubDeactivateRole({accessManager: accessManager, hubConfigurator: address(0)});
   }
 
   function test_setupHubCapsResetRole_reverts() public {
-    vm.expectRevert('invalid access manager');
+    vm.expectRevert('zero address');
     wrapper.setupHubCapsResetRole({accessManager: address(0), hubConfigurator: hubConfigurator});
 
-    vm.expectRevert('invalid hub configurator');
+    vm.expectRevert('zero address');
     wrapper.setupHubCapsResetRole({accessManager: accessManager, hubConfigurator: address(0)});
+  }
+
+  function test_grantHubConfiguratorAllRoles() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantHubConfiguratorAllRoles({accessManager: accessManager, admin: admin});
+
+    (bool hasAdmin, ) = IAccessManager(accessManager).hasRole(
+      Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      admin
+    );
+    assertTrue(hasAdmin);
+
+    (bool hasHalt, ) = IAccessManager(accessManager).hasRole(Roles.HUB_HALT_ROLE, admin);
+    assertTrue(hasHalt);
+
+    (bool hasDeactivate, ) = IAccessManager(accessManager).hasRole(
+      Roles.HUB_DEACTIVATE_ROLE,
+      admin
+    );
+    assertTrue(hasDeactivate);
+
+    (bool hasCapsReset, ) = IAccessManager(accessManager).hasRole(Roles.HUB_CAPS_RESET_ROLE, admin);
+    assertTrue(hasCapsReset);
+  }
+
+  function test_setupHubConfiguratorAllRoles() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.setupHubConfiguratorAllRoles({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator
+    });
+
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        hubConfigurator,
+        IHubConfigurator.addAsset.selector
+      ),
+      Roles.HUB_CONFIGURATOR_ADMIN_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        hubConfigurator,
+        IHubConfigurator.haltAsset.selector
+      ),
+      Roles.HUB_HALT_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        hubConfigurator,
+        IHubConfigurator.deactivateAsset.selector
+      ),
+      Roles.HUB_DEACTIVATE_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        hubConfigurator,
+        IHubConfigurator.resetAssetCaps.selector
+      ),
+      Roles.HUB_CAPS_RESET_ROLE
+    );
+  }
+
+  function _grantAdminToWrapper(address _wrapper) internal {
+    vm.prank(accessManagerAdmin);
+    IAccessManager(accessManager).grantRole(Roles.DEFAULT_ADMIN_ROLE, _wrapper, 0);
   }
 
   function test_getHubConfiguratorAdminRoleSelectors() public view {
