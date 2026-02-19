@@ -190,7 +190,9 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
 
   function _joinLines(Lines storage lines) internal view virtual returns (string memory) {
     uint256 n = lines.s.length;
-    if (n == 0) return '';
+    if (n == 0) {
+      return '';
+    }
     string memory out = lines.s[0];
     for (uint256 i = 1; i < n; i++) {
       out = string.concat(out, '\n', lines.s[i]);
