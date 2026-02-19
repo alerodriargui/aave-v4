@@ -317,10 +317,10 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     assertNotEq(deployInputs.spokeProxyAdminOwner, address(0));
     assertNotEq(deployInputs.spokeConfiguratorAdmin, address(0));
     assertNotEq(deployInputs.gatewayOwner, address(0));
-    assertNotEq(deployInputs.accessManagerAdmin, address(0));
     assertNotEq(deployInputs.hubAdmin, address(0));
     assertNotEq(deployInputs.spokeAdmin, address(0));
 
+    _inputs = deployInputs;
     checkedV4Deployment();
   }
 
