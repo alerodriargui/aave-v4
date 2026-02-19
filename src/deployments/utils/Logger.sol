@@ -21,13 +21,13 @@ contract Logger {
   }
 
   string internal _outputPath;
-  string internal _root;
+  string internal _jsonKey;
   string internal _json;
 
   constructor(string memory outputPath_) {
-    _root = 'root';
+    _jsonKey = 'root';
     _outputPath = outputPath_;
-    _json = _root;
+    _json = _jsonKey;
   }
 
   function write(string memory label, address value) public {
@@ -73,15 +73,15 @@ contract Logger {
   }
 
   function _write(string memory label, address value) internal {
-    _json = vm.serializeAddress(_root, label, value);
+    _json = vm.serializeAddress(_jsonKey, label, value);
   }
 
   function _write(string memory label, uint256 value) internal {
-    _json = vm.serializeUint(_root, label, value);
+    _json = vm.serializeUint(_jsonKey, label, value);
   }
 
   function _write(string memory value) internal {
-    _json = vm.serializeString(_root, 'message', value);
+    _json = vm.serializeString(_jsonKey, 'message', value);
   }
 
   function _writeGroup(string memory groupLabel, AddressEntry[] memory entries) internal {
@@ -89,7 +89,7 @@ contract Logger {
     for (uint256 i = 0; i < entries.length; i++) {
       group = vm.serializeAddress(groupLabel, entries[i].label, entries[i].value);
     }
-    _json = vm.serializeString(_root, groupLabel, group);
+    _json = vm.serializeString(_jsonKey, groupLabel, group);
   }
 
   function _writeGroup(string memory groupLabel, ValueEntry[] memory entries) internal {
@@ -97,19 +97,11 @@ contract Logger {
     for (uint256 i = 0; i < entries.length; i++) {
       group = vm.serializeString(groupLabel, entries[i].label, vm.toString(entries[i].value));
     }
-    _json = vm.serializeString(_root, groupLabel, group);
+    _json = vm.serializeString(_jsonKey, groupLabel, group);
   }
 
-  function _getTimestamp() internal returns (string memory result) {
-    string[] memory command = new string[](3);
-
-    command[0] = 'bash';
-    command[1] = '-c';
-    command[2] = 'response="$(date +%s)"; cast abi-encode "response(string)" $response;';
-    bytes memory timestamp = vm.ffi(command);
-    (result) = abi.decode(timestamp, (string));
-
-    return result;
+  function _getTimestamp() internal view returns (string memory) {
+    return vm.toString(vm.unixTime() / 1000);
   }
 
   function _log(string memory label, address value) internal pure {
