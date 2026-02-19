@@ -61,8 +61,10 @@ contract SpokeMultipleHubBase is SpokeBase {
     vm.startPrank(ADMIN);
     // Grant roles with 0 delay
     accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
 
