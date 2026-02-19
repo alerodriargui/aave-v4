@@ -151,4 +151,97 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
     assertEq(selectors[5], ISpoke.updatePositionManager.selector);
     assertEq(selectors[6], ISpoke.updateReservePriceSource.selector);
   }
+
+  function test_canCall_spokePositionUpdaterRole() public {
+    _grantAdminToWrapper(address(aaveV4SpokeRolesProcedureWrapper));
+    aaveV4SpokeRolesProcedureWrapper.grantSpokePositionUpdaterRole({
+      accessManager: accessManager,
+      admin: admin
+    });
+    aaveV4SpokeRolesProcedureWrapper.setupSpokePositionUpdaterRole({
+      accessManager: accessManager,
+      spoke: spoke
+    });
+
+    bytes4[] memory selectors = aaveV4SpokeRolesProcedureWrapper
+      .getSpokePositionUpdaterRoleSelectors();
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spoke,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(unauthorized, spoke, selectors[i]);
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_spokeConfiguratorRole() public {
+    _grantAdminToWrapper(address(aaveV4SpokeRolesProcedureWrapper));
+    aaveV4SpokeRolesProcedureWrapper.grantSpokeConfiguratorRole({
+      accessManager: accessManager,
+      admin: admin
+    });
+    aaveV4SpokeRolesProcedureWrapper.setupSpokeConfiguratorRole({
+      accessManager: accessManager,
+      spoke: spoke
+    });
+
+    bytes4[] memory selectors = aaveV4SpokeRolesProcedureWrapper
+      .getSpokeConfiguratorRoleSelectors();
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spoke,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(unauthorized, spoke, selectors[i]);
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_spokeAllRoles() public {
+    _grantAdminToWrapper(address(aaveV4SpokeRolesProcedureWrapper));
+    aaveV4SpokeRolesProcedureWrapper.grantSpokeAdminRole({
+      accessManager: accessManager,
+      admin: admin
+    });
+    aaveV4SpokeRolesProcedureWrapper.setupSpokeRoles({accessManager: accessManager, spoke: spoke});
+
+    bytes4[] memory positionUpdaterSelectors = aaveV4SpokeRolesProcedureWrapper
+      .getSpokePositionUpdaterRoleSelectors();
+    for (uint256 i = 0; i < positionUpdaterSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spoke,
+        positionUpdaterSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    bytes4[] memory configuratorSelectors = aaveV4SpokeRolesProcedureWrapper
+      .getSpokeConfiguratorRoleSelectors();
+    for (uint256 i = 0; i < configuratorSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spoke,
+        configuratorSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+  }
 }

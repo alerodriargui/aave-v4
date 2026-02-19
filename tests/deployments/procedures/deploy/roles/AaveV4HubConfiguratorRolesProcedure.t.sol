@@ -205,4 +205,171 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(selectors[0], IHubConfigurator.resetAssetCaps.selector);
     assertEq(selectors[1], IHubConfigurator.resetSpokeCaps.selector);
   }
+
+  function test_canCall_hubConfiguratorAdminRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantHubConfiguratorAdminRole({accessManager: accessManager, admin: admin});
+    wrapper.setupHubConfiguratorAdminRole({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator
+    });
+
+    bytes4[] memory selectors = wrapper.getHubConfiguratorAdminRoleSelectors();
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_hubHaltRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantHubHaltRole({accessManager: accessManager, admin: admin});
+    wrapper.setupHubHaltRole({accessManager: accessManager, hubConfigurator: hubConfigurator});
+
+    bytes4[] memory selectors = wrapper.getHubHaltRoleSelectors();
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_hubDeactivateRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantHubDeactivateRole({accessManager: accessManager, admin: admin});
+    wrapper.setupHubDeactivateRole({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator
+    });
+
+    bytes4[] memory selectors = wrapper.getHubDeactivateRoleSelectors();
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_hubCapsResetRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantHubCapsResetRole({accessManager: accessManager, admin: admin});
+    wrapper.setupHubCapsResetRole({accessManager: accessManager, hubConfigurator: hubConfigurator});
+
+    bytes4[] memory selectors = wrapper.getHubCapsResetRoleSelectors();
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_hubConfiguratorAllRoles() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantHubConfiguratorAllRoles({accessManager: accessManager, admin: admin});
+    wrapper.setupHubConfiguratorAllRoles({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator
+    });
+
+    bytes4[] memory adminSelectors = wrapper.getHubConfiguratorAdminRoleSelectors();
+    for (uint256 i = 0; i < adminSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        adminSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    bytes4[] memory haltSelectors = wrapper.getHubHaltRoleSelectors();
+    for (uint256 i = 0; i < haltSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        haltSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    bytes4[] memory deactivateSelectors = wrapper.getHubDeactivateRoleSelectors();
+    for (uint256 i = 0; i < deactivateSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        deactivateSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    bytes4[] memory capsResetSelectors = wrapper.getHubCapsResetRoleSelectors();
+    for (uint256 i = 0; i < capsResetSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        capsResetSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+  }
 }

@@ -129,4 +129,89 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
     assertEq(selectors[3], IHub.updateSpokeConfig.selector);
     assertEq(selectors[4], IHub.setInterestRateData.selector);
   }
+
+  function test_canCall_hubFeeMinterRole() public {
+    _grantAdminToWrapper(address(aaveV4HubRolesProcedureWrapper));
+    aaveV4HubRolesProcedureWrapper.grantHubFeeMinterRole({
+      accessManager: accessManager,
+      admin: admin
+    });
+    aaveV4HubRolesProcedureWrapper.setupHubFeeMinterRole({accessManager: accessManager, hub: hub});
+
+    bytes4[] memory selectors = aaveV4HubRolesProcedureWrapper.getHubFeeMinterRoleSelectors();
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hub,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(unauthorized, hub, selectors[i]);
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_hubConfiguratorRole() public {
+    _grantAdminToWrapper(address(aaveV4HubRolesProcedureWrapper));
+    aaveV4HubRolesProcedureWrapper.grantHubConfiguratorRole({
+      accessManager: accessManager,
+      admin: admin
+    });
+    aaveV4HubRolesProcedureWrapper.setupHubConfiguratorRole({
+      accessManager: accessManager,
+      hub: hub
+    });
+
+    bytes4[] memory selectors = aaveV4HubRolesProcedureWrapper.getHubConfiguratorRoleSelectors();
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hub,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(unauthorized, hub, selectors[i]);
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_hubAllRoles() public {
+    _grantAdminToWrapper(address(aaveV4HubRolesProcedureWrapper));
+    aaveV4HubRolesProcedureWrapper.grantHubAdminRole({accessManager: accessManager, admin: admin});
+    aaveV4HubRolesProcedureWrapper.setupHubRoles({accessManager: accessManager, hub: hub});
+
+    bytes4[] memory feeMinterSelectors = aaveV4HubRolesProcedureWrapper
+      .getHubFeeMinterRoleSelectors();
+    for (uint256 i = 0; i < feeMinterSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hub,
+        feeMinterSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    bytes4[] memory configuratorSelectors = aaveV4HubRolesProcedureWrapper
+      .getHubConfiguratorRoleSelectors();
+    for (uint256 i = 0; i < configuratorSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hub,
+        configuratorSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+  }
 }

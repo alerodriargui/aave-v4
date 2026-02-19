@@ -173,4 +173,136 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(selectors[1], ISpokeConfigurator.pauseAllReserves.selector);
     assertEq(selectors[2], ISpokeConfigurator.pauseReserve.selector);
   }
+
+  function test_canCall_spokeConfiguratorAdminRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantSpokeConfiguratorAdminRole({accessManager: accessManager, admin: admin});
+    wrapper.setupSpokeConfiguratorAdminRole({
+      accessManager: accessManager,
+      spokeConfigurator: spokeConfigurator
+    });
+
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorAdminRoleSelectors();
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spokeConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        spokeConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_spokeFreezeRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantSpokeFreezeRole({accessManager: accessManager, admin: admin});
+    wrapper.setupSpokeFreezeRole({
+      accessManager: accessManager,
+      spokeConfigurator: spokeConfigurator
+    });
+
+    bytes4[] memory selectors = wrapper.getSpokeFreezeRoleSelectors();
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spokeConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        spokeConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_spokePauseRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantSpokePauseRole({accessManager: accessManager, admin: admin});
+    wrapper.setupSpokePauseRole({
+      accessManager: accessManager,
+      spokeConfigurator: spokeConfigurator
+    });
+
+    bytes4[] memory selectors = wrapper.getSpokePauseRoleSelectors();
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spokeConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        spokeConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_spokeConfiguratorAllRoles() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantSpokeConfiguratorAllRoles({accessManager: accessManager, admin: admin});
+    wrapper.setupSpokeConfiguratorRoles({
+      accessManager: accessManager,
+      spokeConfigurator: spokeConfigurator
+    });
+
+    bytes4[] memory adminSelectors = wrapper.getSpokeConfiguratorAdminRoleSelectors();
+    for (uint256 i = 0; i < adminSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spokeConfigurator,
+        adminSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    bytes4[] memory freezeSelectors = wrapper.getSpokeFreezeRoleSelectors();
+    for (uint256 i = 0; i < freezeSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spokeConfigurator,
+        freezeSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    bytes4[] memory pauseSelectors = wrapper.getSpokePauseRoleSelectors();
+    for (uint256 i = 0; i < pauseSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spokeConfigurator,
+        pauseSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+  }
 }
