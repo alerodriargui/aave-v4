@@ -236,7 +236,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     bool deploySignatureGateway
   ) public {
     deployInputs.grantRoles = false;
-    deployInputs.nativeWrapper = _inputs.nativeWrapper;
     deployInputs.deployNativeTokenGateway = deployNativeTokenGateway;
     deployInputs.deploySignatureGateway = deploySignatureGateway;
     if (withoutHubs) {
@@ -276,7 +275,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     bool deploySignatureGateway
   ) public {
     deployInputs.grantRoles = true;
-    deployInputs.nativeWrapper = _inputs.nativeWrapper;
     deployInputs.deployNativeTokenGateway = deployNativeTokenGateway;
     deployInputs.deploySignatureGateway = deploySignatureGateway;
     if (withoutHubs) {
