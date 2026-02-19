@@ -62,30 +62,47 @@ contract SpokeMultipleHubBase is SpokeBase {
     // Grant roles with 0 delay
     accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, SPOKE_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
 
     // Grant responsibilities to roles
-    // Spoke Admin functionalities
-    bytes4[] memory selectors = new bytes4[](6);
-    selectors[0] = ISpoke.updateReservePriceSource.selector;
-    selectors[1] = ISpoke.updateLiquidationConfig.selector;
-    selectors[2] = ISpoke.addReserve.selector;
-    selectors[3] = ISpoke.updateReserveConfig.selector;
-    selectors[4] = ISpoke.addDynamicReserveConfig.selector;
-    selectors[5] = ISpoke.updateUserRiskPremium.selector;
+    // Spoke Configurator functionalities
+    bytes4[] memory configSelectors = new bytes4[](5);
+    configSelectors[0] = ISpoke.updateReservePriceSource.selector;
+    configSelectors[1] = ISpoke.updateLiquidationConfig.selector;
+    configSelectors[2] = ISpoke.addReserve.selector;
+    configSelectors[3] = ISpoke.updateReserveConfig.selector;
+    configSelectors[4] = ISpoke.addDynamicReserveConfig.selector;
 
     accessManager.setTargetFunctionRole(
       address(spoke1),
-      selectors,
+      configSelectors,
+      Roles.SPOKE_CONFIGURATOR_ROLE
+    );
+    accessManager.setTargetFunctionRole(
+      address(newSpoke),
+      configSelectors,
+      Roles.SPOKE_CONFIGURATOR_ROLE
+    );
+
+    // Spoke Position Updater functionalities
+    bytes4[] memory positionSelectors = new bytes4[](1);
+    positionSelectors[0] = ISpoke.updateUserRiskPremium.selector;
+
+    accessManager.setTargetFunctionRole(
+      address(spoke1),
+      positionSelectors,
       Roles.SPOKE_POSITION_UPDATER_ROLE
     );
     accessManager.setTargetFunctionRole(
       address(newSpoke),
-      selectors,
+      positionSelectors,
       Roles.SPOKE_POSITION_UPDATER_ROLE
     );
 

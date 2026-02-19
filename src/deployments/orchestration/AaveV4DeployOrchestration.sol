@@ -122,14 +122,7 @@ library AaveV4DeployOrchestration {
       }
     }
 
-    return
-      _generateFullReport(
-        report.authorityBatchReport,
-        report.configuratorBatchReport,
-        report.hubBatchReports,
-        report.spokeInstanceBatchReports,
-        report.gatewaysBatchReport
-      );
+    return report;
   }
 
   function _grantHubRoles(
@@ -423,21 +416,6 @@ library AaveV4DeployOrchestration {
   ) internal {
     logger.log('...Setting Hub roles...');
     AaveV4HubRolesProcedure.setupHubRoles(authority, report.hub);
-  }
-
-  function _generateFullReport(
-    BatchReports.AuthorityBatchReport memory authorityBatchReport,
-    BatchReports.ConfiguratorBatchReport memory configuratorBatchReport,
-    OrchestrationReports.HubDeploymentReport[] memory hubBatchReports,
-    OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports,
-    BatchReports.GatewaysBatchReport memory gatewaysBatchReport
-  ) internal pure returns (OrchestrationReports.FullDeploymentReport memory report) {
-    report.authorityBatchReport = authorityBatchReport;
-    report.configuratorBatchReport = configuratorBatchReport;
-    report.hubBatchReports = hubBatchReports;
-    report.spokeInstanceBatchReports = spokeBatchReports;
-    report.gatewaysBatchReport = gatewaysBatchReport;
-    return report;
   }
 
   function _deriveSalt(bytes32 salt_) internal pure returns (bytes32) {
