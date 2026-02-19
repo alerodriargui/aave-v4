@@ -422,18 +422,18 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       assertEq(
         accessManager.getRoleMemberCount(Roles.SPOKE_POSITION_UPDATER_ROLE),
         1,
-        'SpokeAdminRole member count'
+        'SpokePositionUpdaterRole member count'
       );
       assertEq(
         accessManager.getRoleMember(Roles.SPOKE_POSITION_UPDATER_ROLE, 0),
         inputs.spokeAdmin,
-        'SpokeAdminRole member - spoke admin'
+        'SpokePositionUpdaterRole member - spoke admin'
       );
     } else {
       assertEq(
         accessManager.getRoleMemberCount(Roles.SPOKE_POSITION_UPDATER_ROLE),
         0,
-        'HubAdminRoleCount'
+        'SpokePositionUpdaterRoleCount'
       );
     }
 
@@ -453,8 +453,8 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
           report.spokeInstanceBatchReports[i].report.spokeProxy,
           _spokePositionUpdaterRoleSelectors[j]
         );
-        assertEq(allowed, inputs.grantRoles ? true : false, 'SpokeAdminRole allowed');
-        assertEq(delay, 0, 'SpokeAdminRole delay');
+        assertEq(allowed, inputs.grantRoles ? true : false, 'SpokePositionUpdaterRole allowed');
+        assertEq(delay, 0, 'SpokePositionUpdaterRole delay');
 
         assertEq(
           accessManager.getTargetFunctionRole(
@@ -462,7 +462,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
             _spokePositionUpdaterRoleSelectors[j]
           ),
           Roles.SPOKE_POSITION_UPDATER_ROLE,
-          'SpokeAdminRole target function'
+          'SpokePositionUpdaterRole target function'
         );
       }
     }
@@ -483,14 +483,22 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     FullDeployInputs memory inputs
   ) internal view {
     if (inputs.hubLabels.length > 0 && inputs.grantRoles) {
-      assertEq(accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE), 1, 'HubAdminRoleCount');
+      assertEq(
+        accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE),
+        1,
+        'HubFeeMinterRoleCount'
+      );
       assertEq(
         accessManager.getRoleMember(Roles.HUB_FEE_MINTER_ROLE, 0),
         inputs.hubAdmin,
-        'HubAdminRole member - hub admin'
+        'HubFeeMinterRole member - hub admin'
       );
     } else {
-      assertEq(accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE), 0, 'HubAdminRoleCount');
+      assertEq(
+        accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE),
+        0,
+        'HubFeeMinterRoleCount'
+      );
     }
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
       _checkTreasurySpokeRoles(
@@ -505,7 +513,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
             _hubFeeMinterRoleSelectors[j]
           ),
           Roles.HUB_FEE_MINTER_ROLE,
-          'HubAdminRole target function'
+          'HubFeeMinterRole target function'
         );
 
         (bool allowed, uint32 delay) = accessManager.canCall(
@@ -513,8 +521,8 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
           report.hubBatchReports[i].report.hub,
           _hubFeeMinterRoleSelectors[j]
         );
-        assertEq(allowed, inputs.grantRoles ? true : false, 'HubAdminRole allowed');
-        assertEq(delay, 0, 'HubAdminRole delay');
+        assertEq(allowed, inputs.grantRoles ? true : false, 'HubFeeMinterRole allowed');
+        assertEq(delay, 0, 'HubFeeMinterRole delay');
       }
     }
   }
