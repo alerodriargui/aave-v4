@@ -232,17 +232,13 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     address deployer,
     bool withoutHubs,
     bool withoutSpokes,
-    bool withoutGateways
+    bool deployNativeTokenGateway,
+    bool deploySignatureGateway
   ) public {
     deployInputs.grantRoles = false;
     deployInputs.nativeWrapper = _inputs.nativeWrapper;
-    if (withoutGateways) {
-      deployInputs.deployNativeTokenGateway = false;
-      deployInputs.deploySignatureGateway = false;
-    } else {
-      deployInputs.deployNativeTokenGateway = true;
-      deployInputs.deploySignatureGateway = true;
-    }
+    deployInputs.deployNativeTokenGateway = deployNativeTokenGateway;
+    deployInputs.deploySignatureGateway = deploySignatureGateway;
     if (withoutHubs) {
       deployInputs.hubLabels = new string[](0);
     } else {
@@ -276,17 +272,13 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     address deployer,
     bool withoutHubs,
     bool withoutSpokes,
-    bool withoutGateways
+    bool deployNativeTokenGateway,
+    bool deploySignatureGateway
   ) public {
     deployInputs.grantRoles = true;
     deployInputs.nativeWrapper = _inputs.nativeWrapper;
-    if (withoutGateways) {
-      deployInputs.deployNativeTokenGateway = false;
-      deployInputs.deploySignatureGateway = false;
-    } else {
-      deployInputs.deployNativeTokenGateway = true;
-      deployInputs.deploySignatureGateway = true;
-    }
+    deployInputs.deployNativeTokenGateway = deployNativeTokenGateway;
+    deployInputs.deploySignatureGateway = deploySignatureGateway;
     if (withoutHubs) {
       deployInputs.hubLabels = new string[](0);
     } else {
