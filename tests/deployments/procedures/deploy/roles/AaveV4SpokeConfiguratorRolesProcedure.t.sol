@@ -75,23 +75,29 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     );
     assertTrue(hasAdmin);
 
+    (bool hasLiquidationUpdater, ) = IAccessManager(accessManager).hasRole(
+      Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
+      admin
+    );
+    assertTrue(hasLiquidationUpdater);
+
     (bool hasReserveAdder, ) = IAccessManager(accessManager).hasRole(
       Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE,
       admin
     );
     assertTrue(hasReserveAdder);
 
-    (bool hasFreeze, ) = IAccessManager(accessManager).hasRole(
-      Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE,
+    (bool hasFreezer, ) = IAccessManager(accessManager).hasRole(
+      Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
       admin
     );
-    assertTrue(hasFreeze);
+    assertTrue(hasFreezer);
 
-    (bool hasPause, ) = IAccessManager(accessManager).hasRole(
-      Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE,
+    (bool hasPauser, ) = IAccessManager(accessManager).hasRole(
+      Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
       admin
     );
-    assertTrue(hasPause);
+    assertTrue(hasPauser);
   }
 
   function test_setupSpokeConfiguratorRoles() public {
@@ -111,6 +117,13 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
         spokeConfigurator,
+        ISpokeConfigurator.updateLiquidationConfig.selector
+      ),
+      Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        spokeConfigurator,
         ISpokeConfigurator.addReserve.selector
       ),
       Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE
@@ -120,14 +133,14 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
         spokeConfigurator,
         ISpokeConfigurator.updateFrozen.selector
       ),
-      Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE
+      Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE
     );
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
         spokeConfigurator,
         ISpokeConfigurator.updatePaused.selector
       ),
-      Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE
+      Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE
     );
   }
 
@@ -138,24 +151,29 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_getSpokeConfiguratorAdminRoleSelectors() public view {
     bytes4[] memory selectors = wrapper.getSpokeConfiguratorAdminRoleSelectors();
-    assertEq(selectors.length, 17);
+    assertEq(selectors.length, 9);
     assertEq(selectors[0], ISpokeConfigurator.updateReservePriceSource.selector);
-    assertEq(selectors[1], ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector);
-    assertEq(selectors[2], ISpokeConfigurator.updateHealthFactorForMaxBonus.selector);
-    assertEq(selectors[3], ISpokeConfigurator.updateLiquidationBonusFactor.selector);
-    assertEq(selectors[4], ISpokeConfigurator.updateLiquidationConfig.selector);
-    assertEq(selectors[5], ISpokeConfigurator.updateBorrowable.selector);
-    assertEq(selectors[6], ISpokeConfigurator.updateReceiveSharesEnabled.selector);
-    assertEq(selectors[7], ISpokeConfigurator.updateCollateralRisk.selector);
-    assertEq(selectors[8], ISpokeConfigurator.addCollateralFactor.selector);
-    assertEq(selectors[9], ISpokeConfigurator.updateCollateralFactor.selector);
-    assertEq(selectors[10], ISpokeConfigurator.addMaxLiquidationBonus.selector);
-    assertEq(selectors[11], ISpokeConfigurator.updateMaxLiquidationBonus.selector);
-    assertEq(selectors[12], ISpokeConfigurator.addLiquidationFee.selector);
-    assertEq(selectors[13], ISpokeConfigurator.updateLiquidationFee.selector);
-    assertEq(selectors[14], ISpokeConfigurator.addDynamicReserveConfig.selector);
-    assertEq(selectors[15], ISpokeConfigurator.updateDynamicReserveConfig.selector);
-    assertEq(selectors[16], ISpokeConfigurator.updatePositionManager.selector);
+    assertEq(selectors[1], ISpokeConfigurator.updateBorrowable.selector);
+    assertEq(selectors[2], ISpokeConfigurator.updateReceiveSharesEnabled.selector);
+    assertEq(selectors[3], ISpokeConfigurator.updateCollateralRisk.selector);
+    assertEq(selectors[4], ISpokeConfigurator.addCollateralFactor.selector);
+    assertEq(selectors[5], ISpokeConfigurator.updateCollateralFactor.selector);
+    assertEq(selectors[6], ISpokeConfigurator.addDynamicReserveConfig.selector);
+    assertEq(selectors[7], ISpokeConfigurator.updateDynamicReserveConfig.selector);
+    assertEq(selectors[8], ISpokeConfigurator.updatePositionManager.selector);
+  }
+
+  function test_getSpokeConfiguratorLiquidationUpdaterRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
+    assertEq(selectors.length, 8);
+    assertEq(selectors[0], ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector);
+    assertEq(selectors[1], ISpokeConfigurator.updateHealthFactorForMaxBonus.selector);
+    assertEq(selectors[2], ISpokeConfigurator.updateLiquidationBonusFactor.selector);
+    assertEq(selectors[3], ISpokeConfigurator.updateLiquidationConfig.selector);
+    assertEq(selectors[4], ISpokeConfigurator.addMaxLiquidationBonus.selector);
+    assertEq(selectors[5], ISpokeConfigurator.updateMaxLiquidationBonus.selector);
+    assertEq(selectors[6], ISpokeConfigurator.addLiquidationFee.selector);
+    assertEq(selectors[7], ISpokeConfigurator.updateLiquidationFee.selector);
   }
 
   function test_getSpokeConfiguratorReserveAdderRoleSelectors() public view {
@@ -215,6 +233,41 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     }
   }
 
+  function test_canCall_spokeLiquidationUpdaterRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantSpokeConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
+      admin: admin
+    });
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
+    wrapper.setupSpokeConfiguratorRole({
+      accessManager: accessManager,
+      spokeConfigurator: spokeConfigurator,
+      role: Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
+      selectors: selectors
+    });
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spokeConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        spokeConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
   function test_canCall_spokeReserveAdderRole() public {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantSpokeConfiguratorRole({
@@ -250,18 +303,18 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     }
   }
 
-  function test_canCall_spokeFreezeRole() public {
+  function test_canCall_spokeFreezerRole() public {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantSpokeConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
       admin: admin
     });
     bytes4[] memory selectors = wrapper.getSpokeConfiguratorFreezerRoleSelectors();
     wrapper.setupSpokeConfiguratorRole({
       accessManager: accessManager,
       spokeConfigurator: spokeConfigurator,
-      role: Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
       selectors: selectors
     });
     for (uint256 i = 0; i < selectors.length; i++) {
@@ -285,18 +338,18 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     }
   }
 
-  function test_canCall_spokePauseRole() public {
+  function test_canCall_spokePauserRole() public {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantSpokeConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
       admin: admin
     });
     bytes4[] memory selectors = wrapper.getSpokeConfiguratorPauserRoleSelectors();
     wrapper.setupSpokeConfiguratorRole({
       accessManager: accessManager,
       spokeConfigurator: spokeConfigurator,
-      role: Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
       selectors: selectors
     });
     for (uint256 i = 0; i < selectors.length; i++) {
@@ -339,6 +392,18 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
       assertEq(delay, 0);
     }
 
+    bytes4[] memory liquidationUpdaterSelectors = wrapper
+      .getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
+    for (uint256 i = 0; i < liquidationUpdaterSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        spokeConfigurator,
+        liquidationUpdaterSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
     bytes4[] memory reserveAdderSelectors = wrapper.getSpokeConfiguratorReserveAdderRoleSelectors();
     for (uint256 i = 0; i < reserveAdderSelectors.length; i++) {
       (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
@@ -350,23 +415,23 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
       assertEq(delay, 0);
     }
 
-    bytes4[] memory freezeSelectors = wrapper.getSpokeConfiguratorFreezerRoleSelectors();
-    for (uint256 i = 0; i < freezeSelectors.length; i++) {
+    bytes4[] memory freezerSelectors = wrapper.getSpokeConfiguratorFreezerRoleSelectors();
+    for (uint256 i = 0; i < freezerSelectors.length; i++) {
       (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
         admin,
         spokeConfigurator,
-        freezeSelectors[i]
+        freezerSelectors[i]
       );
       assertTrue(allowed);
       assertEq(delay, 0);
     }
 
-    bytes4[] memory pauseSelectors = wrapper.getSpokeConfiguratorPauserRoleSelectors();
-    for (uint256 i = 0; i < pauseSelectors.length; i++) {
+    bytes4[] memory pauserSelectors = wrapper.getSpokeConfiguratorPauserRoleSelectors();
+    for (uint256 i = 0; i < pauserSelectors.length; i++) {
       (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
         admin,
         spokeConfigurator,
-        pauseSelectors[i]
+        pauserSelectors[i]
       );
       assertTrue(allowed);
       assertEq(delay, 0);

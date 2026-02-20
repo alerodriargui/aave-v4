@@ -37,8 +37,16 @@ contract AaveV4HubConfiguratorRolesProcedureWrapper {
     );
   }
 
-  function getHubConfiguratorAdminRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getHubConfiguratorAdminRoleSelectors();
+  function getHubConfiguratorFeeUpdaterRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorFeeUpdaterRoleSelectors();
+  }
+
+  function getHubConfiguratorReinvestmentUpdaterRoleSelectors()
+    external
+    pure
+    returns (bytes4[] memory)
+  {
+    return Roles.getHubConfiguratorReinvestmentUpdaterRoleSelectors();
   }
 
   function getHubConfiguratorAssetListerRoleSelectors() external pure returns (bytes4[] memory) {

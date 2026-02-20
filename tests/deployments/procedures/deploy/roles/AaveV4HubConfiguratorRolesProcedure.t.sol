@@ -19,14 +19,14 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     vm.expectRevert('zero address');
     wrapper.grantHubConfiguratorRole({
       accessManager: address(0),
-      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       admin: admin
     });
 
     vm.expectRevert('zero address');
     wrapper.grantHubConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       admin: address(0)
     });
   }
@@ -46,13 +46,13 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupHubConfiguratorRole_reverts() public {
-    bytes4[] memory selectors = wrapper.getHubConfiguratorAdminRoleSelectors();
+    bytes4[] memory selectors = wrapper.getHubConfiguratorFeeUpdaterRoleSelectors();
 
     vm.expectRevert('zero address');
     wrapper.setupHubConfiguratorRole({
       accessManager: address(0),
       hubConfigurator: hubConfigurator,
-      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       selectors: selectors
     });
 
@@ -60,7 +60,7 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     wrapper.setupHubConfiguratorRole({
       accessManager: accessManager,
       hubConfigurator: address(0),
-      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       selectors: selectors
     });
   }
@@ -69,11 +69,17 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantHubConfiguratorAllRoles({accessManager: accessManager, admin: admin});
 
-    (bool hasAdmin, ) = IAccessManager(accessManager).hasRole(
-      Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+    (bool hasFeeUpdater, ) = IAccessManager(accessManager).hasRole(
+      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       admin
     );
-    assertTrue(hasAdmin);
+    assertTrue(hasFeeUpdater);
+
+    (bool hasReinvestmentUpdater, ) = IAccessManager(accessManager).hasRole(
+      Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE,
+      admin
+    );
+    assertTrue(hasReinvestmentUpdater);
 
     (bool hasAssetLister, ) = IAccessManager(accessManager).hasRole(
       Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
@@ -93,17 +99,17 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     );
     assertTrue(hasIRUpdater);
 
-    (bool hasHalt, ) = IAccessManager(accessManager).hasRole(
-      Roles.HUB_CONFIGURATOR_HALT_ROLE,
+    (bool hasHalter, ) = IAccessManager(accessManager).hasRole(
+      Roles.HUB_CONFIGURATOR_HALTER_ROLE,
       admin
     );
-    assertTrue(hasHalt);
+    assertTrue(hasHalter);
 
-    (bool hasDeactivate, ) = IAccessManager(accessManager).hasRole(
-      Roles.HUB_CONFIGURATOR_DEACTIVATE_ROLE,
+    (bool hasDeactivater, ) = IAccessManager(accessManager).hasRole(
+      Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE,
       admin
     );
-    assertTrue(hasDeactivate);
+    assertTrue(hasDeactivater);
 
     (bool hasCapsUpdater, ) = IAccessManager(accessManager).hasRole(
       Roles.HUB_CONFIGURATOR_CAPS_UDPATER_ROLE,
@@ -124,7 +130,14 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
         hubConfigurator,
         IHubConfigurator.updateLiquidityFee.selector
       ),
-      Roles.HUB_CONFIGURATOR_ADMIN_ROLE
+      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        hubConfigurator,
+        IHubConfigurator.updateReinvestmentController.selector
+      ),
+      Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE
     );
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
@@ -152,14 +165,14 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
         hubConfigurator,
         IHubConfigurator.haltAsset.selector
       ),
-      Roles.HUB_CONFIGURATOR_HALT_ROLE
+      Roles.HUB_CONFIGURATOR_HALTER_ROLE
     );
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
         hubConfigurator,
         IHubConfigurator.deactivateAsset.selector
       ),
-      Roles.HUB_CONFIGURATOR_DEACTIVATE_ROLE
+      Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE
     );
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
@@ -175,14 +188,18 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     IAccessManager(accessManager).grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, _wrapper, 0);
   }
 
-  function test_getHubConfiguratorAdminRoleSelectors() public view {
-    bytes4[] memory selectors = wrapper.getHubConfiguratorAdminRoleSelectors();
-    assertEq(selectors.length, 5);
+  function test_getHubConfiguratorFeeUpdaterRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getHubConfiguratorFeeUpdaterRoleSelectors();
+    assertEq(selectors.length, 3);
     assertEq(selectors[0], IHubConfigurator.updateLiquidityFee.selector);
     assertEq(selectors[1], IHubConfigurator.updateFeeReceiver.selector);
     assertEq(selectors[2], IHubConfigurator.updateFeeConfig.selector);
-    assertEq(selectors[3], IHubConfigurator.updateReinvestmentController.selector);
-    assertEq(selectors[4], IHubConfigurator.updateSpokeRiskPremiumThreshold.selector);
+  }
+
+  function test_getHubConfiguratorReinvestmentUpdaterRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getHubConfiguratorReinvestmentUpdaterRoleSelectors();
+    assertEq(selectors.length, 1);
+    assertEq(selectors[0], IHubConfigurator.updateReinvestmentController.selector);
   }
 
   function test_getHubConfiguratorAssetListerRoleSelectors() public view {
@@ -194,9 +211,10 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_getHubConfiguratorSpokeAdderRoleSelectors() public view {
     bytes4[] memory selectors = wrapper.getHubConfiguratorSpokeAdderRoleSelectors();
-    assertEq(selectors.length, 2);
+    assertEq(selectors.length, 3);
     assertEq(selectors[0], IHubConfigurator.addSpoke.selector);
     assertEq(selectors[1], IHubConfigurator.addSpokeToAssets.selector);
+    assertEq(selectors[2], IHubConfigurator.updateSpokeRiskPremiumThreshold.selector);
   }
 
   function test_getHubConfiguratorInterestRateUpdaterRoleSelectors() public view {
@@ -232,18 +250,53 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(selectors[4], IHubConfigurator.updateSpokeDrawCap.selector);
   }
 
-  function test_canCall_hubConfiguratorAdminRole() public {
+  function test_canCall_hubFeeUpdaterRole() public {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantHubConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       admin: admin
     });
-    bytes4[] memory selectors = wrapper.getHubConfiguratorAdminRoleSelectors();
+    bytes4[] memory selectors = wrapper.getHubConfiguratorFeeUpdaterRoleSelectors();
     wrapper.setupHubConfiguratorRole({
       accessManager: accessManager,
       hubConfigurator: hubConfigurator,
-      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
+      selectors: selectors
+    });
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_hubReinvestmentUpdaterRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantHubConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE,
+      admin: admin
+    });
+    bytes4[] memory selectors = wrapper.getHubConfiguratorReinvestmentUpdaterRoleSelectors();
+    wrapper.setupHubConfiguratorRole({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator,
+      role: Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE,
       selectors: selectors
     });
     for (uint256 i = 0; i < selectors.length; i++) {
@@ -372,18 +425,18 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     }
   }
 
-  function test_canCall_hubHaltRole() public {
+  function test_canCall_hubHalterRole() public {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantHubConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.HUB_CONFIGURATOR_HALT_ROLE,
+      role: Roles.HUB_CONFIGURATOR_HALTER_ROLE,
       admin: admin
     });
     bytes4[] memory selectors = wrapper.getHubConfiguratorHalterRoleSelectors();
     wrapper.setupHubConfiguratorRole({
       accessManager: accessManager,
       hubConfigurator: hubConfigurator,
-      role: Roles.HUB_CONFIGURATOR_HALT_ROLE,
+      role: Roles.HUB_CONFIGURATOR_HALTER_ROLE,
       selectors: selectors
     });
     for (uint256 i = 0; i < selectors.length; i++) {
@@ -407,18 +460,18 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     }
   }
 
-  function test_canCall_hubDeactivateRole() public {
+  function test_canCall_hubDeactivaterRole() public {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantHubConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.HUB_CONFIGURATOR_DEACTIVATE_ROLE,
+      role: Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE,
       admin: admin
     });
     bytes4[] memory selectors = wrapper.getHubConfiguratorActivaterRoleSelectors();
     wrapper.setupHubConfiguratorRole({
       accessManager: accessManager,
       hubConfigurator: hubConfigurator,
-      role: Roles.HUB_CONFIGURATOR_DEACTIVATE_ROLE,
+      role: Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE,
       selectors: selectors
     });
     for (uint256 i = 0; i < selectors.length; i++) {
@@ -485,12 +538,24 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
       hubConfigurator: hubConfigurator
     });
 
-    bytes4[] memory adminSelectors = wrapper.getHubConfiguratorAdminRoleSelectors();
-    for (uint256 i = 0; i < adminSelectors.length; i++) {
+    bytes4[] memory feeUpdaterSelectors = wrapper.getHubConfiguratorFeeUpdaterRoleSelectors();
+    for (uint256 i = 0; i < feeUpdaterSelectors.length; i++) {
       (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
         admin,
         hubConfigurator,
-        adminSelectors[i]
+        feeUpdaterSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    bytes4[] memory reinvestmentUpdaterSelectors = wrapper
+      .getHubConfiguratorReinvestmentUpdaterRoleSelectors();
+    for (uint256 i = 0; i < reinvestmentUpdaterSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        reinvestmentUpdaterSelectors[i]
       );
       assertTrue(allowed);
       assertEq(delay, 0);

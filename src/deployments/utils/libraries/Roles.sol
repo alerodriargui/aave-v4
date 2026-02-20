@@ -20,19 +20,21 @@ library Roles {
   uint64 public constant SPOKE_USER_POSITION_UPDATER_ROLE = 3;
   uint64 public constant SPOKE_CONFIGURATOR_ROLE = 4;
   // HubConfigurator roles
-  uint64 public constant HUB_CONFIGURATOR_ADMIN_ROLE = 5;
-  uint64 public constant HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE = 6;
-  uint64 public constant HUB_CONFIGURATOR_HALT_ROLE = 7;
-  uint64 public constant HUB_CONFIGURATOR_DEACTIVATE_ROLE = 8;
-  uint64 public constant HUB_CONFIGURATOR_CAPS_UDPATER_ROLE = 9;
-  uint64 public constant HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE = 10;
-  uint64 public constant HUB_CONFIGURATOR_ASSET_LISTER_ROLE = 11;
-  uint64 public constant HUB_CONFIGURATOR_SPOKE_ADDER_ROLE = 12;
+  uint64 public constant HUB_CONFIGURATOR_FEE_UPDATER_ROLE = 5;
+  uint64 public constant HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE = 6;
+  uint64 public constant HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE = 7;
+  uint64 public constant HUB_CONFIGURATOR_HALTER_ROLE = 8;
+  uint64 public constant HUB_CONFIGURATOR_DEACTIVATER_ROLE = 9;
+  uint64 public constant HUB_CONFIGURATOR_CAPS_UDPATER_ROLE = 10;
+  uint64 public constant HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE = 11;
+  uint64 public constant HUB_CONFIGURATOR_ASSET_LISTER_ROLE = 12;
+  uint64 public constant HUB_CONFIGURATOR_SPOKE_ADDER_ROLE = 13;
   // SpokeConfigurator roles
-  uint64 public constant SPOKE_CONFIGURATOR_ADMIN_ROLE = 13;
-  uint64 public constant SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE = 14;
-  uint64 public constant SPOKE_CONFIGURATOR_FREEZE_ROLE = 15;
-  uint64 public constant SPOKE_CONFIGURATOR_PAUSE_ROLE = 16;
+  uint64 public constant SPOKE_CONFIGURATOR_ADMIN_ROLE = 14;
+  uint64 public constant SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE = 15;
+  uint64 public constant SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE = 16;
+  uint64 public constant SPOKE_CONFIGURATOR_FREEZER_ROLE = 17;
+  uint64 public constant SPOKE_CONFIGURATOR_PAUSER_ROLE = 18;
 
   // hub configurator role on Hub
   function getHubConfiguratorRoleSelectors() internal pure returns (bytes4[] memory) {
@@ -57,13 +59,21 @@ library Roles {
     return selectors;
   }
 
-  function getHubConfiguratorAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](5);
+  function getHubConfiguratorFeeUpdaterRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](3);
     selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
     selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
     selectors[2] = IHubConfigurator.updateFeeConfig.selector;
-    selectors[3] = IHubConfigurator.updateReinvestmentController.selector;
-    selectors[4] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
+    return selectors;
+  }
+
+  function getHubConfiguratorReinvestmentUpdaterRoleSelectors()
+    internal
+    pure
+    returns (bytes4[] memory)
+  {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = IHubConfigurator.updateReinvestmentController.selector;
     return selectors;
   }
 
@@ -75,9 +85,10 @@ library Roles {
   }
 
   function getHubConfiguratorSpokeAdderRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](2);
+    bytes4[] memory selectors = new bytes4[](3);
     selectors[0] = IHubConfigurator.addSpoke.selector;
     selectors[1] = IHubConfigurator.addSpokeToAssets.selector;
+    selectors[2] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
     return selectors;
   }
 
@@ -139,24 +150,33 @@ library Roles {
   }
 
   function getSpokeConfiguratorAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](17);
+    bytes4[] memory selectors = new bytes4[](9);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
-    selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
-    selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
-    selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
-    selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
-    selectors[5] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[6] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    selectors[7] = ISpokeConfigurator.updateCollateralRisk.selector;
-    selectors[8] = ISpokeConfigurator.addCollateralFactor.selector;
-    selectors[9] = ISpokeConfigurator.updateCollateralFactor.selector;
-    selectors[10] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    selectors[11] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    selectors[12] = ISpokeConfigurator.addLiquidationFee.selector;
-    selectors[13] = ISpokeConfigurator.updateLiquidationFee.selector;
-    selectors[14] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    selectors[15] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[16] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[1] = ISpokeConfigurator.updateBorrowable.selector;
+    selectors[2] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[3] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[4] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[5] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[6] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[7] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectors[8] = ISpokeConfigurator.updatePositionManager.selector;
+    return selectors;
+  }
+
+  function getSpokeConfiguratorLiquidationUpdaterRoleSelectors()
+    internal
+    pure
+    returns (bytes4[] memory)
+  {
+    bytes4[] memory selectors = new bytes4[](8);
+    selectors[0] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
+    selectors[1] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
+    selectors[2] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
+    selectors[3] = ISpokeConfigurator.updateLiquidationConfig.selector;
+    selectors[4] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[5] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[6] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[7] = ISpokeConfigurator.updateLiquidationFee.selector;
     return selectors;
   }
 

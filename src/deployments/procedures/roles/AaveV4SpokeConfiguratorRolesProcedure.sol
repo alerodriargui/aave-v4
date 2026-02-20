@@ -8,14 +8,20 @@ import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.s
 library AaveV4SpokeConfiguratorRolesProcedure {
   /// @notice Grants all SpokeConfigurator granular roles to `admin`:
   ///   - SPOKE_CONFIGURATOR_ADMIN_ROLE
+  ///   - SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE
   ///   - SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE
-  ///   - SPOKE_CONFIGURATOR_FREEZE_ROLE
-  ///   - SPOKE_CONFIGURATOR_PAUSE_ROLE
+  ///   - SPOKE_CONFIGURATOR_FREEZER_ROLE
+  ///   - SPOKE_CONFIGURATOR_PAUSER_ROLE
   function grantSpokeConfiguratorAllRoles(address accessManager, address admin) internal {
     grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE, admin);
+    grantSpokeConfiguratorRole(
+      accessManager,
+      Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
+      admin
+    );
     grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE, admin);
-    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE, admin);
-    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE, admin);
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE, admin);
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE, admin);
   }
 
   function grantSpokeConfiguratorRole(address accessManager, uint64 role, address admin) internal {
@@ -23,6 +29,13 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
+
+  /// @notice Maps SpokeConfigurator function selectors to their roles:
+  ///   - AdminRoleSelectors -> SPOKE_CONFIGURATOR_ADMIN_ROLE
+  ///   - LiquidationUpdaterRoleSelectors -> SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE
+  ///   - ReserveAdderRoleSelectors -> SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE
+  ///   - FreezerRoleSelectors -> SPOKE_CONFIGURATOR_FREEZER_ROLE
+  ///   - PauserRoleSelectors -> SPOKE_CONFIGURATOR_PAUSER_ROLE
   function setupSpokeConfiguratorRoles(address accessManager, address spokeConfigurator) internal {
     setupSpokeConfiguratorRole(
       accessManager,
@@ -33,19 +46,25 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     setupSpokeConfiguratorRole(
       accessManager,
       spokeConfigurator,
+      Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
+      Roles.getSpokeConfiguratorLiquidationUpdaterRoleSelectors()
+    );
+    setupSpokeConfiguratorRole(
+      accessManager,
+      spokeConfigurator,
       Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE,
       Roles.getSpokeConfiguratorReserveAdderRoleSelectors()
     );
     setupSpokeConfiguratorRole(
       accessManager,
       spokeConfigurator,
-      Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE,
+      Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
       Roles.getSpokeConfiguratorFreezerRoleSelectors()
     );
     setupSpokeConfiguratorRole(
       accessManager,
       spokeConfigurator,
-      Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE,
+      Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
       Roles.getSpokeConfiguratorPauserRoleSelectors()
     );
   }

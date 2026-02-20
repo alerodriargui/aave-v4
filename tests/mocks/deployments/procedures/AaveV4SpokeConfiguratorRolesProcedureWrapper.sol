@@ -41,6 +41,14 @@ contract AaveV4SpokeConfiguratorRolesProcedureWrapper {
     return Roles.getSpokeConfiguratorAdminRoleSelectors();
   }
 
+  function getSpokeConfiguratorLiquidationUpdaterRoleSelectors()
+    external
+    pure
+    returns (bytes4[] memory)
+  {
+    return Roles.getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
+  }
+
   function getSpokeConfiguratorReserveAdderRoleSelectors() external pure returns (bytes4[] memory) {
     return Roles.getSpokeConfiguratorReserveAdderRoleSelectors();
   }
