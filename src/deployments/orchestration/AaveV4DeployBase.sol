@@ -16,7 +16,7 @@ library AaveV4DeployBase {
     address admin,
     bytes32 salt
   ) internal returns (BatchReports.AuthorityBatchReport memory) {
-    AaveV4AuthorityBatch authorityBatch = new AaveV4AuthorityBatch(admin, salt);
+    AaveV4AuthorityBatch authorityBatch = new AaveV4AuthorityBatch({admin_: admin, salt_: salt});
     return authorityBatch.getReport();
   }
 
@@ -25,11 +25,11 @@ library AaveV4DeployBase {
     address spokeConfiguratorAuthority,
     bytes32 salt
   ) internal returns (BatchReports.ConfiguratorBatchReport memory) {
-    AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch(
-      hubConfiguratorAuthority,
-      spokeConfiguratorAuthority,
-      salt
-    );
+    AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch({
+      hubConfiguratorAuthority_: hubConfiguratorAuthority,
+      spokeConfiguratorAuthority_: spokeConfiguratorAuthority,
+      salt_: salt
+    });
     return configuratorBatch.getReport();
   }
 
@@ -39,7 +39,12 @@ library AaveV4DeployBase {
     bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (BatchReports.HubBatchReport memory) {
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasurySpokeOwner, authority, hubBytecode, salt);
+    AaveV4HubBatch hubBatch = new AaveV4HubBatch({
+      treasurySpokeOwner_: treasurySpokeOwner,
+      authority_: authority,
+      hubBytecode_: hubBytecode,
+      salt_: salt
+    });
     return hubBatch.getReport();
   }
 
