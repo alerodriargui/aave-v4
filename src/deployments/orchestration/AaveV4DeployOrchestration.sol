@@ -133,7 +133,7 @@ library AaveV4DeployOrchestration {
     address hubConfiguratorAdmin
   ) internal {
     logger.log('...Granting Hub Admin role...');
-    AaveV4HubRolesProcedure.grantHubAdminRole({
+    AaveV4HubRolesProcedure.grantHubAllRoles({
       accessManager: report.authorityBatchReport.accessManager,
       admin: hubAdmin
     });
@@ -159,7 +159,7 @@ library AaveV4DeployOrchestration {
     address spokeConfiguratorAdmin
   ) internal {
     logger.log('...Granting Spoke Admin role...');
-    AaveV4SpokeRolesProcedure.grantSpokeAdminRole({
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles({
       accessManager: report.authorityBatchReport.accessManager,
       admin: spokeAdmin
     });

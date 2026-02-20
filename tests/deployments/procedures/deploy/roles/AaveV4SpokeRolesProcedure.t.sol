@@ -11,12 +11,12 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
     aaveV4SpokeRolesProcedureWrapper = new AaveV4SpokeRolesProcedureWrapper();
   }
 
-  function test_grantSpokeAdminRole_reverts() public {
+  function test_grantSpokeAllRoles_reverts() public {
     vm.expectRevert('zero address');
-    aaveV4SpokeRolesProcedureWrapper.grantSpokeAdminRole({accessManager: address(0), admin: admin});
+    aaveV4SpokeRolesProcedureWrapper.grantSpokeAllRoles({accessManager: address(0), admin: admin});
 
     vm.expectRevert('zero address');
-    aaveV4SpokeRolesProcedureWrapper.grantSpokeAdminRole({
+    aaveV4SpokeRolesProcedureWrapper.grantSpokeAllRoles({
       accessManager: accessManager,
       admin: address(0)
     });
@@ -26,14 +26,14 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
     vm.expectRevert('zero address');
     aaveV4SpokeRolesProcedureWrapper.grantSpokeRole({
       accessManager: address(0),
-      role: Roles.SPOKE_POSITION_UPDATER_ROLE,
+      role: Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
       admin: admin
     });
 
     vm.expectRevert('zero address');
     aaveV4SpokeRolesProcedureWrapper.grantSpokeRole({
       accessManager: accessManager,
-      role: Roles.SPOKE_POSITION_UPDATER_ROLE,
+      role: Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
       admin: address(0)
     });
   }
@@ -77,15 +77,15 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
     });
   }
 
-  function test_grantSpokeAdminRole() public {
+  function test_grantSpokeAllRoles() public {
     _grantAdminToWrapper(address(aaveV4SpokeRolesProcedureWrapper));
-    aaveV4SpokeRolesProcedureWrapper.grantSpokeAdminRole({
+    aaveV4SpokeRolesProcedureWrapper.grantSpokeAllRoles({
       accessManager: accessManager,
       admin: admin
     });
 
     (bool hasPositionUpdater, ) = IAccessManager(accessManager).hasRole(
-      Roles.SPOKE_POSITION_UPDATER_ROLE,
+      Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
       admin
     );
     assertTrue(hasPositionUpdater);
@@ -106,7 +106,7 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
         spoke,
         ISpoke.updateUserDynamicConfig.selector
       ),
-      Roles.SPOKE_POSITION_UPDATER_ROLE
+      Roles.SPOKE_USER_POSITION_UPDATER_ROLE
     );
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(spoke, ISpoke.addReserve.selector),
@@ -116,7 +116,7 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
 
   function _grantAdminToWrapper(address wrapper) internal {
     vm.prank(accessManagerAdmin);
-    IAccessManager(accessManager).grantRole(Roles.DEFAULT_ADMIN_ROLE, wrapper, 0);
+    IAccessManager(accessManager).grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, wrapper, 0);
   }
 
   function test_getSpokePositionUpdaterRoleSelectors() public view {
@@ -144,7 +144,7 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
     _grantAdminToWrapper(address(aaveV4SpokeRolesProcedureWrapper));
     aaveV4SpokeRolesProcedureWrapper.grantSpokeRole({
       accessManager: accessManager,
-      role: Roles.SPOKE_POSITION_UPDATER_ROLE,
+      role: Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
       admin: admin
     });
     aaveV4SpokeRolesProcedureWrapper.setupSpokePositionUpdaterRole({
@@ -204,7 +204,7 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
 
   function test_canCall_spokeAllRoles() public {
     _grantAdminToWrapper(address(aaveV4SpokeRolesProcedureWrapper));
-    aaveV4SpokeRolesProcedureWrapper.grantSpokeAdminRole({
+    aaveV4SpokeRolesProcedureWrapper.grantSpokeAllRoles({
       accessManager: accessManager,
       admin: admin
     });

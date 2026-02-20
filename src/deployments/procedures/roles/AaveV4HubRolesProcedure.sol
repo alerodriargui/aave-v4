@@ -7,12 +7,9 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
 library AaveV4HubRolesProcedure {
-  /// @notice Grants all Hub roles to `admin`:
-  ///   - HUB_FEE_MINTER_ROLE
-  ///   - HUB_CONFIGURATOR_ROLE
-  function grantHubAdminRole(address accessManager, address admin) internal {
-    grantHubRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, admin);
+  function grantHubAllRoles(address accessManager, address admin) internal {
     grantHubRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, admin);
+    grantHubRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, admin);
   }
 
   function grantHubRole(address accessManager, uint64 role, address admin) internal {
@@ -21,10 +18,6 @@ library AaveV4HubRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Maps Hub function selectors to their roles:
-  ///   - HubFeeMinterRoleSelectors -> HUB_FEE_MINTER_ROLE
-  ///   - HubConfiguratorRoleSelectors -> HUB_CONFIGURATOR_ROLE
-  ///   - DeficitEliminatorRoleSelectors -> DEFICIT_ELIMINATOR_ROLE
   function setupHubRoles(address accessManager, address hub) internal {
     setupHubFeeMinterRole(accessManager, hub);
     setupHubConfiguratorRole(accessManager, hub);
@@ -56,7 +49,7 @@ library AaveV4HubRolesProcedure {
     IAccessManager(accessManager).setTargetFunctionRole(
       hub,
       selectors,
-      Roles.DEFICIT_ELIMINATOR_ROLE
+      Roles.HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE
     );
   }
 }

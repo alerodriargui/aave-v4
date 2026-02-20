@@ -125,7 +125,11 @@ contract HubAccessTest is HubBase {
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.setInterestRateData.selector;
     vm.prank(ADMIN);
-    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.DEFAULT_ADMIN_ROLE);
+    accessManager.setTargetFunctionRole(
+      address(hub1),
+      hubSelectors,
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN
+    );
 
     // The old role (HUB_ADMIN) should no longer have access
     vm.expectRevert(
@@ -282,7 +286,7 @@ contract HubAccessTest is HubBase {
       abi.encodeWithSelector(
         IAccessManager.AccessManagerUnauthorizedAccount.selector,
         address(this),
-        Roles.DEFAULT_ADMIN_ROLE
+        Roles.ACCESS_MANAGER_DEFAULT_ADMIN
       )
     );
     authority.updateAuthority(address(hub1), address(newAuthority));

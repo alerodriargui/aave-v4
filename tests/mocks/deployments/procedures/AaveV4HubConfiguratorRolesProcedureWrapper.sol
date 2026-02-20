@@ -41,15 +41,31 @@ contract AaveV4HubConfiguratorRolesProcedureWrapper {
     return Roles.getHubConfiguratorAdminRoleSelectors();
   }
 
-  function getHubHaltRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getHubHaltRoleSelectors();
+  function getHubConfiguratorAssetListerRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorAssetListerRoleSelectors();
   }
 
-  function getHubDeactivateRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getHubDeactivateRoleSelectors();
+  function getHubConfiguratorSpokeAdderRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorSpokeAdderRoleSelectors();
   }
 
-  function getHubCapsResetRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getHubCapsResetRoleSelectors();
+  function getHubConfiguratorInterestRateUpdaterRoleSelectors()
+    external
+    pure
+    returns (bytes4[] memory)
+  {
+    return Roles.getHubConfiguratorInterestRateUpdaterRoleSelectors();
+  }
+
+  function getHubConfiguratorHalterRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorHalterRoleSelectors();
+  }
+
+  function getHubConfiguratorActivaterRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorActivaterRoleSelectors();
+  }
+
+  function getHubConfiguratorCapSetterRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorCapSetterRoleSelectors();
   }
 }

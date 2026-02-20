@@ -8,14 +8,24 @@ import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.s
 library AaveV4HubConfiguratorRolesProcedure {
   /// @notice Grants all HubConfigurator granular roles to `admin`:
   ///   - HUB_CONFIGURATOR_ADMIN_ROLE
-  ///   - HUB_HALT_ROLE
-  ///   - HUB_DEACTIVATE_ROLE
-  ///   - HUB_CAPS_RESET_ROLE
+  ///   - HUB_CONFIGURATOR_ASSET_LISTER_ROLE
+  ///   - HUB_CONFIGURATOR_SPOKE_ADDER_ROLE
+  ///   - HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE
+  ///   - HUB_CONFIGURATOR_HALT_ROLE
+  ///   - HUB_CONFIGURATOR_DEACTIVATE_ROLE
+  ///   - HUB_CONFIGURATOR_CAPS_UDPATER_ROLE
   function grantHubConfiguratorAllRoles(address accessManager, address admin) internal {
     grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_ADMIN_ROLE, admin);
-    grantHubConfiguratorRole(accessManager, Roles.HUB_HALT_ROLE, admin);
-    grantHubConfiguratorRole(accessManager, Roles.HUB_DEACTIVATE_ROLE, admin);
-    grantHubConfiguratorRole(accessManager, Roles.HUB_CAPS_RESET_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE, admin);
+    grantHubConfiguratorRole(
+      accessManager,
+      Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
+      admin
+    );
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_HALT_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_DEACTIVATE_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_CAPS_UDPATER_ROLE, admin);
   }
 
   function grantHubConfiguratorRole(address accessManager, uint64 role, address admin) internal {
@@ -24,11 +34,6 @@ library AaveV4HubConfiguratorRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Maps HubConfigurator function selectors to their granular roles:
-  ///   - HubConfiguratorAdminRoleSelectors -> HUB_CONFIGURATOR_ADMIN_ROLE
-  ///   - HubHaltRoleSelectors -> HUB_HALT_ROLE
-  ///   - HubDeactivateRoleSelectors -> HUB_DEACTIVATE_ROLE
-  ///   - HubCapsResetRoleSelectors -> HUB_CAPS_RESET_ROLE
   function setupHubConfiguratorAllRoles(address accessManager, address hubConfigurator) internal {
     setupHubConfiguratorRole(
       accessManager,
@@ -39,20 +44,38 @@ library AaveV4HubConfiguratorRolesProcedure {
     setupHubConfiguratorRole(
       accessManager,
       hubConfigurator,
-      Roles.HUB_HALT_ROLE,
-      Roles.getHubHaltRoleSelectors()
+      Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
+      Roles.getHubConfiguratorAssetListerRoleSelectors()
     );
     setupHubConfiguratorRole(
       accessManager,
       hubConfigurator,
-      Roles.HUB_DEACTIVATE_ROLE,
-      Roles.getHubDeactivateRoleSelectors()
+      Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE,
+      Roles.getHubConfiguratorSpokeAdderRoleSelectors()
     );
     setupHubConfiguratorRole(
       accessManager,
       hubConfigurator,
-      Roles.HUB_CAPS_RESET_ROLE,
-      Roles.getHubCapsResetRoleSelectors()
+      Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
+      Roles.getHubConfiguratorInterestRateUpdaterRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_HALT_ROLE,
+      Roles.getHubConfiguratorHalterRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_DEACTIVATE_ROLE,
+      Roles.getHubConfiguratorActivaterRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_CAPS_UDPATER_ROLE,
+      Roles.getHubConfiguratorCapSetterRoleSelectors()
     );
   }
 

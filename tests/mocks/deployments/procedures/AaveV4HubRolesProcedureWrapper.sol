@@ -8,8 +8,8 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 contract AaveV4HubRolesProcedureWrapper {
   bool public IS_TEST = true;
 
-  function grantHubAdminRole(address accessManager, address admin) external {
-    AaveV4HubRolesProcedure.grantHubAdminRole(accessManager, admin);
+  function grantHubAllRoles(address accessManager, address admin) external {
+    AaveV4HubRolesProcedure.grantHubAllRoles(accessManager, admin);
   }
 
   function grantHubRole(address accessManager, uint64 role, address admin) external {

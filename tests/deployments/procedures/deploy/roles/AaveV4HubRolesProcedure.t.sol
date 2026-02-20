@@ -11,12 +11,12 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
     aaveV4HubRolesProcedureWrapper = new AaveV4HubRolesProcedureWrapper();
   }
 
-  function test_grantHubAdminRole_reverts() public {
+  function test_grantHubAllRoles_reverts() public {
     vm.expectRevert('zero address');
-    aaveV4HubRolesProcedureWrapper.grantHubAdminRole({accessManager: address(0), admin: admin});
+    aaveV4HubRolesProcedureWrapper.grantHubAllRoles({accessManager: address(0), admin: admin});
 
     vm.expectRevert('zero address');
-    aaveV4HubRolesProcedureWrapper.grantHubAdminRole({
+    aaveV4HubRolesProcedureWrapper.grantHubAllRoles({
       accessManager: accessManager,
       admin: address(0)
     });
@@ -68,18 +68,18 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
     });
   }
 
-  function test_grantHubAdminRole() public {
+  function test_grantHubAllRoles() public {
     _grantAdminToWrapper(address(aaveV4HubRolesProcedureWrapper));
-    aaveV4HubRolesProcedureWrapper.grantHubAdminRole({accessManager: accessManager, admin: admin});
-
-    (bool hasFeeMinter, ) = IAccessManager(accessManager).hasRole(Roles.HUB_FEE_MINTER_ROLE, admin);
-    assertTrue(hasFeeMinter);
+    aaveV4HubRolesProcedureWrapper.grantHubAllRoles({accessManager: accessManager, admin: admin});
 
     (bool hasConfigurator, ) = IAccessManager(accessManager).hasRole(
       Roles.HUB_CONFIGURATOR_ROLE,
       admin
     );
     assertTrue(hasConfigurator);
+
+    (bool hasFeeMinter, ) = IAccessManager(accessManager).hasRole(Roles.HUB_FEE_MINTER_ROLE, admin);
+    assertTrue(hasFeeMinter);
   }
 
   function test_setupHubRoles() public {
@@ -96,13 +96,13 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
     );
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(hub, IHub.eliminateDeficit.selector),
-      Roles.DEFICIT_ELIMINATOR_ROLE
+      Roles.HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE
     );
   }
 
   function _grantAdminToWrapper(address wrapper) internal {
     vm.prank(accessManagerAdmin);
-    IAccessManager(accessManager).grantRole(Roles.DEFAULT_ADMIN_ROLE, wrapper, 0);
+    IAccessManager(accessManager).grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, wrapper, 0);
   }
 
   function test_getHubFeeMinterRoleSelectors() public view {
@@ -180,7 +180,7 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
 
   function test_canCall_hubAllRoles() public {
     _grantAdminToWrapper(address(aaveV4HubRolesProcedureWrapper));
-    aaveV4HubRolesProcedureWrapper.grantHubAdminRole({accessManager: accessManager, admin: admin});
+    aaveV4HubRolesProcedureWrapper.grantHubAllRoles({accessManager: accessManager, admin: admin});
     aaveV4HubRolesProcedureWrapper.setupHubRoles({accessManager: accessManager, hub: hub});
 
     bytes4[] memory feeMinterSelectors = aaveV4HubRolesProcedureWrapper

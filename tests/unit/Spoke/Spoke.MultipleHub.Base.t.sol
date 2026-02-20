@@ -63,13 +63,13 @@ contract SpokeMultipleHubBase is SpokeBase {
     accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, ADMIN, 0);
     accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, HUB_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, HUB_ADMIN, 0);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, SPOKE_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
+    accessManager.grantRole(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
 
     // Grant responsibilities to roles
     // Spoke Configurator functionalities
@@ -98,12 +98,12 @@ contract SpokeMultipleHubBase is SpokeBase {
     accessManager.setTargetFunctionRole(
       address(spoke1),
       positionSelectors,
-      Roles.SPOKE_POSITION_UPDATER_ROLE
+      Roles.SPOKE_USER_POSITION_UPDATER_ROLE
     );
     accessManager.setTargetFunctionRole(
       address(newSpoke),
       positionSelectors,
-      Roles.SPOKE_POSITION_UPDATER_ROLE
+      Roles.SPOKE_USER_POSITION_UPDATER_ROLE
     );
 
     // Hub Admin functionalities

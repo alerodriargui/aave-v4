@@ -215,8 +215,8 @@ library AaveV4TestOrchestration {
     address hubAdmin
   ) public {
     // grant Hub Admin roles
-    AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManager, admin);
-    AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManager, hubAdmin);
+    AaveV4HubRolesProcedure.grantHubAllRoles(report.accessManager, admin);
+    AaveV4HubRolesProcedure.grantHubAllRoles(report.accessManager, hubAdmin);
 
     // grant Hub Configurator role
     AaveV4HubRolesProcedure.grantHubRole(
@@ -239,8 +239,8 @@ library AaveV4TestOrchestration {
     address spokeAdmin
   ) public {
     // grant Spoke roles
-    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManager, admin);
-    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManager, spokeAdmin);
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles(report.accessManager, admin);
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles(report.accessManager, spokeAdmin);
 
     // grant Spoke Configurator roles (allows SpokeConfigurator to call Spoke functions)
     AaveV4SpokeRolesProcedure.grantSpokeRole(

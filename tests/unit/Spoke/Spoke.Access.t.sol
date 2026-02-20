@@ -165,7 +165,7 @@ contract SpokeAccessTest is SpokeBase {
       abi.encodeWithSelector(
         IAccessManager.AccessManagerUnauthorizedAccount.selector,
         address(this),
-        Roles.DEFAULT_ADMIN_ROLE
+        Roles.ACCESS_MANAGER_DEFAULT_ADMIN
       )
     );
     authority.updateAuthority(address(spoke1), address(newAuthority));

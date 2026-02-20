@@ -16,7 +16,7 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
 
     _grantTmpRootAdminRole(newAdmin);
     (bool hasRole, uint32 executionDelay) = IAccessManagerEnumerable(accessManager).hasRole(
-      Roles.DEFAULT_ADMIN_ROLE,
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
       newAdmin
     );
     assertTrue(hasRole);
@@ -51,7 +51,7 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
     address newAdmin = makeAddr('newAdmin');
     vm.prank(accessManagerAdmin);
     IAccessManager(accessManager).grantRole(
-      Roles.DEFAULT_ADMIN_ROLE,
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
       address(aaveV4AccessManagerRolesProcedureWrapper),
       0
     );
@@ -61,7 +61,7 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
     });
 
     (bool hasRole, uint32 executionDelay) = IAccessManagerEnumerable(accessManager).hasRole(
-      Roles.DEFAULT_ADMIN_ROLE,
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
       newAdmin
     );
     assertTrue(hasRole);
@@ -86,7 +86,7 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
   function _grantTmpRootAdminRole(address newAdmin) internal {
     vm.startPrank(accessManagerAdmin);
     IAccessManager(accessManager).grantRole(
-      Roles.DEFAULT_ADMIN_ROLE,
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
       address(aaveV4AccessManagerRolesProcedureWrapper),
       0
     );

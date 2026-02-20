@@ -7,11 +7,8 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
 library AaveV4SpokeRolesProcedure {
-  /// @notice Grants all Spoke roles to `admin`:
-  ///   - SPOKE_POSITION_UPDATER_ROLE
-  ///   - SPOKE_CONFIGURATOR_ROLE
-  function grantSpokeAdminRole(address accessManager, address admin) internal {
-    grantSpokeRole(accessManager, Roles.SPOKE_POSITION_UPDATER_ROLE, admin);
+  function grantSpokeAllRoles(address accessManager, address admin) internal {
+    grantSpokeRole(accessManager, Roles.SPOKE_USER_POSITION_UPDATER_ROLE, admin);
     grantSpokeRole(accessManager, Roles.SPOKE_CONFIGURATOR_ROLE, admin);
   }
 
@@ -21,9 +18,6 @@ library AaveV4SpokeRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Maps Spoke function selectors to their roles:
-  ///   - SpokePositionUpdaterRoleSelectors -> SPOKE_POSITION_UPDATER_ROLE
-  ///   - SpokeConfiguratorRoleSelectors -> SPOKE_CONFIGURATOR_ROLE
   function setupSpokeRoles(address accessManager, address spoke) internal {
     setupSpokePositionUpdaterRole(accessManager, spoke);
     setupSpokeConfiguratorRole(accessManager, spoke);
@@ -36,7 +30,7 @@ library AaveV4SpokeRolesProcedure {
     IAccessManager(accessManager).setTargetFunctionRole(
       spoke,
       selectors,
-      Roles.SPOKE_POSITION_UPDATER_ROLE
+      Roles.SPOKE_USER_POSITION_UPDATER_ROLE
     );
   }
 

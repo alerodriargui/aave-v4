@@ -8,12 +8,14 @@ import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.s
 library AaveV4SpokeConfiguratorRolesProcedure {
   /// @notice Grants all SpokeConfigurator granular roles to `admin`:
   ///   - SPOKE_CONFIGURATOR_ADMIN_ROLE
-  ///   - SPOKE_FREEZE_ROLE
-  ///   - SPOKE_PAUSE_ROLE
+  ///   - SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE
+  ///   - SPOKE_CONFIGURATOR_FREEZE_ROLE
+  ///   - SPOKE_CONFIGURATOR_PAUSE_ROLE
   function grantSpokeConfiguratorAllRoles(address accessManager, address admin) internal {
     grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE, admin);
-    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_FREEZE_ROLE, admin);
-    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_PAUSE_ROLE, admin);
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE, admin);
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE, admin);
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE, admin);
   }
 
   function grantSpokeConfiguratorRole(address accessManager, uint64 role, address admin) internal {
@@ -21,11 +23,6 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
-
-  /// @notice Maps SpokeConfigurator function selectors to their granular roles:
-  ///   - SpokeConfiguratorAdminRoleSelectors -> SPOKE_CONFIGURATOR_ADMIN_ROLE
-  ///   - SpokeFreezeRoleSelectors -> SPOKE_FREEZE_ROLE
-  ///   - SpokePauseRoleSelectors -> SPOKE_PAUSE_ROLE
   function setupSpokeConfiguratorRoles(address accessManager, address spokeConfigurator) internal {
     setupSpokeConfiguratorRole(
       accessManager,
@@ -36,14 +33,20 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     setupSpokeConfiguratorRole(
       accessManager,
       spokeConfigurator,
-      Roles.SPOKE_FREEZE_ROLE,
-      Roles.getSpokeFreezeRoleSelectors()
+      Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE,
+      Roles.getSpokeConfiguratorReserveAdderRoleSelectors()
     );
     setupSpokeConfiguratorRole(
       accessManager,
       spokeConfigurator,
-      Roles.SPOKE_PAUSE_ROLE,
-      Roles.getSpokePauseRoleSelectors()
+      Roles.SPOKE_CONFIGURATOR_FREEZE_ROLE,
+      Roles.getSpokeConfiguratorFreezerRoleSelectors()
+    );
+    setupSpokeConfiguratorRole(
+      accessManager,
+      spokeConfigurator,
+      Roles.SPOKE_CONFIGURATOR_PAUSE_ROLE,
+      Roles.getSpokeConfiguratorPauserRoleSelectors()
     );
   }
 

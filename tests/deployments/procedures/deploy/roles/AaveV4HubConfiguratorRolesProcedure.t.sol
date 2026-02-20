@@ -75,17 +75,41 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     );
     assertTrue(hasAdmin);
 
-    (bool hasHalt, ) = IAccessManager(accessManager).hasRole(Roles.HUB_HALT_ROLE, admin);
+    (bool hasAssetLister, ) = IAccessManager(accessManager).hasRole(
+      Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
+      admin
+    );
+    assertTrue(hasAssetLister);
+
+    (bool hasSpokeAdder, ) = IAccessManager(accessManager).hasRole(
+      Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE,
+      admin
+    );
+    assertTrue(hasSpokeAdder);
+
+    (bool hasIRUpdater, ) = IAccessManager(accessManager).hasRole(
+      Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
+      admin
+    );
+    assertTrue(hasIRUpdater);
+
+    (bool hasHalt, ) = IAccessManager(accessManager).hasRole(
+      Roles.HUB_CONFIGURATOR_HALT_ROLE,
+      admin
+    );
     assertTrue(hasHalt);
 
     (bool hasDeactivate, ) = IAccessManager(accessManager).hasRole(
-      Roles.HUB_DEACTIVATE_ROLE,
+      Roles.HUB_CONFIGURATOR_DEACTIVATE_ROLE,
       admin
     );
     assertTrue(hasDeactivate);
 
-    (bool hasCapsReset, ) = IAccessManager(accessManager).hasRole(Roles.HUB_CAPS_RESET_ROLE, admin);
-    assertTrue(hasCapsReset);
+    (bool hasCapsUpdater, ) = IAccessManager(accessManager).hasRole(
+      Roles.HUB_CONFIGURATOR_CAPS_UDPATER_ROLE,
+      admin
+    );
+    assertTrue(hasCapsUpdater);
   }
 
   function test_setupHubConfiguratorAllRoles() public {
@@ -98,78 +122,114 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
         hubConfigurator,
-        IHubConfigurator.addAsset.selector
+        IHubConfigurator.updateLiquidityFee.selector
       ),
       Roles.HUB_CONFIGURATOR_ADMIN_ROLE
     );
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
         hubConfigurator,
+        IHubConfigurator.addAsset.selector
+      ),
+      Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        hubConfigurator,
+        IHubConfigurator.addSpoke.selector
+      ),
+      Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        hubConfigurator,
+        IHubConfigurator.updateInterestRateStrategy.selector
+      ),
+      Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        hubConfigurator,
         IHubConfigurator.haltAsset.selector
       ),
-      Roles.HUB_HALT_ROLE
+      Roles.HUB_CONFIGURATOR_HALT_ROLE
     );
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
         hubConfigurator,
         IHubConfigurator.deactivateAsset.selector
       ),
-      Roles.HUB_DEACTIVATE_ROLE
+      Roles.HUB_CONFIGURATOR_DEACTIVATE_ROLE
     );
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
         hubConfigurator,
         IHubConfigurator.resetAssetCaps.selector
       ),
-      Roles.HUB_CAPS_RESET_ROLE
+      Roles.HUB_CONFIGURATOR_CAPS_UDPATER_ROLE
     );
   }
 
   function _grantAdminToWrapper(address _wrapper) internal {
     vm.prank(accessManagerAdmin);
-    IAccessManager(accessManager).grantRole(Roles.DEFAULT_ADMIN_ROLE, _wrapper, 0);
+    IAccessManager(accessManager).grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, _wrapper, 0);
   }
 
   function test_getHubConfiguratorAdminRoleSelectors() public view {
     bytes4[] memory selectors = wrapper.getHubConfiguratorAdminRoleSelectors();
-    assertEq(selectors.length, 16);
+    assertEq(selectors.length, 5);
+    assertEq(selectors[0], IHubConfigurator.updateLiquidityFee.selector);
+    assertEq(selectors[1], IHubConfigurator.updateFeeReceiver.selector);
+    assertEq(selectors[2], IHubConfigurator.updateFeeConfig.selector);
+    assertEq(selectors[3], IHubConfigurator.updateReinvestmentController.selector);
+    assertEq(selectors[4], IHubConfigurator.updateSpokeRiskPremiumThreshold.selector);
+  }
+
+  function test_getHubConfiguratorAssetListerRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getHubConfiguratorAssetListerRoleSelectors();
+    assertEq(selectors.length, 2);
     assertEq(selectors[0], IHubConfigurator.addAsset.selector);
     assertEq(selectors[1], IHubConfigurator.addAssetWithDecimals.selector);
-    assertEq(selectors[2], IHubConfigurator.updateLiquidityFee.selector);
-    assertEq(selectors[3], IHubConfigurator.updateFeeReceiver.selector);
-    assertEq(selectors[4], IHubConfigurator.updateFeeConfig.selector);
-    assertEq(selectors[5], IHubConfigurator.updateInterestRateStrategy.selector);
-    assertEq(selectors[6], IHubConfigurator.updateReinvestmentController.selector);
-    assertEq(selectors[7], IHubConfigurator.addSpoke.selector);
-    assertEq(selectors[8], IHubConfigurator.addSpokeToAssets.selector);
-    assertEq(selectors[9], IHubConfigurator.updateSpokeActive.selector);
-    assertEq(selectors[10], IHubConfigurator.updateSpokeHalted.selector);
-    assertEq(selectors[11], IHubConfigurator.updateSpokeSupplyCap.selector);
-    assertEq(selectors[12], IHubConfigurator.updateSpokeDrawCap.selector);
-    assertEq(selectors[13], IHubConfigurator.updateSpokeRiskPremiumThreshold.selector);
-    assertEq(selectors[14], IHubConfigurator.updateSpokeCaps.selector);
-    assertEq(selectors[15], IHubConfigurator.updateInterestRateData.selector);
   }
 
-  function test_getHubHaltRoleSelectors() public view {
-    bytes4[] memory selectors = wrapper.getHubHaltRoleSelectors();
+  function test_getHubConfiguratorSpokeAdderRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getHubConfiguratorSpokeAdderRoleSelectors();
     assertEq(selectors.length, 2);
+    assertEq(selectors[0], IHubConfigurator.addSpoke.selector);
+    assertEq(selectors[1], IHubConfigurator.addSpokeToAssets.selector);
+  }
+
+  function test_getHubConfiguratorInterestRateUpdaterRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getHubConfiguratorInterestRateUpdaterRoleSelectors();
+    assertEq(selectors.length, 2);
+    assertEq(selectors[0], IHubConfigurator.updateInterestRateStrategy.selector);
+    assertEq(selectors[1], IHubConfigurator.updateInterestRateData.selector);
+  }
+
+  function test_getHubConfiguratorHalterRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getHubConfiguratorHalterRoleSelectors();
+    assertEq(selectors.length, 3);
     assertEq(selectors[0], IHubConfigurator.haltAsset.selector);
     assertEq(selectors[1], IHubConfigurator.haltSpoke.selector);
+    assertEq(selectors[2], IHubConfigurator.updateSpokeHalted.selector);
   }
 
-  function test_getHubDeactivateRoleSelectors() public view {
-    bytes4[] memory selectors = wrapper.getHubDeactivateRoleSelectors();
-    assertEq(selectors.length, 2);
+  function test_getHubConfiguratorActivaterRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getHubConfiguratorActivaterRoleSelectors();
+    assertEq(selectors.length, 3);
     assertEq(selectors[0], IHubConfigurator.deactivateAsset.selector);
     assertEq(selectors[1], IHubConfigurator.deactivateSpoke.selector);
+    assertEq(selectors[2], IHubConfigurator.updateSpokeActive.selector);
   }
 
-  function test_getHubCapsResetRoleSelectors() public view {
-    bytes4[] memory selectors = wrapper.getHubCapsResetRoleSelectors();
-    assertEq(selectors.length, 2);
+  function test_getHubConfiguratorCapSetterRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getHubConfiguratorCapSetterRoleSelectors();
+    assertEq(selectors.length, 5);
     assertEq(selectors[0], IHubConfigurator.resetAssetCaps.selector);
     assertEq(selectors[1], IHubConfigurator.resetSpokeCaps.selector);
+    assertEq(selectors[2], IHubConfigurator.updateSpokeCaps.selector);
+    assertEq(selectors[3], IHubConfigurator.updateSpokeSupplyCap.selector);
+    assertEq(selectors[4], IHubConfigurator.updateSpokeDrawCap.selector);
   }
 
   function test_canCall_hubConfiguratorAdminRole() public {
@@ -207,18 +267,123 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     }
   }
 
+  function test_canCall_hubAssetListerRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantHubConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
+      admin: admin
+    });
+    bytes4[] memory selectors = wrapper.getHubConfiguratorAssetListerRoleSelectors();
+    wrapper.setupHubConfiguratorRole({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator,
+      role: Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
+      selectors: selectors
+    });
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_hubSpokeAdderRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantHubConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE,
+      admin: admin
+    });
+    bytes4[] memory selectors = wrapper.getHubConfiguratorSpokeAdderRoleSelectors();
+    wrapper.setupHubConfiguratorRole({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator,
+      role: Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE,
+      selectors: selectors
+    });
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
+  function test_canCall_hubInterestRateUpdaterRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantHubConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
+      admin: admin
+    });
+    bytes4[] memory selectors = wrapper.getHubConfiguratorInterestRateUpdaterRoleSelectors();
+    wrapper.setupHubConfiguratorRole({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator,
+      role: Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
+      selectors: selectors
+    });
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 i = 0; i < selectors.length; i++) {
+      (bool allowed, ) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        hubConfigurator,
+        selectors[i]
+      );
+      assertFalse(allowed);
+    }
+  }
+
   function test_canCall_hubHaltRole() public {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantHubConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.HUB_HALT_ROLE,
+      role: Roles.HUB_CONFIGURATOR_HALT_ROLE,
       admin: admin
     });
-    bytes4[] memory selectors = wrapper.getHubHaltRoleSelectors();
+    bytes4[] memory selectors = wrapper.getHubConfiguratorHalterRoleSelectors();
     wrapper.setupHubConfiguratorRole({
       accessManager: accessManager,
       hubConfigurator: hubConfigurator,
-      role: Roles.HUB_HALT_ROLE,
+      role: Roles.HUB_CONFIGURATOR_HALT_ROLE,
       selectors: selectors
     });
     for (uint256 i = 0; i < selectors.length; i++) {
@@ -246,14 +411,14 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantHubConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.HUB_DEACTIVATE_ROLE,
+      role: Roles.HUB_CONFIGURATOR_DEACTIVATE_ROLE,
       admin: admin
     });
-    bytes4[] memory selectors = wrapper.getHubDeactivateRoleSelectors();
+    bytes4[] memory selectors = wrapper.getHubConfiguratorActivaterRoleSelectors();
     wrapper.setupHubConfiguratorRole({
       accessManager: accessManager,
       hubConfigurator: hubConfigurator,
-      role: Roles.HUB_DEACTIVATE_ROLE,
+      role: Roles.HUB_CONFIGURATOR_DEACTIVATE_ROLE,
       selectors: selectors
     });
     for (uint256 i = 0; i < selectors.length; i++) {
@@ -277,18 +442,18 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     }
   }
 
-  function test_canCall_hubCapsResetRole() public {
+  function test_canCall_hubCapsUpdaterRole() public {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantHubConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.HUB_CAPS_RESET_ROLE,
+      role: Roles.HUB_CONFIGURATOR_CAPS_UDPATER_ROLE,
       admin: admin
     });
-    bytes4[] memory selectors = wrapper.getHubCapsResetRoleSelectors();
+    bytes4[] memory selectors = wrapper.getHubConfiguratorCapSetterRoleSelectors();
     wrapper.setupHubConfiguratorRole({
       accessManager: accessManager,
       hubConfigurator: hubConfigurator,
-      role: Roles.HUB_CAPS_RESET_ROLE,
+      role: Roles.HUB_CONFIGURATOR_CAPS_UDPATER_ROLE,
       selectors: selectors
     });
     for (uint256 i = 0; i < selectors.length; i++) {
@@ -331,7 +496,41 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
       assertEq(delay, 0);
     }
 
-    bytes4[] memory haltSelectors = wrapper.getHubHaltRoleSelectors();
+    bytes4[] memory assetListerSelectors = wrapper.getHubConfiguratorAssetListerRoleSelectors();
+    for (uint256 i = 0; i < assetListerSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        assetListerSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    bytes4[] memory spokeAdderSelectors = wrapper.getHubConfiguratorSpokeAdderRoleSelectors();
+    for (uint256 i = 0; i < spokeAdderSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        spokeAdderSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    bytes4[] memory irUpdaterSelectors = wrapper
+      .getHubConfiguratorInterestRateUpdaterRoleSelectors();
+    for (uint256 i = 0; i < irUpdaterSelectors.length; i++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        hubConfigurator,
+        irUpdaterSelectors[i]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    bytes4[] memory haltSelectors = wrapper.getHubConfiguratorHalterRoleSelectors();
     for (uint256 i = 0; i < haltSelectors.length; i++) {
       (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
         admin,
@@ -342,7 +541,7 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
       assertEq(delay, 0);
     }
 
-    bytes4[] memory deactivateSelectors = wrapper.getHubDeactivateRoleSelectors();
+    bytes4[] memory deactivateSelectors = wrapper.getHubConfiguratorActivaterRoleSelectors();
     for (uint256 i = 0; i < deactivateSelectors.length; i++) {
       (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
         admin,
@@ -353,12 +552,12 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
       assertEq(delay, 0);
     }
 
-    bytes4[] memory capsResetSelectors = wrapper.getHubCapsResetRoleSelectors();
-    for (uint256 i = 0; i < capsResetSelectors.length; i++) {
+    bytes4[] memory capsSetterSelectors = wrapper.getHubConfiguratorCapSetterRoleSelectors();
+    for (uint256 i = 0; i < capsSetterSelectors.length; i++) {
       (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
         admin,
         hubConfigurator,
-        capsResetSelectors[i]
+        capsSetterSelectors[i]
       );
       assertTrue(allowed);
       assertEq(delay, 0);

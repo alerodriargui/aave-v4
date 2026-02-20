@@ -8,8 +8,8 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 contract AaveV4SpokeRolesProcedureWrapper {
   bool public IS_TEST = true;
 
-  function grantSpokeAdminRole(address accessManager, address admin) external {
-    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(accessManager, admin);
+  function grantSpokeAllRoles(address accessManager, address admin) external {
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles(accessManager, admin);
   }
 
   function grantSpokeRole(address accessManager, uint64 role, address admin) external {

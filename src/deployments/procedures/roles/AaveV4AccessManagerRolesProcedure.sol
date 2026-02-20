@@ -24,7 +24,7 @@ library AaveV4AccessManagerRolesProcedure {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({
-      roleId: Roles.DEFAULT_ADMIN_ROLE,
+      roleId: Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
       account: admin,
       executionDelay: 0
     });
@@ -33,6 +33,9 @@ library AaveV4AccessManagerRolesProcedure {
   function revokeAccessManagerAdminRole(address accessManager, address admin) internal {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(admin);
-    IAccessManager(accessManager).revokeRole({roleId: Roles.DEFAULT_ADMIN_ROLE, account: admin});
+    IAccessManager(accessManager).revokeRole({
+      roleId: Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      account: admin
+    });
   }
 }
