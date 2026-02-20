@@ -18,4 +18,8 @@ contract AaveV4AccessManagerRolesProcedureWrapper {
       adminToRemove
     );
   }
+
+  function grantAccessManagerAdminRole(address accessManager, address admin) external {
+    AaveV4AccessManagerRolesProcedure.grantAccessManagerAdminRole(accessManager, admin);
+  }
 }

@@ -22,27 +22,18 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
     });
   }
 
-  function test_grantHubFeeMinterRole_reverts() public {
+  function test_grantHubRole_reverts() public {
     vm.expectRevert('zero address');
-    aaveV4HubRolesProcedureWrapper.grantHubFeeMinterRole({accessManager: address(0), admin: admin});
-
-    vm.expectRevert('zero address');
-    aaveV4HubRolesProcedureWrapper.grantHubFeeMinterRole({
-      accessManager: accessManager,
-      admin: address(0)
-    });
-  }
-
-  function test_grantHubConfiguratorRole_reverts() public {
-    vm.expectRevert('zero address');
-    aaveV4HubRolesProcedureWrapper.grantHubConfiguratorRole({
+    aaveV4HubRolesProcedureWrapper.grantHubRole({
       accessManager: address(0),
+      role: Roles.HUB_FEE_MINTER_ROLE,
       admin: admin
     });
 
     vm.expectRevert('zero address');
-    aaveV4HubRolesProcedureWrapper.grantHubConfiguratorRole({
+    aaveV4HubRolesProcedureWrapper.grantHubRole({
       accessManager: accessManager,
+      role: Roles.HUB_FEE_MINTER_ROLE,
       admin: address(0)
     });
   }
@@ -132,8 +123,9 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
 
   function test_canCall_hubFeeMinterRole() public {
     _grantAdminToWrapper(address(aaveV4HubRolesProcedureWrapper));
-    aaveV4HubRolesProcedureWrapper.grantHubFeeMinterRole({
+    aaveV4HubRolesProcedureWrapper.grantHubRole({
       accessManager: accessManager,
+      role: Roles.HUB_FEE_MINTER_ROLE,
       admin: admin
     });
     aaveV4HubRolesProcedureWrapper.setupHubFeeMinterRole({accessManager: accessManager, hub: hub});
@@ -158,8 +150,9 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
 
   function test_canCall_hubConfiguratorRole() public {
     _grantAdminToWrapper(address(aaveV4HubRolesProcedureWrapper));
-    aaveV4HubRolesProcedureWrapper.grantHubConfiguratorRole({
+    aaveV4HubRolesProcedureWrapper.grantHubRole({
       accessManager: accessManager,
+      role: Roles.HUB_CONFIGURATOR_ROLE,
       admin: admin
     });
     aaveV4HubRolesProcedureWrapper.setupHubConfiguratorRole({

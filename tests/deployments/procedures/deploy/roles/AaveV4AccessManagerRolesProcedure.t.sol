@@ -47,6 +47,41 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
     });
   }
 
+  function test_grantAccessManagerAdminRole() public {
+    address newAdmin = makeAddr('newAdmin');
+    vm.prank(accessManagerAdmin);
+    IAccessManager(accessManager).grantRole(
+      Roles.DEFAULT_ADMIN_ROLE,
+      address(aaveV4AccessManagerRolesProcedureWrapper),
+      0
+    );
+    aaveV4AccessManagerRolesProcedureWrapper.grantAccessManagerAdminRole({
+      accessManager: accessManager,
+      admin: newAdmin
+    });
+
+    (bool hasRole, uint32 executionDelay) = IAccessManagerEnumerable(accessManager).hasRole(
+      Roles.DEFAULT_ADMIN_ROLE,
+      newAdmin
+    );
+    assertTrue(hasRole);
+    assertEq(executionDelay, 0);
+  }
+
+  function test_grantAccessManagerAdminRole_reverts() public {
+    vm.expectRevert('zero address');
+    aaveV4AccessManagerRolesProcedureWrapper.grantAccessManagerAdminRole({
+      accessManager: address(0),
+      admin: admin
+    });
+
+    vm.expectRevert('zero address');
+    aaveV4AccessManagerRolesProcedureWrapper.grantAccessManagerAdminRole({
+      accessManager: accessManager,
+      admin: address(0)
+    });
+  }
+
   /// @dev Grants a temporary root admin role to the wrapper contract to execute the procedure.
   function _grantTmpRootAdminRole(address newAdmin) internal {
     vm.startPrank(accessManagerAdmin);

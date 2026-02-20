@@ -22,30 +22,18 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
     });
   }
 
-  function test_grantSpokePositionUpdaterRole_reverts() public {
+  function test_grantSpokeRole_reverts() public {
     vm.expectRevert('zero address');
-    aaveV4SpokeRolesProcedureWrapper.grantSpokePositionUpdaterRole({
+    aaveV4SpokeRolesProcedureWrapper.grantSpokeRole({
       accessManager: address(0),
+      role: Roles.SPOKE_POSITION_UPDATER_ROLE,
       admin: admin
     });
 
     vm.expectRevert('zero address');
-    aaveV4SpokeRolesProcedureWrapper.grantSpokePositionUpdaterRole({
+    aaveV4SpokeRolesProcedureWrapper.grantSpokeRole({
       accessManager: accessManager,
-      admin: address(0)
-    });
-  }
-
-  function test_grantSpokeConfiguratorRole_reverts() public {
-    vm.expectRevert('zero address');
-    aaveV4SpokeRolesProcedureWrapper.grantSpokeConfiguratorRole({
-      accessManager: address(0),
-      admin: admin
-    });
-
-    vm.expectRevert('zero address');
-    aaveV4SpokeRolesProcedureWrapper.grantSpokeConfiguratorRole({
-      accessManager: accessManager,
+      role: Roles.SPOKE_POSITION_UPDATER_ROLE,
       admin: address(0)
     });
   }
@@ -154,8 +142,9 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
 
   function test_canCall_spokePositionUpdaterRole() public {
     _grantAdminToWrapper(address(aaveV4SpokeRolesProcedureWrapper));
-    aaveV4SpokeRolesProcedureWrapper.grantSpokePositionUpdaterRole({
+    aaveV4SpokeRolesProcedureWrapper.grantSpokeRole({
       accessManager: accessManager,
+      role: Roles.SPOKE_POSITION_UPDATER_ROLE,
       admin: admin
     });
     aaveV4SpokeRolesProcedureWrapper.setupSpokePositionUpdaterRole({
@@ -184,8 +173,9 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
 
   function test_canCall_spokeConfiguratorRole() public {
     _grantAdminToWrapper(address(aaveV4SpokeRolesProcedureWrapper));
-    aaveV4SpokeRolesProcedureWrapper.grantSpokeConfiguratorRole({
+    aaveV4SpokeRolesProcedureWrapper.grantSpokeRole({
       accessManager: accessManager,
+      role: Roles.SPOKE_CONFIGURATOR_ROLE,
       admin: admin
     });
     aaveV4SpokeRolesProcedureWrapper.setupSpokeConfiguratorRole({

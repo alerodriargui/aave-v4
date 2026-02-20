@@ -14,6 +14,7 @@ import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInsta
 
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
@@ -218,8 +219,9 @@ library AaveV4TestOrchestration {
     AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManager, hubAdmin);
 
     // grant Hub Configurator role
-    AaveV4HubRolesProcedure.grantHubConfiguratorRole(
+    AaveV4HubRolesProcedure.grantHubRole(
       report.accessManager,
+      Roles.HUB_CONFIGURATOR_ROLE,
       report.configuratorReport.hubConfigurator
     );
 
@@ -241,8 +243,9 @@ library AaveV4TestOrchestration {
     AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManager, spokeAdmin);
 
     // grant Spoke Configurator roles (allows SpokeConfigurator to call Spoke functions)
-    AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole(
+    AaveV4SpokeRolesProcedure.grantSpokeRole(
       report.accessManager,
+      Roles.SPOKE_CONFIGURATOR_ROLE,
       report.configuratorReport.spokeConfigurator
     );
 
