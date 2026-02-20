@@ -40,15 +40,6 @@ library AaveV4HubConfiguratorRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Maps HubConfigurator function selectors to their roles:
-  ///   - FeeUpdaterRoleSelectors -> HUB_CONFIGURATOR_FEE_UPDATER_ROLE
-  ///   - ReinvestmentUpdaterRoleSelectors -> HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE
-  ///   - AssetListerRoleSelectors -> HUB_CONFIGURATOR_ASSET_LISTER_ROLE
-  ///   - SpokeAdderRoleSelectors -> HUB_CONFIGURATOR_SPOKE_ADDER_ROLE
-  ///   - InterestRateUpdaterRoleSelectors -> HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE
-  ///   - HalterRoleSelectors -> HUB_CONFIGURATOR_HALTER_ROLE
-  ///   - ActivaterRoleSelectors -> HUB_CONFIGURATOR_DEACTIVATER_ROLE
-  ///   - CapSetterRoleSelectors -> HUB_CONFIGURATOR_CAPS_UDPATER_ROLE
   function setupHubConfiguratorAllRoles(address accessManager, address hubConfigurator) internal {
     setupHubConfiguratorRole(
       accessManager,

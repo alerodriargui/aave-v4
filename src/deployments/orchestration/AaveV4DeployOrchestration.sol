@@ -58,7 +58,7 @@ library AaveV4DeployOrchestration {
       hubConfigurator: report.configuratorBatchReport.hubConfigurator
     });
     logger.log('...Setting SpokeConfigurator roles...');
-    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorRoles({
+    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles({
       accessManager: report.authorityBatchReport.accessManager,
       spokeConfigurator: report.configuratorBatchReport.spokeConfigurator
     });
@@ -398,7 +398,7 @@ library AaveV4DeployOrchestration {
     address authority
   ) internal {
     logger.log('...Setting Spoke roles...');
-    AaveV4SpokeRolesProcedure.setupSpokeRoles(authority, report.spokeProxy);
+    AaveV4SpokeRolesProcedure.setupSpokeAllRoles(authority, report.spokeProxy);
   }
 
   function _logHubReport(
@@ -418,7 +418,7 @@ library AaveV4DeployOrchestration {
     address authority
   ) internal {
     logger.log('...Setting Hub roles...');
-    AaveV4HubRolesProcedure.setupHubRoles(authority, report.hub);
+    AaveV4HubRolesProcedure.setupHubAllRoles(authority, report.hub);
   }
 
   function _deriveSalt(bytes32 salt_) internal pure returns (bytes32) {

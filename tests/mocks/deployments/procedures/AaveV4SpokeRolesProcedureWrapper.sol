@@ -17,15 +17,25 @@ contract AaveV4SpokeRolesProcedureWrapper {
   }
 
   function setupSpokeRoles(address accessManager, address spoke) external {
-    AaveV4SpokeRolesProcedure.setupSpokeRoles(accessManager, spoke);
+    AaveV4SpokeRolesProcedure.setupSpokeAllRoles(accessManager, spoke);
   }
 
   function setupSpokePositionUpdaterRole(address accessManager, address spoke) external {
-    AaveV4SpokeRolesProcedure.setupSpokePositionUpdaterRole(accessManager, spoke);
+    AaveV4SpokeRolesProcedure.setupSpokeRole(
+      accessManager,
+      spoke,
+      Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
+      Roles.getSpokePositionUpdaterRoleSelectors()
+    );
   }
 
   function setupSpokeConfiguratorRole(address accessManager, address spoke) external {
-    AaveV4SpokeRolesProcedure.setupSpokeConfiguratorRole(accessManager, spoke);
+    AaveV4SpokeRolesProcedure.setupSpokeRole(
+      accessManager,
+      spoke,
+      Roles.SPOKE_CONFIGURATOR_ROLE,
+      Roles.getSpokeConfiguratorRoleSelectors()
+    );
   }
 
   function getSpokePositionUpdaterRoleSelectors() external pure returns (bytes4[] memory) {

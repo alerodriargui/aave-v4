@@ -7,6 +7,9 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
 library AaveV4HubRolesProcedure {
+  /// @notice Grants all Hub granular roles to `admin`:
+  ///   - HUB_CONFIGURATOR_ROLE
+  ///   - HUB_FEE_MINTER_ROLE
   function grantHubAllRoles(address accessManager, address admin) internal {
     grantHubRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, admin);
     grantHubRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, admin);
@@ -18,38 +21,39 @@ library AaveV4HubRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  function setupHubRoles(address accessManager, address hub) internal {
-    setupHubFeeMinterRole(accessManager, hub);
-    setupHubConfiguratorRole(accessManager, hub);
-    setupDeficitEliminatorRole(accessManager, hub);
-  }
-
-  function setupHubFeeMinterRole(address accessManager, address hub) internal {
-    RolesValidation.validateNonZeroAddress(accessManager);
-    RolesValidation.validateNonZeroAddress(hub);
-    bytes4[] memory selectors = Roles.getHubFeeMinterRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(hub, selectors, Roles.HUB_FEE_MINTER_ROLE);
-  }
-
-  function setupHubConfiguratorRole(address accessManager, address hub) internal {
-    RolesValidation.validateNonZeroAddress(accessManager);
-    RolesValidation.validateNonZeroAddress(hub);
-    bytes4[] memory selectors = Roles.getHubConfiguratorRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(
+  function setupHubAllRoles(address accessManager, address hub) internal {
+    setupHubRole(
+      accessManager,
       hub,
-      selectors,
-      Roles.HUB_CONFIGURATOR_ROLE
+      Roles.HUB_CONFIGURATOR_ROLE,
+      Roles.getHubConfiguratorRoleSelectors()
+    );
+    setupHubRole(
+      accessManager,
+      hub,
+      Roles.HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE,
+      Roles.getDeficitEliminatorRoleSelectors()
+    );
+    setupHubRole(
+      accessManager,
+      hub,
+      Roles.HUB_FEE_MINTER_ROLE,
+      Roles.getHubFeeMinterRoleSelectors()
     );
   }
 
-  function setupDeficitEliminatorRole(address accessManager, address hub) internal {
+  function setupHubRole(
+    address accessManager,
+    address hub,
+    uint64 roleId,
+    bytes4[] memory selectors
+  ) internal {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(hub);
-    bytes4[] memory selectors = Roles.getDeficitEliminatorRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(
-      hub,
-      selectors,
-      Roles.HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE
-    );
+    IAccessManager(accessManager).setTargetFunctionRole({
+      target: hub,
+      selectors: selectors,
+      roleId: roleId
+    });
   }
 }

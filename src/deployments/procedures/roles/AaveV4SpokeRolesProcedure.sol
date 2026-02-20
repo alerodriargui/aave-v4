@@ -7,6 +7,9 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
 library AaveV4SpokeRolesProcedure {
+  /// @notice Grants all Spoke granular roles to `admin`:
+  ///   - SPOKE_USER_POSITION_UPDATER_ROLE
+  ///   - SPOKE_CONFIGURATOR_ROLE
   function grantSpokeAllRoles(address accessManager, address admin) internal {
     grantSpokeRole(accessManager, Roles.SPOKE_USER_POSITION_UPDATER_ROLE, admin);
     grantSpokeRole(accessManager, Roles.SPOKE_CONFIGURATOR_ROLE, admin);
@@ -18,30 +21,33 @@ library AaveV4SpokeRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  function setupSpokeRoles(address accessManager, address spoke) internal {
-    setupSpokePositionUpdaterRole(accessManager, spoke);
-    setupSpokeConfiguratorRole(accessManager, spoke);
-  }
-
-  function setupSpokePositionUpdaterRole(address accessManager, address spoke) internal {
-    RolesValidation.validateNonZeroAddress(accessManager);
-    RolesValidation.validateNonZeroAddress(spoke);
-    bytes4[] memory selectors = Roles.getSpokePositionUpdaterRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(
+  function setupSpokeAllRoles(address accessManager, address spoke) internal {
+    setupSpokeRole(
+      accessManager,
       spoke,
-      selectors,
-      Roles.SPOKE_USER_POSITION_UPDATER_ROLE
+      Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
+      Roles.getSpokePositionUpdaterRoleSelectors()
+    );
+    setupSpokeRole(
+      accessManager,
+      spoke,
+      Roles.SPOKE_CONFIGURATOR_ROLE,
+      Roles.getSpokeConfiguratorRoleSelectors()
     );
   }
 
-  function setupSpokeConfiguratorRole(address accessManager, address spoke) internal {
+  function setupSpokeRole(
+    address accessManager,
+    address spoke,
+    uint64 roleId,
+    bytes4[] memory selectors
+  ) internal {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(spoke);
-    bytes4[] memory selectors = Roles.getSpokeConfiguratorRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(
-      spoke,
-      selectors,
-      Roles.SPOKE_CONFIGURATOR_ROLE
-    );
+    IAccessManager(accessManager).setTargetFunctionRole({
+      target: spoke,
+      selectors: selectors,
+      roleId: roleId
+    });
   }
 }

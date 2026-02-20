@@ -176,12 +176,15 @@ library AaveV4TestOrchestration {
   function setRolesTestEnv(TestTypes.TestEnvReport memory report) public {
     // Set Hub Roles
     for (uint256 i; i < report.hubReports.length; ++i) {
-      AaveV4HubRolesProcedure.setupHubRoles(report.accessManager, report.hubReports[i].hub);
+      AaveV4HubRolesProcedure.setupHubAllRoles(report.accessManager, report.hubReports[i].hub);
     }
 
     // Set Spoke Roles
     for (uint256 i; i < report.spokeReports.length; ++i) {
-      AaveV4SpokeRolesProcedure.setupSpokeRoles(report.accessManager, report.spokeReports[i].spoke);
+      AaveV4SpokeRolesProcedure.setupSpokeAllRoles(
+        report.accessManager,
+        report.spokeReports[i].spoke
+      );
     }
 
     // Set Configurator Roles
@@ -189,7 +192,7 @@ library AaveV4TestOrchestration {
       report.accessManager,
       report.configuratorReport.hubConfigurator
     );
-    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorRoles(
+    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles(
       report.accessManager,
       report.configuratorReport.spokeConfigurator
     );
@@ -199,7 +202,7 @@ library AaveV4TestOrchestration {
     TestTypes.TestHubReport memory report,
     address accessManager
   ) public {
-    AaveV4HubRolesProcedure.setupHubRoles(accessManager, report.hub);
+    AaveV4HubRolesProcedure.setupHubAllRoles(accessManager, report.hub);
   }
 
   function grantRolesTestEnv(

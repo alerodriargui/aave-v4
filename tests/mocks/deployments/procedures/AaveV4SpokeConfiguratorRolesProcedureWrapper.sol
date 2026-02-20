@@ -17,7 +17,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureWrapper {
   }
 
   function setupSpokeConfiguratorRoles(address accessManager, address spokeConfigurator) external {
-    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorRoles(
+    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles(
       accessManager,
       spokeConfigurator
     );

@@ -32,7 +32,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
 
     // Setup Hub roles and add asset
     vm.startPrank(accessManagerAdmin);
-    AaveV4HubRolesProcedure.setupHubRoles(accessManager, deployedHub);
+    AaveV4HubRolesProcedure.setupHubAllRoles(accessManager, deployedHub);
     IAccessManagerEnumerable(accessManager).grantRole(Roles.HUB_CONFIGURATOR_ROLE, admin, 0);
     vm.stopPrank();
 

@@ -17,15 +17,25 @@ contract AaveV4HubRolesProcedureWrapper {
   }
 
   function setupHubRoles(address accessManager, address hub) external {
-    AaveV4HubRolesProcedure.setupHubRoles(accessManager, hub);
+    AaveV4HubRolesProcedure.setupHubAllRoles(accessManager, hub);
   }
 
   function setupHubFeeMinterRole(address accessManager, address hub) external {
-    AaveV4HubRolesProcedure.setupHubFeeMinterRole(accessManager, hub);
+    AaveV4HubRolesProcedure.setupHubRole(
+      accessManager,
+      hub,
+      Roles.HUB_FEE_MINTER_ROLE,
+      Roles.getHubFeeMinterRoleSelectors()
+    );
   }
 
   function setupHubConfiguratorRole(address accessManager, address hub) external {
-    AaveV4HubRolesProcedure.setupHubConfiguratorRole(accessManager, hub);
+    AaveV4HubRolesProcedure.setupHubRole(
+      accessManager,
+      hub,
+      Roles.HUB_CONFIGURATOR_ROLE,
+      Roles.getHubConfiguratorRoleSelectors()
+    );
   }
 
   function getHubFeeMinterRoleSelectors() external pure returns (bytes4[] memory) {

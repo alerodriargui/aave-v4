@@ -30,13 +30,10 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Maps SpokeConfigurator function selectors to their roles:
-  ///   - AdminRoleSelectors -> SPOKE_CONFIGURATOR_ADMIN_ROLE
-  ///   - LiquidationUpdaterRoleSelectors -> SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE
-  ///   - ReserveAdderRoleSelectors -> SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE
-  ///   - FreezerRoleSelectors -> SPOKE_CONFIGURATOR_FREEZER_ROLE
-  ///   - PauserRoleSelectors -> SPOKE_CONFIGURATOR_PAUSER_ROLE
-  function setupSpokeConfiguratorRoles(address accessManager, address spokeConfigurator) internal {
+  function setupSpokeConfiguratorAllRoles(
+    address accessManager,
+    address spokeConfigurator
+  ) internal {
     setupSpokeConfiguratorRole(
       accessManager,
       spokeConfigurator,
