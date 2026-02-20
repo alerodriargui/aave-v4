@@ -5,34 +5,26 @@ pragma solidity ^0.8.0;
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
-import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 library AaveV4HubRolesProcedure {
+  /// @notice Grants all Hub roles to `admin`:
+  ///   - HUB_FEE_MINTER_ROLE
+  ///   - HUB_CONFIGURATOR_ROLE
   function grantHubAdminRole(address accessManager, address admin) internal {
-    grantHubFeeMinterRole(accessManager, admin);
-    grantHubConfiguratorRole(accessManager, admin);
+    grantHubRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, admin);
+    grantHubRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, admin);
   }
 
-  function grantHubFeeMinterRole(address accessManager, address admin) internal {
+  function grantHubRole(address accessManager, uint64 role, address admin) internal {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(admin);
-    IAccessManager(accessManager).grantRole({
-      roleId: Roles.HUB_FEE_MINTER_ROLE,
-      account: admin,
-      executionDelay: 0
-    });
+    IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  function grantHubConfiguratorRole(address accessManager, address admin) internal {
-    RolesValidation.validateNonZeroAddress(accessManager);
-    RolesValidation.validateNonZeroAddress(admin);
-    IAccessManager(accessManager).grantRole({
-      roleId: Roles.HUB_CONFIGURATOR_ROLE,
-      account: admin,
-      executionDelay: 0
-    });
-  }
-
+  /// @notice Maps Hub function selectors to their roles:
+  ///   - HubFeeMinterRoleSelectors -> HUB_FEE_MINTER_ROLE
+  ///   - HubConfiguratorRoleSelectors -> HUB_CONFIGURATOR_ROLE
+  ///   - DeficitEliminatorRoleSelectors -> DEFICIT_ELIMINATOR_ROLE
   function setupHubRoles(address accessManager, address hub) internal {
     setupHubFeeMinterRole(accessManager, hub);
     setupHubConfiguratorRole(accessManager, hub);
@@ -42,14 +34,14 @@ library AaveV4HubRolesProcedure {
   function setupHubFeeMinterRole(address accessManager, address hub) internal {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(hub);
-    bytes4[] memory selectors = getHubFeeMinterRoleSelectors();
+    bytes4[] memory selectors = Roles.getHubFeeMinterRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(hub, selectors, Roles.HUB_FEE_MINTER_ROLE);
   }
 
   function setupHubConfiguratorRole(address accessManager, address hub) internal {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(hub);
-    bytes4[] memory selectors = getHubConfiguratorRoleSelectors();
+    bytes4[] memory selectors = Roles.getHubConfiguratorRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(
       hub,
       selectors,
@@ -60,33 +52,11 @@ library AaveV4HubRolesProcedure {
   function setupDeficitEliminatorRole(address accessManager, address hub) internal {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(hub);
-    bytes4[] memory selectors = getDeficitEliminatorRoleSelectors();
+    bytes4[] memory selectors = Roles.getDeficitEliminatorRoleSelectors();
     IAccessManager(accessManager).setTargetFunctionRole(
       hub,
       selectors,
       Roles.DEFICIT_ELIMINATOR_ROLE
     );
-  }
-
-  function getDeficitEliminatorRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](1);
-    selectors[0] = IHub.eliminateDeficit.selector;
-    return selectors;
-  }
-
-  function getHubFeeMinterRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](1);
-    selectors[0] = IHub.mintFeeShares.selector;
-    return selectors;
-  }
-
-  function getHubConfiguratorRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](5);
-    selectors[0] = IHub.addAsset.selector;
-    selectors[1] = IHub.updateAssetConfig.selector;
-    selectors[2] = IHub.addSpoke.selector;
-    selectors[3] = IHub.updateSpokeConfig.selector;
-    selectors[4] = IHub.setInterestRateData.selector;
-    return selectors;
   }
 }

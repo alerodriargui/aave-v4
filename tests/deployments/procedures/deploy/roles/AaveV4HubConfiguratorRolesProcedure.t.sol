@@ -15,36 +15,20 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     wrapper = new AaveV4HubConfiguratorRolesProcedureWrapper();
   }
 
-  function test_grantHubConfiguratorAdminRole_reverts() public {
+  function test_grantHubConfiguratorRole_reverts() public {
     vm.expectRevert('zero address');
-    wrapper.grantHubConfiguratorAdminRole({accessManager: address(0), admin: admin});
+    wrapper.grantHubConfiguratorRole({
+      accessManager: address(0),
+      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      admin: admin
+    });
 
     vm.expectRevert('zero address');
-    wrapper.grantHubConfiguratorAdminRole({accessManager: accessManager, admin: address(0)});
-  }
-
-  function test_grantHubHaltRole_reverts() public {
-    vm.expectRevert('zero address');
-    wrapper.grantHubHaltRole({accessManager: address(0), admin: admin});
-
-    vm.expectRevert('zero address');
-    wrapper.grantHubHaltRole({accessManager: accessManager, admin: address(0)});
-  }
-
-  function test_grantHubDeactivateRole_reverts() public {
-    vm.expectRevert('zero address');
-    wrapper.grantHubDeactivateRole({accessManager: address(0), admin: admin});
-
-    vm.expectRevert('zero address');
-    wrapper.grantHubDeactivateRole({accessManager: accessManager, admin: address(0)});
-  }
-
-  function test_grantHubCapsResetRole_reverts() public {
-    vm.expectRevert('zero address');
-    wrapper.grantHubCapsResetRole({accessManager: address(0), admin: admin});
-
-    vm.expectRevert('zero address');
-    wrapper.grantHubCapsResetRole({accessManager: accessManager, admin: address(0)});
+    wrapper.grantHubConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      admin: address(0)
+    });
   }
 
   function test_setupHubConfiguratorAllRoles_reverts() public {
@@ -61,42 +45,24 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     });
   }
 
-  function test_setupHubConfiguratorAdminRole_reverts() public {
+  function test_setupHubConfiguratorRole_reverts() public {
+    bytes4[] memory selectors = wrapper.getHubConfiguratorAdminRoleSelectors();
+
     vm.expectRevert('zero address');
-    wrapper.setupHubConfiguratorAdminRole({
+    wrapper.setupHubConfiguratorRole({
       accessManager: address(0),
-      hubConfigurator: hubConfigurator
+      hubConfigurator: hubConfigurator,
+      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      selectors: selectors
     });
 
     vm.expectRevert('zero address');
-    wrapper.setupHubConfiguratorAdminRole({
+    wrapper.setupHubConfiguratorRole({
       accessManager: accessManager,
-      hubConfigurator: address(0)
+      hubConfigurator: address(0),
+      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      selectors: selectors
     });
-  }
-
-  function test_setupHubHaltRole_reverts() public {
-    vm.expectRevert('zero address');
-    wrapper.setupHubHaltRole({accessManager: address(0), hubConfigurator: hubConfigurator});
-
-    vm.expectRevert('zero address');
-    wrapper.setupHubHaltRole({accessManager: accessManager, hubConfigurator: address(0)});
-  }
-
-  function test_setupHubDeactivateRole_reverts() public {
-    vm.expectRevert('zero address');
-    wrapper.setupHubDeactivateRole({accessManager: address(0), hubConfigurator: hubConfigurator});
-
-    vm.expectRevert('zero address');
-    wrapper.setupHubDeactivateRole({accessManager: accessManager, hubConfigurator: address(0)});
-  }
-
-  function test_setupHubCapsResetRole_reverts() public {
-    vm.expectRevert('zero address');
-    wrapper.setupHubCapsResetRole({accessManager: address(0), hubConfigurator: hubConfigurator});
-
-    vm.expectRevert('zero address');
-    wrapper.setupHubCapsResetRole({accessManager: accessManager, hubConfigurator: address(0)});
   }
 
   function test_grantHubConfiguratorAllRoles() public {
@@ -208,13 +174,18 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_canCall_hubConfiguratorAdminRole() public {
     _grantAdminToWrapper(address(wrapper));
-    wrapper.grantHubConfiguratorAdminRole({accessManager: accessManager, admin: admin});
-    wrapper.setupHubConfiguratorAdminRole({
+    wrapper.grantHubConfiguratorRole({
       accessManager: accessManager,
-      hubConfigurator: hubConfigurator
+      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      admin: admin
     });
-
     bytes4[] memory selectors = wrapper.getHubConfiguratorAdminRoleSelectors();
+    wrapper.setupHubConfiguratorRole({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator,
+      role: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
+      selectors: selectors
+    });
     for (uint256 i = 0; i < selectors.length; i++) {
       (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
         admin,
@@ -238,10 +209,18 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_canCall_hubHaltRole() public {
     _grantAdminToWrapper(address(wrapper));
-    wrapper.grantHubHaltRole({accessManager: accessManager, admin: admin});
-    wrapper.setupHubHaltRole({accessManager: accessManager, hubConfigurator: hubConfigurator});
-
+    wrapper.grantHubConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.HUB_HALT_ROLE,
+      admin: admin
+    });
     bytes4[] memory selectors = wrapper.getHubHaltRoleSelectors();
+    wrapper.setupHubConfiguratorRole({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator,
+      role: Roles.HUB_HALT_ROLE,
+      selectors: selectors
+    });
     for (uint256 i = 0; i < selectors.length; i++) {
       (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
         admin,
@@ -265,13 +244,18 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_canCall_hubDeactivateRole() public {
     _grantAdminToWrapper(address(wrapper));
-    wrapper.grantHubDeactivateRole({accessManager: accessManager, admin: admin});
-    wrapper.setupHubDeactivateRole({
+    wrapper.grantHubConfiguratorRole({
       accessManager: accessManager,
-      hubConfigurator: hubConfigurator
+      role: Roles.HUB_DEACTIVATE_ROLE,
+      admin: admin
     });
-
     bytes4[] memory selectors = wrapper.getHubDeactivateRoleSelectors();
+    wrapper.setupHubConfiguratorRole({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator,
+      role: Roles.HUB_DEACTIVATE_ROLE,
+      selectors: selectors
+    });
     for (uint256 i = 0; i < selectors.length; i++) {
       (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
         admin,
@@ -295,10 +279,18 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
 
   function test_canCall_hubCapsResetRole() public {
     _grantAdminToWrapper(address(wrapper));
-    wrapper.grantHubCapsResetRole({accessManager: accessManager, admin: admin});
-    wrapper.setupHubCapsResetRole({accessManager: accessManager, hubConfigurator: hubConfigurator});
-
+    wrapper.grantHubConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.HUB_CAPS_RESET_ROLE,
+      admin: admin
+    });
     bytes4[] memory selectors = wrapper.getHubCapsResetRoleSelectors();
+    wrapper.setupHubConfiguratorRole({
+      accessManager: accessManager,
+      hubConfigurator: hubConfigurator,
+      role: Roles.HUB_CAPS_RESET_ROLE,
+      selectors: selectors
+    });
     for (uint256 i = 0; i < selectors.length; i++) {
       (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
         admin,

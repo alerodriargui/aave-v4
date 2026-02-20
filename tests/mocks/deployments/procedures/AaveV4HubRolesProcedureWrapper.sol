@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 
 contract AaveV4HubRolesProcedureWrapper {
   bool public IS_TEST = true;
@@ -11,12 +12,8 @@ contract AaveV4HubRolesProcedureWrapper {
     AaveV4HubRolesProcedure.grantHubAdminRole(accessManager, admin);
   }
 
-  function grantHubFeeMinterRole(address accessManager, address admin) external {
-    AaveV4HubRolesProcedure.grantHubFeeMinterRole(accessManager, admin);
-  }
-
-  function grantHubConfiguratorRole(address accessManager, address admin) external {
-    AaveV4HubRolesProcedure.grantHubConfiguratorRole(accessManager, admin);
+  function grantHubRole(address accessManager, uint64 role, address admin) external {
+    AaveV4HubRolesProcedure.grantHubRole(accessManager, role, admin);
   }
 
   function setupHubRoles(address accessManager, address hub) external {
@@ -32,10 +29,10 @@ contract AaveV4HubRolesProcedureWrapper {
   }
 
   function getHubFeeMinterRoleSelectors() external pure returns (bytes4[] memory) {
-    return AaveV4HubRolesProcedure.getHubFeeMinterRoleSelectors();
+    return Roles.getHubFeeMinterRoleSelectors();
   }
 
   function getHubConfiguratorRoleSelectors() external pure returns (bytes4[] memory) {
-    return AaveV4HubRolesProcedure.getHubConfiguratorRoleSelectors();
+    return Roles.getHubConfiguratorRoleSelectors();
   }
 }

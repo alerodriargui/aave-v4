@@ -12,6 +12,7 @@ import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInsta
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
@@ -52,15 +53,15 @@ library AaveV4DeployOrchestration {
 
     // Setup Configurator Roles
     logger.log('...Setting HubConfigurator roles...');
-    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles(
-      report.authorityBatchReport.accessManager,
-      report.configuratorBatchReport.hubConfigurator
-    );
+    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles({
+      accessManager: report.authorityBatchReport.accessManager,
+      hubConfigurator: report.configuratorBatchReport.hubConfigurator
+    });
     logger.log('...Setting SpokeConfigurator roles...');
-    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorRoles(
-      report.authorityBatchReport.accessManager,
-      report.configuratorBatchReport.spokeConfigurator
-    );
+    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorRoles({
+      accessManager: report.authorityBatchReport.accessManager,
+      spokeConfigurator: report.configuratorBatchReport.spokeConfigurator
+    });
 
     // Deploy Hub Batches
     report.hubBatchReports = _deployHubs({
@@ -73,13 +74,13 @@ library AaveV4DeployOrchestration {
     });
 
     // Deploy Spoke Instance Batches
-    report.spokeInstanceBatchReports = _deploySpokes(
-      logger,
-      report.authorityBatchReport.accessManager,
-      deployInputs,
-      spokeBytecode,
-      salt
-    );
+    report.spokeInstanceBatchReports = _deploySpokes({
+      logger: logger,
+      authority: report.authorityBatchReport.accessManager,
+      inputs: deployInputs,
+      spokeBytecode: spokeBytecode,
+      salt: salt
+    });
 
     // Deploy Gateways Batch if either gateway flag is enabled
     if (deployInputs.deployNativeTokenGateway || deployInputs.deploySignatureGateway) {
@@ -138,8 +139,9 @@ library AaveV4DeployOrchestration {
     });
 
     logger.log('...Granting Hub Configurator roles...');
-    AaveV4HubRolesProcedure.grantHubConfiguratorRole({
+    AaveV4HubRolesProcedure.grantHubRole({
       accessManager: report.authorityBatchReport.accessManager,
+      role: Roles.HUB_CONFIGURATOR_ROLE,
       admin: report.configuratorBatchReport.hubConfigurator
     });
 
@@ -163,8 +165,9 @@ library AaveV4DeployOrchestration {
     });
 
     logger.log('...Granting Spoke Configurator roles...');
-    AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole({
+    AaveV4SpokeRolesProcedure.grantSpokeRole({
       accessManager: report.authorityBatchReport.accessManager,
+      role: Roles.SPOKE_CONFIGURATOR_ROLE,
       admin: report.configuratorBatchReport.spokeConfigurator
     });
 

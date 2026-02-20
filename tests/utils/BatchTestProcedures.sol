@@ -12,10 +12,6 @@ import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 // orchestration
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {WETHDeployProcedure} from 'tests/deployments/procedures/WETHDeployProcedure.sol';
-import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
-import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
-import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
-import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
@@ -27,7 +23,6 @@ import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationRepor
 import {Constants} from 'tests/Constants.sol';
 
 // libraries
-import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 
 // interfaces
@@ -52,12 +47,11 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   address internal _deployer = makeAddr('deployer');
 
   function setUp() public virtual {
-    _spokePositionUpdaterRoleSelectors = AaveV4SpokeRolesProcedure
-      .getSpokePositionUpdaterRoleSelectors();
-    _spokeConfiguratorRoleSelectors = AaveV4SpokeRolesProcedure.getSpokeConfiguratorRoleSelectors();
+    _spokePositionUpdaterRoleSelectors = Roles.getSpokePositionUpdaterRoleSelectors();
+    _spokeConfiguratorRoleSelectors = Roles.getSpokeConfiguratorRoleSelectors();
 
-    _hubFeeMinterRoleSelectors = AaveV4HubRolesProcedure.getHubFeeMinterRoleSelectors();
-    _hubConfiguratorRoleSelectors = AaveV4HubRolesProcedure.getHubConfiguratorRoleSelectors();
+    _hubFeeMinterRoleSelectors = Roles.getHubFeeMinterRoleSelectors();
+    _hubConfiguratorRoleSelectors = Roles.getHubConfiguratorRoleSelectors();
 
     _weth9 = _deployWETH();
     _logger = new Logger('dummy/path');
@@ -631,13 +625,10 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal view {
-    bytes4[] memory adminSelectors = AaveV4HubConfiguratorRolesProcedure
-      .getHubConfiguratorAdminRoleSelectors();
-    bytes4[] memory haltSelectors = AaveV4HubConfiguratorRolesProcedure.getHubHaltRoleSelectors();
-    bytes4[] memory deactivateSelectors = AaveV4HubConfiguratorRolesProcedure
-      .getHubDeactivateRoleSelectors();
-    bytes4[] memory capsResetSelectors = AaveV4HubConfiguratorRolesProcedure
-      .getHubCapsResetRoleSelectors();
+    bytes4[] memory adminSelectors = Roles.getHubConfiguratorAdminRoleSelectors();
+    bytes4[] memory haltSelectors = Roles.getHubHaltRoleSelectors();
+    bytes4[] memory deactivateSelectors = Roles.getHubDeactivateRoleSelectors();
+    bytes4[] memory capsResetSelectors = Roles.getHubCapsResetRoleSelectors();
 
     address hc = report.configuratorBatchReport.hubConfigurator;
 
@@ -688,12 +679,9 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal view {
-    bytes4[] memory adminSelectors = AaveV4SpokeConfiguratorRolesProcedure
-      .getSpokeConfiguratorAdminRoleSelectors();
-    bytes4[] memory freezeSelectors = AaveV4SpokeConfiguratorRolesProcedure
-      .getSpokeFreezeRoleSelectors();
-    bytes4[] memory pauseSelectors = AaveV4SpokeConfiguratorRolesProcedure
-      .getSpokePauseRoleSelectors();
+    bytes4[] memory adminSelectors = Roles.getSpokeConfiguratorAdminRoleSelectors();
+    bytes4[] memory freezeSelectors = Roles.getSpokeFreezeRoleSelectors();
+    bytes4[] memory pauseSelectors = Roles.getSpokePauseRoleSelectors();
 
     address sc = report.configuratorBatchReport.spokeConfigurator;
 
