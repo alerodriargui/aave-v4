@@ -195,7 +195,10 @@ library AaveV4TestOrchestration {
     );
   }
 
-  function setHubRolesTestEnv(TestTypes.TestHubReport memory report, address accessManager) public {
+  function setupHubRolesTestEnv(
+    TestTypes.TestHubReport memory report,
+    address accessManager
+  ) public {
     AaveV4HubRolesProcedure.setupHubRoles(accessManager, report.hub);
   }
 

@@ -1106,7 +1106,7 @@ abstract contract Base is BatchTestProcedures {
     accessManager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(this), 0);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
 
-    AaveV4TestOrchestration.setHubRolesTestEnv(report, address(accessManager));
+    AaveV4TestOrchestration.setupHubRolesTestEnv(report, address(accessManager));
     vm.stopPrank();
 
     AaveV4TestOrchestration.configureHubsAssets(assetParams);
