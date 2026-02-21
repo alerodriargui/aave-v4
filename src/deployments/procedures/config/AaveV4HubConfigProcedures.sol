@@ -8,74 +8,43 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 
 library AaveV4HubConfigProcedures {
-  function addAsset(ConfigData.AddAssetParams memory params) internal returns (uint256) {
-    uint256 assetId = IHub(params.hub).addAsset(
-      params.underlying,
-      params.decimals,
-      params.feeReceiver,
-      params.irStrategy,
-      params.irData
-    );
-    if (params.liquidityFee > 0 || params.reinvestmentController != address(0)) {
-      IHub(params.hub).updateAssetConfig(
-        assetId,
-        IHub.AssetConfig({
-          liquidityFee: params.liquidityFee,
-          feeReceiver: params.feeReceiver,
-          irStrategy: params.irStrategy,
-          reinvestmentController: params.reinvestmentController
-        }),
-        bytes('')
-      );
-    }
-    return assetId;
-  }
-
   function addAssetViaConfigurator(
     address configurator,
     ConfigData.AddAssetParams memory params
   ) internal returns (uint256) {
     return
-      IHubConfigurator(configurator).addAssetWithDecimals(
-        params.hub,
-        params.underlying,
-        params.decimals,
-        params.feeReceiver,
-        params.liquidityFee,
-        params.irStrategy,
-        params.irData
-      );
-  }
-
-  function updateAssetConfig(ConfigData.UpdateAssetConfigParams memory params) internal {
-    IHub(params.hub).updateAssetConfig(params.assetId, params.config, params.irData);
-  }
-
-  function addSpoke(ConfigData.AddSpokeParams memory params) internal {
-    IHub(params.hub).addSpoke(params.assetId, params.spoke, params.config);
+      IHubConfigurator(configurator).addAssetWithDecimals({
+        hub: params.hub,
+        underlying: params.underlying,
+        decimals: params.decimals,
+        feeReceiver: params.feeReceiver,
+        liquidityFee: params.liquidityFee,
+        irStrategy: params.irStrategy,
+        irData: params.irData
+      });
   }
 
   function addSpokeViaConfigurator(
     address configurator,
     ConfigData.AddSpokeParams memory params
   ) internal {
-    IHubConfigurator(configurator).addSpoke(
-      params.hub,
-      params.spoke,
-      params.assetId,
-      params.config
-    );
+    IHubConfigurator(configurator).addSpoke({
+      hub: params.hub,
+      spoke: params.spoke,
+      assetId: params.assetId,
+      config: params.config
+    });
   }
 
   function addSpokeToAssetsViaConfigurator(
     address configurator,
     ConfigData.AddSpokeToAssetsParams memory params
   ) internal {
-    IHubConfigurator(configurator).addSpokeToAssets(
-      params.hub,
-      params.spoke,
-      params.assetIds,
-      params.configs
-    );
+    IHubConfigurator(configurator).addSpokeToAssets({
+      hub: params.hub,
+      spoke: params.spoke,
+      assetIds: params.assetIds,
+      configs: params.configs
+    });
   }
 }

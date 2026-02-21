@@ -22,7 +22,9 @@ import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/ro
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 
 import {AaveV4HubConfigProcedures} from 'src/deployments/procedures/config/AaveV4HubConfigProcedures.sol';
-import {AaveV4SpokeConfigProcedures} from 'src/deployments/procedures/config/AaveV4SpokeConfigProcedures.sol';
+
+import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 
@@ -150,7 +152,11 @@ library AaveV4TestOrchestration {
 
   function configureHubsSpokes(ConfigData.AddSpokeParams[] memory paramsList) external {
     for (uint256 i; i < paramsList.length; ++i) {
-      AaveV4HubConfigProcedures.addSpoke(paramsList[i]);
+      IHub(paramsList[i].hub).addSpoke({
+        assetId: paramsList[i].assetId,
+        spoke: paramsList[i].spoke,
+        params: paramsList[i].config
+      });
     }
   }
 
@@ -159,7 +165,9 @@ library AaveV4TestOrchestration {
     ConfigData.AddReserveParams[] memory reserveParamsList
   ) external returns (TestTypes.SpokeReserveId[] memory) {
     for (uint256 i; i < liquidationParamsList.length; ++i) {
-      AaveV4SpokeConfigProcedures.updateLiquidationConfig(liquidationParamsList[i]);
+      ISpoke(liquidationParamsList[i].spoke).updateLiquidationConfig(
+        liquidationParamsList[i].config
+      );
     }
     TestTypes.SpokeReserveId[] memory spokeReserveIds = new TestTypes.SpokeReserveId[](
       reserveParamsList.length
@@ -167,7 +175,13 @@ library AaveV4TestOrchestration {
     for (uint256 i; i < reserveParamsList.length; ++i) {
       spokeReserveIds[i] = TestTypes.SpokeReserveId({
         spoke: reserveParamsList[i].spoke,
-        reserveId: AaveV4SpokeConfigProcedures.addReserve(reserveParamsList[i])
+        reserveId: ISpoke(reserveParamsList[i].spoke).addReserve({
+          hub: reserveParamsList[i].hub,
+          assetId: reserveParamsList[i].assetId,
+          priceSource: reserveParamsList[i].priceSource,
+          config: reserveParamsList[i].config,
+          dynamicConfig: reserveParamsList[i].dynamicConfig
+        })
       });
     }
     return spokeReserveIds;
@@ -271,7 +285,25 @@ library AaveV4TestOrchestration {
   ) public returns (uint256[] memory) {
     uint256[] memory assetIds = new uint256[](paramsList.length);
     for (uint256 i; i < paramsList.length; ++i) {
-      assetIds[i] = AaveV4HubConfigProcedures.addAsset(paramsList[i]);
+      assetIds[i] = IHub(paramsList[i].hub).addAsset({
+        underlying: paramsList[i].underlying,
+        decimals: paramsList[i].decimals,
+        feeReceiver: paramsList[i].feeReceiver,
+        irStrategy: paramsList[i].irStrategy,
+        irData: paramsList[i].irData
+      });
+      if (paramsList[i].liquidityFee > 0 || paramsList[i].reinvestmentController != address(0)) {
+        IHub(paramsList[i].hub).updateAssetConfig({
+          assetId: assetIds[i],
+          config: IHub.AssetConfig({
+            liquidityFee: paramsList[i].liquidityFee,
+            feeReceiver: paramsList[i].feeReceiver,
+            irStrategy: paramsList[i].irStrategy,
+            reinvestmentController: paramsList[i].reinvestmentController
+          }),
+          irData: bytes('')
+        });
+      }
     }
     return assetIds;
   }

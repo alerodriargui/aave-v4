@@ -7,7 +7,7 @@ import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/role
 contract AaveV4AccessManagerRolesProcedureWrapper {
   bool public IS_TEST = true;
 
-  function grantRootAdminRole(
+  function replaceDefaultAdminRole(
     address accessManager,
     address adminToAdd,
     address adminToRemove
