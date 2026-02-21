@@ -1,0 +1,55 @@
+name: Certora Equivalence Check Workflow
+
+env:
+  CONFIGS: |
+    certora/equivalence/harness/hashPositionManagerUpdate_EIP712HashCorrect_to_hashPositionManagerUpdate_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashSetUserPositionManagers_EIP712HashCorrect_to_hashSetUserPositionManagers_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashTokenizedDeposit_EIP712HashCorrect_to_hashTokenizedDeposit_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashTokenizedMint_EIP712HashCorrect_to_hashTokenizedMint_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashTokenizedWithdraw_EIP712HashCorrect_to_hashTokenizedWithdraw_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashTokenizedRedeem_EIP712HashCorrect_to_hashTokenizedRedeem_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashSupply_EIP712HashCorrect_to_hashSupply_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashWithdraw_EIP712HashCorrect_to_hashWithdraw_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashBorrow_EIP712HashCorrect_to_hashBorrow_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashRepay_EIP712HashCorrect_to_hashRepay_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashSetUsingAsCollateral_EIP712HashCorrect_to_hashSetUsingAsCollateral_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashUpdateUserRiskPremium_EIP712HashCorrect_to_hashUpdateUserRiskPremium_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+    certora/equivalence/harness/hashUpdateUserDynamicConfig_EIP712HashCorrect_to_hashUpdateUserDynamicConfig_EIP712HashOptimized_equivalence.conf --rule equivalence_of_revert_conditions equivalence_of_return_value
+
+on:
+  pull_request:
+    branches:
+      - main
+      - certora
+      - opt/*
+  push:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+      - name: Install dependencies
+        run: npm install
+
+      # Run Certora Equivalence Checks
+      - uses: Certora/certora-run-action@v2
+        with:
+          configurations: ${{ env.CONFIGS }}
+          solc-versions: 0.8.28
+          job-name: "EIP712 Hash Equivalence"
+          certora-key: ${{ secrets.CERTORAKEY }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
