@@ -16,7 +16,7 @@ library OrchestrationReports {
   }
 
   struct FullDeploymentReport {
-    BatchReports.AccessBatchReport accessBatchReport;
+    BatchReports.AuthorityBatchReport authorityBatchReport;
     BatchReports.ConfiguratorBatchReport configuratorBatchReport;
     SpokeDeploymentReport[] spokeInstanceBatchReports;
     HubDeploymentReport[] hubBatchReports;

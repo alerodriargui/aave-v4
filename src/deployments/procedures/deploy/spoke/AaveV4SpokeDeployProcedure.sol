@@ -8,7 +8,7 @@ import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/Transpa
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 
 contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
-  function _deployUpgradableSpokeInstance(
+  function _deployUpgradeableSpokeInstance(
     address spokeProxyAdminOwner,
     address authority,
     address oracle,
@@ -20,16 +20,16 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
     require(authority != address(0), 'invalid authority');
     require(oracle != address(0), 'invalid oracle');
     require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
-    spokeImplementation = Create2Utils.create2Deploy(
-      salt,
-      _getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit)
-    );
-    spokeProxy = Create2Utils.proxify(
-      salt,
-      spokeImplementation,
-      spokeProxyAdminOwner,
-      abi.encodeCall(ISpokeInstance.initialize, (authority))
-    );
+    spokeImplementation = Create2Utils.create2Deploy({
+      salt: salt,
+      bytecode: _getSpokeInstanceInitCode(spokeBytecode, oracle, maxUserReservesLimit)
+    });
+    spokeProxy = Create2Utils.proxify({
+      salt: salt,
+      logic: spokeImplementation,
+      initialOwner: spokeProxyAdminOwner,
+      data: abi.encodeCall(ISpokeInstance.initialize, (authority))
+    });
     return (spokeProxy, spokeImplementation);
   }
 

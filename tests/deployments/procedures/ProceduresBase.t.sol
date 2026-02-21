@@ -2,8 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Test} from 'forge-std/Test.sol';
-
 import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 
@@ -44,9 +42,9 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
-import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 
-contract ProceduresBase is Test, InputUtils {
+contract ProceduresBase is Create2TestHelper {
   address public owner = makeAddr('owner');
   address public accessManager;
   address public hub = makeAddr('hub');

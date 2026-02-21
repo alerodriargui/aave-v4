@@ -23,10 +23,6 @@ contract Create2UtilsWrapper {
     return Create2Utils.proxify(salt, logic, initialOwner, data);
   }
 
-  function computeCreateAddress(address deployer, uint8 nonce) external pure returns (address) {
-    return Create2Utils.computeCreateAddress(deployer, nonce);
-  }
-
   function computeCreate2Address(
     bytes32 salt,
     bytes32 initcodeHash

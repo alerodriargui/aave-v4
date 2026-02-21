@@ -7,9 +7,10 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {ITokenizationSpokeInstance} from 'src/deployments/utils/interfaces/ITokenizationSpokeInstance.sol';
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
+import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
 contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
-  function _deployUpgradableTokenizationSpokeInstance(
+  function _deployUpgradeableTokenizationSpokeInstance(
     address hub,
     uint256 assetId,
     address spokeProxyAdminOwner,
@@ -22,44 +23,29 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
     require(bytes(shareName).length > 0, 'invalid share name');
     require(bytes(shareSymbol).length > 0, 'invalid share symbol');
 
-    tokenizationSpokeImplementation = Create2Utils.create2Deploy(
-      salt,
-      _getTokenizationSpokeInstanceInitCode(hub, assetId)
-    );
+    tokenizationSpokeImplementation = Create2Utils.create2Deploy({
+      salt: salt,
+      bytecode: _getTokenizationSpokeInstanceInitCode(hub, assetId)
+    });
 
-    tokenizationSpokeProxy = Create2Utils.proxify(
-      salt,
-      tokenizationSpokeImplementation,
-      spokeProxyAdminOwner,
-      abi.encodeCall(ITokenizationSpokeInstance.initialize, (shareName, shareSymbol))
+    tokenizationSpokeProxy = Create2Utils.proxify({
+      salt: salt,
+      logic: tokenizationSpokeImplementation,
+      initialOwner: spokeProxyAdminOwner,
+      data: abi.encodeCall(ITokenizationSpokeInstance.initialize, (shareName, shareSymbol))
+    });
+
+    require(
+      ITokenizationSpoke(tokenizationSpokeProxy).hub() == hub,
+      'tokenization spoke hub mismatch'
+    );
+    require(
+      ITokenizationSpoke(tokenizationSpokeProxy).assetId() == assetId,
+      'tokenization spoke assetId mismatch'
     );
 
     return (tokenizationSpokeProxy, tokenizationSpokeImplementation);
   }
-
-  function _computeTokenizationSpokeInstanceAddress(
-    bytes32 salt,
-    address hub,
-    uint256 assetId,
-    address spokeProxyAdminOwner,
-    string memory shareName,
-    string memory shareSymbol
-  ) internal pure returns (address) {
-    address tokenizationSpokeImplementation = Create2Utils.computeCreate2Address(
-      salt,
-      _getTokenizationSpokeInstanceInitCode(hub, assetId)
-    );
-    bytes memory initCode = abi.encodePacked(
-      type(TransparentUpgradeableProxy).creationCode,
-      abi.encode(
-        tokenizationSpokeImplementation,
-        spokeProxyAdminOwner,
-        abi.encodeCall(ITokenizationSpokeInstance.initialize, (shareName, shareSymbol))
-      )
-    );
-    return Create2Utils.computeCreate2Address(salt, keccak256(initCode));
-  }
-
   function _getTokenizationSpokeInstanceInitCode(
     address hub,
     uint256 assetId

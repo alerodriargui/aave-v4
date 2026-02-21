@@ -17,24 +17,17 @@ contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure 
     string memory shareSymbol_,
     bytes32 salt_
   ) {
-    bytes32 tokenizationSpokeSalt = keccak256(
-      abi.encodePacked(SALT, salt_, 'tokenizationSpokeInstance')
-    );
-
     (
       address tokenizationSpokeProxy,
       address tokenizationSpokeImplementation
-    ) = _deployUpgradableTokenizationSpokeInstance({
+    ) = _deployUpgradeableTokenizationSpokeInstance({
         hub: hub_,
         assetId: assetId_,
         spokeProxyAdminOwner: spokeProxyAdminOwner_,
         shareName: shareName_,
         shareSymbol: shareSymbol_,
-        salt: tokenizationSpokeSalt
+        salt: salt_
       });
-
-    assert(ITokenizationSpoke(tokenizationSpokeProxy).hub() == hub_);
-    assert(ITokenizationSpoke(tokenizationSpokeProxy).assetId() == assetId_);
 
     _report = BatchReports.TokenizationSpokeBatchReport({
       tokenizationSpokeImplementation: tokenizationSpokeImplementation,

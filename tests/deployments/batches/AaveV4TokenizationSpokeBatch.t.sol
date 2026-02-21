@@ -46,7 +46,7 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
 
     // Setup Hub roles and grant HUB_CONFIGURATOR_ROLE to admin
     vm.startPrank(admin);
-    AaveV4HubRolesProcedure.setupHubRoles(accessManager, hub);
+    AaveV4HubRolesProcedure.setupHubAllRoles(accessManager, hub);
     IAccessManagerEnumerable(accessManager).grantRole(Roles.HUB_CONFIGURATOR_ROLE, admin, 0);
 
     assetId = IHub(hub).addAsset({

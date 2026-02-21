@@ -86,6 +86,8 @@ import {TestTypes} from 'tests/utils/TestTypes.sol';
 // orchestration
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
+import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 // mocks
 import {EIP712Types} from 'tests/mocks/EIP712Types.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
@@ -388,7 +390,11 @@ abstract contract Base is BatchTestProcedures {
 
     // temporary grant admin role to address(this) to execute setAndGrantRolesTestEnv from its context
     vm.startPrank(ADMIN);
-    IAccessManager(report.accessManager).grantRole(Roles.DEFAULT_ADMIN_ROLE, address(this), 0);
+    IAccessManager(report.accessManager).grantRole(
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      address(this),
+      0
+    );
     vm.stopPrank();
 
     AaveV4TestOrchestration.setRolesTestEnv(report);
@@ -408,7 +414,10 @@ abstract contract Base is BatchTestProcedures {
       SPOKE_CONFIGURATOR
     );
 
-    IAccessManager(report.accessManager).renounceRole(Roles.DEFAULT_ADMIN_ROLE, address(this));
+    IAccessManager(report.accessManager).renounceRole(
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      address(this)
+    );
   }
 
   function _initTokenList() internal {
@@ -1094,16 +1103,16 @@ abstract contract Base is BatchTestProcedures {
     }
 
     vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.DEFAULT_ADMIN_ROLE, address(this), 0);
+    accessManager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(this), 0);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
 
-    AaveV4TestOrchestration.setHubRolesTestEnv(report, address(accessManager));
+    AaveV4TestOrchestration.setupHubRolesTestEnv(report, address(accessManager));
     vm.stopPrank();
 
     AaveV4TestOrchestration.configureHubsAssets(assetParams);
 
     // Renounce temporary roles
-    accessManager.renounceRole(Roles.DEFAULT_ADMIN_ROLE, address(this));
+    accessManager.renounceRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(this));
     accessManager.renounceRole(Roles.HUB_CONFIGURATOR_ROLE, address(this));
 
     return report;
@@ -1476,13 +1485,13 @@ abstract contract Base is BatchTestProcedures {
   function grantDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
     IAccessManager manager = IAccessManager(hub.authority());
     vm.prank(ADMIN);
-    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, target, 0);
+    manager.grantRole(Roles.HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE, target, 0);
   }
 
   function revokeDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
     IAccessManager manager = IAccessManager(hub.authority());
     vm.prank(ADMIN);
-    manager.revokeRole(Roles.DEFICIT_ELIMINATOR_ROLE, target);
+    manager.revokeRole(Roles.HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE, target);
   }
 
   function getUserInfo(

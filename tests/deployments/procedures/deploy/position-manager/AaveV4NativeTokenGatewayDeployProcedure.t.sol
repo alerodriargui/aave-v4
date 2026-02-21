@@ -12,7 +12,7 @@ contract AaveV4NativeTokenGatewayDeployProcedureTest is ProceduresBase {
     aaveV4NativeTokenGatewayDeployProcedureWrapper = new AaveV4NativeTokenGatewayDeployProcedureWrapper();
   }
 
-  function test_deployHubConfigurator() public {
+  function test_deployNativeTokenGateway() public {
     address nativeTokenGateway = aaveV4NativeTokenGatewayDeployProcedureWrapper
       .deployNativeTokenGateway(nativeWrapper, owner, salt);
     assertNotEq(nativeTokenGateway, address(0));

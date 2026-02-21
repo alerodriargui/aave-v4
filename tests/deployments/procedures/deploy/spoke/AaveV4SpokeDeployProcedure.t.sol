@@ -11,9 +11,9 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
     aaveV4SpokeDeployProcedureWrapper = new AaveV4SpokeDeployProcedureWrapper();
   }
 
-  function test_deployUpgradableSpokeInstance() public {
+  function test_deployUpgradeableSpokeInstance() public {
     (address spokeProxy, address spokeImplementation) = aaveV4SpokeDeployProcedureWrapper
-      .deployUpgradableSpokeInstance(
+      .deployUpgradeableSpokeInstance(
         owner,
         accessManager,
         aaveOracle,
@@ -28,9 +28,9 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
     assertEq(ISpoke(spokeProxy).ORACLE(), aaveOracle);
   }
 
-  function test_deployUpgradableSpokeInstance_reverts() public {
+  function test_deployUpgradeableSpokeInstance_reverts() public {
     vm.expectRevert('invalid spoke proxy admin owner');
-    aaveV4SpokeDeployProcedureWrapper.deployUpgradableSpokeInstance({
+    aaveV4SpokeDeployProcedureWrapper.deployUpgradeableSpokeInstance({
       spokeProxyAdminOwner: address(0),
       authority: accessManager,
       oracle: aaveOracle,
@@ -40,7 +40,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
     });
 
     vm.expectRevert('invalid authority');
-    aaveV4SpokeDeployProcedureWrapper.deployUpgradableSpokeInstance({
+    aaveV4SpokeDeployProcedureWrapper.deployUpgradeableSpokeInstance({
       spokeProxyAdminOwner: owner,
       authority: address(0),
       oracle: aaveOracle,
@@ -50,7 +50,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
     });
 
     vm.expectRevert('invalid oracle');
-    aaveV4SpokeDeployProcedureWrapper.deployUpgradableSpokeInstance({
+    aaveV4SpokeDeployProcedureWrapper.deployUpgradeableSpokeInstance({
       spokeProxyAdminOwner: owner,
       authority: accessManager,
       oracle: address(0),
@@ -60,7 +60,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
     });
 
     vm.expectRevert('invalid max user reserves limit');
-    aaveV4SpokeDeployProcedureWrapper.deployUpgradableSpokeInstance({
+    aaveV4SpokeDeployProcedureWrapper.deployUpgradeableSpokeInstance({
       spokeProxyAdminOwner: owner,
       authority: accessManager,
       oracle: aaveOracle,

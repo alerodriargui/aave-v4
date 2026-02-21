@@ -12,10 +12,6 @@ import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 // orchestration
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {WETHDeployProcedure} from 'tests/deployments/procedures/WETHDeployProcedure.sol';
-import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
-import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
-import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
-import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
@@ -23,11 +19,11 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
+import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {Constants} from 'tests/Constants.sol';
 
 // libraries
-import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 
 // interfaces
@@ -38,7 +34,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
-contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
+contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployProcedure {
   Logger internal _logger;
   FullDeployInputs internal _inputs;
   address internal _weth9;
@@ -52,12 +48,11 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   address internal _deployer = makeAddr('deployer');
 
   function setUp() public virtual {
-    _spokePositionUpdaterRoleSelectors = AaveV4SpokeRolesProcedure
-      .getSpokePositionUpdaterRoleSelectors();
-    _spokeConfiguratorRoleSelectors = AaveV4SpokeRolesProcedure.getSpokeConfiguratorRoleSelectors();
+    _spokePositionUpdaterRoleSelectors = Roles.getSpokePositionUpdaterRoleSelectors();
+    _spokeConfiguratorRoleSelectors = Roles.getSpokeConfiguratorRoleSelectors();
 
-    _hubFeeMinterRoleSelectors = AaveV4HubRolesProcedure.getHubFeeMinterRoleSelectors();
-    _hubConfiguratorRoleSelectors = AaveV4HubRolesProcedure.getHubConfiguratorRoleSelectors();
+    _hubFeeMinterRoleSelectors = Roles.getHubFeeMinterRoleSelectors();
+    _hubConfiguratorRoleSelectors = Roles.getHubConfiguratorRoleSelectors();
 
     _weth9 = _deployWETH();
     _logger = new Logger('dummy/path');
@@ -93,7 +88,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     FullDeployInputs memory inputs
   ) internal view {
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
-      report.accessBatchReport.accessManager
+      report.authorityBatchReport.accessManager
     );
     _checkAccessManagerRoles(accessManager, inputs);
     _checkSpokeRoles(accessManager, report, inputs);
@@ -180,7 +175,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       assertEq(report.gatewaysBatchReport.signatureGateway, address(0), 'Zero SignatureGateway');
     }
 
-    assertNotEq(report.accessBatchReport.accessManager, address(0), 'AccessManager');
+    assertNotEq(report.authorityBatchReport.accessManager, address(0), 'AccessManager');
     assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
     assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
     for (uint256 i = 0; i < report.hubBatchReports.length; i++) {
@@ -211,7 +206,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         .spokeInstanceBatchReports[i];
       _checkSpokeDeployment({
         report: spokeReport,
-        accessManager: report.accessBatchReport.accessManager,
+        accessManager: report.authorityBatchReport.accessManager,
         label: label
       });
       _checkOracleDeployment({report: spokeReport, label: label});
@@ -272,7 +267,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
 
       _checkHubDeployment({
         report: hubReport,
-        accessManager: report.accessBatchReport.accessManager,
+        accessManager: report.authorityBatchReport.accessManager,
         label: label
       });
       _checkInterestRateStrategyDeployment({report: hubReport, label: label});
@@ -322,17 +317,20 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
       ? inputs.accessManagerAdmin
       : _deployer;
     assertEq(
-      accessManager.getRoleMember(Roles.DEFAULT_ADMIN_ROLE, 0),
+      accessManager.getRoleMember(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, 0),
       expectedAdmin,
       'DefaultAdminRoleMember'
     );
     assertEq(
-      accessManager.getRoleMemberCount(Roles.DEFAULT_ADMIN_ROLE),
+      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_DEFAULT_ADMIN),
       1,
       'DefaultAdminRoleCount'
     );
 
-    (bool adminHasRole, ) = accessManager.hasRole(Roles.DEFAULT_ADMIN_ROLE, expectedAdmin);
+    (bool adminHasRole, ) = accessManager.hasRole(
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      expectedAdmin
+    );
     assertTrue(adminHasRole, 'access manager admin has default admin role');
   }
 
@@ -420,20 +418,20 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   ) internal view {
     if (inputs.spokeLabels.length > 0 && inputs.grantRoles) {
       assertEq(
-        accessManager.getRoleMemberCount(Roles.SPOKE_POSITION_UPDATER_ROLE),
+        accessManager.getRoleMemberCount(Roles.SPOKE_USER_POSITION_UPDATER_ROLE),
         1,
-        'SpokeAdminRole member count'
+        'SpokePositionUpdaterRole member count'
       );
       assertEq(
-        accessManager.getRoleMember(Roles.SPOKE_POSITION_UPDATER_ROLE, 0),
+        accessManager.getRoleMember(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, 0),
         inputs.spokeAdmin,
-        'SpokeAdminRole member - spoke admin'
+        'SpokePositionUpdaterRole member - spoke admin'
       );
     } else {
       assertEq(
-        accessManager.getRoleMemberCount(Roles.SPOKE_POSITION_UPDATER_ROLE),
+        accessManager.getRoleMemberCount(Roles.SPOKE_USER_POSITION_UPDATER_ROLE),
         0,
-        'HubAdminRoleCount'
+        'SpokePositionUpdaterRoleCount'
       );
     }
 
@@ -453,16 +451,16 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
           report.spokeInstanceBatchReports[i].report.spokeProxy,
           _spokePositionUpdaterRoleSelectors[j]
         );
-        assertEq(allowed, inputs.grantRoles ? true : false, 'SpokeAdminRole allowed');
-        assertEq(delay, 0, 'SpokeAdminRole delay');
+        assertEq(allowed, inputs.grantRoles ? true : false, 'SpokePositionUpdaterRole allowed');
+        assertEq(delay, 0, 'SpokePositionUpdaterRole delay');
 
         assertEq(
           accessManager.getTargetFunctionRole(
             report.spokeInstanceBatchReports[i].report.spokeProxy,
             _spokePositionUpdaterRoleSelectors[j]
           ),
-          Roles.SPOKE_POSITION_UPDATER_ROLE,
-          'SpokeAdminRole target function'
+          Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
+          'SpokePositionUpdaterRole target function'
         );
       }
     }
@@ -483,14 +481,22 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     FullDeployInputs memory inputs
   ) internal view {
     if (inputs.hubLabels.length > 0 && inputs.grantRoles) {
-      assertEq(accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE), 1, 'HubAdminRoleCount');
+      assertEq(
+        accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE),
+        1,
+        'HubFeeMinterRoleCount'
+      );
       assertEq(
         accessManager.getRoleMember(Roles.HUB_FEE_MINTER_ROLE, 0),
         inputs.hubAdmin,
-        'HubAdminRole member - hub admin'
+        'HubFeeMinterRole member - hub admin'
       );
     } else {
-      assertEq(accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE), 0, 'HubAdminRoleCount');
+      assertEq(
+        accessManager.getRoleMemberCount(Roles.HUB_FEE_MINTER_ROLE),
+        0,
+        'HubFeeMinterRoleCount'
+      );
     }
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
       _checkTreasurySpokeRoles(
@@ -505,7 +511,7 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
             _hubFeeMinterRoleSelectors[j]
           ),
           Roles.HUB_FEE_MINTER_ROLE,
-          'HubAdminRole target function'
+          'HubFeeMinterRole target function'
         );
 
         (bool allowed, uint32 delay) = accessManager.canCall(
@@ -513,8 +519,8 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
           report.hubBatchReports[i].report.hub,
           _hubFeeMinterRoleSelectors[j]
         );
-        assertEq(allowed, inputs.grantRoles ? true : false, 'HubAdminRole allowed');
-        assertEq(delay, 0, 'HubAdminRole delay');
+        assertEq(allowed, inputs.grantRoles ? true : false, 'HubFeeMinterRole allowed');
+        assertEq(delay, 0, 'HubFeeMinterRole delay');
       }
     }
   }
@@ -601,17 +607,17 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
   ) internal view {
     assertEq(
       IAccessManaged(report.configuratorBatchReport.hubConfigurator).authority(),
-      report.accessBatchReport.accessManager,
+      report.authorityBatchReport.accessManager,
       'HubConfigurator authority'
     );
     assertEq(
       IAccessManaged(report.configuratorBatchReport.spokeConfigurator).authority(),
-      report.accessBatchReport.accessManager,
+      report.authorityBatchReport.accessManager,
       'SpokeConfigurator authority'
     );
 
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
-      report.accessBatchReport.accessManager
+      report.authorityBatchReport.accessManager
     );
 
     _checkHubConfiguratorBatchRoles(accessManager, report, inputs);
@@ -623,49 +629,95 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal view {
-    bytes4[] memory adminSelectors = AaveV4HubConfiguratorRolesProcedure
-      .getHubConfiguratorAdminRoleSelectors();
-    bytes4[] memory haltSelectors = AaveV4HubConfiguratorRolesProcedure.getHubHaltRoleSelectors();
-    bytes4[] memory deactivateSelectors = AaveV4HubConfiguratorRolesProcedure
-      .getHubDeactivateRoleSelectors();
-    bytes4[] memory capsResetSelectors = AaveV4HubConfiguratorRolesProcedure
-      .getHubCapsResetRoleSelectors();
+    bytes4[] memory feeUpdaterSelectors = Roles.getHubConfiguratorFeeUpdaterRoleSelectors();
+    bytes4[] memory reinvestmentSelectors = Roles
+      .getHubConfiguratorReinvestmentUpdaterRoleSelectors();
+    bytes4[] memory assetListerSelectors = Roles.getHubConfiguratorAssetListerRoleSelectors();
+    bytes4[] memory spokeAdderSelectors = Roles.getHubConfiguratorSpokeAdderRoleSelectors();
+    bytes4[] memory irUpdaterSelectors = Roles.getHubConfiguratorInterestRateUpdaterRoleSelectors();
+    bytes4[] memory haltSelectors = Roles.getHubConfiguratorHalterRoleSelectors();
+    bytes4[] memory deactivateSelectors = Roles.getHubConfiguratorActivaterRoleSelectors();
+    bytes4[] memory capsResetSelectors = Roles.getHubConfiguratorCapSetterRoleSelectors();
 
     address hc = report.configuratorBatchReport.hubConfigurator;
 
-    for (uint256 i; i < adminSelectors.length; i++) {
+    for (uint256 i; i < feeUpdaterSelectors.length; i++) {
       assertEq(
-        accessManager.getTargetFunctionRole(hc, adminSelectors[i]),
-        Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
-        'HubConfigurator admin selector role mapping'
+        accessManager.getTargetFunctionRole(hc, feeUpdaterSelectors[i]),
+        Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
+        'HubConfigurator feeUpdater selector role mapping'
+      );
+    }
+    for (uint256 i; i < reinvestmentSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(hc, reinvestmentSelectors[i]),
+        Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE,
+        'HubConfigurator reinvestment selector role mapping'
+      );
+    }
+    for (uint256 i; i < assetListerSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(hc, assetListerSelectors[i]),
+        Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
+        'HubConfigurator assetLister selector role mapping'
+      );
+    }
+    for (uint256 i; i < spokeAdderSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(hc, spokeAdderSelectors[i]),
+        Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE,
+        'HubConfigurator spokeAdder selector role mapping'
+      );
+    }
+    for (uint256 i; i < irUpdaterSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(hc, irUpdaterSelectors[i]),
+        Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
+        'HubConfigurator irUpdater selector role mapping'
       );
     }
     for (uint256 i; i < haltSelectors.length; i++) {
       assertEq(
         accessManager.getTargetFunctionRole(hc, haltSelectors[i]),
-        Roles.HUB_HALT_ROLE,
+        Roles.HUB_CONFIGURATOR_HALTER_ROLE,
         'HubConfigurator halt selector role mapping'
       );
     }
     for (uint256 i; i < deactivateSelectors.length; i++) {
       assertEq(
         accessManager.getTargetFunctionRole(hc, deactivateSelectors[i]),
-        Roles.HUB_DEACTIVATE_ROLE,
+        Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE,
         'HubConfigurator deactivate selector role mapping'
       );
     }
     for (uint256 i; i < capsResetSelectors.length; i++) {
       assertEq(
         accessManager.getTargetFunctionRole(hc, capsResetSelectors[i]),
-        Roles.HUB_CAPS_RESET_ROLE,
+        Roles.HUB_CONFIGURATOR_CAPS_UDPATER_ROLE,
         'HubConfigurator capsReset selector role mapping'
       );
     }
 
     // Verify canCall for hub configurator admin
     if (inputs.grantRoles && inputs.hubLabels.length > 0) {
-      (bool allowed, ) = accessManager.canCall(inputs.hubConfiguratorAdmin, hc, adminSelectors[0]);
-      assertTrue(allowed, 'HubConfigurator admin canCall admin selector');
+      (bool allowed, ) = accessManager.canCall(
+        inputs.hubConfiguratorAdmin,
+        hc,
+        feeUpdaterSelectors[0]
+      );
+      assertTrue(allowed, 'HubConfigurator admin canCall feeUpdater selector');
+      (allowed, ) = accessManager.canCall(
+        inputs.hubConfiguratorAdmin,
+        hc,
+        reinvestmentSelectors[0]
+      );
+      assertTrue(allowed, 'HubConfigurator admin canCall reinvestment selector');
+      (allowed, ) = accessManager.canCall(inputs.hubConfiguratorAdmin, hc, assetListerSelectors[0]);
+      assertTrue(allowed, 'HubConfigurator admin canCall assetLister selector');
+      (allowed, ) = accessManager.canCall(inputs.hubConfiguratorAdmin, hc, spokeAdderSelectors[0]);
+      assertTrue(allowed, 'HubConfigurator admin canCall spokeAdder selector');
+      (allowed, ) = accessManager.canCall(inputs.hubConfiguratorAdmin, hc, irUpdaterSelectors[0]);
+      assertTrue(allowed, 'HubConfigurator admin canCall irUpdater selector');
       (allowed, ) = accessManager.canCall(inputs.hubConfiguratorAdmin, hc, haltSelectors[0]);
       assertTrue(allowed, 'HubConfigurator admin canCall halt selector');
       (allowed, ) = accessManager.canCall(inputs.hubConfiguratorAdmin, hc, deactivateSelectors[0]);
@@ -680,12 +732,12 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal view {
-    bytes4[] memory adminSelectors = AaveV4SpokeConfiguratorRolesProcedure
-      .getSpokeConfiguratorAdminRoleSelectors();
-    bytes4[] memory freezeSelectors = AaveV4SpokeConfiguratorRolesProcedure
-      .getSpokeFreezeRoleSelectors();
-    bytes4[] memory pauseSelectors = AaveV4SpokeConfiguratorRolesProcedure
-      .getSpokePauseRoleSelectors();
+    bytes4[] memory adminSelectors = Roles.getSpokeConfiguratorAdminRoleSelectors();
+    bytes4[] memory liqUpdaterSelectors = Roles
+      .getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
+    bytes4[] memory reserveAdderSelectors = Roles.getSpokeConfiguratorReserveAdderRoleSelectors();
+    bytes4[] memory freezeSelectors = Roles.getSpokeConfiguratorFreezerRoleSelectors();
+    bytes4[] memory pauseSelectors = Roles.getSpokeConfiguratorPauserRoleSelectors();
 
     address sc = report.configuratorBatchReport.spokeConfigurator;
 
@@ -696,17 +748,31 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         'SpokeConfigurator admin selector role mapping'
       );
     }
+    for (uint256 i; i < liqUpdaterSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(sc, liqUpdaterSelectors[i]),
+        Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
+        'SpokeConfigurator liquidationUpdater selector role mapping'
+      );
+    }
+    for (uint256 i; i < reserveAdderSelectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(sc, reserveAdderSelectors[i]),
+        Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE,
+        'SpokeConfigurator reserveAdder selector role mapping'
+      );
+    }
     for (uint256 i; i < freezeSelectors.length; i++) {
       assertEq(
         accessManager.getTargetFunctionRole(sc, freezeSelectors[i]),
-        Roles.SPOKE_FREEZE_ROLE,
+        Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
         'SpokeConfigurator freeze selector role mapping'
       );
     }
     for (uint256 i; i < pauseSelectors.length; i++) {
       assertEq(
         accessManager.getTargetFunctionRole(sc, pauseSelectors[i]),
-        Roles.SPOKE_PAUSE_ROLE,
+        Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
         'SpokeConfigurator pause selector role mapping'
       );
     }
@@ -719,6 +785,18 @@ contract BatchTestProcedures is Test, InputUtils, WETHDeployProcedure {
         adminSelectors[0]
       );
       assertTrue(allowed, 'SpokeConfigurator admin canCall admin selector');
+      (allowed, ) = accessManager.canCall(
+        inputs.spokeConfiguratorAdmin,
+        sc,
+        liqUpdaterSelectors[0]
+      );
+      assertTrue(allowed, 'SpokeConfigurator admin canCall liquidationUpdater selector');
+      (allowed, ) = accessManager.canCall(
+        inputs.spokeConfiguratorAdmin,
+        sc,
+        reserveAdderSelectors[0]
+      );
+      assertTrue(allowed, 'SpokeConfigurator admin canCall reserveAdder selector');
       (allowed, ) = accessManager.canCall(inputs.spokeConfiguratorAdmin, sc, freezeSelectors[0]);
       assertTrue(allowed, 'SpokeConfigurator admin canCall freeze selector');
       (allowed, ) = accessManager.canCall(inputs.spokeConfiguratorAdmin, sc, pauseSelectors[0]);

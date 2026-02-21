@@ -75,7 +75,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _inputs.accessManagerAdmin = address(0);
     _inputs.grantRoles = true;
 
-    vm.expectRevert('invalid admin to add');
+    vm.expectRevert('zero address');
     this.checkedV4Deployment();
   }
 
@@ -93,7 +93,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _inputs.grantRoles = grantRoles;
 
     if (grantRoles && _inputs.hubLabels.length > 0) {
-      vm.expectRevert('invalid admin');
+      vm.expectRevert('zero address');
       this.checkedV4Deployment();
     } else {
       checkedV4Deployment();
@@ -151,11 +151,80 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     _inputs.grantRoles = grantRoles;
 
     if (grantRoles && _inputs.spokeLabels.length > 0) {
-      vm.expectRevert('invalid admin');
+      vm.expectRevert('zero address');
       this.checkedV4Deployment();
     } else {
       checkedV4Deployment();
     }
+  }
+
+  function testAaveV4BatchDeployment_withZeroHubAdmin_withRoles_reverts() public {
+    _inputs.hubAdmin = address(0);
+    _inputs.grantRoles = true;
+
+    vm.expectRevert('zero address');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroHubAdmin_withoutRoles() public {
+    _inputs.hubAdmin = address(0);
+    _inputs.grantRoles = false;
+
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroSpokeAdmin_withRoles_reverts() public {
+    _inputs.spokeAdmin = address(0);
+    _inputs.grantRoles = true;
+
+    vm.expectRevert('zero address');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroSpokeAdmin_withoutRoles() public {
+    _inputs.spokeAdmin = address(0);
+    _inputs.grantRoles = false;
+
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroGatewayOwner_withGateways_reverts() public {
+    _inputs.gatewayOwner = address(0);
+    _inputs.deployNativeTokenGateway = true;
+    _inputs.deploySignatureGateway = true;
+
+    vm.expectRevert('invalid owner');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroGatewayOwner_withoutGateways() public {
+    _inputs.gatewayOwner = address(0);
+    _inputs.deployNativeTokenGateway = false;
+    _inputs.deploySignatureGateway = false;
+
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroNativeWrapper_withNativeGateway_reverts() public {
+    _inputs.nativeWrapper = address(0);
+    _inputs.deployNativeTokenGateway = true;
+
+    vm.expectRevert('invalid native wrapper');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroNativeWrapper_withoutNativeGateway() public {
+    _inputs.nativeWrapper = address(0);
+    _inputs.deployNativeTokenGateway = false;
+
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroDeployer_reverts() public {
+    _deployer = address(0);
+
+    vm.expectRevert('invalid admin');
+    this.checkedV4Deployment();
   }
 
   function testAaveV4BatchDeployment_fuzz_withoutRoles(
@@ -163,17 +232,12 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     address deployer,
     bool withoutHubs,
     bool withoutSpokes,
-    bool withoutGateways
+    bool deployNativeTokenGateway,
+    bool deploySignatureGateway
   ) public {
     deployInputs.grantRoles = false;
-    deployInputs.nativeWrapper = _inputs.nativeWrapper;
-    if (withoutGateways) {
-      deployInputs.deployNativeTokenGateway = false;
-      deployInputs.deploySignatureGateway = false;
-    } else {
-      deployInputs.deployNativeTokenGateway = true;
-      deployInputs.deploySignatureGateway = true;
-    }
+    deployInputs.deployNativeTokenGateway = deployNativeTokenGateway;
+    deployInputs.deploySignatureGateway = deploySignatureGateway;
     if (withoutHubs) {
       deployInputs.hubLabels = new string[](0);
     } else {
@@ -207,17 +271,12 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     address deployer,
     bool withoutHubs,
     bool withoutSpokes,
-    bool withoutGateways
+    bool deployNativeTokenGateway,
+    bool deploySignatureGateway
   ) public {
     deployInputs.grantRoles = true;
-    deployInputs.nativeWrapper = _inputs.nativeWrapper;
-    if (withoutGateways) {
-      deployInputs.deployNativeTokenGateway = false;
-      deployInputs.deploySignatureGateway = false;
-    } else {
-      deployInputs.deployNativeTokenGateway = true;
-      deployInputs.deploySignatureGateway = true;
-    }
+    deployInputs.deployNativeTokenGateway = deployNativeTokenGateway;
+    deployInputs.deploySignatureGateway = deploySignatureGateway;
     if (withoutHubs) {
       deployInputs.hubLabels = new string[](0);
     } else {
@@ -258,22 +317,42 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     assertNotEq(deployInputs.spokeProxyAdminOwner, address(0));
     assertNotEq(deployInputs.spokeConfiguratorAdmin, address(0));
     assertNotEq(deployInputs.gatewayOwner, address(0));
-    assertNotEq(deployInputs.accessManagerAdmin, address(0));
     assertNotEq(deployInputs.hubAdmin, address(0));
     assertNotEq(deployInputs.spokeAdmin, address(0));
 
+    _inputs = deployInputs;
     checkedV4Deployment();
   }
 
+  /// @dev Predicts the first revert error based on execution order in deployAaveV4():
+  ///      1. AuthorityBatch (deployer as initial admin)
+  ///      2. Hubs (treasurySpokeOwner)
+  ///      3. Spokes (spokeProxyAdminOwner)
+  ///      4. Gateways (gatewayOwner, nativeWrapper)
+  ///      5. Roles (hubAdmin, hubConfiguratorAdmin, spokeAdmin, spokeConfiguratorAdmin, accessManagerAdmin)
   function _getExpectedError()
     internal
     view
     returns (bool isExpectedError, bytes memory errorMessage)
   {
-    // deployer is initial admin for access manager
+    // 1. deployer is initial admin for access manager
     if (_deployer == address(0)) return (true, bytes('invalid admin'));
 
-    // gateways require a valid owner when enabled
+    // 2. hubs require treasury owner when deployed
+    if (_inputs.hubLabels.length > 0 && _inputs.treasurySpokeOwner == address(0)) {
+      return (true, bytes('invalid owner'));
+    }
+
+    // 3. spokes require proxy admin owner when deployed
+    if (_inputs.spokeLabels.length > 0 && _inputs.spokeProxyAdminOwner == address(0)) {
+      return (true, bytes('invalid spoke proxy admin owner'));
+    }
+
+    // 4. gateways: native gateway checks nativeWrapper first, then owner;
+    //    signature gateway checks owner
+    if (_inputs.deployNativeTokenGateway && _inputs.nativeWrapper == address(0)) {
+      return (true, bytes('invalid native wrapper'));
+    }
     if (
       (_inputs.deployNativeTokenGateway || _inputs.deploySignatureGateway) &&
       _inputs.gatewayOwner == address(0)
@@ -281,34 +360,18 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       return (true, bytes('invalid owner'));
     }
 
-    // hubs require treasury owner when deployed
-    if (_inputs.hubLabels.length > 0 && _inputs.treasurySpokeOwner == address(0)) {
-      return (true, bytes('invalid owner'));
-    }
-
-    // spokes require proxy admin owner when deployed
-    if (_inputs.spokeLabels.length > 0 && _inputs.spokeProxyAdminOwner == address(0)) {
-      return (true, bytes('invalid spoke proxy admin owner'));
-    }
-
     if (_inputs.grantRoles) {
-      // hub roles granted first
-      if (_inputs.hubLabels.length > 0 && _inputs.hubAdmin == address(0)) {
-        return (true, bytes('invalid admin'));
-      }
-      if (_inputs.hubLabels.length > 0 && _inputs.hubConfiguratorAdmin == address(0)) {
-        return (true, bytes('invalid admin'));
-      }
-      // spoke roles granted next
-      if (_inputs.spokeLabels.length > 0 && _inputs.spokeAdmin == address(0)) {
-        return (true, bytes('invalid admin'));
-      }
-      if (_inputs.spokeLabels.length > 0 && _inputs.spokeConfiguratorAdmin == address(0)) {
-        return (true, bytes('invalid admin'));
-      }
-      // access manager admin replaced last
-      if (_inputs.accessManagerAdmin == address(0)) {
-        return (true, bytes('invalid admin to add'));
+      bool hasHubs = _inputs.hubLabels.length > 0;
+      bool hasSpokes = _inputs.spokeLabels.length > 0;
+
+      if (
+        (hasHubs &&
+          (_inputs.hubAdmin == address(0) || _inputs.hubConfiguratorAdmin == address(0))) ||
+        (hasSpokes &&
+          (_inputs.spokeAdmin == address(0) || _inputs.spokeConfiguratorAdmin == address(0))) ||
+        _inputs.accessManagerAdmin == address(0)
+      ) {
+        return (true, bytes('zero address'));
       }
     }
   }

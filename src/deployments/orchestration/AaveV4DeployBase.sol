@@ -5,19 +5,19 @@ pragma solidity ^0.8.0;
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 
-import {AaveV4AccessBatch} from 'src/deployments/batches/AaveV4AccessBatch.sol';
+import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 
 library AaveV4DeployBase {
-  function deployAccessBatch(
+  function deployAuthorityBatch(
     address admin,
     bytes32 salt
-  ) internal returns (BatchReports.AccessBatchReport memory) {
-    AaveV4AccessBatch accessBatch = new AaveV4AccessBatch(admin, salt);
-    return accessBatch.getReport();
+  ) internal returns (BatchReports.AuthorityBatchReport memory) {
+    AaveV4AuthorityBatch authorityBatch = new AaveV4AuthorityBatch({admin_: admin, salt_: salt});
+    return authorityBatch.getReport();
   }
 
   function deployConfiguratorBatch(
@@ -25,11 +25,11 @@ library AaveV4DeployBase {
     address spokeConfiguratorAuthority,
     bytes32 salt
   ) internal returns (BatchReports.ConfiguratorBatchReport memory) {
-    AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch(
-      hubConfiguratorAuthority,
-      spokeConfiguratorAuthority,
-      salt
-    );
+    AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch({
+      hubConfiguratorAuthority_: hubConfiguratorAuthority,
+      spokeConfiguratorAuthority_: spokeConfiguratorAuthority,
+      salt_: salt
+    });
     return configuratorBatch.getReport();
   }
 
@@ -39,7 +39,12 @@ library AaveV4DeployBase {
     bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (BatchReports.HubBatchReport memory) {
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch(treasurySpokeOwner, authority, hubBytecode, salt);
+    AaveV4HubBatch hubBatch = new AaveV4HubBatch({
+      treasurySpokeOwner_: treasurySpokeOwner,
+      authority_: authority,
+      hubBytecode_: hubBytecode,
+      salt_: salt
+    });
     return hubBatch.getReport();
   }
 

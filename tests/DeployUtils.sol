@@ -7,10 +7,37 @@ import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/Transpa
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
-import {Create2Utils} from 'tests/Create2Utils.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 library DeployUtils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
+  bytes internal constant CREATE2_FACTORY_BYTECODE =
+    hex'7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
+
+  error Create2DeploymentFailed();
+
+  function loadCreate2Factory() internal {
+    if (Create2Utils.isContractDeployed(Create2Utils.CREATE2_FACTORY)) {
+      return;
+    }
+    vm.etch(Create2Utils.CREATE2_FACTORY, CREATE2_FACTORY_BYTECODE);
+  }
+
+  function _create2Deploy(bytes32 salt, bytes memory bytecode) internal returns (address) {
+    address computed = Create2Utils.computeCreate2Address(salt, bytecode);
+
+    if (Create2Utils.isContractDeployed(computed)) {
+      return computed;
+    } else {
+      bytes memory creationBytecode = abi.encodePacked(salt, bytecode);
+      (, bytes memory returnData) = Create2Utils.CREATE2_FACTORY.call(creationBytecode);
+
+      address deployedAt = address(uint160(bytes20(returnData)));
+      require(deployedAt == computed, Create2DeploymentFailed());
+
+      return deployedAt;
+    }
+  }
 
   function deploySpokeImplementation(
     address oracle,
@@ -24,11 +51,9 @@ library DeployUtils {
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (ISpokeInstance spoke) {
-    Create2Utils.loadCreate2Factory();
+    loadCreate2Factory();
     return
-      ISpokeInstance(
-        Create2Utils.create2Deploy(salt, _getSpokeInstanceInitCode(oracle, maxUserReservesLimit))
-      );
+      ISpokeInstance(_create2Deploy(salt, _getSpokeInstanceInitCode(oracle, maxUserReservesLimit)));
   }
 
   function deploySpoke(
@@ -61,7 +86,7 @@ library DeployUtils {
   ) internal returns (address) {
     bytes32 initCodeHash = keccak256(_getSpokeInstanceInitCode(oracle, maxUserReservesLimit));
 
-    Create2Utils.loadCreate2Factory();
+    loadCreate2Factory();
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
   }
 
@@ -70,8 +95,8 @@ library DeployUtils {
   }
 
   function deployHub(address authority, bytes32 salt) internal returns (IHub hub) {
-    Create2Utils.loadCreate2Factory();
-    return IHub(Create2Utils.create2Deploy(salt, _getHubInitCode(authority)));
+    loadCreate2Factory();
+    return IHub(_create2Deploy(salt, _getHubInitCode(authority)));
   }
 
   function getDeterministicHubAddress(address authority) internal returns (address) {
@@ -81,7 +106,7 @@ library DeployUtils {
   function getDeterministicHubAddress(address authority, bytes32 salt) internal returns (address) {
     bytes32 initCodeHash = keccak256(_getHubInitCode(authority));
 
-    Create2Utils.loadCreate2Factory();
+    loadCreate2Factory();
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
   }
 

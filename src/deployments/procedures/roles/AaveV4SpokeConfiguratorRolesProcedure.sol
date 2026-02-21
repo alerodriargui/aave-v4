@@ -4,130 +4,76 @@ pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
-import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
-
+import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 library AaveV4SpokeConfiguratorRolesProcedure {
+  /// @notice Grants all SpokeConfigurator granular roles to `admin`:
+  ///   - SPOKE_CONFIGURATOR_ADMIN_ROLE
+  ///   - SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE
+  ///   - SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE
+  ///   - SPOKE_CONFIGURATOR_FREEZER_ROLE
+  ///   - SPOKE_CONFIGURATOR_PAUSER_ROLE
   function grantSpokeConfiguratorAllRoles(address accessManager, address admin) internal {
-    grantSpokeConfiguratorAdminRole(accessManager, admin);
-    grantSpokeFreezeRole(accessManager, admin);
-    grantSpokePauseRole(accessManager, admin);
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE, admin);
+    grantSpokeConfiguratorRole(
+      accessManager,
+      Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
+      admin
+    );
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE, admin);
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE, admin);
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE, admin);
   }
 
-  function grantSpokeConfiguratorAdminRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
-    IAccessManager(accessManager).grantRole({
-      roleId: Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
-      account: admin,
-      executionDelay: 0
-    });
+  function grantSpokeConfiguratorRole(address accessManager, uint64 role, address admin) internal {
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(admin);
+    IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  function grantSpokeFreezeRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
-    IAccessManager(accessManager).grantRole({
-      roleId: Roles.SPOKE_FREEZE_ROLE,
-      account: admin,
-      executionDelay: 0
-    });
-  }
-
-  function grantSpokePauseRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
-    IAccessManager(accessManager).grantRole({
-      roleId: Roles.SPOKE_PAUSE_ROLE,
-      account: admin,
-      executionDelay: 0
-    });
-  }
-
-  function setupSpokeConfiguratorRoles(address accessManager, address spokeConfigurator) internal {
-    setupSpokeConfiguratorAdminRole(accessManager, spokeConfigurator);
-    setupSpokeFreezeRole(accessManager, spokeConfigurator);
-    setupSpokePauseRole(accessManager, spokeConfigurator);
-  }
-
-  function setupSpokeConfiguratorAdminRole(
+  function setupSpokeConfiguratorAllRoles(
     address accessManager,
     address spokeConfigurator
   ) internal {
-    _validateAccessManagerAndSpokeConfigurator(accessManager, spokeConfigurator);
-    bytes4[] memory selectors = getSpokeConfiguratorAdminRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(
+    setupSpokeConfiguratorRole(
+      accessManager,
       spokeConfigurator,
-      selectors,
-      Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE
+      Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
+      Roles.getSpokeConfiguratorAdminRoleSelectors()
+    );
+    setupSpokeConfiguratorRole(
+      accessManager,
+      spokeConfigurator,
+      Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
+      Roles.getSpokeConfiguratorLiquidationUpdaterRoleSelectors()
+    );
+    setupSpokeConfiguratorRole(
+      accessManager,
+      spokeConfigurator,
+      Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE,
+      Roles.getSpokeConfiguratorReserveAdderRoleSelectors()
+    );
+    setupSpokeConfiguratorRole(
+      accessManager,
+      spokeConfigurator,
+      Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
+      Roles.getSpokeConfiguratorFreezerRoleSelectors()
+    );
+    setupSpokeConfiguratorRole(
+      accessManager,
+      spokeConfigurator,
+      Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
+      Roles.getSpokeConfiguratorPauserRoleSelectors()
     );
   }
 
-  function setupSpokeFreezeRole(address accessManager, address spokeConfigurator) internal {
-    _validateAccessManagerAndSpokeConfigurator(accessManager, spokeConfigurator);
-    bytes4[] memory selectors = getSpokeFreezeRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(
-      spokeConfigurator,
-      selectors,
-      Roles.SPOKE_FREEZE_ROLE
-    );
-  }
-
-  function setupSpokePauseRole(address accessManager, address spokeConfigurator) internal {
-    _validateAccessManagerAndSpokeConfigurator(accessManager, spokeConfigurator);
-    bytes4[] memory selectors = getSpokePauseRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(
-      spokeConfigurator,
-      selectors,
-      Roles.SPOKE_PAUSE_ROLE
-    );
-  }
-
-  function getSpokeConfiguratorAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](18);
-    selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
-    selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
-    selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
-    selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
-    selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
-    selectors[5] = ISpokeConfigurator.addReserve.selector;
-    selectors[6] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[7] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    selectors[8] = ISpokeConfigurator.updateCollateralRisk.selector;
-    selectors[9] = ISpokeConfigurator.addCollateralFactor.selector;
-    selectors[10] = ISpokeConfigurator.updateCollateralFactor.selector;
-    selectors[11] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    selectors[12] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    selectors[13] = ISpokeConfigurator.addLiquidationFee.selector;
-    selectors[14] = ISpokeConfigurator.updateLiquidationFee.selector;
-    selectors[15] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    selectors[16] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[17] = ISpokeConfigurator.updatePositionManager.selector;
-    return selectors;
-  }
-
-  function getSpokeFreezeRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](3);
-    selectors[0] = ISpokeConfigurator.updateFrozen.selector;
-    selectors[1] = ISpokeConfigurator.freezeAllReserves.selector;
-    selectors[2] = ISpokeConfigurator.freezeReserve.selector;
-    return selectors;
-  }
-
-  function getSpokePauseRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](3);
-    selectors[0] = ISpokeConfigurator.updatePaused.selector;
-    selectors[1] = ISpokeConfigurator.pauseAllReserves.selector;
-    selectors[2] = ISpokeConfigurator.pauseReserve.selector;
-    return selectors;
-  }
-
-  function _validateAccessManagerAndSpokeConfigurator(
+  function setupSpokeConfiguratorRole(
     address accessManager,
-    address spokeConfigurator
-  ) private pure {
-    require(accessManager != address(0), 'invalid access manager');
-    require(spokeConfigurator != address(0), 'invalid spoke configurator');
-  }
-
-  function _validateAccessManagerAndAdmin(address accessManager, address admin) private pure {
-    require(accessManager != address(0), 'invalid access manager');
-    require(admin != address(0), 'invalid admin');
+    address spokeConfigurator,
+    uint64 role,
+    bytes4[] memory selectors
+  ) internal {
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(spokeConfigurator);
+    IAccessManager(accessManager).setTargetFunctionRole(spokeConfigurator, selectors, role);
   }
 }

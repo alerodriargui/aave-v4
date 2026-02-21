@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 
 contract AaveV4SpokeConfiguratorRolesProcedureWrapper {
   bool public IS_TEST = true;
@@ -11,52 +12,52 @@ contract AaveV4SpokeConfiguratorRolesProcedureWrapper {
     AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles(accessManager, admin);
   }
 
-  function grantSpokeConfiguratorAdminRole(address accessManager, address admin) external {
-    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAdminRole(accessManager, admin);
-  }
-
-  function grantSpokeFreezeRole(address accessManager, address admin) external {
-    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeFreezeRole(accessManager, admin);
-  }
-
-  function grantSpokePauseRole(address accessManager, address admin) external {
-    AaveV4SpokeConfiguratorRolesProcedure.grantSpokePauseRole(accessManager, admin);
+  function grantSpokeConfiguratorRole(address accessManager, uint64 role, address admin) external {
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorRole(accessManager, role, admin);
   }
 
   function setupSpokeConfiguratorRoles(address accessManager, address spokeConfigurator) external {
-    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorRoles(
+    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles(
       accessManager,
       spokeConfigurator
     );
   }
 
-  function setupSpokeConfiguratorAdminRole(
+  function setupSpokeConfiguratorRole(
     address accessManager,
-    address spokeConfigurator
+    address spokeConfigurator,
+    uint64 role,
+    bytes4[] memory selectors
   ) external {
-    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAdminRole(
+    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorRole(
       accessManager,
-      spokeConfigurator
+      spokeConfigurator,
+      role,
+      selectors
     );
-  }
-
-  function setupSpokeFreezeRole(address accessManager, address spokeConfigurator) external {
-    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeFreezeRole(accessManager, spokeConfigurator);
-  }
-
-  function setupSpokePauseRole(address accessManager, address spokeConfigurator) external {
-    AaveV4SpokeConfiguratorRolesProcedure.setupSpokePauseRole(accessManager, spokeConfigurator);
   }
 
   function getSpokeConfiguratorAdminRoleSelectors() external pure returns (bytes4[] memory) {
-    return AaveV4SpokeConfiguratorRolesProcedure.getSpokeConfiguratorAdminRoleSelectors();
+    return Roles.getSpokeConfiguratorAdminRoleSelectors();
   }
 
-  function getSpokeFreezeRoleSelectors() external pure returns (bytes4[] memory) {
-    return AaveV4SpokeConfiguratorRolesProcedure.getSpokeFreezeRoleSelectors();
+  function getSpokeConfiguratorLiquidationUpdaterRoleSelectors()
+    external
+    pure
+    returns (bytes4[] memory)
+  {
+    return Roles.getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
   }
 
-  function getSpokePauseRoleSelectors() external pure returns (bytes4[] memory) {
-    return AaveV4SpokeConfiguratorRolesProcedure.getSpokePauseRoleSelectors();
+  function getSpokeConfiguratorReserveAdderRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getSpokeConfiguratorReserveAdderRoleSelectors();
+  }
+
+  function getSpokeConfiguratorFreezerRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getSpokeConfiguratorFreezerRoleSelectors();
+  }
+
+  function getSpokeConfiguratorPauserRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getSpokeConfiguratorPauserRoleSelectors();
   }
 }

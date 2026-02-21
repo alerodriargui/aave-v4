@@ -78,6 +78,9 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     InputUtils.FullDeployInputs memory expected = _inputs;
     if (grantRoles) {
       expected.accessManagerAdmin = _deployer;
+    } else {
+      expected.treasurySpokeOwner = _deployer;
+      expected.spokeProxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -92,6 +95,10 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     InputUtils.FullDeployInputs memory expected = _inputs;
     if (grantRoles) {
       expected.hubAdmin = _deployer;
+    } else {
+      // when grantRoles=false, treasurySpokeOwner and spokeProxyAdminOwner always default to deployer
+      expected.treasurySpokeOwner = _deployer;
+      expected.spokeProxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -106,6 +113,9 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     InputUtils.FullDeployInputs memory expected = _inputs;
     if (grantRoles) {
       expected.spokeAdmin = _deployer;
+    } else {
+      expected.treasurySpokeOwner = _deployer;
+      expected.spokeProxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -122,6 +132,9 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     InputUtils.FullDeployInputs memory expected = _inputs;
     if (grantRoles) {
       expected.hubConfiguratorAdmin = _deployer;
+    } else {
+      expected.treasurySpokeOwner = _deployer;
+      expected.spokeProxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -138,6 +151,9 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     InputUtils.FullDeployInputs memory expected = _inputs;
     if (grantRoles) {
       expected.spokeConfiguratorAdmin = _deployer;
+    } else {
+      expected.treasurySpokeOwner = _deployer;
+      expected.spokeProxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -153,8 +169,10 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     );
 
     InputUtils.FullDeployInputs memory expected = _inputs;
-    if (grantRoles) {
-      expected.spokeProxyAdminOwner = _deployer;
+    // spokeProxyAdminOwner always defaults to deployer (in both grantRoles branches)
+    expected.spokeProxyAdminOwner = _deployer;
+    if (!grantRoles) {
+      expected.treasurySpokeOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -169,8 +187,10 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       _deployer
     );
     InputUtils.FullDeployInputs memory expected = _inputs;
-    if (grantRoles) {
-      expected.treasurySpokeOwner = _deployer;
+    // treasurySpokeOwner always defaults to deployer (in both grantRoles branches)
+    expected.treasurySpokeOwner = _deployer;
+    if (!grantRoles) {
+      expected.spokeProxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -184,6 +204,10 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     );
     InputUtils.FullDeployInputs memory expected = _inputs;
     expected.gatewayOwner = _deployer;
+    if (!grantRoles) {
+      expected.treasurySpokeOwner = _deployer;
+      expected.spokeProxyAdminOwner = _deployer;
+    }
     assertEq(sanitized, expected);
   }
 
@@ -196,6 +220,35 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     );
     InputUtils.FullDeployInputs memory expected = _inputs;
     expected.nativeWrapper = address(0);
+    if (!grantRoles) {
+      expected.treasurySpokeOwner = _deployer;
+      expected.spokeProxyAdminOwner = _deployer;
+    }
+    assertEq(sanitized, expected);
+  }
+
+  function test_loadWarningsAndSanitizeInputs_revertsWith_duplicateHubLabel() public {
+    _inputs.hubLabels = ['hub1', 'hub2', 'hub1'];
+    vm.expectRevert('duplicate hub label: hub1');
+    _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
+  }
+
+  function test_loadWarningsAndSanitizeInputs_revertsWith_duplicateSpokeLabel() public {
+    _inputs.spokeLabels = ['spoke1', 'spoke1'];
+    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(2);
+    _inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(2);
+    _inputs.spokeOracleDescriptions = _defaultSpokeOracleDescriptions(_inputs.spokeLabels);
+    vm.expectRevert('duplicate spoke label: spoke1');
+    _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
+  }
+
+  function test_loadWarningsAndSanitizeInputs_withZeroSalt() public {
+    _inputs.salt = bytes32(0);
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
     assertEq(sanitized, expected);
   }
 
@@ -217,6 +270,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.grantRoles, b.grantRoles, 'grant roles');
     assertEq(a.hubLabels, b.hubLabels, 'hub labels');
     assertEq(a.spokeLabels, b.spokeLabels, 'spoke labels');
+    assertEq(a.salt, b.salt, 'salt');
     assertEq(abi.encode(a), abi.encode(b));
   }
 

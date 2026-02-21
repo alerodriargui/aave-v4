@@ -9,7 +9,7 @@ contract MetadataLogger is Logger {
   constructor(string memory outputPath_) Logger(outputPath_) {}
 
   function writeJsonReportMarket(OrchestrationReports.FullDeploymentReport memory report) public {
-    _write('AccessManager', report.accessBatchReport.accessManager);
+    _write('AccessManager', report.authorityBatchReport.accessManager);
     _write('HubConfigurator', report.configuratorBatchReport.hubConfigurator);
     _write('SpokeConfigurator', report.configuratorBatchReport.spokeConfigurator);
 
@@ -21,7 +21,7 @@ contract MetadataLogger is Logger {
       });
       hubEntries[1] = Logger.AddressEntry({
         label: 'InterestRateStrategy',
-        value: report.hubBatchReports[i].report.hub
+        value: report.hubBatchReports[i].report.irStrategy
       });
       hubEntries[2] = Logger.AddressEntry({
         label: 'TreasurySpoke',

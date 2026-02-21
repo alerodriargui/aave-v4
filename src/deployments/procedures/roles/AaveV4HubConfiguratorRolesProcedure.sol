@@ -4,151 +4,101 @@ pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
-import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
-
+import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 library AaveV4HubConfiguratorRolesProcedure {
+  /// @notice Grants all HubConfigurator granular roles to `admin`:
+  ///   - HUB_CONFIGURATOR_FEE_UPDATER_ROLE
+  ///   - HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE
+  ///   - HUB_CONFIGURATOR_ASSET_LISTER_ROLE
+  ///   - HUB_CONFIGURATOR_SPOKE_ADDER_ROLE
+  ///   - HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE
+  ///   - HUB_CONFIGURATOR_HALTER_ROLE
+  ///   - HUB_CONFIGURATOR_DEACTIVATER_ROLE
+  ///   - HUB_CONFIGURATOR_CAPS_UDPATER_ROLE
   function grantHubConfiguratorAllRoles(address accessManager, address admin) internal {
-    grantHubConfiguratorAdminRole(accessManager, admin);
-    grantHubHaltRole(accessManager, admin);
-    grantHubDeactivateRole(accessManager, admin);
-    grantHubCapsResetRole(accessManager, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE, admin);
+    grantHubConfiguratorRole(
+      accessManager,
+      Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE,
+      admin
+    );
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE, admin);
+    grantHubConfiguratorRole(
+      accessManager,
+      Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
+      admin
+    );
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_HALTER_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_CAPS_UDPATER_ROLE, admin);
   }
 
-  function grantHubConfiguratorAdminRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
-    IAccessManager(accessManager).grantRole({
-      roleId: Roles.HUB_CONFIGURATOR_ADMIN_ROLE,
-      account: admin,
-      executionDelay: 0
-    });
+  function grantHubConfiguratorRole(address accessManager, uint64 role, address admin) internal {
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(admin);
+    IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  function grantHubHaltRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
-    IAccessManager(accessManager).grantRole({
-      roleId: Roles.HUB_HALT_ROLE,
-      account: admin,
-      executionDelay: 0
-    });
-  }
-
-  function grantHubDeactivateRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
-    IAccessManager(accessManager).grantRole({
-      roleId: Roles.HUB_DEACTIVATE_ROLE,
-      account: admin,
-      executionDelay: 0
-    });
-  }
-
-  function grantHubCapsResetRole(address accessManager, address admin) internal {
-    _validateAccessManagerAndAdmin(accessManager, admin);
-    IAccessManager(accessManager).grantRole({
-      roleId: Roles.HUB_CAPS_RESET_ROLE,
-      account: admin,
-      executionDelay: 0
-    });
-  }
-
-  function setupHubConfiguratorRoles(address accessManager, address hubConfigurator) internal {
-    setupHubConfiguratorAdminRole(accessManager, hubConfigurator);
-    setupHubHaltRole(accessManager, hubConfigurator);
-    setupHubDeactivateRole(accessManager, hubConfigurator);
-    setupHubCapsResetRole(accessManager, hubConfigurator);
-  }
-
-  function setupHubConfiguratorAdminRole(address accessManager, address hubConfigurator) internal {
-    _validateAccessManagerAndHubConfigurator(accessManager, hubConfigurator);
-    bytes4[] memory selectors = getHubConfiguratorAdminRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(
+  function setupHubConfiguratorAllRoles(address accessManager, address hubConfigurator) internal {
+    setupHubConfiguratorRole(
+      accessManager,
       hubConfigurator,
-      selectors,
-      Roles.HUB_CONFIGURATOR_ADMIN_ROLE
+      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
+      Roles.getHubConfiguratorFeeUpdaterRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE,
+      Roles.getHubConfiguratorReinvestmentUpdaterRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
+      Roles.getHubConfiguratorAssetListerRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE,
+      Roles.getHubConfiguratorSpokeAdderRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
+      Roles.getHubConfiguratorInterestRateUpdaterRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_HALTER_ROLE,
+      Roles.getHubConfiguratorHalterRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE,
+      Roles.getHubConfiguratorActivaterRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
+      Roles.HUB_CONFIGURATOR_CAPS_UDPATER_ROLE,
+      Roles.getHubConfiguratorCapSetterRoleSelectors()
     );
   }
 
-  function setupHubHaltRole(address accessManager, address hubConfigurator) internal {
-    _validateAccessManagerAndHubConfigurator(accessManager, hubConfigurator);
-    bytes4[] memory selectors = getHubHaltRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(
-      hubConfigurator,
-      selectors,
-      Roles.HUB_HALT_ROLE
-    );
-  }
-
-  function setupHubDeactivateRole(address accessManager, address hubConfigurator) internal {
-    _validateAccessManagerAndHubConfigurator(accessManager, hubConfigurator);
-    bytes4[] memory selectors = getHubDeactivateRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(
-      hubConfigurator,
-      selectors,
-      Roles.HUB_DEACTIVATE_ROLE
-    );
-  }
-
-  function setupHubCapsResetRole(address accessManager, address hubConfigurator) internal {
-    _validateAccessManagerAndHubConfigurator(accessManager, hubConfigurator);
-    bytes4[] memory selectors = getHubCapsResetRoleSelectors();
-    IAccessManager(accessManager).setTargetFunctionRole(
-      hubConfigurator,
-      selectors,
-      Roles.HUB_CAPS_RESET_ROLE
-    );
-  }
-
-  function getHubConfiguratorAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](16);
-    selectors[0] = IHubConfigurator.addAsset.selector;
-    selectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
-    selectors[2] = IHubConfigurator.updateLiquidityFee.selector;
-    selectors[3] = IHubConfigurator.updateFeeReceiver.selector;
-    selectors[4] = IHubConfigurator.updateFeeConfig.selector;
-    selectors[5] = IHubConfigurator.updateInterestRateStrategy.selector;
-    selectors[6] = IHubConfigurator.updateReinvestmentController.selector;
-    selectors[7] = IHubConfigurator.addSpoke.selector;
-    selectors[8] = IHubConfigurator.addSpokeToAssets.selector;
-    selectors[9] = IHubConfigurator.updateSpokeActive.selector;
-    selectors[10] = IHubConfigurator.updateSpokeHalted.selector;
-    selectors[11] = IHubConfigurator.updateSpokeSupplyCap.selector;
-    selectors[12] = IHubConfigurator.updateSpokeDrawCap.selector;
-    selectors[13] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
-    selectors[14] = IHubConfigurator.updateSpokeCaps.selector;
-    selectors[15] = IHubConfigurator.updateInterestRateData.selector;
-    return selectors;
-  }
-
-  function getHubHaltRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](2);
-    selectors[0] = IHubConfigurator.haltAsset.selector;
-    selectors[1] = IHubConfigurator.haltSpoke.selector;
-    return selectors;
-  }
-
-  function getHubDeactivateRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](2);
-    selectors[0] = IHubConfigurator.deactivateAsset.selector;
-    selectors[1] = IHubConfigurator.deactivateSpoke.selector;
-    return selectors;
-  }
-
-  function getHubCapsResetRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](2);
-    selectors[0] = IHubConfigurator.resetAssetCaps.selector;
-    selectors[1] = IHubConfigurator.resetSpokeCaps.selector;
-    return selectors;
-  }
-
-  function _validateAccessManagerAndHubConfigurator(
+  function setupHubConfiguratorRole(
     address accessManager,
-    address hubConfigurator
-  ) private pure {
-    require(accessManager != address(0), 'invalid access manager');
-    require(hubConfigurator != address(0), 'invalid hub configurator');
-  }
-
-  function _validateAccessManagerAndAdmin(address accessManager, address admin) private pure {
-    require(accessManager != address(0), 'invalid access manager');
-    require(admin != address(0), 'invalid admin');
+    address hubConfigurator,
+    uint64 role,
+    bytes4[] memory selectors
+  ) internal {
+    RolesValidation.validateNonZeroAddress(accessManager);
+    RolesValidation.validateNonZeroAddress(hubConfigurator);
+    IAccessManager(accessManager).setTargetFunctionRole(hubConfigurator, selectors, role);
   }
 }

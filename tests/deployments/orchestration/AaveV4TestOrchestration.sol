@@ -8,12 +8,13 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 
-import {AaveV4AccessBatch} from 'src/deployments/batches/AaveV4AccessBatch.sol';
+import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
@@ -21,7 +22,9 @@ import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/ro
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 
 import {AaveV4HubConfigProcedures} from 'src/deployments/procedures/config/AaveV4HubConfigProcedures.sol';
-import {AaveV4SpokeConfigProcedures} from 'src/deployments/procedures/config/AaveV4SpokeConfigProcedures.sol';
+
+import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 
@@ -67,7 +70,7 @@ library AaveV4TestOrchestration {
     report.spokeReports = new TestTypes.TestSpokeReport[](spokeCount);
 
     // Deploy Access Batch
-    report.accessManager = AaveV4DeployBase.deployAccessBatch(admin, salt).accessManager;
+    report.accessManager = AaveV4DeployBase.deployAuthorityBatch(admin, salt).accessManager;
 
     // Deploy Hub Batches
     for (uint256 i; i < hubCount; ++i) {
@@ -149,7 +152,11 @@ library AaveV4TestOrchestration {
 
   function configureHubsSpokes(ConfigData.AddSpokeParams[] memory paramsList) external {
     for (uint256 i; i < paramsList.length; ++i) {
-      AaveV4HubConfigProcedures.addSpoke(paramsList[i]);
+      IHub(paramsList[i].hub).addSpoke({
+        assetId: paramsList[i].assetId,
+        spoke: paramsList[i].spoke,
+        params: paramsList[i].config
+      });
     }
   }
 
@@ -158,7 +165,9 @@ library AaveV4TestOrchestration {
     ConfigData.AddReserveParams[] memory reserveParamsList
   ) external returns (TestTypes.SpokeReserveId[] memory) {
     for (uint256 i; i < liquidationParamsList.length; ++i) {
-      AaveV4SpokeConfigProcedures.updateLiquidationConfig(liquidationParamsList[i]);
+      ISpoke(liquidationParamsList[i].spoke).updateLiquidationConfig(
+        liquidationParamsList[i].config
+      );
     }
     TestTypes.SpokeReserveId[] memory spokeReserveIds = new TestTypes.SpokeReserveId[](
       reserveParamsList.length
@@ -166,7 +175,13 @@ library AaveV4TestOrchestration {
     for (uint256 i; i < reserveParamsList.length; ++i) {
       spokeReserveIds[i] = TestTypes.SpokeReserveId({
         spoke: reserveParamsList[i].spoke,
-        reserveId: AaveV4SpokeConfigProcedures.addReserve(reserveParamsList[i])
+        reserveId: ISpoke(reserveParamsList[i].spoke).addReserve({
+          hub: reserveParamsList[i].hub,
+          assetId: reserveParamsList[i].assetId,
+          priceSource: reserveParamsList[i].priceSource,
+          config: reserveParamsList[i].config,
+          dynamicConfig: reserveParamsList[i].dynamicConfig
+        })
       });
     }
     return spokeReserveIds;
@@ -175,27 +190,33 @@ library AaveV4TestOrchestration {
   function setRolesTestEnv(TestTypes.TestEnvReport memory report) public {
     // Set Hub Roles
     for (uint256 i; i < report.hubReports.length; ++i) {
-      AaveV4HubRolesProcedure.setupHubRoles(report.accessManager, report.hubReports[i].hub);
+      AaveV4HubRolesProcedure.setupHubAllRoles(report.accessManager, report.hubReports[i].hub);
     }
 
     // Set Spoke Roles
     for (uint256 i; i < report.spokeReports.length; ++i) {
-      AaveV4SpokeRolesProcedure.setupSpokeRoles(report.accessManager, report.spokeReports[i].spoke);
+      AaveV4SpokeRolesProcedure.setupSpokeAllRoles(
+        report.accessManager,
+        report.spokeReports[i].spoke
+      );
     }
 
     // Set Configurator Roles
-    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorRoles(
+    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles(
       report.accessManager,
       report.configuratorReport.hubConfigurator
     );
-    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorRoles(
+    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles(
       report.accessManager,
       report.configuratorReport.spokeConfigurator
     );
   }
 
-  function setHubRolesTestEnv(TestTypes.TestHubReport memory report, address accessManager) public {
-    AaveV4HubRolesProcedure.setupHubRoles(accessManager, report.hub);
+  function setupHubRolesTestEnv(
+    TestTypes.TestHubReport memory report,
+    address accessManager
+  ) public {
+    AaveV4HubRolesProcedure.setupHubAllRoles(accessManager, report.hub);
   }
 
   function grantRolesTestEnv(
@@ -214,12 +235,13 @@ library AaveV4TestOrchestration {
     address hubAdmin
   ) public {
     // grant Hub Admin roles
-    AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManager, admin);
-    AaveV4HubRolesProcedure.grantHubAdminRole(report.accessManager, hubAdmin);
+    AaveV4HubRolesProcedure.grantHubAllRoles(report.accessManager, admin);
+    AaveV4HubRolesProcedure.grantHubAllRoles(report.accessManager, hubAdmin);
 
     // grant Hub Configurator role
-    AaveV4HubRolesProcedure.grantHubConfiguratorRole(
+    AaveV4HubRolesProcedure.grantHubRole(
       report.accessManager,
+      Roles.HUB_CONFIGURATOR_ROLE,
       report.configuratorReport.hubConfigurator
     );
 
@@ -237,12 +259,13 @@ library AaveV4TestOrchestration {
     address spokeAdmin
   ) public {
     // grant Spoke roles
-    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManager, admin);
-    AaveV4SpokeRolesProcedure.grantSpokeAdminRole(report.accessManager, spokeAdmin);
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles(report.accessManager, admin);
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles(report.accessManager, spokeAdmin);
 
     // grant Spoke Configurator roles (allows SpokeConfigurator to call Spoke functions)
-    AaveV4SpokeRolesProcedure.grantSpokeConfiguratorRole(
+    AaveV4SpokeRolesProcedure.grantSpokeRole(
       report.accessManager,
+      Roles.SPOKE_CONFIGURATOR_ROLE,
       report.configuratorReport.spokeConfigurator
     );
 
@@ -262,7 +285,25 @@ library AaveV4TestOrchestration {
   ) public returns (uint256[] memory) {
     uint256[] memory assetIds = new uint256[](paramsList.length);
     for (uint256 i; i < paramsList.length; ++i) {
-      assetIds[i] = AaveV4HubConfigProcedures.addAsset(paramsList[i]);
+      assetIds[i] = IHub(paramsList[i].hub).addAsset({
+        underlying: paramsList[i].underlying,
+        decimals: paramsList[i].decimals,
+        feeReceiver: paramsList[i].feeReceiver,
+        irStrategy: paramsList[i].irStrategy,
+        irData: paramsList[i].irData
+      });
+      if (paramsList[i].liquidityFee > 0 || paramsList[i].reinvestmentController != address(0)) {
+        IHub(paramsList[i].hub).updateAssetConfig({
+          assetId: assetIds[i],
+          config: IHub.AssetConfig({
+            liquidityFee: paramsList[i].liquidityFee,
+            feeReceiver: paramsList[i].feeReceiver,
+            irStrategy: paramsList[i].irStrategy,
+            reinvestmentController: paramsList[i].reinvestmentController
+          }),
+          irData: bytes('')
+        });
+      }
     }
     return assetIds;
   }

@@ -5,13 +5,10 @@ pragma solidity ^0.8.0;
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 contract AaveV4AaveOracleDeployProcedure is AaveV4DeployProcedureBase {
-  function _deployAaveOracle(
-    uint8 decimals_,
-    string memory description_
-  ) internal returns (address) {
-    require(decimals_ > 0, 'invalid oracle decimals');
-    require(bytes(description_).length > 0, 'invalid oracle description');
+  function _deployAaveOracle(uint8 decimals, string memory description) internal returns (address) {
+    require(decimals > 0, 'invalid oracle decimals');
+    require(bytes(description).length > 0, 'invalid oracle description');
     // AaveOracle must be deployed via create so deployer can call setSpoke after deployment
-    return address(new AaveOracle({decimals_: decimals_, description_: description_}));
+    return address(new AaveOracle({decimals_: decimals, description_: description}));
   }
 }

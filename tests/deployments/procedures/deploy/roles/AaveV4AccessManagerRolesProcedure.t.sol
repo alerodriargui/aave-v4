@@ -11,51 +11,92 @@ contract AaveV4AccessManagerRolesProcedureTest is ProceduresBase {
     aaveV4AccessManagerRolesProcedureWrapper = new AaveV4AccessManagerRolesProcedureWrapper();
   }
 
-  function test_grantRootAdminRole() public {
+  function test_replaceDefaultAdminRole() public {
     address newAdmin = makeAddr('newAdmin');
 
-    _grantTmpRootAdminRole(newAdmin);
+    _replaceDefaultAdminRole(newAdmin);
     (bool hasRole, uint32 executionDelay) = IAccessManagerEnumerable(accessManager).hasRole(
-      Roles.DEFAULT_ADMIN_ROLE,
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
       newAdmin
     );
     assertTrue(hasRole);
     assertEq(executionDelay, 0);
   }
 
-  function test_grantRootAdminRole_reverts() public {
+  function test_replaceDefaultAdminRole_reverts() public {
     address newAdmin = makeAddr('newAdmin');
-    vm.expectRevert('invalid access manager');
-    aaveV4AccessManagerRolesProcedureWrapper.grantRootAdminRole({
+    vm.expectRevert('zero address');
+    aaveV4AccessManagerRolesProcedureWrapper.replaceDefaultAdminRole({
       accessManager: address(0),
       adminToAdd: newAdmin,
-      adminToRemove: address(0)
+      adminToRemove: accessManagerAdmin
     });
 
-    vm.expectRevert('invalid admin to add');
-    aaveV4AccessManagerRolesProcedureWrapper.grantRootAdminRole({
+    vm.expectRevert('zero address');
+    aaveV4AccessManagerRolesProcedureWrapper.replaceDefaultAdminRole({
       accessManager: accessManager,
       adminToAdd: address(0),
       adminToRemove: newAdmin
     });
 
-    vm.expectRevert('invalid admin to remove');
-    aaveV4AccessManagerRolesProcedureWrapper.grantRootAdminRole({
+    vm.prank(accessManagerAdmin);
+    IAccessManager(accessManager).grantRole(
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      address(aaveV4AccessManagerRolesProcedureWrapper),
+      0
+    );
+    vm.expectRevert('zero address');
+    aaveV4AccessManagerRolesProcedureWrapper.replaceDefaultAdminRole({
       accessManager: accessManager,
       adminToAdd: newAdmin,
       adminToRemove: address(0)
     });
   }
 
-  /// @dev Grants a temporary root admin role to the wrapper contract to execute the procedure.
-  function _grantTmpRootAdminRole(address newAdmin) internal {
-    vm.startPrank(accessManagerAdmin);
+  function test_grantAccessManagerAdminRole() public {
+    address newAdmin = makeAddr('newAdmin');
+    vm.prank(accessManagerAdmin);
     IAccessManager(accessManager).grantRole(
-      Roles.DEFAULT_ADMIN_ROLE,
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
       address(aaveV4AccessManagerRolesProcedureWrapper),
       0
     );
-    aaveV4AccessManagerRolesProcedureWrapper.grantRootAdminRole({
+    aaveV4AccessManagerRolesProcedureWrapper.grantAccessManagerAdminRole({
+      accessManager: accessManager,
+      admin: newAdmin
+    });
+
+    (bool hasRole, uint32 executionDelay) = IAccessManagerEnumerable(accessManager).hasRole(
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      newAdmin
+    );
+    assertTrue(hasRole);
+    assertEq(executionDelay, 0);
+  }
+
+  function test_grantAccessManagerAdminRole_reverts() public {
+    vm.expectRevert('zero address');
+    aaveV4AccessManagerRolesProcedureWrapper.grantAccessManagerAdminRole({
+      accessManager: address(0),
+      admin: admin
+    });
+
+    vm.expectRevert('zero address');
+    aaveV4AccessManagerRolesProcedureWrapper.grantAccessManagerAdminRole({
+      accessManager: accessManager,
+      admin: address(0)
+    });
+  }
+
+  /// @dev Grants a temporary root admin role to the wrapper contract to execute the procedure.
+  function _replaceDefaultAdminRole(address newAdmin) internal {
+    vm.startPrank(accessManagerAdmin);
+    IAccessManager(accessManager).grantRole(
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      address(aaveV4AccessManagerRolesProcedureWrapper),
+      0
+    );
+    aaveV4AccessManagerRolesProcedureWrapper.replaceDefaultAdminRole({
       accessManager: accessManager,
       adminToAdd: newAdmin,
       adminToRemove: address(aaveV4AccessManagerRolesProcedureWrapper)

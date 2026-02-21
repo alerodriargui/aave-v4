@@ -2,25 +2,24 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Test} from 'forge-std/Test.sol';
 import {
   Create2Utils,
   Create2UtilsWrapper
 } from 'tests/mocks/deployments/libraries/Create2UtilsWrapper.sol';
-import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 
 contract Dummy {
   constructor() {}
 }
 
-contract Create2UtilsTest is Test, InputUtils {
+contract Create2UtilsTest is Create2TestHelper {
   Create2UtilsWrapper internal _harness;
   function setUp() public {
     _harness = new Create2UtilsWrapper();
   }
   function testCreate2Deploy_revertsWith_missingCreate2Factory() public {
-    vm.expectRevert(Create2Utils.missingCreate2Factory.selector);
+    vm.expectRevert(Create2Utils.MissingCreate2Factory.selector);
     _harness.create2Deploy(bytes32(0), type(Dummy).creationCode);
   }
 
@@ -31,7 +30,7 @@ contract Create2UtilsTest is Test, InputUtils {
       hex'600060005260206000f3' // runtime: mstore(0,0); return(0,32)
     );
     bytes memory bytecode = type(Dummy).creationCode;
-    vm.expectRevert(Create2Utils.create2AddressDerivationFailure.selector);
+    vm.expectRevert(Create2Utils.Create2AddressDerivationFailure.selector);
     _harness.create2Deploy(salt, bytecode);
   }
 
@@ -39,7 +38,7 @@ contract Create2UtilsTest is Test, InputUtils {
     vm.assume(salt != bytes32(0));
     _etchCreate2Factory();
     bytes memory bytecode = hex'fd';
-    vm.expectRevert(Create2Utils.failedCreate2FactoryCall.selector);
+    vm.expectRevert(Create2Utils.FailedCreate2FactoryCall.selector);
     _harness.create2Deploy(salt, bytecode);
   }
 
@@ -50,7 +49,7 @@ contract Create2UtilsTest is Test, InputUtils {
     _harness.create2Deploy(salt, bytecode);
 
     // after already deployed, it should now revert
-    vm.expectRevert(Create2Utils.contractAlreadyDeployed.selector);
+    vm.expectRevert(Create2Utils.ContractAlreadyDeployed.selector);
     _harness.create2Deploy(salt, bytecode);
   }
 
@@ -94,23 +93,6 @@ contract Create2UtilsTest is Test, InputUtils {
   function testIsContractDeployed() public {
     address deployed = address(new Dummy());
     assertTrue(_harness.isContractDeployed(deployed));
-  }
-
-  function testComputeCreateAddress_revertsWith_nonceNotSupported(
-    address deployer,
-    uint8 nonce
-  ) public {
-    vm.assume(deployer != address(0));
-    vm.assume(nonce >= 0x80);
-    vm.expectRevert(Create2Utils.nonceNotSupported.selector);
-    _harness.computeCreateAddress(deployer, nonce);
-  }
-
-  function testComputeCreateAddress_fuzz(address deployer, uint8 nonce) public view {
-    vm.assume(deployer != address(0));
-    vm.assume(nonce < 0x80);
-    address expected = vm.computeCreateAddress(deployer, nonce);
-    assertEq(_harness.computeCreateAddress(deployer, nonce), expected);
   }
 
   function testComputeCreate2Address_fuzz(bytes32 salt, bytes32 initcode) public view {
