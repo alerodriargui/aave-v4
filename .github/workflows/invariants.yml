@@ -38,5 +38,5 @@ jobs:
         with:
           files: .
           contract: Tester
-          config: invariants/_config/echidna_config_ci.yaml
+          config: invariants/protocol-suite/_config/echidna_config_ci.yaml
           test-mode: ${{ matrix.mode == 'assertion' && 'assertion' || '' }}

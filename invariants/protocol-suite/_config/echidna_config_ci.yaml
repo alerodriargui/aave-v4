@@ -47,7 +47,7 @@ corpusDir: "corpus"
 #mutConsts: [100, 1, 1]
 
 #remappings
-cryticArgs: ["--ignore-compile", "--compile-libraries=(LiquidationLogic,0xf01)"]
+cryticArgs: ["--compile-libraries=(LiquidationLogic,0xf01)"]
 
 deployContracts: [["0xf01", "LiquidationLogic"]]
 
