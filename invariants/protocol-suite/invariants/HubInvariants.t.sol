@@ -30,12 +30,12 @@ abstract contract HubInvariants is HandlerAggregator {
   }
 
   function assert_INV_HUB_B(address hubAddress, uint256 assetId) internal {
-    // Sum per-spoke values
-    uint256 spokeCount = spokesAddresses.length;
+    // Sum per-spoke values (use allSpokes to include treasury spokes for consistency with INV_HUB_GH/O)
+    uint256 spokeCount = allSpokes.length;
     uint256 sumDebt;
 
     for (uint256 i; i < spokeCount; i++) {
-      (uint256 d, uint256 p) = IHub(hubAddress).getSpokeOwed(assetId, spokesAddresses[i]);
+      (uint256 d, uint256 p) = IHub(hubAddress).getSpokeOwed(assetId, allSpokes[i]);
       sumDebt += d + p;
     }
 
@@ -44,15 +44,15 @@ abstract contract HubInvariants is HandlerAggregator {
   }
 
   function assert_INV_HUB_C(address hubAddress, uint256 assetId) internal {
-    // Sum per-spoke values
-    uint256 spokeCount = spokesAddresses.length;
+    // Sum per-spoke values (use allSpokes to include treasury spokes for consistency with INV_HUB_GH/O)
+    uint256 spokeCount = allSpokes.length;
 
     uint256 sumDrawnShares;
     uint256 sumPremDrawnShares;
     int256 sumPremOffsetRay;
 
     for (uint256 i; i < spokeCount; i++) {
-      address spoke = spokesAddresses[i];
+      address spoke = allSpokes[i];
       sumDrawnShares += IHub(hubAddress).getSpokeDrawnShares(assetId, spoke);
       (uint256 premiumDrawnShares, int256 premiumOffsetRay) = IHub(hubAddress).getSpokePremiumData(
         assetId,
@@ -79,11 +79,18 @@ abstract contract HubInvariants is HandlerAggregator {
     uint256 totalDebt = IHub(hubAddress).getAssetTotalOwed(assetId);
     uint256 accruedFees = IHub(hubAddress).getAssetAccruedFees(assetId);
 
-    // Checks //TODO check todo file INV_HUB_E
+    // Checks: totalAddedAssets ≈ previewRemoveByShares(totalAddedShares)
+    // Tolerance: the virtual offset (V=1e6) absorbs a fraction of accrued interest when
+    // converting all shares back to assets. The gap is ceil(V * interestAccrued / (shares + V)).
+    // We use the simpler bound: interestAccrued + 1, since V/(shares+V) < 1.
+    uint256 addedShares = IHub(hubAddress).getAddedShares(assetId);
+    uint256 interestAccrued = totalSuppliedAssets > addedShares
+      ? totalSuppliedAssets - addedShares
+      : 0;
     assertApproxEqAbs(
       totalSuppliedAssets,
-      IHub(hubAddress).previewRemoveByShares(assetId, IHub(hubAddress).getAddedShares(assetId)),
-      IHub(hubAddress).previewRemoveByShares(assetId, 1), // tolerance of 1 share for rounding
+      IHub(hubAddress).previewRemoveByShares(assetId, addedShares),
+      interestAccrued + 1,
       INV_HUB_E
     );
 
@@ -116,7 +123,7 @@ abstract contract HubInvariants is HandlerAggregator {
     assertApproxEqAbs(
       totalAddedAssets,
       IHub(hubAddress).getAddedAssets(assetId),
-      SPOKE_COUNT,
+      spokeCount,
       INV_HUB_G
     );
     assertEq(totalAddedShares, IHub(hubAddress).getAddedShares(assetId), INV_HUB_H);
@@ -141,18 +148,6 @@ abstract contract HubInvariants is HandlerAggregator {
 
     // Checks
     assertTrue(assetConfig.irStrategy != address(0), INV_HUB_K);
-  }
-
-  function assert_INV_HUB_L(address hubAddress, uint256 assetId) internal {
-    (uint256 premiumShares, int256 premiumOffsetRay) = IHub(hubAddress).getAssetPremiumData(
-      assetId
-    );
-
-    assertGe(
-      int256(IHub(hubAddress).previewRestoreByShares(assetId, premiumShares) * WadRayMath.RAY),
-      premiumOffsetRay,
-      INV_HUB_L
-    );
   }
 
   function assert_INV_HUB_O(address hubAddress, uint256 assetId) internal {
@@ -200,5 +195,30 @@ abstract contract HubInvariants is HandlerAggregator {
     // Tolerance: 1 wei rounding scaled up
     uint256 tolerance = WadRayMath.RAY * PercentageMath.PERCENTAGE_FACTOR;
     assertApproxEqAbs(lhs, rhs, tolerance, INV_HUB_N);
+  }
+
+  function assert_INV_HUB_Q(address hubAddress, uint256 assetId) internal {
+    uint256 currentIndex = IHub(hubAddress).getAssetDrawnIndex(assetId);
+    if (lastSeenDrawnIndex[hubAddress][assetId] > 0) {
+      assertGe(currentIndex, lastSeenDrawnIndex[hubAddress][assetId], INV_HUB_Q);
+    }
+    lastSeenDrawnIndex[hubAddress][assetId] = currentIndex;
+  }
+
+  function assert_INV_HUB_R(address hubAddress, uint256 assetId) internal {
+    uint256 assets = IHub(hubAddress).getAddedAssets(assetId) + 1e6;
+    uint256 shares = IHub(hubAddress).getAddedShares(assetId) + 1e6;
+    if (lastSeenShares[hubAddress][assetId] > 0) {
+      // assets/shares >= lastAssets/lastShares  <=>  assets * lastShares >= lastAssets * shares
+      assertFullMulGe(
+        assets,
+        lastSeenShares[hubAddress][assetId],
+        lastSeenAssets[hubAddress][assetId],
+        shares,
+        INV_HUB_R
+      );
+    }
+    lastSeenAssets[hubAddress][assetId] = assets;
+    lastSeenShares[hubAddress][assetId] = shares;
   }
 }

@@ -23,7 +23,10 @@ import {MockPriceFeedSimulator} from '../shared/mocks/MockPriceFeedSimulator.sol
 // Contracts
 import {BaseTest} from './base/BaseTest.t.sol';
 import {DeployUtils} from 'tests/DeployUtils.sol';
-import {AssetInterestRateStrategy, IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
@@ -100,6 +103,8 @@ contract Setup is BaseTest {
     treasurySpoke2 = ITreasurySpoke(new TreasurySpoke(admin, address(hub2)));
     allSpokes.push(address(treasurySpoke1));
     allSpokes.push(address(treasurySpoke2));
+    treasurySpokesAddresses.push(address(treasurySpoke1));
+    treasurySpokesAddresses.push(address(treasurySpoke2));
 
     // Configurators
     hubConfigurator = new HubConfigurator(address(accessManager));
@@ -444,6 +449,16 @@ contract Setup is BaseTest {
     spokeReserveIds[address(treasurySpoke1)].push(hub1WethAssetId);
     spokeReserveIds[address(treasurySpoke2)].push(hub2UsdcAssetId);
     spokeReserveIds[address(treasurySpoke2)].push(hub2WethAssetId);
+
+    // Map ids for treasury spokes (reserveId == assetId for treasury spokes)
+    reserveIdToAssetId[address(treasurySpoke1)][hub1UsdcAssetId] = hub1UsdcAssetId;
+    reserveIdToAssetId[address(treasurySpoke1)][hub1WethAssetId] = hub1WethAssetId;
+    reserveIdToHubAddress[address(treasurySpoke1)][hub1UsdcAssetId] = address(hub1);
+    reserveIdToHubAddress[address(treasurySpoke1)][hub1WethAssetId] = address(hub1);
+    reserveIdToAssetId[address(treasurySpoke2)][hub2UsdcAssetId] = hub2UsdcAssetId;
+    reserveIdToAssetId[address(treasurySpoke2)][hub2WethAssetId] = hub2WethAssetId;
+    reserveIdToHubAddress[address(treasurySpoke2)][hub2UsdcAssetId] = address(hub2);
+    reserveIdToHubAddress[address(treasurySpoke2)][hub2WethAssetId] = address(hub2);
 
     // Add SPOKE 1 assets to hubs
     hub1.addSpoke(

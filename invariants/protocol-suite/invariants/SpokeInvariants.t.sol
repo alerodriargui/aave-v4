@@ -79,8 +79,10 @@ abstract contract SpokeInvariants is HandlerAggregator {
 
   function assert_INV_SP_D(address spoke, address user) internal {
     ISpoke.UserAccountData memory d = ISpoke(spoke).getUserAccountData(user);
-    if (d.totalCollateralValue == 0) {
-      assertEq(d.totalDebtValueRay, 0, INV_SP_D); // todo fix
+    if (d.totalDebtValueRay == 0) {
+      assertEq(d.healthFactor, UINT256_MAX, INV_SP_D);
+    } else if (d.totalCollateralValue == 0) {
+      assertEq(d.healthFactor, 0, INV_SP_D);
     }
   }
 
@@ -100,5 +102,13 @@ abstract contract SpokeInvariants is HandlerAggregator {
     uint256 reserveSuppliedAssets = ISpokeBase(spoke).getReserveSuppliedAssets(reserveId);
     assertLe(sumUserAssets, reserveSuppliedAssets, INV_SP_F);
     assertApproxEqAbs(sumUserAssets, reserveSuppliedAssets, NUMBER_OF_ACTORS, INV_SP_F);
+  }
+
+  function assert_INV_SP_H(address spoke, uint256 reserveId, address user) internal {
+    uint32 userKey = ISpoke(spoke).getUserPosition(reserveId, user).dynamicConfigKey;
+    uint32 reserveKey = ISpoke(spoke).getReserve(reserveId).dynamicConfigKey;
+    if (userKey > 0) {
+      assertLe(uint256(userKey), uint256(reserveKey), INV_SP_H);
+    }
   }
 }

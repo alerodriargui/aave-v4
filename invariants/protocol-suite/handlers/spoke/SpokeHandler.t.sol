@@ -2,7 +2,6 @@
 pragma solidity ^0.8.19;
 
 // Interfaces
-import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeHandler} from '../interfaces/ISpokeHandler.sol';
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
@@ -10,7 +9,6 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 // Libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {Constants} from 'tests/Constants.sol';
-import 'forge-std/console.sol';
 
 // Test Contracts
 import {Actor} from '../../../shared/utils/Actor.sol';
@@ -34,8 +32,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     // Debt reserve
     uint256 debtReserveId;
     uint256 collateralReserveId;
-    uint256 reserveDebtBefore;
-    uint256 reserveDebtAfter;
     // Liquidation
     uint256 debtToCover;
     uint256 debtLiquidated;
@@ -89,10 +85,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     // Get one of the reserves IDs randomly
     uint256 reserveId = _getRandomReserveId(spoke, k);
 
-    uint256 userAmount = IHub(_getHubAddress(spoke, reserveId)).previewRemoveByShares(
-      reserveId,
-      ISpoke(spoke).getUserSuppliedShares(reserveId, onBehalfOf)
-    );
+    uint256 userAmount = ISpoke(spoke).getUserSuppliedAssets(reserveId, onBehalfOf);
 
     // Register user to check postconditions
     _registerUserToCheck(spoke, reserveId, onBehalfOf);
@@ -103,10 +96,14 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       abi.encodeCall(ISpokeBase.withdraw, (reserveId, amount, onBehalfOf))
     );
 
-    // Implemented outside the success check to assert success
+    // GPOST_SP_H: debt-free user with valid auth and unblocked reserve must be able to withdraw
+    // todo make this "position healthy" after withdraw, add similar check on borrow
     if (
+      _isAuthorized(spoke, onBehalfOf) &&
+      !_isReserveActionBlocked(spoke, reserveId, false, false) &&
       defaultVarsBefore.userVars[spoke][reserveId][onBehalfOf].totalDebt == 0 &&
-      (amount > 0 && userAmount != 0)
+      amount > 0 &&
+      userAmount != 0
     ) {
       assertTrue(success, GPOST_SP_H);
     }
@@ -222,12 +219,9 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     );
 
     liquidationVars.totalDebtValueBefore = ISpoke(liquidationVars.spoke)
-      .getUserAccountData(_getRandomActor(i))
+      .getUserAccountData(liquidationVars.violator)
       .totalDebtValueRay
-      .fromRayUp(); // todo fix
-    liquidationVars.reserveDebtBefore = ISpoke(liquidationVars.spoke).getReserveTotalDebt(
-      liquidationVars.debtReserveId
-    );
+      .fromRayUp();
 
     if (receiveShares) {
       liquidationVars.liquidatorCollateralBalanceBefore = ISpoke(liquidationVars.spoke)
@@ -277,13 +271,16 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     if (success) {
       _after();
 
-      // Calculate the debt liquidated
-      liquidationVars.reserveDebtAfter = ISpoke(liquidationVars.spoke).getReserveTotalDebt(
-        liquidationVars.debtReserveId
-      );
-      liquidationVars.debtLiquidated = (liquidationVars.reserveDebtBefore >
-        liquidationVars.reserveDebtAfter)
-        ? liquidationVars.reserveDebtBefore - liquidationVars.reserveDebtAfter
+      // Calculate the debt liquidated from user-level snapshots (not reserve-level, which
+      // includes interest accrual on other users' debt and would be inaccurate)
+      uint256 violatorDebtBefore = defaultVarsBefore
+        .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator]
+        .totalDebt;
+      uint256 violatorDebtAfter = defaultVarsAfter
+        .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator]
+        .totalDebt;
+      liquidationVars.debtLiquidated = (violatorDebtBefore > violatorDebtAfter)
+        ? violatorDebtBefore - violatorDebtAfter
         : 0;
 
       if (receiveShares) {
@@ -318,7 +315,9 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       if (liquidationVars.totalDebtValueBefore < Constants.DUST_LIQUIDATION_THRESHOLD) {
         assertEq(
           defaultVarsAfter
-            .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(i)]
+            .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][
+              liquidationVars.violator
+            ]
             .totalDebt,
           0,
           HSPOST_SP_LIQ_C
@@ -329,7 +328,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
       assertLt(
         defaultVarsBefore
-          .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)]
+          .userAccountDataVars[liquidationVars.spoke][liquidationVars.violator]
           .healthFactor,
         Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         HSPOST_SP_LIQ_E
@@ -337,15 +336,15 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
       if (
         defaultVarsAfter
-          .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][_getRandomActor(i)]
+          .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator]
           .totalDebt > 0
       ) {
         assertGt(
           defaultVarsAfter
-            .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)]
+            .userAccountDataVars[liquidationVars.spoke][liquidationVars.violator]
             .healthFactor,
           defaultVarsBefore
-            .userAccountDataVars[liquidationVars.spoke][_getRandomActor(i)]
+            .userAccountDataVars[liquidationVars.spoke][liquidationVars.violator]
             .healthFactor,
           HSPOST_SP_LIQ_G
         );
@@ -401,6 +400,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     address spoke = _getRandomSpoke(i);
 
     uint256 totalDebt = _getTotalDebt(spoke, onBehalfOf);
+    uint256 totalPremiumDebtRay = _getTotalPremiumDebtRay(spoke, onBehalfOf);
 
     // Register user to check postconditions
     _registerUserToCheck(spoke, CHECK_ALL_RESERVES, onBehalfOf);
@@ -413,8 +413,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
     if (success) {
       _after();
-
-      ///// HSPOST /////
+      assertEq(_getTotalPremiumDebtRay(spoke, onBehalfOf), totalPremiumDebtRay, HSPOST_HUB_M);
       assertEq(_getTotalDebt(spoke, onBehalfOf), totalDebt, HSPOST_SP_F);
     } else {
       revert('SpokeHandler: updateUserRiskPremium failed');
@@ -444,6 +443,9 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     }
   }
 
+  // todo add updateUserPositionManager
+  // todo check decoded returnData
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                         OWNER ACTIONS                                     //
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -459,5 +461,14 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       totalDebt += ISpoke(spoke).getUserTotalDebt(spokeReserveIds[spoke][i], user);
     }
     return totalDebt;
+  }
+
+  function _getTotalPremiumDebtRay(address spoke, address user) internal view returns (uint256) {
+    uint256 totalPremiumDebtRay;
+    uint256 reserveCount = spokeReserveIds[spoke].length;
+    for (uint256 i; i < reserveCount; i++) {
+      totalPremiumDebtRay += ISpoke(spoke).getUserPremiumDebtRay(spokeReserveIds[spoke][i], user);
+    }
+    return totalPremiumDebtRay;
   }
 }

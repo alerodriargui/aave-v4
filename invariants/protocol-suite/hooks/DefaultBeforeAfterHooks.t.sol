@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 // Libraries
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import 'forge-std/console.sol';
 
 // Utils
@@ -22,6 +23,8 @@ import {BaseHooks} from '../base/BaseHooks.t.sol';
 /// @notice Helper contract for before and after hooks, state variable caching and postconditions
 /// @dev This contract is inherited by handlers
 abstract contract DefaultBeforeAfterHooks is BaseHooks {
+  using WadRayMath for uint256;
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                         STRUCTS                                           //
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -45,8 +48,15 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     uint256 healthFactor;
   }
 
+  struct SpokeAssetVars {
+    uint256 addedAssets;
+    uint256 addedShares;
+    uint256 owed;
+  }
+
   struct DefaultVars {
     mapping(address hub => mapping(uint256 assetId => AssetVars)) assetVars;
+    mapping(address hub => mapping(uint256 assetId => mapping(address spoke => SpokeAssetVars))) spokeAssetVars;
     mapping(address spoke => mapping(uint256 reserveId => mapping(address user => UserVars))) userVars;
     mapping(address spoke => mapping(address user => UserAccountDataVars)) userAccountDataVars;
   }
@@ -85,6 +95,8 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
   function _defaultHooksBefore() internal {
     // Asset values
     _setAssetValues(defaultVarsBefore);
+    // Spoke asset values
+    _setSpokeAssetValues(defaultVarsBefore);
     // User values
     _setUserValues(defaultVarsBefore);
   }
@@ -92,6 +104,8 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
   function _defaultHooksAfter() internal {
     // Asset values
     _setAssetValues(defaultVarsAfter);
+    // Spoke asset values
+    _setSpokeAssetValues(defaultVarsAfter);
     // User values
     _setUserValues(defaultVarsAfter);
   }
@@ -115,6 +129,24 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
         _defaultVars.assetVars[hubAddress][j].lastUpdateTimestamp = IHub(hubAddress)
           .getAsset(j)
           .lastUpdateTimestamp;
+      }
+    }
+  }
+
+  function _setSpokeAssetValues(DefaultVars storage _defaultVars) internal {
+    for (uint256 i; i < hubAddresses.length; i++) {
+      address hubAddress = hubAddresses[i];
+      uint256 assetCount = IHub(hubAddress).getAssetCount();
+      for (uint256 j; j < assetCount; j++) {
+        for (uint256 k; k < allSpokes.length; k++) {
+          address spoke = allSpokes[k];
+          _defaultVars.spokeAssetVars[hubAddress][j][spoke].addedAssets = IHub(hubAddress)
+            .getSpokeAddedAssets(j, spoke);
+          _defaultVars.spokeAssetVars[hubAddress][j][spoke].addedShares = IHub(hubAddress)
+            .getSpokeAddedShares(j, spoke);
+          (uint256 drawn, uint256 premium) = IHub(hubAddress).getSpokeOwed(j, spoke);
+          _defaultVars.spokeAssetVars[hubAddress][j][spoke].owed = drawn + premium;
+        }
       }
     }
   }
@@ -202,7 +234,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
           assetId,
           IHub(hubAddress).getAssetLiquidity(assetId),
           defaultVarsAfter.assetVars[hubAddress][assetId].drawn,
-          0, // Unused in the interest rate calculation
+          IHub(hubAddress).getAssetDeficitRay(assetId).fromRayUp(),
           IHub(hubAddress).getAssetSwept(assetId)
         ),
         GPOST_HUB_C
@@ -223,28 +255,30 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     IHub.SpokeConfig memory spokeConfig = IHub(hubAddress).getSpokeConfig(assetId, spoke);
     (, uint8 decimals) = IHub(hubAddress).getAssetUnderlyingAndDecimals(assetId);
 
-    // GPOST_HUB_E
+    // GPOST_HUB_E: spoke-level addedAssets must be within addCap after an add action
     if (
-      defaultVarsAfter.assetVars[hubAddress][assetId].totalAssets >
-      defaultVarsBefore.assetVars[hubAddress][assetId].totalAssets
+      defaultVarsAfter.spokeAssetVars[hubAddress][assetId][spoke].addedAssets >
+        defaultVarsBefore.spokeAssetVars[hubAddress][assetId][spoke].addedAssets &&
+      defaultVarsAfter.spokeAssetVars[hubAddress][assetId][spoke].addedShares !=
+        defaultVarsBefore.spokeAssetVars[hubAddress][assetId][spoke].addedShares /// @dev filter out interest accrual
     ) {
       if (spokeConfig.addCap != MAX_ALLOWED_SPOKE_CAP) {
         assertLe(
-          defaultVarsAfter.assetVars[hubAddress][assetId].totalAssets,
+          defaultVarsAfter.spokeAssetVars[hubAddress][assetId][spoke].addedAssets,
           spokeConfig.addCap * MathUtils.uncheckedExp(10, decimals),
           GPOST_HUB_E
         );
       }
     }
 
-    // GPOST_HUB_F
+    // GPOST_HUB_F: spoke-level owed must be within drawCap after a draw action
     if (
-      defaultVarsAfter.assetVars[hubAddress][assetId].drawn >
-      defaultVarsBefore.assetVars[hubAddress][assetId].drawn
+      defaultVarsAfter.spokeAssetVars[hubAddress][assetId][spoke].owed >
+      defaultVarsBefore.spokeAssetVars[hubAddress][assetId][spoke].owed
     ) {
       if (spokeConfig.drawCap != MAX_ALLOWED_SPOKE_CAP) {
         assertLe(
-          defaultVarsAfter.assetVars[hubAddress][assetId].drawn,
+          defaultVarsAfter.spokeAssetVars[hubAddress][assetId][spoke].owed,
           spokeConfig.drawCap * MathUtils.uncheckedExp(10, decimals),
           GPOST_HUB_F
         );
@@ -340,7 +374,8 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
       assertTrue(
         currentActionSignature == ISpokeHandler.supply.selector ||
           currentActionSignature == ISpokeHandler.repay.selector ||
-          currentActionSignature == ISpokeHandler.liquidationCall.selector,
+          currentActionSignature == ISpokeHandler.liquidationCall.selector ||
+          currentActionSignature == ISpokeHandler.updateUserRiskPremium.selector,
         GPOST_SP_LIQ_H
       );
     }

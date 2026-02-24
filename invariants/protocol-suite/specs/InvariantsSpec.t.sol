@@ -46,9 +46,6 @@ abstract contract InvariantsSpec {
   string constant INV_HUB_K =
     'INV_HUB_K: Asset.irStrategy should never be address(0) for any (currently/previously) registered asset';
 
-  string constant INV_HUB_L =
-    'INV_HUB_L: Asset.premiumShares.toDrawnAssetsUp() * WadRayMath.RAY >= Asset.premiumOffsetRay * WadRayMath.RAY';
-
   string constant INV_HUB_N =
     'INV_HUB_N: Liquidity growth (ie accrued interest) = AccruedFees + sum of Accrued for all spokes with non zero addedShares';
 
@@ -57,6 +54,12 @@ abstract contract InvariantsSpec {
 
   string constant INV_HUB_P =
     'INV_HUB_P: Premium offset should not exceed premium shares * drawnIndex';
+
+  string constant INV_HUB_Q =
+    'INV_HUB_Q: Drawn index must be monotonically non-decreasing across invariant checks';
+
+  string constant INV_HUB_R =
+    'INV_HUB_R: Supply share price (addedAssets/addedShares) must be monotonically non-decreasing across invariant checks';
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                        SPOKE                                              //
@@ -78,4 +81,7 @@ abstract contract InvariantsSpec {
 
   string constant INV_SP_F =
     'INV_SP_F: Sum of user supplied assets on a spoke for a given asset == spoke supplied assets (hub spoke added assets)';
+
+  string constant INV_SP_H =
+    'INV_SP_H: User dynamicConfigKey must never exceed the reserve dynamicConfigKey (no future config reference)';
 }

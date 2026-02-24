@@ -105,5 +105,5 @@ abstract contract PostconditionsSpec {
     'GPOST_SP_LIQ_G: Only liquidations can deteriorate the health factor of an already unhealthy account';
 
   string constant GPOST_SP_LIQ_H =
-    'GPOST_SP_LIQ_H: Only a supply, repay & liquidationCall can leave an account in an unhealthy state';
+    'GPOST_SP_LIQ_H: Only a supply, repay, liquidationCall & updateUserRiskPremium can leave an account in an unhealthy state';
 }

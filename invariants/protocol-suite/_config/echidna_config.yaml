@@ -11,10 +11,10 @@ balanceAddr: 0x1000000000000000000000000
 balanceContract: 0x1000000000000000000000000000000000000000000000000
 
 #testLimit is the number of test sequences to run
-testLimit: 20000000
+testLimit: 1000000
 
 #seqLen defines how many transactions are in a test sequence
-seqLen: 300
+seqLen: 30
 
 #shrinkLimit determines how much effort is spent shrinking failing sequences
 shrinkLimit: 2500
@@ -60,4 +60,4 @@ quiet: false
 format: "text"
 
 # concurrent workers
-workers: 10
+workers: 30

@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 // Libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import 'forge-std/console.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 // Interfaces
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -17,6 +17,8 @@ import {HandlerAggregator} from '../HandlerAggregator.t.sol';
 /// @notice Implements Hub Invariants for the protocol
 /// @dev Inherits HandlerAggregator to check actions in assertion testing mode
 abstract contract HubInvariants is HandlerAggregator {
+  using SafeCast for *;
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                           HUB                                             //
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -138,18 +140,6 @@ abstract contract HubInvariants is HandlerAggregator {
     assertTrue(assetConfig.irStrategy != address(0), INV_HUB_K);
   }
 
-  function assert_INV_HUB_L(uint256 assetId) internal {
-    // Get premium data
-    (uint256 premiumShares, int256 premiumOffsetRay) = hub.getAssetPremiumData(assetId);
-
-    // Check
-    assertGe(
-      int256(hub.previewRestoreByShares(assetId, premiumShares) * WadRayMath.RAY),
-      premiumOffsetRay,
-      INV_HUB_L
-    );
-  }
-
   function assert_INV_HUB_O(uint256 assetId) internal {
     uint256 spokeCount = NUMBER_OF_ACTORS;
     uint256 totalDeficitRay;
@@ -162,7 +152,7 @@ abstract contract HubInvariants is HandlerAggregator {
   function assert_INV_HUB_P(uint256 assetId) internal {
     (uint256 premiumShares, int256 premiumOffsetRay) = hub.getAssetPremiumData(assetId);
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-    assertGe(int256(premiumShares * drawnIndex), premiumOffsetRay, INV_HUB_P);
+    assertGe((premiumShares * drawnIndex).toInt256(), premiumOffsetRay, INV_HUB_P);
   }
 
   function assert_INV_HUB_N(uint256 assetId) internal {

@@ -32,18 +32,18 @@ coverage :
 
 # Echidna
 echidna:
-	FOUNDRY_PROFILE=invariant echidna invariants/protocol-suite/Tester.t.sol --contract Tester --config ./invariants/protocol-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/protocol-suite/Tester.t.sol:Tester --config ./invariants/protocol-suite/_config/echidna_config.yaml
 echidna-assert:
-	FOUNDRY_PROFILE=invariant echidna invariants/protocol-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./invariants/protocol-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/protocol-suite/Tester.t.sol:Tester --test-mode assertion --config ./invariants/protocol-suite/_config/echidna_config.yaml
 echidna-explore:
-	FOUNDRY_PROFILE=invariant echidna invariants/protocol-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./invariants/protocol-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/protocol-suite/Tester.t.sol:Tester --test-mode exploration --config ./invariants/protocol-suite/_config/echidna_config.yaml
 
 echidna-hub:
-	FOUNDRY_PROFILE=invariant echidna invariants/hub-suite/Tester.t.sol --contract Tester --config ./invariants/hub-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/hub-suite/Tester.t.sol:Tester --config ./invariants/hub-suite/_config/echidna_config.yaml
 echidna-hub-assert:
-	FOUNDRY_PROFILE=invariant echidna invariants/hub-suite/Tester.t.sol --contract Tester --test-mode assertion --config ./invariants/hub-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/hub-suite/Tester.t.sol:Tester --test-mode assertion --config ./invariants/hub-suite/_config/echidna_config.yaml
 echidna-hub-explore:
-	FOUNDRY_PROFILE=invariant echidna invariants/hub-suite/Tester.t.sol --contract Tester --test-mode exploration --config ./invariants/hub-suite/_config/echidna_config.yaml
+	FOUNDRY_PROFILE=invariant echidna . --contract invariants/hub-suite/Tester.t.sol:Tester --test-mode exploration --config ./invariants/hub-suite/_config/echidna_config.yaml
 
 # Medusa
 medusa:

@@ -26,7 +26,12 @@ contract DonationAttackHandler is BaseHandler {
     // Get one of the assets IDs randomly
     address underlying = _getRandomBaseAsset(i);
 
+    // Register all spoke/reserve pairs that map to this hub so hub postconditions fire
+    _registerAllReservesForHub(hubAddress);
+
+    _before();
     TestnetERC20(underlying).mint(hubAddress, amount);
+    _after();
   }
 
   function donateUnderlyingToSpoke(uint256 amount, uint8 i, uint8 j) external {
@@ -35,10 +40,40 @@ contract DonationAttackHandler is BaseHandler {
     // Get one of the assets IDs randomly
     address underlying = _getRandomBaseAsset(i);
 
+    // Register all reserves for this spoke so hub postconditions fire
+    _registerAllReservesForSpoke(spoke);
+
+    _before();
     TestnetERC20(underlying).mint(spoke, amount);
+    _after();
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                           HELPERS                                         //
   ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  /// @dev Registers a user-to-check entry for every reserve of every spoke that is connected
+  ///      to the given hub, so that hub-level postconditions (GPOST_HUB_A..G) are evaluated.
+  ///      Uses address(this) as the user since donations don't act on a specific user.
+  function _registerAllReservesForHub(address hubAddress) internal {
+    for (uint256 s; s < spokesAddresses.length; s++) {
+      address spoke = spokesAddresses[s];
+      uint256[] storage reserveIds = spokeReserveIds[spoke];
+      for (uint256 r; r < reserveIds.length; r++) {
+        if (reserveIdToHubAddress[spoke][reserveIds[r]] == hubAddress) {
+          _registerUserToCheck(spoke, reserveIds[r], address(this));
+        }
+      }
+    }
+  }
+
+  /// @dev Registers a user-to-check entry for every reserve of the given spoke,
+  ///      so that hub-level postconditions are evaluated for all assets of the spoke.
+  ///      Uses address(this) as the user since donations don't act on a specific user.
+  function _registerAllReservesForSpoke(address spoke) internal {
+    uint256[] storage reserveIds = spokeReserveIds[spoke];
+    for (uint256 r; r < reserveIds.length; r++) {
+      _registerUserToCheck(spoke, reserveIds[r], address(this));
+    }
+  }
 }

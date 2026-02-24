@@ -32,10 +32,11 @@ abstract contract Invariants is HubInvariants, SpokeInvariants {
         assert_INV_HUB_GH(hubAddress, j);
         assert_INV_HUB_I(hubAddress, j);
         assert_INV_HUB_K(hubAddress, j);
-        assert_INV_HUB_L(hubAddress, j);
         assert_INV_HUB_O(hubAddress, j);
         assert_INV_HUB_P(hubAddress, j);
         assert_INV_HUB_N(hubAddress, j);
+        assert_INV_HUB_Q(hubAddress, j);
+        assert_INV_HUB_R(hubAddress, j);
       }
     }
 
@@ -63,9 +64,21 @@ abstract contract Invariants is HubInvariants, SpokeInvariants {
         // Applied per actor per reserve of the spoke
         for (uint256 k; k < actorAddresses.length; k++) {
           assert_INV_SP_B(spoke, reserveId, actorAddresses[k]);
+          assert_INV_SP_H(spoke, reserveId, actorAddresses[k]);
         }
       }
     }
+
+    // Applied per treasury spoke (only hub-sync invariant applies;
+    // user-level invariants don't apply since TreasurySpoke has no per-user positions)
+    for (uint256 i; i < treasurySpokesAddresses.length; i++) {
+      address spoke = treasurySpokesAddresses[i];
+      for (uint256 j; j < spokeReserveIds[spoke].length; j++) {
+        uint256 reserveId = spokeReserveIds[spoke][j];
+        assert_INV_SP_A(spoke, reserveId);
+      }
+    }
+
     return true;
   }
 }

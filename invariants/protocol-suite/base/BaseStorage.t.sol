@@ -114,6 +114,8 @@ abstract contract BaseStorage {
   // SPOKES
   /// @notice Array of spokes addresses for the suite
   address[] internal spokesAddresses;
+  /// @notice Array of treasury spoke addresses
+  address[] internal treasurySpokesAddresses;
   /// @notice spokesAddresses + treasurySpoke address
   address[] internal allSpokes;
   /// @notice Spoke configurations
@@ -126,6 +128,14 @@ abstract contract BaseStorage {
   mapping(address => mapping(uint256 => uint256)) internal assetIdToReserveId;
   /// @notice Spoke reserveIds to hub addresses
   mapping(address => mapping(uint256 => address)) internal reserveIdToHubAddress;
+
+  // INVARIANT TRACKING (stateful invariants)
+  /// @notice Last seen drawn index per hub per assetId (INV_HUB_Q)
+  mapping(address => mapping(uint256 => uint256)) internal lastSeenDrawnIndex;
+  /// @notice Last seen added assets per hub per assetId (INV_HUB_R)
+  mapping(address => mapping(uint256 => uint256)) internal lastSeenAssets;
+  /// @notice Last seen added shares per hub per assetId (INV_HUB_R)
+  mapping(address => mapping(uint256 => uint256)) internal lastSeenShares;
 
   // PRICE FEEDS
   address[] internal priceFeeds;

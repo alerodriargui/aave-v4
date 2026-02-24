@@ -8,7 +8,8 @@ import 'forge-std/console.sol';
 import {Constants} from 'tests/Constants.sol';
 
 // Interfaces
-import {IERC20} from 'forge-std/interfaces/IERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 // Utils
@@ -130,6 +131,29 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
     return
       ISpoke(spoke).getUserAccountData(user).healthFactor >=
       Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
+  }
+
+  /// @notice Returns true if the reserve/spoke is admin-blocked for the given action
+  function _isReserveActionBlocked(
+    address spoke,
+    uint256 reserveId,
+    bool checkFrozen,
+    bool checkBorrowable
+  ) internal view returns (bool) {
+    ISpoke.ReserveConfig memory config = ISpoke(spoke).getReserveConfig(reserveId);
+    if (config.paused) return true;
+    if (checkFrozen && config.frozen) return true;
+    if (checkBorrowable && !config.borrowable) return true;
+    address hubAddress = _getHubAddress(spoke, reserveId);
+    uint256 assetId = _getAssetId(spoke, reserveId);
+    IHub.SpokeData memory spokeData = IHub(hubAddress).getSpoke(assetId, spoke);
+    if (!spokeData.active || spokeData.halted) return true;
+    return false;
+  }
+
+  /// @notice Returns true if the current actor can act on behalf of `onBehalfOf` on the spoke
+  function _isAuthorized(address spoke, address onBehalfOf) internal view returns (bool) {
+    return ISpoke(spoke).isPositionManager(onBehalfOf, address(actor));
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
