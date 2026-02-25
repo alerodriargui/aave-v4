@@ -40,24 +40,7 @@ library DeployUtils {
     return
       ISpoke(
         proxify(
-          address(ISpokeInstance(deploy(_getSpokeInstanceInitCode(oracle, maxUserReservesLimit)))),
-          proxyAdminOwner,
-          initData
-        )
-      );
-  }
-
-  function deploySpoke(
-    address oracle,
-    bytes32 /*implSalt*/,
-    uint16 maxUserReservesLimit,
-    address proxyAdminOwner,
-    bytes memory initData
-  ) internal returns (ISpoke) {
-    return
-      ISpoke(
-        proxify(
-          address(ISpokeInstance(deploy(_getSpokeInstanceInitCode(oracle, maxUserReservesLimit)))),
+          address(deploySpokeImplementation(oracle, maxUserReservesLimit, '')),
           proxyAdminOwner,
           initData
         )
@@ -83,18 +66,12 @@ library DeployUtils {
   }
 
   function deployHub(address authority) internal returns (IHub) {
-    return IHub(deploy(_getHubInitCode(authority)));
+    return deployHub(authority, '');
   }
 
-  function deploy(bytes memory bytecode) internal returns (address addr) {
-    assembly ('memory-safe') {
-      addr := create(0, add(bytecode, 0x20), mload(bytecode))
-    }
-    require(addr != address(0));
-  }
-
-  function deployHub(address authority, bytes32 /*salt*/) internal returns (IHub hub) {
-    return IHub(deploy(_getHubInitCode(authority)));
+  function deployHub(address authority, bytes32 salt) internal returns (IHub hub) {
+    Create2Utils.loadCreate2Factory();
+    return IHub(Create2Utils.create2Deploy(salt, _getHubInitCode(authority)));
   }
 
   function getDeterministicHubAddress(address authority) internal returns (address) {

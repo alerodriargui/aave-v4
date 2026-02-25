@@ -37,6 +37,6 @@ jobs:
         uses: crytic/echidna-action@v2
         with:
           files: .
-          contract: Tester
+          contract: invariants/protocol-suite/Tester.t.sol:Tester
           config: invariants/protocol-suite/_config/echidna_config_ci.yaml
           test-mode: ${{ matrix.mode == 'assertion' && 'assertion' || '' }}
