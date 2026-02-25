@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-import {FeeSharesMinterBase} from 'src/hub/FeeSharesMinterBase.sol';
+import {FeeSharesMinterBase} from 'src/utils/FeeSharesMinterBase.sol';
+import {IFeeSharesMinterBase} from 'src/utils/IFeeSharesMinterBase.sol';
 
 contract FeeSharesMinterBaseTest is HubBase {
   using SafeCast for uint256;
@@ -20,7 +21,7 @@ contract FeeSharesMinterBaseTest is HubBase {
   }
 
   function test_setConfig_revertsWith_OwnableUnauthorized() public {
-    FeeSharesMinterBase.MintConfig memory config = FeeSharesMinterBase.MintConfig({
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 1 days,
       minUnrealizedFeePercent: 100 // 1%
     });
@@ -31,7 +32,7 @@ contract FeeSharesMinterBaseTest is HubBase {
   }
 
   function test_execute_success() public {
-    FeeSharesMinterBase.MintConfig memory config = FeeSharesMinterBase.MintConfig({
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 1 days,
       minUnrealizedFeePercent: 10 // 0.1%
     });
@@ -67,16 +68,16 @@ contract FeeSharesMinterBaseTest is HubBase {
     uint256 addAmount,
     uint256 drawAmount,
     uint256 skipTime,
-    uint256 minTimeInterval,
+    uint32 minTimeInterval,
     uint16 minUnrealizedFeePercent
   ) public {
     addAmount = bound(addAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, addAmount / 2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-    minTimeInterval = bound(minTimeInterval, 0, 365 days);
+    minTimeInterval = bound(minTimeInterval, 0, 365 days).toUint32();
     minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 0, 10000).toUint16();
 
-    FeeSharesMinterBase.MintConfig memory config = FeeSharesMinterBase.MintConfig({
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: minTimeInterval,
       minUnrealizedFeePercent: minUnrealizedFeePercent
     });
@@ -106,13 +107,13 @@ contract FeeSharesMinterBaseTest is HubBase {
         'Should not be executable immediately after'
       );
     } else {
-      vm.expectRevert(FeeSharesMinterBase.ConditionsNotMet.selector);
+      vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
       minter.execute(address(hub1), daiAssetId);
     }
   }
 
   function test_execute_revertsWith_TimeIntervalNotMet() public {
-    FeeSharesMinterBase.MintConfig memory config = FeeSharesMinterBase.MintConfig({
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 7 days,
       minUnrealizedFeePercent: 0
     });
@@ -135,12 +136,12 @@ contract FeeSharesMinterBaseTest is HubBase {
 
     vm.warp(block.timestamp + 1 days); // Only 1 day passed, config needs 7
 
-    vm.expectRevert(FeeSharesMinterBase.ConditionsNotMet.selector);
+    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
     minter.execute(address(hub1), daiAssetId);
   }
 
   function test_execute_revertsWith_MinShareNotMet() public {
-    FeeSharesMinterBase.MintConfig memory config = FeeSharesMinterBase.MintConfig({
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
       minUnrealizedFeePercent: 0
     });
@@ -157,12 +158,12 @@ contract FeeSharesMinterBaseTest is HubBase {
 
     assertFalse(minter.checkExecute(address(hub1), daiAssetId));
 
-    vm.expectRevert(FeeSharesMinterBase.ConditionsNotMet.selector);
+    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
     minter.execute(address(hub1), daiAssetId);
   }
 
   function test_execute_revertsWith_PercentThresholdNotMet() public {
-    FeeSharesMinterBase.MintConfig memory config = FeeSharesMinterBase.MintConfig({
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
       minUnrealizedFeePercent: 5000 // 50% threshold
     });
@@ -183,7 +184,7 @@ contract FeeSharesMinterBaseTest is HubBase {
 
     assertFalse(minter.checkExecute(address(hub1), daiAssetId));
 
-    vm.expectRevert(FeeSharesMinterBase.ConditionsNotMet.selector);
+    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
     minter.execute(address(hub1), daiAssetId);
   }
 
@@ -194,7 +195,7 @@ contract FeeSharesMinterBaseTest is HubBase {
     uint256 oneBpsFees = hugeAssets / 10000;
 
     // Config: 1 bps min
-    FeeSharesMinterBase.MintConfig memory config = FeeSharesMinterBase.MintConfig({
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
       minUnrealizedFeePercent: 1 // 1 BPS
     });
@@ -238,13 +239,13 @@ contract FeeSharesMinterBaseTest is HubBase {
   }
 
   function test_fuzz_setConfig_success(
-    uint256 minTimeInterval,
+    uint32 minTimeInterval,
     uint16 minUnrealizedFeePercent
   ) public {
-    minTimeInterval = bound(minTimeInterval, 0, 365 days);
+    minTimeInterval = bound(minTimeInterval, 0, 365 days).toUint32();
     minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 0, 10000).toUint16();
 
-    FeeSharesMinterBase.MintConfig memory config = FeeSharesMinterBase.MintConfig({
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: minTimeInterval,
       minUnrealizedFeePercent: minUnrealizedFeePercent
     });
@@ -252,23 +253,26 @@ contract FeeSharesMinterBaseTest is HubBase {
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
 
-    FeeSharesMinterBase.MintConfig memory savedConfig = minter.getConfig(address(hub1), daiAssetId);
+    IFeeSharesMinterBase.MintConfig memory savedConfig = minter.getConfig(
+      address(hub1),
+      daiAssetId
+    );
     assertEq(savedConfig.minTimeInterval, minTimeInterval);
     assertEq(savedConfig.minUnrealizedFeePercent, minUnrealizedFeePercent);
   }
 
   function test_fuzz_setConfig_revertsWith_InvalidConfig_TimeInterval(
-    uint256 minTimeInterval
+    uint32 minTimeInterval
   ) public {
-    minTimeInterval = bound(minTimeInterval, 365 days + 1, UINT256_MAX);
+    minTimeInterval = bound(minTimeInterval, 365 days + 1, type(uint32).max).toUint32();
 
-    FeeSharesMinterBase.MintConfig memory config = FeeSharesMinterBase.MintConfig({
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: minTimeInterval,
       minUnrealizedFeePercent: 0
     });
 
     vm.prank(ADMIN);
-    vm.expectRevert(FeeSharesMinterBase.InvalidConfig.selector);
+    vm.expectRevert(IFeeSharesMinterBase.InvalidConfig.selector);
     minter.setConfig(address(hub1), daiAssetId, config);
   }
 
@@ -277,13 +281,13 @@ contract FeeSharesMinterBaseTest is HubBase {
   ) public {
     minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 10001, type(uint16).max).toUint16();
 
-    FeeSharesMinterBase.MintConfig memory config = FeeSharesMinterBase.MintConfig({
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
       minUnrealizedFeePercent: minUnrealizedFeePercent
     });
 
     vm.prank(ADMIN);
-    vm.expectRevert(FeeSharesMinterBase.InvalidConfig.selector);
+    vm.expectRevert(IFeeSharesMinterBase.InvalidConfig.selector);
     minter.setConfig(address(hub1), daiAssetId, config);
   }
 

@@ -2,51 +2,40 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
-import {Ownable2Step} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
+import {IFeeSharesMinterBase} from 'src/utils/IFeeSharesMinterBase.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title FeeSharesMinterBase
 /// @author Aave Labs
 /// @notice Contract to mint fee shares on the Hub when specific conditions are met.
-contract FeeSharesMinterBase is Ownable2Step, Rescuable {
-  struct MintConfig {
-    uint256 minTimeInterval;
-    uint16 minUnrealizedFeePercent; // 1e4 = 100% (basis points)
-  }
-
-  uint256 public constant MAX_BPS = 1e4;
+contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
+  /// @inheritdoc IFeeSharesMinterBase
   uint256 public constant MAX_TIME_INTERVAL = 365 days;
 
-  mapping(address => mapping(uint256 => MintConfig)) internal _configs;
+  /// @inheritdoc IFeeSharesMinterBase
   mapping(address => mapping(uint256 => uint256)) public lastMintTime;
 
-  event ConfigUpdated(address indexed hub, uint256 indexed assetId, MintConfig config);
-
-  error ConditionsNotMet();
-  error InvalidConfig();
+  mapping(address => mapping(uint256 => MintConfig)) internal _configs;
 
   /// @dev Constructor.
   /// @param owner The owner of the contract.
   constructor(address owner) Ownable(owner) {}
 
-  /// @notice Sets the automation configuration for a specific asset.
-  /// @param hub The address of the hub.
-  /// @param assetId The identifier of the asset.
-  /// @param config The new configuration.
+  /// @inheritdoc IFeeSharesMinterBase
   function setConfig(address hub, uint256 assetId, MintConfig memory config) external onlyOwner {
     require(
-      config.minUnrealizedFeePercent <= MAX_BPS && config.minTimeInterval <= MAX_TIME_INTERVAL,
+      config.minUnrealizedFeePercent <= PercentageMath.PERCENTAGE_FACTOR &&
+        config.minTimeInterval <= MAX_TIME_INTERVAL,
       InvalidConfig()
     );
     _configs[hub][assetId] = config;
     emit ConfigUpdated(hub, assetId, config);
   }
 
-  /// @notice Executes the fee minting if conditions are met.
-  /// @param hub The address of the hub.
-  /// @param assetId The identifier of the asset.
+  /// @inheritdoc IFeeSharesMinterBase
   function execute(address hub, uint256 assetId) external {
     require(_checkExecute(hub, assetId), ConditionsNotMet());
 
@@ -54,18 +43,12 @@ contract FeeSharesMinterBase is Ownable2Step, Rescuable {
     IHub(hub).mintFeeShares(assetId);
   }
 
-  /// @notice Returns the automation configuration for a specific asset.
-  /// @param hub The address of the hub.
-  /// @param assetId The identifier of the asset.
-  /// @return The configuration struct.
+  /// @inheritdoc IFeeSharesMinterBase
   function getConfig(address hub, uint256 assetId) external view returns (MintConfig memory) {
     return _configs[hub][assetId];
   }
 
-  /// @notice Checks if the conditions to mint fee shares are met.
-  /// @param hub The address of the hub.
-  /// @param assetId The identifier of the asset.
-  /// @return True if conditions are met, false otherwise.
+  /// @inheritdoc IFeeSharesMinterBase
   function checkExecute(address hub, uint256 assetId) external view returns (bool) {
     return _checkExecute(hub, assetId);
   }
@@ -84,22 +67,19 @@ contract FeeSharesMinterBase is Ownable2Step, Rescuable {
 
     IHub hubContract = IHub(hub);
     uint256 accruedFees = hubContract.getAssetAccruedFees(assetId);
-
     uint256 totalAddedAssets = hubContract.getAddedAssets(assetId);
-    if (totalAddedAssets == 0) return false;
 
     // Check if accruedFees / totalAddedAssets >= minUnrealizedFeePercent (in bps)
-    if ((accruedFees * MAX_BPS) / totalAddedAssets < config.minUnrealizedFeePercent) {
+    if (
+      PercentageMath.percentDivDown(accruedFees, totalAddedAssets) < config.minUnrealizedFeePercent
+    ) {
       return false;
     }
 
     // Ensure at least 1 fee share is minted
     uint256 expectedShares = hubContract.previewAddByAssets(assetId, accruedFees);
-    if (expectedShares == 0) {
-      return false;
-    }
 
-    return true;
+    return expectedShares > 0;
   }
 
   /// @inheritdoc Rescuable
