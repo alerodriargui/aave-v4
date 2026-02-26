@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 // Copyright (c) 2025 Aave Labs
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
 /// @title IFeeSharesMinterBase
 /// @author Aave Labs
@@ -10,7 +10,7 @@ interface IFeeSharesMinterBase {
   /// @param minTimeInterval Minimum number of seconds that must elapse between mint executions.
   /// @param minUnrealizedFeePercent Minimum ratio of accrued fees to total assets, in bps.
   struct MintConfig {
-    uint32 minTimeInterval;
+    uint48 minTimeInterval;
     uint16 minUnrealizedFeePercent;
   }
 
