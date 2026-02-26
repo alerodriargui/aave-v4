@@ -44,6 +44,24 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
   }
 
   /// @inheritdoc IFeeSharesMinterBase
+  function performUpkeep(bytes calldata performData) external override {
+    (address hub, uint256 assetId) = abi.decode(performData, (address, uint256));
+    require(_checkExecute(hub, assetId), ConditionsNotMet());
+
+    lastMintTime[hub][assetId] = block.timestamp;
+    IHub(hub).mintFeeShares(assetId);
+  }
+
+  /// @inheritdoc IFeeSharesMinterBase
+  function checkUpkeep(
+    bytes calldata checkData
+  ) external view override returns (bool upkeepNeeded, bytes memory performData) {
+    (address hub, uint256 assetId) = abi.decode(checkData, (address, uint256));
+    upkeepNeeded = _checkExecute(hub, assetId);
+    performData = checkData;
+  }
+
+  /// @inheritdoc IFeeSharesMinterBase
   function getConfig(address hub, uint256 assetId) external view returns (MintConfig memory) {
     return _configs[hub][assetId];
   }
