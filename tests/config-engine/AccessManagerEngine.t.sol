@@ -451,7 +451,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(4, ACCOUNT, 0);
 
     engine.executeGrantHubConfiguratorFeeUpdaterRole(grants);
   }
@@ -473,7 +473,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(6, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(4, ACCOUNT, 0);
 
     engine.executeGrantHubConfiguratorReinvestmentUpdaterRole(grants);
   }
@@ -495,7 +495,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(12, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(4, ACCOUNT, 0);
 
     engine.executeGrantHubConfiguratorAssetListerRole(grants);
   }
@@ -517,7 +517,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(13, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(4, ACCOUNT, 0);
 
     engine.executeGrantHubConfiguratorSpokeAdderRole(grants);
   }
@@ -539,7 +539,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(11, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(4, ACCOUNT, 0);
 
     engine.executeGrantHubConfiguratorInterestRateUpdaterRole(grants);
   }
@@ -561,7 +561,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(8, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(4, ACCOUNT, 0);
 
     engine.executeGrantHubConfiguratorHalterRole(grants);
   }
@@ -583,7 +583,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(9, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(4, ACCOUNT, 0);
 
     engine.executeGrantHubConfiguratorDeactivaterRole(grants);
   }
@@ -605,7 +605,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(10, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(4, ACCOUNT, 0);
 
     engine.executeGrantHubConfiguratorCapsUpdaterRole(grants);
   }
@@ -627,7 +627,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(14, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT, 0);
 
     engine.executeGrantSpokeConfiguratorAdminRole(grants);
   }
@@ -649,7 +649,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(15, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT, 0);
 
     engine.executeGrantSpokeConfiguratorLiquidationUpdaterRole(grants);
   }
@@ -671,7 +671,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(16, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT, 0);
 
     engine.executeGrantSpokeConfiguratorReserveAdderRole(grants);
   }
@@ -693,7 +693,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(17, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT, 0);
 
     engine.executeGrantSpokeConfiguratorFreezerRole(grants);
   }
@@ -715,7 +715,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(18, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT, 0);
 
     engine.executeGrantSpokeConfiguratorPauserRole(grants);
   }
@@ -732,34 +732,19 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeGrantHubConfiguratorAllRoles_concrete() public {
-    // Grants 8 roles in order: 5, 6, 12, 13, 11, 8, 9, 10
+    // AllRoles now maps to a single HUB_CONFIGURATOR_ROLE (4) grant per account
     IAaveV4ConfigEngine.RoleGrantByName[] memory grants = _toRoleGrantByNameArray(
       _defaultRoleGrantByName()
     );
 
-    // Expect 8 events in order: 5, 6, 12, 13, 11, 8, 9, 10
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(6, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(12, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(13, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(11, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(8, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(9, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(10, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(4, ACCOUNT, 0);
 
     engine.executeGrantHubConfiguratorAllRoles(grants);
   }
 
   function test_executeGrantHubConfiguratorAllRoles_multiAccount() public {
-    // Grants 8 roles in order: 5, 6, 12, 13, 11, 8, 9, 10
+    // AllRoles now maps to a single HUB_CONFIGURATOR_ROLE (4) grant per account
     IAaveV4ConfigEngine.RoleGrantByName[] memory grants = _toRoleGrantByNameArray2(
       IAaveV4ConfigEngine.RoleGrantByName({
         authority: address(mockAccessManager),
@@ -771,47 +756,11 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    // 16 events total: for each of the 8 roles, grant to ACCOUNT then ACCOUNT2
-    // Role 5
+    // 2 events total: grant role 4 to ACCOUNT then ACCOUNT2
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(4, ACCOUNT, 0);
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT2, 0);
-    // Role 6
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(6, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(6, ACCOUNT2, 0);
-    // Role 12
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(12, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(12, ACCOUNT2, 0);
-    // Role 13
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(13, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(13, ACCOUNT2, 0);
-    // Role 11
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(11, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(11, ACCOUNT2, 0);
-    // Role 8
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(8, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(8, ACCOUNT2, 0);
-    // Role 9
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(9, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(9, ACCOUNT2, 0);
-    // Role 10
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(10, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(10, ACCOUNT2, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(4, ACCOUNT2, 0);
 
     engine.executeGrantHubConfiguratorAllRoles(grants);
   }
@@ -828,28 +777,19 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
   }
 
   function test_executeGrantSpokeConfiguratorAllRoles_concrete() public {
-    // Grants 5 roles in order: 14, 15, 16, 17, 18
+    // AllRoles now maps to a single SPOKE_CONFIGURATOR_ROLE (5) grant per account
     IAaveV4ConfigEngine.RoleGrantByName[] memory grants = _toRoleGrantByNameArray(
       _defaultRoleGrantByName()
     );
 
-    // Expect 5 events in order: 14, 15, 16, 17, 18
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(14, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(15, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(16, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(17, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(18, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT, 0);
 
     engine.executeGrantSpokeConfiguratorAllRoles(grants);
   }
 
   function test_executeGrantSpokeConfiguratorAllRoles_multiAccount() public {
-    // Grants 5 roles in order: 14, 15, 16, 17, 18
+    // AllRoles now maps to a single SPOKE_CONFIGURATOR_ROLE (5) grant per account
     IAaveV4ConfigEngine.RoleGrantByName[] memory grants = _toRoleGrantByNameArray2(
       IAaveV4ConfigEngine.RoleGrantByName({
         authority: address(mockAccessManager),
@@ -861,32 +801,11 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    // 10 events total: for each of the 5 roles, grant to ACCOUNT then ACCOUNT2
-    // Role 14
+    // 2 events total: grant role 5 to ACCOUNT then ACCOUNT2
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(14, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT, 0);
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(14, ACCOUNT2, 0);
-    // Role 15
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(15, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(15, ACCOUNT2, 0);
-    // Role 16
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(16, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(16, ACCOUNT2, 0);
-    // Role 17
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(17, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(17, ACCOUNT2, 0);
-    // Role 18
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(18, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(18, ACCOUNT2, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT2, 0);
 
     engine.executeGrantSpokeConfiguratorAllRoles(grants);
   }

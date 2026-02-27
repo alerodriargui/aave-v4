@@ -12,7 +12,7 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {EngineFlags} from 'src/config-engine/EngineFlags.sol';
-import {Roles} from 'src/utils/libraries/Roles.sol';
+import {Roles} from 'src/libraries/types/Roles.sol';
 import {MockHubConfigurator} from 'tests/mocks/config-engine/MockHubConfigurator.sol';
 import {MockSpokeConfigurator} from 'tests/mocks/config-engine/MockSpokeConfigurator.sol';
 import {MockAccessManagerForEngine} from 'tests/mocks/config-engine/MockAccessManagerForEngine.sol';
@@ -71,18 +71,14 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.RoleGrant[] memory grants = new IAaveV4ConfigEngine.RoleGrant[](1);
     grants[0] = IAaveV4ConfigEngine.RoleGrant({
       authority: address(mockAccessManager),
-      roleId: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
+      roleId: Roles.HUB_CONFIGURATOR_ROLE,
       account: ACCOUNT,
       executionDelay: 100
     });
     payload.setAccessManagerRoleGrants(grants);
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
-      ACCOUNT,
-      100
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 100);
 
     payload.execute();
   }
@@ -109,7 +105,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.RoleGrant[] memory grants = new IAaveV4ConfigEngine.RoleGrant[](1);
     grants[0] = IAaveV4ConfigEngine.RoleGrant({
       authority: address(mockAccessManager),
-      roleId: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
+      roleId: Roles.HUB_CONFIGURATOR_ROLE,
       account: ACCOUNT,
       executionDelay: 0
     });
@@ -123,11 +119,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     emit MockSpokeConfigurator.PauseAllReservesCalled(SPOKE);
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
 
     payload.execute();
   }
@@ -189,11 +181,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setHubConfiguratorFeeUpdaterRoleGrants(grants);
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
 
     payload.execute();
   }
@@ -764,16 +752,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory revocations = new IAaveV4ConfigEngine.RoleRevocation[](1);
     revocations[0] = IAaveV4ConfigEngine.RoleRevocation({
       authority: address(mockAccessManager),
-      roleId: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
+      roleId: Roles.HUB_CONFIGURATOR_ROLE,
       account: ACCOUNT
     });
     payload.setAccessManagerRoleRevocations(revocations);
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.RevokeRoleCalled(
-      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
-      ACCOUNT
-    );
+    emit MockAccessManagerForEngine.RevokeRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT);
 
     payload.execute();
   }
@@ -783,14 +768,14 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.RoleAdminUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.RoleAdminUpdate({
       authority: address(mockAccessManager),
-      roleId: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
+      roleId: Roles.HUB_CONFIGURATOR_ROLE,
       admin: Roles.HUB_CONFIGURATOR_ROLE
     });
     payload.setAccessManagerRoleAdminUpdates(updates);
 
     vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.SetRoleAdminCalled(
-      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
+      Roles.HUB_CONFIGURATOR_ROLE,
       Roles.HUB_CONFIGURATOR_ROLE
     );
 
@@ -802,15 +787,15 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.RoleGuardianUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.RoleGuardianUpdate({
       authority: address(mockAccessManager),
-      roleId: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
-      guardian: Roles.HUB_FEE_MINTER_ROLE
+      roleId: Roles.HUB_CONFIGURATOR_ROLE,
+      guardian: Roles.DEFICIT_ELIMINATOR_ROLE
     });
     payload.setAccessManagerRoleGuardianUpdates(updates);
 
     vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.SetRoleGuardianCalled(
-      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
-      Roles.HUB_FEE_MINTER_ROLE
+      Roles.HUB_CONFIGURATOR_ROLE,
+      Roles.DEFICIT_ELIMINATOR_ROLE
     );
 
     payload.execute();
@@ -825,7 +810,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       authority: address(mockAccessManager),
       target: TARGET,
       selectors: selectors,
-      roleId: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE
+      roleId: Roles.HUB_CONFIGURATOR_ROLE
     });
     payload.setAccessManagerTargetFunctionRoleUpdates(updates);
 
@@ -833,7 +818,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     emit MockAccessManagerForEngine.SetTargetFunctionRoleCalled(
       TARGET,
       selectors,
-      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE
+      Roles.HUB_CONFIGURATOR_ROLE
     );
 
     payload.execute();
@@ -860,16 +845,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.RoleLabelUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.RoleLabelUpdate({
       authority: address(mockAccessManager),
-      roleId: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
+      roleId: Roles.HUB_CONFIGURATOR_ROLE,
       label: 'FEE_UPDATER'
     });
     payload.setAccessManagerRoleLabelUpdates(updates);
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.LabelRoleCalled(
-      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
-      'FEE_UPDATER'
-    );
+    emit MockAccessManagerForEngine.LabelRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, 'FEE_UPDATER');
 
     payload.execute();
   }
@@ -879,16 +861,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       memory updates = new IAaveV4ConfigEngine.GrantDelayUpdate[](1);
     updates[0] = IAaveV4ConfigEngine.GrantDelayUpdate({
       authority: address(mockAccessManager),
-      roleId: Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
+      roleId: Roles.HUB_CONFIGURATOR_ROLE,
       newDelay: 3600
     });
     payload.setAccessManagerGrantDelayUpdates(updates);
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetGrantDelayCalled(
-      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
-      3600
-    );
+    emit MockAccessManagerForEngine.SetGrantDelayCalled(Roles.HUB_CONFIGURATOR_ROLE, 3600);
 
     payload.execute();
   }
@@ -927,215 +906,100 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   function test_execute_hubConfiguratorReinvestmentUpdaterRoleGrants() public {
     payload.setHubConfiguratorReinvestmentUpdaterRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_hubConfiguratorAssetListerRoleGrants() public {
     payload.setHubConfiguratorAssetListerRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_hubConfiguratorSpokeAdderRoleGrants() public {
     payload.setHubConfiguratorSpokeAdderRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_hubConfiguratorInterestRateUpdaterRoleGrants() public {
     payload.setHubConfiguratorInterestRateUpdaterRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_hubConfiguratorHalterRoleGrants() public {
     payload.setHubConfiguratorHalterRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_HALTER_ROLE, ACCOUNT, 0);
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_hubConfiguratorDeactivaterRoleGrants() public {
     payload.setHubConfiguratorDeactivaterRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_hubConfiguratorCapsUpdaterRoleGrants() public {
     payload.setHubConfiguratorCapsUpdaterRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_CAPS_UPDATER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_hubConfiguratorAllRoleGrants() public {
     payload.setHubConfiguratorAllRoleGrants(_makeRoleGrantByName());
-    // AllRoles grants 8 roles in order: FEE_UPDATER, REINVESTMENT, ASSET_LISTER, SPOKE_ADDER,
-    //   INTEREST_RATE, HALTER, DEACTIVATER, CAPS_UPDATER
+    // AllRoles now maps to a single HUB_CONFIGURATOR_ROLE grant per account
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
-      ACCOUNT,
-      0
-    );
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE,
-      ACCOUNT,
-      0
-    );
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
-      ACCOUNT,
-      0
-    );
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE,
-      ACCOUNT,
-      0
-    );
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
-      ACCOUNT,
-      0
-    );
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_HALTER_ROLE, ACCOUNT, 0);
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE,
-      ACCOUNT,
-      0
-    );
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.HUB_CONFIGURATOR_CAPS_UPDATER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_spokeConfiguratorAdminRoleGrants() public {
     payload.setSpokeConfiguratorAdminRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_spokeConfiguratorLiquidationUpdaterRoleGrants() public {
     payload.setSpokeConfiguratorLiquidationUpdaterRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_spokeConfiguratorReserveAdderRoleGrants() public {
     payload.setSpokeConfiguratorReserveAdderRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_spokeConfiguratorFreezerRoleGrants() public {
     payload.setSpokeConfiguratorFreezerRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_spokeConfiguratorPauserRoleGrants() public {
     payload.setSpokeConfiguratorPauserRoleGrants(_makeRoleGrantByName());
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_spokeConfiguratorAllRoleGrants() public {
     payload.setSpokeConfiguratorAllRoleGrants(_makeRoleGrantByName());
-    // AllRoles grants 5 roles in order: ADMIN, LIQUIDATION_UPDATER, RESERVE_ADDER, FREEZER, PAUSER
+    // AllRoles now maps to a single SPOKE_CONFIGURATOR_ROLE grant per account
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
-      ACCOUNT,
-      0
-    );
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
-      ACCOUNT,
-      0
-    );
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE,
-      ACCOUNT,
-      0
-    );
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
-      ACCOUNT,
-      0
-    );
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(
-      Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
-      ACCOUNT,
-      0
-    );
+    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 

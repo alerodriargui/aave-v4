@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
-import {Roles} from 'src/utils/libraries/Roles.sol';
+import {Roles} from 'src/libraries/types/Roles.sol';
 
 /// @title AccessManagerEngine
 /// @author Aave Labs
@@ -126,7 +126,7 @@ library AccessManagerEngine {
   function executeGrantHubConfiguratorFeeUpdaterRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE);
+    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the HubConfigurator reinvestment updater role.
@@ -134,7 +134,7 @@ library AccessManagerEngine {
   function executeGrantHubConfiguratorReinvestmentUpdaterRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE);
+    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the HubConfigurator asset lister role.
@@ -142,7 +142,7 @@ library AccessManagerEngine {
   function executeGrantHubConfiguratorAssetListerRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE);
+    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the HubConfigurator spoke adder role.
@@ -150,7 +150,7 @@ library AccessManagerEngine {
   function executeGrantHubConfiguratorSpokeAdderRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE);
+    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the HubConfigurator interest rate updater role.
@@ -158,7 +158,7 @@ library AccessManagerEngine {
   function executeGrantHubConfiguratorInterestRateUpdaterRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE);
+    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the HubConfigurator halter role.
@@ -166,7 +166,7 @@ library AccessManagerEngine {
   function executeGrantHubConfiguratorHalterRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_HALTER_ROLE);
+    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the HubConfigurator deactivater role.
@@ -174,7 +174,7 @@ library AccessManagerEngine {
   function executeGrantHubConfiguratorDeactivaterRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE);
+    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the HubConfigurator caps updater role.
@@ -182,7 +182,7 @@ library AccessManagerEngine {
   function executeGrantHubConfiguratorCapsUpdaterRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_CAPS_UPDATER_ROLE);
+    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants all HubConfigurator roles.
@@ -190,14 +190,7 @@ library AccessManagerEngine {
   function executeGrantHubConfiguratorAllRoles(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE);
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE);
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE);
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE);
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE);
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_HALTER_ROLE);
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE);
-    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_CAPS_UPDATER_ROLE);
+    _grantRoleByName(grants, Roles.HUB_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the SpokeConfigurator admin role.
@@ -205,7 +198,7 @@ library AccessManagerEngine {
   function executeGrantSpokeConfiguratorAdminRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE);
+    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the SpokeConfigurator liquidation updater role.
@@ -213,7 +206,7 @@ library AccessManagerEngine {
   function executeGrantSpokeConfiguratorLiquidationUpdaterRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE);
+    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the SpokeConfigurator reserve adder role.
@@ -221,7 +214,7 @@ library AccessManagerEngine {
   function executeGrantSpokeConfiguratorReserveAdderRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE);
+    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the SpokeConfigurator freezer role.
@@ -229,7 +222,7 @@ library AccessManagerEngine {
   function executeGrantSpokeConfiguratorFreezerRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE);
+    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants the SpokeConfigurator pauser role.
@@ -237,7 +230,7 @@ library AccessManagerEngine {
   function executeGrantSpokeConfiguratorPauserRole(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE);
+    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants all SpokeConfigurator roles.
@@ -245,11 +238,7 @@ library AccessManagerEngine {
   function executeGrantSpokeConfiguratorAllRoles(
     IAaveV4ConfigEngine.RoleGrantByName[] calldata grants
   ) external {
-    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE);
-    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE);
-    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE);
-    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE);
-    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE);
+    _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_ROLE);
   }
 
   /// @notice Grants a specific role to each account in the array via their respective AccessManager.
