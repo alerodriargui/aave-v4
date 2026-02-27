@@ -6,6 +6,7 @@ import 'tests/unit/Hub/HubBase.t.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {FeeSharesMinterBase} from 'src/utils/FeeSharesMinterBase.sol';
 import {IFeeSharesMinterBase} from 'src/utils/IFeeSharesMinterBase.sol';
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 
 contract FeeSharesMinterBaseTest is HubBase {
   using SafeCast for uint256;
@@ -52,8 +53,9 @@ contract FeeSharesMinterBaseTest is HubBase {
     addAmount = bound(addAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, addAmount / 2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-    minTimeInterval = bound(minTimeInterval, 0, 365 days).toUint32();
-    minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 0, 10000).toUint16();
+    minTimeInterval = bound(minTimeInterval, 0, minter.MAX_TIME_INTERVAL()).toUint32();
+    minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 0, PercentageMath.PERCENTAGE_FACTOR)
+      .toUint16();
 
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: minTimeInterval,
@@ -216,8 +218,9 @@ contract FeeSharesMinterBaseTest is HubBase {
     uint32 minTimeInterval,
     uint16 minUnrealizedFeePercent
   ) public {
-    minTimeInterval = bound(minTimeInterval, 0, 365 days).toUint32();
-    minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 0, 10000).toUint16();
+    minTimeInterval = bound(minTimeInterval, 0, minter.MAX_TIME_INTERVAL()).toUint32();
+    minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 0, PercentageMath.PERCENTAGE_FACTOR)
+      .toUint16();
 
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: minTimeInterval,
@@ -238,7 +241,8 @@ contract FeeSharesMinterBaseTest is HubBase {
   function test_fuzz_setConfig_revertsWith_InvalidConfig_TimeInterval(
     uint32 minTimeInterval
   ) public {
-    minTimeInterval = bound(minTimeInterval, 365 days + 1, type(uint32).max).toUint32();
+    minTimeInterval = bound(minTimeInterval, minter.MAX_TIME_INTERVAL() + 1, type(uint32).max)
+      .toUint32();
 
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: minTimeInterval,
@@ -253,7 +257,11 @@ contract FeeSharesMinterBaseTest is HubBase {
   function test_fuzz_setConfig_revertsWith_InvalidConfig_FeePercent(
     uint16 minUnrealizedFeePercent
   ) public {
-    minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 10001, type(uint16).max).toUint16();
+    minUnrealizedFeePercent = bound(
+      minUnrealizedFeePercent,
+      PercentageMath.PERCENTAGE_FACTOR + 1,
+      type(uint16).max
+    ).toUint16();
 
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
@@ -326,8 +334,9 @@ contract FeeSharesMinterBaseTest is HubBase {
     addAmount = bound(addAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, addAmount / 2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-    minTimeInterval = bound(minTimeInterval, 0, 365 days).toUint32();
-    minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 0, 10000).toUint16();
+    minTimeInterval = bound(minTimeInterval, 0, minter.MAX_TIME_INTERVAL()).toUint32();
+    minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 0, PercentageMath.PERCENTAGE_FACTOR)
+      .toUint16();
 
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: minTimeInterval,
