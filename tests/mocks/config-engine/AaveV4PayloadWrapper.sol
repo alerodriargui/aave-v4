@@ -52,6 +52,12 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   IAaveV4ConfigEngine.ReserveFreeze[] private _spokeReserveFreezes;
   IAaveV4ConfigEngine.PositionManagerUpdate[] private _spokePositionManagerUpdates;
 
+  // Position manager action storage
+  IAaveV4ConfigEngine.SpokeRegistration[] private _positionManagerSpokeRegistrations;
+  IAaveV4ConfigEngine.TokenRescue[] private _positionManagerTokenRescues;
+  IAaveV4ConfigEngine.NativeRescue[] private _positionManagerNativeRescues;
+  IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] private _positionManagerRoleRenouncements;
+
   // Access manager action storage
   IAaveV4ConfigEngine.RoleGrant[] private _accessManagerRoleGrants;
   IAaveV4ConfigEngine.RoleRevocation[] private _accessManagerRoleRevocations;
@@ -284,6 +290,33 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   ) external {
     delete _spokePositionManagerUpdates;
     for (uint256 i = 0; i < items.length; i++) _spokePositionManagerUpdates.push(items[i]);
+  }
+
+  // Position manager setters
+  function setPositionManagerSpokeRegistrations(
+    IAaveV4ConfigEngine.SpokeRegistration[] memory items
+  ) external {
+    delete _positionManagerSpokeRegistrations;
+    for (uint256 i = 0; i < items.length; i++) _positionManagerSpokeRegistrations.push(items[i]);
+  }
+
+  function setPositionManagerTokenRescues(IAaveV4ConfigEngine.TokenRescue[] memory items) external {
+    delete _positionManagerTokenRescues;
+    for (uint256 i = 0; i < items.length; i++) _positionManagerTokenRescues.push(items[i]);
+  }
+
+  function setPositionManagerNativeRescues(
+    IAaveV4ConfigEngine.NativeRescue[] memory items
+  ) external {
+    delete _positionManagerNativeRescues;
+    for (uint256 i = 0; i < items.length; i++) _positionManagerNativeRescues.push(items[i]);
+  }
+
+  function setPositionManagerRoleRenouncements(
+    IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory items
+  ) external {
+    delete _positionManagerRoleRenouncements;
+    for (uint256 i = 0; i < items.length; i++) _positionManagerRoleRenouncements.push(items[i]);
   }
 
   // Access manager setters
@@ -974,5 +1007,42 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
     return _spokeConfiguratorAllRoleGrants;
+  }
+
+  // Position manager overrides
+  function positionManagerSpokeRegistrations()
+    internal
+    view
+    override
+    returns (IAaveV4ConfigEngine.SpokeRegistration[] memory)
+  {
+    return _positionManagerSpokeRegistrations;
+  }
+
+  function positionManagerTokenRescues()
+    internal
+    view
+    override
+    returns (IAaveV4ConfigEngine.TokenRescue[] memory)
+  {
+    return _positionManagerTokenRescues;
+  }
+
+  function positionManagerNativeRescues()
+    internal
+    view
+    override
+    returns (IAaveV4ConfigEngine.NativeRescue[] memory)
+  {
+    return _positionManagerNativeRescues;
+  }
+
+  function positionManagerRoleRenouncements()
+    internal
+    view
+    override
+    returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory)
+  {
+    return _positionManagerRoleRenouncements;
   }
 }

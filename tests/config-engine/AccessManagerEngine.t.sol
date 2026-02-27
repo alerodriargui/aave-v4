@@ -3,8 +3,11 @@
 pragma solidity ^0.8.0;
 
 import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+
 import {MockAccessManagerForEngine} from 'tests/mocks/config-engine/MockAccessManagerForEngine.sol';
 
 contract AccessManagerEngineTest is BaseConfigEngineTest {

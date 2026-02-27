@@ -3,19 +3,24 @@
 pragma solidity ^0.8.0;
 
 import {VmSafe} from 'forge-std/Vm.sol';
+
 import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
-import {AaveV4PayloadWrapper} from 'tests/mocks/config-engine/AaveV4PayloadWrapper.sol';
-import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
-import {EngineFlags} from 'src/config-engine/EngineFlags.sol';
+
 import {Roles} from 'src/libraries/types/Roles.sol';
+
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
+
+import {AaveV4PayloadWrapper} from 'tests/mocks/config-engine/AaveV4PayloadWrapper.sol';
 import {MockHubConfigurator} from 'tests/mocks/config-engine/MockHubConfigurator.sol';
 import {MockSpokeConfigurator} from 'tests/mocks/config-engine/MockSpokeConfigurator.sol';
 import {MockAccessManagerForEngine} from 'tests/mocks/config-engine/MockAccessManagerForEngine.sol';
+import {MockPositionManagerForEngine} from 'tests/mocks/config-engine/MockPositionManagerForEngine.sol';
 
 contract AaveV4PayloadTest is BaseConfigEngineTest {
   AaveV4PayloadWrapper public payload;
@@ -1047,6 +1052,69 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     emit MockHubConfigurator.HaltAssetCalled(HUB, ASSET_ID);
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.HaltAssetCalled(hub2, ASSET_ID + 1);
+
+    payload.execute();
+  }
+
+  function test_execute_positionManagerSpokeRegistrations() public {
+    IAaveV4ConfigEngine.SpokeRegistration[]
+      memory regs = new IAaveV4ConfigEngine.SpokeRegistration[](1);
+    regs[0] = IAaveV4ConfigEngine.SpokeRegistration({
+      positionManager: address(mockPositionManager),
+      spoke: SPOKE,
+      registered: true
+    });
+    payload.setPositionManagerSpokeRegistrations(regs);
+
+    vm.expectEmit(address(mockPositionManager));
+    emit MockPositionManagerForEngine.RegisterSpokeCalled(SPOKE, true);
+
+    payload.execute();
+  }
+
+  function test_execute_positionManagerTokenRescues() public {
+    IAaveV4ConfigEngine.TokenRescue[] memory rescues = new IAaveV4ConfigEngine.TokenRescue[](1);
+    rescues[0] = IAaveV4ConfigEngine.TokenRescue({
+      positionManager: address(mockPositionManager),
+      token: TOKEN,
+      to: RESCUE_TO,
+      amount: RESCUE_AMOUNT
+    });
+    payload.setPositionManagerTokenRescues(rescues);
+
+    vm.expectEmit(address(mockPositionManager));
+    emit MockPositionManagerForEngine.RescueTokenCalled(TOKEN, RESCUE_TO, RESCUE_AMOUNT);
+
+    payload.execute();
+  }
+
+  function test_execute_positionManagerNativeRescues() public {
+    IAaveV4ConfigEngine.NativeRescue[] memory rescues = new IAaveV4ConfigEngine.NativeRescue[](1);
+    rescues[0] = IAaveV4ConfigEngine.NativeRescue({
+      positionManager: address(mockPositionManager),
+      to: RESCUE_TO,
+      amount: RESCUE_AMOUNT
+    });
+    payload.setPositionManagerNativeRescues(rescues);
+
+    vm.expectEmit(address(mockPositionManager));
+    emit MockPositionManagerForEngine.RescueNativeCalled(RESCUE_TO, RESCUE_AMOUNT);
+
+    payload.execute();
+  }
+
+  function test_execute_positionManagerRoleRenouncements() public {
+    IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
+      memory renouncements = new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](1);
+    renouncements[0] = IAaveV4ConfigEngine.PositionManagerRoleRenouncement({
+      positionManager: address(mockPositionManager),
+      spoke: SPOKE,
+      user: USER
+    });
+    payload.setPositionManagerRoleRenouncements(renouncements);
+
+    vm.expectEmit(address(mockPositionManager));
+    emit MockPositionManagerForEngine.RenouncePositionManagerRoleCalled(SPOKE, USER);
 
     payload.execute();
   }

@@ -3,44 +3,51 @@
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
-import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {EngineFlags} from 'src/config-engine/EngineFlags.sol';
+
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
-import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
+
+import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+
+import {EngineFlags} from 'src/config-engine/EngineFlags.sol';
 
 import {MockHubConfigurator} from 'tests/mocks/config-engine/MockHubConfigurator.sol';
 import {MockSpokeConfigurator} from 'tests/mocks/config-engine/MockSpokeConfigurator.sol';
 import {MockAccessManagerForEngine} from 'tests/mocks/config-engine/MockAccessManagerForEngine.sol';
 import {MockSpokeReader} from 'tests/mocks/config-engine/MockSpokeReader.sol';
+import {MockPositionManagerForEngine} from 'tests/mocks/config-engine/MockPositionManagerForEngine.sol';
 
 abstract contract BaseConfigEngineTest is Test {
+  uint256 constant ASSET_ID = 1;
+  uint256 constant RESERVE_ID = 2;
+  uint256 constant LIQUIDITY_FEE = 500;
+  uint256 constant DYNAMIC_CONFIG_KEY = 3;
+  uint256 constant RESCUE_AMOUNT = 1000e18;
+  bytes constant IR_DATA = hex'deadbeef';
+
+  address internal HUB = makeAddr('HUB');
+  address internal SPOKE = makeAddr('SPOKE');
+  address internal UNDERLYING = makeAddr('UNDERLYING');
+  address internal FEE_RECEIVER = makeAddr('FEE_RECEIVER');
+  address internal IR_STRATEGY = makeAddr('IR_STRATEGY');
+  address internal PRICE_SOURCE = makeAddr('PRICE_SOURCE');
+  address internal ACCOUNT = makeAddr('ACCOUNT');
+  address internal TARGET = makeAddr('TARGET');
+  address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
+  address internal REINVESTMENT_CONTROLLER = makeAddr('REINVESTMENT_CONTROLLER');
+  address internal TOKEN = makeAddr('TOKEN');
+  address internal RESCUE_TO = makeAddr('RESCUE_TO');
+  address internal USER = makeAddr('USER');
+
   AaveV4ConfigEngine public engine;
   MockHubConfigurator public mockHubConfigurator;
   MockSpokeConfigurator public mockSpokeConfigurator;
   MockAccessManagerForEngine public mockAccessManager;
   MockSpokeReader public mockSpokeReader;
-
-  // Common addresses
-  address constant HUB = address(0x1001);
-  address constant SPOKE = address(0x2001);
-  address constant UNDERLYING = address(0x3001);
-  address constant FEE_RECEIVER = address(0x4001);
-  address constant IR_STRATEGY = address(0x5001);
-  address constant PRICE_SOURCE = address(0x6001);
-  address constant ACCOUNT = address(0x7001);
-  address constant TARGET = address(0x8001);
-  address constant POSITION_MANAGER = address(0x9001);
-  address constant REINVESTMENT_CONTROLLER = address(0xA001);
-
-  // Common values
-  uint256 constant ASSET_ID = 1;
-  uint256 constant RESERVE_ID = 2;
-  uint256 constant LIQUIDITY_FEE = 500;
-  uint256 constant DYNAMIC_CONFIG_KEY = 3;
-  bytes constant IR_DATA = hex'deadbeef';
+  MockPositionManagerForEngine public mockPositionManager;
 
   function setUp() public virtual {
     engine = new AaveV4ConfigEngine();
@@ -48,6 +55,7 @@ abstract contract BaseConfigEngineTest is Test {
     mockSpokeConfigurator = new MockSpokeConfigurator();
     mockAccessManager = new MockAccessManagerForEngine();
     mockSpokeReader = new MockSpokeReader();
+    mockPositionManager = new MockPositionManagerForEngine();
   }
 
   // Helper: default AssetListing (decimals=0 -> addAsset branch)
@@ -695,5 +703,33 @@ abstract contract BaseConfigEngineTest is Test {
         positionManager: POSITION_MANAGER,
         active: true
       });
+  }
+
+  function _toSpokeRegistrationArray(
+    IAaveV4ConfigEngine.SpokeRegistration memory item
+  ) internal pure returns (IAaveV4ConfigEngine.SpokeRegistration[] memory arr) {
+    arr = new IAaveV4ConfigEngine.SpokeRegistration[](1);
+    arr[0] = item;
+  }
+
+  function _toTokenRescueArray(
+    IAaveV4ConfigEngine.TokenRescue memory item
+  ) internal pure returns (IAaveV4ConfigEngine.TokenRescue[] memory arr) {
+    arr = new IAaveV4ConfigEngine.TokenRescue[](1);
+    arr[0] = item;
+  }
+
+  function _toNativeRescueArray(
+    IAaveV4ConfigEngine.NativeRescue memory item
+  ) internal pure returns (IAaveV4ConfigEngine.NativeRescue[] memory arr) {
+    arr = new IAaveV4ConfigEngine.NativeRescue[](1);
+    arr[0] = item;
+  }
+
+  function _toPositionManagerRoleRenouncementArray(
+    IAaveV4ConfigEngine.PositionManagerRoleRenouncement memory item
+  ) internal pure returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory arr) {
+    arr = new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](1);
+    arr[0] = item;
   }
 }

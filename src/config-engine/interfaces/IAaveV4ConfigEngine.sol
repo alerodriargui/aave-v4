@@ -429,6 +429,48 @@ interface IAaveV4ConfigEngine {
     bool active;
   }
 
+  /// @notice Parameters for registering/deregistering a spoke on a position manager.
+  /// @param positionManager The position manager address.
+  /// @param spoke The address of the spoke.
+  /// @param registered Whether to register (true) or deregister (false) the spoke.
+  struct SpokeRegistration {
+    address positionManager;
+    address spoke;
+    bool registered;
+  }
+
+  /// @notice Parameters for rescuing ERC20 tokens from a position manager.
+  /// @param positionManager The position manager address.
+  /// @param token The address of the ERC20 token to rescue.
+  /// @param to The address to send the rescued tokens to.
+  /// @param amount The amount of tokens to rescue.
+  struct TokenRescue {
+    address positionManager;
+    address token;
+    address to;
+    uint256 amount;
+  }
+
+  /// @notice Parameters for rescuing native assets from a position manager.
+  /// @param positionManager The position manager address.
+  /// @param to The address to send the rescued native assets to.
+  /// @param amount The amount of native assets to rescue.
+  struct NativeRescue {
+    address positionManager;
+    address to;
+    uint256 amount;
+  }
+
+  /// @notice Parameters for renouncing the position manager role for a user on a spoke.
+  /// @param positionManager The position manager address.
+  /// @param spoke The address of the spoke.
+  /// @param user The address of the user to renounce the role for.
+  struct PositionManagerRoleRenouncement {
+    address positionManager;
+    address spoke;
+    address user;
+  }
+
   /// @notice Parameters for granting a role via AccessManager.
   /// @param authority The AccessManager address.
   /// @param roleId The role identifier.
@@ -678,6 +720,26 @@ interface IAaveV4ConfigEngine {
   /// @notice Updates position managers on spokes.
   /// @param updates The position manager updates to execute.
   function executeSpokePositionManagerUpdates(PositionManagerUpdate[] calldata updates) external;
+
+  /// @notice Registers/deregisters spokes on position managers.
+  /// @param registrations The spoke registrations to execute.
+  function executePositionManagerSpokeRegistrations(
+    SpokeRegistration[] calldata registrations
+  ) external;
+
+  /// @notice Rescues ERC20 tokens from position managers.
+  /// @param rescues The token rescues to execute.
+  function executePositionManagerTokenRescues(TokenRescue[] calldata rescues) external;
+
+  /// @notice Rescues native assets from position managers.
+  /// @param rescues The native rescues to execute.
+  function executePositionManagerNativeRescues(NativeRescue[] calldata rescues) external;
+
+  /// @notice Renounces position manager roles for users on spokes.
+  /// @param renouncements The role renouncements to execute.
+  function executePositionManagerRoleRenouncements(
+    PositionManagerRoleRenouncement[] calldata renouncements
+  ) external;
 
   /// @notice Grants roles via AccessManager.
   /// @param grants The role grants to execute.

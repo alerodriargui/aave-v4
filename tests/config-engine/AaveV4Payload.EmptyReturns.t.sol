@@ -3,8 +3,9 @@
 pragma solidity ^0.8.0;
 
 import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
-import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
+
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
 
 /// @dev Minimal concrete payload that does NOT override any virtual methods.
 ///   Calling execute() on this exercises every base virtual method returning empty arrays,
@@ -401,6 +402,34 @@ contract ExposedAaveV4Payload is AaveV4Payload {
   {
     return spokeConfiguratorAllRoleGrants();
   }
+
+  function exposed_positionManagerSpokeRegistrations()
+    external
+    returns (IAaveV4ConfigEngine.SpokeRegistration[] memory)
+  {
+    return positionManagerSpokeRegistrations();
+  }
+
+  function exposed_positionManagerTokenRescues()
+    external
+    returns (IAaveV4ConfigEngine.TokenRescue[] memory)
+  {
+    return positionManagerTokenRescues();
+  }
+
+  function exposed_positionManagerNativeRescues()
+    external
+    returns (IAaveV4ConfigEngine.NativeRescue[] memory)
+  {
+    return positionManagerNativeRescues();
+  }
+
+  function exposed_positionManagerRoleRenouncements()
+    external
+    returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory)
+  {
+    return positionManagerRoleRenouncements();
+  }
 }
 
 contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
@@ -642,5 +671,21 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
 
   function test_spokeConfiguratorAllRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_spokeConfiguratorAllRoleGrants().length, 0);
+  }
+
+  function test_positionManagerSpokeRegistrations_returnsEmpty() public {
+    assertEq(exposed.exposed_positionManagerSpokeRegistrations().length, 0);
+  }
+
+  function test_positionManagerTokenRescues_returnsEmpty() public {
+    assertEq(exposed.exposed_positionManagerTokenRescues().length, 0);
+  }
+
+  function test_positionManagerNativeRescues_returnsEmpty() public {
+    assertEq(exposed.exposed_positionManagerNativeRescues().length, 0);
+  }
+
+  function test_positionManagerRoleRenouncements_returnsEmpty() public {
+    assertEq(exposed.exposed_positionManagerRoleRenouncements().length, 0);
   }
 }

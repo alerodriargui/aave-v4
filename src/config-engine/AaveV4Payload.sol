@@ -31,6 +31,7 @@ abstract contract AaveV4Payload {
     _executeHubActions();
     _executeSpokeActions();
     _executeAccessManagerActions();
+    _executePositionManagerActions();
     _postExecute();
   }
 
@@ -496,6 +497,38 @@ abstract contract AaveV4Payload {
     if (allSpokeGrants.length > 0) {
       _delegateCallEngine(
         abi.encodeCall(IAaveV4ConfigEngine.executeGrantSpokeConfiguratorAllRoles, (allSpokeGrants))
+      );
+    }
+  }
+
+  /// @notice Executes all position manager configuration actions via delegatecall to the engine.
+  function _executePositionManagerActions() internal {
+    IAaveV4ConfigEngine.SpokeRegistration[] memory spokeRegs = positionManagerSpokeRegistrations();
+    if (spokeRegs.length > 0) {
+      _delegateCallEngine(
+        abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerSpokeRegistrations, (spokeRegs))
+      );
+    }
+
+    IAaveV4ConfigEngine.TokenRescue[] memory tokenRescues = positionManagerTokenRescues();
+    if (tokenRescues.length > 0) {
+      _delegateCallEngine(
+        abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerTokenRescues, (tokenRescues))
+      );
+    }
+
+    IAaveV4ConfigEngine.NativeRescue[] memory nativeRescues = positionManagerNativeRescues();
+    if (nativeRescues.length > 0) {
+      _delegateCallEngine(
+        abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerNativeRescues, (nativeRescues))
+      );
+    }
+
+    IAaveV4ConfigEngine.PositionManagerRoleRenouncement[]
+      memory renouncements = positionManagerRoleRenouncements();
+    if (renouncements.length > 0) {
+      _delegateCallEngine(
+        abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerRoleRenouncements, (renouncements))
       );
     }
   }
@@ -1057,5 +1090,45 @@ abstract contract AaveV4Payload {
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
     return new IAaveV4ConfigEngine.RoleGrantByName[](0);
+  }
+
+  /// @notice Returns the position manager spoke registrations to execute. Override to provide registrations.
+  /// @return An array of SpokeRegistration structs (empty by default).
+  function positionManagerSpokeRegistrations()
+    internal
+    virtual
+    returns (IAaveV4ConfigEngine.SpokeRegistration[] memory)
+  {
+    return new IAaveV4ConfigEngine.SpokeRegistration[](0);
+  }
+
+  /// @notice Returns the position manager token rescues to execute. Override to provide rescues.
+  /// @return An array of TokenRescue structs (empty by default).
+  function positionManagerTokenRescues()
+    internal
+    virtual
+    returns (IAaveV4ConfigEngine.TokenRescue[] memory)
+  {
+    return new IAaveV4ConfigEngine.TokenRescue[](0);
+  }
+
+  /// @notice Returns the position manager native rescues to execute. Override to provide rescues.
+  /// @return An array of NativeRescue structs (empty by default).
+  function positionManagerNativeRescues()
+    internal
+    virtual
+    returns (IAaveV4ConfigEngine.NativeRescue[] memory)
+  {
+    return new IAaveV4ConfigEngine.NativeRescue[](0);
+  }
+
+  /// @notice Returns the position manager role renouncements to execute. Override to provide renouncements.
+  /// @return An array of PositionManagerRoleRenouncement structs (empty by default).
+  function positionManagerRoleRenouncements()
+    internal
+    virtual
+    returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory)
+  {
+    return new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](0);
   }
 }

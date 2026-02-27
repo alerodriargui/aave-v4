@@ -6,6 +6,7 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
 import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
 import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
+import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
 
 /// @title AaveV4ConfigEngine
 /// @author Aave Labs
@@ -189,6 +190,30 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
   /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokePositionManagerUpdates(PositionManagerUpdate[] calldata updates) external {
     SpokeEngine.executeSpokePositionManagerUpdates(updates);
+  }
+
+  /// @inheritdoc IAaveV4ConfigEngine
+  function executePositionManagerSpokeRegistrations(
+    SpokeRegistration[] calldata registrations
+  ) external {
+    PositionManagerEngine.executePositionManagerSpokeRegistrations(registrations);
+  }
+
+  /// @inheritdoc IAaveV4ConfigEngine
+  function executePositionManagerTokenRescues(TokenRescue[] calldata rescues) external {
+    PositionManagerEngine.executePositionManagerTokenRescues(rescues);
+  }
+
+  /// @inheritdoc IAaveV4ConfigEngine
+  function executePositionManagerNativeRescues(NativeRescue[] calldata rescues) external {
+    PositionManagerEngine.executePositionManagerNativeRescues(rescues);
+  }
+
+  /// @inheritdoc IAaveV4ConfigEngine
+  function executePositionManagerRoleRenouncements(
+    PositionManagerRoleRenouncement[] calldata renouncements
+  ) external {
+    PositionManagerEngine.executePositionManagerRoleRenouncements(renouncements);
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
