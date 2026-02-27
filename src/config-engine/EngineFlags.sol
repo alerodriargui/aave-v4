@@ -9,9 +9,9 @@ library EngineFlags {
   /// @dev Thrown when toBool receives a value other than 0 or 1.
   error InvalidBoolValue(uint256 value);
 
-  /// @dev Sentinel value meaning "do not update this field".
+  /// @dev Sentinel value to keep the current uint value.
   uint256 internal constant KEEP_CURRENT = type(uint256).max;
-  /// @dev Sentinel address meaning "do not update this address field".
+  /// @dev Sentinel address to keep the current address value.
   address internal constant KEEP_CURRENT_ADDRESS = address(type(uint160).max);
 
   /// @dev Convenience constant representing an enabled boolean flag (1).
@@ -19,12 +19,13 @@ library EngineFlags {
   /// @dev Convenience constant representing a disabled boolean flag (0).
   uint256 internal constant DISABLED = 0;
 
-  /// @notice Converts a uint256 flag (0 or 1) to a bool. Reverts on any other value.
+  /// @notice Converts a uint256 flag (0 or 1) to a bool.
+  /// @dev Reverts on any other value than the expected constants.
   /// @param flag The uint256 flag to convert (must be 0 or 1).
   /// @return The boolean representation of the flag.
   function toBool(uint256 flag) internal pure returns (bool) {
-    require(flag == 0 || flag == 1, InvalidBoolValue(flag));
-    return flag == 1;
+    require(flag == ENABLED || flag == DISABLED, InvalidBoolValue(flag));
+    return flag == ENABLED;
   }
 
   /// @notice Converts a bool to uint256 (false = DISABLED, true = ENABLED).

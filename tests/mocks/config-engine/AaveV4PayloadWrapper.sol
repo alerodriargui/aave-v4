@@ -3,9 +3,11 @@
 pragma solidity ^0.8.0;
 
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/IAaveV4ConfigEngine.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 contract AaveV4PayloadWrapper is AaveV4Payload {
+  bool public constant IS_TEST = true;
+
   // Hook tracking
   bool public preExecuteCalled;
   bool public postExecuteCalled;

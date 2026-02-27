@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/IAaveV4ConfigEngine.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {EngineFlags} from 'src/config-engine/EngineFlags.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
@@ -184,60 +184,516 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  // Helper: wrap single item in array for engine calls
-  function _toArray(
+  function _toReinvestmentControllerUpdateArray(
+    IAaveV4ConfigEngine.ReinvestmentControllerUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.ReinvestmentControllerUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.ReinvestmentControllerUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toSpokeAdditionArray(
+    IAaveV4ConfigEngine.SpokeAddition memory item
+  ) internal pure returns (IAaveV4ConfigEngine.SpokeAddition[] memory arr) {
+    arr = new IAaveV4ConfigEngine.SpokeAddition[](1);
+    arr[0] = item;
+  }
+
+  function _toSpokeToAssetsAdditionArray(
+    IAaveV4ConfigEngine.SpokeToAssetsAddition memory item
+  ) internal pure returns (IAaveV4ConfigEngine.SpokeToAssetsAddition[] memory arr) {
+    arr = new IAaveV4ConfigEngine.SpokeToAssetsAddition[](1);
+    arr[0] = item;
+  }
+
+  function _toSpokeRiskPremiumThresholdUpdateArray(
+    IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toAssetHaltArray(
+    IAaveV4ConfigEngine.AssetHalt memory item
+  ) internal pure returns (IAaveV4ConfigEngine.AssetHalt[] memory arr) {
+    arr = new IAaveV4ConfigEngine.AssetHalt[](1);
+    arr[0] = item;
+  }
+
+  function _toAssetDeactivationArray(
+    IAaveV4ConfigEngine.AssetDeactivation memory item
+  ) internal pure returns (IAaveV4ConfigEngine.AssetDeactivation[] memory arr) {
+    arr = new IAaveV4ConfigEngine.AssetDeactivation[](1);
+    arr[0] = item;
+  }
+
+  function _toAssetCapsResetArray(
+    IAaveV4ConfigEngine.AssetCapsReset memory item
+  ) internal pure returns (IAaveV4ConfigEngine.AssetCapsReset[] memory arr) {
+    arr = new IAaveV4ConfigEngine.AssetCapsReset[](1);
+    arr[0] = item;
+  }
+
+  function _toSpokeHaltArray(
+    IAaveV4ConfigEngine.SpokeHalt memory item
+  ) internal pure returns (IAaveV4ConfigEngine.SpokeHalt[] memory arr) {
+    arr = new IAaveV4ConfigEngine.SpokeHalt[](1);
+    arr[0] = item;
+  }
+
+  function _toSpokeDeactivationArray(
+    IAaveV4ConfigEngine.SpokeDeactivation memory item
+  ) internal pure returns (IAaveV4ConfigEngine.SpokeDeactivation[] memory arr) {
+    arr = new IAaveV4ConfigEngine.SpokeDeactivation[](1);
+    arr[0] = item;
+  }
+
+  function _toSpokeCapsResetArray(
+    IAaveV4ConfigEngine.SpokeCapsReset memory item
+  ) internal pure returns (IAaveV4ConfigEngine.SpokeCapsReset[] memory arr) {
+    arr = new IAaveV4ConfigEngine.SpokeCapsReset[](1);
+    arr[0] = item;
+  }
+
+  function _toAssetListingArray(
     IAaveV4ConfigEngine.AssetListing memory item
   ) internal pure returns (IAaveV4ConfigEngine.AssetListing[] memory arr) {
     arr = new IAaveV4ConfigEngine.AssetListing[](1);
     arr[0] = item;
   }
 
-  function _toArray(
+  function _toFeeConfigUpdateArray(
     IAaveV4ConfigEngine.FeeConfigUpdate memory item
   ) internal pure returns (IAaveV4ConfigEngine.FeeConfigUpdate[] memory arr) {
     arr = new IAaveV4ConfigEngine.FeeConfigUpdate[](1);
     arr[0] = item;
   }
 
-  function _toArray(
+  function _toInterestRateUpdateArray(
     IAaveV4ConfigEngine.InterestRateUpdate memory item
   ) internal pure returns (IAaveV4ConfigEngine.InterestRateUpdate[] memory arr) {
     arr = new IAaveV4ConfigEngine.InterestRateUpdate[](1);
     arr[0] = item;
   }
 
-  function _toArray(
+  function _toSpokeCapsUpdateArray(
     IAaveV4ConfigEngine.SpokeCapsUpdate memory item
   ) internal pure returns (IAaveV4ConfigEngine.SpokeCapsUpdate[] memory arr) {
     arr = new IAaveV4ConfigEngine.SpokeCapsUpdate[](1);
     arr[0] = item;
   }
 
-  function _toArray(
+  function _toSpokeStatusUpdateArray(
     IAaveV4ConfigEngine.SpokeStatusUpdate memory item
   ) internal pure returns (IAaveV4ConfigEngine.SpokeStatusUpdate[] memory arr) {
     arr = new IAaveV4ConfigEngine.SpokeStatusUpdate[](1);
     arr[0] = item;
   }
 
-  function _toArray(
+  function _toReserveConfigUpdateArray(
     IAaveV4ConfigEngine.ReserveConfigUpdate memory item
   ) internal pure returns (IAaveV4ConfigEngine.ReserveConfigUpdate[] memory arr) {
     arr = new IAaveV4ConfigEngine.ReserveConfigUpdate[](1);
     arr[0] = item;
   }
 
-  function _toArray(
+  function _toLiquidationConfigUpdateArray(
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory item
   ) internal pure returns (IAaveV4ConfigEngine.LiquidationConfigUpdate[] memory arr) {
     arr = new IAaveV4ConfigEngine.LiquidationConfigUpdate[](1);
     arr[0] = item;
   }
 
-  function _toArray(
+  function _toDynamicReserveConfigUpdateArray(
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate memory item
   ) internal pure returns (IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] memory arr) {
     arr = new IAaveV4ConfigEngine.DynamicReserveConfigUpdate[](1);
     arr[0] = item;
+  }
+
+  function _toRoleGrantArray(
+    IAaveV4ConfigEngine.RoleGrant memory item
+  ) internal pure returns (IAaveV4ConfigEngine.RoleGrant[] memory arr) {
+    arr = new IAaveV4ConfigEngine.RoleGrant[](1);
+    arr[0] = item;
+  }
+
+  function _toRoleRevocationArray(
+    IAaveV4ConfigEngine.RoleRevocation memory item
+  ) internal pure returns (IAaveV4ConfigEngine.RoleRevocation[] memory arr) {
+    arr = new IAaveV4ConfigEngine.RoleRevocation[](1);
+    arr[0] = item;
+  }
+
+  function _toRoleAdminUpdateArray(
+    IAaveV4ConfigEngine.RoleAdminUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.RoleAdminUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.RoleAdminUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toRoleGuardianUpdateArray(
+    IAaveV4ConfigEngine.RoleGuardianUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.RoleGuardianUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.RoleGuardianUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toTargetFunctionRoleUpdateArray(
+    IAaveV4ConfigEngine.TargetFunctionRoleUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.TargetFunctionRoleUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.TargetFunctionRoleUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toTargetClosedUpdateArray(
+    IAaveV4ConfigEngine.TargetClosedUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.TargetClosedUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.TargetClosedUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toRoleLabelUpdateArray(
+    IAaveV4ConfigEngine.RoleLabelUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.RoleLabelUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.RoleLabelUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toGrantDelayUpdateArray(
+    IAaveV4ConfigEngine.GrantDelayUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.GrantDelayUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.GrantDelayUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toTargetAdminDelayUpdateArray(
+    IAaveV4ConfigEngine.TargetAdminDelayUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.TargetAdminDelayUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toRoleGrantByNameArray(
+    IAaveV4ConfigEngine.RoleGrantByName memory item
+  ) internal pure returns (IAaveV4ConfigEngine.RoleGrantByName[] memory arr) {
+    arr = new IAaveV4ConfigEngine.RoleGrantByName[](1);
+    arr[0] = item;
+  }
+
+  function _toRoleGrantByNameArray2(
+    IAaveV4ConfigEngine.RoleGrantByName memory item1,
+    IAaveV4ConfigEngine.RoleGrantByName memory item2
+  ) internal pure returns (IAaveV4ConfigEngine.RoleGrantByName[] memory arr) {
+    arr = new IAaveV4ConfigEngine.RoleGrantByName[](2);
+    arr[0] = item1;
+    arr[1] = item2;
+  }
+
+  function _defaultRoleGrantByName()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.RoleGrantByName memory)
+  {
+    return
+      IAaveV4ConfigEngine.RoleGrantByName({
+        authority: address(mockAccessManager),
+        account: ACCOUNT
+      });
+  }
+
+  function _toReserveListingArray(
+    IAaveV4ConfigEngine.ReserveListing memory item
+  ) internal pure returns (IAaveV4ConfigEngine.ReserveListing[] memory arr) {
+    arr = new IAaveV4ConfigEngine.ReserveListing[](1);
+    arr[0] = item;
+  }
+
+  function _toReservePriceSourceUpdateArray(
+    IAaveV4ConfigEngine.ReservePriceSourceUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.ReservePriceSourceUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.ReservePriceSourceUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toDynamicReserveConfigAdditionArray(
+    IAaveV4ConfigEngine.DynamicReserveConfigAddition memory item
+  ) internal pure returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition[] memory arr) {
+    arr = new IAaveV4ConfigEngine.DynamicReserveConfigAddition[](1);
+    arr[0] = item;
+  }
+
+  function _toCollateralFactorAdditionArray(
+    IAaveV4ConfigEngine.CollateralFactorAddition memory item
+  ) internal pure returns (IAaveV4ConfigEngine.CollateralFactorAddition[] memory arr) {
+    arr = new IAaveV4ConfigEngine.CollateralFactorAddition[](1);
+    arr[0] = item;
+  }
+
+  function _toCollateralFactorUpdateArray(
+    IAaveV4ConfigEngine.CollateralFactorUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.CollateralFactorUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.CollateralFactorUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toMaxLiquidationBonusAdditionArray(
+    IAaveV4ConfigEngine.MaxLiquidationBonusAddition memory item
+  ) internal pure returns (IAaveV4ConfigEngine.MaxLiquidationBonusAddition[] memory arr) {
+    arr = new IAaveV4ConfigEngine.MaxLiquidationBonusAddition[](1);
+    arr[0] = item;
+  }
+
+  function _toMaxLiquidationBonusUpdateArray(
+    IAaveV4ConfigEngine.MaxLiquidationBonusUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toLiquidationFeeAdditionArray(
+    IAaveV4ConfigEngine.LiquidationFeeAddition memory item
+  ) internal pure returns (IAaveV4ConfigEngine.LiquidationFeeAddition[] memory arr) {
+    arr = new IAaveV4ConfigEngine.LiquidationFeeAddition[](1);
+    arr[0] = item;
+  }
+
+  function _toLiquidationFeeUpdateArray(
+    IAaveV4ConfigEngine.LiquidationFeeUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.LiquidationFeeUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.LiquidationFeeUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _toSpokePauseArray(
+    IAaveV4ConfigEngine.SpokePause memory item
+  ) internal pure returns (IAaveV4ConfigEngine.SpokePause[] memory arr) {
+    arr = new IAaveV4ConfigEngine.SpokePause[](1);
+    arr[0] = item;
+  }
+
+  function _toSpokeFreezeArray(
+    IAaveV4ConfigEngine.SpokeFreeze memory item
+  ) internal pure returns (IAaveV4ConfigEngine.SpokeFreeze[] memory arr) {
+    arr = new IAaveV4ConfigEngine.SpokeFreeze[](1);
+    arr[0] = item;
+  }
+
+  function _toReservePauseArray(
+    IAaveV4ConfigEngine.ReservePause memory item
+  ) internal pure returns (IAaveV4ConfigEngine.ReservePause[] memory arr) {
+    arr = new IAaveV4ConfigEngine.ReservePause[](1);
+    arr[0] = item;
+  }
+
+  function _toReserveFreezeArray(
+    IAaveV4ConfigEngine.ReserveFreeze memory item
+  ) internal pure returns (IAaveV4ConfigEngine.ReserveFreeze[] memory arr) {
+    arr = new IAaveV4ConfigEngine.ReserveFreeze[](1);
+    arr[0] = item;
+  }
+
+  function _toPositionManagerUpdateArray(
+    IAaveV4ConfigEngine.PositionManagerUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.PositionManagerUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.PositionManagerUpdate[](1);
+    arr[0] = item;
+  }
+
+  function _defaultReserveListing()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.ReserveListing memory)
+  {
+    return
+      IAaveV4ConfigEngine.ReserveListing({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        hub: HUB,
+        assetId: ASSET_ID,
+        priceSource: PRICE_SOURCE,
+        config: ISpoke.ReserveConfig({
+          collateralRisk: 5000,
+          paused: false,
+          frozen: false,
+          borrowable: true,
+          receiveSharesEnabled: true
+        }),
+        dynamicConfig: ISpoke.DynamicReserveConfig({
+          collateralFactor: 8000,
+          maxLiquidationBonus: 10500,
+          liquidationFee: 200
+        })
+      });
+  }
+
+  function _defaultReservePriceSourceUpdate()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.ReservePriceSourceUpdate memory)
+  {
+    return
+      IAaveV4ConfigEngine.ReservePriceSourceUpdate({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        reserveId: RESERVE_ID,
+        priceSource: PRICE_SOURCE
+      });
+  }
+
+  function _defaultDynamicReserveConfigAddition()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition memory)
+  {
+    return
+      IAaveV4ConfigEngine.DynamicReserveConfigAddition({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        reserveId: RESERVE_ID,
+        dynamicConfig: ISpoke.DynamicReserveConfig({
+          collateralFactor: 8000,
+          maxLiquidationBonus: 10500,
+          liquidationFee: 200
+        })
+      });
+  }
+
+  function _defaultCollateralFactorAddition()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.CollateralFactorAddition memory)
+  {
+    return
+      IAaveV4ConfigEngine.CollateralFactorAddition({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        reserveId: RESERVE_ID,
+        collateralFactor: 8000
+      });
+  }
+
+  function _defaultCollateralFactorUpdate()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.CollateralFactorUpdate memory)
+  {
+    return
+      IAaveV4ConfigEngine.CollateralFactorUpdate({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        reserveId: RESERVE_ID,
+        dynamicConfigKey: DYNAMIC_CONFIG_KEY,
+        collateralFactor: 9000
+      });
+  }
+
+  function _defaultMaxLiquidationBonusAddition()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.MaxLiquidationBonusAddition memory)
+  {
+    return
+      IAaveV4ConfigEngine.MaxLiquidationBonusAddition({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        reserveId: RESERVE_ID,
+        maxLiquidationBonus: 10500
+      });
+  }
+
+  function _defaultMaxLiquidationBonusUpdate()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.MaxLiquidationBonusUpdate memory)
+  {
+    return
+      IAaveV4ConfigEngine.MaxLiquidationBonusUpdate({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        reserveId: RESERVE_ID,
+        dynamicConfigKey: DYNAMIC_CONFIG_KEY,
+        maxLiquidationBonus: 11000
+      });
+  }
+
+  function _defaultLiquidationFeeAddition()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.LiquidationFeeAddition memory)
+  {
+    return
+      IAaveV4ConfigEngine.LiquidationFeeAddition({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        reserveId: RESERVE_ID,
+        liquidationFee: 300
+      });
+  }
+
+  function _defaultLiquidationFeeUpdate()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.LiquidationFeeUpdate memory)
+  {
+    return
+      IAaveV4ConfigEngine.LiquidationFeeUpdate({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        reserveId: RESERVE_ID,
+        dynamicConfigKey: DYNAMIC_CONFIG_KEY,
+        liquidationFee: 400
+      });
+  }
+
+  function _defaultSpokePause() internal view returns (IAaveV4ConfigEngine.SpokePause memory) {
+    return
+      IAaveV4ConfigEngine.SpokePause({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE
+      });
+  }
+
+  function _defaultSpokeFreeze() internal view returns (IAaveV4ConfigEngine.SpokeFreeze memory) {
+    return
+      IAaveV4ConfigEngine.SpokeFreeze({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE
+      });
+  }
+
+  function _defaultReservePause() internal view returns (IAaveV4ConfigEngine.ReservePause memory) {
+    return
+      IAaveV4ConfigEngine.ReservePause({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        reserveId: RESERVE_ID
+      });
+  }
+
+  function _defaultReserveFreeze()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.ReserveFreeze memory)
+  {
+    return
+      IAaveV4ConfigEngine.ReserveFreeze({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        reserveId: RESERVE_ID
+      });
+  }
+
+  function _defaultPositionManagerUpdate()
+    internal
+    view
+    returns (IAaveV4ConfigEngine.PositionManagerUpdate memory)
+  {
+    return
+      IAaveV4ConfigEngine.PositionManagerUpdate({
+        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
+        spoke: SPOKE,
+        positionManager: POSITION_MANAGER,
+        active: true
+      });
   }
 }

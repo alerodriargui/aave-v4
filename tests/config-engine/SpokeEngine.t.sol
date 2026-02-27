@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/IAaveV4ConfigEngine.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {EngineFlags} from 'src/config-engine/EngineFlags.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
@@ -11,421 +11,25 @@ import {MockSpokeConfigurator} from 'tests/mocks/config-engine/MockSpokeConfigur
 import {MockSpokeReader} from 'tests/mocks/config-engine/MockSpokeReader.sol';
 
 contract SpokeEngineTest is BaseConfigEngineTest {
-  // ============================================================
-  // Re-declare mock events for vm.expectEmit
-  // ============================================================
-
-  event AddReserveCalled(
-    address spoke,
-    address hub,
-    uint256 assetId,
-    address priceSource,
-    uint24 collateralRisk,
-    bool paused,
-    bool frozen,
-    bool borrowable,
-    bool receiveSharesEnabled,
-    uint16 collateralFactor,
-    uint32 maxLiquidationBonus,
-    uint16 liquidationFee
-  );
-
-  event UpdateReservePriceSourceCalled(address spoke, uint256 reserveId, address priceSource);
-
-  event UpdateCollateralRiskCalled(address spoke, uint256 reserveId, uint256 collateralRisk);
-  event UpdatePausedCalled(address spoke, uint256 reserveId, bool paused);
-  event UpdateFrozenCalled(address spoke, uint256 reserveId, bool frozen);
-  event UpdateBorrowableCalled(address spoke, uint256 reserveId, bool borrowable);
-  event UpdateReceiveSharesEnabledCalled(
-    address spoke,
-    uint256 reserveId,
-    bool receiveSharesEnabled
-  );
-
-  event UpdateLiquidationConfigCalled(
-    address spoke,
-    uint128 targetHealthFactor,
-    uint64 healthFactorForMaxBonus,
-    uint16 liquidationBonusFactor
-  );
-  event UpdateLiquidationTargetHealthFactorCalled(address spoke, uint256 targetHealthFactor);
-  event UpdateHealthFactorForMaxBonusCalled(address spoke, uint256 healthFactorForMaxBonus);
-  event UpdateLiquidationBonusFactorCalled(address spoke, uint256 liquidationBonusFactor);
-
-  event AddDynamicReserveConfigCalled(
-    address spoke,
-    uint256 reserveId,
-    uint16 collateralFactor,
-    uint32 maxLiquidationBonus,
-    uint16 liquidationFee
-  );
-
-  event UpdateDynamicReserveConfigCalled(
-    address spoke,
-    uint256 reserveId,
-    uint32 dynamicConfigKey,
-    uint16 collateralFactor,
-    uint32 maxLiquidationBonus,
-    uint16 liquidationFee
-  );
-
-  event AddCollateralFactorCalled(address spoke, uint256 reserveId, uint16 collateralFactor);
-  event UpdateCollateralFactorCalled(
-    address spoke,
-    uint256 reserveId,
-    uint32 dynamicConfigKey,
-    uint16 collateralFactor
-  );
-
-  event AddMaxLiquidationBonusCalled(address spoke, uint256 reserveId, uint256 maxLiquidationBonus);
-  event UpdateMaxLiquidationBonusCalled(
-    address spoke,
-    uint256 reserveId,
-    uint32 dynamicConfigKey,
-    uint256 maxLiquidationBonus
-  );
-
-  event AddLiquidationFeeCalled(address spoke, uint256 reserveId, uint256 liquidationFee);
-  event UpdateLiquidationFeeCalled(
-    address spoke,
-    uint256 reserveId,
-    uint32 dynamicConfigKey,
-    uint256 liquidationFee
-  );
-
-  event PauseAllReservesCalled(address spoke);
-  event FreezeAllReservesCalled(address spoke);
-  event PauseReserveCalled(address spoke, uint256 reserveId);
-  event FreezeReserveCalled(address spoke, uint256 reserveId);
-  event UpdatePositionManagerCalled(address spoke, address positionManager, bool active);
-
-  // ============================================================
-  // Array helpers for types not in BaseConfigEngineTest
-  // ============================================================
-
-  function _toArray(
-    IAaveV4ConfigEngine.ReserveListing memory item
-  ) internal pure returns (IAaveV4ConfigEngine.ReserveListing[] memory arr) {
-    arr = new IAaveV4ConfigEngine.ReserveListing[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.ReservePriceSourceUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.ReservePriceSourceUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.ReservePriceSourceUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.DynamicReserveConfigAddition memory item
-  ) internal pure returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition[] memory arr) {
-    arr = new IAaveV4ConfigEngine.DynamicReserveConfigAddition[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.CollateralFactorAddition memory item
-  ) internal pure returns (IAaveV4ConfigEngine.CollateralFactorAddition[] memory arr) {
-    arr = new IAaveV4ConfigEngine.CollateralFactorAddition[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.CollateralFactorUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.CollateralFactorUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.CollateralFactorUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.MaxLiquidationBonusAddition memory item
-  ) internal pure returns (IAaveV4ConfigEngine.MaxLiquidationBonusAddition[] memory arr) {
-    arr = new IAaveV4ConfigEngine.MaxLiquidationBonusAddition[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.MaxLiquidationBonusUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.LiquidationFeeAddition memory item
-  ) internal pure returns (IAaveV4ConfigEngine.LiquidationFeeAddition[] memory arr) {
-    arr = new IAaveV4ConfigEngine.LiquidationFeeAddition[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.LiquidationFeeUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.LiquidationFeeUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.LiquidationFeeUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.SpokePause memory item
-  ) internal pure returns (IAaveV4ConfigEngine.SpokePause[] memory arr) {
-    arr = new IAaveV4ConfigEngine.SpokePause[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.SpokeFreeze memory item
-  ) internal pure returns (IAaveV4ConfigEngine.SpokeFreeze[] memory arr) {
-    arr = new IAaveV4ConfigEngine.SpokeFreeze[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.ReservePause memory item
-  ) internal pure returns (IAaveV4ConfigEngine.ReservePause[] memory arr) {
-    arr = new IAaveV4ConfigEngine.ReservePause[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.ReserveFreeze memory item
-  ) internal pure returns (IAaveV4ConfigEngine.ReserveFreeze[] memory arr) {
-    arr = new IAaveV4ConfigEngine.ReserveFreeze[](1);
-    arr[0] = item;
-  }
-
-  function _toArray(
-    IAaveV4ConfigEngine.PositionManagerUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.PositionManagerUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.PositionManagerUpdate[](1);
-    arr[0] = item;
-  }
-
-  // ============================================================
-  // Default struct helpers
-  // ============================================================
-
-  function _defaultReserveListing()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.ReserveListing memory)
-  {
-    return
-      IAaveV4ConfigEngine.ReserveListing({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        hub: HUB,
-        assetId: ASSET_ID,
-        priceSource: PRICE_SOURCE,
-        config: ISpoke.ReserveConfig({
-          collateralRisk: 5000,
-          paused: false,
-          frozen: false,
-          borrowable: true,
-          receiveSharesEnabled: true
-        }),
-        dynamicConfig: ISpoke.DynamicReserveConfig({
-          collateralFactor: 8000,
-          maxLiquidationBonus: 10500,
-          liquidationFee: 200
-        })
-      });
-  }
-
-  function _defaultReservePriceSourceUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.ReservePriceSourceUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.ReservePriceSourceUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        priceSource: PRICE_SOURCE
-      });
-  }
-
-  function _defaultDynamicReserveConfigAddition()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition memory)
-  {
-    return
-      IAaveV4ConfigEngine.DynamicReserveConfigAddition({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        dynamicConfig: ISpoke.DynamicReserveConfig({
-          collateralFactor: 8000,
-          maxLiquidationBonus: 10500,
-          liquidationFee: 200
-        })
-      });
-  }
-
-  function _defaultCollateralFactorAddition()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.CollateralFactorAddition memory)
-  {
-    return
-      IAaveV4ConfigEngine.CollateralFactorAddition({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        collateralFactor: 8000
-      });
-  }
-
-  function _defaultCollateralFactorUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.CollateralFactorUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.CollateralFactorUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        dynamicConfigKey: DYNAMIC_CONFIG_KEY,
-        collateralFactor: 9000
-      });
-  }
-
-  function _defaultMaxLiquidationBonusAddition()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.MaxLiquidationBonusAddition memory)
-  {
-    return
-      IAaveV4ConfigEngine.MaxLiquidationBonusAddition({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        maxLiquidationBonus: 10500
-      });
-  }
-
-  function _defaultMaxLiquidationBonusUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.MaxLiquidationBonusUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.MaxLiquidationBonusUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        dynamicConfigKey: DYNAMIC_CONFIG_KEY,
-        maxLiquidationBonus: 11000
-      });
-  }
-
-  function _defaultLiquidationFeeAddition()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.LiquidationFeeAddition memory)
-  {
-    return
-      IAaveV4ConfigEngine.LiquidationFeeAddition({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        liquidationFee: 300
-      });
-  }
-
-  function _defaultLiquidationFeeUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.LiquidationFeeUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.LiquidationFeeUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        dynamicConfigKey: DYNAMIC_CONFIG_KEY,
-        liquidationFee: 400
-      });
-  }
-
-  function _defaultSpokePause() internal view returns (IAaveV4ConfigEngine.SpokePause memory) {
-    return
-      IAaveV4ConfigEngine.SpokePause({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE
-      });
-  }
-
-  function _defaultSpokeFreeze() internal view returns (IAaveV4ConfigEngine.SpokeFreeze memory) {
-    return
-      IAaveV4ConfigEngine.SpokeFreeze({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE
-      });
-  }
-
-  function _defaultReservePause() internal view returns (IAaveV4ConfigEngine.ReservePause memory) {
-    return
-      IAaveV4ConfigEngine.ReservePause({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID
-      });
-  }
-
-  function _defaultReserveFreeze()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.ReserveFreeze memory)
-  {
-    return
-      IAaveV4ConfigEngine.ReserveFreeze({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID
-      });
-  }
-
-  function _defaultPositionManagerUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.PositionManagerUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.PositionManagerUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        positionManager: POSITION_MANAGER,
-        active: true
-      });
-  }
-
-  // ============================================================
-  // 1. executeSpokeReserveConfigUpdates
-  // ============================================================
-
   function test_executeSpokeReserveConfigUpdates_allSet() public {
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = _defaultReserveConfigUpdate();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, 5000);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, 5000);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdatePausedCalled(SPOKE, RESERVE_ID, false);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdatePausedCalled(SPOKE, RESERVE_ID, false);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateFrozenCalled(SPOKE, RESERVE_ID, false);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateFrozenCalled(SPOKE, RESERVE_ID, false);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateBorrowableCalled(SPOKE, RESERVE_ID, true);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateBorrowableCalled(SPOKE, RESERVE_ID, true);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateReceiveSharesEnabledCalled(SPOKE, RESERVE_ID, true);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateReceiveSharesEnabledCalled(SPOKE, RESERVE_ID, true);
 
-    engine.executeSpokeReserveConfigUpdates(_toArray(update));
+    engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
   }
 
   function test_executeSpokeReserveConfigUpdates_allKeepCurrent() public {
@@ -442,7 +46,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       });
 
     vm.recordLogs();
-    engine.executeSpokeReserveConfigUpdates(_toArray(update));
+    engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
@@ -459,11 +63,11 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         receiveSharesEnabled: EngineFlags.KEEP_CURRENT
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, 7500);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, 7500);
 
     vm.recordLogs();
-    engine.executeSpokeReserveConfigUpdates(_toArray(update));
+    engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 1);
   }
 
@@ -492,22 +96,26 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         receiveSharesEnabled: receiveSharesEnabled
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, collateralRisk);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, collateralRisk);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdatePausedCalled(SPOKE, RESERVE_ID, paused_);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdatePausedCalled(SPOKE, RESERVE_ID, paused_);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateFrozenCalled(SPOKE, RESERVE_ID, frozen_);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateFrozenCalled(SPOKE, RESERVE_ID, frozen_);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateBorrowableCalled(SPOKE, RESERVE_ID, borrowable_);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateBorrowableCalled(SPOKE, RESERVE_ID, borrowable_);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateReceiveSharesEnabledCalled(SPOKE, RESERVE_ID, receiveSharesEnabled_);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateReceiveSharesEnabledCalled(
+      SPOKE,
+      RESERVE_ID,
+      receiveSharesEnabled_
+    );
 
-    engine.executeSpokeReserveConfigUpdates(_toArray(update));
+    engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
   }
 
   function test_executeSpokeReserveConfigUpdates_revert() public {
@@ -515,21 +123,22 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.ReserveConfigUpdate memory update = _defaultReserveConfigUpdate();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeReserveConfigUpdates(_toArray(update));
+    vm.expectRevert(MockSpokeConfigurator.UpdateCollateralRiskReverted.selector);
+    engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
   }
-
-  // ============================================================
-  // 2. executeSpokeLiquidationConfigUpdates
-  // ============================================================
 
   function test_executeSpokeLiquidationConfigUpdates_allSet() public {
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory update = _defaultLiquidationConfigUpdate();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateLiquidationConfigCalled(SPOKE, uint128(1.05e18), uint64(0.95e18), uint16(10000));
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateLiquidationConfigCalled(
+      SPOKE,
+      uint128(1.05e18),
+      uint64(0.95e18),
+      uint16(10000)
+    );
 
-    engine.executeSpokeLiquidationConfigUpdates(_toArray(update));
+    engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
   }
 
   function test_executeSpokeLiquidationConfigUpdates_targetOnly() public {
@@ -542,11 +151,11 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationBonusFactor: EngineFlags.KEEP_CURRENT
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateLiquidationTargetHealthFactorCalled(SPOKE, 1.05e18);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateLiquidationTargetHealthFactorCalled(SPOKE, 1.05e18);
 
     vm.recordLogs();
-    engine.executeSpokeLiquidationConfigUpdates(_toArray(update));
+    engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 1);
   }
 
@@ -560,11 +169,11 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationBonusFactor: EngineFlags.KEEP_CURRENT
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateHealthFactorForMaxBonusCalled(SPOKE, 0.95e18);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateHealthFactorForMaxBonusCalled(SPOKE, 0.95e18);
 
     vm.recordLogs();
-    engine.executeSpokeLiquidationConfigUpdates(_toArray(update));
+    engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 1);
   }
 
@@ -578,11 +187,11 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationBonusFactor: 10000
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateLiquidationBonusFactorCalled(SPOKE, 10000);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateLiquidationBonusFactorCalled(SPOKE, 10000);
 
     vm.recordLogs();
-    engine.executeSpokeLiquidationConfigUpdates(_toArray(update));
+    engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 1);
   }
 
@@ -596,14 +205,14 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationBonusFactor: EngineFlags.KEEP_CURRENT
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateLiquidationTargetHealthFactorCalled(SPOKE, 1.05e18);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateLiquidationTargetHealthFactorCalled(SPOKE, 1.05e18);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateHealthFactorForMaxBonusCalled(SPOKE, 0.95e18);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateHealthFactorForMaxBonusCalled(SPOKE, 0.95e18);
 
     vm.recordLogs();
-    engine.executeSpokeLiquidationConfigUpdates(_toArray(update));
+    engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 2);
   }
 
@@ -618,7 +227,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       });
 
     vm.recordLogs();
-    engine.executeSpokeLiquidationConfigUpdates(_toArray(update));
+    engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
@@ -640,15 +249,15 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationBonusFactor: liquidationBonusFactor
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateLiquidationConfigCalled(
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateLiquidationConfigCalled(
       SPOKE,
       uint128(targetHealthFactor),
       uint64(healthFactorForMaxBonus),
       uint16(liquidationBonusFactor)
     );
 
-    engine.executeSpokeLiquidationConfigUpdates(_toArray(update));
+    engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
   }
 
   function test_executeSpokeLiquidationConfigUpdates_revert() public {
@@ -659,13 +268,9 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.LiquidationConfigUpdate memory update = _defaultLiquidationConfigUpdate();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeLiquidationConfigUpdates(_toArray(update));
+    vm.expectRevert(MockSpokeConfigurator.UpdateLiquidationConfigReverted.selector);
+    engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
   }
-
-  // ============================================================
-  // 3. executeSpokeDynamicReserveConfigUpdates
-  // ============================================================
 
   function _setupDynamicReserveConfig(
     uint16 collateralFactor,
@@ -689,8 +294,8 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate
       memory update = _defaultDynamicReserveConfigUpdate();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateDynamicReserveConfigCalled(
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateDynamicReserveConfigCalled(
       address(mockSpokeReader),
       RESERVE_ID,
       uint32(DYNAMIC_CONFIG_KEY),
@@ -699,7 +304,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       1000
     );
 
-    engine.executeSpokeDynamicReserveConfigUpdates(_toArray(update));
+    engine.executeSpokeDynamicReserveConfigUpdates(_toDynamicReserveConfigUpdateArray(update));
   }
 
   function test_executeSpokeDynamicReserveConfigUpdates_allKeepCurrent() public {
@@ -718,7 +323,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     // When all fields are KEEP_CURRENT the external write call should be skipped entirely.
     vm.recordLogs();
-    engine.executeSpokeDynamicReserveConfigUpdates(_toArray(update));
+    engine.executeSpokeDynamicReserveConfigUpdates(_toDynamicReserveConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
@@ -736,8 +341,8 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationFee: 500
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateDynamicReserveConfigCalled(
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateDynamicReserveConfigCalled(
       address(mockSpokeReader),
       RESERVE_ID,
       uint32(DYNAMIC_CONFIG_KEY),
@@ -746,7 +351,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       500
     );
 
-    engine.executeSpokeDynamicReserveConfigUpdates(_toArray(update));
+    engine.executeSpokeDynamicReserveConfigUpdates(_toDynamicReserveConfigUpdateArray(update));
   }
 
   function test_executeSpokeDynamicReserveConfigUpdates_revertReader() public {
@@ -756,7 +361,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       memory update = _defaultDynamicReserveConfigUpdate();
 
     vm.expectRevert('MOCK_READ_REVERT');
-    engine.executeSpokeDynamicReserveConfigUpdates(_toArray(update));
+    engine.executeSpokeDynamicReserveConfigUpdates(_toDynamicReserveConfigUpdateArray(update));
   }
 
   function test_executeSpokeDynamicReserveConfigUpdates_revertConfigurator() public {
@@ -770,19 +375,15 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate
       memory update = _defaultDynamicReserveConfigUpdate();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeDynamicReserveConfigUpdates(_toArray(update));
+    vm.expectRevert(MockSpokeConfigurator.UpdateDynamicReserveConfigReverted.selector);
+    engine.executeSpokeDynamicReserveConfigUpdates(_toDynamicReserveConfigUpdateArray(update));
   }
-
-  // ============================================================
-  // 4. executeSpokeReserveListings
-  // ============================================================
 
   function test_executeSpokeReserveListings_concrete() public {
     IAaveV4ConfigEngine.ReserveListing memory listing = _defaultReserveListing();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit AddReserveCalled(
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.AddReserveCalled(
       SPOKE,
       HUB,
       ASSET_ID,
@@ -797,7 +398,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       200
     );
 
-    engine.executeSpokeReserveListings(_toArray(listing));
+    engine.executeSpokeReserveListings(_toReserveListingArray(listing));
   }
 
   function testFuzz_executeSpokeReserveListings(
@@ -830,8 +431,8 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       })
     });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit AddReserveCalled(
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.AddReserveCalled(
       SPOKE,
       HUB,
       ASSET_ID,
@@ -846,7 +447,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       liquidationFee
     );
 
-    engine.executeSpokeReserveListings(_toArray(listing));
+    engine.executeSpokeReserveListings(_toReserveListingArray(listing));
   }
 
   function test_executeSpokeReserveListings_revert() public {
@@ -854,21 +455,17 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.ReserveListing memory listing = _defaultReserveListing();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeReserveListings(_toArray(listing));
+    vm.expectRevert(MockSpokeConfigurator.AddReserveReverted.selector);
+    engine.executeSpokeReserveListings(_toReserveListingArray(listing));
   }
-
-  // ============================================================
-  // 5. executeSpokeReservePriceSourceUpdates
-  // ============================================================
 
   function test_executeSpokeReservePriceSourceUpdates_concrete() public {
     IAaveV4ConfigEngine.ReservePriceSourceUpdate memory update = _defaultReservePriceSourceUpdate();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateReservePriceSourceCalled(SPOKE, RESERVE_ID, PRICE_SOURCE);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(SPOKE, RESERVE_ID, PRICE_SOURCE);
 
-    engine.executeSpokeReservePriceSourceUpdates(_toArray(update));
+    engine.executeSpokeReservePriceSourceUpdates(_toReservePriceSourceUpdateArray(update));
   }
 
   function testFuzz_executeSpokeReservePriceSourceUpdates(
@@ -883,10 +480,10 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         priceSource: priceSource
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateReservePriceSourceCalled(SPOKE, reserveId, priceSource);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(SPOKE, reserveId, priceSource);
 
-    engine.executeSpokeReservePriceSourceUpdates(_toArray(update));
+    engine.executeSpokeReservePriceSourceUpdates(_toReservePriceSourceUpdateArray(update));
   }
 
   function test_executeSpokeReservePriceSourceUpdates_revert() public {
@@ -897,22 +494,20 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.ReservePriceSourceUpdate memory update = _defaultReservePriceSourceUpdate();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeReservePriceSourceUpdates(_toArray(update));
+    vm.expectRevert(MockSpokeConfigurator.UpdateReservePriceSourceReverted.selector);
+    engine.executeSpokeReservePriceSourceUpdates(_toReservePriceSourceUpdateArray(update));
   }
-
-  // ============================================================
-  // 6. executeSpokeDynamicReserveConfigAdditions
-  // ============================================================
 
   function test_executeSpokeDynamicReserveConfigAdditions_concrete() public {
     IAaveV4ConfigEngine.DynamicReserveConfigAddition
       memory addition = _defaultDynamicReserveConfigAddition();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit AddDynamicReserveConfigCalled(SPOKE, RESERVE_ID, 8000, 10500, 200);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.AddDynamicReserveConfigCalled(SPOKE, RESERVE_ID, 8000, 10500, 200);
 
-    engine.executeSpokeDynamicReserveConfigAdditions(_toArray(addition));
+    engine.executeSpokeDynamicReserveConfigAdditions(
+      _toDynamicReserveConfigAdditionArray(addition)
+    );
   }
 
   function testFuzz_executeSpokeDynamicReserveConfigAdditions(
@@ -932,8 +527,8 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         })
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit AddDynamicReserveConfigCalled(
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.AddDynamicReserveConfigCalled(
       SPOKE,
       RESERVE_ID,
       collateralFactor,
@@ -941,7 +536,9 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       liquidationFee
     );
 
-    engine.executeSpokeDynamicReserveConfigAdditions(_toArray(addition));
+    engine.executeSpokeDynamicReserveConfigAdditions(
+      _toDynamicReserveConfigAdditionArray(addition)
+    );
   }
 
   function test_executeSpokeDynamicReserveConfigAdditions_revert() public {
@@ -953,22 +550,20 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.DynamicReserveConfigAddition
       memory addition = _defaultDynamicReserveConfigAddition();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeDynamicReserveConfigAdditions(_toArray(addition));
+    vm.expectRevert(MockSpokeConfigurator.AddDynamicReserveConfigReverted.selector);
+    engine.executeSpokeDynamicReserveConfigAdditions(
+      _toDynamicReserveConfigAdditionArray(addition)
+    );
   }
-
-  // ============================================================
-  // 7. executeSpokeCollateralFactorAdditions
-  // ============================================================
 
   function test_executeSpokeCollateralFactorAdditions_concrete() public {
     IAaveV4ConfigEngine.CollateralFactorAddition
       memory addition = _defaultCollateralFactorAddition();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit AddCollateralFactorCalled(SPOKE, RESERVE_ID, 8000);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.AddCollateralFactorCalled(SPOKE, RESERVE_ID, 8000);
 
-    engine.executeSpokeCollateralFactorAdditions(_toArray(addition));
+    engine.executeSpokeCollateralFactorAdditions(_toCollateralFactorAdditionArray(addition));
   }
 
   function testFuzz_executeSpokeCollateralFactorAdditions(uint256 collateralFactor) public {
@@ -982,10 +577,14 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         collateralFactor: collateralFactor
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit AddCollateralFactorCalled(SPOKE, RESERVE_ID, uint16(collateralFactor));
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.AddCollateralFactorCalled(
+      SPOKE,
+      RESERVE_ID,
+      uint16(collateralFactor)
+    );
 
-    engine.executeSpokeCollateralFactorAdditions(_toArray(addition));
+    engine.executeSpokeCollateralFactorAdditions(_toCollateralFactorAdditionArray(addition));
   }
 
   function test_executeSpokeCollateralFactorAdditions_revert() public {
@@ -994,21 +593,22 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.CollateralFactorAddition
       memory addition = _defaultCollateralFactorAddition();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeCollateralFactorAdditions(_toArray(addition));
+    vm.expectRevert(MockSpokeConfigurator.AddCollateralFactorReverted.selector);
+    engine.executeSpokeCollateralFactorAdditions(_toCollateralFactorAdditionArray(addition));
   }
-
-  // ============================================================
-  // 8. executeSpokeCollateralFactorUpdates
-  // ============================================================
 
   function test_executeSpokeCollateralFactorUpdates_concrete() public {
     IAaveV4ConfigEngine.CollateralFactorUpdate memory update = _defaultCollateralFactorUpdate();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateCollateralFactorCalled(SPOKE, RESERVE_ID, uint32(DYNAMIC_CONFIG_KEY), 9000);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateCollateralFactorCalled(
+      SPOKE,
+      RESERVE_ID,
+      uint32(DYNAMIC_CONFIG_KEY),
+      9000
+    );
 
-    engine.executeSpokeCollateralFactorUpdates(_toArray(update));
+    engine.executeSpokeCollateralFactorUpdates(_toCollateralFactorUpdateArray(update));
   }
 
   function testFuzz_executeSpokeCollateralFactorUpdates(
@@ -1027,15 +627,15 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         collateralFactor: collateralFactor
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateCollateralFactorCalled(
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateCollateralFactorCalled(
       SPOKE,
       RESERVE_ID,
       uint32(dynamicConfigKey),
       uint16(collateralFactor)
     );
 
-    engine.executeSpokeCollateralFactorUpdates(_toArray(update));
+    engine.executeSpokeCollateralFactorUpdates(_toCollateralFactorUpdateArray(update));
   }
 
   function test_executeSpokeCollateralFactorUpdates_revert() public {
@@ -1043,22 +643,18 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.CollateralFactorUpdate memory update = _defaultCollateralFactorUpdate();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeCollateralFactorUpdates(_toArray(update));
+    vm.expectRevert(MockSpokeConfigurator.UpdateCollateralFactorReverted.selector);
+    engine.executeSpokeCollateralFactorUpdates(_toCollateralFactorUpdateArray(update));
   }
-
-  // ============================================================
-  // 9. executeSpokeMaxLiquidationBonusAdditions
-  // ============================================================
 
   function test_executeSpokeMaxLiquidationBonusAdditions_concrete() public {
     IAaveV4ConfigEngine.MaxLiquidationBonusAddition
       memory addition = _defaultMaxLiquidationBonusAddition();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit AddMaxLiquidationBonusCalled(SPOKE, RESERVE_ID, 10500);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.AddMaxLiquidationBonusCalled(SPOKE, RESERVE_ID, 10500);
 
-    engine.executeSpokeMaxLiquidationBonusAdditions(_toArray(addition));
+    engine.executeSpokeMaxLiquidationBonusAdditions(_toMaxLiquidationBonusAdditionArray(addition));
   }
 
   function testFuzz_executeSpokeMaxLiquidationBonusAdditions(uint256 maxLiquidationBonus) public {
@@ -1070,10 +666,10 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         maxLiquidationBonus: maxLiquidationBonus
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit AddMaxLiquidationBonusCalled(SPOKE, RESERVE_ID, maxLiquidationBonus);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.AddMaxLiquidationBonusCalled(SPOKE, RESERVE_ID, maxLiquidationBonus);
 
-    engine.executeSpokeMaxLiquidationBonusAdditions(_toArray(addition));
+    engine.executeSpokeMaxLiquidationBonusAdditions(_toMaxLiquidationBonusAdditionArray(addition));
   }
 
   function test_executeSpokeMaxLiquidationBonusAdditions_revert() public {
@@ -1082,22 +678,23 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.MaxLiquidationBonusAddition
       memory addition = _defaultMaxLiquidationBonusAddition();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeMaxLiquidationBonusAdditions(_toArray(addition));
+    vm.expectRevert(MockSpokeConfigurator.AddMaxLiquidationBonusReverted.selector);
+    engine.executeSpokeMaxLiquidationBonusAdditions(_toMaxLiquidationBonusAdditionArray(addition));
   }
-
-  // ============================================================
-  // 10. executeSpokeMaxLiquidationBonusUpdates
-  // ============================================================
 
   function test_executeSpokeMaxLiquidationBonusUpdates_concrete() public {
     IAaveV4ConfigEngine.MaxLiquidationBonusUpdate
       memory update = _defaultMaxLiquidationBonusUpdate();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateMaxLiquidationBonusCalled(SPOKE, RESERVE_ID, uint32(DYNAMIC_CONFIG_KEY), 11000);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateMaxLiquidationBonusCalled(
+      SPOKE,
+      RESERVE_ID,
+      uint32(DYNAMIC_CONFIG_KEY),
+      11000
+    );
 
-    engine.executeSpokeMaxLiquidationBonusUpdates(_toArray(update));
+    engine.executeSpokeMaxLiquidationBonusUpdates(_toMaxLiquidationBonusUpdateArray(update));
   }
 
   function testFuzz_executeSpokeMaxLiquidationBonusUpdates(
@@ -1115,15 +712,15 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         maxLiquidationBonus: maxLiquidationBonus
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateMaxLiquidationBonusCalled(
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateMaxLiquidationBonusCalled(
       SPOKE,
       RESERVE_ID,
       uint32(dynamicConfigKey),
       maxLiquidationBonus
     );
 
-    engine.executeSpokeMaxLiquidationBonusUpdates(_toArray(update));
+    engine.executeSpokeMaxLiquidationBonusUpdates(_toMaxLiquidationBonusUpdateArray(update));
   }
 
   function test_executeSpokeMaxLiquidationBonusUpdates_revert() public {
@@ -1135,21 +732,17 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     IAaveV4ConfigEngine.MaxLiquidationBonusUpdate
       memory update = _defaultMaxLiquidationBonusUpdate();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeMaxLiquidationBonusUpdates(_toArray(update));
+    vm.expectRevert(MockSpokeConfigurator.UpdateMaxLiquidationBonusReverted.selector);
+    engine.executeSpokeMaxLiquidationBonusUpdates(_toMaxLiquidationBonusUpdateArray(update));
   }
-
-  // ============================================================
-  // 11. executeSpokeLiquidationFeeAdditions
-  // ============================================================
 
   function test_executeSpokeLiquidationFeeAdditions_concrete() public {
     IAaveV4ConfigEngine.LiquidationFeeAddition memory addition = _defaultLiquidationFeeAddition();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit AddLiquidationFeeCalled(SPOKE, RESERVE_ID, 300);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.AddLiquidationFeeCalled(SPOKE, RESERVE_ID, 300);
 
-    engine.executeSpokeLiquidationFeeAdditions(_toArray(addition));
+    engine.executeSpokeLiquidationFeeAdditions(_toLiquidationFeeAdditionArray(addition));
   }
 
   function testFuzz_executeSpokeLiquidationFeeAdditions(uint256 liquidationFee) public {
@@ -1161,10 +754,10 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationFee: liquidationFee
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit AddLiquidationFeeCalled(SPOKE, RESERVE_ID, liquidationFee);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.AddLiquidationFeeCalled(SPOKE, RESERVE_ID, liquidationFee);
 
-    engine.executeSpokeLiquidationFeeAdditions(_toArray(addition));
+    engine.executeSpokeLiquidationFeeAdditions(_toLiquidationFeeAdditionArray(addition));
   }
 
   function test_executeSpokeLiquidationFeeAdditions_revert() public {
@@ -1172,21 +765,22 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.LiquidationFeeAddition memory addition = _defaultLiquidationFeeAddition();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeLiquidationFeeAdditions(_toArray(addition));
+    vm.expectRevert(MockSpokeConfigurator.AddLiquidationFeeReverted.selector);
+    engine.executeSpokeLiquidationFeeAdditions(_toLiquidationFeeAdditionArray(addition));
   }
-
-  // ============================================================
-  // 12. executeSpokeLiquidationFeeUpdates
-  // ============================================================
 
   function test_executeSpokeLiquidationFeeUpdates_concrete() public {
     IAaveV4ConfigEngine.LiquidationFeeUpdate memory update = _defaultLiquidationFeeUpdate();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateLiquidationFeeCalled(SPOKE, RESERVE_ID, uint32(DYNAMIC_CONFIG_KEY), 400);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateLiquidationFeeCalled(
+      SPOKE,
+      RESERVE_ID,
+      uint32(DYNAMIC_CONFIG_KEY),
+      400
+    );
 
-    engine.executeSpokeLiquidationFeeUpdates(_toArray(update));
+    engine.executeSpokeLiquidationFeeUpdates(_toLiquidationFeeUpdateArray(update));
   }
 
   function testFuzz_executeSpokeLiquidationFeeUpdates(
@@ -1204,10 +798,15 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationFee: liquidationFee
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdateLiquidationFeeCalled(SPOKE, RESERVE_ID, uint32(dynamicConfigKey), liquidationFee);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateLiquidationFeeCalled(
+      SPOKE,
+      RESERVE_ID,
+      uint32(dynamicConfigKey),
+      liquidationFee
+    );
 
-    engine.executeSpokeLiquidationFeeUpdates(_toArray(update));
+    engine.executeSpokeLiquidationFeeUpdates(_toLiquidationFeeUpdateArray(update));
   }
 
   function test_executeSpokeLiquidationFeeUpdates_revert() public {
@@ -1215,21 +814,17 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.LiquidationFeeUpdate memory update = _defaultLiquidationFeeUpdate();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeLiquidationFeeUpdates(_toArray(update));
+    vm.expectRevert(MockSpokeConfigurator.UpdateLiquidationFeeReverted.selector);
+    engine.executeSpokeLiquidationFeeUpdates(_toLiquidationFeeUpdateArray(update));
   }
-
-  // ============================================================
-  // 13. executeSpokeAllReservesPauses
-  // ============================================================
 
   function test_executeSpokeAllReservesPauses_concrete() public {
     IAaveV4ConfigEngine.SpokePause memory pause = _defaultSpokePause();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit PauseAllReservesCalled(SPOKE);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.PauseAllReservesCalled(SPOKE);
 
-    engine.executeSpokeAllReservesPauses(_toArray(pause));
+    engine.executeSpokeAllReservesPauses(_toSpokePauseArray(pause));
   }
 
   function testFuzz_executeSpokeAllReservesPauses(address spoke) public {
@@ -1238,10 +833,10 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       spoke: spoke
     });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit PauseAllReservesCalled(spoke);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.PauseAllReservesCalled(spoke);
 
-    engine.executeSpokeAllReservesPauses(_toArray(pause));
+    engine.executeSpokeAllReservesPauses(_toSpokePauseArray(pause));
   }
 
   function test_executeSpokeAllReservesPauses_revert() public {
@@ -1249,21 +844,17 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.SpokePause memory pause = _defaultSpokePause();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeAllReservesPauses(_toArray(pause));
+    vm.expectRevert(MockSpokeConfigurator.PauseAllReservesReverted.selector);
+    engine.executeSpokeAllReservesPauses(_toSpokePauseArray(pause));
   }
-
-  // ============================================================
-  // 14. executeSpokeAllReservesFreezes
-  // ============================================================
 
   function test_executeSpokeAllReservesFreezes_concrete() public {
     IAaveV4ConfigEngine.SpokeFreeze memory freeze = _defaultSpokeFreeze();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit FreezeAllReservesCalled(SPOKE);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.FreezeAllReservesCalled(SPOKE);
 
-    engine.executeSpokeAllReservesFreezes(_toArray(freeze));
+    engine.executeSpokeAllReservesFreezes(_toSpokeFreezeArray(freeze));
   }
 
   function testFuzz_executeSpokeAllReservesFreezes(address spoke) public {
@@ -1272,10 +863,10 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       spoke: spoke
     });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit FreezeAllReservesCalled(spoke);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.FreezeAllReservesCalled(spoke);
 
-    engine.executeSpokeAllReservesFreezes(_toArray(freeze));
+    engine.executeSpokeAllReservesFreezes(_toSpokeFreezeArray(freeze));
   }
 
   function test_executeSpokeAllReservesFreezes_revert() public {
@@ -1283,21 +874,17 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.SpokeFreeze memory freeze = _defaultSpokeFreeze();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeAllReservesFreezes(_toArray(freeze));
+    vm.expectRevert(MockSpokeConfigurator.FreezeAllReservesReverted.selector);
+    engine.executeSpokeAllReservesFreezes(_toSpokeFreezeArray(freeze));
   }
-
-  // ============================================================
-  // 15. executeSpokeReservePauses
-  // ============================================================
 
   function test_executeSpokeReservePauses_concrete() public {
     IAaveV4ConfigEngine.ReservePause memory pause = _defaultReservePause();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit PauseReserveCalled(SPOKE, RESERVE_ID);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.PauseReserveCalled(SPOKE, RESERVE_ID);
 
-    engine.executeSpokeReservePauses(_toArray(pause));
+    engine.executeSpokeReservePauses(_toReservePauseArray(pause));
   }
 
   function testFuzz_executeSpokeReservePauses(uint256 reserveId) public {
@@ -1307,10 +894,10 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       reserveId: reserveId
     });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit PauseReserveCalled(SPOKE, reserveId);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.PauseReserveCalled(SPOKE, reserveId);
 
-    engine.executeSpokeReservePauses(_toArray(pause));
+    engine.executeSpokeReservePauses(_toReservePauseArray(pause));
   }
 
   function test_executeSpokeReservePauses_revert() public {
@@ -1318,21 +905,17 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.ReservePause memory pause = _defaultReservePause();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeReservePauses(_toArray(pause));
+    vm.expectRevert(MockSpokeConfigurator.PauseReserveReverted.selector);
+    engine.executeSpokeReservePauses(_toReservePauseArray(pause));
   }
-
-  // ============================================================
-  // 16. executeSpokeReserveFreezes
-  // ============================================================
 
   function test_executeSpokeReserveFreezes_concrete() public {
     IAaveV4ConfigEngine.ReserveFreeze memory freeze = _defaultReserveFreeze();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit FreezeReserveCalled(SPOKE, RESERVE_ID);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.FreezeReserveCalled(SPOKE, RESERVE_ID);
 
-    engine.executeSpokeReserveFreezes(_toArray(freeze));
+    engine.executeSpokeReserveFreezes(_toReserveFreezeArray(freeze));
   }
 
   function testFuzz_executeSpokeReserveFreezes(uint256 reserveId) public {
@@ -1342,10 +925,10 @@ contract SpokeEngineTest is BaseConfigEngineTest {
       reserveId: reserveId
     });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit FreezeReserveCalled(SPOKE, reserveId);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.FreezeReserveCalled(SPOKE, reserveId);
 
-    engine.executeSpokeReserveFreezes(_toArray(freeze));
+    engine.executeSpokeReserveFreezes(_toReserveFreezeArray(freeze));
   }
 
   function test_executeSpokeReserveFreezes_revert() public {
@@ -1353,21 +936,17 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.ReserveFreeze memory freeze = _defaultReserveFreeze();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokeReserveFreezes(_toArray(freeze));
+    vm.expectRevert(MockSpokeConfigurator.FreezeReserveReverted.selector);
+    engine.executeSpokeReserveFreezes(_toReserveFreezeArray(freeze));
   }
-
-  // ============================================================
-  // 17. executeSpokePositionManagerUpdates
-  // ============================================================
 
   function test_executeSpokePositionManagerUpdates_concrete() public {
     IAaveV4ConfigEngine.PositionManagerUpdate memory update = _defaultPositionManagerUpdate();
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdatePositionManagerCalled(SPOKE, POSITION_MANAGER, true);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdatePositionManagerCalled(SPOKE, POSITION_MANAGER, true);
 
-    engine.executeSpokePositionManagerUpdates(_toArray(update));
+    engine.executeSpokePositionManagerUpdates(_toPositionManagerUpdateArray(update));
   }
 
   function testFuzz_executeSpokePositionManagerUpdates(
@@ -1382,10 +961,10 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         active: active
       });
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
-    emit UpdatePositionManagerCalled(SPOKE, positionManager, active);
+    vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdatePositionManagerCalled(SPOKE, positionManager, active);
 
-    engine.executeSpokePositionManagerUpdates(_toArray(update));
+    engine.executeSpokePositionManagerUpdates(_toPositionManagerUpdateArray(update));
   }
 
   function test_executeSpokePositionManagerUpdates_revert() public {
@@ -1393,7 +972,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
 
     IAaveV4ConfigEngine.PositionManagerUpdate memory update = _defaultPositionManagerUpdate();
 
-    vm.expectRevert('MOCK_REVERT');
-    engine.executeSpokePositionManagerUpdates(_toArray(update));
+    vm.expectRevert(MockSpokeConfigurator.UpdatePositionManagerReverted.selector);
+    engine.executeSpokePositionManagerUpdates(_toPositionManagerUpdateArray(update));
   }
 }

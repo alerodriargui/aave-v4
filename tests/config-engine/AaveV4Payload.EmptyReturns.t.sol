@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/IAaveV4ConfigEngine.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @dev Minimal concrete payload that does NOT override any virtual methods.
 ///   Calling execute() on this exercises every base virtual method returning empty arrays,
@@ -114,7 +114,6 @@ contract ExposedAaveV4Payload is AaveV4Payload {
     return hubSpokeCapsResets();
   }
 
-  // Spoke getters
   function exposed_spokeReserveListings()
     external
     returns (IAaveV4ConfigEngine.ReserveListing[] memory)
@@ -234,7 +233,6 @@ contract ExposedAaveV4Payload is AaveV4Payload {
     return spokePositionManagerUpdates();
   }
 
-  // Access manager getters
   function exposed_accessManagerRoleGrants()
     external
     returns (IAaveV4ConfigEngine.RoleGrant[] memory)
@@ -422,10 +420,6 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     minimal.execute();
   }
 
-  // ============================================================
-  // Hub virtual methods return empty arrays
-  // ============================================================
-
   function test_hubAssetListings_returnsEmpty() public {
     assertEq(exposed.exposed_hubAssetListings().length, 0);
   }
@@ -485,10 +479,6 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
   function test_hubSpokeCapsResets_returnsEmpty() public {
     assertEq(exposed.exposed_hubSpokeCapsResets().length, 0);
   }
-
-  // ============================================================
-  // Spoke virtual methods return empty arrays
-  // ============================================================
 
   function test_spokeReserveListings_returnsEmpty() public {
     assertEq(exposed.exposed_spokeReserveListings().length, 0);
@@ -558,10 +548,6 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     assertEq(exposed.exposed_spokePositionManagerUpdates().length, 0);
   }
 
-  // ============================================================
-  // Access Manager virtual methods return empty arrays
-  // ============================================================
-
   function test_accessManagerRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerRoleGrants().length, 0);
   }
@@ -597,10 +583,6 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
   function test_accessManagerTargetAdminDelayUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerTargetAdminDelayUpdates().length, 0);
   }
-
-  // ============================================================
-  // Convenience role grant virtual methods return empty arrays
-  // ============================================================
 
   function test_hubConfiguratorFeeUpdaterRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_hubConfiguratorFeeUpdaterRoleGrants().length, 0);

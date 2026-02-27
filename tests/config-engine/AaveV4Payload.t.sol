@@ -6,7 +6,7 @@ import {VmSafe} from 'forge-std/Vm.sol';
 import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
 import {AaveV4PayloadWrapper} from 'tests/mocks/config-engine/AaveV4PayloadWrapper.sol';
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
-import {IAaveV4ConfigEngine} from 'src/config-engine/IAaveV4ConfigEngine.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -47,7 +47,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubAssetHalts(halts);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.HaltAssetCalled(HUB, ASSET_ID);
 
     payload.execute();
@@ -61,7 +61,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeAllReservesPauses(pauses);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.PauseAllReservesCalled(SPOKE);
 
     payload.execute();
@@ -77,7 +77,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setAccessManagerRoleGrants(grants);
 
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       ACCOUNT,
@@ -116,13 +116,13 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setAccessManagerRoleGrants(grants);
 
     // Expect all 3 events
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.HaltAssetCalled(HUB, ASSET_ID);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.PauseAllReservesCalled(SPOKE);
 
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       ACCOUNT,
@@ -170,7 +170,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     mockHubConfigurator.setShouldRevert(IHubConfigurator.haltAsset.selector, true);
 
-    vm.expectRevert('MOCK_REVERT');
+    vm.expectRevert(MockHubConfigurator.HaltAssetReverted.selector);
     payload.execute();
   }
 
@@ -188,7 +188,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubConfiguratorFeeUpdaterRoleGrants(grants);
 
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       ACCOUNT,
@@ -198,16 +198,12 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  // ============================================================
-  // Hub action coverage tests
-  // ============================================================
-
   function test_execute_hubAssetListings() public {
     IAaveV4ConfigEngine.AssetListing[] memory listings = new IAaveV4ConfigEngine.AssetListing[](1);
     listings[0] = _defaultAssetListing();
     payload.setHubAssetListings(listings);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.AddAssetCalled(
       HUB,
       UNDERLYING,
@@ -226,7 +222,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     updates[0] = _defaultFeeConfigUpdate();
     payload.setHubFeeConfigUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateFeeConfigCalled(HUB, ASSET_ID, LIQUIDITY_FEE, FEE_RECEIVER);
 
     payload.execute();
@@ -238,7 +234,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     updates[0] = _defaultInterestRateUpdate();
     payload.setHubInterestRateUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateInterestRateStrategyCalled(HUB, ASSET_ID, IR_STRATEGY, IR_DATA);
 
     payload.execute();
@@ -255,7 +251,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubReinvestmentControllerUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateReinvestmentControllerCalled(
       HUB,
       ASSET_ID,
@@ -285,7 +281,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubSpokeAdditions(additions);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.AddSpokeCalled(HUB, SPOKE, ASSET_ID, config);
 
     payload.execute();
@@ -313,7 +309,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubSpokeToAssetsAdditions(additions);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.AddSpokeToAssetsCalled(HUB, SPOKE, assetIds, configs);
 
     payload.execute();
@@ -325,7 +321,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     updates[0] = _defaultSpokeCapsUpdate();
     payload.setHubSpokeCapsUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeCapsCalled(HUB, ASSET_ID, SPOKE, 1000, 500);
 
     payload.execute();
@@ -343,7 +339,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubSpokeRiskPremiumThresholdUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeRiskPremiumThresholdCalled(HUB, ASSET_ID, SPOKE, 200);
 
     payload.execute();
@@ -355,9 +351,9 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     updates[0] = _defaultSpokeStatusUpdate();
     payload.setHubSpokeStatusUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeActiveCalled(HUB, ASSET_ID, SPOKE, true);
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeHaltedCalled(HUB, ASSET_ID, SPOKE, false);
 
     payload.execute();
@@ -373,7 +369,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubAssetDeactivations(deactivations);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.DeactivateAssetCalled(HUB, ASSET_ID);
 
     payload.execute();
@@ -390,7 +386,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubAssetCapsResets(resets);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.ResetAssetCapsCalled(HUB, ASSET_ID);
 
     payload.execute();
@@ -405,7 +401,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubSpokeHalts(halts);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.HaltSpokeCalled(HUB, SPOKE);
 
     payload.execute();
@@ -421,7 +417,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubSpokeDeactivations(deactivations);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.DeactivateSpokeCalled(HUB, SPOKE);
 
     payload.execute();
@@ -438,15 +434,11 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubSpokeCapsResets(resets);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.ResetSpokeCapsCalled(HUB, SPOKE);
 
     payload.execute();
   }
-
-  // ============================================================
-  // Spoke action coverage tests
-  // ============================================================
 
   function test_execute_spokeReserveListings() public {
     IAaveV4ConfigEngine.ReserveListing[] memory listings = new IAaveV4ConfigEngine.ReserveListing[](
@@ -473,7 +465,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeReserveListings(listings);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.AddReserveCalled(
       SPOKE,
       HUB,
@@ -498,15 +490,15 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     updates[0] = _defaultReserveConfigUpdate();
     payload.setSpokeReserveConfigUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, 5000);
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdatePausedCalled(SPOKE, RESERVE_ID, false);
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateFrozenCalled(SPOKE, RESERVE_ID, false);
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateBorrowableCalled(SPOKE, RESERVE_ID, true);
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateReceiveSharesEnabledCalled(SPOKE, RESERVE_ID, true);
 
     payload.execute();
@@ -523,7 +515,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeReservePriceSourceUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(SPOKE, RESERVE_ID, PRICE_SOURCE);
 
     payload.execute();
@@ -535,7 +527,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     updates[0] = _defaultLiquidationConfigUpdate();
     payload.setSpokeLiquidationConfigUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateLiquidationConfigCalled(
       SPOKE,
       uint128(1.05e18),
@@ -561,7 +553,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeDynamicReserveConfigAdditions(additions);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.AddDynamicReserveConfigCalled(SPOKE, RESERVE_ID, 8000, 10500, 1000);
 
     payload.execute();
@@ -573,7 +565,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     updates[0] = _defaultDynamicReserveConfigUpdate();
     payload.setSpokeDynamicReserveConfigUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateDynamicReserveConfigCalled(
       address(mockSpokeReader),
       RESERVE_ID,
@@ -597,7 +589,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeCollateralFactorAdditions(additions);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.AddCollateralFactorCalled(SPOKE, RESERVE_ID, 8000);
 
     payload.execute();
@@ -615,7 +607,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeCollateralFactorUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateCollateralFactorCalled(
       SPOKE,
       RESERVE_ID,
@@ -637,7 +629,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeMaxLiquidationBonusAdditions(additions);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.AddMaxLiquidationBonusCalled(SPOKE, RESERVE_ID, 10500);
 
     payload.execute();
@@ -655,7 +647,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeMaxLiquidationBonusUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateMaxLiquidationBonusCalled(
       SPOKE,
       RESERVE_ID,
@@ -677,7 +669,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeLiquidationFeeAdditions(additions);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.AddLiquidationFeeCalled(SPOKE, RESERVE_ID, 1000);
 
     payload.execute();
@@ -695,7 +687,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeLiquidationFeeUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateLiquidationFeeCalled(
       SPOKE,
       RESERVE_ID,
@@ -714,7 +706,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeAllReservesFreezes(freezes);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.FreezeAllReservesCalled(SPOKE);
 
     payload.execute();
@@ -729,7 +721,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeReservePauses(pauses);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.PauseReserveCalled(SPOKE, RESERVE_ID);
 
     payload.execute();
@@ -744,7 +736,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeReserveFreezes(freezes);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.FreezeReserveCalled(SPOKE, RESERVE_ID);
 
     payload.execute();
@@ -761,15 +753,11 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokePositionManagerUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdatePositionManagerCalled(SPOKE, POSITION_MANAGER, true);
 
     payload.execute();
   }
-
-  // ============================================================
-  // Access manager action coverage tests
-  // ============================================================
 
   function test_execute_accessManagerRoleRevocations() public {
     IAaveV4ConfigEngine.RoleRevocation[]
@@ -781,7 +769,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setAccessManagerRoleRevocations(revocations);
 
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.RevokeRoleCalled(
       Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       ACCOUNT
@@ -800,7 +788,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setAccessManagerRoleAdminUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.SetRoleAdminCalled(
       Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       Roles.HUB_CONFIGURATOR_ROLE
@@ -819,7 +807,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setAccessManagerRoleGuardianUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.SetRoleGuardianCalled(
       Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       Roles.HUB_FEE_MINTER_ROLE
@@ -841,7 +829,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setAccessManagerTargetFunctionRoleUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.SetTargetFunctionRoleCalled(
       TARGET,
       selectors,
@@ -861,7 +849,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setAccessManagerTargetClosedUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.SetTargetClosedCalled(TARGET, true);
 
     payload.execute();
@@ -877,7 +865,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setAccessManagerRoleLabelUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.LabelRoleCalled(
       Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       'FEE_UPDATER'
@@ -896,7 +884,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setAccessManagerGrantDelayUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.SetGrantDelayCalled(
       Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       3600
@@ -915,15 +903,11 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setAccessManagerTargetAdminDelayUpdates(updates);
 
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.SetTargetAdminDelayCalled(TARGET, 7200);
 
     payload.execute();
   }
-
-  // ============================================================
-  // Convenience role grant coverage tests
-  // ============================================================
 
   function _makeRoleGrantByName()
     internal
@@ -942,7 +926,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_hubConfiguratorReinvestmentUpdaterRoleGrants() public {
     payload.setHubConfiguratorReinvestmentUpdaterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE,
       ACCOUNT,
@@ -953,7 +937,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_hubConfiguratorAssetListerRoleGrants() public {
     payload.setHubConfiguratorAssetListerRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
       ACCOUNT,
@@ -964,7 +948,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_hubConfiguratorSpokeAdderRoleGrants() public {
     payload.setHubConfiguratorSpokeAdderRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE,
       ACCOUNT,
@@ -975,7 +959,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_hubConfiguratorInterestRateUpdaterRoleGrants() public {
     payload.setHubConfiguratorInterestRateUpdaterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
       ACCOUNT,
@@ -986,14 +970,14 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_hubConfiguratorHalterRoleGrants() public {
     payload.setHubConfiguratorHalterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_HALTER_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
   function test_execute_hubConfiguratorDeactivaterRoleGrants() public {
     payload.setHubConfiguratorDeactivaterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE,
       ACCOUNT,
@@ -1004,7 +988,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_hubConfiguratorCapsUpdaterRoleGrants() public {
     payload.setHubConfiguratorCapsUpdaterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_CAPS_UPDATER_ROLE,
       ACCOUNT,
@@ -1017,45 +1001,45 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setHubConfiguratorAllRoleGrants(_makeRoleGrantByName());
     // AllRoles grants 8 roles in order: FEE_UPDATER, REINVESTMENT, ASSET_LISTER, SPOKE_ADDER,
     //   INTEREST_RATE, HALTER, DEACTIVATER, CAPS_UPDATER
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_FEE_UPDATER_ROLE,
       ACCOUNT,
       0
     );
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE,
       ACCOUNT,
       0
     );
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
       ACCOUNT,
       0
     );
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE,
       ACCOUNT,
       0
     );
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE,
       ACCOUNT,
       0
     );
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_HALTER_ROLE, ACCOUNT, 0);
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_DEACTIVATER_ROLE,
       ACCOUNT,
       0
     );
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.HUB_CONFIGURATOR_CAPS_UPDATER_ROLE,
       ACCOUNT,
@@ -1066,7 +1050,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_spokeConfiguratorAdminRoleGrants() public {
     payload.setSpokeConfiguratorAdminRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
       ACCOUNT,
@@ -1077,7 +1061,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_spokeConfiguratorLiquidationUpdaterRoleGrants() public {
     payload.setSpokeConfiguratorLiquidationUpdaterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
       ACCOUNT,
@@ -1088,7 +1072,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_spokeConfiguratorReserveAdderRoleGrants() public {
     payload.setSpokeConfiguratorReserveAdderRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE,
       ACCOUNT,
@@ -1099,7 +1083,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_spokeConfiguratorFreezerRoleGrants() public {
     payload.setSpokeConfiguratorFreezerRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
       ACCOUNT,
@@ -1110,7 +1094,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
   function test_execute_spokeConfiguratorPauserRoleGrants() public {
     payload.setSpokeConfiguratorPauserRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
       ACCOUNT,
@@ -1122,31 +1106,31 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   function test_execute_spokeConfiguratorAllRoleGrants() public {
     payload.setSpokeConfiguratorAllRoleGrants(_makeRoleGrantByName());
     // AllRoles grants 5 roles in order: ADMIN, LIQUIDATION_UPDATER, RESERVE_ADDER, FREEZER, PAUSER
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
       ACCOUNT,
       0
     );
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
       ACCOUNT,
       0
     );
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE,
       ACCOUNT,
       0
     );
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
       ACCOUNT,
       0
     );
-    vm.expectEmit(true, true, true, true, address(mockAccessManager));
+    vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(
       Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
       ACCOUNT,
@@ -1155,18 +1139,10 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  // ============================================================
-  // Constructor validation
-  // ============================================================
-
   function test_constructor_revertsOnZeroAddress() public {
     vm.expectRevert(AaveV4Payload.InvalidConfigEngine.selector);
     new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(0)));
   }
-
-  // ============================================================
-  // Hub asset listing with explicit decimals
-  // ============================================================
 
   function test_execute_hubAssetListings_withDecimals() public {
     IAaveV4ConfigEngine.AssetListing[] memory listings = new IAaveV4ConfigEngine.AssetListing[](1);
@@ -1174,7 +1150,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     listings[0].decimals = 18;
     payload.setHubAssetListings(listings);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.AddAssetWithDecimalsCalled(
       HUB,
       UNDERLYING,
@@ -1187,10 +1163,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload.execute();
   }
-
-  // ============================================================
-  // Multi-element array tests
-  // ============================================================
 
   function test_execute_hubAssetHalts_multiElement() public {
     address hub2 = address(0x1002);
@@ -1207,9 +1179,9 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setHubAssetHalts(halts);
 
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.HaltAssetCalled(HUB, ASSET_ID);
-    vm.expectEmit(true, true, true, true, address(mockHubConfigurator));
+    vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.HaltAssetCalled(hub2, ASSET_ID + 1);
 
     payload.execute();
@@ -1229,9 +1201,9 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     });
     payload.setSpokeReservePauses(pauses);
 
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.PauseReserveCalled(SPOKE, RESERVE_ID);
-    vm.expectEmit(true, true, true, true, address(mockSpokeConfigurator));
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.PauseReserveCalled(SPOKE, RESERVE_ID + 1);
 
     payload.execute();

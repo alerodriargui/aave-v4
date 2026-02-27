@@ -5,11 +5,11 @@ pragma solidity ^0.8.0;
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 contract MockSpokeReader {
-  mapping(bytes32 => ISpoke.DynamicReserveConfig) private _configs;
+  string public constant REVERT_MSG = 'MOCK_READ_REVERT';
 
   bool public shouldRevertOnRead;
 
-  string public constant REVERT_MSG = 'MOCK_READ_REVERT';
+  mapping(bytes32 => ISpoke.DynamicReserveConfig) private _configs;
 
   function setShouldRevertOnRead(bool revert_) external {
     shouldRevertOnRead = revert_;

@@ -6,21 +6,8 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 contract MockSpokeConfigurator is ISpokeConfigurator {
-  // Per-function revert toggle
   mapping(bytes4 => bool) public shouldRevert;
 
-  string public constant REVERT_MSG = 'MOCK_REVERT';
-
-  function setShouldRevert(bytes4 selector, bool revert_) external {
-    shouldRevert[selector] = revert_;
-  }
-
-  modifier maybeRevert() {
-    if (shouldRevert[msg.sig]) revert(REVERT_MSG);
-    _;
-  }
-
-  // Events
   event UpdateReservePriceSourceCalled(address spoke, uint256 reserveId, address priceSource);
 
   event UpdateLiquidationTargetHealthFactorCalled(address spoke, uint256 targetHealthFactor);
@@ -119,41 +106,64 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
 
   event UpdatePositionManagerCalled(address spoke, address positionManager, bool active);
 
-  // Implementations
+  error UpdateReservePriceSourceReverted();
+  error UpdateLiquidationTargetHealthFactorReverted();
+  error UpdateHealthFactorForMaxBonusReverted();
+  error UpdateLiquidationBonusFactorReverted();
+  error UpdateLiquidationConfigReverted();
+  error AddReserveReverted();
+  error UpdatePausedReverted();
+  error UpdateFrozenReverted();
+  error UpdateBorrowableReverted();
+  error UpdateReceiveSharesEnabledReverted();
+  error UpdateCollateralRiskReverted();
+  error AddCollateralFactorReverted();
+  error UpdateCollateralFactorReverted();
+  error AddMaxLiquidationBonusReverted();
+  error UpdateMaxLiquidationBonusReverted();
+  error AddLiquidationFeeReverted();
+  error UpdateLiquidationFeeReverted();
+  error AddDynamicReserveConfigReverted();
+  error UpdateDynamicReserveConfigReverted();
+  error PauseAllReservesReverted();
+  error FreezeAllReservesReverted();
+  error PauseReserveReverted();
+  error FreezeReserveReverted();
+  error UpdatePositionManagerReverted();
+
+  function setShouldRevert(bytes4 selector, bool revert_) external {
+    shouldRevert[selector] = revert_;
+  }
 
   function updateReservePriceSource(
     address spoke,
     uint256 reserveId,
     address priceSource
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateReservePriceSourceReverted();
     emit UpdateReservePriceSourceCalled(spoke, reserveId, priceSource);
   }
 
-  function updateLiquidationTargetHealthFactor(
-    address spoke,
-    uint256 targetHealthFactor
-  ) external maybeRevert {
+  function updateLiquidationTargetHealthFactor(address spoke, uint256 targetHealthFactor) external {
+    if (shouldRevert[msg.sig]) revert UpdateLiquidationTargetHealthFactorReverted();
     emit UpdateLiquidationTargetHealthFactorCalled(spoke, targetHealthFactor);
   }
 
-  function updateHealthFactorForMaxBonus(
-    address spoke,
-    uint256 healthFactorForMaxBonus
-  ) external maybeRevert {
+  function updateHealthFactorForMaxBonus(address spoke, uint256 healthFactorForMaxBonus) external {
+    if (shouldRevert[msg.sig]) revert UpdateHealthFactorForMaxBonusReverted();
     emit UpdateHealthFactorForMaxBonusCalled(spoke, healthFactorForMaxBonus);
   }
 
-  function updateLiquidationBonusFactor(
-    address spoke,
-    uint256 liquidationBonusFactor
-  ) external maybeRevert {
+  function updateLiquidationBonusFactor(address spoke, uint256 liquidationBonusFactor) external {
+    if (shouldRevert[msg.sig]) revert UpdateLiquidationBonusFactorReverted();
     emit UpdateLiquidationBonusFactorCalled(spoke, liquidationBonusFactor);
   }
 
   function updateLiquidationConfig(
     address spoke,
     ISpoke.LiquidationConfig calldata liquidationConfig
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateLiquidationConfigReverted();
     emit UpdateLiquidationConfigCalled(
       spoke,
       liquidationConfig.targetHealthFactor,
@@ -169,7 +179,8 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     address priceSource,
     ISpoke.ReserveConfig calldata config,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external maybeRevert returns (uint256) {
+  ) external returns (uint256) {
+    if (shouldRevert[msg.sig]) revert AddReserveReverted();
     emit AddReserveCalled(
       spoke,
       hub,
@@ -187,19 +198,18 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     return 0;
   }
 
-  function updatePaused(address spoke, uint256 reserveId, bool paused) external maybeRevert {
+  function updatePaused(address spoke, uint256 reserveId, bool paused) external {
+    if (shouldRevert[msg.sig]) revert UpdatePausedReverted();
     emit UpdatePausedCalled(spoke, reserveId, paused);
   }
 
-  function updateFrozen(address spoke, uint256 reserveId, bool frozen) external maybeRevert {
+  function updateFrozen(address spoke, uint256 reserveId, bool frozen) external {
+    if (shouldRevert[msg.sig]) revert UpdateFrozenReverted();
     emit UpdateFrozenCalled(spoke, reserveId, frozen);
   }
 
-  function updateBorrowable(
-    address spoke,
-    uint256 reserveId,
-    bool borrowable
-  ) external maybeRevert {
+  function updateBorrowable(address spoke, uint256 reserveId, bool borrowable) external {
+    if (shouldRevert[msg.sig]) revert UpdateBorrowableReverted();
     emit UpdateBorrowableCalled(spoke, reserveId, borrowable);
   }
 
@@ -207,15 +217,13 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     bool receiveSharesEnabled
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateReceiveSharesEnabledReverted();
     emit UpdateReceiveSharesEnabledCalled(spoke, reserveId, receiveSharesEnabled);
   }
 
-  function updateCollateralRisk(
-    address spoke,
-    uint256 reserveId,
-    uint256 collateralRisk
-  ) external maybeRevert {
+  function updateCollateralRisk(address spoke, uint256 reserveId, uint256 collateralRisk) external {
+    if (shouldRevert[msg.sig]) revert UpdateCollateralRiskReverted();
     emit UpdateCollateralRiskCalled(spoke, reserveId, collateralRisk);
   }
 
@@ -223,7 +231,8 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint16 collateralFactor
-  ) external maybeRevert returns (uint32) {
+  ) external returns (uint32) {
+    if (shouldRevert[msg.sig]) revert AddCollateralFactorReverted();
     emit AddCollateralFactorCalled(spoke, reserveId, collateralFactor);
     return 0;
   }
@@ -233,7 +242,8 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     uint256 reserveId,
     uint32 dynamicConfigKey,
     uint16 collateralFactor
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateCollateralFactorReverted();
     emit UpdateCollateralFactorCalled(spoke, reserveId, dynamicConfigKey, collateralFactor);
   }
 
@@ -241,7 +251,8 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 maxLiquidationBonus
-  ) external maybeRevert returns (uint32) {
+  ) external returns (uint32) {
+    if (shouldRevert[msg.sig]) revert AddMaxLiquidationBonusReverted();
     emit AddMaxLiquidationBonusCalled(spoke, reserveId, maxLiquidationBonus);
     return 0;
   }
@@ -251,7 +262,8 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     uint256 reserveId,
     uint32 dynamicConfigKey,
     uint256 maxLiquidationBonus
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateMaxLiquidationBonusReverted();
     emit UpdateMaxLiquidationBonusCalled(spoke, reserveId, dynamicConfigKey, maxLiquidationBonus);
   }
 
@@ -259,7 +271,8 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     uint256 liquidationFee
-  ) external maybeRevert returns (uint32) {
+  ) external returns (uint32) {
+    if (shouldRevert[msg.sig]) revert AddLiquidationFeeReverted();
     emit AddLiquidationFeeCalled(spoke, reserveId, liquidationFee);
     return 0;
   }
@@ -269,7 +282,8 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     uint256 reserveId,
     uint32 dynamicConfigKey,
     uint256 liquidationFee
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateLiquidationFeeReverted();
     emit UpdateLiquidationFeeCalled(spoke, reserveId, dynamicConfigKey, liquidationFee);
   }
 
@@ -277,7 +291,8 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     address spoke,
     uint256 reserveId,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external maybeRevert returns (uint32) {
+  ) external returns (uint32) {
+    if (shouldRevert[msg.sig]) revert AddDynamicReserveConfigReverted();
     emit AddDynamicReserveConfigCalled(
       spoke,
       reserveId,
@@ -293,7 +308,8 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     uint256 reserveId,
     uint32 dynamicConfigKey,
     ISpoke.DynamicReserveConfig calldata dynamicConfig
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateDynamicReserveConfigReverted();
     emit UpdateDynamicReserveConfigCalled(
       spoke,
       reserveId,
@@ -304,27 +320,28 @@ contract MockSpokeConfigurator is ISpokeConfigurator {
     );
   }
 
-  function pauseAllReserves(address spoke) external maybeRevert {
+  function pauseAllReserves(address spoke) external {
+    if (shouldRevert[msg.sig]) revert PauseAllReservesReverted();
     emit PauseAllReservesCalled(spoke);
   }
 
-  function freezeAllReserves(address spoke) external maybeRevert {
+  function freezeAllReserves(address spoke) external {
+    if (shouldRevert[msg.sig]) revert FreezeAllReservesReverted();
     emit FreezeAllReservesCalled(spoke);
   }
 
-  function pauseReserve(address spoke, uint256 reserveId) external maybeRevert {
+  function pauseReserve(address spoke, uint256 reserveId) external {
+    if (shouldRevert[msg.sig]) revert PauseReserveReverted();
     emit PauseReserveCalled(spoke, reserveId);
   }
 
-  function freezeReserve(address spoke, uint256 reserveId) external maybeRevert {
+  function freezeReserve(address spoke, uint256 reserveId) external {
+    if (shouldRevert[msg.sig]) revert FreezeReserveReverted();
     emit FreezeReserveCalled(spoke, reserveId);
   }
 
-  function updatePositionManager(
-    address spoke,
-    address positionManager,
-    bool active
-  ) external maybeRevert {
+  function updatePositionManager(address spoke, address positionManager, bool active) external {
+    if (shouldRevert[msg.sig]) revert UpdatePositionManagerReverted();
     emit UpdatePositionManagerCalled(spoke, positionManager, active);
   }
 }

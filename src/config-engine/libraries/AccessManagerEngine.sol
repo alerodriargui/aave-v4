@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IAaveV4ConfigEngine} from 'src/config-engine/IAaveV4ConfigEngine.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/utils/libraries/Roles.sol';
 
@@ -10,10 +10,6 @@ import {Roles} from 'src/utils/libraries/Roles.sol';
 /// @author Aave Labs
 /// @notice Library containing access manager logic for AaveV4ConfigEngine.
 library AccessManagerEngine {
-  // ============================================================
-  // Core Access Manager Methods
-  // ============================================================
-
   /// @notice Grants roles via AccessManager.
   /// @param grants The role grants to execute.
   function executeRoleGrants(IAaveV4ConfigEngine.RoleGrant[] calldata grants) external {
@@ -124,10 +120,6 @@ library AccessManagerEngine {
       );
     }
   }
-
-  // ============================================================
-  // Convenience Role Grant Methods
-  // ============================================================
 
   /// @notice Grants the HubConfigurator fee updater role.
   /// @param grants The role grants to execute.
@@ -259,10 +251,6 @@ library AccessManagerEngine {
     _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE);
     _grantRoleByName(grants, Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE);
   }
-
-  // ============================================================
-  // Internal Helpers
-  // ============================================================
 
   /// @notice Grants a specific role to each account in the array via their respective AccessManager.
   /// @param grants The role grant parameters (authority + account pairs).

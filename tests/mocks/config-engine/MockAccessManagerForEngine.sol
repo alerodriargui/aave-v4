@@ -5,21 +5,8 @@ pragma solidity ^0.8.0;
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 
 contract MockAccessManagerForEngine is IAccessManager {
-  // Per-function revert toggle
   mapping(bytes4 => bool) public shouldRevert;
 
-  string public constant REVERT_MSG = 'MOCK_REVERT';
-
-  function setShouldRevert(bytes4 selector, bool revert_) external {
-    shouldRevert[selector] = revert_;
-  }
-
-  modifier maybeRevert() {
-    if (shouldRevert[msg.sig]) revert(REVERT_MSG);
-    _;
-  }
-
-  // Diagnostic events
   event GrantRoleCalled(uint64 roleId, address account, uint32 executionDelay);
   event RevokeRoleCalled(uint64 roleId, address account);
   event SetRoleAdminCalled(uint64 roleId, uint64 admin);
@@ -30,21 +17,37 @@ contract MockAccessManagerForEngine is IAccessManager {
   event SetGrantDelayCalled(uint64 roleId, uint32 newDelay);
   event SetTargetAdminDelayCalled(address target, uint32 newDelay);
 
-  // Core methods used by AccessManagerEngine
+  error GrantRoleReverted();
+  error RevokeRoleReverted();
+  error SetRoleAdminReverted();
+  error SetRoleGuardianReverted();
+  error SetTargetFunctionRoleReverted();
+  error SetTargetClosedReverted();
+  error LabelRoleReverted();
+  error SetGrantDelayReverted();
+  error SetTargetAdminDelayReverted();
 
-  function grantRole(uint64 roleId, address account, uint32 executionDelay) external maybeRevert {
+  function setShouldRevert(bytes4 selector, bool revert_) external {
+    shouldRevert[selector] = revert_;
+  }
+
+  function grantRole(uint64 roleId, address account, uint32 executionDelay) external {
+    if (shouldRevert[msg.sig]) revert GrantRoleReverted();
     emit GrantRoleCalled(roleId, account, executionDelay);
   }
 
-  function revokeRole(uint64 roleId, address account) external maybeRevert {
+  function revokeRole(uint64 roleId, address account) external {
+    if (shouldRevert[msg.sig]) revert RevokeRoleReverted();
     emit RevokeRoleCalled(roleId, account);
   }
 
-  function setRoleAdmin(uint64 roleId, uint64 admin) external maybeRevert {
+  function setRoleAdmin(uint64 roleId, uint64 admin) external {
+    if (shouldRevert[msg.sig]) revert SetRoleAdminReverted();
     emit SetRoleAdminCalled(roleId, admin);
   }
 
-  function setRoleGuardian(uint64 roleId, uint64 guardian) external maybeRevert {
+  function setRoleGuardian(uint64 roleId, uint64 guardian) external {
+    if (shouldRevert[msg.sig]) revert SetRoleGuardianReverted();
     emit SetRoleGuardianCalled(roleId, guardian);
   }
 
@@ -52,27 +55,30 @@ contract MockAccessManagerForEngine is IAccessManager {
     address target,
     bytes4[] calldata selectors,
     uint64 roleId
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert SetTargetFunctionRoleReverted();
     emit SetTargetFunctionRoleCalled(target, selectors, roleId);
   }
 
-  function setTargetClosed(address target, bool closed) external maybeRevert {
+  function setTargetClosed(address target, bool closed) external {
+    if (shouldRevert[msg.sig]) revert SetTargetClosedReverted();
     emit SetTargetClosedCalled(target, closed);
   }
 
-  function labelRole(uint64 roleId, string calldata label) external maybeRevert {
+  function labelRole(uint64 roleId, string calldata label) external {
+    if (shouldRevert[msg.sig]) revert LabelRoleReverted();
     emit LabelRoleCalled(roleId, label);
   }
 
-  function setGrantDelay(uint64 roleId, uint32 newDelay) external maybeRevert {
+  function setGrantDelay(uint64 roleId, uint32 newDelay) external {
+    if (shouldRevert[msg.sig]) revert SetGrantDelayReverted();
     emit SetGrantDelayCalled(roleId, newDelay);
   }
 
-  function setTargetAdminDelay(address target, uint32 newDelay) external maybeRevert {
+  function setTargetAdminDelay(address target, uint32 newDelay) external {
+    if (shouldRevert[msg.sig]) revert SetTargetAdminDelayReverted();
     emit SetTargetAdminDelayCalled(target, newDelay);
   }
-
-  // Stub view/pure methods to satisfy the IAccessManager interface
 
   function canCall(address, address, bytes4) external pure returns (bool, uint32) {
     return (false, 0);

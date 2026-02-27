@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IAaveV4ConfigEngine} from 'src/config-engine/IAaveV4ConfigEngine.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 
 /// @title AaveV4Payload
@@ -11,11 +11,11 @@ import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 abstract contract AaveV4Payload {
   using Address for address;
 
-  /// @dev Thrown when the config engine address is zero.
-  error InvalidConfigEngine();
-
   /// @notice The config engine used to execute payload actions via delegatecall.
   IAaveV4ConfigEngine public immutable CONFIG_ENGINE;
+
+  /// @dev Thrown when the config engine address is zero.
+  error InvalidConfigEngine();
 
   /// @param configEngine The IAaveV4ConfigEngine implementation to delegatecall into.
   constructor(IAaveV4ConfigEngine configEngine) {
@@ -33,10 +33,6 @@ abstract contract AaveV4Payload {
     _executeAccessManagerActions();
     _postExecute();
   }
-
-  // ============================================================
-  // Internal execution orchestrators
-  // ============================================================
 
   /// @notice Executes all hub-related configuration actions via delegatecall to the engine.
   function _executeHubActions() internal {
@@ -504,28 +500,16 @@ abstract contract AaveV4Payload {
     }
   }
 
-  // ============================================================
-  // Delegatecall helper
-  // ============================================================
-
   /// @notice Delegatecalls the config engine with the given calldata.
   /// @param data The ABI-encoded function call to forward to CONFIG_ENGINE.
   function _delegateCallEngine(bytes memory data) internal {
     address(CONFIG_ENGINE).functionDelegateCall(data);
   }
 
-  // ============================================================
-  // Virtual hooks
-  // ============================================================
-
   /// @notice Hook called before executing any actions. Override to add pre-execution logic.
   function _preExecute() internal virtual {}
   /// @notice Hook called after executing all actions. Override to add post-execution logic.
   function _postExecute() internal virtual {}
-
-  // ============================================================
-  // Hub virtual methods (return empty arrays by default)
-  // ============================================================
 
   /// @notice Returns the hub asset listings to execute. Override to provide listings.
   /// @return An array of AssetListing structs (empty by default).
@@ -664,10 +648,6 @@ abstract contract AaveV4Payload {
   {
     return new IAaveV4ConfigEngine.SpokeCapsReset[](0);
   }
-
-  // ============================================================
-  // Spoke virtual methods (return empty arrays by default)
-  // ============================================================
 
   /// @notice Returns the spoke reserve listings to execute. Override to provide listings.
   /// @return An array of ReserveListing structs (empty by default).
@@ -839,10 +819,6 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.PositionManagerUpdate[](0);
   }
 
-  // ============================================================
-  // Access Manager virtual methods (return empty arrays by default)
-  // ============================================================
-
   /// @notice Returns the access manager role grants to execute. Override to provide grants.
   /// @return An array of RoleGrant structs (empty by default).
   function accessManagerRoleGrants()
@@ -932,10 +908,6 @@ abstract contract AaveV4Payload {
   {
     return new IAaveV4ConfigEngine.TargetAdminDelayUpdate[](0);
   }
-
-  // ============================================================
-  // Convenience role grant virtual methods (return empty arrays by default)
-  // ============================================================
 
   /// @notice Returns the HubConfigurator fee updater role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).

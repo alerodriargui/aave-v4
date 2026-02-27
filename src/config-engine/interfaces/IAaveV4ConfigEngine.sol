@@ -14,10 +14,6 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 /// All numeric fields in config structs use uint256 so that type(uint256).max can serve as
 /// the universal KEEP_CURRENT sentinel. Boolean fields use uint256 (0=false, 1=true, KEEP_CURRENT=skip).
 interface IAaveV4ConfigEngine {
-  // ============================================================
-  // Hub Configurator Structs
-  // ============================================================
-
   /// @notice Parameters for listing a new asset on a hub.
   /// @param hubConfigurator The HubConfigurator to use for this action.
   /// @param hub The address of the Hub.
@@ -212,10 +208,6 @@ interface IAaveV4ConfigEngine {
     address hub;
     address spoke;
   }
-
-  // ============================================================
-  // Spoke Configurator Structs
-  // ============================================================
 
   /// @notice Parameters for listing a new reserve on a spoke.
   /// @param spokeConfigurator The SpokeConfigurator to use for this action.
@@ -437,10 +429,6 @@ interface IAaveV4ConfigEngine {
     bool active;
   }
 
-  // ============================================================
-  // Access Manager Structs
-  // ============================================================
-
   /// @notice Parameters for granting a role via AccessManager.
   /// @param authority The AccessManager address.
   /// @param roleId The role identifier.
@@ -543,10 +531,6 @@ interface IAaveV4ConfigEngine {
     address account;
   }
 
-  // ============================================================
-  // Hub Configurator Methods
-  // ============================================================
-
   /// @notice Lists new assets on hubs via the HubConfigurator.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(AssetListing[] calldata listings) external;
@@ -610,10 +594,6 @@ interface IAaveV4ConfigEngine {
   /// @notice Resets spoke caps on hubs.
   /// @param resets The spoke caps resets to execute.
   function executeHubSpokeCapsResets(SpokeCapsReset[] calldata resets) external;
-
-  // ============================================================
-  // Spoke Configurator Methods
-  // ============================================================
 
   /// @notice Lists new reserves on spokes.
   /// @param listings The reserve listings to execute.
@@ -699,10 +679,6 @@ interface IAaveV4ConfigEngine {
   /// @param updates The position manager updates to execute.
   function executeSpokePositionManagerUpdates(PositionManagerUpdate[] calldata updates) external;
 
-  // ============================================================
-  // Access Manager Methods
-  // ============================================================
-
   /// @notice Grants roles via AccessManager.
   /// @param grants The role grants to execute.
   function executeRoleGrants(RoleGrant[] calldata grants) external;
@@ -738,10 +714,6 @@ interface IAaveV4ConfigEngine {
   /// @notice Updates target admin delays via AccessManager.
   /// @param updates The target admin delay updates to execute.
   function executeTargetAdminDelayUpdates(TargetAdminDelayUpdate[] calldata updates) external;
-
-  // ============================================================
-  // Convenience Role Grant Methods
-  // ============================================================
 
   /// @notice Grants the HubConfigurator fee updater role.
   /// @param grants The role grants to execute.

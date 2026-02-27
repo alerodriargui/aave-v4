@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IAaveV4ConfigEngine} from 'src/config-engine/IAaveV4ConfigEngine.sol';
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
 import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
 import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
@@ -11,10 +11,6 @@ import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngi
 /// @author Aave Labs
 /// @notice Stateless implementation of IAaveV4ConfigEngine. Invoked via delegatecall from payload contracts.
 contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
-  // ============================================================
-  // Hub Configurator Methods
-  // ============================================================
-
   /// @inheritdoc IAaveV4ConfigEngine
   function executeHubAssetListings(AssetListing[] calldata listings) external {
     HubEngine.executeHubAssetListings(listings);
@@ -93,10 +89,6 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
   function executeHubSpokeCapsResets(SpokeCapsReset[] calldata resets) external {
     HubEngine.executeHubSpokeCapsResets(resets);
   }
-
-  // ============================================================
-  // Spoke Configurator Methods
-  // ============================================================
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokeReserveListings(ReserveListing[] calldata listings) external {
@@ -199,10 +191,6 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
     SpokeEngine.executeSpokePositionManagerUpdates(updates);
   }
 
-  // ============================================================
-  // Access Manager Methods
-  // ============================================================
-
   /// @inheritdoc IAaveV4ConfigEngine
   function executeRoleGrants(RoleGrant[] calldata grants) external {
     AccessManagerEngine.executeRoleGrants(grants);
@@ -247,10 +235,6 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
   function executeTargetAdminDelayUpdates(TargetAdminDelayUpdate[] calldata updates) external {
     AccessManagerEngine.executeTargetAdminDelayUpdates(updates);
   }
-
-  // ============================================================
-  // Convenience Role Grant Methods
-  // ============================================================
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeGrantHubConfiguratorFeeUpdaterRole(RoleGrantByName[] calldata grants) external {

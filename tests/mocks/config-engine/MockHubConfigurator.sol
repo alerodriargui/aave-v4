@@ -6,21 +6,8 @@ import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 contract MockHubConfigurator is IHubConfigurator {
-  // Per-function revert toggle
   mapping(bytes4 => bool) public shouldRevert;
 
-  string public constant REVERT_MSG = 'MOCK_REVERT';
-
-  function setShouldRevert(bytes4 selector, bool revert_) external {
-    shouldRevert[selector] = revert_;
-  }
-
-  modifier maybeRevert() {
-    if (shouldRevert[msg.sig]) revert(REVERT_MSG);
-    _;
-  }
-
-  // Events
   event AddAssetCalled(
     address hub,
     address underlying,
@@ -110,7 +97,32 @@ contract MockHubConfigurator is IHubConfigurator {
 
   event ResetSpokeCapsCalled(address hub, address spoke);
 
-  // Implementations
+  error AddAssetReverted();
+  error AddAssetWithDecimalsReverted();
+  error UpdateLiquidityFeeReverted();
+  error UpdateFeeReceiverReverted();
+  error UpdateFeeConfigReverted();
+  error UpdateInterestRateStrategyReverted();
+  error UpdateInterestRateDataReverted();
+  error UpdateReinvestmentControllerReverted();
+  error ResetAssetCapsReverted();
+  error DeactivateAssetReverted();
+  error HaltAssetReverted();
+  error AddSpokeReverted();
+  error AddSpokeToAssetsReverted();
+  error UpdateSpokeActiveReverted();
+  error UpdateSpokeHaltedReverted();
+  error UpdateSpokeSupplyCapReverted();
+  error UpdateSpokeDrawCapReverted();
+  error UpdateSpokeRiskPremiumThresholdReverted();
+  error UpdateSpokeCapsReverted();
+  error DeactivateSpokeReverted();
+  error HaltSpokeReverted();
+  error ResetSpokeCapsReverted();
+
+  function setShouldRevert(bytes4 selector, bool revert_) external {
+    shouldRevert[selector] = revert_;
+  }
 
   function addAsset(
     address hub,
@@ -119,7 +131,8 @@ contract MockHubConfigurator is IHubConfigurator {
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
-  ) external maybeRevert returns (uint256) {
+  ) external returns (uint256) {
+    if (shouldRevert[msg.sig]) revert AddAssetReverted();
     emit AddAssetCalled(hub, underlying, feeReceiver, liquidityFee, irStrategy, irData);
     return 0;
   }
@@ -132,7 +145,8 @@ contract MockHubConfigurator is IHubConfigurator {
     uint256 liquidityFee,
     address irStrategy,
     bytes calldata irData
-  ) external maybeRevert returns (uint256) {
+  ) external returns (uint256) {
+    if (shouldRevert[msg.sig]) revert AddAssetWithDecimalsReverted();
     emit AddAssetWithDecimalsCalled(
       hub,
       underlying,
@@ -145,19 +159,13 @@ contract MockHubConfigurator is IHubConfigurator {
     return 0;
   }
 
-  function updateLiquidityFee(
-    address hub,
-    uint256 assetId,
-    uint256 liquidityFee
-  ) external maybeRevert {
+  function updateLiquidityFee(address hub, uint256 assetId, uint256 liquidityFee) external {
+    if (shouldRevert[msg.sig]) revert UpdateLiquidityFeeReverted();
     emit UpdateLiquidityFeeCalled(hub, assetId, liquidityFee);
   }
 
-  function updateFeeReceiver(
-    address hub,
-    uint256 assetId,
-    address feeReceiver
-  ) external maybeRevert {
+  function updateFeeReceiver(address hub, uint256 assetId, address feeReceiver) external {
+    if (shouldRevert[msg.sig]) revert UpdateFeeReceiverReverted();
     emit UpdateFeeReceiverCalled(hub, assetId, feeReceiver);
   }
 
@@ -166,7 +174,8 @@ contract MockHubConfigurator is IHubConfigurator {
     uint256 assetId,
     uint256 liquidityFee,
     address feeReceiver
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateFeeConfigReverted();
     emit UpdateFeeConfigCalled(hub, assetId, liquidityFee, feeReceiver);
   }
 
@@ -175,15 +184,13 @@ contract MockHubConfigurator is IHubConfigurator {
     uint256 assetId,
     address irStrategy,
     bytes calldata irData
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateInterestRateStrategyReverted();
     emit UpdateInterestRateStrategyCalled(hub, assetId, irStrategy, irData);
   }
 
-  function updateInterestRateData(
-    address hub,
-    uint256 assetId,
-    bytes calldata irData
-  ) external maybeRevert {
+  function updateInterestRateData(address hub, uint256 assetId, bytes calldata irData) external {
+    if (shouldRevert[msg.sig]) revert UpdateInterestRateDataReverted();
     emit UpdateInterestRateDataCalled(hub, assetId, irData);
   }
 
@@ -191,19 +198,23 @@ contract MockHubConfigurator is IHubConfigurator {
     address hub,
     uint256 assetId,
     address reinvestmentController
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateReinvestmentControllerReverted();
     emit UpdateReinvestmentControllerCalled(hub, assetId, reinvestmentController);
   }
 
-  function resetAssetCaps(address hub, uint256 assetId) external maybeRevert {
+  function resetAssetCaps(address hub, uint256 assetId) external {
+    if (shouldRevert[msg.sig]) revert ResetAssetCapsReverted();
     emit ResetAssetCapsCalled(hub, assetId);
   }
 
-  function deactivateAsset(address hub, uint256 assetId) external maybeRevert {
+  function deactivateAsset(address hub, uint256 assetId) external {
+    if (shouldRevert[msg.sig]) revert DeactivateAssetReverted();
     emit DeactivateAssetCalled(hub, assetId);
   }
 
-  function haltAsset(address hub, uint256 assetId) external maybeRevert {
+  function haltAsset(address hub, uint256 assetId) external {
+    if (shouldRevert[msg.sig]) revert HaltAssetReverted();
     emit HaltAssetCalled(hub, assetId);
   }
 
@@ -212,7 +223,8 @@ contract MockHubConfigurator is IHubConfigurator {
     address spoke,
     uint256 assetId,
     IHub.SpokeConfig calldata config
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert AddSpokeReverted();
     emit AddSpokeCalled(hub, spoke, assetId, config);
   }
 
@@ -221,25 +233,18 @@ contract MockHubConfigurator is IHubConfigurator {
     address spoke,
     uint256[] calldata assetIds,
     IHub.SpokeConfig[] calldata configs
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert AddSpokeToAssetsReverted();
     emit AddSpokeToAssetsCalled(hub, spoke, assetIds, configs);
   }
 
-  function updateSpokeActive(
-    address hub,
-    uint256 assetId,
-    address spoke,
-    bool active
-  ) external maybeRevert {
+  function updateSpokeActive(address hub, uint256 assetId, address spoke, bool active) external {
+    if (shouldRevert[msg.sig]) revert UpdateSpokeActiveReverted();
     emit UpdateSpokeActiveCalled(hub, assetId, spoke, active);
   }
 
-  function updateSpokeHalted(
-    address hub,
-    uint256 assetId,
-    address spoke,
-    bool halted
-  ) external maybeRevert {
+  function updateSpokeHalted(address hub, uint256 assetId, address spoke, bool halted) external {
+    if (shouldRevert[msg.sig]) revert UpdateSpokeHaltedReverted();
     emit UpdateSpokeHaltedCalled(hub, assetId, spoke, halted);
   }
 
@@ -248,7 +253,8 @@ contract MockHubConfigurator is IHubConfigurator {
     uint256 assetId,
     address spoke,
     uint256 addCap
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateSpokeSupplyCapReverted();
     emit UpdateSpokeSupplyCapCalled(hub, assetId, spoke, addCap);
   }
 
@@ -257,7 +263,8 @@ contract MockHubConfigurator is IHubConfigurator {
     uint256 assetId,
     address spoke,
     uint256 drawCap
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateSpokeDrawCapReverted();
     emit UpdateSpokeDrawCapCalled(hub, assetId, spoke, drawCap);
   }
 
@@ -266,7 +273,8 @@ contract MockHubConfigurator is IHubConfigurator {
     uint256 assetId,
     address spoke,
     uint256 riskPremiumThreshold
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateSpokeRiskPremiumThresholdReverted();
     emit UpdateSpokeRiskPremiumThresholdCalled(hub, assetId, spoke, riskPremiumThreshold);
   }
 
@@ -276,19 +284,23 @@ contract MockHubConfigurator is IHubConfigurator {
     address spoke,
     uint256 addCap,
     uint256 drawCap
-  ) external maybeRevert {
+  ) external {
+    if (shouldRevert[msg.sig]) revert UpdateSpokeCapsReverted();
     emit UpdateSpokeCapsCalled(hub, assetId, spoke, addCap, drawCap);
   }
 
-  function deactivateSpoke(address hub, address spoke) external maybeRevert {
+  function deactivateSpoke(address hub, address spoke) external {
+    if (shouldRevert[msg.sig]) revert DeactivateSpokeReverted();
     emit DeactivateSpokeCalled(hub, spoke);
   }
 
-  function haltSpoke(address hub, address spoke) external maybeRevert {
+  function haltSpoke(address hub, address spoke) external {
+    if (shouldRevert[msg.sig]) revert HaltSpokeReverted();
     emit HaltSpokeCalled(hub, spoke);
   }
 
-  function resetSpokeCaps(address hub, address spoke) external maybeRevert {
+  function resetSpokeCaps(address hub, address spoke) external {
+    if (shouldRevert[msg.sig]) revert ResetSpokeCapsReverted();
     emit ResetSpokeCapsCalled(hub, spoke);
   }
 }
