@@ -405,7 +405,7 @@ contract ExposedAaveV4Payload is AaveV4Payload {
   }
 }
 
-contract AaveV4PayloadBaseTest is BaseConfigEngineTest {
+contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
   MinimalAaveV4Payload public minimal;
   ExposedAaveV4Payload public exposed;
 
@@ -426,63 +426,63 @@ contract AaveV4PayloadBaseTest is BaseConfigEngineTest {
   // Hub virtual methods return empty arrays
   // ============================================================
 
-  function test_base_hubAssetListings_returnsEmpty() public {
+  function test_hubAssetListings_returnsEmpty() public {
     assertEq(exposed.exposed_hubAssetListings().length, 0);
   }
 
-  function test_base_hubFeeConfigUpdates_returnsEmpty() public {
+  function test_hubFeeConfigUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_hubFeeConfigUpdates().length, 0);
   }
 
-  function test_base_hubInterestRateUpdates_returnsEmpty() public {
+  function test_hubInterestRateUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_hubInterestRateUpdates().length, 0);
   }
 
-  function test_base_hubReinvestmentControllerUpdates_returnsEmpty() public {
+  function test_hubReinvestmentControllerUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_hubReinvestmentControllerUpdates().length, 0);
   }
 
-  function test_base_hubSpokeAdditions_returnsEmpty() public {
+  function test_hubSpokeAdditions_returnsEmpty() public {
     assertEq(exposed.exposed_hubSpokeAdditions().length, 0);
   }
 
-  function test_base_hubSpokeToAssetsAdditions_returnsEmpty() public {
+  function test_hubSpokeToAssetsAdditions_returnsEmpty() public {
     assertEq(exposed.exposed_hubSpokeToAssetsAdditions().length, 0);
   }
 
-  function test_base_hubSpokeCapsUpdates_returnsEmpty() public {
+  function test_hubSpokeCapsUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_hubSpokeCapsUpdates().length, 0);
   }
 
-  function test_base_hubSpokeRiskPremiumThresholdUpdates_returnsEmpty() public {
+  function test_hubSpokeRiskPremiumThresholdUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_hubSpokeRiskPremiumThresholdUpdates().length, 0);
   }
 
-  function test_base_hubSpokeStatusUpdates_returnsEmpty() public {
+  function test_hubSpokeStatusUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_hubSpokeStatusUpdates().length, 0);
   }
 
-  function test_base_hubAssetHalts_returnsEmpty() public {
+  function test_hubAssetHalts_returnsEmpty() public {
     assertEq(exposed.exposed_hubAssetHalts().length, 0);
   }
 
-  function test_base_hubAssetDeactivations_returnsEmpty() public {
+  function test_hubAssetDeactivations_returnsEmpty() public {
     assertEq(exposed.exposed_hubAssetDeactivations().length, 0);
   }
 
-  function test_base_hubAssetCapsResets_returnsEmpty() public {
+  function test_hubAssetCapsResets_returnsEmpty() public {
     assertEq(exposed.exposed_hubAssetCapsResets().length, 0);
   }
 
-  function test_base_hubSpokeHalts_returnsEmpty() public {
+  function test_hubSpokeHalts_returnsEmpty() public {
     assertEq(exposed.exposed_hubSpokeHalts().length, 0);
   }
 
-  function test_base_hubSpokeDeactivations_returnsEmpty() public {
+  function test_hubSpokeDeactivations_returnsEmpty() public {
     assertEq(exposed.exposed_hubSpokeDeactivations().length, 0);
   }
 
-  function test_base_hubSpokeCapsResets_returnsEmpty() public {
+  function test_hubSpokeCapsResets_returnsEmpty() public {
     assertEq(exposed.exposed_hubSpokeCapsResets().length, 0);
   }
 
@@ -490,71 +490,71 @@ contract AaveV4PayloadBaseTest is BaseConfigEngineTest {
   // Spoke virtual methods return empty arrays
   // ============================================================
 
-  function test_base_spokeReserveListings_returnsEmpty() public {
+  function test_spokeReserveListings_returnsEmpty() public {
     assertEq(exposed.exposed_spokeReserveListings().length, 0);
   }
 
-  function test_base_spokeReserveConfigUpdates_returnsEmpty() public {
+  function test_spokeReserveConfigUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_spokeReserveConfigUpdates().length, 0);
   }
 
-  function test_base_spokeReservePriceSourceUpdates_returnsEmpty() public {
+  function test_spokeReservePriceSourceUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_spokeReservePriceSourceUpdates().length, 0);
   }
 
-  function test_base_spokeLiquidationConfigUpdates_returnsEmpty() public {
+  function test_spokeLiquidationConfigUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_spokeLiquidationConfigUpdates().length, 0);
   }
 
-  function test_base_spokeDynamicReserveConfigAdditions_returnsEmpty() public {
+  function test_spokeDynamicReserveConfigAdditions_returnsEmpty() public {
     assertEq(exposed.exposed_spokeDynamicReserveConfigAdditions().length, 0);
   }
 
-  function test_base_spokeDynamicReserveConfigUpdates_returnsEmpty() public {
+  function test_spokeDynamicReserveConfigUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_spokeDynamicReserveConfigUpdates().length, 0);
   }
 
-  function test_base_spokeCollateralFactorAdditions_returnsEmpty() public {
+  function test_spokeCollateralFactorAdditions_returnsEmpty() public {
     assertEq(exposed.exposed_spokeCollateralFactorAdditions().length, 0);
   }
 
-  function test_base_spokeCollateralFactorUpdates_returnsEmpty() public {
+  function test_spokeCollateralFactorUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_spokeCollateralFactorUpdates().length, 0);
   }
 
-  function test_base_spokeMaxLiquidationBonusAdditions_returnsEmpty() public {
+  function test_spokeMaxLiquidationBonusAdditions_returnsEmpty() public {
     assertEq(exposed.exposed_spokeMaxLiquidationBonusAdditions().length, 0);
   }
 
-  function test_base_spokeMaxLiquidationBonusUpdates_returnsEmpty() public {
+  function test_spokeMaxLiquidationBonusUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_spokeMaxLiquidationBonusUpdates().length, 0);
   }
 
-  function test_base_spokeLiquidationFeeAdditions_returnsEmpty() public {
+  function test_spokeLiquidationFeeAdditions_returnsEmpty() public {
     assertEq(exposed.exposed_spokeLiquidationFeeAdditions().length, 0);
   }
 
-  function test_base_spokeLiquidationFeeUpdates_returnsEmpty() public {
+  function test_spokeLiquidationFeeUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_spokeLiquidationFeeUpdates().length, 0);
   }
 
-  function test_base_spokeAllReservesPauses_returnsEmpty() public {
+  function test_spokeAllReservesPauses_returnsEmpty() public {
     assertEq(exposed.exposed_spokeAllReservesPauses().length, 0);
   }
 
-  function test_base_spokeAllReservesFreezes_returnsEmpty() public {
+  function test_spokeAllReservesFreezes_returnsEmpty() public {
     assertEq(exposed.exposed_spokeAllReservesFreezes().length, 0);
   }
 
-  function test_base_spokeReservePauses_returnsEmpty() public {
+  function test_spokeReservePauses_returnsEmpty() public {
     assertEq(exposed.exposed_spokeReservePauses().length, 0);
   }
 
-  function test_base_spokeReserveFreezes_returnsEmpty() public {
+  function test_spokeReserveFreezes_returnsEmpty() public {
     assertEq(exposed.exposed_spokeReserveFreezes().length, 0);
   }
 
-  function test_base_spokePositionManagerUpdates_returnsEmpty() public {
+  function test_spokePositionManagerUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_spokePositionManagerUpdates().length, 0);
   }
 
@@ -562,39 +562,39 @@ contract AaveV4PayloadBaseTest is BaseConfigEngineTest {
   // Access Manager virtual methods return empty arrays
   // ============================================================
 
-  function test_base_accessManagerRoleGrants_returnsEmpty() public {
+  function test_accessManagerRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerRoleGrants().length, 0);
   }
 
-  function test_base_accessManagerRoleRevocations_returnsEmpty() public {
+  function test_accessManagerRoleRevocations_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerRoleRevocations().length, 0);
   }
 
-  function test_base_accessManagerRoleAdminUpdates_returnsEmpty() public {
+  function test_accessManagerRoleAdminUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerRoleAdminUpdates().length, 0);
   }
 
-  function test_base_accessManagerRoleGuardianUpdates_returnsEmpty() public {
+  function test_accessManagerRoleGuardianUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerRoleGuardianUpdates().length, 0);
   }
 
-  function test_base_accessManagerTargetFunctionRoleUpdates_returnsEmpty() public {
+  function test_accessManagerTargetFunctionRoleUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerTargetFunctionRoleUpdates().length, 0);
   }
 
-  function test_base_accessManagerTargetClosedUpdates_returnsEmpty() public {
+  function test_accessManagerTargetClosedUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerTargetClosedUpdates().length, 0);
   }
 
-  function test_base_accessManagerRoleLabelUpdates_returnsEmpty() public {
+  function test_accessManagerRoleLabelUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerRoleLabelUpdates().length, 0);
   }
 
-  function test_base_accessManagerGrantDelayUpdates_returnsEmpty() public {
+  function test_accessManagerGrantDelayUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerGrantDelayUpdates().length, 0);
   }
 
-  function test_base_accessManagerTargetAdminDelayUpdates_returnsEmpty() public {
+  function test_accessManagerTargetAdminDelayUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerTargetAdminDelayUpdates().length, 0);
   }
 
@@ -602,63 +602,63 @@ contract AaveV4PayloadBaseTest is BaseConfigEngineTest {
   // Convenience role grant virtual methods return empty arrays
   // ============================================================
 
-  function test_base_hubConfiguratorFeeUpdaterRoleGrants_returnsEmpty() public {
+  function test_hubConfiguratorFeeUpdaterRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_hubConfiguratorFeeUpdaterRoleGrants().length, 0);
   }
 
-  function test_base_hubConfiguratorReinvestmentUpdaterRoleGrants_returnsEmpty() public {
+  function test_hubConfiguratorReinvestmentUpdaterRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_hubConfiguratorReinvestmentUpdaterRoleGrants().length, 0);
   }
 
-  function test_base_hubConfiguratorAssetListerRoleGrants_returnsEmpty() public {
+  function test_hubConfiguratorAssetListerRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_hubConfiguratorAssetListerRoleGrants().length, 0);
   }
 
-  function test_base_hubConfiguratorSpokeAdderRoleGrants_returnsEmpty() public {
+  function test_hubConfiguratorSpokeAdderRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_hubConfiguratorSpokeAdderRoleGrants().length, 0);
   }
 
-  function test_base_hubConfiguratorInterestRateUpdaterRoleGrants_returnsEmpty() public {
+  function test_hubConfiguratorInterestRateUpdaterRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_hubConfiguratorInterestRateUpdaterRoleGrants().length, 0);
   }
 
-  function test_base_hubConfiguratorHalterRoleGrants_returnsEmpty() public {
+  function test_hubConfiguratorHalterRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_hubConfiguratorHalterRoleGrants().length, 0);
   }
 
-  function test_base_hubConfiguratorDeactivaterRoleGrants_returnsEmpty() public {
+  function test_hubConfiguratorDeactivaterRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_hubConfiguratorDeactivaterRoleGrants().length, 0);
   }
 
-  function test_base_hubConfiguratorCapsUpdaterRoleGrants_returnsEmpty() public {
+  function test_hubConfiguratorCapsUpdaterRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_hubConfiguratorCapsUpdaterRoleGrants().length, 0);
   }
 
-  function test_base_hubConfiguratorAllRoleGrants_returnsEmpty() public {
+  function test_hubConfiguratorAllRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_hubConfiguratorAllRoleGrants().length, 0);
   }
 
-  function test_base_spokeConfiguratorAdminRoleGrants_returnsEmpty() public {
+  function test_spokeConfiguratorAdminRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_spokeConfiguratorAdminRoleGrants().length, 0);
   }
 
-  function test_base_spokeConfiguratorLiquidationUpdaterRoleGrants_returnsEmpty() public {
+  function test_spokeConfiguratorLiquidationUpdaterRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_spokeConfiguratorLiquidationUpdaterRoleGrants().length, 0);
   }
 
-  function test_base_spokeConfiguratorReserveAdderRoleGrants_returnsEmpty() public {
+  function test_spokeConfiguratorReserveAdderRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_spokeConfiguratorReserveAdderRoleGrants().length, 0);
   }
 
-  function test_base_spokeConfiguratorFreezerRoleGrants_returnsEmpty() public {
+  function test_spokeConfiguratorFreezerRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_spokeConfiguratorFreezerRoleGrants().length, 0);
   }
 
-  function test_base_spokeConfiguratorPauserRoleGrants_returnsEmpty() public {
+  function test_spokeConfiguratorPauserRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_spokeConfiguratorPauserRoleGrants().length, 0);
   }
 
-  function test_base_spokeConfiguratorAllRoleGrants_returnsEmpty() public {
+  function test_spokeConfiguratorAllRoleGrants_returnsEmpty() public {
     assertEq(exposed.exposed_spokeConfiguratorAllRoleGrants().length, 0);
   }
 }
