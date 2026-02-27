@@ -32,37 +32,14 @@ contract FeeSharesMinterBaseTest is HubBase {
     minter.setConfig(address(hub1), daiAssetId, config);
   }
 
-  function test_execute_success() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 1 days,
-      minUnrealizedFeePercent: 10 // 0.1%
-    });
-    vm.prank(ADMIN);
-    minter.setConfig(address(hub1), daiAssetId, config);
-
-    // Generate fees
-    // Add 1000 DAI, borrow 900 DAI
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke1),
+  function test_execute() public {
+    test_fuzz_execute({
       addAmount: 1000e18,
-      drawUser: bob,
-      drawSpoke: address(spoke1),
       drawAmount: 900e18,
-      skipTime: 365 days // Skip enough time for interval and fee accrual
+      skipTime: 365 days,
+      minTimeInterval: 1 days,
+      minUnrealizedFeePercent: 10
     });
-
-    assertTrue(minter.checkExecute(address(hub1), daiAssetId), 'Should be executable');
-
-    minter.execute(address(hub1), daiAssetId);
-
-    assertEq(minter.lastMintTime(address(hub1), daiAssetId), block.timestamp);
-    assertFalse(
-      minter.checkExecute(address(hub1), daiAssetId),
-      'Should not be executable immediately after'
-    );
   }
 
   function test_fuzz_execute(
@@ -97,9 +74,7 @@ contract FeeSharesMinterBaseTest is HubBase {
       skipTime: skipTime
     });
 
-    bool shouldExecute = minter.checkExecute(address(hub1), daiAssetId);
-
-    if (shouldExecute) {
+    if (minter.checkExecute(address(hub1), daiAssetId)) {
       minter.execute(address(hub1), daiAssetId);
 
       assertEq(minter.lastMintTime(address(hub1), daiAssetId), block.timestamp);
@@ -113,7 +88,7 @@ contract FeeSharesMinterBaseTest is HubBase {
     }
   }
 
-  function test_execute_revertsWith_TimeIntervalNotMet() public {
+  function test_execute_revertsWith_ConditionsNotMet_TimeIntervalNotMet() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 7 days,
       minUnrealizedFeePercent: 0
@@ -130,18 +105,22 @@ contract FeeSharesMinterBaseTest is HubBase {
       drawUser: bob,
       drawSpoke: address(spoke1),
       drawAmount: 100e18,
-      skipTime: 8 days
+      skipTime: 6 days
     });
 
-    minter.execute(address(hub1), daiAssetId); // Success, sets lastMintTime = block.timestamp
-
-    vm.warp(block.timestamp + 1 days); // Only 1 day passed, config needs 7
-
+    assertFalse(minter.checkExecute(address(hub1), daiAssetId), 'Not enough time elapsed');
     vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
     minter.execute(address(hub1), daiAssetId);
+
+    vm.warp(block.timestamp + 1 days);
+    assertTrue(minter.checkExecute(address(hub1), daiAssetId), 'Sufficient conditions for execute');
+    minter.execute(address(hub1), daiAssetId);
+
+    assertEq(minter.lastMintTime(address(hub1), daiAssetId), block.timestamp, 'Just minted');
+    assertFalse(minter.checkExecute(address(hub1), daiAssetId), 'Cannot mint again immediately');
   }
 
-  function test_execute_revertsWith_MinShareNotMet() public {
+  function test_execute_revertsWith_ConditionsNotMet_zeroFees() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
       minUnrealizedFeePercent: 0
@@ -149,10 +128,10 @@ contract FeeSharesMinterBaseTest is HubBase {
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
 
-    // Add liquidity but NO borrow -> No fees
+    // Add liquidity, but no borrow, so no fees
     Utils.add(hub1, daiAssetId, address(spoke1), 1000e18, bob);
 
-    skip(365 days); // Time passes
+    skip(365 days);
 
     uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
     assertEq(accruedFees, 0, 'No fees should be accrued');
@@ -163,7 +142,7 @@ contract FeeSharesMinterBaseTest is HubBase {
     minter.execute(address(hub1), daiAssetId);
   }
 
-  function test_execute_revertsWith_PercentThresholdNotMet() public {
+  function test_execute_revertsWith_ConditionsNotMet_PercentThresholdNotMet() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
       minUnrealizedFeePercent: 5000 // 50% threshold
@@ -180,8 +159,15 @@ contract FeeSharesMinterBaseTest is HubBase {
       drawUser: bob,
       drawSpoke: address(spoke1),
       drawAmount: 100e18,
-      skipTime: 1 days
+      skipTime: 365 days
     });
+
+    uint256 fees = hub1.getAssetAccruedFees(daiAssetId);
+    uint256 totalAssets = hub1.getAddedAssets(daiAssetId);
+
+    assertGt(fees, 0, 'Fees must be nonzero');
+    assertGt(hub1.previewAddByAssets(daiAssetId, fees), 0, 'At least 1 share would be minted');
+    assertLt(fees, totalAssets / 2, 'Fees must be < 50% of total');
 
     assertFalse(minter.checkExecute(address(hub1), daiAssetId));
 
@@ -189,54 +175,41 @@ contract FeeSharesMinterBaseTest is HubBase {
     minter.execute(address(hub1), daiAssetId);
   }
 
-  function test_execute_largeScalePrecision() public {
-    // 1 billion assets (1e9 * 1e18 = 1e27)
-    uint256 hugeAssets = 1_000_000_000e18;
-    // 1 bps of that (1e27 / 10000 = 1e23)
-    uint256 oneBpsFees = hugeAssets / 10000;
-
-    // Config: 1 bps min
+  function test_execute_revertsWith_ConditionsNotMet_MinShareNotMet_nonzeroFees() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
-      minUnrealizedFeePercent: 1 // 1 BPS
+      minUnrealizedFeePercent: 0
     });
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
 
-    // Mock Hub calls to simulate this exact state
-    vm.mockCall(
-      address(hub1),
-      abi.encodeWithSelector(IHubBase.getAddedAssets.selector, daiAssetId),
-      abi.encode(hugeAssets)
-    );
-    vm.mockCall(
-      address(hub1),
-      abi.encodeWithSelector(IHub.getAssetAccruedFees.selector, daiAssetId),
-      abi.encode(oneBpsFees)
-    );
-    // Also mock previewAddByAssets to ensure min shares check passes (1e23 fees > 1 share)
-    vm.mockCall(
-      address(hub1),
-      abi.encodeWithSelector(IHubBase.previewAddByAssets.selector, daiAssetId, oneBpsFees),
-      abi.encode(100e18) // Just needs to be >= 1
-    );
+    // Inflate exhange rate
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addSpoke: address(spoke1),
+      addAmount: 300 wei,
+      drawUser: bob,
+      drawSpoke: address(spoke1),
+      drawAmount: 200 wei,
+      skipTime: MAX_SKIP_TIME - 110 days
+    });
 
-    assertTrue(minter.checkExecute(address(hub1), daiAssetId), 'Should pass at exactly 1 bps');
+    // Clear accrued fees
+    minter.execute(address(hub1), daiAssetId);
 
-    // Test just below 1 bps
-    vm.mockCall(
-      address(hub1),
-      abi.encodeWithSelector(IHub.getAssetAccruedFees.selector, daiAssetId),
-      abi.encode(oneBpsFees - 1)
-    );
-    // Mock the preview call for the new fee amount as well
-    vm.mockCall(
-      address(hub1),
-      abi.encodeWithSelector(IHubBase.previewAddByAssets.selector, daiAssetId, oneBpsFees - 1),
-      abi.encode(100e18)
-    );
+    // Accrue some fees
+    skip(110 days);
 
-    assertFalse(minter.checkExecute(address(hub1), daiAssetId), 'Should fail just below 1 bps');
+    uint256 fees = hub1.getAssetAccruedFees(daiAssetId);
+    assertGt(fees, 0, 'Fees must be nonzero');
+    assertEq(hub1.previewAddByAssets(daiAssetId, fees), 0, 'Shares must round to zero');
+
+    assertFalse(minter.checkExecute(address(hub1), daiAssetId));
+
+    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
+    minter.execute(address(hub1), daiAssetId);
   }
 
   function test_fuzz_setConfig_success(
@@ -333,180 +306,17 @@ contract FeeSharesMinterBaseTest is HubBase {
     assertEq(minter.pendingOwner(), address(0), 'Pending owner should be cleared');
   }
 
-  function test_checkUpkeep_returnsTrue_whenConditionsMet() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 1 days,
-      minUnrealizedFeePercent: 10 // 0.1%
-    });
-    vm.prank(ADMIN);
-    minter.setConfig(address(hub1), daiAssetId, config);
-
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke1),
+  function test_performUpkeep() public {
+    test_fuzz_performUpkeep({
       addAmount: 1000e18,
-      drawUser: bob,
-      drawSpoke: address(spoke1),
       drawAmount: 900e18,
-      skipTime: 365 days
-    });
-
-    bytes memory checkData = abi.encode(address(hub1), daiAssetId);
-    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(checkData);
-
-    assertTrue(
-      minter.checkExecute(address(hub1), daiAssetId),
-      'checkExecute should also return true'
-    );
-    assertTrue(upkeepNeeded, 'checkUpkeep should return true when conditions are met');
-    assertEq(performData, checkData, 'performData should echo checkData');
-  }
-
-  function test_checkUpkeep_timeInterval_boundary() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 7 days,
-      minUnrealizedFeePercent: 0
-    });
-    vm.prank(ADMIN);
-    minter.setConfig(address(hub1), daiAssetId, config);
-
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke1),
-      addAmount: 1000e18,
-      drawUser: bob,
-      drawSpoke: address(spoke1),
-      drawAmount: 100e18,
-      skipTime: 6 days
-    });
-
-    bytes memory checkData = abi.encode(address(hub1), daiAssetId);
-    (bool upkeepNeeded, ) = minter.checkUpkeep(checkData);
-    assertFalse(
-      minter.checkExecute(address(hub1), daiAssetId),
-      'checkExecute should be false at 6 days'
-    );
-    assertFalse(upkeepNeeded, 'checkUpkeep should be false at 6 days');
-
-    vm.warp(block.timestamp + 1 days);
-
-    (bool upkeepNeededAfter, bytes memory performData) = minter.checkUpkeep(checkData);
-    assertTrue(
-      minter.checkExecute(address(hub1), daiAssetId),
-      'checkExecute should be true at 7 days'
-    );
-    assertTrue(upkeepNeededAfter, 'checkUpkeep should be true at 7 days');
-    assertEq(performData, checkData, 'performData should echo checkData');
-  }
-
-  function test_checkUpkeep_returnsFalse_whenNoFees() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 0,
-      minUnrealizedFeePercent: 0
-    });
-    vm.prank(ADMIN);
-    minter.setConfig(address(hub1), daiAssetId, config);
-
-    // Liquidity added, but no fees accrued
-    Utils.add(hub1, daiAssetId, address(spoke1), 1000e18, bob);
-    skip(365 days);
-
-    bytes memory checkData = abi.encode(address(hub1), daiAssetId);
-    (bool upkeepNeeded, ) = minter.checkUpkeep(checkData);
-
-    assertFalse(upkeepNeeded, 'checkUpkeep should return false with no fees');
-  }
-
-  function test_performUpkeep_success() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
+      skipTime: 365 days,
       minTimeInterval: 1 days,
-      minUnrealizedFeePercent: 10 // 0.1%
+      minUnrealizedFeePercent: 10
     });
-    vm.prank(ADMIN);
-    minter.setConfig(address(hub1), daiAssetId, config);
-
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke1),
-      addAmount: 1000e18,
-      drawUser: bob,
-      drawSpoke: address(spoke1),
-      drawAmount: 900e18,
-      skipTime: 365 days
-    });
-
-    bytes memory performData = abi.encode(address(hub1), daiAssetId);
-    minter.performUpkeep(performData);
-
-    assertEq(
-      minter.lastMintTime(address(hub1), daiAssetId),
-      block.timestamp,
-      'lastMintTime should be updated'
-    );
-    // Conditions should no longer be met (interval resets)
-    assertFalse(
-      minter.checkExecute(address(hub1), daiAssetId),
-      'Should not be executable immediately after'
-    );
   }
 
-  function test_performUpkeep_timeInterval_boundary() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 7 days,
-      minUnrealizedFeePercent: 0
-    });
-    vm.prank(ADMIN);
-    minter.setConfig(address(hub1), daiAssetId, config);
-
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke1),
-      addAmount: 1000e18,
-      drawUser: bob,
-      drawSpoke: address(spoke1),
-      drawAmount: 100e18,
-      skipTime: 6 days
-    });
-
-    bytes memory performData = abi.encode(address(hub1), daiAssetId);
-    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
-    minter.performUpkeep(performData);
-
-    vm.warp(block.timestamp + 1 days);
-    minter.performUpkeep(performData);
-
-    assertEq(
-      minter.lastMintTime(address(hub1), daiAssetId),
-      block.timestamp,
-      'lastMintTime should be updated'
-    );
-  }
-
-  function test_performUpkeep_revertsWith_ConditionsNotMet_noFees() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 0,
-      minUnrealizedFeePercent: 0
-    });
-    vm.prank(ADMIN);
-    minter.setConfig(address(hub1), daiAssetId, config);
-
-    Utils.add(hub1, daiAssetId, address(spoke1), 1000e18, bob);
-    skip(365 days);
-
-    bytes memory performData = abi.encode(address(hub1), daiAssetId);
-    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
-    minter.performUpkeep(performData);
-  }
-
-  function test_fuzz_performUpkeep_and_checkUpkeep_areConsistent(
+  function test_fuzz_performUpkeep(
     uint256 addAmount,
     uint256 drawAmount,
     uint256 skipTime,
@@ -562,5 +372,145 @@ contract FeeSharesMinterBaseTest is HubBase {
       vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
       minter.performUpkeep(performData);
     }
+  }
+
+  function test_performUpkeep_revertsWith_ConditionsNotMet_timeIntervalNotMet() public {
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
+      minTimeInterval: 7 days,
+      minUnrealizedFeePercent: 0
+    });
+    vm.prank(ADMIN);
+    minter.setConfig(address(hub1), daiAssetId, config);
+
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addSpoke: address(spoke1),
+      addAmount: 1000e18,
+      drawUser: bob,
+      drawSpoke: address(spoke1),
+      drawAmount: 100e18,
+      skipTime: 6 days
+    });
+
+    bytes memory checkData = abi.encode(address(hub1), daiAssetId);
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(checkData);
+
+    assertFalse(upkeepNeeded, 'checkUpkeep should be false at 6 days');
+    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
+    minter.performUpkeep(performData);
+
+    vm.warp(block.timestamp + 1 days);
+
+    (bool upkeepNeededAfter, bytes memory performDataAfter) = minter.checkUpkeep(checkData);
+    assertTrue(upkeepNeededAfter, 'checkUpkeep should be true at 7 days');
+    minter.performUpkeep(performDataAfter);
+
+    assertEq(
+      minter.lastMintTime(address(hub1), daiAssetId),
+      block.timestamp,
+      'lastMintTime should be updated'
+    );
+    (upkeepNeeded, ) = minter.checkUpkeep(checkData);
+    assertFalse(upkeepNeeded, 'checkUpkeep should be false after performUpkeep');
+  }
+
+  function test_performUpkeep_revertsWith_ConditionsNotMet_noFees() public {
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
+      minTimeInterval: 0,
+      minUnrealizedFeePercent: 0
+    });
+    vm.prank(ADMIN);
+    minter.setConfig(address(hub1), daiAssetId, config);
+
+    // Liquidity added, but no fees accrued
+    Utils.add(hub1, daiAssetId, address(spoke1), 1000e18, bob);
+    skip(365 days);
+
+    assertEq(hub1.getAssetAccruedFees(daiAssetId), 0, 'Fees should be zero');
+
+    bytes memory checkData = abi.encode(address(hub1), daiAssetId);
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(checkData);
+    assertFalse(upkeepNeeded, 'checkUpkeep should return false with no fees');
+
+    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
+    minter.performUpkeep(performData);
+  }
+
+  function test_performUpkeep_revertsWith_ConditionsNotMet_percentThresholdNotMet_withMinShares()
+    public
+  {
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
+      minTimeInterval: 0,
+      minUnrealizedFeePercent: 5000
+    });
+    vm.prank(ADMIN);
+    minter.setConfig(address(hub1), daiAssetId, config);
+
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addSpoke: address(spoke1),
+      addAmount: 1000e18,
+      drawUser: bob,
+      drawSpoke: address(spoke1),
+      drawAmount: 100e18,
+      skipTime: 365 days
+    });
+
+    uint256 fees = hub1.getAssetAccruedFees(daiAssetId);
+    uint256 totalAssets = hub1.getAddedAssets(daiAssetId);
+
+    assertGt(fees, 0, 'Fees must be nonzero');
+    assertGt(hub1.previewAddByAssets(daiAssetId, fees), 0, 'At least 1 share would be minted');
+    assertLt(fees, totalAssets / 2, 'Fees must be < 50% of total');
+
+    bytes memory checkData = abi.encode(address(hub1), daiAssetId);
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(checkData);
+    assertFalse(upkeepNeeded, 'checkUpkeep should be false: ratio below threshold');
+
+    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
+    minter.performUpkeep(performData);
+  }
+
+  function test_performUpkeep_revertsWith_ConditionsNotMet_MinShareNotMet_nonzeroFees() public {
+    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
+      minTimeInterval: 0,
+      minUnrealizedFeePercent: 0
+    });
+    vm.prank(ADMIN);
+    minter.setConfig(address(hub1), daiAssetId, config);
+
+    // Inflate exhange rate
+    _addAndDrawLiquidity({
+      hub: hub1,
+      assetId: daiAssetId,
+      addUser: bob,
+      addSpoke: address(spoke1),
+      addAmount: 300 wei,
+      drawUser: bob,
+      drawSpoke: address(spoke1),
+      drawAmount: 200 wei,
+      skipTime: MAX_SKIP_TIME - 110 days
+    });
+
+    // Clear accrued fees
+    minter.execute(address(hub1), daiAssetId);
+
+    // Accrue some fees
+    skip(110 days);
+
+    uint256 fees = hub1.getAssetAccruedFees(daiAssetId);
+    assertGt(fees, 0, 'Fees must be nonzero');
+    assertEq(hub1.previewAddByAssets(daiAssetId, fees), 0, 'Shares must round to zero');
+
+    bytes memory checkData = abi.encode(address(hub1), daiAssetId);
+    (bool upkeepNeeded, bytes memory performData) = minter.checkUpkeep(checkData);
+    assertFalse(upkeepNeeded, 'checkUpkeep should be false when 0 shares minted');
+
+    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
+    minter.performUpkeep(performData);
   }
 }
