@@ -28,7 +28,7 @@ contract AaveV4GatewayBatchTest is BatchBaseTest {
   function test_nativeGatewayWiring() public view {
     NativeTokenGateway gateway = NativeTokenGateway(payable(report.nativeGateway));
     assertEq(gateway.owner(), admin);
-    assertEq(gateway.NATIVE_WRAPPER(), nativeWrapper);
+    assertEq(gateway.NATIVE_TOKEN_WRAPPER(), nativeWrapper);
   }
 
   function test_signatureGatewayOwner() public view {
