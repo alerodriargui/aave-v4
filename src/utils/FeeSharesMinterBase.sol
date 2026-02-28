@@ -94,7 +94,7 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
       return false;
     }
 
-    // Ensure at least 1 fee share is minted
+    // Ensure at least 1 fee share would be minted
     uint256 expectedShares = hubContract.previewAddByAssets(assetId, accruedFees);
 
     return expectedShares > 0;

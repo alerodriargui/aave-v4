@@ -22,7 +22,7 @@ interface IFeeSharesMinterBase is AutomationCompatibleInterface {
   /// @param config The new configuration.
   event ConfigUpdated(address indexed hub, uint256 indexed assetId, MintConfig config);
 
-  /// @notice Thrown when `execute` is called but the required conditions are not met.
+  /// @notice Thrown upon minting when the required conditions are not met.
   error ConditionsNotMet();
 
   /// @notice Thrown when `setConfig` is called with invalid parameter values.
@@ -41,13 +41,12 @@ interface IFeeSharesMinterBase is AutomationCompatibleInterface {
 
   /// @notice Chainlink Automation on-chain execution entry point.
   /// @dev performData must be abi.encoded as (address hub, uint256 assetId).
-  ///      Conditions are re-validated on-chain before minting.
   /// @inheritdoc AutomationCompatibleInterface
   function performUpkeep(bytes calldata performData) external;
 
   /// @notice Chainlink Automation off-chain simulation check.
   /// @dev checkData must be abi.encoded as (address hub, uint256 assetId).
-  ///      Returns upkeepNeeded=true and the same bytes as performData when conditions are met.
+  /// @dev Returns upkeepNeeded=true and the same bytes as performData when conditions are met.
   /// @inheritdoc AutomationCompatibleInterface
   function checkUpkeep(
     bytes calldata checkData
