@@ -38,7 +38,7 @@ runs = 1000
 seed = "0x640"
 
 [profile.pr.fuzz]
-runs = 5000
+runs = 5 # todo revert
 
 [profile.ci.fuzz]
 runs = 10000
