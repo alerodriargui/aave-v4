@@ -2,13 +2,12 @@
 pragma solidity ^0.8.19;
 
 // Interfaces
-import {IERC20} from 'forge-std/interfaces/IERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {IHubHandler} from './interfaces/IHubHandler.sol';
 
 // Libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import 'forge-std/console.sol';
 
 // Test Contracts
 import {Actor} from '../../shared/utils/Actor.sol';
@@ -247,6 +246,32 @@ contract HubHandler is BaseHandler, IHubHandler {
       offsetRayDelta: offsetRayDelta,
       restoredPremiumRay: 0
     });
+
+    _before();
+    (success, returnData) = actor.proxy(
+      address(hub),
+      abi.encodeCall(IHubBase.refreshPremium, (targetAssetId, premiumDelta))
+    );
+
+    if (success) {
+      _after();
+
+      // HSPOST_HUB_M: refreshPremium cannot change total premium debt (only redistribution)
+      assertEq(
+        defaultVarsAfter.assetVars[targetAssetId].premium,
+        defaultVarsBefore.assetVars[targetAssetId].premium,
+        HSPOST_HUB_M
+      );
+    } else {
+      revert('HubHandler: refreshPremium failed');
+    }
+  }
+
+  // @dev broader `refreshPremium` to cover edge cases, above case exists for narrow happy path
+  function refreshPremium(IHubBase.PremiumDelta memory premiumDelta, uint8 i) external setup {
+    bool success;
+    bytes memory returnData;
+    targetAssetId = _getRandomBaseAssetId(i);
 
     _before();
     (success, returnData) = actor.proxy(
