@@ -10,7 +10,7 @@ methods {
 
     // proved in Spoke.spec that this function does not change the user position
     // rule updateUserDynamicConfig_noChangeToDebtValue
-    function UserPositionDebt.applyPremiumDelta(ISpoke.UserPosition storage userPosition, IHubBase.PremiumDelta memory premiumDelta) internal => NONDET;
+    function UserPositionUtils.applyPremiumDelta(ISpoke.UserPosition storage userPosition, IHubBase.PremiumDelta memory premiumDelta) internal => NONDET;
 }
 
 persistent ghost mapping(address => uint256) ghostHealthFactor {
@@ -68,4 +68,3 @@ rule userHealthStaysAboveThreshold(method f) filtered {f -> !outOfScopeFunctions
     // If the operation succeeded, check health factor after
     assert ghostHealthFactor[user] >= HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
 }
-

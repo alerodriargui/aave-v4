@@ -51,7 +51,7 @@ rule increaseCollateralOrReduceDebtFunctions(method f) filtered {f -> !outOfScop
     uint120 beforeUserPosition_premiumShares = spoke._userPositions[user][reserveId].premiumShares;
     int200 beforeUserPosition_premiumOffsetRay = spoke._userPositions[user][reserveId].premiumOffsetRay;
     uint120 beforeUserPosition_suppliedShares = spoke._userPositions[user][reserveId].suppliedShares;
-    uint24 beforeUserPosition_dynamicConfigKey = spoke._userPositions[user][reserveId].dynamicConfigKey;
+    uint32 beforeUserPosition_dynamicConfigKey = spoke._userPositions[user][reserveId].dynamicConfigKey;
 
 
     mathint premiumDebtBefore = (spoke._userPositions[user][reserveId].premiumShares * getAssetDrawnIndexCVL(spoke._reserves[reserveId].assetId, e))- spoke._userPositions[user][reserveId].premiumOffsetRay;
@@ -67,7 +67,7 @@ rule increaseCollateralOrReduceDebtFunctions(method f) filtered {f -> !outOfScop
     uint120 afterUserPosition_premiumShares = spoke._userPositions[user][reserveId].premiumShares;
     int200 afterUserPosition_premiumOffsetRay = spoke._userPositions[user][reserveId].premiumOffsetRay;
     uint120 afterUserPosition_suppliedShares = spoke._userPositions[user][reserveId].suppliedShares;
-    uint24 afterUserPosition_dynamicConfigKey = spoke._userPositions[user][reserveId].dynamicConfigKey;
+    uint32 afterUserPosition_dynamicConfigKey = spoke._userPositions[user][reserveId].dynamicConfigKey;
 
     mathint premiumDebtAfter = (spoke._userPositions[user][reserveId].premiumShares * getAssetDrawnIndexCVL(spoke._reserves[reserveId].assetId, e)) - spoke._userPositions[user][reserveId].premiumOffsetRay;
     
@@ -224,22 +224,22 @@ rule noCollateralNoDebt(uint256 reserveIdUsed, address user, method f)
     validReserveId_singleUser(spoke._reserveCount, user);
     require userGhost == user;
     ISpoke.UserAccountData beforeUserAccountData = getUserAccountData(e,user);
-    uint24 dynamicConfigKey = spoke._reserves[reserveIdUsed].dynamicConfigKey;
+    uint32 dynamicConfigKey = spoke._reserves[reserveIdUsed].dynamicConfigKey;
     uint16 beforeCollateralFactor = spoke._dynamicConfig[reserveIdUsed][dynamicConfigKey].collateralFactor;
-    require beforeUserAccountData.totalCollateralValue == 0 => beforeUserAccountData.totalDebtValue == 0;
+    require beforeUserAccountData.totalCollateralValue == 0 => beforeUserAccountData.totalDebtValueRay == 0;
 
     calldataarg args;
     f(e, args);
 
     ISpoke.UserAccountData afterUserAccountData = getUserAccountData(e,user);
-    uint24 dynamicConfigKeyAfter = spoke._reserves[reserveIdUsed].dynamicConfigKey;
+    uint32 dynamicConfigKeyAfter = spoke._reserves[reserveIdUsed].dynamicConfigKey;
     uint16 afterCollateralFactor = spoke._dynamicConfig[reserveIdUsed][dynamicConfigKeyAfter].collateralFactor;
     if (f.selector == sig:addDynamicReserveConfig(uint256, ISpoke.DynamicReserveConfig).selector) {
         // assume we are working on reserveIdUsed
         require dynamicConfigKeyAfter != dynamicConfigKey;
     }
     require  beforeCollateralFactor > 0 => afterCollateralFactor > 0, "rule collateralFactorNotZero";
-    assert afterUserAccountData.totalCollateralValue == 0 => afterUserAccountData.totalDebtValue == 0;
+    assert afterUserAccountData.totalCollateralValue == 0 => afterUserAccountData.totalDebtValueRay == 0;
 }
 
 /**
@@ -252,7 +252,7 @@ rule collateralFactorNotZero(uint256 reserveId, address user, method f) filtered
     requireInvariant dynamicConfigKeyConsistency(reserveId,user);
     validReserveId_singleUser(reserveId, user);
     require userGhost == user;
-    uint24 dynamicConfigKey;
+    uint32 dynamicConfigKey;
     require dynamicConfigKey <= spoke._reserves[reserveId].dynamicConfigKey;
     require spoke._dynamicConfig[reserveId][dynamicConfigKey].collateralFactor > 0;
     calldataarg args;
@@ -289,4 +289,3 @@ invariant dynamicConfigKeyConsistency(uint256 reserveId, address user)
         requireInvariant validReserveId_single(reserveId);
     }
 }
-
