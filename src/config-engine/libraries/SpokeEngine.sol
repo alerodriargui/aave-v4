@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {EngineFlags} from 'src/config-engine/EngineFlags.sol';
+import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 

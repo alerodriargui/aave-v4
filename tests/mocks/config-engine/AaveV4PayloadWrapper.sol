@@ -507,9 +507,8 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     for (uint256 i = 0; i < items.length; i++) _spokeConfiguratorAllRoleGrants.push(items[i]);
   }
 
-  // Hub overrides
   function hubAssetListings()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.AssetListing[] memory)
@@ -518,7 +517,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubFeeConfigUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.FeeConfigUpdate[] memory)
@@ -527,7 +526,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubInterestRateUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.InterestRateUpdate[] memory)
@@ -536,7 +535,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubReinvestmentControllerUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.ReinvestmentControllerUpdate[] memory)
@@ -545,7 +544,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubSpokeAdditions()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.SpokeAddition[] memory)
@@ -554,7 +553,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubSpokeToAssetsAdditions()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.SpokeToAssetsAddition[] memory)
@@ -567,7 +566,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubSpokeCapsUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.SpokeCapsUpdate[] memory)
@@ -576,7 +575,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubSpokeRiskPremiumThresholdUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[] memory)
@@ -585,7 +584,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubSpokeStatusUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.SpokeStatusUpdate[] memory)
@@ -593,12 +592,12 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     return _hubSpokeStatusUpdates;
   }
 
-  function hubAssetHalts() internal view override returns (IAaveV4ConfigEngine.AssetHalt[] memory) {
+  function hubAssetHalts() public view override returns (IAaveV4ConfigEngine.AssetHalt[] memory) {
     return _hubAssetHalts;
   }
 
   function hubAssetDeactivations()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.AssetDeactivation[] memory)
@@ -607,7 +606,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubAssetCapsResets()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.AssetCapsReset[] memory)
@@ -615,12 +614,12 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     return _hubAssetCapsResets;
   }
 
-  function hubSpokeHalts() internal view override returns (IAaveV4ConfigEngine.SpokeHalt[] memory) {
+  function hubSpokeHalts() public view override returns (IAaveV4ConfigEngine.SpokeHalt[] memory) {
     return _hubSpokeHalts;
   }
 
   function hubSpokeDeactivations()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.SpokeDeactivation[] memory)
@@ -629,7 +628,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubSpokeCapsResets()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.SpokeCapsReset[] memory)
@@ -637,9 +636,8 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     return _hubSpokeCapsResets;
   }
 
-  // Spoke overrides
   function spokeReserveListings()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.ReserveListing[] memory)
@@ -648,7 +646,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeReserveConfigUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.ReserveConfigUpdate[] memory)
@@ -657,7 +655,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeReservePriceSourceUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.ReservePriceSourceUpdate[] memory)
@@ -666,7 +664,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeLiquidationConfigUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.LiquidationConfigUpdate[] memory)
@@ -675,7 +673,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeDynamicReserveConfigAdditions()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition[] memory)
@@ -684,7 +682,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeDynamicReserveConfigUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] memory)
@@ -693,7 +691,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeCollateralFactorAdditions()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.CollateralFactorAddition[] memory)
@@ -702,7 +700,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeCollateralFactorUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.CollateralFactorUpdate[] memory)
@@ -711,7 +709,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeMaxLiquidationBonusAdditions()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.MaxLiquidationBonusAddition[] memory)
@@ -720,7 +718,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeMaxLiquidationBonusUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[] memory)
@@ -729,7 +727,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeLiquidationFeeAdditions()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.LiquidationFeeAddition[] memory)
@@ -738,7 +736,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeLiquidationFeeUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.LiquidationFeeUpdate[] memory)
@@ -747,7 +745,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeAllReservesPauses()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.SpokePause[] memory)
@@ -756,7 +754,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeAllReservesFreezes()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.SpokeFreeze[] memory)
@@ -765,7 +763,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeReservePauses()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.ReservePause[] memory)
@@ -774,7 +772,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeReserveFreezes()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.ReserveFreeze[] memory)
@@ -783,7 +781,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokePositionManagerUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.PositionManagerUpdate[] memory)
@@ -791,9 +789,8 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     return _spokePositionManagerUpdates;
   }
 
-  // Access manager overrides
   function accessManagerRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrant[] memory)
@@ -802,7 +799,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function accessManagerRoleRevocations()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleRevocation[] memory)
@@ -811,7 +808,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function accessManagerRoleAdminUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleAdminUpdate[] memory)
@@ -820,7 +817,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function accessManagerRoleGuardianUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGuardianUpdate[] memory)
@@ -829,7 +826,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function accessManagerTargetFunctionRoleUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.TargetFunctionRoleUpdate[] memory)
@@ -838,7 +835,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function accessManagerTargetClosedUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.TargetClosedUpdate[] memory)
@@ -847,7 +844,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function accessManagerRoleLabelUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleLabelUpdate[] memory)
@@ -856,7 +853,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function accessManagerGrantDelayUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.GrantDelayUpdate[] memory)
@@ -865,7 +862,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function accessManagerTargetAdminDelayUpdates()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory)
@@ -873,9 +870,8 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     return _accessManagerTargetAdminDelayUpdates;
   }
 
-  // Convenience role grant overrides
   function hubConfiguratorFeeUpdaterRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -884,7 +880,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubConfiguratorReinvestmentUpdaterRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -893,7 +889,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubConfiguratorAssetListerRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -902,7 +898,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubConfiguratorSpokeAdderRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -911,7 +907,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubConfiguratorInterestRateUpdaterRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -920,7 +916,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubConfiguratorHalterRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -929,7 +925,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubConfiguratorDeactivaterRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -938,7 +934,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubConfiguratorCapsUpdaterRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -947,7 +943,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function hubConfiguratorAllRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -956,7 +952,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeConfiguratorAdminRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -965,7 +961,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeConfiguratorLiquidationUpdaterRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -974,7 +970,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeConfiguratorReserveAdderRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -983,7 +979,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeConfiguratorFreezerRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -992,7 +988,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeConfiguratorPauserRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -1001,7 +997,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function spokeConfiguratorAllRoleGrants()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
@@ -1009,9 +1005,8 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     return _spokeConfiguratorAllRoleGrants;
   }
 
-  // Position manager overrides
   function positionManagerSpokeRegistrations()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.SpokeRegistration[] memory)
@@ -1020,7 +1015,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function positionManagerTokenRescues()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.TokenRescue[] memory)
@@ -1029,7 +1024,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function positionManagerNativeRescues()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.NativeRescue[] memory)
@@ -1038,7 +1033,7 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   }
 
   function positionManagerRoleRenouncements()
-    internal
+    public
     view
     override
     returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory)

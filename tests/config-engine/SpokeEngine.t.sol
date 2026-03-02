@@ -8,7 +8,7 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
-import {EngineFlags} from 'src/config-engine/EngineFlags.sol';
+import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
 import {MockSpokeConfigurator} from 'tests/mocks/config-engine/MockSpokeConfigurator.sol';
 

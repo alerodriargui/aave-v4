@@ -2,13 +2,17 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {EngineFlags} from 'src/config-engine/EngineFlags.sol';
+import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
 /// @title HubEngine
 /// @author Aave Labs
 /// @notice Library containing hub configurator logic for AaveV4ConfigEngine.
 library HubEngine {
+  using SafeCast for uint256;
+
   /// @notice Lists new assets on hubs via the HubConfigurator.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
@@ -27,7 +31,7 @@ library HubEngine {
         listings[i].hubConfigurator.addAssetWithDecimals(
           listings[i].hub,
           listings[i].underlying,
-          uint8(listings[i].decimals),
+          listings[i].decimals.toUint8(),
           listings[i].feeReceiver,
           listings[i].liquidityFee,
           listings[i].irStrategy,

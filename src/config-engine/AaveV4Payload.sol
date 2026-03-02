@@ -546,14 +546,14 @@ abstract contract AaveV4Payload {
 
   /// @notice Returns the hub asset listings to execute. Override to provide listings.
   /// @return An array of AssetListing structs (empty by default).
-  function hubAssetListings() internal virtual returns (IAaveV4ConfigEngine.AssetListing[] memory) {
+  function hubAssetListings() public virtual returns (IAaveV4ConfigEngine.AssetListing[] memory) {
     return new IAaveV4ConfigEngine.AssetListing[](0);
   }
 
   /// @notice Returns the hub fee config updates to execute. Override to provide updates.
   /// @return An array of FeeConfigUpdate structs (empty by default).
   function hubFeeConfigUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.FeeConfigUpdate[] memory)
   {
@@ -563,7 +563,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the hub interest rate updates to execute. Override to provide updates.
   /// @return An array of InterestRateUpdate structs (empty by default).
   function hubInterestRateUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.InterestRateUpdate[] memory)
   {
@@ -573,7 +573,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the hub reinvestment controller updates to execute. Override to provide updates.
   /// @return An array of ReinvestmentControllerUpdate structs (empty by default).
   function hubReinvestmentControllerUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.ReinvestmentControllerUpdate[] memory)
   {
@@ -582,18 +582,14 @@ abstract contract AaveV4Payload {
 
   /// @notice Returns the hub spoke additions to execute. Override to provide additions.
   /// @return An array of SpokeAddition structs (empty by default).
-  function hubSpokeAdditions()
-    internal
-    virtual
-    returns (IAaveV4ConfigEngine.SpokeAddition[] memory)
-  {
+  function hubSpokeAdditions() public virtual returns (IAaveV4ConfigEngine.SpokeAddition[] memory) {
     return new IAaveV4ConfigEngine.SpokeAddition[](0);
   }
 
   /// @notice Returns the hub spoke-to-assets additions to execute. Override to provide additions.
   /// @return An array of SpokeToAssetsAddition structs (empty by default).
   function hubSpokeToAssetsAdditions()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.SpokeToAssetsAddition[] memory)
   {
@@ -603,7 +599,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the hub spoke caps updates to execute. Override to provide updates.
   /// @return An array of SpokeCapsUpdate structs (empty by default).
   function hubSpokeCapsUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.SpokeCapsUpdate[] memory)
   {
@@ -613,7 +609,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the hub spoke risk premium threshold updates to execute. Override to provide updates.
   /// @return An array of SpokeRiskPremiumThresholdUpdate structs (empty by default).
   function hubSpokeRiskPremiumThresholdUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[] memory)
   {
@@ -623,7 +619,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the hub spoke status updates to execute. Override to provide updates.
   /// @return An array of SpokeStatusUpdate structs (empty by default).
   function hubSpokeStatusUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.SpokeStatusUpdate[] memory)
   {
@@ -632,14 +628,14 @@ abstract contract AaveV4Payload {
 
   /// @notice Returns the hub asset halts to execute. Override to provide halts.
   /// @return An array of AssetHalt structs (empty by default).
-  function hubAssetHalts() internal virtual returns (IAaveV4ConfigEngine.AssetHalt[] memory) {
+  function hubAssetHalts() public virtual returns (IAaveV4ConfigEngine.AssetHalt[] memory) {
     return new IAaveV4ConfigEngine.AssetHalt[](0);
   }
 
   /// @notice Returns the hub asset deactivations to execute. Override to provide deactivations.
   /// @return An array of AssetDeactivation structs (empty by default).
   function hubAssetDeactivations()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.AssetDeactivation[] memory)
   {
@@ -649,7 +645,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the hub asset caps resets to execute. Override to provide resets.
   /// @return An array of AssetCapsReset structs (empty by default).
   function hubAssetCapsResets()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.AssetCapsReset[] memory)
   {
@@ -658,14 +654,14 @@ abstract contract AaveV4Payload {
 
   /// @notice Returns the hub spoke halts to execute. Override to provide halts.
   /// @return An array of SpokeHalt structs (empty by default).
-  function hubSpokeHalts() internal virtual returns (IAaveV4ConfigEngine.SpokeHalt[] memory) {
+  function hubSpokeHalts() public virtual returns (IAaveV4ConfigEngine.SpokeHalt[] memory) {
     return new IAaveV4ConfigEngine.SpokeHalt[](0);
   }
 
   /// @notice Returns the hub spoke deactivations to execute. Override to provide deactivations.
   /// @return An array of SpokeDeactivation structs (empty by default).
   function hubSpokeDeactivations()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.SpokeDeactivation[] memory)
   {
@@ -675,7 +671,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the hub spoke caps resets to execute. Override to provide resets.
   /// @return An array of SpokeCapsReset structs (empty by default).
   function hubSpokeCapsResets()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.SpokeCapsReset[] memory)
   {
@@ -685,7 +681,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke reserve listings to execute. Override to provide listings.
   /// @return An array of ReserveListing structs (empty by default).
   function spokeReserveListings()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.ReserveListing[] memory)
   {
@@ -695,7 +691,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke reserve config updates to execute. Override to provide updates.
   /// @return An array of ReserveConfigUpdate structs (empty by default).
   function spokeReserveConfigUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.ReserveConfigUpdate[] memory)
   {
@@ -705,7 +701,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke reserve price source updates to execute. Override to provide updates.
   /// @return An array of ReservePriceSourceUpdate structs (empty by default).
   function spokeReservePriceSourceUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.ReservePriceSourceUpdate[] memory)
   {
@@ -715,7 +711,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke liquidation config updates to execute. Override to provide updates.
   /// @return An array of LiquidationConfigUpdate structs (empty by default).
   function spokeLiquidationConfigUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.LiquidationConfigUpdate[] memory)
   {
@@ -725,7 +721,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke dynamic reserve config additions to execute. Override to provide additions.
   /// @return An array of DynamicReserveConfigAddition structs (empty by default).
   function spokeDynamicReserveConfigAdditions()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition[] memory)
   {
@@ -735,7 +731,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke dynamic reserve config updates to execute. Override to provide updates.
   /// @return An array of DynamicReserveConfigUpdate structs (empty by default).
   function spokeDynamicReserveConfigUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] memory)
   {
@@ -745,7 +741,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke collateral factor additions to execute. Override to provide additions.
   /// @return An array of CollateralFactorAddition structs (empty by default).
   function spokeCollateralFactorAdditions()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.CollateralFactorAddition[] memory)
   {
@@ -755,7 +751,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke collateral factor updates to execute. Override to provide updates.
   /// @return An array of CollateralFactorUpdate structs (empty by default).
   function spokeCollateralFactorUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.CollateralFactorUpdate[] memory)
   {
@@ -765,7 +761,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke max liquidation bonus additions to execute. Override to provide additions.
   /// @return An array of MaxLiquidationBonusAddition structs (empty by default).
   function spokeMaxLiquidationBonusAdditions()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.MaxLiquidationBonusAddition[] memory)
   {
@@ -775,7 +771,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke max liquidation bonus updates to execute. Override to provide updates.
   /// @return An array of MaxLiquidationBonusUpdate structs (empty by default).
   function spokeMaxLiquidationBonusUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[] memory)
   {
@@ -785,7 +781,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke liquidation fee additions to execute. Override to provide additions.
   /// @return An array of LiquidationFeeAddition structs (empty by default).
   function spokeLiquidationFeeAdditions()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.LiquidationFeeAddition[] memory)
   {
@@ -795,7 +791,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke liquidation fee updates to execute. Override to provide updates.
   /// @return An array of LiquidationFeeUpdate structs (empty by default).
   function spokeLiquidationFeeUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.LiquidationFeeUpdate[] memory)
   {
@@ -805,7 +801,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke all-reserves pauses to execute. Override to provide pauses.
   /// @return An array of SpokePause structs (empty by default).
   function spokeAllReservesPauses()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.SpokePause[] memory)
   {
@@ -815,7 +811,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke all-reserves freezes to execute. Override to provide freezes.
   /// @return An array of SpokeFreeze structs (empty by default).
   function spokeAllReservesFreezes()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.SpokeFreeze[] memory)
   {
@@ -824,18 +820,14 @@ abstract contract AaveV4Payload {
 
   /// @notice Returns the spoke reserve pauses to execute. Override to provide pauses.
   /// @return An array of ReservePause structs (empty by default).
-  function spokeReservePauses()
-    internal
-    virtual
-    returns (IAaveV4ConfigEngine.ReservePause[] memory)
-  {
+  function spokeReservePauses() public virtual returns (IAaveV4ConfigEngine.ReservePause[] memory) {
     return new IAaveV4ConfigEngine.ReservePause[](0);
   }
 
   /// @notice Returns the spoke reserve freezes to execute. Override to provide freezes.
   /// @return An array of ReserveFreeze structs (empty by default).
   function spokeReserveFreezes()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.ReserveFreeze[] memory)
   {
@@ -845,7 +837,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the spoke position manager updates to execute. Override to provide updates.
   /// @return An array of PositionManagerUpdate structs (empty by default).
   function spokePositionManagerUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.PositionManagerUpdate[] memory)
   {
@@ -855,7 +847,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the access manager role grants to execute. Override to provide grants.
   /// @return An array of RoleGrant structs (empty by default).
   function accessManagerRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrant[] memory)
   {
@@ -865,7 +857,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the access manager role revocations to execute. Override to provide revocations.
   /// @return An array of RoleRevocation structs (empty by default).
   function accessManagerRoleRevocations()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleRevocation[] memory)
   {
@@ -875,7 +867,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the access manager role admin updates to execute. Override to provide updates.
   /// @return An array of RoleAdminUpdate structs (empty by default).
   function accessManagerRoleAdminUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleAdminUpdate[] memory)
   {
@@ -885,7 +877,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the access manager role guardian updates to execute. Override to provide updates.
   /// @return An array of RoleGuardianUpdate structs (empty by default).
   function accessManagerRoleGuardianUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGuardianUpdate[] memory)
   {
@@ -895,7 +887,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the access manager target function role updates to execute. Override to provide updates.
   /// @return An array of TargetFunctionRoleUpdate structs (empty by default).
   function accessManagerTargetFunctionRoleUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.TargetFunctionRoleUpdate[] memory)
   {
@@ -905,7 +897,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the access manager target closed updates to execute. Override to provide updates.
   /// @return An array of TargetClosedUpdate structs (empty by default).
   function accessManagerTargetClosedUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.TargetClosedUpdate[] memory)
   {
@@ -915,7 +907,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the access manager role label updates to execute. Override to provide updates.
   /// @return An array of RoleLabelUpdate structs (empty by default).
   function accessManagerRoleLabelUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleLabelUpdate[] memory)
   {
@@ -925,7 +917,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the access manager grant delay updates to execute. Override to provide updates.
   /// @return An array of GrantDelayUpdate structs (empty by default).
   function accessManagerGrantDelayUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.GrantDelayUpdate[] memory)
   {
@@ -935,7 +927,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the access manager target admin delay updates to execute. Override to provide updates.
   /// @return An array of TargetAdminDelayUpdate structs (empty by default).
   function accessManagerTargetAdminDelayUpdates()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory)
   {
@@ -945,7 +937,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the HubConfigurator fee updater role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function hubConfiguratorFeeUpdaterRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -955,7 +947,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the HubConfigurator reinvestment updater role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function hubConfiguratorReinvestmentUpdaterRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -965,7 +957,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the HubConfigurator asset lister role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function hubConfiguratorAssetListerRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -975,7 +967,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the HubConfigurator spoke adder role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function hubConfiguratorSpokeAdderRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -985,7 +977,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the HubConfigurator interest rate updater role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function hubConfiguratorInterestRateUpdaterRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -995,7 +987,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the HubConfigurator halter role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function hubConfiguratorHalterRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -1005,7 +997,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the HubConfigurator deactivater role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function hubConfiguratorDeactivaterRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -1015,7 +1007,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the HubConfigurator caps updater role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function hubConfiguratorCapsUpdaterRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -1025,7 +1017,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the HubConfigurator all-roles grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function hubConfiguratorAllRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -1035,7 +1027,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the SpokeConfigurator admin role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function spokeConfiguratorAdminRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -1045,7 +1037,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the SpokeConfigurator liquidation updater role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function spokeConfiguratorLiquidationUpdaterRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -1055,7 +1047,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the SpokeConfigurator reserve adder role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function spokeConfiguratorReserveAdderRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -1065,7 +1057,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the SpokeConfigurator freezer role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function spokeConfiguratorFreezerRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -1075,7 +1067,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the SpokeConfigurator pauser role grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function spokeConfiguratorPauserRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -1085,7 +1077,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the SpokeConfigurator all-roles grants to execute. Override to provide grants.
   /// @return An array of RoleGrantByName structs (empty by default).
   function spokeConfiguratorAllRoleGrants()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
   {
@@ -1095,7 +1087,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the position manager spoke registrations to execute. Override to provide registrations.
   /// @return An array of SpokeRegistration structs (empty by default).
   function positionManagerSpokeRegistrations()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.SpokeRegistration[] memory)
   {
@@ -1105,7 +1097,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the position manager token rescues to execute. Override to provide rescues.
   /// @return An array of TokenRescue structs (empty by default).
   function positionManagerTokenRescues()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.TokenRescue[] memory)
   {
@@ -1115,7 +1107,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the position manager native rescues to execute. Override to provide rescues.
   /// @return An array of NativeRescue structs (empty by default).
   function positionManagerNativeRescues()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.NativeRescue[] memory)
   {
@@ -1125,7 +1117,7 @@ abstract contract AaveV4Payload {
   /// @notice Returns the position manager role renouncements to execute. Override to provide renouncements.
   /// @return An array of PositionManagerRoleRenouncement structs (empty by default).
   function positionManagerRoleRenouncements()
-    internal
+    public
     virtual
     returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory)
   {
