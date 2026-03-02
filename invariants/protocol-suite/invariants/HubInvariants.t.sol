@@ -2,9 +2,11 @@
 pragma solidity ^0.8.19;
 
 // Libraries
+import {Premium} from 'src/hub/libraries/Premium.sol';
+import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import 'forge-std/console.sol';
+import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 // Interfaces
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -17,6 +19,9 @@ import {HandlerAggregator} from '../HandlerAggregator.t.sol';
 /// @notice Implements Hub Invariants for the protocol
 /// @dev Inherits HandlerAggregator to check actions in assertion testing mode
 abstract contract HubInvariants is HandlerAggregator {
+  using SafeCast for *;
+  using WadRayMath for *;
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                          HUB                                             //
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,41 +76,46 @@ abstract contract HubInvariants is HandlerAggregator {
     assertEq(sumPremOffsetRay, a.premiumOffsetRay, INV_HUB_C);
   }
 
-  function assert_INV_HUB_EF(address hubAddress, uint256 assetId) internal {
-    // Total amounts
-    uint256 totalSuppliedAssets = IHub(hubAddress).getAddedAssets(assetId);
+  function assert_INV_HUB_E(address hubAddress, uint256 assetId) internal {
+    uint256 totalAssets = IHub(hubAddress).getAddedAssets(assetId);
+    uint256 totalShares = IHub(hubAddress).getAddedShares(assetId);
 
-    IHub.Asset memory asset = IHub(hubAddress).getAsset(assetId);
-    uint256 totalDebt = IHub(hubAddress).getAssetTotalOwed(assetId);
-    uint256 accruedFees = IHub(hubAddress).getAssetAccruedFees(assetId);
+    // interest accrued on virtual shares
+    uint256 burntInterest = totalAssets -
+      IHub(hubAddress).previewRemoveByShares(assetId, totalShares);
 
     // Checks: totalAddedAssets ≈ previewRemoveByShares(totalAddedShares)
     // Tolerance: the virtual offset (V=1e6) absorbs a fraction of accrued interest when
-    // converting all shares back to assets. The gap is ceil(V * interestAccrued / (shares + V)).
-    // We use the simpler bound: interestAccrued + 1, since V/(shares+V) < 1.
-    uint256 addedShares = IHub(hubAddress).getAddedShares(assetId);
-    uint256 interestAccrued = totalSuppliedAssets > addedShares
-      ? totalSuppliedAssets - addedShares
-      : 0;
+    // converting all shares back to assets.
     assertApproxEqAbs(
-      totalSuppliedAssets,
-      IHub(hubAddress).previewRemoveByShares(assetId, addedShares),
-      interestAccrued + 1,
-      INV_HUB_E
+      totalAssets,
+      IHub(hubAddress).previewRemoveByShares(assetId, totalShares), // round down
+      burntInterest,
+      INV_HUB_E_1
     );
 
-    // totalAddedAssets + fees = liquidity + totalDebt + deficit + swept
-    // Note: uses approx equality due to rounding differences between totalOwed (rounds twice)
-    // and aggregatedOwedRay.fromRayUp() (rounds once)
-    assertApproxEqAbs(
-      (totalSuppliedAssets + accruedFees) * WadRayMath.RAY,
-      asset.liquidity * WadRayMath.RAY +
-        totalDebt * WadRayMath.RAY +
-        asset.deficitRay +
-        asset.swept * WadRayMath.RAY,
-      2 * WadRayMath.RAY, // tolerance of 2 units for rounding
-      INV_HUB_F
+    assertGe(
+      totalAssets + SharesMath.VIRTUAL_ASSETS,
+      IHub(hubAddress).previewRemoveByShares(assetId, totalShares + SharesMath.VIRTUAL_ASSETS),
+      INV_HUB_E_2
     );
+  }
+
+  function assert_INV_HUB_F(address hubAddress, uint256 assetId) internal {
+    uint256 totalAssets = IHub(hubAddress).getAddedAssets(assetId);
+    uint256 accruedFees = IHub(hubAddress).getAssetAccruedFees(assetId);
+
+    IHub.Asset memory asset = IHub(hubAddress).getAsset(assetId);
+    uint256 index = IHub(hubAddress).getAssetDrawnIndex(assetId);
+    uint256 premiumRay = Premium.calculatePremiumRay({
+      premiumShares: asset.premiumShares,
+      premiumOffsetRay: asset.premiumOffsetRay,
+      drawnIndex: index
+    });
+    uint256 drawnRay = asset.drawnShares * index;
+    uint256 aggregatedOwed = (drawnRay + premiumRay + asset.deficitRay).fromRayUp();
+
+    assertEq(totalAssets + accruedFees, asset.liquidity + aggregatedOwed + asset.swept, INV_HUB_F);
   }
 
   function assert_INV_HUB_GH(address hubAddress, uint256 assetId) internal {

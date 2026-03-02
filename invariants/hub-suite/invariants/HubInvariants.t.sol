@@ -2,6 +2,8 @@
 pragma solidity ^0.8.19;
 
 // Libraries
+import {Premium} from 'src/hub/libraries/Premium.sol';
+import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
@@ -18,6 +20,7 @@ import {HandlerAggregator} from '../HandlerAggregator.t.sol';
 /// @dev Inherits HandlerAggregator to check actions in assertion testing mode
 abstract contract HubInvariants is HandlerAggregator {
   using SafeCast for *;
+  using WadRayMath for *;
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                           HUB                                             //
@@ -72,30 +75,45 @@ abstract contract HubInvariants is HandlerAggregator {
     assertEq(sumPremOffsetRay, a.premiumOffsetRay, INV_HUB_C);
   }
 
-  function assert_INV_HUB_EF(uint256 assetId) internal {
-    // Total amounts
-    uint256 totalSuppliedAssets = hub.getAddedAssets(assetId);
+  function assert_INV_HUB_E(uint256 assetId) internal {
+    uint256 totalAssets = hub.getAddedAssets(assetId);
+    uint256 totalShares = hub.getAddedShares(assetId);
+
+    // interest accrued on virtual shares
+    uint256 burntInterest = totalAssets - hub.previewRemoveByShares(assetId, totalShares);
+
+    // Checks: totalAddedAssets ≈ previewRemoveByShares(totalAddedShares)
+    // Tolerance: the virtual offset (V=1e6) absorbs a fraction of accrued interest when
+    // converting all shares back to assets
+    assertApproxEqAbs(
+      totalAssets,
+      hub.previewRemoveByShares(assetId, totalShares), // round down
+      burntInterest,
+      INV_HUB_E_1
+    );
+
+    assertGe(
+      totalAssets + SharesMath.VIRTUAL_ASSETS,
+      hub.previewRemoveByShares(assetId, totalShares + SharesMath.VIRTUAL_ASSETS),
+      INV_HUB_E_2
+    );
+  }
+
+  function assert_INV_HUB_F(uint256 assetId) internal {
+    uint256 totalAssets = hub.getAddedAssets(assetId);
+    uint256 accruedFees = hub.getAssetAccruedFees(assetId);
 
     IHub.Asset memory asset = hub.getAsset(assetId);
-    uint256 totalDebt = hub.getAssetTotalOwed(assetId);
+    uint256 index = hub.getAssetDrawnIndex(assetId);
+    uint256 premiumRay = Premium.calculatePremiumRay({
+      premiumShares: asset.premiumShares,
+      premiumOffsetRay: asset.premiumOffsetRay,
+      drawnIndex: index
+    });
+    uint256 drawnRay = asset.drawnShares * index;
+    uint256 aggregatedOwed = (drawnRay + premiumRay + asset.deficitRay).fromRayUp();
 
-    // Checks
-    assertApproxEqAbs(
-      //TODO check todo file INV_HUB_E
-      totalSuppliedAssets,
-      hub.previewRemoveByShares(assetId, hub.getAddedShares(assetId)),
-      hub.previewRemoveByShares(assetId, 1), // tolerance of 1 share for rounding
-      INV_HUB_E
-    );
-
-    assertEq(
-      totalSuppliedAssets * WadRayMath.RAY,
-      asset.liquidity * WadRayMath.RAY +
-        totalDebt * WadRayMath.RAY +
-        asset.deficitRay +
-        asset.swept * WadRayMath.RAY,
-      INV_HUB_F
-    );
+    assertEq(totalAssets + accruedFees, asset.liquidity + aggregatedOwed + asset.swept, INV_HUB_F);
   }
 
   function assert_INV_HUB_GH(uint256 assetId) internal {
@@ -188,7 +206,8 @@ abstract contract HubInvariants is HandlerAggregator {
   function assert_INV_HUB_ERC4626_A(uint256 assetId, address spoke) internal {
     uint256 addedAssets = hub.getSpokeAddedAssets(assetId, spoke);
     uint256 addedShares = hub.getSpokeAddedShares(assetId, spoke);
-    if (addedAssets != 0) assertTrue(addedShares != 0, INV_HUB_ERC4626_A);
+    uint256 premiumShares = hub.getSpoke(assetId, spoke).premiumShares;
+    if (addedAssets != 0 && premiumShares == 0) assertTrue(addedShares != 0, INV_HUB_ERC4626_A);
   }
 
   function assert_INV_HUB_ERC4626_B(uint256 assetId, address spoke) internal {
@@ -200,7 +219,8 @@ abstract contract HubInvariants is HandlerAggregator {
   function assert_INV_HUB_ERC4626_C(uint256 assetId) internal {
     uint256 addedAssets = hub.getAddedAssets(assetId);
     uint256 addedShares = hub.getAddedShares(assetId);
-    if (addedAssets != 0) assertTrue(addedShares != 0, INV_HUB_ERC4626_C);
+    uint256 premiumShares = hub.getAsset(assetId).premiumShares;
+    if (addedAssets != 0 && premiumShares == 0) assertTrue(addedShares != 0, INV_HUB_ERC4626_C);
   }
 
   function assert_INV_HUB_ERC4626_D(uint256 assetId) internal {

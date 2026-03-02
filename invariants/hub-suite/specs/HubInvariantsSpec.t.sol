@@ -56,13 +56,13 @@ abstract contract HubInvariantsSpec is InvariantsSpec {
   // GENERIC
 
   string constant INV_HUB_ERC4626_A =
-    'INV_HUB_ERC4626_A: Spoke cannot have non-zero assets and zero shares in add side';
+    'INV_HUB_ERC4626_A: Spoke cannot have non-zero assets and zero shares in add side without any premium';
 
   string constant INV_HUB_ERC4626_B =
     'INV_HUB_ERC4626_B: Spoke cannot have non-zero assets and zero shares in draw side';
 
   string constant INV_HUB_ERC4626_C =
-    'INV_HUB_ERC4626_C: Asset cannot have non-zero assets and zero shares in add side';
+    'INV_HUB_ERC4626_C: Asset cannot have non-zero assets and zero shares in add side without any premium';
 
   string constant INV_HUB_ERC4626_D =
     'INV_HUB_ERC4626_D: Asset cannot have non-zero assets and zero shares in draw side';

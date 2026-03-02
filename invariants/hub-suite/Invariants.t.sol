@@ -14,7 +14,8 @@ abstract contract Invariants is HubInvariants {
       assert_INV_HUB_A(i);
       assert_INV_HUB_B(i);
       assert_INV_HUB_C(i);
-      assert_INV_HUB_EF(i);
+      assert_INV_HUB_E(i);
+      assert_INV_HUB_F(i);
       assert_INV_HUB_GH(i);
       assert_INV_HUB_I(i);
       assert_INV_HUB_K(i);

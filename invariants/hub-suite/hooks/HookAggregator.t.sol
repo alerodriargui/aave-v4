@@ -6,7 +6,6 @@ import {DefaultBeforeAfterHooks} from './DefaultBeforeAfterHooks.t.sol';
 
 // Utils
 import {ErrorHandlers} from '../../shared/utils/ErrorHandlers.sol';
-import 'forge-std/console.sol';
 
 /// @title HookAggregator
 /// @notice Helper contract to aggregate all before / after hook contracts, inherited on each handler

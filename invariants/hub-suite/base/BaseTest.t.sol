@@ -37,7 +37,7 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
 
   /// @dev Solves medusa backward time warp issue
   modifier monotonicTimestamp() virtual {
-    /// @dev: Implement monotonic timestamp if needed
+    // @dev Implement monotonic timestamp if needed
     _;
   }
 

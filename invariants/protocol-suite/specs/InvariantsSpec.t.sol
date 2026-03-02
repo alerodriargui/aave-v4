@@ -28,11 +28,14 @@ abstract contract InvariantsSpec {
   string constant INV_HUB_C =
     'INV_HUB_C: Sum of [baseDrawnShares/premiumDrawnShares/premiumOffsetRay] of individual (spoke/user) should match the corresponding value of the asset on the Hub';
 
-  string constant INV_HUB_E =
-    'INV_HUB_E: hub.getAddedAssets and hub.previewRemoveByShares(hub.getAddedShares(assetId)) should match at any time, should not be off by more than 1 share worth of assets due to division precision loss';
+  string constant INV_HUB_E_1 =
+    'INV_HUB_E: total assets is equal to or greater than the supplied amount without taking into account the virtual assets and shares up to the burn interest to virtual shares';
+
+  string constant INV_HUB_E_2 =
+    'INV_HUB_E: total assets is equal to the supplied amount when taking into account the virtual assets and shares';
 
   string constant INV_HUB_F =
-    'INV_HUB_F: hub.getTotalSuppliedAssets = totalAssets() = availableLiquidity + totalDebt + deficit + swept';
+    'INV_HUB_F: hub.getTotalSuppliedAssets = totalAssets() = availableLiquidity + (totalDebtRay + deficitRay).fromRayUp + swept';
 
   string constant INV_HUB_G =
     'INV_HUB_G: totalAddedAssets = sum of addedAssets of all registered spokes (including present & past treasury spoke) with a tolerance of SPOKE_COUNT'; // TODO check if tolerance is correct
