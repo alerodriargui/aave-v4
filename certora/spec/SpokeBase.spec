@@ -100,6 +100,11 @@ definition outOfScopeFunctions(method f) returns bool =
     f.selector == sig:multicall(bytes[]).selector ||
     f.selector == sig:liquidationCall(uint256, uint256, address, uint256, bool).selector;
 
+definition listedReserveId(uint256 reserveId) returns bool =
+    spoke._reserves[reserveId].underlying != 0 &&
+    spoke._reserves[reserveId].hub != 0 &&
+    spoke._hubAssetIdToReserveId[spoke._reserves[reserveId].hub][spoke._reserves[reserveId].assetId] == reserveId;
+
 
 function setup() {
     
@@ -107,8 +112,8 @@ function setup() {
     require forall uint256 reserveId. forall address user.
     // exists
     (reserveId < spoke._reserveCount  => 
-    // has underlying and hub
-    (spoke._reserves[reserveId].underlying != 0 && spoke._reserves[reserveId].hub != 0 && spoke._reserveExists[spoke._reserves[reserveId].hub][spoke._reserves[reserveId].assetId] )
+    // has underlying, hub, and reverse map points to this reserve
+    listedReserveId(reserveId)
     &&
     // not exists
     (reserveId >= spoke._reserveCount => ( 

@@ -115,8 +115,8 @@ invariant validReserveId()
 forall uint256 reserveId. forall address user.
     // exists
     (reserveId < spoke._reserveCount  => 
-    // has underlying and hub
-    (spoke._reserves[reserveId].underlying != 0 && spoke._reserves[reserveId].hub != 0 && spoke._reserveExists[spoke._reserves[reserveId].hub][spoke._reserves[reserveId].assetId] )
+    // has underlying, hub, and reverse map points to this reserve
+    listedReserveId(reserveId)
     &&
     // not exists
     (reserveId >= spoke._reserveCount => ( 
@@ -137,8 +137,8 @@ invariant validReserveId_single(uint256 reserveId)
  
     // exists
     (reserveId < spoke._reserveCount  => 
-    // has underlying and hub
-    (spoke._reserves[reserveId].underlying != 0 && spoke._reserves[reserveId].hub != 0 && spoke._reserveExists[spoke._reserves[reserveId].hub][spoke._reserves[reserveId].assetId] ))
+    // has underlying, hub, and reverse map points to this reserve
+    listedReserveId(reserveId))
     &&
     // not exists
     (reserveId >= spoke._reserveCount =>
@@ -164,8 +164,8 @@ invariant validReserveId_single(uint256 reserveId)
 function validReserveId_singleUser(uint256 reserveId, address user)  {
     require
     (reserveId < spoke._reserveCount  => 
-    // has underlying and hub
-    (spoke._reserves[reserveId].underlying != 0 && spoke._reserves[reserveId].hub != 0 && spoke._reserveExists[spoke._reserves[reserveId].hub][spoke._reserves[reserveId].assetId] ))
+    // has underlying, hub, and reverse map points to this reserve
+    listedReserveId(reserveId))
     &&
     // not exists
     (reserveId >= spoke._reserveCount =>
@@ -289,5 +289,4 @@ invariant dynamicConfigKeyConsistency(uint256 reserveId, address user)
         requireInvariant validReserveId_single(reserveId);
     }
 }
-
 

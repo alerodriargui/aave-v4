@@ -213,8 +213,8 @@ function safeAssumptions() {
 
     // a reservid that exists has underlying and hub
     require forall uint256 reserveId. (reserveId < spoke._reserveCount  => 
-    // has underlying and hub
-    (spoke._reserves[reserveId].underlying != 0 && spoke._reserves[reserveId].hub == hub && spoke._reserveExists[spoke._reserves[reserveId].hub][spoke._reserves[reserveId].assetId] ));
+    // has underlying, maps back to this reserve, and belongs to the expected hub
+    (listedReserveId(reserveId) && spoke._reserves[reserveId].hub == hub));
 
     // a reservid that does not exist has no underlying, hub, assetId
     require forall uint256 reserveId. reserveId >= spoke._reserveCount => (
