@@ -419,7 +419,7 @@ invariant underlyingAssetsIntegrity()
             underlyingToAssetIdMirror[hub._assets[assetId].underlying] == assetId)
     &&
     (forall address underlying.
-        listedUnderlying(underlying) =>
+        underlying != 0 && listedUnderlying(underlying) =>
             underlyingToAssetIdMirror[underlying] < hub._assetCount);
 
 
