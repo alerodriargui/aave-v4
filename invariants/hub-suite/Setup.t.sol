@@ -6,10 +6,6 @@ import {ActorsUtils} from '../shared/utils/ActorsUtils.sol';
 import {Constants} from 'tests/Constants.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {Actor} from '../shared/utils/Actor.sol';
-import 'forge-std/console.sol';
-
-// Interfaces
-import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 // Test Contracts
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
@@ -20,7 +16,8 @@ import {DeployUtils} from 'tests/DeployUtils.sol';
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
-import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
+import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
+import {Hub, IHub} from 'src/hub/Hub.sol';
 
 /// @notice Setup contract for the invariant test Suite, inherited by Tester
 contract Setup is BaseTest {
@@ -68,7 +65,7 @@ contract Setup is BaseTest {
     accessManager = new AccessManager(admin);
 
     // Hub 1
-    hub = DeployUtils.deployHub(address(accessManager));
+    hub = new Hub(address(accessManager));
     irStrategy = new AssetInterestRateStrategy(address(hub));
 
     // Configurators
@@ -293,6 +290,38 @@ contract Setup is BaseTest {
       selectors[1] = IHub.setInterestRateData.selector;
       selectors[2] = IHub.updateAssetConfig.selector;
       accessManager.setTargetFunctionRole(address(hub), selectors, Roles.HUB_ADMIN_ROLE);
+    }
+
+    {
+      bytes4[] memory selectors = new bytes4[](22);
+      selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
+      selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
+      selectors[2] = IHubConfigurator.updateFeeConfig.selector;
+      selectors[3] = IHubConfigurator.updateInterestRateStrategy.selector;
+      selectors[4] = IHubConfigurator.updateReinvestmentController.selector;
+      selectors[5] = IHubConfigurator.resetAssetCaps.selector;
+      selectors[6] = IHubConfigurator.deactivateAsset.selector;
+      selectors[7] = IHubConfigurator.haltAsset.selector;
+      selectors[8] = IHubConfigurator.addSpoke.selector;
+      selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
+      selectors[10] = IHubConfigurator.updateSpokeActive.selector;
+      selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
+      selectors[12] = IHubConfigurator.updateSpokeSupplyCap.selector;
+      selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
+      selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
+      selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
+      selectors[16] = IHubConfigurator.deactivateSpoke.selector;
+      selectors[17] = IHubConfigurator.haltSpoke.selector;
+      selectors[18] = IHubConfigurator.resetSpokeCaps.selector;
+      selectors[19] = IHubConfigurator.updateInterestRateData.selector;
+      selectors[20] = IHubConfigurator.addAsset.selector;
+      selectors[21] = IHubConfigurator.addAssetWithDecimals.selector;
+
+      accessManager.setTargetFunctionRole(
+        address(hubConfigurator),
+        selectors,
+        accessManager.PUBLIC_ROLE()
+      );
     }
   }
 

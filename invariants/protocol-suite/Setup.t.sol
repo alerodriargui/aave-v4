@@ -6,7 +6,6 @@ import {CREATE3} from '../shared/utils/CREATE3.sol';
 import {ActorsUtils} from '../shared/utils/ActorsUtils.sol';
 import {Constants} from 'tests/Constants.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
-import 'forge-std/console.sol';
 
 // Interfaces
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
