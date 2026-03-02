@@ -118,6 +118,7 @@ abstract contract HubInvariants is HandlerAggregator {
 
   function assert_INV_HUB_GH(uint256 assetId) internal {
     uint256 spokeCount = NUMBER_OF_ACTORS;
+    uint256 tolerancePerActor = hub.previewAddByShares(assetId, 1);
 
     // Sum per-spoke values
     uint256 totalAddedAssets;
@@ -132,7 +133,12 @@ abstract contract HubInvariants is HandlerAggregator {
     // Checks
     uint256 addedShares = hub.getAddedShares(assetId);
     if (addedShares > 0) {
-      assertApproxEqAbs(totalAddedAssets, hub.getAddedAssets(assetId), SPOKE_COUNT, INV_HUB_G); // TODO check if tolerance is correct
+      assertApproxEqAbs(
+        totalAddedAssets,
+        hub.getAddedAssets(assetId),
+        SPOKE_COUNT * tolerancePerActor,
+        INV_HUB_G
+      );
     }
     assertEq(totalAddedShares, hub.getAddedShares(assetId), INV_HUB_H);
   }

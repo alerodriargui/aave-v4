@@ -217,11 +217,11 @@ contract HubHandler is BaseHandler, IHubHandler {
     }
   }
 
-  function eliminateDeficit(uint256 amount, uint8 i, uint8 j) external setup {
+  function eliminateDeficit(uint256 amount, uint8 i) external setup {
     bool success;
     bytes memory returnData;
     targetAssetId = _getRandomBaseAssetId(i);
-    address spoke = _getRandomActor(j);
+    address spoke = address(actors[USER3]); // todo move this to an auth handler?
 
     _before();
     (success, returnData) = actor.proxy(

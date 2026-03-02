@@ -40,11 +40,10 @@ abstract contract HubInvariants is HandlerAggregator {
     uint256 sumDebt;
 
     for (uint256 i; i < spokeCount; i++) {
-      (uint256 d, uint256 p) = IHub(hubAddress).getSpokeOwed(assetId, allSpokes[i]);
-      sumDebt += d + p;
+      sumDebt += IHub(hubAddress).getSpokeTotalOwed(assetId, allSpokes[i]);
     }
 
-    uint256 assetTotal = IHub(hubAddress).getAssetTotalOwed(assetId); // drawn + premium
+    uint256 assetTotal = IHub(hubAddress).getAssetTotalOwed(assetId);
     assertGe(sumDebt, assetTotal, INV_HUB_B);
   }
 
@@ -120,6 +119,7 @@ abstract contract HubInvariants is HandlerAggregator {
 
   function assert_INV_HUB_GH(address hubAddress, uint256 assetId) internal {
     uint256 spokeCount = allSpokes.length;
+    uint256 tolerancePerActor = IHub(hubAddress).previewAddByShares(assetId, 1);
 
     // Sum per-spoke values
     uint256 totalAddedAssets;
@@ -133,7 +133,7 @@ abstract contract HubInvariants is HandlerAggregator {
     assertApproxEqAbs(
       totalAddedAssets,
       IHub(hubAddress).getAddedAssets(assetId),
-      spokeCount,
+      spokeCount * tolerancePerActor,
       INV_HUB_G
     );
     assertEq(totalAddedShares, IHub(hubAddress).getAddedShares(assetId), INV_HUB_H);

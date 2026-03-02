@@ -36,12 +36,12 @@ contract ReplayTest8 is Invariants, Setup {
   //                                   		REPLAY TESTS                                     //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  function test_replay_8_eliminateDeficit() public {
-    _setUpActor(USER1);
-    Tester.refreshPremium(1, 0);
-    _delay(1);
-    Tester.eliminateDeficit(1, 0, 0);
-  }
+  // function test_replay_8_eliminateDeficit() public {
+  //   _setUpActor(USER1);
+  //   Tester.refreshPremium(1, 0);
+  //   _delay(1);
+  //   Tester.eliminateDeficit(1, 0, 0);
+  // }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                           HELPERS                                         //

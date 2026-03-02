@@ -63,7 +63,7 @@ contract ReplayTest2Hub is Invariants, Setup {
     Tester.add(2, 1);
     Tester.draw(1, 1);
     _delay(1);
-    Tester.eliminateDeficit(1974577205127400860, 0, 0);
+    Tester.eliminateDeficit(1974577205127400860, 0);
   }
 
   /// @dev PASS
