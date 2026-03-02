@@ -38,6 +38,13 @@ library MathUtils {
     }
   }
 
+  /// @notice Returns the saturating subtraction at zero.
+  function zeroFloorSub(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    assembly ('memory-safe') {
+      c := mul(sub(a, b), gt(a, b))
+    }
+  }
+
   /// @notice Returns the sum of an unsigned and signed integer.
   /// @dev Reverts on underflow.
   function add(uint256 a, int256 b) internal pure returns (uint256) {
@@ -71,6 +78,18 @@ library MathUtils {
   function uncheckedExp(uint256 a, uint256 b) internal pure returns (uint256) {
     unchecked {
       return a ** b;
+    }
+  }
+
+  /// @notice Divides `a` by `b`, rounding up.
+  /// @dev Reverts if division by zero.
+  /// @return c = ceil(a / b).
+  function divUp(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    assembly ('memory-safe') {
+      if iszero(b) {
+        revert(0, 0)
+      }
+      c := add(div(a, b), gt(mod(a, b), 0))
     }
   }
 
