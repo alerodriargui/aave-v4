@@ -12,9 +12,7 @@
     "targetContractsBalances": [
       "0xffffffffffffffffffffffffffffffffffffffffffffffffffff"
     ],
-    "predeployedContracts": {
-      "LiquidationLogic": "0xf01"
-    },
+    "predeployedContracts": {},
     "constructorArgs": {},
     "deployerAddress": "0x30000",
     "senderAddresses": ["0x10000", "0x20000", "0x30000"],
@@ -68,11 +66,7 @@
       "target": "invariants/hub-suite/Tester.t.sol",
       "solcVersion": "",
       "exportDirectory": "",
-      "args": [
-        "--solc-remaps",
-        "forge-std/=../../../lib/forge-std/src/",
-        "--compile-libraries=(LiquidationLogic,0xf01)"
-      ]
+      "args": ["--solc-remaps", "forge-std/=../../../lib/forge-std/src/"]
     }
   },
   "logging": {

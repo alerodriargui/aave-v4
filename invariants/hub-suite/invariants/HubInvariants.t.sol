@@ -215,8 +215,11 @@ abstract contract HubInvariants is HandlerAggregator {
   function assert_INV_HUB_ERC4626_A(uint256 assetId, address spoke) internal {
     uint256 addedAssets = hub.getSpokeAddedAssets(assetId, spoke);
     uint256 addedShares = hub.getSpokeAddedShares(assetId, spoke);
-    uint256 premiumShares = hub.getSpoke(assetId, spoke).premiumShares;
-    if (addedAssets != 0 && premiumShares == 0) assertTrue(addedShares != 0, INV_HUB_ERC4626_A);
+    uint256 premiumRay = hub.getAssetPremiumRay(assetId);
+    // since premium can be incurred without drawing liquidity
+    if (addedAssets != 0 && premiumRay == 0) {
+      assertTrue(addedShares != 0, INV_HUB_ERC4626_A);
+    }
   }
 
   function assert_INV_HUB_ERC4626_B(uint256 assetId, address spoke) internal {
@@ -228,8 +231,11 @@ abstract contract HubInvariants is HandlerAggregator {
   function assert_INV_HUB_ERC4626_C(uint256 assetId) internal {
     uint256 addedAssets = hub.getAddedAssets(assetId);
     uint256 addedShares = hub.getAddedShares(assetId);
-    uint256 premiumShares = hub.getAsset(assetId).premiumShares;
-    if (addedAssets != 0 && premiumShares == 0) assertTrue(addedShares != 0, INV_HUB_ERC4626_C);
+    uint256 premiumRay = hub.getAssetPremiumRay(assetId);
+    // since premium can be incurred without drawing liquidity
+    if (addedAssets != 0 && premiumRay == 0) {
+      assertTrue(addedShares != 0, INV_HUB_ERC4626_C);
+    }
   }
 
   function assert_INV_HUB_ERC4626_D(uint256 assetId) internal {
