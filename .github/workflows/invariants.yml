@@ -1,4 +1,4 @@
-name: Echidna-Invariants Enigma-Dark
+name: Echidna-Invariants
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
       - name: Run Echidna ${{ matrix.mode == 'property' && 'Property' || 'Assertion' }} Mode
         uses: crytic/echidna-action@v2
         with:
-          files: .
-          contract: invariants/protocol-suite/Tester.t.sol:Tester
+          files: invariants/protocol-suite/Tester.t.sol
+          contract: Tester
           config: invariants/protocol-suite/_config/echidna_config_ci.yaml
           test-mode: ${{ matrix.mode == 'assertion' && 'assertion' || '' }}
