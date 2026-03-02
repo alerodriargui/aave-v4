@@ -1,0 +1,45 @@
+name: Echidna-Invariants
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+env:
+  FOUNDRY_PROFILE: invariant
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  echidna:
+    name: Echidna-Invariants (${{ matrix.mode }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        mode: [property, assertion]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run Foundry setup
+        uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
+        with:
+          FOUNDRY_VERSION: nightly
+
+      - name: Run Forge Build
+        run: forge build --build-info
+
+      - name: Run Echidna ${{ matrix.mode == 'property' && 'Property' || 'Assertion' }} Mode
+        uses: crytic/echidna-action@v2
+        with:
+          files: invariants/hub-suite/Tester.t.sol
+          contract: Tester
+          config: invariants/hub-suite/_config/echidna_config_ci.yaml
+          test-mode: ${{ matrix.mode == 'assertion' && 'assertion' || '' }}

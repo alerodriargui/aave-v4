@@ -11,7 +11,7 @@ balanceAddr: 0x1000000000000000000000000
 balanceContract: 0x1000000000000000000000000000000000000000000000000
 
 #testLimit is the number of test sequences to run
-testLimit: 80000
+testLimit: 200000
 
 #seqLen defines how many transactions are in a test sequence
 seqLen: 300
