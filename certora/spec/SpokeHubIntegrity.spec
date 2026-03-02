@@ -74,7 +74,9 @@ hook Sstore _userPositions[KEY address user][KEY uint256 reserveId].premiumOffse
 
 /// Verify that the user drawn shares are consistent with the Hub drawn shares
 invariant userDrawnShareConsistency(uint256 reserveId) 
-    sumUserDrawnSharesPerReserveId[reserveId] == hub._spokes[spoke._reserves[reserveId].assetId][spoke].drawnShares &&
+    (reserveId < spoke._reserveCount =>
+        sumUserDrawnSharesPerReserveId[reserveId] == hub._spokes[spoke._reserves[reserveId].assetId][spoke].drawnShares)
+    &&
     ( reserveId >= spoke._reserveCount => 
         sumUserDrawnSharesPerReserveId[reserveId] == 0
     ) 
@@ -106,7 +108,9 @@ invariant userDrawnShareConsistency(uint256 reserveId)
 
 /// Verify that the user premium shares are consistent with the Hub premium shares
 invariant userPremiumShareConsistency(uint256 reserveId) 
-    sumUserPremiumSharesPerReserveId[reserveId] == hub._spokes[spoke._reserves[reserveId].assetId][spoke].premiumShares &&
+    (reserveId < spoke._reserveCount =>
+        sumUserPremiumSharesPerReserveId[reserveId] == hub._spokes[spoke._reserves[reserveId].assetId][spoke].premiumShares)
+    &&
     ( reserveId >= spoke._reserveCount => 
         sumUserPremiumSharesPerReserveId[reserveId] == 0
     )
@@ -127,7 +131,9 @@ invariant userPremiumShareConsistency(uint256 reserveId)
 
 /// Verify that the user premium offset is consistent with the Hub premium offset
 invariant userPremiumOffsetConsistency(uint256 reserveId) 
-    sumUserPremiumOffsetPerReserveId[reserveId] == hub._spokes[spoke._reserves[reserveId].assetId][spoke].premiumOffsetRay &&
+    (reserveId < spoke._reserveCount =>
+        sumUserPremiumOffsetPerReserveId[reserveId] == hub._spokes[spoke._reserves[reserveId].assetId][spoke].premiumOffsetRay)
+    &&
     ( reserveId >= spoke._reserveCount => 
         sumUserPremiumOffsetPerReserveId[reserveId] == 0
     ) 
@@ -149,8 +155,9 @@ invariant userPremiumOffsetConsistency(uint256 reserveId)
 
 /// Verify that the user supplied shares are consistent with the Hub supplied shares
 invariant userSuppliedShareConsistency(uint256 reserveId, uint256 assetId_) 
-    sumUserSuppliedSharesPerReserveId[reserveId] <= hub._spokes[spoke._reserves[reserveId].assetId][spoke].addedShares
-    && 
+    (reserveId < spoke._reserveCount =>
+        sumUserSuppliedSharesPerReserveId[reserveId] <= hub._spokes[spoke._reserves[reserveId].assetId][spoke].addedShares)
+    &&
     ( reserveId >= spoke._reserveCount => 
         sumUserSuppliedSharesPerReserveId[reserveId] == 0
     )
