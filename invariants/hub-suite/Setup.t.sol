@@ -173,6 +173,7 @@ contract Setup is BaseTest {
     // Spoke 1: usdc, weth and wbtc
     // Spoke 2: weth and wbtc
     // Spoke 3: usdc, weth and wbtc
+    // Only Spoke 3 is granted DEFICIT_ELIMINATOR Role
 
     // Add SPOKE 1 assets to hub
     hub.addSpoke(
@@ -276,6 +277,13 @@ contract Setup is BaseTest {
     usdc.approve(address(hub), type(uint256).max);
     weth.approve(address(hub), type(uint256).max);
     wbtc.approve(address(hub), type(uint256).max);
+
+    accessManager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, address(actors[USER3]), 0);
+    {
+      bytes4[] memory selectors = new bytes4[](1);
+      selectors[0] = IHub.eliminateDeficit.selector;
+      accessManager.setTargetFunctionRole(address(hub), selectors, Roles.DEFICIT_ELIMINATOR_ROLE);
+    }
   }
 
   /// @notice Set up roles for the configurators
