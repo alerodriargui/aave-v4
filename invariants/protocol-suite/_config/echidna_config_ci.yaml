@@ -51,15 +51,6 @@ cryticArgs: ["--ignore-compile", "--compile-libraries=(LiquidationLogic,0xf01)"]
 
 deployContracts: [["0xf01", "LiquidationLogic"]]
 
-# create2factory
-deployBytecodes:
-  [
-    [
-      "0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7",
-      "7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3",
-    ],
-  ]
-
 # maximum value to send to payable functions
 maxValue: 1e+30 # 100000000000 eth
 
