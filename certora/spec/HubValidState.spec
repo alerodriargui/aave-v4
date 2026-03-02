@@ -167,6 +167,9 @@ definition emptyAsset(uint256 assetId) returns bool =
             !hub._spokes[assetId][spokeId].active &&
             assetToSpokeIndexes[assetId][to_bytes32(spokeId)] == 0
         );
+
+definition listedUnderlying(address underlying) returns bool =
+    hub._assets[underlyingToAssetIdMirror[underlying]].underlying == underlying;
         
 
 
@@ -179,10 +182,11 @@ invariant validAssetId(uint256 assetId, address asset )
     (assetId < hub._assetCount => 
         // uniqueness of underlying
         (forall uint256 otherAssetId. otherAssetId != assetId => hub._assets[assetId].underlying != hub._assets[otherAssetId].underlying ) &&
-        // in list of underlying assets
-        (underlyingAssetsIndexes[to_bytes32(hub._assets[assetId].underlying)] != 0)) &&
-    // not in underlyingAssetsIndexes implies no assetId with this underlying
-     (forall address asset1. asset1!=0 && underlyingAssetsIndexes[to_bytes32(asset1)] == 0 => (forall uint256 anyAssetId. hub._assets[anyAssetId].underlying != asset1 ))
+        // listed by reverse mapping and round-trips to the current assetId
+        (listedUnderlying(hub._assets[assetId].underlying)) &&
+        (underlyingToAssetIdMirror[hub._assets[assetId].underlying] == assetId)) &&
+    // non-listed underlying implies no assetId with this underlying
+     (forall address asset1. asset1!=0 && !listedUnderlying(asset1) => (forall uint256 anyAssetId. hub._assets[anyAssetId].underlying != asset1 ))
     {
         preserved {
             requireInvariant assetToSpokesIntegrity(assetId);
@@ -351,16 +355,8 @@ ghost mapping(uint256 => uint256) assetToSpokeLength {
     axiom forall uint256 assetId. assetToSpokeLength[assetId] < max_uint256;
 }
 
-ghost mapping(bytes32 => uint256) underlyingAssetsIndexes {
-    init_state axiom forall bytes32 x. underlyingAssetsIndexes[x] == 0;
-}
-ghost mapping(mathint => bytes32) underlyingAssetsValues {
-    init_state axiom forall mathint x. underlyingAssetsValues[x] == to_bytes32(0);
-}
-ghost uint256 underlyingAssetsLength {
-    init_state axiom underlyingAssetsLength == 0;
-    // assumption: it's infeasible to grow the list to these many elements.
-    axiom underlyingAssetsLength < max_uint256;
+ghost mapping(address => uint256) underlyingToAssetIdMirror {
+    init_state axiom forall address underlying. underlyingToAssetIdMirror[underlying] == 0;
 }
 
 // HOOKS
@@ -397,27 +393,13 @@ hook Sload uint256 index hub._assetToSpokes[KEY uint256 assetId]._inner._positio
 }
 
 
-// Store hook to synchronize underlyingAssetsLength with the length of the set._inner._values array.
-hook Sstore hub._underlyingAssets._inner._values.length uint256 newLength {
-    underlyingAssetsLength = newLength;
-}
-// Store hook to synchronize underlyingAssetsValues array with set._inner._values.
-hook Sstore hub._underlyingAssets._inner._values[INDEX uint256 index] bytes32 newValue {
-    underlyingAssetsValues[index] = newValue;
-}
-// Store hook to synchronize underlyingAssetsIndexes array with set._inner._positions.
-hook Sstore hub._underlyingAssets._inner._positions[KEY bytes32 value] uint256 newIndex {
-    underlyingAssetsIndexes[value] = newIndex;
+// Store hook to synchronize underlyingToAssetIdMirror with hub._underlyingToAssetId.
+hook Sstore hub._underlyingToAssetId[KEY address underlying] uint256 newAssetId {
+    underlyingToAssetIdMirror[underlying] = newAssetId;
 }
 
-hook Sload uint256 length hub._underlyingAssets._inner._values.length {
-    require underlyingAssetsLength == length;
-}
-hook Sload bytes32 value hub._underlyingAssets._inner._values[INDEX uint256 index] {
-    require underlyingAssetsValues[index] == value;
-}
-hook Sload uint256 index hub._underlyingAssets._inner._positions[KEY bytes32 value] {
-    require underlyingAssetsIndexes[value] == index;
+hook Sload uint256 assetId hub._underlyingToAssetId[KEY address underlying] {
+    require underlyingToAssetIdMirror[underlying] == assetId;
 }
 
 // INVARIANTS
@@ -432,9 +414,13 @@ invariant assetToSpokesIntegrity(uint256 assetId)
          (assetToSpokeValues[assetId][assetToSpokeIndexes[assetId][value] - 1] == value && assetToSpokeIndexes[assetId][value] >= 1 && assetToSpokeIndexes[assetId][value] <= assetToSpokeLength[assetId]));
 
 invariant underlyingAssetsIntegrity()
-    (forall uint256 index. 0 <= index && index < underlyingAssetsLength => to_mathint(underlyingAssetsIndexes[underlyingAssetsValues[index]]) == index + 1)
-    && (forall bytes32 value. underlyingAssetsIndexes[value] == 0 ||
-         (underlyingAssetsValues[underlyingAssetsIndexes[value] - 1] == value && underlyingAssetsIndexes[value] >= 1 && underlyingAssetsIndexes[value] <= underlyingAssetsLength));
+    (forall uint256 assetId.
+        assetId < hub._assetCount =>
+            underlyingToAssetIdMirror[hub._assets[assetId].underlying] == assetId)
+    &&
+    (forall address underlying.
+        listedUnderlying(underlying) =>
+            underlyingToAssetIdMirror[underlying] < hub._assetCount);
 
 
 
