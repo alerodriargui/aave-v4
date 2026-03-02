@@ -69,7 +69,7 @@ contract Setup is BaseTest {
     irStrategy = new AssetInterestRateStrategy(address(hub));
 
     // Configurators
-    hubConfigurator = new HubConfigurator(admin);
+    hubConfigurator = new HubConfigurator(address(accessManager));
     _setUpConfiguratorRoles();
 
     vm.label(address(accessManager), 'accessManager');
