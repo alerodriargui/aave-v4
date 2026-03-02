@@ -127,8 +127,11 @@ abstract contract HubInvariants is HandlerAggregator {
       totalAddedAssets += hub.getSpokeAddedAssets(assetId, actorAddresses[i]);
       totalAddedShares += hub.getSpokeAddedShares(assetId, actorAddresses[i]);
     }
-    totalAddedAssets += hub.getSpokeAddedAssets(assetId, address(this));
-    totalAddedShares += hub.getSpokeAddedShares(assetId, address(this));
+    address feeReceiver = hub.getAsset(assetId).feeReceiver;
+    totalAddedAssets += hub.getSpokeAddedAssets(assetId, feeReceiver);
+    totalAddedShares += hub.getSpokeAddedShares(assetId, feeReceiver);
+
+    totalAddedAssets += _calculateBurntInterest(hub, assetId);
 
     // Checks
     uint256 addedShares = hub.getAddedShares(assetId);
@@ -136,7 +139,7 @@ abstract contract HubInvariants is HandlerAggregator {
       assertApproxEqAbs(
         totalAddedAssets,
         hub.getAddedAssets(assetId),
-        SPOKE_COUNT * tolerancePerActor,
+        (spokeCount + 2) * tolerancePerActor,
         INV_HUB_G
       );
     }

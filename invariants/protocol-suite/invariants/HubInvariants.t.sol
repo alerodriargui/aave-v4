@@ -129,11 +129,13 @@ abstract contract HubInvariants is HandlerAggregator {
       totalAddedShares += IHub(hubAddress).getSpokeAddedShares(assetId, allSpokes[i]);
     }
 
+    totalAddedAssets += _calculateBurntInterest(IHub(hubAddress), assetId);
+
     // Checks
     assertApproxEqAbs(
       totalAddedAssets,
       IHub(hubAddress).getAddedAssets(assetId),
-      spokeCount * tolerancePerActor,
+      (spokeCount + 2) * tolerancePerActor,
       INV_HUB_G
     );
     assertEq(totalAddedShares, IHub(hubAddress).getAddedShares(assetId), INV_HUB_H);

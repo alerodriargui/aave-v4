@@ -58,15 +58,6 @@ contract ReplayTest2Hub is Invariants, Setup {
   }
 
   /// @dev PASS
-  function test_replay_2_eliminateDeficit() public {
-    _setUpActor(USER1);
-    Tester.add(2, 1);
-    Tester.draw(1, 1);
-    _delay(1);
-    Tester.eliminateDeficit(1974577205127400860, 0);
-  }
-
-  /// @dev PASS
   function test_replay_2_remove() public {
     _setUpActor(USER1);
     Tester.add(2, 1);

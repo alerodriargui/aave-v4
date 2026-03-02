@@ -32,6 +32,15 @@ contract ReplayTest9 is Invariants, Setup {
     vm.warp(101007);
   }
 
+  function test_replay_9_sum_of_balances() public {
+    Tester.add(1, 2);
+    Tester.refreshPremium(445022, 2);
+    _delay(18880);
+    _delay(23650);
+    Tester.donateUnderlyingToHub(0, 0);
+    invariant_INV_HUB();
+  }
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                           HELPERS                                         //
   ///////////////////////////////////////////////////////////////////////////////////////////////

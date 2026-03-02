@@ -4,10 +4,10 @@ pragma solidity ^0.8.19;
 // Libraries
 import {Vm} from 'forge-std/Base.sol';
 import {StdUtils} from 'forge-std/StdUtils.sol';
-import 'forge-std/console.sol';
 
 // Interfaces
-import {IERC20} from 'forge-std/interfaces/IERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 // Utils
@@ -109,10 +109,7 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
   function _transferByActor(address token, address to, uint256 amount) internal {
     bool success;
     bytes memory returnData;
-    (success, returnData) = actor.proxy(
-      token,
-      abi.encodeWithSelector(IERC20.transfer.selector, to, amount)
-    );
+    (success, returnData) = actor.proxy(token, abi.encodeCall(IERC20.transfer, (to, amount)));
     require(success, string(returnData));
   }
 
@@ -120,10 +117,14 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
   function _approveByActor(address token, address spender, uint256 amount) internal {
     bool success;
     bytes memory returnData;
-    (success, returnData) = actor.proxy(
-      token,
-      abi.encodeWithSelector(IERC20.approve.selector, spender, amount)
-    );
+    (success, returnData) = actor.proxy(token, abi.encodeCall(IERC20.approve, (spender, amount)));
     require(success, string(returnData));
+  }
+
+  /// @notice Helper function to calculate burnt interest in assets terms (originating from virtual shares)
+  function _calculateBurntInterest(IHub hub_, uint256 assetId_) internal view returns (uint256) {
+    uint256 totalAssets = hub_.getAddedAssets(assetId_);
+    uint256 totalShares = hub_.getAddedShares(assetId_);
+    return totalAssets - hub_.previewRemoveByShares(assetId_, totalShares);
   }
 }
