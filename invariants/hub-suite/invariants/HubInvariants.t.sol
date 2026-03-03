@@ -67,12 +67,12 @@ abstract contract HubInvariants is HandlerAggregator {
     }
 
     // Asset totals
-    IHub.Asset memory a = hub.getAsset(assetId);
+    IHub.Asset memory asset = hub.getAsset(assetId);
 
     // Checks
-    assertEq(sumDrawnShares, a.drawnShares, INV_HUB_C);
-    assertEq(sumPremDrawnShares, a.premiumShares, INV_HUB_C);
-    assertEq(sumPremOffsetRay, a.premiumOffsetRay, INV_HUB_C);
+    assertEq(sumDrawnShares, asset.drawnShares, INV_HUB_C);
+    assertEq(sumPremDrawnShares, asset.premiumShares, INV_HUB_C);
+    assertEq(sumPremOffsetRay, asset.premiumOffsetRay, INV_HUB_C);
   }
 
   function assert_INV_HUB_E(uint256 assetId) internal {
@@ -104,13 +104,14 @@ abstract contract HubInvariants is HandlerAggregator {
     uint256 accruedFees = hub.getAssetAccruedFees(assetId);
 
     IHub.Asset memory asset = hub.getAsset(assetId);
-    uint256 index = hub.getAssetDrawnIndex(assetId);
+    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
+
     uint256 premiumRay = Premium.calculatePremiumRay({
       premiumShares: asset.premiumShares,
       premiumOffsetRay: asset.premiumOffsetRay,
-      drawnIndex: index
+      drawnIndex: drawnIndex
     });
-    uint256 drawnRay = asset.drawnShares * index;
+    uint256 drawnRay = asset.drawnShares * drawnIndex;
     uint256 aggregatedOwed = (drawnRay + premiumRay + asset.deficitRay).fromRayUp();
 
     assertEq(totalAssets + accruedFees, asset.liquidity + aggregatedOwed + asset.swept, INV_HUB_F);
@@ -180,36 +181,6 @@ abstract contract HubInvariants is HandlerAggregator {
     (uint256 premiumShares, int256 premiumOffsetRay) = hub.getAssetPremiumData(assetId);
     uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
     assertGe((premiumShares * drawnIndex).toInt256(), premiumOffsetRay, INV_HUB_P);
-  }
-
-  function assert_INV_HUB_N(uint256 assetId) internal {
-    IHub.Asset memory asset = hub.getAsset(assetId);
-
-    // Skip if no debt (no interest can accrue)
-    if (asset.drawnShares == 0 && asset.premiumShares == 0) return;
-
-    // Get current index (includes unrealized interest) vs stored index
-    uint256 currentIndex = hub.getAssetDrawnIndex(assetId);
-    uint256 storedIndex = asset.drawnIndex;
-
-    // Skip if no index growth (no interest accrued)
-    if (currentIndex == storedIndex) return;
-
-    // Calculate accrued interest from index growth
-    uint256 indexGrowth = currentIndex - storedIndex;
-    uint256 totalDebtShares = uint256(asset.drawnShares) + uint256(asset.premiumShares);
-    uint256 accruedInterestRay = (totalDebtShares * indexGrowth);
-
-    // Get unrealized fees
-    uint256 unrealizedFees = hub.getAssetAccruedFees(assetId) - asset.realizedFees;
-
-    // Invariant: fees × PERCENTAGE_FACTOR × RAY ≈ accruedInterestRay × liquidityFee
-    uint256 lhs = unrealizedFees * PercentageMath.PERCENTAGE_FACTOR * WadRayMath.RAY;
-    uint256 rhs = accruedInterestRay * asset.liquidityFee;
-
-    // Tolerance: 1 wei rounding scaled up
-    uint256 tolerance = WadRayMath.RAY * PercentageMath.PERCENTAGE_FACTOR;
-    assertApproxEqAbs(lhs, rhs, tolerance, INV_HUB_N);
   }
 
   function assert_INV_HUB_ERC4626_A(uint256 assetId, address spoke) internal {

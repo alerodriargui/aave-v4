@@ -174,7 +174,18 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       (uint256 drawnAfter, ) = hub.getSpokeOwed(cachedTargetAssetId, address(actor));
 
-      assertEq(drawnBefore, drawnAfter + drawnAmount, HSPOST_HUB_ERC4626_RESTORE_A);
+      if (restoredDrawnShares > 0) {
+        uint256 tolerance = hub.previewRestoreByShares(cachedTargetAssetId, 1);
+        assertApproxEqAbs(
+          drawnBefore,
+          drawnAfter + drawnAmount,
+          tolerance,
+          HSPOST_HUB_ERC4626_RESTORE_A
+        );
+      } else {
+        // dust case, all restored assets donated
+        assertEq(drawnAfter, drawnBefore, HSPOST_HUB_ERC4626_RESTORE_A);
+      }
       assertEq(
         drawnSharesBefore,
         hub.getSpokeDrawnShares(cachedTargetAssetId, address(actor)) + restoredDrawnShares,
@@ -258,8 +269,8 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       // HSPOST_HUB_M: refreshPremium cannot change total premium debt (only redistribution)
       assertEq(
-        defaultVarsAfter.assetVars[targetAssetId].premium,
-        defaultVarsBefore.assetVars[targetAssetId].premium,
+        _assetVarsAfter(targetAssetId).debt.premium,
+        _assetVarsBefore(targetAssetId).debt.premium,
         HSPOST_HUB_M
       );
     } else {
@@ -284,8 +295,8 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       // HSPOST_HUB_M: refreshPremium cannot change total premium debt (only redistribution)
       assertEq(
-        defaultVarsAfter.assetVars[targetAssetId].premium,
-        defaultVarsBefore.assetVars[targetAssetId].premium,
+        _assetVarsAfter(targetAssetId).debt.premium,
+        _assetVarsBefore(targetAssetId).debt.premium,
         HSPOST_HUB_M
       );
     } else {

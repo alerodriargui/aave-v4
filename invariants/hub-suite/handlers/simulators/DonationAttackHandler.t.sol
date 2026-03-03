@@ -23,7 +23,9 @@ contract DonationAttackHandler is BaseHandler {
   function donateUnderlyingToHub(uint256 amount, uint8 i) external {
     address underlying = _getRandomBaseAsset(i);
 
+    _before();
     TestnetERC20(underlying).mint(address(hub), amount);
+    _after();
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

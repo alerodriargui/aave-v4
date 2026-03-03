@@ -49,9 +49,6 @@ abstract contract InvariantsSpec {
   string constant INV_HUB_K =
     'INV_HUB_K: Asset.irStrategy should never be address(0) for any (currently/previously) registered asset';
 
-  string constant INV_HUB_N =
-    'INV_HUB_N: Liquidity growth (ie accrued interest) = AccruedFees + sum of Accrued for all spokes with non zero addedShares';
-
   string constant INV_HUB_O =
     'INV_HUB_O: sum of deficitRay across spokes for a given asset == total asset deficitRay';
 

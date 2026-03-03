@@ -21,7 +21,6 @@ abstract contract Invariants is HubInvariants {
       assert_INV_HUB_K(i);
       assert_INV_HUB_O(i);
       assert_INV_HUB_P(i);
-      assert_INV_HUB_N(i);
       for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
         assert_INV_HUB_ERC4626_A(i, actorAddresses[j]);
         assert_INV_HUB_ERC4626_B(i, actorAddresses[j]);

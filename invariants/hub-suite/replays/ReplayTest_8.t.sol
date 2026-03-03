@@ -45,6 +45,15 @@ contract ReplayTest8 is Invariants, Setup {
     invariant_INV_HUB();
   }
 
+  function test_replay_8_2() public {
+    _setUpActor(USER1);
+    Tester.add(1, 0);
+    Tester.draw(1, 0);
+    _delay(5);
+    Tester.restore(1, 0, 0, 0);
+    invariant_INV_HUB();
+  }
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                           HELPERS                                         //
   ///////////////////////////////////////////////////////////////////////////////////////////////

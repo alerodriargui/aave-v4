@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 // Interfaces
-import {IERC20} from 'forge-std/interfaces/IERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
 // Libraries
 import {MockERC20} from 'tests/mocks/MockERC20.sol';

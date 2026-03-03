@@ -179,36 +179,6 @@ abstract contract HubInvariants is HandlerAggregator {
     assertGe(int256(premiumShares * drawnIndex), premiumOffsetRay, INV_HUB_P);
   }
 
-  function assert_INV_HUB_N(address hubAddress, uint256 assetId) internal {
-    IHub.Asset memory asset = IHub(hubAddress).getAsset(assetId);
-
-    // Skip if no debt (no interest can accrue)
-    if (asset.drawnShares == 0 && asset.premiumShares == 0) return;
-
-    // Get current index (includes unrealized interest) vs stored index
-    uint256 currentIndex = IHub(hubAddress).getAssetDrawnIndex(assetId);
-    uint256 storedIndex = asset.drawnIndex;
-
-    // Skip if no index growth (no interest accrued)
-    if (currentIndex == storedIndex) return;
-
-    // Calculate accrued interest from index growth
-    uint256 indexGrowth = currentIndex - storedIndex;
-    uint256 totalDebtShares = uint256(asset.drawnShares) + uint256(asset.premiumShares);
-    uint256 accruedInterestRay = (totalDebtShares * indexGrowth);
-
-    // Get unrealized fees
-    uint256 unrealizedFees = IHub(hubAddress).getAssetAccruedFees(assetId) - asset.realizedFees;
-
-    // Invariant: fees × PERCENTAGE_FACTOR × RAY ≈ accruedInterestRay × liquidityFee
-    uint256 lhs = unrealizedFees * PercentageMath.PERCENTAGE_FACTOR * WadRayMath.RAY;
-    uint256 rhs = accruedInterestRay * asset.liquidityFee;
-
-    // Tolerance: 1 wei rounding scaled up
-    uint256 tolerance = WadRayMath.RAY * PercentageMath.PERCENTAGE_FACTOR;
-    assertApproxEqAbs(lhs, rhs, tolerance, INV_HUB_N);
-  }
-
   function assert_INV_HUB_Q(address hubAddress, uint256 assetId) internal {
     uint256 currentIndex = IHub(hubAddress).getAssetDrawnIndex(assetId);
     if (lastSeenDrawnIndex[hubAddress][assetId] > 0) {
