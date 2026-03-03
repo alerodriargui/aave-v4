@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 // Interfaces
-import {IERC20} from 'forge-std/interfaces/IERC20.sol';
+import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
 // Libraries
 import {MockERC20} from 'tests/mocks/MockERC20.sol';
@@ -42,17 +42,14 @@ contract BaseHandler is HookAggregator {
 
   /// @notice Helper function to approve an amount of tokens to a spender, a proxy Actor
   function _approve(address token, Actor actor_, address spender, uint256 amount) internal {
-    bool success;
-    bytes memory returnData;
-    (success, returnData) = actor_.proxy(
+    (bool ok, bytes memory returnData) = actor_.proxy(
       token,
-      abi.encodeWithSelector(0x095ea7b3, spender, amount)
+      abi.encodeCall(IERC20.approve, (spender, amount))
     );
-    require(success, string(returnData));
+    require(ok, string(ret));
   }
 
   /// @notice Helper function to safely approve an amount of tokens to a spender
-
   function _approve(address token, address owner, address spender, uint256 amount) internal {
     vm.prank(owner);
     _safeApprove(token, spender, 0);
@@ -63,11 +60,9 @@ contract BaseHandler is HookAggregator {
   /// @notice Helper function to safely approve an amount of tokens to a spender
   /// @dev This function is used to revert on failed approvals
   function _safeApprove(address token, address spender, uint256 amount) internal {
-    (bool success, bytes memory retdata) = token.call(
-      abi.encodeWithSelector(IERC20.approve.selector, spender, amount)
-    );
-    assert(success);
-    if (retdata.length > 0) assert(abi.decode(retdata, (bool)));
+    (bool ok, bytes memory ret) = token.call(abi.encodeCall(IERC20.approve, (spender, amount)));
+    assert(ok);
+    if (ret.length > 0) assert(abi.decode(ret, (bool)));
   }
 
   /// @notice Helper function to mint an amount of tokens to an address

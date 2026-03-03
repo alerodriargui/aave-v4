@@ -27,7 +27,7 @@ contract ReplayTest7 is Invariants, Setup {
     _setUp();
 
     /// @dev fixes the actor to the first user
-    actor = actors[USER1];
+    actor = userToActor[USER1];
 
     vm.warp(101007);
   }
@@ -38,13 +38,13 @@ contract ReplayTest7 is Invariants, Setup {
 
   function test_replay_7_updateUserRiskPremium() public {
     _setUpActor(USER3);
-    Tester.supply(790, 128, 71, 201);
-    Tester.setUsingAsCollateral(true, 111, 253);
-    Tester.borrow(527, 68, 203, 9);
+    Tester.supply(790, 128, 71, 203);
+    Tester.setUsingAsCollateral(true, 111, 255);
+    Tester.borrow(527, 68, 203, 11);
     _setUpActor(USER1);
     _delay(1812425);
     _delay(320876);
-    Tester.updateFrozen(false, 59, 85);
+    Tester.updateFrozen(false, 59, 87);
     _setUpActor(USER2);
     _delay(343393);
     Tester.updateHealthFactorForMaxBonus(105, 146);
@@ -55,14 +55,14 @@ contract ReplayTest7 is Invariants, Setup {
     Tester.updateUserRiskPremium(101);
     _setUpActor(USER3);
     _delay(590687);
-    Tester.setUsingAsCollateral(true, 111, 253);
+    Tester.setUsingAsCollateral(true, 111, 255);
     _delay(323286);
     Tester.donateUnderlyingToHub(194, 231, 231);
     _delay(505810);
-    Tester.borrow(56, 77, 155, 21);
+    Tester.borrow(56, 77, 155, 23);
     _setUpActor(USER2);
     _delay(112744);
-    Tester.updateBorrowable(false, 223, 157);
+    Tester.updateBorrowable(false, 223, 159);
     _setUpActor(USER1);
     _delay(1632525);
     _setUpActor(USER2);
@@ -85,7 +85,7 @@ contract ReplayTest7 is Invariants, Setup {
     _delay(928317);
     _setUpActor(USER1);
     _delay(23908);
-    Tester.updateBorrowable(true, 217, 53);
+    Tester.updateBorrowable(true, 217, 55);
     _setUpActor(USER3);
     _delay(582766);
     Tester.updateUserRiskPremium(25);
@@ -94,11 +94,11 @@ contract ReplayTest7 is Invariants, Setup {
   function test_replay_7_repay() public {
     _setUpActor(USER3);
     _delay(321376);
-    Tester.supply(790, 197, 87, 201);
+    Tester.supply(790, 197, 87, 203);
     Tester.supply(100000000000000000000000002, 50, 228, 214);
-    Tester.setUsingAsCollateral(true, 197, 253);
+    Tester.setUsingAsCollateral(true, 197, 255);
     _delay(20833);
-    Tester.borrow(2973933138, 65, 107, 14);
+    Tester.borrow(2973933138, 65, 107, 12);
     _setUpActor(USER1);
     Tester.updateSpokeSupplyCap(172, 180, 253, 253);
     _setUpActor(USER3);
@@ -107,7 +107,7 @@ contract ReplayTest7 is Invariants, Setup {
       1209722426464509529070304541882533570806727645123886685504166337177518312,
       62,
       253,
-      254
+      252
     );
   }
 
@@ -123,25 +123,25 @@ contract ReplayTest7 is Invariants, Setup {
 
   /// @notice Set up an actor
   function _setUpActor(address _origin) internal {
-    actor = actors[_origin];
+    actor = userToActor[_origin];
   }
 
   /// @notice Set up an actor and fast forward the time
   /// @dev Use for ECHIDNA call-traces
   function _setUpActorAndDelay(address _origin, uint256 _seconds) internal {
-    actor = actors[_origin];
+    actor = userToActor[_origin];
     vm.warp(block.timestamp + _seconds);
   }
 
   /// @notice Set up a specific block and actor
   function _setUpBlockAndActor(uint256 _block, address _user) internal {
     vm.roll(_block);
-    actor = actors[_user];
+    actor = userToActor[_user];
   }
 
   /// @notice Set up a specific timestamp and actor
   function _setUpTimestampAndActor(uint256 _timestamp, address _user) internal {
     vm.warp(_timestamp);
-    actor = actors[_user];
+    actor = userToActor[_user];
   }
 }

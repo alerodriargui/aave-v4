@@ -232,6 +232,9 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                          HELPERS                                          //
   ///////////////////////////////////////////////////////////////////////////////////////////////
+  /// @dev Only use these helpers in postConditions, do NOT rely on them at Invariants because they not be populated
+  /// when the fuzzer has updated env (eg block.timestamp) which does not invoke any Handler
+
   function _cacheCurrentActionSignature() internal {
     currentActionSignature = bytes4(msg.sig);
   }

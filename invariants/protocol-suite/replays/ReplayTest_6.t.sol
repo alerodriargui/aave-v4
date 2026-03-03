@@ -27,7 +27,7 @@ contract ReplayTest6 is Invariants, Setup {
     _setUp();
 
     /// @dev fixes the actor to the first user
-    actor = actors[USER1];
+    actor = userToActor[USER1];
 
     vm.warp(101007);
   }
@@ -38,9 +38,8 @@ contract ReplayTest6 is Invariants, Setup {
 
   function test_replay_6_freezeAllReserves() public {
     _setUpActor(USER3);
-    Tester.supply(673, 128, 1, 201);
-    Tester.setUsingAsCollateral(true, 111, 253);
-    Tester.borrow(527, 68, 203, 9);
+    Tester.supply(673, 128, 1, 203);
+    Tester.setUsingAsCollateral(true, 111, 255);
     _setUpActor(USER1);
     _delay(338347);
     Tester.freezeAllReserves(32);
@@ -49,12 +48,12 @@ contract ReplayTest6 is Invariants, Setup {
 
   function test_replay_6_supply() public {
     _setUpActor(USER3);
-    Tester.supply(790, 197, 87, 201);
-    Tester.setUsingAsCollateral(true, 197, 253);
-    Tester.borrow(527, 68, 65, 9);
+    Tester.supply(790, 197, 87, 203);
+    Tester.setUsingAsCollateral(true, 197, 255);
+    Tester.borrow(527, 68, 65, 11);
     _setUpActor(USER1);
     _delay(467);
-    Tester.supply(1327428228, 3, 151, 97);
+    Tester.supply(1327428228, 3, 151, 99);
     invariant_INV_SP();
   }
 
@@ -70,25 +69,25 @@ contract ReplayTest6 is Invariants, Setup {
 
   /// @notice Set up an actor
   function _setUpActor(address _origin) internal {
-    actor = actors[_origin];
+    actor = userToActor[_origin];
   }
 
   /// @notice Set up an actor and fast forward the time
   /// @dev Use for ECHIDNA call-traces
   function _setUpActorAndDelay(address _origin, uint256 _seconds) internal {
-    actor = actors[_origin];
+    actor = userToActor[_origin];
     vm.warp(block.timestamp + _seconds);
   }
 
   /// @notice Set up a specific block and actor
   function _setUpBlockAndActor(uint256 _block, address _user) internal {
     vm.roll(_block);
-    actor = actors[_user];
+    actor = userToActor[_user];
   }
 
   /// @notice Set up a specific timestamp and actor
   function _setUpTimestampAndActor(uint256 _timestamp, address _user) internal {
     vm.warp(_timestamp);
-    actor = actors[_user];
+    actor = userToActor[_user];
   }
 }

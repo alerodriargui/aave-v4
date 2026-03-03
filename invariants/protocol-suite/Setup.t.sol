@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 // Libraries
+import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {CREATE3} from '../shared/utils/CREATE3.sol';
 import {ActorsUtils} from '../shared/utils/ActorsUtils.sol';
 import {Constants} from 'tests/Constants.sol';
@@ -26,7 +27,7 @@ import {
   AssetInterestRateStrategy,
   IAssetInterestRateStrategy
 } from 'src/hub/AssetInterestRateStrategy.sol';
-import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
+import {AccessManagerEnumerable} from 'src/access/AccessManagerEnumerable.sol';
 import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
 import {HubConfigurator, IHubConfigurator} from 'src/hub/HubConfigurator.sol';
@@ -37,6 +38,9 @@ import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 
 /// @notice Setup contract for the invariant test Suite, inherited by Tester
 contract Setup is BaseTest {
+  using EnumerableSet for EnumerableSet.AddressSet;
+  using ActorsUtils for *;
+
   /// @notice Number of actors to deploy
   function _setUp() internal {
     // Deploy the suite assets
@@ -75,7 +79,7 @@ contract Setup is BaseTest {
   /// @notice Deploy protocol core contracts
   function _deployProtocolCore() internal {
     // Access manager
-    accessManager = new AccessManager(admin);
+    accessManager = new AccessManagerEnumerable(admin);
 
     // Hub 1
     hub1 = new Hub(address(accessManager));
@@ -84,7 +88,7 @@ contract Setup is BaseTest {
       treasurySpoke: address(treasurySpoke1),
       irStrategy: address(irStrategy1)
     });
-    hubAddresses.push(address(hub1));
+    hubs.add(address(hub1));
 
     // Hub 2
     hub2 = new Hub(address(accessManager));
@@ -93,7 +97,7 @@ contract Setup is BaseTest {
       treasurySpoke: address(treasurySpoke2),
       irStrategy: address(irStrategy2)
     });
-    hubAddresses.push(address(hub2));
+    hubs.add(address(hub2));
 
     // Spokes
     (spoke1, oracle1) = _deploySpokeWithOracle(admin, address(accessManager), 'Spoke 1 (USD)');
@@ -102,8 +106,8 @@ contract Setup is BaseTest {
     treasurySpoke2 = ITreasurySpoke(new TreasurySpoke(admin, address(hub2)));
     allSpokes.push(address(treasurySpoke1));
     allSpokes.push(address(treasurySpoke2));
-    treasurySpokesAddresses.push(address(treasurySpoke1));
-    treasurySpokesAddresses.push(address(treasurySpoke2));
+    treasurySpokes.add(address(treasurySpoke1));
+    treasurySpokes.add(address(treasurySpoke2));
 
     // Configurators
     hubConfigurator = new HubConfigurator(address(accessManager));
@@ -150,7 +154,7 @@ contract Setup is BaseTest {
     assertEq(spoke.ORACLE(), address(oracle));
     assertEq(oracle.SPOKE(), address(spoke));
 
-    spokesAddresses.push(address(spoke));
+    spokes.add(address(spoke));
     allSpokes.push(address(spoke));
 
     return (spoke, oracle);
@@ -433,22 +437,6 @@ contract Setup is BaseTest {
     reserveIdToHubAddress[address(spoke2)][spokeInfo[spoke2].weth.reserveId] = address(hub1);
     reserveIdToHubAddress[address(spoke2)][spokeInfo[spoke2].weth2.reserveId] = address(hub2);
 
-    // Store spoke reserve ids on array
-    spokeReserveIds[address(spoke1)].push(spokeInfo[spoke1].usdc.reserveId);
-    spokeReserveIds[address(spoke1)].push(spokeInfo[spoke1].usdc2.reserveId);
-    spokeReserveIds[address(spoke1)].push(spokeInfo[spoke1].weth.reserveId);
-    spokeReserveIds[address(spoke1)].push(spokeInfo[spoke1].weth2.reserveId);
-    spokeReserveIds[address(spoke2)].push(spokeInfo[spoke2].usdc.reserveId);
-    spokeReserveIds[address(spoke2)].push(spokeInfo[spoke2].usdc2.reserveId);
-    spokeReserveIds[address(spoke2)].push(spokeInfo[spoke2].weth.reserveId);
-    spokeReserveIds[address(spoke2)].push(spokeInfo[spoke2].weth2.reserveId);
-
-    // TreasurySpoke uses assetIds directly as reserveIds
-    spokeReserveIds[address(treasurySpoke1)].push(hub1UsdcAssetId);
-    spokeReserveIds[address(treasurySpoke1)].push(hub1WethAssetId);
-    spokeReserveIds[address(treasurySpoke2)].push(hub2UsdcAssetId);
-    spokeReserveIds[address(treasurySpoke2)].push(hub2WethAssetId);
-
     // Map ids for treasury spokes (reserveId == assetId for treasury spokes)
     reserveIdToAssetId[address(treasurySpoke1)][hub1UsdcAssetId] = hub1UsdcAssetId;
     reserveIdToAssetId[address(treasurySpoke1)][hub1WethAssetId] = hub1WethAssetId;
@@ -608,7 +596,7 @@ contract Setup is BaseTest {
       accessManager.setTargetFunctionRole(
         address(hubConfigurator),
         selectors,
-        accessManager.PUBLIC_ROLE()
+        type(uint64).max // !todo public role, fix this
       );
     }
 
@@ -642,7 +630,7 @@ contract Setup is BaseTest {
       accessManager.setTargetFunctionRole(
         address(spokeConfigurator),
         selectors,
-        accessManager.PUBLIC_ROLE()
+        type(uint64).max // !todo public role, fix this
       );
     }
   }
@@ -654,12 +642,11 @@ contract Setup is BaseTest {
   /// @notice Deploy protocol actors and initialize their balances
   function _setUpActors() internal {
     // Initialize the three actors of the fuzzers
-    address[] memory addresses = new address[](3);
-    addresses[0] = USER1;
-    addresses[1] = USER2;
-    addresses[2] = USER3;
+    address[] memory users = new address[](3);
+    users[0] = USER1;
+    users[1] = USER2;
+    users[2] = USER3;
 
-    // Initialize the tokens array
     address[] memory tokens = new address[](2);
     tokens[0] = address(usdc);
     tokens[1] = address(weth);
@@ -670,9 +657,10 @@ contract Setup is BaseTest {
     contracts[2] = address(spoke1);
     contracts[3] = address(spoke2);
 
-    actorAddresses = ActorsUtils.setUpActors(addresses, tokens, contracts);
-    actors[USER1] = Actor(payable(actorAddresses[0]));
-    actors[USER2] = Actor(payable(actorAddresses[1]));
-    actors[USER3] = Actor(payable(actorAddresses[2]));
+    address[] memory actorAddresses = users.setUpActors(tokens, contracts);
+    for (uint256 i; i < actorAddresses.length; ++i) {
+      userToActor[users[i]] = Actor(payable(actorAddresses[i]));
+      actors.add(actorAddresses[i]);
+    }
   }
 }

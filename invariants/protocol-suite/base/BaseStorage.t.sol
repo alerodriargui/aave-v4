@@ -1,22 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-// Contracts
+import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
-import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
-import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
-import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
-import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
+import {IAssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
+import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
+import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
-// Mock Contracts
-
-// Test Contracts
-
-// Utils
 import {Actor} from '../../shared/utils/Actor.sol';
 
 /// @notice BaseStorage contract for all test contracts, works in tandem with BaseTest
@@ -28,8 +23,8 @@ abstract contract BaseStorage {
   uint256 constant MAX_TOKEN_AMOUNT = 1e29;
 
   uint256 constant ONE_DAY = 1 days;
-  uint256 constant ONE_MONTH = ONE_YEAR / 12;
   uint256 constant ONE_YEAR = 365 days;
+  uint256 constant ONE_MONTH = ONE_YEAR / 12;
 
   uint256 internal constant NUMBER_OF_ACTORS = 3;
   uint256 internal constant INITIAL_COLL_BALANCE = 1e21;
@@ -45,10 +40,10 @@ abstract contract BaseStorage {
   Actor internal actor;
 
   /// @notice Mapping of fuzzer user addresses to actors
-  mapping(address => Actor) internal actors;
+  mapping(address user => Actor) internal userToActor;
 
   /// @notice Array of all actor addresses
-  address[] internal actorAddresses;
+  EnumerableSet.AddressSet internal actors;
 
   /// @notice The address that is targeted when executing an action (OPTIONAL)
   address internal targetActor;
@@ -72,23 +67,23 @@ abstract contract BaseStorage {
   // HUB CONTRACTS
   IHub internal hub1;
   IHub internal hub2;
-  AssetInterestRateStrategy internal irStrategy1;
-  AssetInterestRateStrategy internal irStrategy2;
-  HubConfigurator internal hubConfigurator;
+  IAssetInterestRateStrategy internal irStrategy1;
+  IAssetInterestRateStrategy internal irStrategy2;
+  IHubConfigurator internal hubConfigurator;
 
   // SPOKE CONTRACTS
   ITreasurySpoke internal treasurySpoke1;
   ITreasurySpoke internal treasurySpoke2;
   ISpoke internal spoke1;
   ISpoke internal spoke2;
-  SpokeConfigurator internal spokeConfigurator;
+  ISpokeConfigurator internal spokeConfigurator;
 
   // ORACLES
   IAaveOracle internal oracle1;
   IAaveOracle internal oracle2;
 
   // CONFIGURATION
-  AccessManager internal accessManager;
+  IAccessManagerEnumerable internal accessManager;
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                       EXTRA VARIABLES                                     //
@@ -105,7 +100,7 @@ abstract contract BaseStorage {
   uint256 internal hub2UsdcAssetId;
 
   /// @notice Array of hub addresses for the suite
-  address[] internal hubAddresses;
+  EnumerableSet.AddressSet internal hubs;
   /// @notice Spoke configurations
   mapping(address => HubInfo) internal hubInfo;
   /// @notice Hub assetIds
@@ -113,15 +108,13 @@ abstract contract BaseStorage {
 
   // SPOKES
   /// @notice Array of spokes addresses for the suite
-  address[] internal spokesAddresses;
+  EnumerableSet.AddressSet internal spokes;
   /// @notice Array of treasury spoke addresses
-  address[] internal treasurySpokesAddresses;
+  EnumerableSet.AddressSet internal treasurySpokes;
   /// @notice spokesAddresses + treasurySpoke address
   address[] internal allSpokes;
   /// @notice Spoke configurations
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
-  /// @notice Spoke reserveIds
-  mapping(address => uint256[]) internal spokeReserveIds;
   /// @notice Spoke reserveIds to global assetIds
   mapping(address => mapping(uint256 => uint256)) internal reserveIdToAssetId;
   /// @notice Spoke assetIds to reserveIds info

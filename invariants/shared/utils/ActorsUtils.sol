@@ -24,30 +24,29 @@ library ActorsUtils {
     // Initialize the three actors of the fuzzers
     for (uint256 i; i < addresses.length; i++) {
       // Deploy actor proxies and approve system contracts
-      address _actor = setUpActor(tokens, contracts);
+      address actor = setUpActor(tokens, contracts);
 
       // Mint initial balances to actors
       for (uint256 j = 0; j < tokens.length; j++) {
-        TestnetERC20 _token = TestnetERC20(tokens[j]);
-        uint256 decimals = _token.decimals();
-        _token.mint(_actor, INITIAL_BALANCE * 10 ** decimals);
+        TestnetERC20 token = TestnetERC20(tokens[j]);
+        uint256 decimals = token.decimals();
+        token.mint(actor, INITIAL_BALANCE * 10 ** decimals);
       }
-      actorAddresses[i] = _actor;
+      actorAddresses[i] = actor;
     }
   }
 
   /// @notice Deploy an actor proxy contract
   /// @param tokens Array of token addresses
   /// @param contracts Array of contract addresses to aprove tokens to
-  /// @return actorAddress Address of the deployed actor
+  /// @return Address of the deployed actor
   function setUpActor(
     address[] memory tokens,
     address[] memory contracts
-  ) internal returns (address actorAddress) {
-    bool success;
-    Actor _actor = new Actor(tokens, contracts);
-    (success, ) = address(_actor).call{value: INITIAL_ETH_BALANCE}('');
-    assert(success);
-    actorAddress = address(_actor);
+  ) internal returns (address) {
+    Actor actor = new Actor(tokens, contracts);
+    (bool ok, ) = address(actor).call{value: INITIAL_ETH_BALANCE}('');
+    assert(ok);
+    return address(actor);
   }
 }

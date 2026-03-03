@@ -67,12 +67,12 @@ abstract contract HubInvariants is HandlerAggregator {
     }
 
     // Asset totals
-    IHub.Asset memory a = IHub(hubAddress).getAsset(assetId);
+    AssetVars memory vars = _assetVarsAfter(hubAddress, assetId);
 
     // Checks
-    assertEq(sumDrawnShares, a.drawnShares, INV_HUB_C);
-    assertEq(sumPremDrawnShares, a.premiumShares, INV_HUB_C);
-    assertEq(sumPremOffsetRay, a.premiumOffsetRay, INV_HUB_C);
+    assertEq(sumDrawnShares, vars.asset.drawnShares, INV_HUB_C);
+    assertEq(sumPremDrawnShares, vars.asset.premiumShares, INV_HUB_C);
+    assertEq(sumPremOffsetRay, vars.asset.premiumOffsetRay, INV_HUB_C);
   }
 
   function assert_INV_HUB_E(address hubAddress, uint256 assetId) internal {
@@ -105,13 +105,14 @@ abstract contract HubInvariants is HandlerAggregator {
     uint256 accruedFees = IHub(hubAddress).getAssetAccruedFees(assetId);
 
     IHub.Asset memory asset = IHub(hubAddress).getAsset(assetId);
-    uint256 index = IHub(hubAddress).getAssetDrawnIndex(assetId);
+    uint256 drawnIndex = IHub(hubAddress).getAssetDrawnIndex(assetId);
+
     uint256 premiumRay = Premium.calculatePremiumRay({
       premiumShares: asset.premiumShares,
       premiumOffsetRay: asset.premiumOffsetRay,
-      drawnIndex: index
+      drawnIndex: drawnIndex
     });
-    uint256 drawnRay = asset.drawnShares * index;
+    uint256 drawnRay = asset.drawnShares * drawnIndex;
     uint256 aggregatedOwed = (drawnRay + premiumRay + asset.deficitRay).fromRayUp();
 
     assertEq(totalAssets + accruedFees, asset.liquidity + aggregatedOwed + asset.swept, INV_HUB_F);

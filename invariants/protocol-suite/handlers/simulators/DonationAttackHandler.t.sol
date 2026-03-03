@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-// Test Contracts
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {BaseHandler} from '../../base/BaseHandler.t.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 
 /// @title DonationAttackHandler
 /// @notice Handler test contract for a set of actions
 contract DonationAttackHandler is BaseHandler {
+  using EnumerableSet for EnumerableSet.AddressSet;
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                      STATE VARIABLES                                      //
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -21,23 +24,19 @@ contract DonationAttackHandler is BaseHandler {
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function donateUnderlyingToHub(uint256 amount, uint8 i, uint8 j) external {
-    // Get one of the hub addresses randomly
-    address hubAddress = _getRandomHub(j);
-    // Get one of the assets IDs randomly
+    address hub = _getRandomHub(j);
     address underlying = _getRandomBaseAsset(i);
 
     // Register all spoke/reserve pairs that map to this hub so hub postconditions fire
-    _registerAllReservesForHub(hubAddress);
+    _registerAllReservesForHub(hub);
 
     _before();
-    TestnetERC20(underlying).mint(hubAddress, amount);
+    TestnetERC20(underlying).mint(hub, amount);
     _after();
   }
 
   function donateUnderlyingToSpoke(uint256 amount, uint8 i, uint8 j) external {
-    // Get one of the spoke addresses randomly
     address spoke = _getRandomSpoke(j);
-    // Get one of the assets IDs randomly
     address underlying = _getRandomBaseAsset(i);
 
     // Register all reserves for this spoke so hub postconditions fire
@@ -56,12 +55,12 @@ contract DonationAttackHandler is BaseHandler {
   ///      to the given hub, so that hub-level postconditions (GPOST_HUB_A..G) are evaluated.
   ///      Uses address(this) as the user since donations don't act on a specific user.
   function _registerAllReservesForHub(address hubAddress) internal {
-    for (uint256 s; s < spokesAddresses.length; s++) {
-      address spoke = spokesAddresses[s];
-      uint256[] storage reserveIds = spokeReserveIds[spoke];
-      for (uint256 r; r < reserveIds.length; r++) {
-        if (reserveIdToHubAddress[spoke][reserveIds[r]] == hubAddress) {
-          _registerUserToCheck(spoke, reserveIds[r], address(this));
+    for (uint256 s; s < spokes.length(); s++) {
+      address spoke = spokes.at(s);
+      uint256 reserveCount = ISpoke(spoke).getReserveCount();
+      for (uint256 r; r < reserveCount; r++) {
+        if (reserveIdToHubAddress[spoke][r] == hubAddress) {
+          _registerUserToCheck(spoke, r, address(this));
         }
       }
     }
@@ -71,9 +70,9 @@ contract DonationAttackHandler is BaseHandler {
   ///      so that hub-level postconditions are evaluated for all assets of the spoke.
   ///      Uses address(this) as the user since donations don't act on a specific user.
   function _registerAllReservesForSpoke(address spoke) internal {
-    uint256[] storage reserveIds = spokeReserveIds[spoke];
-    for (uint256 r; r < reserveIds.length; r++) {
-      _registerUserToCheck(spoke, reserveIds[r], address(this));
+    uint256 reserveCount = ISpoke(spoke).getReserveCount();
+    for (uint256 r; r < reserveCount; ++r) {
+      _registerUserToCheck(spoke, r, address(this));
     }
   }
 }

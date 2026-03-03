@@ -2,56 +2,49 @@
 pragma solidity ^0.8.19;
 
 // Interfaces
-import {IERC20} from 'forge-std/interfaces/IERC20.sol';
+import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 
 /// @notice Proxy contract for invariant suite actors to avoid aTester calling contracts
 contract Actor {
-  /// @notice list of tokens to approve
-  address[] internal tokens;
-  /// @notice list of contracts to approve tokens to
-  address[] internal contracts;
+  using SafeERC20 for IERC20;
 
-  constructor(address[] memory _tokens, address[] memory _contracts) payable {
-    tokens = _tokens;
-    contracts = _contracts;
-    for (uint256 i = 0; i < tokens.length; i++) {
-      for (uint256 j = 0; j < contracts.length; j++) {
-        IERC20(tokens[i]).approve(contracts[j], type(uint256).max);
+  /// @dev Constructor approves the maximum amount of all tokens to all protocol contracts to avoid needing to approve in handlers
+  constructor(address[] memory tokens, address[] memory contracts) payable {
+    for (uint256 i = 0; i < tokens.length; ++i) {
+      for (uint256 j = 0; j < contracts.length; ++j) {
+        IERC20(tokens[i]).forceApprove(contracts[j], type(uint256).max);
       }
     }
   }
 
   /// @notice Helper function to proxy a call to a target contract, used to avoid Tester calling contracts
-  function proxy(
-    address _target,
-    bytes memory _calldata
-  ) public returns (bool success, bytes memory returnData) {
-    (success, returnData) = address(_target).call(_calldata);
-
-    handleAssertionError(success, returnData);
+  function proxy(address target, bytes memory callData) public returns (bool, bytes memory) {
+    (bool ok, bytes memory ret) = address(target).call(callData);
+    _handleAssertionError(ok, ret);
+    return (ok, ret);
   }
 
   /// @notice Helper function to proxy a call and value to a target contract, used to avoid Tester calling contracts
   function proxy(
-    address _target,
-    bytes memory _calldata,
+    address target,
+    bytes memory callData,
     uint256 value
-  ) public returns (bool success, bytes memory returnData) {
-    (success, returnData) = address(_target).call{value: value}(_calldata);
-
-    handleAssertionError(success, returnData);
+  ) public payable returns (bool, bytes memory) {
+    (bool ok, bytes memory ret) = address(target).call{value: value}(callData);
+    _handleAssertionError(ok, ret);
+    return (ok, ret);
   }
 
   /// @notice Checks if a call failed due to an assertion error and propagates the error if found.
-  /// @param success Indicates whether the call was successful.
-  /// @param returnData The data returned from the call.
-  function handleAssertionError(bool success, bytes memory returnData) internal pure {
-    if (!success && returnData.length == 36) {
+  /// @param ok Indicates whether the call was successful.
+  /// @param ret The data returned from the call.
+  function _handleAssertionError(bool ok, bytes memory ret) internal pure {
+    if (!ok && ret.length == 36) {
       bytes4 selector;
       uint256 code;
-      assembly {
-        selector := mload(add(returnData, 0x20))
-        code := mload(add(returnData, 0x24))
+      assembly ('memory-safe') {
+        selector := mload(add(ret, 0x20))
+        code := mload(add(ret, 0x24))
       }
 
       if (selector == bytes4(0x4e487b71) && code == 1) {

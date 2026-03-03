@@ -27,7 +27,7 @@ contract ReplayTest2 is Invariants, Setup {
     _setUp();
 
     /// @dev fixes the actor to the first user
-    actor = actors[USER1];
+    actor = userToActor[USER1];
 
     vm.warp(101007);
   }
@@ -63,25 +63,25 @@ contract ReplayTest2 is Invariants, Setup {
 
   /// @notice Set up an actor
   function _setUpActor(address _origin) internal {
-    actor = actors[_origin];
+    actor = userToActor[_origin];
   }
 
   /// @notice Set up an actor and fast forward the time
   /// @dev Use for ECHIDNA call-traces
   function _setUpActorAndDelay(address _origin, uint256 _seconds) internal {
-    actor = actors[_origin];
+    actor = userToActor[_origin];
     vm.warp(block.timestamp + _seconds);
   }
 
   /// @notice Set up a specific block and actor
   function _setUpBlockAndActor(uint256 _block, address _user) internal {
     vm.roll(_block);
-    actor = actors[_user];
+    actor = userToActor[_user];
   }
 
   /// @notice Set up a specific timestamp and actor
   function _setUpTimestampAndActor(uint256 _timestamp, address _user) internal {
     vm.warp(_timestamp);
-    actor = actors[_user];
+    actor = userToActor[_user];
   }
 }

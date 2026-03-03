@@ -2,10 +2,11 @@
 pragma solidity ^0.8.19;
 
 // Libraries
+import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
+import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import 'forge-std/console.sol';
 
 // Utils
 import {Constants} from 'tests/Constants.sol';
@@ -23,40 +24,47 @@ import {BaseHooks} from '../base/BaseHooks.t.sol';
 /// @notice Helper contract for before and after hooks, state variable caching and postconditions
 /// @dev This contract is inherited by handlers
 abstract contract DefaultBeforeAfterHooks is BaseHooks {
-  using WadRayMath for uint256;
+  using WadRayMath for *;
+  using EnumerableSet for EnumerableSet.AddressSet;
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                         STRUCTS                                           //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  struct Debt {
+    uint256 drawn;
+    uint256 premium;
+    uint256 owed;
+  }
+
   struct AssetVars {
+    IHub.Asset asset;
+    uint256 drawnRate;
     uint256 drawnIndex;
     uint256 totalAssets;
     uint256 totalShares;
-    uint256 drawn;
-    uint256 premium;
-    uint256 lastUpdateTimestamp;
+    Debt debt;
   }
 
   struct UserVars {
-    uint256 drawnDebt;
-    uint256 premiumDebt;
-    uint256 totalDebt;
+    ISpoke.UserPosition position;
+    Debt debt;
   }
 
   struct UserAccountDataVars {
-    uint256 healthFactor;
+    ISpoke.UserAccountData data;
   }
 
-  struct SpokeAssetVars {
+  struct SpokeVars {
+    IHub.SpokeData spokeData;
     uint256 addedAssets;
     uint256 addedShares;
-    uint256 owed;
+    Debt debt;
   }
 
   struct DefaultVars {
     mapping(address hub => mapping(uint256 assetId => AssetVars)) assetVars;
-    mapping(address hub => mapping(uint256 assetId => mapping(address spoke => SpokeAssetVars))) spokeAssetVars;
+    mapping(address hub => mapping(uint256 assetId => mapping(address spoke => SpokeVars))) spokeVars;
     mapping(address spoke => mapping(uint256 reserveId => mapping(address user => UserVars))) userVars;
     mapping(address spoke => mapping(address user => UserAccountDataVars)) userAccountDataVars;
   }
@@ -114,83 +122,71 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
   //                                       HELPERS                                             //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  function _setAssetValues(DefaultVars storage _defaultVars) internal {
-    for (uint256 i; i < hubAddresses.length; i++) {
-      address hubAddress = hubAddresses[i];
-      uint256 assetCount = IHub(hubAddress).getAssetCount();
+  /// @dev Only use these helpers in postConditions, do NOT rely on them at Invariants because they not be populated
+  /// when the fuzzer has updated env (eg block.timestamp) which does not invoke any Handler
+
+  function _setAssetValues(DefaultVars storage defaultVars) internal {
+    for (uint256 i; i < hubs.length(); i++) {
+      IHub hub = IHub(hubs.at(i));
+      uint256 assetCount = hub.getAssetCount();
       for (uint256 j; j < assetCount; j++) {
-        _defaultVars.assetVars[hubAddress][j].drawnIndex = IHub(hubAddress).getAssetDrawnIndex(j);
-        _defaultVars.assetVars[hubAddress][j].totalAssets = IHub(hubAddress).getAddedAssets(j);
-        _defaultVars.assetVars[hubAddress][j].totalShares = IHub(hubAddress).getAddedShares(j);
-        (
-          _defaultVars.assetVars[hubAddress][j].drawn,
-          _defaultVars.assetVars[hubAddress][j].premium
-        ) = IHub(hubAddress).getAssetOwed(j);
-        _defaultVars.assetVars[hubAddress][j].lastUpdateTimestamp = IHub(hubAddress)
-          .getAsset(j)
-          .lastUpdateTimestamp;
+        (uint256 drawn, uint256 premium) = hub.getAssetOwed(j);
+        defaultVars.assetVars[address(hub)][j] = AssetVars({
+          asset: hub.getAsset(j),
+          drawnRate: hub.getAssetDrawnRate(j),
+          drawnIndex: hub.getAssetDrawnIndex(j),
+          totalAssets: hub.getAddedAssets(j),
+          totalShares: hub.getAddedShares(j),
+          debt: Debt({drawn: drawn, premium: premium, owed: drawn + premium})
+        });
       }
     }
   }
 
-  function _setSpokeAssetValues(DefaultVars storage _defaultVars) internal {
-    for (uint256 i; i < hubAddresses.length; i++) {
-      address hubAddress = hubAddresses[i];
-      uint256 assetCount = IHub(hubAddress).getAssetCount();
+  function _setSpokeAssetValues(DefaultVars storage defaultVars) internal {
+    for (uint256 i; i < hubs.length(); i++) {
+      IHub hub = IHub(hubs.at(i));
+      uint256 assetCount = hub.getAssetCount();
       for (uint256 j; j < assetCount; j++) {
         for (uint256 k; k < allSpokes.length; k++) {
           address spoke = allSpokes[k];
-          _defaultVars.spokeAssetVars[hubAddress][j][spoke].addedAssets = IHub(hubAddress)
-            .getSpokeAddedAssets(j, spoke);
-          _defaultVars.spokeAssetVars[hubAddress][j][spoke].addedShares = IHub(hubAddress)
-            .getSpokeAddedShares(j, spoke);
-          (uint256 drawn, uint256 premium) = IHub(hubAddress).getSpokeOwed(j, spoke);
-          _defaultVars.spokeAssetVars[hubAddress][j][spoke].owed = drawn + premium;
+          (uint256 drawn, uint256 premium) = hub.getSpokeOwed(j, spoke);
+          defaultVars.spokeVars[address(hub)][j][spoke] = SpokeVars({
+            spokeData: hub.getSpoke(j, spoke),
+            addedAssets: hub.getSpokeAddedAssets(j, spoke),
+            addedShares: hub.getSpokeAddedShares(j, spoke),
+            debt: Debt({drawn: drawn, premium: premium, owed: drawn + premium})
+          });
         }
       }
     }
   }
 
-  function _setUserValues(DefaultVars storage _defaultVars) internal {
-    // Iterate through all users to check
-    for (uint256 i; i < usersToCheck.length; i++) {
+  function _setUserValues(DefaultVars storage defaultVars) internal {
+    for (uint256 i; i < usersToCheck.length; ++i) {
       UserInfo memory userInfo = usersToCheck[i];
-
-      // Cache values for the user's account data
-      ISpoke.UserAccountData memory userAccountData = ISpoke(userInfo.spoke).getUserAccountData(
-        userInfo.user
-      );
-      _defaultVars.userAccountDataVars[userInfo.spoke][userInfo.user].healthFactor = userAccountData
-        .healthFactor;
+      ISpoke spoke = ISpoke(userInfo.spoke);
+      defaultVars.userAccountDataVars[userInfo.spoke][userInfo.user].data = spoke
+        .getUserAccountData(userInfo.user);
 
       // Cache values for all reserves of the spoke, used after actions: updateUserRiskPremium, updateUserDynamicConfig
       if (userInfo.reserveId == CHECK_ALL_RESERVES) {
-        // Iterate through all reserves of the spoke
-        for (uint256 j; j < spokeReserveIds[userInfo.spoke].length; j++) {
-          (
-            _defaultVars
-              .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
-              .drawnDebt,
-            _defaultVars
-              .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
-              .premiumDebt
-          ) = ISpoke(userInfo.spoke).getUserDebt(spokeReserveIds[userInfo.spoke][j], userInfo.user);
-          _defaultVars
-            .userVars[userInfo.spoke][spokeReserveIds[userInfo.spoke][j]][userInfo.user]
-            .totalDebt = ISpoke(userInfo.spoke).getUserTotalDebt(
-            spokeReserveIds[userInfo.spoke][j],
-            userInfo.user
-          );
+        uint256 reserveCount = spoke.getReserveCount();
+        for (uint256 j; j < reserveCount; ++j) {
+          (uint256 drawn, uint256 premium) = spoke.getUserDebt(j, userInfo.user);
+          defaultVars.userVars[userInfo.spoke][j][userInfo.user] = UserVars({
+            position: spoke.getUserPosition(j, userInfo.user),
+            debt: Debt({drawn: drawn, premium: premium, owed: drawn + premium})
+          });
         }
       } else {
         // Cache values for a specific reserve of the spoke, used after actions: supply, withdraw, borrow, repay, setUsingAsCollateral
-        (
-          _defaultVars.userVars[userInfo.spoke][userInfo.reserveId][userInfo.user].drawnDebt,
-          _defaultVars.userVars[userInfo.spoke][userInfo.reserveId][userInfo.user].premiumDebt
-        ) = ISpoke(userInfo.spoke).getUserDebt(userInfo.reserveId, userInfo.user);
-        _defaultVars.userVars[userInfo.spoke][userInfo.reserveId][userInfo.user].totalDebt = ISpoke(
-          userInfo.spoke
-        ).getUserTotalDebt(userInfo.reserveId, userInfo.user);
+        uint256 reserveId = userInfo.reserveId;
+        (uint256 drawn, uint256 premium) = spoke.getUserDebt(reserveId, userInfo.user);
+        defaultVars.userVars[userInfo.spoke][reserveId][userInfo.user] = UserVars({
+          position: spoke.getUserPosition(reserveId, userInfo.user),
+          debt: Debt({drawn: drawn, premium: premium, owed: drawn + premium})
+        });
       }
     }
   }
@@ -200,19 +196,20 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function assert_GPOST_HUB_A(address hubAddress, uint256 assetId) internal {
-    assertGe(
-      defaultVarsAfter.assetVars[hubAddress][assetId].drawnIndex,
-      defaultVarsBefore.assetVars[hubAddress][assetId].drawnIndex,
-      GPOST_HUB_A
-    );
+    AssetVars memory varsBefore = _assetVarsBefore(hubAddress, assetId);
+    AssetVars memory varsAfter = _assetVarsAfter(hubAddress, assetId);
+    assertGe(varsAfter.drawnIndex, varsBefore.drawnIndex, GPOST_HUB_A);
   }
 
   function assert_GPOST_HUB_B(address hubAddress, uint256 assetId) internal {
+    AssetVars memory varsBefore = _assetVarsBefore(hubAddress, assetId);
+    AssetVars memory varsAfter = _assetVarsAfter(hubAddress, assetId);
+
     assertFullMulGe(
-      defaultVarsAfter.assetVars[hubAddress][assetId].totalAssets + 1e6,
-      defaultVarsBefore.assetVars[hubAddress][assetId].totalShares + 1e6,
-      defaultVarsBefore.assetVars[hubAddress][assetId].totalAssets + 1e6,
-      defaultVarsAfter.assetVars[hubAddress][assetId].totalShares + 1e6,
+      varsAfter.totalAssets + SharesMath.VIRTUAL_ASSETS,
+      varsBefore.totalShares + SharesMath.VIRTUAL_SHARES,
+      varsBefore.totalAssets + SharesMath.VIRTUAL_ASSETS,
+      varsAfter.totalShares + SharesMath.VIRTUAL_SHARES,
       GPOST_HUB_B
     );
   }
@@ -228,14 +225,15 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
       signature == ISpokeHandler.updateUserRiskPremium.selector ||
       signature == ISpokeHandler.liquidationCall.selector
     ) {
+      AssetVars memory vars = _assetVarsAfter(hubAddress, assetId);
       assertEq(
-        IHub(hubAddress).getAssetDrawnRate(assetId),
+        vars.drawnRate,
         IAssetInterestRateStrategy(hubInfo[hubAddress].irStrategy).calculateInterestRate(
           assetId,
-          IHub(hubAddress).getAssetLiquidity(assetId),
-          defaultVarsAfter.assetVars[hubAddress][assetId].drawn,
-          IHub(hubAddress).getAssetDeficitRay(assetId).fromRayUp(),
-          IHub(hubAddress).getAssetSwept(assetId)
+          vars.asset.liquidity,
+          vars.debt.drawn,
+          vars.asset.deficitRay.fromRayUp(),
+          vars.asset.swept
         ),
         GPOST_HUB_C
       );
@@ -244,7 +242,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
 
   function assert_GPOST_HUB_D(address hubAddress, uint256 assetId) internal {
     assertLe(
-      defaultVarsAfter.assetVars[hubAddress][assetId].lastUpdateTimestamp,
+      _assetVarsAfter(hubAddress, assetId).asset.lastUpdateTimestamp,
       block.timestamp,
       GPOST_HUB_D
     );
@@ -255,16 +253,17 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     IHub.SpokeConfig memory spokeConfig = IHub(hubAddress).getSpokeConfig(assetId, spoke);
     (, uint8 decimals) = IHub(hubAddress).getAssetUnderlyingAndDecimals(assetId);
 
+    SpokeVars memory spokeDataBefore = _spokeVarsBefore(hubAddress, assetId, spoke);
+    SpokeVars memory spokeDataAfter = _spokeVarsAfter(hubAddress, assetId, spoke);
+
     // GPOST_HUB_E: spoke-level addedAssets must be within addCap after an add action
     if (
-      defaultVarsAfter.spokeAssetVars[hubAddress][assetId][spoke].addedAssets >
-        defaultVarsBefore.spokeAssetVars[hubAddress][assetId][spoke].addedAssets &&
-      defaultVarsAfter.spokeAssetVars[hubAddress][assetId][spoke].addedShares !=
-        defaultVarsBefore.spokeAssetVars[hubAddress][assetId][spoke].addedShares /// @dev filter out interest accrual
+      spokeDataAfter.addedAssets > spokeDataBefore.addedAssets &&
+      spokeDataAfter.addedShares != spokeDataBefore.addedShares /// @dev required to avoid interest accrual detection
     ) {
       if (spokeConfig.addCap != MAX_ALLOWED_SPOKE_CAP) {
         assertLe(
-          defaultVarsAfter.spokeAssetVars[hubAddress][assetId][spoke].addedAssets,
+          spokeDataAfter.addedAssets,
           spokeConfig.addCap * MathUtils.uncheckedExp(10, decimals),
           GPOST_HUB_E
         );
@@ -272,13 +271,10 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     }
 
     // GPOST_HUB_F: spoke-level owed must be within drawCap after a draw action
-    if (
-      defaultVarsAfter.spokeAssetVars[hubAddress][assetId][spoke].owed >
-      defaultVarsBefore.spokeAssetVars[hubAddress][assetId][spoke].owed
-    ) {
+    if (spokeDataAfter.debt.owed > spokeDataBefore.debt.owed) {
       if (spokeConfig.drawCap != MAX_ALLOWED_SPOKE_CAP) {
         assertLe(
-          defaultVarsAfter.spokeAssetVars[hubAddress][assetId][spoke].owed,
+          spokeDataAfter.debt.owed,
           spokeConfig.drawCap * MathUtils.uncheckedExp(10, decimals),
           GPOST_HUB_F
         );
@@ -288,8 +284,8 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
 
   function assert_GPOST_HUB_G(address hubAddress, uint256 assetId) internal {
     assertGe(
-      defaultVarsAfter.assetVars[hubAddress][assetId].lastUpdateTimestamp,
-      defaultVarsBefore.assetVars[hubAddress][assetId].lastUpdateTimestamp,
+      _assetVarsAfter(hubAddress, assetId).asset.lastUpdateTimestamp,
+      _assetVarsBefore(hubAddress, assetId).asset.lastUpdateTimestamp,
       GPOST_HUB_G
     );
   }
@@ -307,10 +303,10 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
   }
 
   function assert_GPOST_SP_B(address spoke, uint256 reserveId, address user) internal {
-    if (
-      defaultVarsAfter.userVars[spoke][reserveId][user].premiumDebt <
-      defaultVarsBefore.userVars[spoke][reserveId][user].premiumDebt
-    ) {
+    UserVars memory userVarsBefore = _userVarsBefore(spoke, reserveId, user);
+    UserVars memory userVarsAfter = _userVarsAfter(spoke, reserveId, user);
+
+    if (userVarsAfter.debt.premium < userVarsBefore.debt.premium) {
       assertTrue(
         currentActionSignature == ISpokeHandler.repay.selector ||
           currentActionSignature == ISpokeHandler.liquidationCall.selector,
@@ -318,26 +314,19 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
       );
     }
 
-    if (
-      defaultVarsAfter.userVars[spoke][reserveId][user].drawnDebt <
-      defaultVarsBefore.userVars[spoke][reserveId][user].drawnDebt
-    ) {
+    if (userVarsAfter.debt.drawn < userVarsBefore.debt.drawn) {
       assertTrue(
         currentActionSignature == ISpokeHandler.repay.selector ||
           currentActionSignature == ISpokeHandler.liquidationCall.selector,
         GPOST_SP_B2
       );
-      assertEq(defaultVarsAfter.userVars[spoke][reserveId][user].premiumDebt, 0, GPOST_SP_B2);
+      assertEq(userVarsAfter.debt.premium, 0, GPOST_SP_B2);
     }
   }
 
   function assert_GPOST_SP_E(address spoke, uint256 reserveId, address user) internal {
-    // latest reserve key
     uint32 latestKey = ISpoke(spoke).getReserve(reserveId).dynamicConfigKey;
-    // user-stored key
     uint32 userKey = ISpoke(spoke).getUserPosition(reserveId, user).dynamicConfigKey;
-
-    // Read the cached signature of the current action
     bytes4 signature = currentActionSignature;
 
     if (
@@ -351,16 +340,14 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
   }
 
   function assert_GPOST_LIQ_G(address spoke, address user) internal {
-    // Read the cached values of the user's health factor
-    uint256 healthFactorBefore = defaultVarsBefore.userAccountDataVars[spoke][user].healthFactor;
-    uint256 healthFactorAfter = defaultVarsAfter.userAccountDataVars[spoke][user].healthFactor;
+    UserAccountDataVars memory dataBefore = _userAccountDataVarsBefore(spoke, user);
+    UserAccountDataVars memory dataAfter = _userAccountDataVarsAfter(spoke, user);
 
-    // Read the cached signature of the current action
     bytes4 signature = currentActionSignature;
 
     if (
-      healthFactorBefore < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
-      healthFactorAfter < healthFactorBefore
+      dataBefore.data.healthFactor < Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD &&
+      dataAfter.data.healthFactor < dataBefore.data.healthFactor
     ) {
       assertTrue(signature == ISpokeHandler.liquidationCall.selector, GPOST_SP_LIQ_G);
     }
@@ -368,7 +355,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
 
   function assert_GPOST_SP_LIQ_H(address spoke, address user) internal {
     if (
-      defaultVarsAfter.userAccountDataVars[spoke][user].healthFactor <
+      _userAccountDataVarsAfter(spoke, user).data.healthFactor <
       Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD
     ) {
       assertTrue(
@@ -391,5 +378,65 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
 
   function _cacheCurrentActionSignature() internal {
     currentActionSignature = bytes4(msg.sig);
+  }
+
+  function _assetVarsBefore(
+    address hubAddress,
+    uint256 assetId
+  ) internal view returns (AssetVars memory) {
+    return defaultVarsBefore.assetVars[hubAddress][assetId];
+  }
+
+  function _assetVarsAfter(
+    address hubAddress,
+    uint256 assetId
+  ) internal view returns (AssetVars memory) {
+    return defaultVarsAfter.assetVars[hubAddress][assetId];
+  }
+
+  function _spokeVarsBefore(
+    address hubAddress,
+    uint256 assetId,
+    address spoke
+  ) internal view returns (SpokeVars memory) {
+    return defaultVarsBefore.spokeVars[hubAddress][assetId][spoke];
+  }
+
+  function _spokeVarsAfter(
+    address hubAddress,
+    uint256 assetId,
+    address spoke
+  ) internal view returns (SpokeVars memory) {
+    return defaultVarsAfter.spokeVars[hubAddress][assetId][spoke];
+  }
+
+  function _userVarsBefore(
+    address spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (UserVars memory) {
+    return defaultVarsBefore.userVars[spoke][reserveId][user];
+  }
+
+  function _userVarsAfter(
+    address spoke,
+    uint256 reserveId,
+    address user
+  ) internal view returns (UserVars memory) {
+    return defaultVarsAfter.userVars[spoke][reserveId][user];
+  }
+
+  function _userAccountDataVarsBefore(
+    address spoke,
+    address user
+  ) internal view returns (UserAccountDataVars memory) {
+    return defaultVarsBefore.userAccountDataVars[spoke][user];
+  }
+
+  function _userAccountDataVarsAfter(
+    address spoke,
+    address user
+  ) internal view returns (UserAccountDataVars memory) {
+    return defaultVarsAfter.userAccountDataVars[spoke][user];
   }
 }

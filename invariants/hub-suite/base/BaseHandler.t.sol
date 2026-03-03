@@ -52,7 +52,6 @@ contract BaseHandler is HookAggregator {
   }
 
   /// @notice Helper function to safely approve an amount of tokens to a spender
-
   function _approve(address token, address owner, address spender, uint256 amount) internal {
     vm.prank(owner);
     _safeApprove(token, spender, 0);
@@ -63,11 +62,9 @@ contract BaseHandler is HookAggregator {
   /// @notice Helper function to safely approve an amount of tokens to a spender
   /// @dev This function is used to revert on failed approvals
   function _safeApprove(address token, address spender, uint256 amount) internal {
-    (bool success, bytes memory retdata) = token.call(
-      abi.encodeWithSelector(IERC20.approve.selector, spender, amount)
-    );
-    assert(success);
-    if (retdata.length > 0) assert(abi.decode(retdata, (bool)));
+    (bool ok, bytes memory ret) = token.call(abi.encodeCall(IERC20.approve, (spender, amount)));
+    assert(ok);
+    if (ret.length > 0) assert(abi.decode(ret, (bool)));
   }
 
   /// @notice Helper function to mint an amount of tokens to an address

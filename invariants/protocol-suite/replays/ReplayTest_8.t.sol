@@ -27,7 +27,7 @@ contract ReplayTest7 is Invariants, Setup {
     _setUp();
 
     /// @dev fixes the actor to the first user
-    actor = actors[USER1];
+    actor = userToActor[USER1];
 
     vm.warp(101007);
   }
@@ -62,7 +62,7 @@ contract ReplayTest7 is Invariants, Setup {
     Tester.updatePaused(false, 134, 157);
     _setUpActor(USER2);
     _delay(267059);
-    Tester.updateFrozen(true, 121, 96);
+    Tester.updateFrozen(true, 121, 98);
     _delay(70398);
     Tester.donateUnderlyingToSpoke(10, 26, 123);
     _delay(570296);
@@ -85,7 +85,7 @@ contract ReplayTest7 is Invariants, Setup {
     Tester.updateFrozen(true, 190, 214);
     _setUpActor(USER2);
     _delay(395602);
-    Tester.updatePaused(false, 211, 11);
+    Tester.updatePaused(false, 211, 9);
     _delay(420078);
     Tester.setPrice(
       32073901804028723412800996385287954179043683908620921829695310985447157891024,
@@ -100,7 +100,7 @@ contract ReplayTest7 is Invariants, Setup {
     _delay(147712);
     Tester.freezeAllReserves(0);
     _setUpActor(USER3);
-    Tester.updatePaused(false, 69, 126);
+    Tester.updatePaused(false, 69, 124);
     _setUpActor(USER1);
     Tester.updatePaused(false, 204, 59);
     _setUpActor(USER2);
@@ -154,7 +154,7 @@ contract ReplayTest7 is Invariants, Setup {
     Tester.updateFrozen(true, 0, 0);
     _delay(432000);
     Tester.updateUserDynamicConfig(86);
-    Tester.updateBorrowable(false, 225, 96);
+    Tester.updateBorrowable(false, 225, 98);
     _setUpActor(USER1);
     _delay(333625);
     Tester.updateUserRiskPremium(0);
@@ -171,20 +171,20 @@ contract ReplayTest7 is Invariants, Setup {
   function test_replay_withdraw_2() public {
     _setUpActor(USER2);
     _delay(48);
-    Tester.supply(5765, 214, 57, 0);
+    Tester.supply(5765, 214, 57, 2);
     Tester.pauseAllReserves(229);
     Tester.withdraw(
       79270905586291627497307400106420653318261579396350751610744730950627405265,
       190,
       189,
-      0
+      2
     );
   }
 
   function test_replay_withdraw_3() public {
     _setUpActor(USER1);
     _delay(48);
-    Tester.updatePaused(false, 43, 5);
+    Tester.updatePaused(false, 43, 7);
     _setUpActor(USER2);
     Tester.donateUnderlyingToSpoke(
       4453226477229950780488458817391925832298660130277646469228882959756527864210,
@@ -197,13 +197,13 @@ contract ReplayTest7 is Invariants, Setup {
     Tester.updatePaused(true, 92, 0);
     _setUpActor(USER1);
     _delay(184974);
-    Tester.updateFrozen(false, 5, 198);
+    Tester.updateFrozen(false, 5, 196);
     _setUpActor(USER2);
     Tester.setPrice(-1, 56);
     _setUpActor(USER1);
     Tester.updateUserDynamicConfig(22);
     _delay(12646);
-    Tester.supply(50000000, 0, 27, 0);
+    Tester.supply(50000000, 0, 27, 2);
     _setUpActor(USER3);
     _delay(367615);
     Tester.pauseAllReserves(137);
@@ -216,13 +216,13 @@ contract ReplayTest7 is Invariants, Setup {
       0
     );
     _setUpActor(USER2);
-    Tester.updatePaused(false, 153, 223);
+    Tester.updatePaused(false, 153, 221);
     _setUpActor(USER1);
     Tester.withdraw(
       34926635329146824736853381233931534329217246589975803687784392641014182723417,
       0,
       201,
-      12
+      10
     );
   }
 
@@ -238,25 +238,25 @@ contract ReplayTest7 is Invariants, Setup {
 
   /// @notice Set up an actor
   function _setUpActor(address _origin) internal {
-    actor = actors[_origin];
+    actor = userToActor[_origin];
   }
 
   /// @notice Set up an actor and fast forward the time
   /// @dev Use for ECHIDNA call-traces
   function _setUpActorAndDelay(address _origin, uint256 _seconds) internal {
-    actor = actors[_origin];
+    actor = userToActor[_origin];
     vm.warp(block.timestamp + _seconds);
   }
 
   /// @notice Set up a specific block and actor
   function _setUpBlockAndActor(uint256 _block, address _user) internal {
     vm.roll(_block);
-    actor = actors[_user];
+    actor = userToActor[_user];
   }
 
   /// @notice Set up a specific timestamp and actor
   function _setUpTimestampAndActor(uint256 _timestamp, address _user) internal {
     vm.warp(_timestamp);
-    actor = actors[_user];
+    actor = userToActor[_user];
   }
 }

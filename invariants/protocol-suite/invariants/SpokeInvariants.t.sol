@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
+
 // Interfaces
 import {ISpokeBase} from 'src/spoke/interfaces/ISpokeBase.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
@@ -13,6 +15,8 @@ import {HandlerAggregator} from '../HandlerAggregator.t.sol';
 /// @notice Implements Spoke Invariants for the protocol
 /// @dev Inherits HandlerAggregator to check actions in assertion testing mode
 abstract contract SpokeInvariants is HandlerAggregator {
+  using EnumerableSet for EnumerableSet.AddressSet;
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                          SPOKE                                             //
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,8 +75,8 @@ abstract contract SpokeInvariants is HandlerAggregator {
 
   function assert_INV_SP_C(address spoke, uint256 reserveId) internal {
     uint256 sumSpokeDebts;
-    for (uint256 i; i < actorAddresses.length; i++) {
-      sumSpokeDebts += ISpokeBase(spoke).getUserTotalDebt(reserveId, actorAddresses[i]);
+    for (uint256 i; i < actors.length(); i++) {
+      sumSpokeDebts += ISpokeBase(spoke).getUserTotalDebt(reserveId, actors.at(i));
     }
     assertGe(sumSpokeDebts, ISpokeBase(spoke).getReserveTotalDebt(reserveId), INV_SP_C);
   }
@@ -88,16 +92,16 @@ abstract contract SpokeInvariants is HandlerAggregator {
 
   function assert_INV_SP_E(address spoke, uint256 reserveId) internal {
     uint256 sumUserShares;
-    for (uint256 i; i < actorAddresses.length; i++) {
-      sumUserShares += ISpokeBase(spoke).getUserSuppliedShares(reserveId, actorAddresses[i]);
+    for (uint256 i; i < actors.length(); i++) {
+      sumUserShares += ISpokeBase(spoke).getUserSuppliedShares(reserveId, actors.at(i));
     }
     assertEq(sumUserShares, ISpokeBase(spoke).getReserveSuppliedShares(reserveId), INV_SP_E);
   }
 
   function assert_INV_SP_F(address spoke, uint256 reserveId) internal {
     uint256 sumUserAssets;
-    for (uint256 i; i < actorAddresses.length; i++) {
-      sumUserAssets += ISpokeBase(spoke).getUserSuppliedAssets(reserveId, actorAddresses[i]);
+    for (uint256 i; i < actors.length(); i++) {
+      sumUserAssets += ISpokeBase(spoke).getUserSuppliedAssets(reserveId, actors.at(i));
     }
     uint256 reserveSuppliedAssets = ISpokeBase(spoke).getReserveSuppliedAssets(reserveId);
     assertLe(sumUserAssets, reserveSuppliedAssets, INV_SP_F);

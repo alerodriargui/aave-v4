@@ -8,6 +8,7 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
 // Libraries
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
+import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {Constants} from 'tests/Constants.sol';
 
 // Test Contracts
@@ -18,6 +19,7 @@ import {BaseHandler} from '../../base/BaseHandler.t.sol';
 /// @notice Handler test contract for a set of actions
 contract SpokeHandler is BaseHandler, ISpokeHandler {
   using WadRayMath for uint256;
+  using MathUtils for uint256;
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                      STATE VARIABLES                                      //
@@ -101,7 +103,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     if (
       _isAuthorized(spoke, onBehalfOf) &&
       !_isReserveActionBlocked(spoke, reserveId, false, false) &&
-      defaultVarsBefore.userVars[spoke][reserveId][onBehalfOf].totalDebt == 0 &&
+      _userVarsBefore(spoke, reserveId, onBehalfOf).debt.owed == 0 &&
       amount > 0 &&
       userAmount != 0
     ) {
@@ -177,8 +179,8 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       ///// HSPOST /////
 
       assertLe(
-        defaultVarsAfter.userVars[spoke][reserveId][onBehalfOf].totalDebt,
-        defaultVarsBefore.userVars[spoke][reserveId][onBehalfOf].totalDebt,
+        _userVarsAfter(spoke, reserveId, onBehalfOf).debt.owed,
+        _userVarsBefore(spoke, reserveId, onBehalfOf).debt.owed,
         HSPOST_SP_C
       );
     } else {
@@ -273,15 +275,19 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
       // Calculate the debt liquidated from user-level snapshots (not reserve-level, which
       // includes interest accrual on other users' debt and would be inaccurate)
-      uint256 violatorDebtBefore = defaultVarsBefore
-        .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator]
-        .totalDebt;
-      uint256 violatorDebtAfter = defaultVarsAfter
-        .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator]
-        .totalDebt;
-      liquidationVars.debtLiquidated = (violatorDebtBefore > violatorDebtAfter)
-        ? violatorDebtBefore - violatorDebtAfter
-        : 0;
+      UserVars memory violatorDebtVarsBefore = _userVarsBefore(
+        liquidationVars.spoke,
+        liquidationVars.debtReserveId,
+        liquidationVars.violator
+      );
+      UserVars memory violatorDebtVarsAfter = _userVarsAfter(
+        liquidationVars.spoke,
+        liquidationVars.debtReserveId,
+        liquidationVars.violator
+      );
+      liquidationVars.debtLiquidated = violatorDebtVarsBefore.debt.owed.zeroFloorSub(
+        violatorDebtVarsAfter.debt.owed
+      );
 
       if (receiveShares) {
         liquidationVars.liquidatorCollateralBalanceAfter = ISpoke(liquidationVars.spoke)
@@ -292,13 +298,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       }
 
       ///// HSPOST /////
-      assertLe(
-        liquidationVars.debtLiquidated,
-        defaultVarsBefore
-          .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator]
-          .totalDebt,
-        HSPOST_SP_LIQ_A
-      );
+      assertLe(liquidationVars.debtLiquidated, violatorDebtVarsBefore.debt.owed, HSPOST_SP_LIQ_A);
 
       if (
         liquidationVars.liquidatorCollateralBalanceAfter >
@@ -313,38 +313,26 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       }
 
       if (liquidationVars.totalDebtValueBefore < Constants.DUST_LIQUIDATION_THRESHOLD) {
-        assertEq(
-          defaultVarsAfter
-            .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][
-              liquidationVars.violator
-            ]
-            .totalDebt,
-          0,
-          HSPOST_SP_LIQ_C
-        );
+        assertEq(violatorDebtVarsAfter.debt.owed, 0, HSPOST_SP_LIQ_C);
       }
 
       assertGe(liquidationVars.debtToCover, liquidationVars.debtLiquidated, HSPOST_SP_LIQ_D);
 
       assertLt(
-        defaultVarsBefore
-          .userAccountDataVars[liquidationVars.spoke][liquidationVars.violator]
+        _userAccountDataVarsBefore(liquidationVars.spoke, liquidationVars.violator)
+          .data
           .healthFactor,
         Constants.HEALTH_FACTOR_LIQUIDATION_THRESHOLD,
         HSPOST_SP_LIQ_E
       );
 
-      if (
-        defaultVarsAfter
-          .userVars[liquidationVars.spoke][liquidationVars.debtReserveId][liquidationVars.violator]
-          .totalDebt > 0
-      ) {
+      if (violatorDebtVarsAfter.debt.owed > 0) {
         assertGt(
-          defaultVarsAfter
-            .userAccountDataVars[liquidationVars.spoke][liquidationVars.violator]
+          _userAccountDataVarsAfter(liquidationVars.spoke, liquidationVars.violator)
+            .data
             .healthFactor,
-          defaultVarsBefore
-            .userAccountDataVars[liquidationVars.spoke][liquidationVars.violator]
+          _userAccountDataVarsBefore(liquidationVars.spoke, liquidationVars.violator)
+            .data
             .healthFactor,
           HSPOST_SP_LIQ_G
         );
@@ -365,7 +353,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     uint256 reserveId = _getRandomReserveId(spoke, j);
 
     (bool isUsingAsCollateral, ) = ISpoke(spoke).getUserReserveStatus(reserveId, onBehalfOf);
-
+    // !todo remove this
     require(
       usingAsCollateral != isUsingAsCollateral,
       'SpokeHandler: usingAsCollateral already set'
@@ -399,9 +387,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
     address spoke = _getRandomSpoke(i);
 
-    uint256 totalDebt = _getTotalDebt(spoke, onBehalfOf);
-    uint256 totalPremiumDebtRay = _getTotalPremiumDebtRay(spoke, onBehalfOf);
-
     // Register user to check postconditions
     _registerUserToCheck(spoke, CHECK_ALL_RESERVES, onBehalfOf);
 
@@ -413,8 +398,14 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
     if (success) {
       _after();
-      assertEq(_getTotalPremiumDebtRay(spoke, onBehalfOf), totalPremiumDebtRay, HSPOST_HUB_M);
-      assertEq(_getTotalDebt(spoke, onBehalfOf), totalDebt, HSPOST_SP_F);
+      ///// HSPOST /////
+      uint256 reserveCount = ISpoke(spoke).getReserveCount();
+      for (uint256 j; j < reserveCount; j++) {
+        UserVars memory varsBefore = _userVarsBefore(spoke, j, onBehalfOf);
+        UserVars memory varsAfter = _userVarsAfter(spoke, j, onBehalfOf);
+        assertEq(varsBefore.debt.premium, varsAfter.debt.premium, HSPOST_HUB_M); // !todo add premium ray in those getters and check that here?
+        assertEq(varsBefore.debt.owed, varsAfter.debt.owed, HSPOST_SP_F);
+      }
     } else {
       revert('SpokeHandler: updateUserRiskPremium failed');
     }
@@ -453,22 +444,4 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                           HELPERS                                         //
   ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  function _getTotalDebt(address spoke, address user) internal view returns (uint256) {
-    uint256 totalDebt;
-    uint256 reserveCount = spokeReserveIds[spoke].length;
-    for (uint256 i; i < reserveCount; i++) {
-      totalDebt += ISpoke(spoke).getUserTotalDebt(spokeReserveIds[spoke][i], user);
-    }
-    return totalDebt;
-  }
-
-  function _getTotalPremiumDebtRay(address spoke, address user) internal view returns (uint256) {
-    uint256 totalPremiumDebtRay;
-    uint256 reserveCount = spokeReserveIds[spoke].length;
-    for (uint256 i; i < reserveCount; i++) {
-      totalPremiumDebtRay += ISpoke(spoke).getUserPremiumDebtRay(spokeReserveIds[spoke][i], user);
-    }
-    return totalPremiumDebtRay;
-  }
 }

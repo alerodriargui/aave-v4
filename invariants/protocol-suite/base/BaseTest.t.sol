@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 // Libraries
 import {Vm} from 'forge-std/Base.sol';
 import {StdUtils} from 'forge-std/StdUtils.sol';
-import 'forge-std/console.sol';
+import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {Constants} from 'tests/Constants.sol';
 
 // Interfaces
@@ -24,7 +24,9 @@ import {BaseStorage} from './BaseStorage.t.sol';
 /// @dev Provides setup modifier and cheat code setup
 /// @dev inherits Storage, Testing constants assertions and utils needed for testing
 abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdUtils {
-  bool internal IS_TEST = true;
+  using EnumerableSet for EnumerableSet.AddressSet;
+
+  bool internal IS_TEST = true; // todo! make public
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                   ACTOR PROXY MECHANISM                                   //
@@ -32,7 +34,7 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
 
   /// @dev Actor proxy mechanism
   modifier setup() virtual {
-    actor = actors[msg.sender];
+    actor = userToActor[msg.sender];
     _;
     delete actor;
   }
@@ -65,8 +67,8 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
 
   /// @notice Get a random actor proxy address
   function _getRandomActor(uint256 _i) internal view returns (address) {
-    uint256 _actorIndex = _i % NUMBER_OF_ACTORS;
-    return actorAddresses[_actorIndex];
+    uint256 _actorIndex = _i % actors.length();
+    return actors.at(_actorIndex);
   }
 
   /// @notice Helper function to get a random base asset
@@ -89,14 +91,13 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
 
   /// @notice Helper function to get a random spoke address
   function _getRandomSpoke(uint256 i) internal view returns (address) {
-    uint256 _spokeIndex = i % spokesAddresses.length;
-    return spokesAddresses[_spokeIndex];
+    uint256 _spokeIndex = i % spokes.length();
+    return spokes.at(_spokeIndex);
   }
 
   /// @notice Helper function to get a random reserve id from a spoke
   function _getRandomReserveId(address spoke, uint256 i) internal view returns (uint256) {
-    uint256 _reserveIndex = i % spokeReserveIds[spoke].length;
-    return spokeReserveIds[spoke][_reserveIndex];
+    return i % ISpoke(spoke).getReserveCount();
   }
 
   /// @notice Helper function to get a random price feed address
@@ -107,8 +108,8 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
 
   /// @notice Helper function to get a random hub address
   function _getRandomHub(uint256 i) internal view returns (address) {
-    uint256 _hubIndex = i % hubAddresses.length;
-    return hubAddresses[_hubIndex];
+    uint256 _hubIndex = i % hubs.length();
+    return hubs.at(_hubIndex);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
