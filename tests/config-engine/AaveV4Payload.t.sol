@@ -14,7 +14,13 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {IHubEngine} from 'src/config-engine/interfaces/IHubEngine.sol';
+import {ISpokeEngine} from 'src/config-engine/interfaces/ISpokeEngine.sol';
+import {IAccessManagerEngine} from 'src/config-engine/interfaces/IAccessManagerEngine.sol';
+import {IPositionManagerEngine} from 'src/config-engine/interfaces/IPositionManagerEngine.sol';
+import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
+import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
 import {AaveV4PayloadWrapper} from 'tests/mocks/config-engine/AaveV4PayloadWrapper.sol';
 import {MockHubConfigurator} from 'tests/mocks/config-engine/MockHubConfigurator.sol';
@@ -73,14 +79,16 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   }
 
   function test_execute_accessManagerAction_delegatesCorrectly() public {
-    IAaveV4ConfigEngine.RoleGrant[] memory grants = new IAaveV4ConfigEngine.RoleGrant[](1);
-    grants[0] = IAaveV4ConfigEngine.RoleGrant({
+    IAaveV4ConfigEngine.RoleMembership[]
+      memory memberships = new IAaveV4ConfigEngine.RoleMembership[](1);
+    memberships[0] = IAaveV4ConfigEngine.RoleMembership({
       authority: address(mockAccessManager),
       roleId: Roles.HUB_CONFIGURATOR_ROLE,
       account: ACCOUNT,
+      granted: true,
       executionDelay: 100
     });
-    payload.setAccessManagerRoleGrants(grants);
+    payload.setAccessManagerRoleMemberships(memberships);
 
     vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 100);
@@ -107,14 +115,16 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setSpokeAllReservesPauses(pauses);
 
     // Access manager action
-    IAaveV4ConfigEngine.RoleGrant[] memory grants = new IAaveV4ConfigEngine.RoleGrant[](1);
-    grants[0] = IAaveV4ConfigEngine.RoleGrant({
+    IAaveV4ConfigEngine.RoleMembership[]
+      memory memberships = new IAaveV4ConfigEngine.RoleMembership[](1);
+    memberships[0] = IAaveV4ConfigEngine.RoleMembership({
       authority: address(mockAccessManager),
       roleId: Roles.HUB_CONFIGURATOR_ROLE,
       account: ACCOUNT,
+      granted: true,
       executionDelay: 0
     });
-    payload.setAccessManagerRoleGrants(grants);
+    payload.setAccessManagerRoleMemberships(memberships);
 
     // Expect all 3 events
     vm.expectEmit(address(mockHubConfigurator));
@@ -175,22 +185,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     assertEq(address(payload.CONFIG_ENGINE()), address(engine));
   }
 
-  function test_execute_convenienceRoleGrant_viaPayload() public {
-    IAaveV4ConfigEngine.RoleGrantByName[] memory grants = new IAaveV4ConfigEngine.RoleGrantByName[](
-      1
-    );
-    grants[0] = IAaveV4ConfigEngine.RoleGrantByName({
-      authority: address(mockAccessManager),
-      account: ACCOUNT
-    });
-    payload.setHubConfiguratorFeeUpdaterRoleGrants(grants);
-
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
-
-    payload.execute();
-  }
-
   function test_execute_hubAssetListings() public {
     IAaveV4ConfigEngine.AssetListing[] memory listings = new IAaveV4ConfigEngine.AssetListing[](1);
     listings[0] = _defaultAssetListing();
@@ -209,11 +203,20 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_hubFeeConfigUpdates() public {
-    IAaveV4ConfigEngine.FeeConfigUpdate[]
-      memory updates = new IAaveV4ConfigEngine.FeeConfigUpdate[](1);
-    updates[0] = _defaultFeeConfigUpdate();
-    payload.setHubFeeConfigUpdates(updates);
+  function test_execute_hubAssetConfigUpdates_feeOnly() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
+      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
+      hub: HUB,
+      assetId: ASSET_ID,
+      liquidityFee: LIQUIDITY_FEE,
+      feeReceiver: FEE_RECEIVER,
+      irStrategy: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irData: '',
+      reinvestmentController: EngineFlags.KEEP_CURRENT_ADDRESS
+    });
+    payload.setHubAssetConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateFeeConfigCalled(HUB, ASSET_ID, LIQUIDITY_FEE, FEE_RECEIVER);
@@ -221,11 +224,20 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_hubInterestRateUpdates() public {
-    IAaveV4ConfigEngine.InterestRateUpdate[]
-      memory updates = new IAaveV4ConfigEngine.InterestRateUpdate[](1);
-    updates[0] = _defaultInterestRateUpdate();
-    payload.setHubInterestRateUpdates(updates);
+  function test_execute_hubAssetConfigUpdates_interestRateOnly() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
+      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
+      hub: HUB,
+      assetId: ASSET_ID,
+      liquidityFee: EngineFlags.KEEP_CURRENT,
+      feeReceiver: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irStrategy: IR_STRATEGY,
+      irData: IR_DATA,
+      reinvestmentController: EngineFlags.KEEP_CURRENT_ADDRESS
+    });
+    payload.setHubAssetConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateInterestRateStrategyCalled(HUB, ASSET_ID, IR_STRATEGY, IR_DATA);
@@ -233,16 +245,20 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_hubReinvestmentControllerUpdates() public {
-    IAaveV4ConfigEngine.ReinvestmentControllerUpdate[]
-      memory updates = new IAaveV4ConfigEngine.ReinvestmentControllerUpdate[](1);
-    updates[0] = IAaveV4ConfigEngine.ReinvestmentControllerUpdate({
+  function test_execute_hubAssetConfigUpdates_reinvestmentOnly() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.AssetConfigUpdate({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
       hub: HUB,
       assetId: ASSET_ID,
+      liquidityFee: EngineFlags.KEEP_CURRENT,
+      feeReceiver: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irStrategy: EngineFlags.KEEP_CURRENT_ADDRESS,
+      irData: '',
       reinvestmentController: REINVESTMENT_CONTROLLER
     });
-    payload.setHubReinvestmentControllerUpdates(updates);
+    payload.setHubAssetConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateReinvestmentControllerCalled(
@@ -250,32 +266,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       ASSET_ID,
       REINVESTMENT_CONTROLLER
     );
-
-    payload.execute();
-  }
-
-  function test_execute_hubSpokeAdditions() public {
-    IAaveV4ConfigEngine.SpokeAddition[] memory additions = new IAaveV4ConfigEngine.SpokeAddition[](
-      1
-    );
-    IHub.SpokeConfig memory config = IHub.SpokeConfig({
-      addCap: 1000,
-      drawCap: 500,
-      riskPremiumThreshold: 100,
-      active: true,
-      halted: false
-    });
-    additions[0] = IAaveV4ConfigEngine.SpokeAddition({
-      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      spoke: SPOKE,
-      assetId: ASSET_ID,
-      config: config
-    });
-    payload.setHubSpokeAdditions(additions);
-
-    vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.AddSpokeCalled(HUB, SPOKE, ASSET_ID, config);
 
     payload.execute();
   }
@@ -308,11 +298,21 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_hubSpokeCapsUpdates() public {
-    IAaveV4ConfigEngine.SpokeCapsUpdate[]
-      memory updates = new IAaveV4ConfigEngine.SpokeCapsUpdate[](1);
-    updates[0] = _defaultSpokeCapsUpdate();
-    payload.setHubSpokeCapsUpdates(updates);
+  function test_execute_hubSpokeConfigUpdates_capsOnly() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
+      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
+      hub: HUB,
+      assetId: ASSET_ID,
+      spoke: SPOKE,
+      addCap: 1000,
+      drawCap: 500,
+      riskPremiumThreshold: EngineFlags.KEEP_CURRENT,
+      active: EngineFlags.KEEP_CURRENT,
+      halted: EngineFlags.KEEP_CURRENT
+    });
+    payload.setHubSpokeConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeCapsCalled(HUB, ASSET_ID, SPOKE, 1000, 500);
@@ -320,17 +320,21 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_hubSpokeRiskPremiumThresholdUpdates() public {
-    IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[]
-      memory updates = new IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[](1);
-    updates[0] = IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate({
+  function test_execute_hubSpokeConfigUpdates_riskPremiumThresholdOnly() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
       hub: HUB,
       assetId: ASSET_ID,
       spoke: SPOKE,
-      riskPremiumThreshold: 200
+      addCap: EngineFlags.KEEP_CURRENT,
+      drawCap: EngineFlags.KEEP_CURRENT,
+      riskPremiumThreshold: 200,
+      active: EngineFlags.KEEP_CURRENT,
+      halted: EngineFlags.KEEP_CURRENT
     });
-    payload.setHubSpokeRiskPremiumThresholdUpdates(updates);
+    payload.setHubSpokeConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeRiskPremiumThresholdCalled(HUB, ASSET_ID, SPOKE, 200);
@@ -338,11 +342,21 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_hubSpokeStatusUpdates() public {
-    IAaveV4ConfigEngine.SpokeStatusUpdate[]
-      memory updates = new IAaveV4ConfigEngine.SpokeStatusUpdate[](1);
-    updates[0] = _defaultSpokeStatusUpdate();
-    payload.setHubSpokeStatusUpdates(updates);
+  function test_execute_hubSpokeConfigUpdates_statusOnly() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.SpokeConfigUpdate({
+      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
+      hub: HUB,
+      assetId: ASSET_ID,
+      spoke: SPOKE,
+      addCap: EngineFlags.KEEP_CURRENT,
+      drawCap: EngineFlags.KEEP_CURRENT,
+      riskPremiumThreshold: EngineFlags.KEEP_CURRENT,
+      active: EngineFlags.ENABLED,
+      halted: EngineFlags.DISABLED
+    });
+    payload.setHubSpokeConfigUpdates(updates);
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeActiveCalled(HUB, ASSET_ID, SPOKE, true);
@@ -484,6 +498,8 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setSpokeReserveConfigUpdates(updates);
 
     vm.expectEmit(address(mockSpokeConfigurator));
+    emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(SPOKE, RESERVE_ID, PRICE_SOURCE);
+    vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateCollateralRiskCalled(SPOKE, RESERVE_ID, 5000);
     vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdatePausedCalled(SPOKE, RESERVE_ID, false);
@@ -497,16 +513,21 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_spokeReservePriceSourceUpdates() public {
-    IAaveV4ConfigEngine.ReservePriceSourceUpdate[]
-      memory updates = new IAaveV4ConfigEngine.ReservePriceSourceUpdate[](1);
-    updates[0] = IAaveV4ConfigEngine.ReservePriceSourceUpdate({
+  function test_execute_spokeReserveConfigUpdates_priceSourceOnly() public {
+    IAaveV4ConfigEngine.ReserveConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.ReserveConfigUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.ReserveConfigUpdate({
       spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
       spoke: SPOKE,
       reserveId: RESERVE_ID,
-      priceSource: PRICE_SOURCE
+      priceSource: PRICE_SOURCE,
+      collateralRisk: EngineFlags.KEEP_CURRENT,
+      paused: EngineFlags.KEEP_CURRENT,
+      frozen: EngineFlags.KEEP_CURRENT,
+      borrowable: EngineFlags.KEEP_CURRENT,
+      receiveSharesEnabled: EngineFlags.KEEP_CURRENT
     });
-    payload.setSpokeReservePriceSourceUpdates(updates);
+    payload.setSpokeReserveConfigUpdates(updates);
 
     vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.UpdateReservePriceSourceCalled(SPOKE, RESERVE_ID, PRICE_SOURCE);
@@ -571,126 +592,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_spokeCollateralFactorAdditions() public {
-    IAaveV4ConfigEngine.CollateralFactorAddition[]
-      memory additions = new IAaveV4ConfigEngine.CollateralFactorAddition[](1);
-    additions[0] = IAaveV4ConfigEngine.CollateralFactorAddition({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID,
-      collateralFactor: 8000
-    });
-    payload.setSpokeCollateralFactorAdditions(additions);
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.AddCollateralFactorCalled(SPOKE, RESERVE_ID, 8000);
-
-    payload.execute();
-  }
-
-  function test_execute_spokeCollateralFactorUpdates() public {
-    IAaveV4ConfigEngine.CollateralFactorUpdate[]
-      memory updates = new IAaveV4ConfigEngine.CollateralFactorUpdate[](1);
-    updates[0] = IAaveV4ConfigEngine.CollateralFactorUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID,
-      dynamicConfigKey: DYNAMIC_CONFIG_KEY,
-      collateralFactor: 8000
-    });
-    payload.setSpokeCollateralFactorUpdates(updates);
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateCollateralFactorCalled(
-      SPOKE,
-      RESERVE_ID,
-      uint32(DYNAMIC_CONFIG_KEY),
-      8000
-    );
-
-    payload.execute();
-  }
-
-  function test_execute_spokeMaxLiquidationBonusAdditions() public {
-    IAaveV4ConfigEngine.MaxLiquidationBonusAddition[]
-      memory additions = new IAaveV4ConfigEngine.MaxLiquidationBonusAddition[](1);
-    additions[0] = IAaveV4ConfigEngine.MaxLiquidationBonusAddition({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID,
-      maxLiquidationBonus: 10500
-    });
-    payload.setSpokeMaxLiquidationBonusAdditions(additions);
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.AddMaxLiquidationBonusCalled(SPOKE, RESERVE_ID, 10500);
-
-    payload.execute();
-  }
-
-  function test_execute_spokeMaxLiquidationBonusUpdates() public {
-    IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[]
-      memory updates = new IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[](1);
-    updates[0] = IAaveV4ConfigEngine.MaxLiquidationBonusUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID,
-      dynamicConfigKey: DYNAMIC_CONFIG_KEY,
-      maxLiquidationBonus: 10500
-    });
-    payload.setSpokeMaxLiquidationBonusUpdates(updates);
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateMaxLiquidationBonusCalled(
-      SPOKE,
-      RESERVE_ID,
-      uint32(DYNAMIC_CONFIG_KEY),
-      10500
-    );
-
-    payload.execute();
-  }
-
-  function test_execute_spokeLiquidationFeeAdditions() public {
-    IAaveV4ConfigEngine.LiquidationFeeAddition[]
-      memory additions = new IAaveV4ConfigEngine.LiquidationFeeAddition[](1);
-    additions[0] = IAaveV4ConfigEngine.LiquidationFeeAddition({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID,
-      liquidationFee: 1000
-    });
-    payload.setSpokeLiquidationFeeAdditions(additions);
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.AddLiquidationFeeCalled(SPOKE, RESERVE_ID, 1000);
-
-    payload.execute();
-  }
-
-  function test_execute_spokeLiquidationFeeUpdates() public {
-    IAaveV4ConfigEngine.LiquidationFeeUpdate[]
-      memory updates = new IAaveV4ConfigEngine.LiquidationFeeUpdate[](1);
-    updates[0] = IAaveV4ConfigEngine.LiquidationFeeUpdate({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID,
-      dynamicConfigKey: DYNAMIC_CONFIG_KEY,
-      liquidationFee: 1000
-    });
-    payload.setSpokeLiquidationFeeUpdates(updates);
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.UpdateLiquidationFeeCalled(
-      SPOKE,
-      RESERVE_ID,
-      uint32(DYNAMIC_CONFIG_KEY),
-      1000
-    );
-
-    payload.execute();
-  }
-
   function test_execute_spokeAllReservesFreezes() public {
     IAaveV4ConfigEngine.SpokeFreeze[] memory freezes = new IAaveV4ConfigEngine.SpokeFreeze[](1);
     freezes[0] = IAaveV4ConfigEngine.SpokeFreeze({
@@ -701,36 +602,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     vm.expectEmit(address(mockSpokeConfigurator));
     emit MockSpokeConfigurator.FreezeAllReservesCalled(SPOKE);
-
-    payload.execute();
-  }
-
-  function test_execute_spokeReservePauses() public {
-    IAaveV4ConfigEngine.ReservePause[] memory pauses = new IAaveV4ConfigEngine.ReservePause[](1);
-    pauses[0] = IAaveV4ConfigEngine.ReservePause({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID
-    });
-    payload.setSpokeReservePauses(pauses);
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.PauseReserveCalled(SPOKE, RESERVE_ID);
-
-    payload.execute();
-  }
-
-  function test_execute_spokeReserveFreezes() public {
-    IAaveV4ConfigEngine.ReserveFreeze[] memory freezes = new IAaveV4ConfigEngine.ReserveFreeze[](1);
-    freezes[0] = IAaveV4ConfigEngine.ReserveFreeze({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID
-    });
-    payload.setSpokeReserveFreezes(freezes);
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.FreezeReserveCalled(SPOKE, RESERVE_ID);
 
     payload.execute();
   }
@@ -752,15 +623,17 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_accessManagerRoleRevocations() public {
-    IAaveV4ConfigEngine.RoleRevocation[]
-      memory revocations = new IAaveV4ConfigEngine.RoleRevocation[](1);
-    revocations[0] = IAaveV4ConfigEngine.RoleRevocation({
+  function test_execute_accessManagerRoleMemberships_revoke() public {
+    IAaveV4ConfigEngine.RoleMembership[]
+      memory memberships = new IAaveV4ConfigEngine.RoleMembership[](1);
+    memberships[0] = IAaveV4ConfigEngine.RoleMembership({
       authority: address(mockAccessManager),
       roleId: Roles.HUB_CONFIGURATOR_ROLE,
-      account: ACCOUNT
+      account: ACCOUNT,
+      granted: false,
+      executionDelay: 0
     });
-    payload.setAccessManagerRoleRevocations(revocations);
+    payload.setAccessManagerRoleMemberships(memberships);
 
     vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.RevokeRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT);
@@ -768,40 +641,32 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_accessManagerRoleAdminUpdates() public {
-    IAaveV4ConfigEngine.RoleAdminUpdate[]
-      memory updates = new IAaveV4ConfigEngine.RoleAdminUpdate[](1);
-    updates[0] = IAaveV4ConfigEngine.RoleAdminUpdate({
+  function test_execute_accessManagerRoleUpdates() public {
+    IAaveV4ConfigEngine.RoleUpdate[] memory updates = new IAaveV4ConfigEngine.RoleUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.RoleUpdate({
       authority: address(mockAccessManager),
       roleId: Roles.HUB_CONFIGURATOR_ROLE,
-      admin: Roles.HUB_CONFIGURATOR_ROLE
+      admin: Roles.HUB_CONFIGURATOR_ROLE,
+      guardian: Roles.DEFICIT_ELIMINATOR_ROLE,
+      grantDelay: 3600,
+      label: 'FEE_UPDATER'
     });
-    payload.setAccessManagerRoleAdminUpdates(updates);
+    payload.setAccessManagerRoleUpdates(updates);
 
     vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.SetRoleAdminCalled(
       Roles.HUB_CONFIGURATOR_ROLE,
       Roles.HUB_CONFIGURATOR_ROLE
     );
-
-    payload.execute();
-  }
-
-  function test_execute_accessManagerRoleGuardianUpdates() public {
-    IAaveV4ConfigEngine.RoleGuardianUpdate[]
-      memory updates = new IAaveV4ConfigEngine.RoleGuardianUpdate[](1);
-    updates[0] = IAaveV4ConfigEngine.RoleGuardianUpdate({
-      authority: address(mockAccessManager),
-      roleId: Roles.HUB_CONFIGURATOR_ROLE,
-      guardian: Roles.DEFICIT_ELIMINATOR_ROLE
-    });
-    payload.setAccessManagerRoleGuardianUpdates(updates);
-
     vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.SetRoleGuardianCalled(
       Roles.HUB_CONFIGURATOR_ROLE,
       Roles.DEFICIT_ELIMINATOR_ROLE
     );
+    vm.expectEmit(address(mockAccessManager));
+    emit MockAccessManagerForEngine.SetGrantDelayCalled(Roles.HUB_CONFIGURATOR_ROLE, 3600);
+    vm.expectEmit(address(mockAccessManager));
+    emit MockAccessManagerForEngine.LabelRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, 'FEE_UPDATER');
 
     payload.execute();
   }
@@ -829,54 +694,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_accessManagerTargetClosedUpdates() public {
-    IAaveV4ConfigEngine.TargetClosedUpdate[]
-      memory updates = new IAaveV4ConfigEngine.TargetClosedUpdate[](1);
-    updates[0] = IAaveV4ConfigEngine.TargetClosedUpdate({
-      authority: address(mockAccessManager),
-      target: TARGET,
-      closed: true
-    });
-    payload.setAccessManagerTargetClosedUpdates(updates);
-
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetTargetClosedCalled(TARGET, true);
-
-    payload.execute();
-  }
-
-  function test_execute_accessManagerRoleLabelUpdates() public {
-    IAaveV4ConfigEngine.RoleLabelUpdate[]
-      memory updates = new IAaveV4ConfigEngine.RoleLabelUpdate[](1);
-    updates[0] = IAaveV4ConfigEngine.RoleLabelUpdate({
-      authority: address(mockAccessManager),
-      roleId: Roles.HUB_CONFIGURATOR_ROLE,
-      label: 'FEE_UPDATER'
-    });
-    payload.setAccessManagerRoleLabelUpdates(updates);
-
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.LabelRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, 'FEE_UPDATER');
-
-    payload.execute();
-  }
-
-  function test_execute_accessManagerGrantDelayUpdates() public {
-    IAaveV4ConfigEngine.GrantDelayUpdate[]
-      memory updates = new IAaveV4ConfigEngine.GrantDelayUpdate[](1);
-    updates[0] = IAaveV4ConfigEngine.GrantDelayUpdate({
-      authority: address(mockAccessManager),
-      roleId: Roles.HUB_CONFIGURATOR_ROLE,
-      newDelay: 3600
-    });
-    payload.setAccessManagerGrantDelayUpdates(updates);
-
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetGrantDelayCalled(Roles.HUB_CONFIGURATOR_ROLE, 3600);
-
-    payload.execute();
-  }
-
   function test_execute_accessManagerTargetAdminDelayUpdates() public {
     IAaveV4ConfigEngine.TargetAdminDelayUpdate[]
       memory updates = new IAaveV4ConfigEngine.TargetAdminDelayUpdate[](1);
@@ -890,121 +707,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     vm.expectEmit(address(mockAccessManager));
     emit MockAccessManagerForEngine.SetTargetAdminDelayCalled(TARGET, 7200);
 
-    payload.execute();
-  }
-
-  function _makeRoleGrantByName()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    IAaveV4ConfigEngine.RoleGrantByName[] memory grants = new IAaveV4ConfigEngine.RoleGrantByName[](
-      1
-    );
-    grants[0] = IAaveV4ConfigEngine.RoleGrantByName({
-      authority: address(mockAccessManager),
-      account: ACCOUNT
-    });
-    return grants;
-  }
-
-  function test_execute_hubConfiguratorReinvestmentUpdaterRoleGrants() public {
-    payload.setHubConfiguratorReinvestmentUpdaterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_hubConfiguratorAssetListerRoleGrants() public {
-    payload.setHubConfiguratorAssetListerRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_hubConfiguratorSpokeAdderRoleGrants() public {
-    payload.setHubConfiguratorSpokeAdderRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_hubConfiguratorInterestRateUpdaterRoleGrants() public {
-    payload.setHubConfiguratorInterestRateUpdaterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_hubConfiguratorHalterRoleGrants() public {
-    payload.setHubConfiguratorHalterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_hubConfiguratorDeactivaterRoleGrants() public {
-    payload.setHubConfiguratorDeactivaterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_hubConfiguratorCapsUpdaterRoleGrants() public {
-    payload.setHubConfiguratorCapsUpdaterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_hubConfiguratorAllRoleGrants() public {
-    payload.setHubConfiguratorAllRoleGrants(_makeRoleGrantByName());
-    // AllRoles now maps to a single HUB_CONFIGURATOR_ROLE grant per account
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_spokeConfiguratorAdminRoleGrants() public {
-    payload.setSpokeConfiguratorAdminRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_spokeConfiguratorLiquidationUpdaterRoleGrants() public {
-    payload.setSpokeConfiguratorLiquidationUpdaterRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_spokeConfiguratorReserveAdderRoleGrants() public {
-    payload.setSpokeConfiguratorReserveAdderRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_spokeConfiguratorFreezerRoleGrants() public {
-    payload.setSpokeConfiguratorFreezerRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_spokeConfiguratorPauserRoleGrants() public {
-    payload.setSpokeConfiguratorPauserRoleGrants(_makeRoleGrantByName());
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
-    payload.execute();
-  }
-
-  function test_execute_spokeConfiguratorAllRoleGrants() public {
-    payload.setSpokeConfiguratorAllRoleGrants(_makeRoleGrantByName());
-    // AllRoles now maps to a single SPOKE_CONFIGURATOR_ROLE grant per account
-    vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(Roles.SPOKE_CONFIGURATOR_ROLE, ACCOUNT, 0);
     payload.execute();
   }
 
@@ -1072,31 +774,19 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_positionManagerTokenRescues() public {
-    IAaveV4ConfigEngine.TokenRescue[] memory rescues = new IAaveV4ConfigEngine.TokenRescue[](1);
-    rescues[0] = IAaveV4ConfigEngine.TokenRescue({
+  function test_execute_positionManagerRescues() public {
+    IAaveV4ConfigEngine.Rescue[] memory rescues = new IAaveV4ConfigEngine.Rescue[](1);
+    rescues[0] = IAaveV4ConfigEngine.Rescue({
       positionManager: address(mockPositionManager),
       token: TOKEN,
       to: RESCUE_TO,
-      amount: RESCUE_AMOUNT
+      tokenAmount: RESCUE_AMOUNT,
+      nativeAmount: RESCUE_AMOUNT
     });
-    payload.setPositionManagerTokenRescues(rescues);
+    payload.setPositionManagerRescues(rescues);
 
     vm.expectEmit(address(mockPositionManager));
     emit MockPositionManagerForEngine.RescueTokenCalled(TOKEN, RESCUE_TO, RESCUE_AMOUNT);
-
-    payload.execute();
-  }
-
-  function test_execute_positionManagerNativeRescues() public {
-    IAaveV4ConfigEngine.NativeRescue[] memory rescues = new IAaveV4ConfigEngine.NativeRescue[](1);
-    rescues[0] = IAaveV4ConfigEngine.NativeRescue({
-      positionManager: address(mockPositionManager),
-      to: RESCUE_TO,
-      amount: RESCUE_AMOUNT
-    });
-    payload.setPositionManagerNativeRescues(rescues);
-
     vm.expectEmit(address(mockPositionManager));
     emit MockPositionManagerForEngine.RescueNativeCalled(RESCUE_TO, RESCUE_AMOUNT);
 
@@ -1119,25 +809,43 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_spokeReservePauses_multiElement() public {
-    IAaveV4ConfigEngine.ReservePause[] memory pauses = new IAaveV4ConfigEngine.ReservePause[](2);
-    pauses[0] = IAaveV4ConfigEngine.ReservePause({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID
-    });
-    pauses[1] = IAaveV4ConfigEngine.ReservePause({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE,
-      reserveId: RESERVE_ID + 1
-    });
-    payload.setSpokeReservePauses(pauses);
+  function test_configEngine_constructor_revertsOnZeroHubEngine() public {
+    vm.expectRevert(AaveV4ConfigEngine.InvalidEngineAddress.selector);
+    new AaveV4ConfigEngine(
+      IHubEngine(address(0)),
+      ISpokeEngine(address(1)),
+      IAccessManagerEngine(address(1)),
+      IPositionManagerEngine(address(1))
+    );
+  }
 
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.PauseReserveCalled(SPOKE, RESERVE_ID);
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.PauseReserveCalled(SPOKE, RESERVE_ID + 1);
+  function test_configEngine_constructor_revertsOnZeroSpokeEngine() public {
+    vm.expectRevert(AaveV4ConfigEngine.InvalidEngineAddress.selector);
+    new AaveV4ConfigEngine(
+      IHubEngine(address(1)),
+      ISpokeEngine(address(0)),
+      IAccessManagerEngine(address(1)),
+      IPositionManagerEngine(address(1))
+    );
+  }
 
-    payload.execute();
+  function test_configEngine_constructor_revertsOnZeroAccessManagerEngine() public {
+    vm.expectRevert(AaveV4ConfigEngine.InvalidEngineAddress.selector);
+    new AaveV4ConfigEngine(
+      IHubEngine(address(1)),
+      ISpokeEngine(address(1)),
+      IAccessManagerEngine(address(0)),
+      IPositionManagerEngine(address(1))
+    );
+  }
+
+  function test_configEngine_constructor_revertsOnZeroPositionManagerEngine() public {
+    vm.expectRevert(AaveV4ConfigEngine.InvalidEngineAddress.selector);
+    new AaveV4ConfigEngine(
+      IHubEngine(address(1)),
+      ISpokeEngine(address(1)),
+      IAccessManagerEngine(address(1)),
+      IPositionManagerEngine(address(0))
+    );
   }
 }

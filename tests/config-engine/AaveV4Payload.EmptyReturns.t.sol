@@ -23,32 +23,11 @@ contract ExposedAaveV4Payload is AaveV4Payload {
     return hubAssetListings();
   }
 
-  function exposed_hubFeeConfigUpdates()
+  function exposed_hubAssetConfigUpdates()
     external
-    returns (IAaveV4ConfigEngine.FeeConfigUpdate[] memory)
+    returns (IAaveV4ConfigEngine.AssetConfigUpdate[] memory)
   {
-    return hubFeeConfigUpdates();
-  }
-
-  function exposed_hubInterestRateUpdates()
-    external
-    returns (IAaveV4ConfigEngine.InterestRateUpdate[] memory)
-  {
-    return hubInterestRateUpdates();
-  }
-
-  function exposed_hubReinvestmentControllerUpdates()
-    external
-    returns (IAaveV4ConfigEngine.ReinvestmentControllerUpdate[] memory)
-  {
-    return hubReinvestmentControllerUpdates();
-  }
-
-  function exposed_hubSpokeAdditions()
-    external
-    returns (IAaveV4ConfigEngine.SpokeAddition[] memory)
-  {
-    return hubSpokeAdditions();
+    return hubAssetConfigUpdates();
   }
 
   function exposed_hubSpokeToAssetsAdditions()
@@ -58,25 +37,11 @@ contract ExposedAaveV4Payload is AaveV4Payload {
     return hubSpokeToAssetsAdditions();
   }
 
-  function exposed_hubSpokeCapsUpdates()
+  function exposed_hubSpokeConfigUpdates()
     external
-    returns (IAaveV4ConfigEngine.SpokeCapsUpdate[] memory)
+    returns (IAaveV4ConfigEngine.SpokeConfigUpdate[] memory)
   {
-    return hubSpokeCapsUpdates();
-  }
-
-  function exposed_hubSpokeRiskPremiumThresholdUpdates()
-    external
-    returns (IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[] memory)
-  {
-    return hubSpokeRiskPremiumThresholdUpdates();
-  }
-
-  function exposed_hubSpokeStatusUpdates()
-    external
-    returns (IAaveV4ConfigEngine.SpokeStatusUpdate[] memory)
-  {
-    return hubSpokeStatusUpdates();
+    return hubSpokeConfigUpdates();
   }
 
   function exposed_hubAssetHalts() external returns (IAaveV4ConfigEngine.AssetHalt[] memory) {
@@ -129,13 +94,6 @@ contract ExposedAaveV4Payload is AaveV4Payload {
     return spokeReserveConfigUpdates();
   }
 
-  function exposed_spokeReservePriceSourceUpdates()
-    external
-    returns (IAaveV4ConfigEngine.ReservePriceSourceUpdate[] memory)
-  {
-    return spokeReservePriceSourceUpdates();
-  }
-
   function exposed_spokeLiquidationConfigUpdates()
     external
     returns (IAaveV4ConfigEngine.LiquidationConfigUpdate[] memory)
@@ -157,48 +115,6 @@ contract ExposedAaveV4Payload is AaveV4Payload {
     return spokeDynamicReserveConfigUpdates();
   }
 
-  function exposed_spokeCollateralFactorAdditions()
-    external
-    returns (IAaveV4ConfigEngine.CollateralFactorAddition[] memory)
-  {
-    return spokeCollateralFactorAdditions();
-  }
-
-  function exposed_spokeCollateralFactorUpdates()
-    external
-    returns (IAaveV4ConfigEngine.CollateralFactorUpdate[] memory)
-  {
-    return spokeCollateralFactorUpdates();
-  }
-
-  function exposed_spokeMaxLiquidationBonusAdditions()
-    external
-    returns (IAaveV4ConfigEngine.MaxLiquidationBonusAddition[] memory)
-  {
-    return spokeMaxLiquidationBonusAdditions();
-  }
-
-  function exposed_spokeMaxLiquidationBonusUpdates()
-    external
-    returns (IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[] memory)
-  {
-    return spokeMaxLiquidationBonusUpdates();
-  }
-
-  function exposed_spokeLiquidationFeeAdditions()
-    external
-    returns (IAaveV4ConfigEngine.LiquidationFeeAddition[] memory)
-  {
-    return spokeLiquidationFeeAdditions();
-  }
-
-  function exposed_spokeLiquidationFeeUpdates()
-    external
-    returns (IAaveV4ConfigEngine.LiquidationFeeUpdate[] memory)
-  {
-    return spokeLiquidationFeeUpdates();
-  }
-
   function exposed_spokeAllReservesPauses()
     external
     returns (IAaveV4ConfigEngine.SpokePause[] memory)
@@ -213,20 +129,6 @@ contract ExposedAaveV4Payload is AaveV4Payload {
     return spokeAllReservesFreezes();
   }
 
-  function exposed_spokeReservePauses()
-    external
-    returns (IAaveV4ConfigEngine.ReservePause[] memory)
-  {
-    return spokeReservePauses();
-  }
-
-  function exposed_spokeReserveFreezes()
-    external
-    returns (IAaveV4ConfigEngine.ReserveFreeze[] memory)
-  {
-    return spokeReserveFreezes();
-  }
-
   function exposed_spokePositionManagerUpdates()
     external
     returns (IAaveV4ConfigEngine.PositionManagerUpdate[] memory)
@@ -234,32 +136,18 @@ contract ExposedAaveV4Payload is AaveV4Payload {
     return spokePositionManagerUpdates();
   }
 
-  function exposed_accessManagerRoleGrants()
+  function exposed_accessManagerRoleMemberships()
     external
-    returns (IAaveV4ConfigEngine.RoleGrant[] memory)
+    returns (IAaveV4ConfigEngine.RoleMembership[] memory)
   {
-    return accessManagerRoleGrants();
+    return accessManagerRoleMemberships();
   }
 
-  function exposed_accessManagerRoleRevocations()
+  function exposed_accessManagerRoleUpdates()
     external
-    returns (IAaveV4ConfigEngine.RoleRevocation[] memory)
+    returns (IAaveV4ConfigEngine.RoleUpdate[] memory)
   {
-    return accessManagerRoleRevocations();
-  }
-
-  function exposed_accessManagerRoleAdminUpdates()
-    external
-    returns (IAaveV4ConfigEngine.RoleAdminUpdate[] memory)
-  {
-    return accessManagerRoleAdminUpdates();
-  }
-
-  function exposed_accessManagerRoleGuardianUpdates()
-    external
-    returns (IAaveV4ConfigEngine.RoleGuardianUpdate[] memory)
-  {
-    return accessManagerRoleGuardianUpdates();
+    return accessManagerRoleUpdates();
   }
 
   function exposed_accessManagerTargetFunctionRoleUpdates()
@@ -269,138 +157,11 @@ contract ExposedAaveV4Payload is AaveV4Payload {
     return accessManagerTargetFunctionRoleUpdates();
   }
 
-  function exposed_accessManagerTargetClosedUpdates()
-    external
-    returns (IAaveV4ConfigEngine.TargetClosedUpdate[] memory)
-  {
-    return accessManagerTargetClosedUpdates();
-  }
-
-  function exposed_accessManagerRoleLabelUpdates()
-    external
-    returns (IAaveV4ConfigEngine.RoleLabelUpdate[] memory)
-  {
-    return accessManagerRoleLabelUpdates();
-  }
-
-  function exposed_accessManagerGrantDelayUpdates()
-    external
-    returns (IAaveV4ConfigEngine.GrantDelayUpdate[] memory)
-  {
-    return accessManagerGrantDelayUpdates();
-  }
-
   function exposed_accessManagerTargetAdminDelayUpdates()
     external
     returns (IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory)
   {
     return accessManagerTargetAdminDelayUpdates();
-  }
-
-  // Convenience role grant getters
-  function exposed_hubConfiguratorFeeUpdaterRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return hubConfiguratorFeeUpdaterRoleGrants();
-  }
-
-  function exposed_hubConfiguratorReinvestmentUpdaterRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return hubConfiguratorReinvestmentUpdaterRoleGrants();
-  }
-
-  function exposed_hubConfiguratorAssetListerRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return hubConfiguratorAssetListerRoleGrants();
-  }
-
-  function exposed_hubConfiguratorSpokeAdderRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return hubConfiguratorSpokeAdderRoleGrants();
-  }
-
-  function exposed_hubConfiguratorInterestRateUpdaterRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return hubConfiguratorInterestRateUpdaterRoleGrants();
-  }
-
-  function exposed_hubConfiguratorHalterRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return hubConfiguratorHalterRoleGrants();
-  }
-
-  function exposed_hubConfiguratorDeactivaterRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return hubConfiguratorDeactivaterRoleGrants();
-  }
-
-  function exposed_hubConfiguratorCapsUpdaterRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return hubConfiguratorCapsUpdaterRoleGrants();
-  }
-
-  function exposed_hubConfiguratorAllRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return hubConfiguratorAllRoleGrants();
-  }
-
-  function exposed_spokeConfiguratorAdminRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return spokeConfiguratorAdminRoleGrants();
-  }
-
-  function exposed_spokeConfiguratorLiquidationUpdaterRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return spokeConfiguratorLiquidationUpdaterRoleGrants();
-  }
-
-  function exposed_spokeConfiguratorReserveAdderRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return spokeConfiguratorReserveAdderRoleGrants();
-  }
-
-  function exposed_spokeConfiguratorFreezerRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return spokeConfiguratorFreezerRoleGrants();
-  }
-
-  function exposed_spokeConfiguratorPauserRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return spokeConfiguratorPauserRoleGrants();
-  }
-
-  function exposed_spokeConfiguratorAllRoleGrants()
-    external
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return spokeConfiguratorAllRoleGrants();
   }
 
   function exposed_positionManagerSpokeRegistrations()
@@ -410,18 +171,8 @@ contract ExposedAaveV4Payload is AaveV4Payload {
     return positionManagerSpokeRegistrations();
   }
 
-  function exposed_positionManagerTokenRescues()
-    external
-    returns (IAaveV4ConfigEngine.TokenRescue[] memory)
-  {
-    return positionManagerTokenRescues();
-  }
-
-  function exposed_positionManagerNativeRescues()
-    external
-    returns (IAaveV4ConfigEngine.NativeRescue[] memory)
-  {
-    return positionManagerNativeRescues();
+  function exposed_positionManagerRescues() external returns (IAaveV4ConfigEngine.Rescue[] memory) {
+    return positionManagerRescues();
   }
 
   function exposed_positionManagerRoleRenouncements()
@@ -453,36 +204,16 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     assertEq(exposed.exposed_hubAssetListings().length, 0);
   }
 
-  function test_hubFeeConfigUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_hubFeeConfigUpdates().length, 0);
-  }
-
-  function test_hubInterestRateUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_hubInterestRateUpdates().length, 0);
-  }
-
-  function test_hubReinvestmentControllerUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_hubReinvestmentControllerUpdates().length, 0);
-  }
-
-  function test_hubSpokeAdditions_returnsEmpty() public {
-    assertEq(exposed.exposed_hubSpokeAdditions().length, 0);
+  function test_hubAssetConfigUpdates_returnsEmpty() public {
+    assertEq(exposed.exposed_hubAssetConfigUpdates().length, 0);
   }
 
   function test_hubSpokeToAssetsAdditions_returnsEmpty() public {
     assertEq(exposed.exposed_hubSpokeToAssetsAdditions().length, 0);
   }
 
-  function test_hubSpokeCapsUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_hubSpokeCapsUpdates().length, 0);
-  }
-
-  function test_hubSpokeRiskPremiumThresholdUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_hubSpokeRiskPremiumThresholdUpdates().length, 0);
-  }
-
-  function test_hubSpokeStatusUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_hubSpokeStatusUpdates().length, 0);
+  function test_hubSpokeConfigUpdates_returnsEmpty() public {
+    assertEq(exposed.exposed_hubSpokeConfigUpdates().length, 0);
   }
 
   function test_hubAssetHalts_returnsEmpty() public {
@@ -517,10 +248,6 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     assertEq(exposed.exposed_spokeReserveConfigUpdates().length, 0);
   }
 
-  function test_spokeReservePriceSourceUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeReservePriceSourceUpdates().length, 0);
-  }
-
   function test_spokeLiquidationConfigUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_spokeLiquidationConfigUpdates().length, 0);
   }
@@ -533,30 +260,6 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     assertEq(exposed.exposed_spokeDynamicReserveConfigUpdates().length, 0);
   }
 
-  function test_spokeCollateralFactorAdditions_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeCollateralFactorAdditions().length, 0);
-  }
-
-  function test_spokeCollateralFactorUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeCollateralFactorUpdates().length, 0);
-  }
-
-  function test_spokeMaxLiquidationBonusAdditions_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeMaxLiquidationBonusAdditions().length, 0);
-  }
-
-  function test_spokeMaxLiquidationBonusUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeMaxLiquidationBonusUpdates().length, 0);
-  }
-
-  function test_spokeLiquidationFeeAdditions_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeLiquidationFeeAdditions().length, 0);
-  }
-
-  function test_spokeLiquidationFeeUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeLiquidationFeeUpdates().length, 0);
-  }
-
   function test_spokeAllReservesPauses_returnsEmpty() public {
     assertEq(exposed.exposed_spokeAllReservesPauses().length, 0);
   }
@@ -565,124 +268,32 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     assertEq(exposed.exposed_spokeAllReservesFreezes().length, 0);
   }
 
-  function test_spokeReservePauses_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeReservePauses().length, 0);
-  }
-
-  function test_spokeReserveFreezes_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeReserveFreezes().length, 0);
-  }
-
   function test_spokePositionManagerUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_spokePositionManagerUpdates().length, 0);
   }
 
-  function test_accessManagerRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_accessManagerRoleGrants().length, 0);
+  function test_accessManagerRoleMemberships_returnsEmpty() public {
+    assertEq(exposed.exposed_accessManagerRoleMemberships().length, 0);
   }
 
-  function test_accessManagerRoleRevocations_returnsEmpty() public {
-    assertEq(exposed.exposed_accessManagerRoleRevocations().length, 0);
-  }
-
-  function test_accessManagerRoleAdminUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_accessManagerRoleAdminUpdates().length, 0);
-  }
-
-  function test_accessManagerRoleGuardianUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_accessManagerRoleGuardianUpdates().length, 0);
+  function test_accessManagerRoleUpdates_returnsEmpty() public {
+    assertEq(exposed.exposed_accessManagerRoleUpdates().length, 0);
   }
 
   function test_accessManagerTargetFunctionRoleUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerTargetFunctionRoleUpdates().length, 0);
   }
 
-  function test_accessManagerTargetClosedUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_accessManagerTargetClosedUpdates().length, 0);
-  }
-
-  function test_accessManagerRoleLabelUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_accessManagerRoleLabelUpdates().length, 0);
-  }
-
-  function test_accessManagerGrantDelayUpdates_returnsEmpty() public {
-    assertEq(exposed.exposed_accessManagerGrantDelayUpdates().length, 0);
-  }
-
   function test_accessManagerTargetAdminDelayUpdates_returnsEmpty() public {
     assertEq(exposed.exposed_accessManagerTargetAdminDelayUpdates().length, 0);
-  }
-
-  function test_hubConfiguratorFeeUpdaterRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_hubConfiguratorFeeUpdaterRoleGrants().length, 0);
-  }
-
-  function test_hubConfiguratorReinvestmentUpdaterRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_hubConfiguratorReinvestmentUpdaterRoleGrants().length, 0);
-  }
-
-  function test_hubConfiguratorAssetListerRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_hubConfiguratorAssetListerRoleGrants().length, 0);
-  }
-
-  function test_hubConfiguratorSpokeAdderRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_hubConfiguratorSpokeAdderRoleGrants().length, 0);
-  }
-
-  function test_hubConfiguratorInterestRateUpdaterRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_hubConfiguratorInterestRateUpdaterRoleGrants().length, 0);
-  }
-
-  function test_hubConfiguratorHalterRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_hubConfiguratorHalterRoleGrants().length, 0);
-  }
-
-  function test_hubConfiguratorDeactivaterRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_hubConfiguratorDeactivaterRoleGrants().length, 0);
-  }
-
-  function test_hubConfiguratorCapsUpdaterRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_hubConfiguratorCapsUpdaterRoleGrants().length, 0);
-  }
-
-  function test_hubConfiguratorAllRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_hubConfiguratorAllRoleGrants().length, 0);
-  }
-
-  function test_spokeConfiguratorAdminRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeConfiguratorAdminRoleGrants().length, 0);
-  }
-
-  function test_spokeConfiguratorLiquidationUpdaterRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeConfiguratorLiquidationUpdaterRoleGrants().length, 0);
-  }
-
-  function test_spokeConfiguratorReserveAdderRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeConfiguratorReserveAdderRoleGrants().length, 0);
-  }
-
-  function test_spokeConfiguratorFreezerRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeConfiguratorFreezerRoleGrants().length, 0);
-  }
-
-  function test_spokeConfiguratorPauserRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeConfiguratorPauserRoleGrants().length, 0);
-  }
-
-  function test_spokeConfiguratorAllRoleGrants_returnsEmpty() public {
-    assertEq(exposed.exposed_spokeConfiguratorAllRoleGrants().length, 0);
   }
 
   function test_positionManagerSpokeRegistrations_returnsEmpty() public {
     assertEq(exposed.exposed_positionManagerSpokeRegistrations().length, 0);
   }
 
-  function test_positionManagerTokenRescues_returnsEmpty() public {
-    assertEq(exposed.exposed_positionManagerTokenRescues().length, 0);
-  }
-
-  function test_positionManagerNativeRescues_returnsEmpty() public {
-    assertEq(exposed.exposed_positionManagerNativeRescues().length, 0);
+  function test_positionManagerRescues_returnsEmpty() public {
+    assertEq(exposed.exposed_positionManagerRescues().length, 0);
   }
 
   function test_positionManagerRoleRenouncements_returnsEmpty() public {

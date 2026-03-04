@@ -42,35 +42,10 @@ abstract contract AaveV4Payload {
       _delegateCallEngine(abi.encodeCall(IAaveV4ConfigEngine.executeHubAssetListings, (listings)));
     }
 
-    IAaveV4ConfigEngine.FeeConfigUpdate[] memory feeUpdates = hubFeeConfigUpdates();
-    if (feeUpdates.length > 0) {
+    IAaveV4ConfigEngine.AssetConfigUpdate[] memory assetConfigUpdates = hubAssetConfigUpdates();
+    if (assetConfigUpdates.length > 0) {
       _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeHubFeeConfigUpdates, (feeUpdates))
-      );
-    }
-
-    IAaveV4ConfigEngine.InterestRateUpdate[] memory irUpdates = hubInterestRateUpdates();
-    if (irUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeHubInterestRateUpdates, (irUpdates))
-      );
-    }
-
-    IAaveV4ConfigEngine.ReinvestmentControllerUpdate[]
-      memory reinvestUpdates = hubReinvestmentControllerUpdates();
-    if (reinvestUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeHubReinvestmentControllerUpdates,
-          (reinvestUpdates)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.SpokeAddition[] memory spokeAdds = hubSpokeAdditions();
-    if (spokeAdds.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeHubSpokeAdditions, (spokeAdds))
+        abi.encodeCall(IAaveV4ConfigEngine.executeHubAssetConfigUpdates, (assetConfigUpdates))
       );
     }
 
@@ -82,28 +57,10 @@ abstract contract AaveV4Payload {
       );
     }
 
-    IAaveV4ConfigEngine.SpokeCapsUpdate[] memory capsUpdates = hubSpokeCapsUpdates();
-    if (capsUpdates.length > 0) {
+    IAaveV4ConfigEngine.SpokeConfigUpdate[] memory spokeConfigUpdates = hubSpokeConfigUpdates();
+    if (spokeConfigUpdates.length > 0) {
       _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeHubSpokeCapsUpdates, (capsUpdates))
-      );
-    }
-
-    IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[]
-      memory riskUpdates = hubSpokeRiskPremiumThresholdUpdates();
-    if (riskUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeHubSpokeRiskPremiumThresholdUpdates,
-          (riskUpdates)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.SpokeStatusUpdate[] memory statusUpdates = hubSpokeStatusUpdates();
-    if (statusUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeHubSpokeStatusUpdates, (statusUpdates))
+        abi.encodeCall(IAaveV4ConfigEngine.executeHubSpokeConfigUpdates, (spokeConfigUpdates))
       );
     }
 
@@ -163,17 +120,6 @@ abstract contract AaveV4Payload {
       );
     }
 
-    IAaveV4ConfigEngine.ReservePriceSourceUpdate[]
-      memory priceSourceUpdates = spokeReservePriceSourceUpdates();
-    if (priceSourceUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeSpokeReservePriceSourceUpdates,
-          (priceSourceUpdates)
-        )
-      );
-    }
-
     IAaveV4ConfigEngine.LiquidationConfigUpdate[]
       memory liqConfigUpdates = spokeLiquidationConfigUpdates();
     if (liqConfigUpdates.length > 0) {
@@ -198,50 +144,6 @@ abstract contract AaveV4Payload {
       );
     }
 
-    IAaveV4ConfigEngine.CollateralFactorAddition[] memory cfAdds = spokeCollateralFactorAdditions();
-    if (cfAdds.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokeCollateralFactorAdditions, (cfAdds))
-      );
-    }
-
-    IAaveV4ConfigEngine.CollateralFactorUpdate[] memory cfUpdates = spokeCollateralFactorUpdates();
-    if (cfUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokeCollateralFactorUpdates, (cfUpdates))
-      );
-    }
-
-    IAaveV4ConfigEngine.MaxLiquidationBonusAddition[]
-      memory mlbAdds = spokeMaxLiquidationBonusAdditions();
-    if (mlbAdds.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokeMaxLiquidationBonusAdditions, (mlbAdds))
-      );
-    }
-
-    IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[]
-      memory mlbUpdates = spokeMaxLiquidationBonusUpdates();
-    if (mlbUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokeMaxLiquidationBonusUpdates, (mlbUpdates))
-      );
-    }
-
-    IAaveV4ConfigEngine.LiquidationFeeAddition[] memory lfAdds = spokeLiquidationFeeAdditions();
-    if (lfAdds.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokeLiquidationFeeAdditions, (lfAdds))
-      );
-    }
-
-    IAaveV4ConfigEngine.LiquidationFeeUpdate[] memory lfUpdates = spokeLiquidationFeeUpdates();
-    if (lfUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokeLiquidationFeeUpdates, (lfUpdates))
-      );
-    }
-
     IAaveV4ConfigEngine.SpokePause[] memory allPauses = spokeAllReservesPauses();
     if (allPauses.length > 0) {
       _delegateCallEngine(
@@ -256,20 +158,6 @@ abstract contract AaveV4Payload {
       );
     }
 
-    IAaveV4ConfigEngine.ReservePause[] memory reservePauses = spokeReservePauses();
-    if (reservePauses.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokeReservePauses, (reservePauses))
-      );
-    }
-
-    IAaveV4ConfigEngine.ReserveFreeze[] memory reserveFreezes = spokeReserveFreezes();
-    if (reserveFreezes.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokeReserveFreezes, (reserveFreezes))
-      );
-    }
-
     IAaveV4ConfigEngine.PositionManagerUpdate[] memory pmUpdates = spokePositionManagerUpdates();
     if (pmUpdates.length > 0) {
       _delegateCallEngine(
@@ -280,31 +168,16 @@ abstract contract AaveV4Payload {
 
   /// @notice Executes all access manager configuration actions via delegatecall to the engine.
   function _executeAccessManagerActions() internal {
-    IAaveV4ConfigEngine.RoleGrant[] memory roleGrants = accessManagerRoleGrants();
-    if (roleGrants.length > 0) {
-      _delegateCallEngine(abi.encodeCall(IAaveV4ConfigEngine.executeRoleGrants, (roleGrants)));
-    }
-
-    IAaveV4ConfigEngine.RoleRevocation[] memory roleRevocations = accessManagerRoleRevocations();
-    if (roleRevocations.length > 0) {
+    IAaveV4ConfigEngine.RoleMembership[] memory memberships = accessManagerRoleMemberships();
+    if (memberships.length > 0) {
       _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeRoleRevocations, (roleRevocations))
+        abi.encodeCall(IAaveV4ConfigEngine.executeRoleMemberships, (memberships))
       );
     }
 
-    IAaveV4ConfigEngine.RoleAdminUpdate[] memory adminUpdates = accessManagerRoleAdminUpdates();
-    if (adminUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeRoleAdminUpdates, (adminUpdates))
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGuardianUpdate[]
-      memory guardianUpdates = accessManagerRoleGuardianUpdates();
-    if (guardianUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeRoleGuardianUpdates, (guardianUpdates))
-      );
+    IAaveV4ConfigEngine.RoleUpdate[] memory roleUpdates = accessManagerRoleUpdates();
+    if (roleUpdates.length > 0) {
+      _delegateCallEngine(abi.encodeCall(IAaveV4ConfigEngine.executeRoleUpdates, (roleUpdates)));
     }
 
     IAaveV4ConfigEngine.TargetFunctionRoleUpdate[]
@@ -315,188 +188,11 @@ abstract contract AaveV4Payload {
       );
     }
 
-    IAaveV4ConfigEngine.TargetClosedUpdate[]
-      memory closedUpdates = accessManagerTargetClosedUpdates();
-    if (closedUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeTargetClosedUpdates, (closedUpdates))
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleLabelUpdate[] memory labelUpdates = accessManagerRoleLabelUpdates();
-    if (labelUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeRoleLabelUpdates, (labelUpdates))
-      );
-    }
-
-    IAaveV4ConfigEngine.GrantDelayUpdate[]
-      memory grantDelayUpdates = accessManagerGrantDelayUpdates();
-    if (grantDelayUpdates.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeGrantDelayUpdates, (grantDelayUpdates))
-      );
-    }
-
     IAaveV4ConfigEngine.TargetAdminDelayUpdate[]
       memory targetDelayUpdates = accessManagerTargetAdminDelayUpdates();
     if (targetDelayUpdates.length > 0) {
       _delegateCallEngine(
         abi.encodeCall(IAaveV4ConfigEngine.executeTargetAdminDelayUpdates, (targetDelayUpdates))
-      );
-    }
-
-    // Convenience role grant methods
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory feeUpdaterGrants = hubConfiguratorFeeUpdaterRoleGrants();
-    if (feeUpdaterGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantHubConfiguratorFeeUpdaterRole,
-          (feeUpdaterGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory reinvestGrants = hubConfiguratorReinvestmentUpdaterRoleGrants();
-    if (reinvestGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantHubConfiguratorReinvestmentUpdaterRole,
-          (reinvestGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory assetListerGrants = hubConfiguratorAssetListerRoleGrants();
-    if (assetListerGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantHubConfiguratorAssetListerRole,
-          (assetListerGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory spokeAdderGrants = hubConfiguratorSpokeAdderRoleGrants();
-    if (spokeAdderGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantHubConfiguratorSpokeAdderRole,
-          (spokeAdderGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory irUpdaterGrants = hubConfiguratorInterestRateUpdaterRoleGrants();
-    if (irUpdaterGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantHubConfiguratorInterestRateUpdaterRole,
-          (irUpdaterGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[] memory halterGrants = hubConfiguratorHalterRoleGrants();
-    if (halterGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeGrantHubConfiguratorHalterRole, (halterGrants))
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory deactivaterGrants = hubConfiguratorDeactivaterRoleGrants();
-    if (deactivaterGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantHubConfiguratorDeactivaterRole,
-          (deactivaterGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory capsUpdaterGrants = hubConfiguratorCapsUpdaterRoleGrants();
-    if (capsUpdaterGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantHubConfiguratorCapsUpdaterRole,
-          (capsUpdaterGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[] memory allHubGrants = hubConfiguratorAllRoleGrants();
-    if (allHubGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeGrantHubConfiguratorAllRoles, (allHubGrants))
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory spokeAdminGrants = spokeConfiguratorAdminRoleGrants();
-    if (spokeAdminGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantSpokeConfiguratorAdminRole,
-          (spokeAdminGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory spokeLiqGrants = spokeConfiguratorLiquidationUpdaterRoleGrants();
-    if (spokeLiqGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantSpokeConfiguratorLiquidationUpdaterRole,
-          (spokeLiqGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory spokeReserveAdderGrants = spokeConfiguratorReserveAdderRoleGrants();
-    if (spokeReserveAdderGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantSpokeConfiguratorReserveAdderRole,
-          (spokeReserveAdderGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory spokeFreezerGrants = spokeConfiguratorFreezerRoleGrants();
-    if (spokeFreezerGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantSpokeConfiguratorFreezerRole,
-          (spokeFreezerGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[]
-      memory spokePauserGrants = spokeConfiguratorPauserRoleGrants();
-    if (spokePauserGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(
-          IAaveV4ConfigEngine.executeGrantSpokeConfiguratorPauserRole,
-          (spokePauserGrants)
-        )
-      );
-    }
-
-    IAaveV4ConfigEngine.RoleGrantByName[] memory allSpokeGrants = spokeConfiguratorAllRoleGrants();
-    if (allSpokeGrants.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeGrantSpokeConfiguratorAllRoles, (allSpokeGrants))
       );
     }
   }
@@ -510,17 +206,10 @@ abstract contract AaveV4Payload {
       );
     }
 
-    IAaveV4ConfigEngine.TokenRescue[] memory tokenRescues = positionManagerTokenRescues();
-    if (tokenRescues.length > 0) {
+    IAaveV4ConfigEngine.Rescue[] memory rescues = positionManagerRescues();
+    if (rescues.length > 0) {
       _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerTokenRescues, (tokenRescues))
-      );
-    }
-
-    IAaveV4ConfigEngine.NativeRescue[] memory nativeRescues = positionManagerNativeRescues();
-    if (nativeRescues.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerNativeRescues, (nativeRescues))
+        abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerRescues, (rescues))
       );
     }
 
@@ -550,40 +239,14 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.AssetListing[](0);
   }
 
-  /// @notice Returns the hub fee config updates to execute. Override to provide updates.
-  /// @return An array of FeeConfigUpdate structs (empty by default).
-  function hubFeeConfigUpdates()
+  /// @notice Returns the hub asset config updates to execute. Override to provide updates.
+  /// @return An array of AssetConfigUpdate structs (empty by default).
+  function hubAssetConfigUpdates()
     public
     virtual
-    returns (IAaveV4ConfigEngine.FeeConfigUpdate[] memory)
+    returns (IAaveV4ConfigEngine.AssetConfigUpdate[] memory)
   {
-    return new IAaveV4ConfigEngine.FeeConfigUpdate[](0);
-  }
-
-  /// @notice Returns the hub interest rate updates to execute. Override to provide updates.
-  /// @return An array of InterestRateUpdate structs (empty by default).
-  function hubInterestRateUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.InterestRateUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.InterestRateUpdate[](0);
-  }
-
-  /// @notice Returns the hub reinvestment controller updates to execute. Override to provide updates.
-  /// @return An array of ReinvestmentControllerUpdate structs (empty by default).
-  function hubReinvestmentControllerUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.ReinvestmentControllerUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.ReinvestmentControllerUpdate[](0);
-  }
-
-  /// @notice Returns the hub spoke additions to execute. Override to provide additions.
-  /// @return An array of SpokeAddition structs (empty by default).
-  function hubSpokeAdditions() public virtual returns (IAaveV4ConfigEngine.SpokeAddition[] memory) {
-    return new IAaveV4ConfigEngine.SpokeAddition[](0);
+    return new IAaveV4ConfigEngine.AssetConfigUpdate[](0);
   }
 
   /// @notice Returns the hub spoke-to-assets additions to execute. Override to provide additions.
@@ -596,34 +259,14 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.SpokeToAssetsAddition[](0);
   }
 
-  /// @notice Returns the hub spoke caps updates to execute. Override to provide updates.
-  /// @return An array of SpokeCapsUpdate structs (empty by default).
-  function hubSpokeCapsUpdates()
+  /// @notice Returns the hub spoke config updates to execute. Override to provide updates.
+  /// @return An array of SpokeConfigUpdate structs (empty by default).
+  function hubSpokeConfigUpdates()
     public
     virtual
-    returns (IAaveV4ConfigEngine.SpokeCapsUpdate[] memory)
+    returns (IAaveV4ConfigEngine.SpokeConfigUpdate[] memory)
   {
-    return new IAaveV4ConfigEngine.SpokeCapsUpdate[](0);
-  }
-
-  /// @notice Returns the hub spoke risk premium threshold updates to execute. Override to provide updates.
-  /// @return An array of SpokeRiskPremiumThresholdUpdate structs (empty by default).
-  function hubSpokeRiskPremiumThresholdUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[](0);
-  }
-
-  /// @notice Returns the hub spoke status updates to execute. Override to provide updates.
-  /// @return An array of SpokeStatusUpdate structs (empty by default).
-  function hubSpokeStatusUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.SpokeStatusUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.SpokeStatusUpdate[](0);
+    return new IAaveV4ConfigEngine.SpokeConfigUpdate[](0);
   }
 
   /// @notice Returns the hub asset halts to execute. Override to provide halts.
@@ -698,16 +341,6 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.ReserveConfigUpdate[](0);
   }
 
-  /// @notice Returns the spoke reserve price source updates to execute. Override to provide updates.
-  /// @return An array of ReservePriceSourceUpdate structs (empty by default).
-  function spokeReservePriceSourceUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.ReservePriceSourceUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.ReservePriceSourceUpdate[](0);
-  }
-
   /// @notice Returns the spoke liquidation config updates to execute. Override to provide updates.
   /// @return An array of LiquidationConfigUpdate structs (empty by default).
   function spokeLiquidationConfigUpdates()
@@ -738,66 +371,6 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.DynamicReserveConfigUpdate[](0);
   }
 
-  /// @notice Returns the spoke collateral factor additions to execute. Override to provide additions.
-  /// @return An array of CollateralFactorAddition structs (empty by default).
-  function spokeCollateralFactorAdditions()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.CollateralFactorAddition[] memory)
-  {
-    return new IAaveV4ConfigEngine.CollateralFactorAddition[](0);
-  }
-
-  /// @notice Returns the spoke collateral factor updates to execute. Override to provide updates.
-  /// @return An array of CollateralFactorUpdate structs (empty by default).
-  function spokeCollateralFactorUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.CollateralFactorUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.CollateralFactorUpdate[](0);
-  }
-
-  /// @notice Returns the spoke max liquidation bonus additions to execute. Override to provide additions.
-  /// @return An array of MaxLiquidationBonusAddition structs (empty by default).
-  function spokeMaxLiquidationBonusAdditions()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.MaxLiquidationBonusAddition[] memory)
-  {
-    return new IAaveV4ConfigEngine.MaxLiquidationBonusAddition[](0);
-  }
-
-  /// @notice Returns the spoke max liquidation bonus updates to execute. Override to provide updates.
-  /// @return An array of MaxLiquidationBonusUpdate structs (empty by default).
-  function spokeMaxLiquidationBonusUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[](0);
-  }
-
-  /// @notice Returns the spoke liquidation fee additions to execute. Override to provide additions.
-  /// @return An array of LiquidationFeeAddition structs (empty by default).
-  function spokeLiquidationFeeAdditions()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.LiquidationFeeAddition[] memory)
-  {
-    return new IAaveV4ConfigEngine.LiquidationFeeAddition[](0);
-  }
-
-  /// @notice Returns the spoke liquidation fee updates to execute. Override to provide updates.
-  /// @return An array of LiquidationFeeUpdate structs (empty by default).
-  function spokeLiquidationFeeUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.LiquidationFeeUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.LiquidationFeeUpdate[](0);
-  }
-
   /// @notice Returns the spoke all-reserves pauses to execute. Override to provide pauses.
   /// @return An array of SpokePause structs (empty by default).
   function spokeAllReservesPauses()
@@ -818,22 +391,6 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.SpokeFreeze[](0);
   }
 
-  /// @notice Returns the spoke reserve pauses to execute. Override to provide pauses.
-  /// @return An array of ReservePause structs (empty by default).
-  function spokeReservePauses() public virtual returns (IAaveV4ConfigEngine.ReservePause[] memory) {
-    return new IAaveV4ConfigEngine.ReservePause[](0);
-  }
-
-  /// @notice Returns the spoke reserve freezes to execute. Override to provide freezes.
-  /// @return An array of ReserveFreeze structs (empty by default).
-  function spokeReserveFreezes()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.ReserveFreeze[] memory)
-  {
-    return new IAaveV4ConfigEngine.ReserveFreeze[](0);
-  }
-
   /// @notice Returns the spoke position manager updates to execute. Override to provide updates.
   /// @return An array of PositionManagerUpdate structs (empty by default).
   function spokePositionManagerUpdates()
@@ -844,44 +401,24 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.PositionManagerUpdate[](0);
   }
 
-  /// @notice Returns the access manager role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrant structs (empty by default).
-  function accessManagerRoleGrants()
+  /// @notice Returns the access manager role memberships to execute. Override to provide memberships.
+  /// @return An array of RoleMembership structs (empty by default).
+  function accessManagerRoleMemberships()
     public
     virtual
-    returns (IAaveV4ConfigEngine.RoleGrant[] memory)
+    returns (IAaveV4ConfigEngine.RoleMembership[] memory)
   {
-    return new IAaveV4ConfigEngine.RoleGrant[](0);
+    return new IAaveV4ConfigEngine.RoleMembership[](0);
   }
 
-  /// @notice Returns the access manager role revocations to execute. Override to provide revocations.
-  /// @return An array of RoleRevocation structs (empty by default).
-  function accessManagerRoleRevocations()
+  /// @notice Returns the access manager role updates to execute. Override to provide updates.
+  /// @return An array of RoleUpdate structs (empty by default).
+  function accessManagerRoleUpdates()
     public
     virtual
-    returns (IAaveV4ConfigEngine.RoleRevocation[] memory)
+    returns (IAaveV4ConfigEngine.RoleUpdate[] memory)
   {
-    return new IAaveV4ConfigEngine.RoleRevocation[](0);
-  }
-
-  /// @notice Returns the access manager role admin updates to execute. Override to provide updates.
-  /// @return An array of RoleAdminUpdate structs (empty by default).
-  function accessManagerRoleAdminUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleAdminUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleAdminUpdate[](0);
-  }
-
-  /// @notice Returns the access manager role guardian updates to execute. Override to provide updates.
-  /// @return An array of RoleGuardianUpdate structs (empty by default).
-  function accessManagerRoleGuardianUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGuardianUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGuardianUpdate[](0);
+    return new IAaveV4ConfigEngine.RoleUpdate[](0);
   }
 
   /// @notice Returns the access manager target function role updates to execute. Override to provide updates.
@@ -894,36 +431,6 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.TargetFunctionRoleUpdate[](0);
   }
 
-  /// @notice Returns the access manager target closed updates to execute. Override to provide updates.
-  /// @return An array of TargetClosedUpdate structs (empty by default).
-  function accessManagerTargetClosedUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.TargetClosedUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.TargetClosedUpdate[](0);
-  }
-
-  /// @notice Returns the access manager role label updates to execute. Override to provide updates.
-  /// @return An array of RoleLabelUpdate structs (empty by default).
-  function accessManagerRoleLabelUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleLabelUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleLabelUpdate[](0);
-  }
-
-  /// @notice Returns the access manager grant delay updates to execute. Override to provide updates.
-  /// @return An array of GrantDelayUpdate structs (empty by default).
-  function accessManagerGrantDelayUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.GrantDelayUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.GrantDelayUpdate[](0);
-  }
-
   /// @notice Returns the access manager target admin delay updates to execute. Override to provide updates.
   /// @return An array of TargetAdminDelayUpdate structs (empty by default).
   function accessManagerTargetAdminDelayUpdates()
@@ -932,156 +439,6 @@ abstract contract AaveV4Payload {
     returns (IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory)
   {
     return new IAaveV4ConfigEngine.TargetAdminDelayUpdate[](0);
-  }
-
-  /// @notice Returns the HubConfigurator fee updater role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function hubConfiguratorFeeUpdaterRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the HubConfigurator reinvestment updater role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function hubConfiguratorReinvestmentUpdaterRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the HubConfigurator asset lister role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function hubConfiguratorAssetListerRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the HubConfigurator spoke adder role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function hubConfiguratorSpokeAdderRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the HubConfigurator interest rate updater role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function hubConfiguratorInterestRateUpdaterRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the HubConfigurator halter role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function hubConfiguratorHalterRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the HubConfigurator deactivater role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function hubConfiguratorDeactivaterRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the HubConfigurator caps updater role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function hubConfiguratorCapsUpdaterRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the HubConfigurator all-roles grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function hubConfiguratorAllRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the SpokeConfigurator admin role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function spokeConfiguratorAdminRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the SpokeConfigurator liquidation updater role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function spokeConfiguratorLiquidationUpdaterRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the SpokeConfigurator reserve adder role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function spokeConfiguratorReserveAdderRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the SpokeConfigurator freezer role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function spokeConfiguratorFreezerRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the SpokeConfigurator pauser role grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function spokeConfiguratorPauserRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
-  }
-
-  /// @notice Returns the SpokeConfigurator all-roles grants to execute. Override to provide grants.
-  /// @return An array of RoleGrantByName structs (empty by default).
-  function spokeConfiguratorAllRoleGrants()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleGrantByName[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleGrantByName[](0);
   }
 
   /// @notice Returns the position manager spoke registrations to execute. Override to provide registrations.
@@ -1094,24 +451,10 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.SpokeRegistration[](0);
   }
 
-  /// @notice Returns the position manager token rescues to execute. Override to provide rescues.
-  /// @return An array of TokenRescue structs (empty by default).
-  function positionManagerTokenRescues()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.TokenRescue[] memory)
-  {
-    return new IAaveV4ConfigEngine.TokenRescue[](0);
-  }
-
-  /// @notice Returns the position manager native rescues to execute. Override to provide rescues.
-  /// @return An array of NativeRescue structs (empty by default).
-  function positionManagerNativeRescues()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.NativeRescue[] memory)
-  {
-    return new IAaveV4ConfigEngine.NativeRescue[](0);
+  /// @notice Returns the position manager rescues to execute. Override to provide rescues.
+  /// @return An array of Rescue structs (empty by default).
+  function positionManagerRescues() public virtual returns (IAaveV4ConfigEngine.Rescue[] memory) {
+    return new IAaveV4ConfigEngine.Rescue[](0);
   }
 
   /// @notice Returns the position manager role renouncements to execute. Override to provide renouncements.

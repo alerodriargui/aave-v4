@@ -5,12 +5,13 @@ pragma solidity ^0.8.0;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {IHubEngine} from 'src/config-engine/interfaces/IHubEngine.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
 /// @title HubEngine
 /// @author Aave Labs
-/// @notice Library containing hub configurator logic for AaveV4ConfigEngine.
-library HubEngine {
+/// @notice Contract containing hub configurator logic for AaveV4ConfigEngine.
+contract HubEngine is IHubEngine {
   using SafeCast for uint256;
 
   /// @notice Lists new assets on hubs via the HubConfigurator.
@@ -41,17 +42,18 @@ library HubEngine {
     }
   }
 
-  /// @notice Updates fee config for assets on hubs.
-  /// @dev If both liquidityFee and feeReceiver are set, calls updateFeeConfig.
-  ///   If only liquidityFee is set, calls updateLiquidityFee.
-  ///   If only feeReceiver is set, calls updateFeeReceiver.
-  ///   If neither is set, the update is skipped.
-  /// @param updates The fee config updates to execute.
-  function executeHubFeeConfigUpdates(
-    IAaveV4ConfigEngine.FeeConfigUpdate[] calldata updates
+  /// @notice Updates asset config (fee, interest rate, reinvestment) for assets on hubs.
+  /// @dev Dispatches to the appropriate HubConfigurator methods based on sentinel values:
+  ///   Fee: both set → updateFeeConfig; only fee → updateLiquidityFee; only receiver → updateFeeReceiver.
+  ///   IR: strategy set → updateInterestRateStrategy; strategy kept + irData → updateInterestRateData.
+  ///   Reinvestment: address set → updateReinvestmentController.
+  /// @param updates The asset config updates to execute.
+  function executeHubAssetConfigUpdates(
+    IAaveV4ConfigEngine.AssetConfigUpdate[] calldata updates
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      // Fee dispatch
       bool updateFee = updates[i].liquidityFee != EngineFlags.KEEP_CURRENT;
       bool updateReceiver = updates[i].feeReceiver != EngineFlags.KEEP_CURRENT_ADDRESS;
 
@@ -75,19 +77,8 @@ library HubEngine {
           updates[i].feeReceiver
         );
       }
-    }
-  }
 
-  /// @notice Updates interest rate config for assets on hubs.
-  /// @dev If irStrategy differs from KEEP_CURRENT_ADDRESS, calls updateInterestRateStrategy
-  ///   (which also sets new irData). If irStrategy is kept but irData is provided,
-  ///   calls updateInterestRateData to update data only. If neither applies, the update is skipped.
-  /// @param updates The interest rate updates to execute.
-  function executeHubInterestRateUpdates(
-    IAaveV4ConfigEngine.InterestRateUpdate[] calldata updates
-  ) external {
-    uint256 length = updates.length;
-    for (uint256 i; i < length; ++i) {
+      // Interest rate dispatch
       if (updates[i].irStrategy != EngineFlags.KEEP_CURRENT_ADDRESS) {
         updates[i].hubConfigurator.updateInterestRateStrategy(
           updates[i].hub,
@@ -102,37 +93,15 @@ library HubEngine {
           updates[i].irData
         );
       }
-    }
-  }
 
-  /// @notice Updates reinvestment controllers for assets on hubs.
-  /// @param updates The reinvestment controller updates to execute.
-  function executeHubReinvestmentControllerUpdates(
-    IAaveV4ConfigEngine.ReinvestmentControllerUpdate[] calldata updates
-  ) external {
-    uint256 length = updates.length;
-    for (uint256 i; i < length; ++i) {
-      updates[i].hubConfigurator.updateReinvestmentController(
-        updates[i].hub,
-        updates[i].assetId,
-        updates[i].reinvestmentController
-      );
-    }
-  }
-
-  /// @notice Adds spokes to hubs for specific assets.
-  /// @param additions The spoke additions to execute.
-  function executeHubSpokeAdditions(
-    IAaveV4ConfigEngine.SpokeAddition[] calldata additions
-  ) external {
-    uint256 length = additions.length;
-    for (uint256 i; i < length; ++i) {
-      additions[i].hubConfigurator.addSpoke(
-        additions[i].hub,
-        additions[i].spoke,
-        additions[i].assetId,
-        additions[i].config
-      );
+      // Reinvestment controller dispatch
+      if (updates[i].reinvestmentController != EngineFlags.KEEP_CURRENT_ADDRESS) {
+        updates[i].hubConfigurator.updateReinvestmentController(
+          updates[i].hub,
+          updates[i].assetId,
+          updates[i].reinvestmentController
+        );
+      }
     }
   }
 
@@ -152,17 +121,18 @@ library HubEngine {
     }
   }
 
-  /// @notice Updates spoke caps on hubs.
-  /// @dev If both addCap and drawCap are set, calls updateSpokeCaps.
-  ///   If only addCap is set, calls updateSpokeSupplyCap.
-  ///   If only drawCap is set, calls updateSpokeDrawCap.
-  ///   If neither is set, the update is skipped.
-  /// @param updates The spoke caps updates to execute.
-  function executeHubSpokeCapsUpdates(
-    IAaveV4ConfigEngine.SpokeCapsUpdate[] calldata updates
+  /// @notice Updates spoke config (caps, risk premium threshold, status) on hubs.
+  /// @dev Dispatches to the appropriate HubConfigurator methods based on sentinel values:
+  ///   Caps: both set → updateSpokeCaps; only add → updateSpokeSupplyCap; only draw → updateSpokeDrawCap.
+  ///   Risk premium threshold: set → updateSpokeRiskPremiumThreshold.
+  ///   Status: active set → updateSpokeActive; halted set → updateSpokeHalted.
+  /// @param updates The spoke config updates to execute.
+  function executeHubSpokeConfigUpdates(
+    IAaveV4ConfigEngine.SpokeConfigUpdate[] calldata updates
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      // Caps dispatch
       bool updateAdd = updates[i].addCap != EngineFlags.KEEP_CURRENT;
       bool updateDraw = updates[i].drawCap != EngineFlags.KEEP_CURRENT;
 
@@ -189,32 +159,18 @@ library HubEngine {
           updates[i].drawCap
         );
       }
-    }
-  }
 
-  /// @notice Updates spoke risk premium thresholds on hubs.
-  /// @param updates The spoke risk premium threshold updates to execute.
-  function executeHubSpokeRiskPremiumThresholdUpdates(
-    IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[] calldata updates
-  ) external {
-    uint256 length = updates.length;
-    for (uint256 i; i < length; ++i) {
-      updates[i].hubConfigurator.updateSpokeRiskPremiumThreshold(
-        updates[i].hub,
-        updates[i].assetId,
-        updates[i].spoke,
-        updates[i].riskPremiumThreshold
-      );
-    }
-  }
+      // Risk premium threshold dispatch
+      if (updates[i].riskPremiumThreshold != EngineFlags.KEEP_CURRENT) {
+        updates[i].hubConfigurator.updateSpokeRiskPremiumThreshold(
+          updates[i].hub,
+          updates[i].assetId,
+          updates[i].spoke,
+          updates[i].riskPremiumThreshold
+        );
+      }
 
-  /// @notice Updates spoke status (active/halted) on hubs.
-  /// @param updates The spoke status updates to execute.
-  function executeHubSpokeStatusUpdates(
-    IAaveV4ConfigEngine.SpokeStatusUpdate[] calldata updates
-  ) external {
-    uint256 length = updates.length;
-    for (uint256 i; i < length; ++i) {
+      // Status dispatch
       if (updates[i].active != EngineFlags.KEEP_CURRENT) {
         updates[i].hubConfigurator.updateSpokeActive(
           updates[i].hub,

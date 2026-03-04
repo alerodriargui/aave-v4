@@ -13,6 +13,10 @@ library EngineFlags {
   uint256 internal constant KEEP_CURRENT = type(uint256).max;
   /// @dev Sentinel address to keep the current address value.
   address internal constant KEEP_CURRENT_ADDRESS = address(type(uint160).max);
+  /// @dev Sentinel value to keep the current uint64 value.
+  uint64 internal constant KEEP_CURRENT_UINT64 = type(uint64).max;
+  /// @dev Sentinel value to keep the current uint32 value.
+  uint32 internal constant KEEP_CURRENT_UINT32 = type(uint32).max;
 
   /// @dev Convenience constant representing an enabled boolean flag (1).
   uint256 internal constant ENABLED = 1;

@@ -59,101 +59,137 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     engine.executePositionManagerSpokeRegistrations(regs);
   }
 
-  function test_executePositionManagerTokenRescues_concrete() public {
-    IAaveV4ConfigEngine.TokenRescue[] memory rescues = _toTokenRescueArray(
-      IAaveV4ConfigEngine.TokenRescue({
+  function test_executePositionManagerRescues_tokenOnly() public {
+    IAaveV4ConfigEngine.Rescue[] memory rescues = _toRescueArray(
+      IAaveV4ConfigEngine.Rescue({
         positionManager: address(mockPositionManager),
         token: TOKEN,
         to: RESCUE_TO,
-        amount: RESCUE_AMOUNT
+        tokenAmount: RESCUE_AMOUNT,
+        nativeAmount: 0
       })
     );
 
     vm.expectEmit(address(mockPositionManager));
     emit MockPositionManagerForEngine.RescueTokenCalled(TOKEN, RESCUE_TO, RESCUE_AMOUNT);
 
-    engine.executePositionManagerTokenRescues(rescues);
+    engine.executePositionManagerRescues(rescues);
   }
 
-  function test_executePositionManagerTokenRescues_fuzz(
-    address token,
-    address to,
-    uint256 amount
-  ) public {
-    IAaveV4ConfigEngine.TokenRescue[] memory rescues = _toTokenRescueArray(
-      IAaveV4ConfigEngine.TokenRescue({
+  function test_executePositionManagerRescues_nativeOnly() public {
+    IAaveV4ConfigEngine.Rescue[] memory rescues = _toRescueArray(
+      IAaveV4ConfigEngine.Rescue({
         positionManager: address(mockPositionManager),
-        token: token,
-        to: to,
-        amount: amount
-      })
-    );
-
-    vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManagerForEngine.RescueTokenCalled(token, to, amount);
-
-    engine.executePositionManagerTokenRescues(rescues);
-  }
-
-  function test_executePositionManagerTokenRescues_revert() public {
-    mockPositionManager.setShouldRevert(IRescuable.rescueToken.selector, true);
-
-    IAaveV4ConfigEngine.TokenRescue[] memory rescues = _toTokenRescueArray(
-      IAaveV4ConfigEngine.TokenRescue({
-        positionManager: address(mockPositionManager),
-        token: TOKEN,
+        token: address(0),
         to: RESCUE_TO,
-        amount: RESCUE_AMOUNT
-      })
-    );
-
-    vm.expectRevert(MockPositionManagerForEngine.RescueTokenReverted.selector);
-    engine.executePositionManagerTokenRescues(rescues);
-  }
-
-  function test_executePositionManagerNativeRescues_concrete() public {
-    IAaveV4ConfigEngine.NativeRescue[] memory rescues = _toNativeRescueArray(
-      IAaveV4ConfigEngine.NativeRescue({
-        positionManager: address(mockPositionManager),
-        to: RESCUE_TO,
-        amount: RESCUE_AMOUNT
+        tokenAmount: 0,
+        nativeAmount: RESCUE_AMOUNT
       })
     );
 
     vm.expectEmit(address(mockPositionManager));
     emit MockPositionManagerForEngine.RescueNativeCalled(RESCUE_TO, RESCUE_AMOUNT);
 
-    engine.executePositionManagerNativeRescues(rescues);
+    engine.executePositionManagerRescues(rescues);
   }
 
-  function test_executePositionManagerNativeRescues_fuzz(address to, uint256 amount) public {
-    IAaveV4ConfigEngine.NativeRescue[] memory rescues = _toNativeRescueArray(
-      IAaveV4ConfigEngine.NativeRescue({
+  function test_executePositionManagerRescues_both() public {
+    IAaveV4ConfigEngine.Rescue[] memory rescues = _toRescueArray(
+      IAaveV4ConfigEngine.Rescue({
         positionManager: address(mockPositionManager),
-        to: to,
-        amount: amount
+        token: TOKEN,
+        to: RESCUE_TO,
+        tokenAmount: RESCUE_AMOUNT,
+        nativeAmount: RESCUE_AMOUNT
       })
     );
 
     vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManagerForEngine.RescueNativeCalled(to, amount);
+    emit MockPositionManagerForEngine.RescueTokenCalled(TOKEN, RESCUE_TO, RESCUE_AMOUNT);
+    vm.expectEmit(address(mockPositionManager));
+    emit MockPositionManagerForEngine.RescueNativeCalled(RESCUE_TO, RESCUE_AMOUNT);
 
-    engine.executePositionManagerNativeRescues(rescues);
+    engine.executePositionManagerRescues(rescues);
   }
 
-  function test_executePositionManagerNativeRescues_revert() public {
+  function test_executePositionManagerRescues_skipBoth() public {
+    IAaveV4ConfigEngine.Rescue[] memory rescues = _toRescueArray(
+      IAaveV4ConfigEngine.Rescue({
+        positionManager: address(mockPositionManager),
+        token: address(0),
+        to: RESCUE_TO,
+        tokenAmount: 0,
+        nativeAmount: 0
+      })
+    );
+
+    vm.recordLogs();
+    engine.executePositionManagerRescues(rescues);
+    assertEq(vm.getRecordedLogs().length, 0);
+  }
+
+  function testFuzz_executePositionManagerRescues(
+    address token,
+    address to,
+    uint256 tokenAmount,
+    uint256 nativeAmount
+  ) public {
+    vm.assume(tokenAmount > 0 || nativeAmount > 0);
+
+    IAaveV4ConfigEngine.Rescue[] memory rescues = _toRescueArray(
+      IAaveV4ConfigEngine.Rescue({
+        positionManager: address(mockPositionManager),
+        token: token,
+        to: to,
+        tokenAmount: tokenAmount,
+        nativeAmount: nativeAmount
+      })
+    );
+
+    if (tokenAmount > 0) {
+      vm.expectEmit(address(mockPositionManager));
+      emit MockPositionManagerForEngine.RescueTokenCalled(token, to, tokenAmount);
+    }
+    if (nativeAmount > 0) {
+      vm.expectEmit(address(mockPositionManager));
+      emit MockPositionManagerForEngine.RescueNativeCalled(to, nativeAmount);
+    }
+
+    engine.executePositionManagerRescues(rescues);
+  }
+
+  function test_executePositionManagerRescues_revert_token() public {
+    mockPositionManager.setShouldRevert(IRescuable.rescueToken.selector, true);
+
+    IAaveV4ConfigEngine.Rescue[] memory rescues = _toRescueArray(
+      IAaveV4ConfigEngine.Rescue({
+        positionManager: address(mockPositionManager),
+        token: TOKEN,
+        to: RESCUE_TO,
+        tokenAmount: RESCUE_AMOUNT,
+        nativeAmount: 0
+      })
+    );
+
+    vm.expectRevert(MockPositionManagerForEngine.RescueTokenReverted.selector);
+    engine.executePositionManagerRescues(rescues);
+  }
+
+  function test_executePositionManagerRescues_revert_native() public {
     mockPositionManager.setShouldRevert(IRescuable.rescueNative.selector, true);
 
-    IAaveV4ConfigEngine.NativeRescue[] memory rescues = _toNativeRescueArray(
-      IAaveV4ConfigEngine.NativeRescue({
+    IAaveV4ConfigEngine.Rescue[] memory rescues = _toRescueArray(
+      IAaveV4ConfigEngine.Rescue({
         positionManager: address(mockPositionManager),
+        token: address(0),
         to: RESCUE_TO,
-        amount: RESCUE_AMOUNT
+        tokenAmount: 0,
+        nativeAmount: RESCUE_AMOUNT
       })
     );
 
     vm.expectRevert(MockPositionManagerForEngine.RescueNativeReverted.selector);
-    engine.executePositionManagerNativeRescues(rescues);
+    engine.executePositionManagerRescues(rescues);
   }
 
   function test_executePositionManagerRoleRenouncements_concrete() public {

@@ -3,14 +3,15 @@
 pragma solidity ^0.8.0;
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {ISpokeEngine} from 'src/config-engine/interfaces/ISpokeEngine.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 /// @title SpokeEngine
 /// @author Aave Labs
-/// @notice Library containing spoke configurator logic for AaveV4ConfigEngine.
-library SpokeEngine {
+/// @notice Contract containing spoke configurator logic for AaveV4ConfigEngine.
+contract SpokeEngine is ISpokeEngine {
   using SafeCast for uint256;
 
   /// @notice Lists new reserves on spokes.
@@ -38,6 +39,13 @@ library SpokeEngine {
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
+      if (updates[i].priceSource != EngineFlags.KEEP_CURRENT_ADDRESS) {
+        updates[i].spokeConfigurator.updateReservePriceSource(
+          updates[i].spoke,
+          updates[i].reserveId,
+          updates[i].priceSource
+        );
+      }
       if (updates[i].collateralRisk != EngineFlags.KEEP_CURRENT) {
         updates[i].spokeConfigurator.updateCollateralRisk(
           updates[i].spoke,
@@ -73,21 +81,6 @@ library SpokeEngine {
           EngineFlags.toBool(updates[i].receiveSharesEnabled)
         );
       }
-    }
-  }
-
-  /// @notice Updates reserve price sources on spokes.
-  /// @param updates The reserve price source updates to execute.
-  function executeSpokeReservePriceSourceUpdates(
-    IAaveV4ConfigEngine.ReservePriceSourceUpdate[] calldata updates
-  ) external {
-    uint256 length = updates.length;
-    for (uint256 i; i < length; ++i) {
-      updates[i].spokeConfigurator.updateReservePriceSource(
-        updates[i].spoke,
-        updates[i].reserveId,
-        updates[i].priceSource
-      );
     }
   }
 
@@ -192,99 +185,6 @@ library SpokeEngine {
     }
   }
 
-  /// @notice Adds collateral factors on spokes.
-  /// @param additions The collateral factor additions to execute.
-  function executeSpokeCollateralFactorAdditions(
-    IAaveV4ConfigEngine.CollateralFactorAddition[] calldata additions
-  ) external {
-    uint256 length = additions.length;
-    for (uint256 i; i < length; ++i) {
-      additions[i].spokeConfigurator.addCollateralFactor(
-        additions[i].spoke,
-        additions[i].reserveId,
-        additions[i].collateralFactor.toUint16()
-      );
-    }
-  }
-
-  /// @notice Updates collateral factors on spokes.
-  /// @param updates The collateral factor updates to execute.
-  function executeSpokeCollateralFactorUpdates(
-    IAaveV4ConfigEngine.CollateralFactorUpdate[] calldata updates
-  ) external {
-    uint256 length = updates.length;
-    for (uint256 i; i < length; ++i) {
-      updates[i].spokeConfigurator.updateCollateralFactor(
-        updates[i].spoke,
-        updates[i].reserveId,
-        updates[i].dynamicConfigKey.toUint32(),
-        updates[i].collateralFactor.toUint16()
-      );
-    }
-  }
-
-  /// @notice Adds max liquidation bonuses on spokes.
-  /// @param additions The max liquidation bonus additions to execute.
-  function executeSpokeMaxLiquidationBonusAdditions(
-    IAaveV4ConfigEngine.MaxLiquidationBonusAddition[] calldata additions
-  ) external {
-    uint256 length = additions.length;
-    for (uint256 i; i < length; ++i) {
-      additions[i].spokeConfigurator.addMaxLiquidationBonus(
-        additions[i].spoke,
-        additions[i].reserveId,
-        additions[i].maxLiquidationBonus
-      );
-    }
-  }
-
-  /// @notice Updates max liquidation bonuses on spokes.
-  /// @param updates The max liquidation bonus updates to execute.
-  function executeSpokeMaxLiquidationBonusUpdates(
-    IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[] calldata updates
-  ) external {
-    uint256 length = updates.length;
-    for (uint256 i; i < length; ++i) {
-      updates[i].spokeConfigurator.updateMaxLiquidationBonus(
-        updates[i].spoke,
-        updates[i].reserveId,
-        updates[i].dynamicConfigKey.toUint32(),
-        updates[i].maxLiquidationBonus
-      );
-    }
-  }
-
-  /// @notice Adds liquidation fees on spokes.
-  /// @param additions The liquidation fee additions to execute.
-  function executeSpokeLiquidationFeeAdditions(
-    IAaveV4ConfigEngine.LiquidationFeeAddition[] calldata additions
-  ) external {
-    uint256 length = additions.length;
-    for (uint256 i; i < length; ++i) {
-      additions[i].spokeConfigurator.addLiquidationFee(
-        additions[i].spoke,
-        additions[i].reserveId,
-        additions[i].liquidationFee
-      );
-    }
-  }
-
-  /// @notice Updates liquidation fees on spokes.
-  /// @param updates The liquidation fee updates to execute.
-  function executeSpokeLiquidationFeeUpdates(
-    IAaveV4ConfigEngine.LiquidationFeeUpdate[] calldata updates
-  ) external {
-    uint256 length = updates.length;
-    for (uint256 i; i < length; ++i) {
-      updates[i].spokeConfigurator.updateLiquidationFee(
-        updates[i].spoke,
-        updates[i].reserveId,
-        updates[i].dynamicConfigKey.toUint32(),
-        updates[i].liquidationFee
-      );
-    }
-  }
-
   /// @notice Pauses all reserves on spokes.
   /// @param pauses The spoke pauses to execute.
   function executeSpokeAllReservesPauses(
@@ -304,26 +204,6 @@ library SpokeEngine {
     uint256 length = freezes.length;
     for (uint256 i; i < length; ++i) {
       freezes[i].spokeConfigurator.freezeAllReserves(freezes[i].spoke);
-    }
-  }
-
-  /// @notice Pauses individual reserves on spokes.
-  /// @param pauses The reserve pauses to execute.
-  function executeSpokeReservePauses(IAaveV4ConfigEngine.ReservePause[] calldata pauses) external {
-    uint256 length = pauses.length;
-    for (uint256 i; i < length; ++i) {
-      pauses[i].spokeConfigurator.pauseReserve(pauses[i].spoke, pauses[i].reserveId);
-    }
-  }
-
-  /// @notice Freezes individual reserves on spokes.
-  /// @param freezes The reserve freezes to execute.
-  function executeSpokeReserveFreezes(
-    IAaveV4ConfigEngine.ReserveFreeze[] calldata freezes
-  ) external {
-    uint256 length = freezes.length;
-    for (uint256 i; i < length; ++i) {
-      freezes[i].spokeConfigurator.freezeReserve(freezes[i].spoke, freezes[i].reserveId);
     }
   }
 

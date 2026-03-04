@@ -3,344 +3,247 @@
 pragma solidity ^0.8.0;
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
-import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
-import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
-import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
+import {IHubEngine} from 'src/config-engine/interfaces/IHubEngine.sol';
+import {ISpokeEngine} from 'src/config-engine/interfaces/ISpokeEngine.sol';
+import {IAccessManagerEngine} from 'src/config-engine/interfaces/IAccessManagerEngine.sol';
+import {IPositionManagerEngine} from 'src/config-engine/interfaces/IPositionManagerEngine.sol';
+import {Address} from 'src/dependencies/openzeppelin/Address.sol';
 
 /// @title AaveV4ConfigEngine
 /// @author Aave Labs
-/// @notice Stateless implementation of IAaveV4ConfigEngine. Invoked via delegatecall from payload contracts.
+/// @notice Implementation of IAaveV4ConfigEngine. Stores 4 deployed sub-engine addresses as
+///   immutables and delegatecalls into them. Invoked via delegatecall from payload contracts.
 contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
+  using Address for address;
+
+  /// @dev Thrown when a constructor engine address is zero.
+  error InvalidEngineAddress();
+
+  /// @notice The deployed HubEngine contract.
+  IHubEngine public immutable HUB_ENGINE;
+  /// @notice The deployed SpokeEngine contract.
+  ISpokeEngine public immutable SPOKE_ENGINE;
+  /// @notice The deployed AccessManagerEngine contract.
+  IAccessManagerEngine public immutable ACCESS_MANAGER_ENGINE;
+  /// @notice The deployed PositionManagerEngine contract.
+  IPositionManagerEngine public immutable POSITION_MANAGER_ENGINE;
+
+  /// @param hubEngine The HubEngine implementation.
+  /// @param spokeEngine The SpokeEngine implementation.
+  /// @param accessManagerEngine The AccessManagerEngine implementation.
+  /// @param positionManagerEngine The PositionManagerEngine implementation.
+  constructor(
+    IHubEngine hubEngine,
+    ISpokeEngine spokeEngine,
+    IAccessManagerEngine accessManagerEngine,
+    IPositionManagerEngine positionManagerEngine
+  ) {
+    require(address(hubEngine) != address(0), InvalidEngineAddress());
+    require(address(spokeEngine) != address(0), InvalidEngineAddress());
+    require(address(accessManagerEngine) != address(0), InvalidEngineAddress());
+    require(address(positionManagerEngine) != address(0), InvalidEngineAddress());
+    HUB_ENGINE = hubEngine;
+    SPOKE_ENGINE = spokeEngine;
+    ACCESS_MANAGER_ENGINE = accessManagerEngine;
+    POSITION_MANAGER_ENGINE = positionManagerEngine;
+  }
+
+  // --- Hub Engine ---
+
   /// @inheritdoc IAaveV4ConfigEngine
   function executeHubAssetListings(AssetListing[] calldata listings) external {
-    HubEngine.executeHubAssetListings(listings);
+    address(HUB_ENGINE).functionDelegateCall(
+      abi.encodeCall(IHubEngine.executeHubAssetListings, (listings))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
-  function executeHubFeeConfigUpdates(FeeConfigUpdate[] calldata updates) external {
-    HubEngine.executeHubFeeConfigUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeHubInterestRateUpdates(InterestRateUpdate[] calldata updates) external {
-    HubEngine.executeHubInterestRateUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeHubReinvestmentControllerUpdates(
-    ReinvestmentControllerUpdate[] calldata updates
-  ) external {
-    HubEngine.executeHubReinvestmentControllerUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeHubSpokeAdditions(SpokeAddition[] calldata additions) external {
-    HubEngine.executeHubSpokeAdditions(additions);
+  function executeHubAssetConfigUpdates(AssetConfigUpdate[] calldata updates) external {
+    address(HUB_ENGINE).functionDelegateCall(
+      abi.encodeCall(IHubEngine.executeHubAssetConfigUpdates, (updates))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeHubSpokeToAssetsAdditions(SpokeToAssetsAddition[] calldata additions) external {
-    HubEngine.executeHubSpokeToAssetsAdditions(additions);
+    address(HUB_ENGINE).functionDelegateCall(
+      abi.encodeCall(IHubEngine.executeHubSpokeToAssetsAdditions, (additions))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
-  function executeHubSpokeCapsUpdates(SpokeCapsUpdate[] calldata updates) external {
-    HubEngine.executeHubSpokeCapsUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeHubSpokeRiskPremiumThresholdUpdates(
-    SpokeRiskPremiumThresholdUpdate[] calldata updates
-  ) external {
-    HubEngine.executeHubSpokeRiskPremiumThresholdUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeHubSpokeStatusUpdates(SpokeStatusUpdate[] calldata updates) external {
-    HubEngine.executeHubSpokeStatusUpdates(updates);
+  function executeHubSpokeConfigUpdates(SpokeConfigUpdate[] calldata updates) external {
+    address(HUB_ENGINE).functionDelegateCall(
+      abi.encodeCall(IHubEngine.executeHubSpokeConfigUpdates, (updates))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeHubAssetHalts(AssetHalt[] calldata halts) external {
-    HubEngine.executeHubAssetHalts(halts);
+    address(HUB_ENGINE).functionDelegateCall(
+      abi.encodeCall(IHubEngine.executeHubAssetHalts, (halts))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeHubAssetDeactivations(AssetDeactivation[] calldata deactivations) external {
-    HubEngine.executeHubAssetDeactivations(deactivations);
+    address(HUB_ENGINE).functionDelegateCall(
+      abi.encodeCall(IHubEngine.executeHubAssetDeactivations, (deactivations))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeHubAssetCapsResets(AssetCapsReset[] calldata resets) external {
-    HubEngine.executeHubAssetCapsResets(resets);
+    address(HUB_ENGINE).functionDelegateCall(
+      abi.encodeCall(IHubEngine.executeHubAssetCapsResets, (resets))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeHubSpokeHalts(SpokeHalt[] calldata halts) external {
-    HubEngine.executeHubSpokeHalts(halts);
+    address(HUB_ENGINE).functionDelegateCall(
+      abi.encodeCall(IHubEngine.executeHubSpokeHalts, (halts))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeHubSpokeDeactivations(SpokeDeactivation[] calldata deactivations) external {
-    HubEngine.executeHubSpokeDeactivations(deactivations);
+    address(HUB_ENGINE).functionDelegateCall(
+      abi.encodeCall(IHubEngine.executeHubSpokeDeactivations, (deactivations))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeHubSpokeCapsResets(SpokeCapsReset[] calldata resets) external {
-    HubEngine.executeHubSpokeCapsResets(resets);
+    address(HUB_ENGINE).functionDelegateCall(
+      abi.encodeCall(IHubEngine.executeHubSpokeCapsResets, (resets))
+    );
   }
+
+  // --- Spoke Engine ---
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokeReserveListings(ReserveListing[] calldata listings) external {
-    SpokeEngine.executeSpokeReserveListings(listings);
+    address(SPOKE_ENGINE).functionDelegateCall(
+      abi.encodeCall(ISpokeEngine.executeSpokeReserveListings, (listings))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokeReserveConfigUpdates(ReserveConfigUpdate[] calldata updates) external {
-    SpokeEngine.executeSpokeReserveConfigUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokeReservePriceSourceUpdates(
-    ReservePriceSourceUpdate[] calldata updates
-  ) external {
-    SpokeEngine.executeSpokeReservePriceSourceUpdates(updates);
+    address(SPOKE_ENGINE).functionDelegateCall(
+      abi.encodeCall(ISpokeEngine.executeSpokeReserveConfigUpdates, (updates))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokeLiquidationConfigUpdates(
     LiquidationConfigUpdate[] calldata updates
   ) external {
-    SpokeEngine.executeSpokeLiquidationConfigUpdates(updates);
+    address(SPOKE_ENGINE).functionDelegateCall(
+      abi.encodeCall(ISpokeEngine.executeSpokeLiquidationConfigUpdates, (updates))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokeDynamicReserveConfigAdditions(
     DynamicReserveConfigAddition[] calldata additions
   ) external {
-    SpokeEngine.executeSpokeDynamicReserveConfigAdditions(additions);
+    address(SPOKE_ENGINE).functionDelegateCall(
+      abi.encodeCall(ISpokeEngine.executeSpokeDynamicReserveConfigAdditions, (additions))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokeDynamicReserveConfigUpdates(
     DynamicReserveConfigUpdate[] calldata updates
   ) external {
-    SpokeEngine.executeSpokeDynamicReserveConfigUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokeCollateralFactorAdditions(
-    CollateralFactorAddition[] calldata additions
-  ) external {
-    SpokeEngine.executeSpokeCollateralFactorAdditions(additions);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokeCollateralFactorUpdates(CollateralFactorUpdate[] calldata updates) external {
-    SpokeEngine.executeSpokeCollateralFactorUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokeMaxLiquidationBonusAdditions(
-    MaxLiquidationBonusAddition[] calldata additions
-  ) external {
-    SpokeEngine.executeSpokeMaxLiquidationBonusAdditions(additions);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokeMaxLiquidationBonusUpdates(
-    MaxLiquidationBonusUpdate[] calldata updates
-  ) external {
-    SpokeEngine.executeSpokeMaxLiquidationBonusUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokeLiquidationFeeAdditions(
-    LiquidationFeeAddition[] calldata additions
-  ) external {
-    SpokeEngine.executeSpokeLiquidationFeeAdditions(additions);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokeLiquidationFeeUpdates(LiquidationFeeUpdate[] calldata updates) external {
-    SpokeEngine.executeSpokeLiquidationFeeUpdates(updates);
+    address(SPOKE_ENGINE).functionDelegateCall(
+      abi.encodeCall(ISpokeEngine.executeSpokeDynamicReserveConfigUpdates, (updates))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokeAllReservesPauses(SpokePause[] calldata pauses) external {
-    SpokeEngine.executeSpokeAllReservesPauses(pauses);
+    address(SPOKE_ENGINE).functionDelegateCall(
+      abi.encodeCall(ISpokeEngine.executeSpokeAllReservesPauses, (pauses))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokeAllReservesFreezes(SpokeFreeze[] calldata freezes) external {
-    SpokeEngine.executeSpokeAllReservesFreezes(freezes);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokeReservePauses(ReservePause[] calldata pauses) external {
-    SpokeEngine.executeSpokeReservePauses(pauses);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokeReserveFreezes(ReserveFreeze[] calldata freezes) external {
-    SpokeEngine.executeSpokeReserveFreezes(freezes);
+    address(SPOKE_ENGINE).functionDelegateCall(
+      abi.encodeCall(ISpokeEngine.executeSpokeAllReservesFreezes, (freezes))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokePositionManagerUpdates(PositionManagerUpdate[] calldata updates) external {
-    SpokeEngine.executeSpokePositionManagerUpdates(updates);
+    address(SPOKE_ENGINE).functionDelegateCall(
+      abi.encodeCall(ISpokeEngine.executeSpokePositionManagerUpdates, (updates))
+    );
   }
+
+  // --- Position Manager Engine ---
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executePositionManagerSpokeRegistrations(
     SpokeRegistration[] calldata registrations
   ) external {
-    PositionManagerEngine.executePositionManagerSpokeRegistrations(registrations);
+    address(POSITION_MANAGER_ENGINE).functionDelegateCall(
+      abi.encodeCall(
+        IPositionManagerEngine.executePositionManagerSpokeRegistrations,
+        (registrations)
+      )
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
-  function executePositionManagerTokenRescues(TokenRescue[] calldata rescues) external {
-    PositionManagerEngine.executePositionManagerTokenRescues(rescues);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executePositionManagerNativeRescues(NativeRescue[] calldata rescues) external {
-    PositionManagerEngine.executePositionManagerNativeRescues(rescues);
+  function executePositionManagerRescues(Rescue[] calldata rescues) external {
+    address(POSITION_MANAGER_ENGINE).functionDelegateCall(
+      abi.encodeCall(IPositionManagerEngine.executePositionManagerRescues, (rescues))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executePositionManagerRoleRenouncements(
     PositionManagerRoleRenouncement[] calldata renouncements
   ) external {
-    PositionManagerEngine.executePositionManagerRoleRenouncements(renouncements);
+    address(POSITION_MANAGER_ENGINE).functionDelegateCall(
+      abi.encodeCall(
+        IPositionManagerEngine.executePositionManagerRoleRenouncements,
+        (renouncements)
+      )
+    );
+  }
+
+  // --- Access Manager Engine ---
+
+  /// @inheritdoc IAaveV4ConfigEngine
+  function executeRoleMemberships(RoleMembership[] calldata memberships) external {
+    address(ACCESS_MANAGER_ENGINE).functionDelegateCall(
+      abi.encodeCall(IAccessManagerEngine.executeRoleMemberships, (memberships))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
-  function executeRoleGrants(RoleGrant[] calldata grants) external {
-    AccessManagerEngine.executeRoleGrants(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeRoleRevocations(RoleRevocation[] calldata revocations) external {
-    AccessManagerEngine.executeRoleRevocations(revocations);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeRoleAdminUpdates(RoleAdminUpdate[] calldata updates) external {
-    AccessManagerEngine.executeRoleAdminUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeRoleGuardianUpdates(RoleGuardianUpdate[] calldata updates) external {
-    AccessManagerEngine.executeRoleGuardianUpdates(updates);
+  function executeRoleUpdates(RoleUpdate[] calldata updates) external {
+    address(ACCESS_MANAGER_ENGINE).functionDelegateCall(
+      abi.encodeCall(IAccessManagerEngine.executeRoleUpdates, (updates))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeTargetFunctionRoleUpdates(TargetFunctionRoleUpdate[] calldata updates) external {
-    AccessManagerEngine.executeTargetFunctionRoleUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeTargetClosedUpdates(TargetClosedUpdate[] calldata updates) external {
-    AccessManagerEngine.executeTargetClosedUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeRoleLabelUpdates(RoleLabelUpdate[] calldata updates) external {
-    AccessManagerEngine.executeRoleLabelUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantDelayUpdates(GrantDelayUpdate[] calldata updates) external {
-    AccessManagerEngine.executeGrantDelayUpdates(updates);
+    address(ACCESS_MANAGER_ENGINE).functionDelegateCall(
+      abi.encodeCall(IAccessManagerEngine.executeTargetFunctionRoleUpdates, (updates))
+    );
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
   function executeTargetAdminDelayUpdates(TargetAdminDelayUpdate[] calldata updates) external {
-    AccessManagerEngine.executeTargetAdminDelayUpdates(updates);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantHubConfiguratorFeeUpdaterRole(RoleGrantByName[] calldata grants) external {
-    AccessManagerEngine.executeGrantHubConfiguratorFeeUpdaterRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantHubConfiguratorReinvestmentUpdaterRole(
-    RoleGrantByName[] calldata grants
-  ) external {
-    AccessManagerEngine.executeGrantHubConfiguratorReinvestmentUpdaterRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantHubConfiguratorAssetListerRole(RoleGrantByName[] calldata grants) external {
-    AccessManagerEngine.executeGrantHubConfiguratorAssetListerRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantHubConfiguratorSpokeAdderRole(RoleGrantByName[] calldata grants) external {
-    AccessManagerEngine.executeGrantHubConfiguratorSpokeAdderRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantHubConfiguratorInterestRateUpdaterRole(
-    RoleGrantByName[] calldata grants
-  ) external {
-    AccessManagerEngine.executeGrantHubConfiguratorInterestRateUpdaterRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantHubConfiguratorHalterRole(RoleGrantByName[] calldata grants) external {
-    AccessManagerEngine.executeGrantHubConfiguratorHalterRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantHubConfiguratorDeactivaterRole(RoleGrantByName[] calldata grants) external {
-    AccessManagerEngine.executeGrantHubConfiguratorDeactivaterRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantHubConfiguratorCapsUpdaterRole(RoleGrantByName[] calldata grants) external {
-    AccessManagerEngine.executeGrantHubConfiguratorCapsUpdaterRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantHubConfiguratorAllRoles(RoleGrantByName[] calldata grants) external {
-    AccessManagerEngine.executeGrantHubConfiguratorAllRoles(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantSpokeConfiguratorAdminRole(RoleGrantByName[] calldata grants) external {
-    AccessManagerEngine.executeGrantSpokeConfiguratorAdminRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantSpokeConfiguratorLiquidationUpdaterRole(
-    RoleGrantByName[] calldata grants
-  ) external {
-    AccessManagerEngine.executeGrantSpokeConfiguratorLiquidationUpdaterRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantSpokeConfiguratorReserveAdderRole(
-    RoleGrantByName[] calldata grants
-  ) external {
-    AccessManagerEngine.executeGrantSpokeConfiguratorReserveAdderRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantSpokeConfiguratorFreezerRole(RoleGrantByName[] calldata grants) external {
-    AccessManagerEngine.executeGrantSpokeConfiguratorFreezerRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantSpokeConfiguratorPauserRole(RoleGrantByName[] calldata grants) external {
-    AccessManagerEngine.executeGrantSpokeConfiguratorPauserRole(grants);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeGrantSpokeConfiguratorAllRoles(RoleGrantByName[] calldata grants) external {
-    AccessManagerEngine.executeGrantSpokeConfiguratorAllRoles(grants);
+    address(ACCESS_MANAGER_ENGINE).functionDelegateCall(
+      abi.encodeCall(IAccessManagerEngine.executeTargetAdminDelayUpdates, (updates))
+    );
   }
 }

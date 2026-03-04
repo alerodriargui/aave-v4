@@ -11,6 +11,14 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {IHubEngine} from 'src/config-engine/interfaces/IHubEngine.sol';
+import {ISpokeEngine} from 'src/config-engine/interfaces/ISpokeEngine.sol';
+import {IAccessManagerEngine} from 'src/config-engine/interfaces/IAccessManagerEngine.sol';
+import {IPositionManagerEngine} from 'src/config-engine/interfaces/IPositionManagerEngine.sol';
+import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
+import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
+import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
+import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
 
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
@@ -50,7 +58,16 @@ abstract contract BaseConfigEngineTest is Test {
   MockPositionManagerForEngine public mockPositionManager;
 
   function setUp() public virtual {
-    engine = new AaveV4ConfigEngine();
+    HubEngine hubEngine = new HubEngine();
+    SpokeEngine spokeEngine = new SpokeEngine();
+    AccessManagerEngine accessManagerEngine = new AccessManagerEngine();
+    PositionManagerEngine positionManagerEngine = new PositionManagerEngine();
+    engine = new AaveV4ConfigEngine(
+      IHubEngine(address(hubEngine)),
+      ISpokeEngine(address(spokeEngine)),
+      IAccessManagerEngine(address(accessManagerEngine)),
+      IPositionManagerEngine(address(positionManagerEngine))
+    );
     mockHubConfigurator = new MockHubConfigurator();
     mockSpokeConfigurator = new MockSpokeConfigurator();
     mockAccessManager = new MockAccessManagerForEngine();
@@ -73,67 +90,40 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  // Helper: default FeeConfigUpdate (both fields set)
-  function _defaultFeeConfigUpdate()
+  // Helper: default AssetConfigUpdate (all fields set)
+  function _defaultAssetConfigUpdate()
     internal
     view
-    returns (IAaveV4ConfigEngine.FeeConfigUpdate memory)
+    returns (IAaveV4ConfigEngine.AssetConfigUpdate memory)
   {
     return
-      IAaveV4ConfigEngine.FeeConfigUpdate({
+      IAaveV4ConfigEngine.AssetConfigUpdate({
         hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
         hub: HUB,
         assetId: ASSET_ID,
         liquidityFee: LIQUIDITY_FEE,
-        feeReceiver: FEE_RECEIVER
-      });
-  }
-
-  // Helper: default InterestRateUpdate (strategy change)
-  function _defaultInterestRateUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.InterestRateUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.InterestRateUpdate({
-        hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: HUB,
-        assetId: ASSET_ID,
+        feeReceiver: FEE_RECEIVER,
         irStrategy: IR_STRATEGY,
-        irData: IR_DATA
+        irData: IR_DATA,
+        reinvestmentController: REINVESTMENT_CONTROLLER
       });
   }
 
-  // Helper: default SpokeCapsUpdate (both caps set)
-  function _defaultSpokeCapsUpdate()
+  // Helper: default SpokeConfigUpdate (all fields set)
+  function _defaultSpokeConfigUpdate()
     internal
     view
-    returns (IAaveV4ConfigEngine.SpokeCapsUpdate memory)
+    returns (IAaveV4ConfigEngine.SpokeConfigUpdate memory)
   {
     return
-      IAaveV4ConfigEngine.SpokeCapsUpdate({
+      IAaveV4ConfigEngine.SpokeConfigUpdate({
         hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
         hub: HUB,
         assetId: ASSET_ID,
         spoke: SPOKE,
         addCap: 1000,
-        drawCap: 500
-      });
-  }
-
-  // Helper: default SpokeStatusUpdate (both set)
-  function _defaultSpokeStatusUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.SpokeStatusUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.SpokeStatusUpdate({
-        hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: HUB,
-        assetId: ASSET_ID,
-        spoke: SPOKE,
+        drawCap: 500,
+        riskPremiumThreshold: 100,
         active: EngineFlags.ENABLED,
         halted: EngineFlags.DISABLED
       });
@@ -150,6 +140,7 @@ abstract contract BaseConfigEngineTest is Test {
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
         spoke: SPOKE,
         reserveId: RESERVE_ID,
+        priceSource: PRICE_SOURCE,
         collateralRisk: 5000,
         paused: EngineFlags.DISABLED,
         frozen: EngineFlags.DISABLED,
@@ -192,17 +183,17 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  function _toReinvestmentControllerUpdateArray(
-    IAaveV4ConfigEngine.ReinvestmentControllerUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.ReinvestmentControllerUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.ReinvestmentControllerUpdate[](1);
+  function _toAssetConfigUpdateArray(
+    IAaveV4ConfigEngine.AssetConfigUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.AssetConfigUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.AssetConfigUpdate[](1);
     arr[0] = item;
   }
 
-  function _toSpokeAdditionArray(
-    IAaveV4ConfigEngine.SpokeAddition memory item
-  ) internal pure returns (IAaveV4ConfigEngine.SpokeAddition[] memory arr) {
-    arr = new IAaveV4ConfigEngine.SpokeAddition[](1);
+  function _toSpokeConfigUpdateArray(
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.SpokeConfigUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.SpokeConfigUpdate[](1);
     arr[0] = item;
   }
 
@@ -210,13 +201,6 @@ abstract contract BaseConfigEngineTest is Test {
     IAaveV4ConfigEngine.SpokeToAssetsAddition memory item
   ) internal pure returns (IAaveV4ConfigEngine.SpokeToAssetsAddition[] memory arr) {
     arr = new IAaveV4ConfigEngine.SpokeToAssetsAddition[](1);
-    arr[0] = item;
-  }
-
-  function _toSpokeRiskPremiumThresholdUpdateArray(
-    IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate[](1);
     arr[0] = item;
   }
 
@@ -269,34 +253,6 @@ abstract contract BaseConfigEngineTest is Test {
     arr[0] = item;
   }
 
-  function _toFeeConfigUpdateArray(
-    IAaveV4ConfigEngine.FeeConfigUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.FeeConfigUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.FeeConfigUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toInterestRateUpdateArray(
-    IAaveV4ConfigEngine.InterestRateUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.InterestRateUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.InterestRateUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toSpokeCapsUpdateArray(
-    IAaveV4ConfigEngine.SpokeCapsUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.SpokeCapsUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.SpokeCapsUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toSpokeStatusUpdateArray(
-    IAaveV4ConfigEngine.SpokeStatusUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.SpokeStatusUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.SpokeStatusUpdate[](1);
-    arr[0] = item;
-  }
-
   function _toReserveConfigUpdateArray(
     IAaveV4ConfigEngine.ReserveConfigUpdate memory item
   ) internal pure returns (IAaveV4ConfigEngine.ReserveConfigUpdate[] memory arr) {
@@ -318,31 +274,17 @@ abstract contract BaseConfigEngineTest is Test {
     arr[0] = item;
   }
 
-  function _toRoleGrantArray(
-    IAaveV4ConfigEngine.RoleGrant memory item
-  ) internal pure returns (IAaveV4ConfigEngine.RoleGrant[] memory arr) {
-    arr = new IAaveV4ConfigEngine.RoleGrant[](1);
+  function _toRoleMembershipArray(
+    IAaveV4ConfigEngine.RoleMembership memory item
+  ) internal pure returns (IAaveV4ConfigEngine.RoleMembership[] memory arr) {
+    arr = new IAaveV4ConfigEngine.RoleMembership[](1);
     arr[0] = item;
   }
 
-  function _toRoleRevocationArray(
-    IAaveV4ConfigEngine.RoleRevocation memory item
-  ) internal pure returns (IAaveV4ConfigEngine.RoleRevocation[] memory arr) {
-    arr = new IAaveV4ConfigEngine.RoleRevocation[](1);
-    arr[0] = item;
-  }
-
-  function _toRoleAdminUpdateArray(
-    IAaveV4ConfigEngine.RoleAdminUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.RoleAdminUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.RoleAdminUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toRoleGuardianUpdateArray(
-    IAaveV4ConfigEngine.RoleGuardianUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.RoleGuardianUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.RoleGuardianUpdate[](1);
+  function _toRoleUpdateArray(
+    IAaveV4ConfigEngine.RoleUpdate memory item
+  ) internal pure returns (IAaveV4ConfigEngine.RoleUpdate[] memory arr) {
+    arr = new IAaveV4ConfigEngine.RoleUpdate[](1);
     arr[0] = item;
   }
 
@@ -353,60 +295,11 @@ abstract contract BaseConfigEngineTest is Test {
     arr[0] = item;
   }
 
-  function _toTargetClosedUpdateArray(
-    IAaveV4ConfigEngine.TargetClosedUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.TargetClosedUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.TargetClosedUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toRoleLabelUpdateArray(
-    IAaveV4ConfigEngine.RoleLabelUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.RoleLabelUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.RoleLabelUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toGrantDelayUpdateArray(
-    IAaveV4ConfigEngine.GrantDelayUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.GrantDelayUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.GrantDelayUpdate[](1);
-    arr[0] = item;
-  }
-
   function _toTargetAdminDelayUpdateArray(
     IAaveV4ConfigEngine.TargetAdminDelayUpdate memory item
   ) internal pure returns (IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory arr) {
     arr = new IAaveV4ConfigEngine.TargetAdminDelayUpdate[](1);
     arr[0] = item;
-  }
-
-  function _toRoleGrantByNameArray(
-    IAaveV4ConfigEngine.RoleGrantByName memory item
-  ) internal pure returns (IAaveV4ConfigEngine.RoleGrantByName[] memory arr) {
-    arr = new IAaveV4ConfigEngine.RoleGrantByName[](1);
-    arr[0] = item;
-  }
-
-  function _toRoleGrantByNameArray2(
-    IAaveV4ConfigEngine.RoleGrantByName memory item1,
-    IAaveV4ConfigEngine.RoleGrantByName memory item2
-  ) internal pure returns (IAaveV4ConfigEngine.RoleGrantByName[] memory arr) {
-    arr = new IAaveV4ConfigEngine.RoleGrantByName[](2);
-    arr[0] = item1;
-    arr[1] = item2;
-  }
-
-  function _defaultRoleGrantByName()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.RoleGrantByName memory)
-  {
-    return
-      IAaveV4ConfigEngine.RoleGrantByName({
-        authority: address(mockAccessManager),
-        account: ACCOUNT
-      });
   }
 
   function _toReserveListingArray(
@@ -416,59 +309,10 @@ abstract contract BaseConfigEngineTest is Test {
     arr[0] = item;
   }
 
-  function _toReservePriceSourceUpdateArray(
-    IAaveV4ConfigEngine.ReservePriceSourceUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.ReservePriceSourceUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.ReservePriceSourceUpdate[](1);
-    arr[0] = item;
-  }
-
   function _toDynamicReserveConfigAdditionArray(
     IAaveV4ConfigEngine.DynamicReserveConfigAddition memory item
   ) internal pure returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition[] memory arr) {
     arr = new IAaveV4ConfigEngine.DynamicReserveConfigAddition[](1);
-    arr[0] = item;
-  }
-
-  function _toCollateralFactorAdditionArray(
-    IAaveV4ConfigEngine.CollateralFactorAddition memory item
-  ) internal pure returns (IAaveV4ConfigEngine.CollateralFactorAddition[] memory arr) {
-    arr = new IAaveV4ConfigEngine.CollateralFactorAddition[](1);
-    arr[0] = item;
-  }
-
-  function _toCollateralFactorUpdateArray(
-    IAaveV4ConfigEngine.CollateralFactorUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.CollateralFactorUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.CollateralFactorUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toMaxLiquidationBonusAdditionArray(
-    IAaveV4ConfigEngine.MaxLiquidationBonusAddition memory item
-  ) internal pure returns (IAaveV4ConfigEngine.MaxLiquidationBonusAddition[] memory arr) {
-    arr = new IAaveV4ConfigEngine.MaxLiquidationBonusAddition[](1);
-    arr[0] = item;
-  }
-
-  function _toMaxLiquidationBonusUpdateArray(
-    IAaveV4ConfigEngine.MaxLiquidationBonusUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.MaxLiquidationBonusUpdate[](1);
-    arr[0] = item;
-  }
-
-  function _toLiquidationFeeAdditionArray(
-    IAaveV4ConfigEngine.LiquidationFeeAddition memory item
-  ) internal pure returns (IAaveV4ConfigEngine.LiquidationFeeAddition[] memory arr) {
-    arr = new IAaveV4ConfigEngine.LiquidationFeeAddition[](1);
-    arr[0] = item;
-  }
-
-  function _toLiquidationFeeUpdateArray(
-    IAaveV4ConfigEngine.LiquidationFeeUpdate memory item
-  ) internal pure returns (IAaveV4ConfigEngine.LiquidationFeeUpdate[] memory arr) {
-    arr = new IAaveV4ConfigEngine.LiquidationFeeUpdate[](1);
     arr[0] = item;
   }
 
@@ -483,20 +327,6 @@ abstract contract BaseConfigEngineTest is Test {
     IAaveV4ConfigEngine.SpokeFreeze memory item
   ) internal pure returns (IAaveV4ConfigEngine.SpokeFreeze[] memory arr) {
     arr = new IAaveV4ConfigEngine.SpokeFreeze[](1);
-    arr[0] = item;
-  }
-
-  function _toReservePauseArray(
-    IAaveV4ConfigEngine.ReservePause memory item
-  ) internal pure returns (IAaveV4ConfigEngine.ReservePause[] memory arr) {
-    arr = new IAaveV4ConfigEngine.ReservePause[](1);
-    arr[0] = item;
-  }
-
-  function _toReserveFreezeArray(
-    IAaveV4ConfigEngine.ReserveFreeze memory item
-  ) internal pure returns (IAaveV4ConfigEngine.ReserveFreeze[] memory arr) {
-    arr = new IAaveV4ConfigEngine.ReserveFreeze[](1);
     arr[0] = item;
   }
 
@@ -534,20 +364,6 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  function _defaultReservePriceSourceUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.ReservePriceSourceUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.ReservePriceSourceUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        priceSource: PRICE_SOURCE
-      });
-  }
-
   function _defaultDynamicReserveConfigAddition()
     internal
     view
@@ -566,93 +382,6 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  function _defaultCollateralFactorAddition()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.CollateralFactorAddition memory)
-  {
-    return
-      IAaveV4ConfigEngine.CollateralFactorAddition({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        collateralFactor: 8000
-      });
-  }
-
-  function _defaultCollateralFactorUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.CollateralFactorUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.CollateralFactorUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        dynamicConfigKey: DYNAMIC_CONFIG_KEY,
-        collateralFactor: 9000
-      });
-  }
-
-  function _defaultMaxLiquidationBonusAddition()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.MaxLiquidationBonusAddition memory)
-  {
-    return
-      IAaveV4ConfigEngine.MaxLiquidationBonusAddition({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        maxLiquidationBonus: 10500
-      });
-  }
-
-  function _defaultMaxLiquidationBonusUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.MaxLiquidationBonusUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.MaxLiquidationBonusUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        dynamicConfigKey: DYNAMIC_CONFIG_KEY,
-        maxLiquidationBonus: 11000
-      });
-  }
-
-  function _defaultLiquidationFeeAddition()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.LiquidationFeeAddition memory)
-  {
-    return
-      IAaveV4ConfigEngine.LiquidationFeeAddition({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        liquidationFee: 300
-      });
-  }
-
-  function _defaultLiquidationFeeUpdate()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.LiquidationFeeUpdate memory)
-  {
-    return
-      IAaveV4ConfigEngine.LiquidationFeeUpdate({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID,
-        dynamicConfigKey: DYNAMIC_CONFIG_KEY,
-        liquidationFee: 400
-      });
-  }
-
   function _defaultSpokePause() internal view returns (IAaveV4ConfigEngine.SpokePause memory) {
     return
       IAaveV4ConfigEngine.SpokePause({
@@ -666,28 +395,6 @@ abstract contract BaseConfigEngineTest is Test {
       IAaveV4ConfigEngine.SpokeFreeze({
         spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
         spoke: SPOKE
-      });
-  }
-
-  function _defaultReservePause() internal view returns (IAaveV4ConfigEngine.ReservePause memory) {
-    return
-      IAaveV4ConfigEngine.ReservePause({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID
-      });
-  }
-
-  function _defaultReserveFreeze()
-    internal
-    view
-    returns (IAaveV4ConfigEngine.ReserveFreeze memory)
-  {
-    return
-      IAaveV4ConfigEngine.ReserveFreeze({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE,
-        reserveId: RESERVE_ID
       });
   }
 
@@ -712,17 +419,10 @@ abstract contract BaseConfigEngineTest is Test {
     arr[0] = item;
   }
 
-  function _toTokenRescueArray(
-    IAaveV4ConfigEngine.TokenRescue memory item
-  ) internal pure returns (IAaveV4ConfigEngine.TokenRescue[] memory arr) {
-    arr = new IAaveV4ConfigEngine.TokenRescue[](1);
-    arr[0] = item;
-  }
-
-  function _toNativeRescueArray(
-    IAaveV4ConfigEngine.NativeRescue memory item
-  ) internal pure returns (IAaveV4ConfigEngine.NativeRescue[] memory arr) {
-    arr = new IAaveV4ConfigEngine.NativeRescue[](1);
+  function _toRescueArray(
+    IAaveV4ConfigEngine.Rescue memory item
+  ) internal pure returns (IAaveV4ConfigEngine.Rescue[] memory arr) {
+    arr = new IAaveV4ConfigEngine.Rescue[](1);
     arr[0] = item;
   }
 

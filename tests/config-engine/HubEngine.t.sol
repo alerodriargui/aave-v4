@@ -97,188 +97,359 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetListings(_toAssetListingArray(listing));
   }
 
-  function test_executeHubFeeConfigUpdates_both() public {
-    IAaveV4ConfigEngine.FeeConfigUpdate memory update = _defaultFeeConfigUpdate();
+  // ---------------------------------------------------------------------------
+  // AssetConfigUpdate tests — fee config scenarios
+  // ---------------------------------------------------------------------------
+
+  function test_executeHubAssetConfigUpdates_feeBoth() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
+    // Skip IR and reinvestment
+    update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irData = '';
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateFeeConfigCalled(HUB, ASSET_ID, LIQUIDITY_FEE, FEE_RECEIVER);
 
-    engine.executeHubFeeConfigUpdates(_toFeeConfigUpdateArray(update));
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  function test_executeHubFeeConfigUpdates_feeOnly() public {
-    IAaveV4ConfigEngine.FeeConfigUpdate memory update = _defaultFeeConfigUpdate();
+  function test_executeHubAssetConfigUpdates_feeOnly() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
     update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    // Skip IR and reinvestment
+    update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irData = '';
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateLiquidityFeeCalled(HUB, ASSET_ID, LIQUIDITY_FEE);
 
-    engine.executeHubFeeConfigUpdates(_toFeeConfigUpdateArray(update));
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  function test_executeHubFeeConfigUpdates_receiverOnly() public {
-    IAaveV4ConfigEngine.FeeConfigUpdate memory update = _defaultFeeConfigUpdate();
+  function test_executeHubAssetConfigUpdates_receiverOnly() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
     update.liquidityFee = EngineFlags.KEEP_CURRENT;
+    // Skip IR and reinvestment
+    update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irData = '';
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateFeeReceiverCalled(HUB, ASSET_ID, FEE_RECEIVER);
 
-    engine.executeHubFeeConfigUpdates(_toFeeConfigUpdateArray(update));
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  function test_executeHubFeeConfigUpdates_neither() public {
-    IAaveV4ConfigEngine.FeeConfigUpdate memory update = _defaultFeeConfigUpdate();
+  function test_executeHubAssetConfigUpdates_feeNeither() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
     update.liquidityFee = EngineFlags.KEEP_CURRENT;
     update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    // Skip IR and reinvestment
+    update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irData = '';
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
 
     // No event expected; should be a no-op
     vm.recordLogs();
-    engine.executeHubFeeConfigUpdates(_toFeeConfigUpdateArray(update));
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
-  function testFuzz_executeHubFeeConfigUpdates(uint256 fee, address receiver) public {
+  function testFuzz_executeHubAssetConfigUpdates_fee(uint256 fee, address receiver) public {
     vm.assume(fee != EngineFlags.KEEP_CURRENT);
     vm.assume(receiver != EngineFlags.KEEP_CURRENT_ADDRESS);
     vm.assume(receiver != address(0));
 
-    IAaveV4ConfigEngine.FeeConfigUpdate memory update = _defaultFeeConfigUpdate();
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
     update.liquidityFee = fee;
     update.feeReceiver = receiver;
+    // Skip IR and reinvestment
+    update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irData = '';
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateFeeConfigCalled(HUB, ASSET_ID, fee, receiver);
 
-    engine.executeHubFeeConfigUpdates(_toFeeConfigUpdateArray(update));
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  function test_executeHubFeeConfigUpdates_revert() public {
+  function test_executeHubAssetConfigUpdates_feeRevert() public {
     mockHubConfigurator.setShouldRevert(IHubConfigurator.updateFeeConfig.selector, true);
 
-    IAaveV4ConfigEngine.FeeConfigUpdate memory update = _defaultFeeConfigUpdate();
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
+    // Skip IR and reinvestment
+    update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irData = '';
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
 
     vm.expectRevert(MockHubConfigurator.UpdateFeeConfigReverted.selector);
-    engine.executeHubFeeConfigUpdates(_toFeeConfigUpdateArray(update));
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  function test_executeHubInterestRateUpdates_strategyChange() public {
-    IAaveV4ConfigEngine.InterestRateUpdate memory update = _defaultInterestRateUpdate();
+  // ---------------------------------------------------------------------------
+  // AssetConfigUpdate tests — interest rate scenarios
+  // ---------------------------------------------------------------------------
+
+  function test_executeHubAssetConfigUpdates_strategyChange() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
+    // Skip fee and reinvestment
+    update.liquidityFee = EngineFlags.KEEP_CURRENT;
+    update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateInterestRateStrategyCalled(HUB, ASSET_ID, IR_STRATEGY, IR_DATA);
 
-    engine.executeHubInterestRateUpdates(_toInterestRateUpdateArray(update));
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  function test_executeHubInterestRateUpdates_dataOnly() public {
-    IAaveV4ConfigEngine.InterestRateUpdate memory update = _defaultInterestRateUpdate();
+  function test_executeHubAssetConfigUpdates_irDataOnly() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
     update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
     // irData is non-empty from default
+    // Skip fee and reinvestment
+    update.liquidityFee = EngineFlags.KEEP_CURRENT;
+    update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateInterestRateDataCalled(HUB, ASSET_ID, IR_DATA);
 
-    engine.executeHubInterestRateUpdates(_toInterestRateUpdateArray(update));
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  function test_executeHubInterestRateUpdates_noOp() public {
-    IAaveV4ConfigEngine.InterestRateUpdate memory update = _defaultInterestRateUpdate();
+  function test_executeHubAssetConfigUpdates_irNoOp() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
     update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
     update.irData = '';
+    // Skip fee and reinvestment
+    update.liquidityFee = EngineFlags.KEEP_CURRENT;
+    update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
 
     // No event expected; should be a no-op
     vm.recordLogs();
-    engine.executeHubInterestRateUpdates(_toInterestRateUpdateArray(update));
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
-  function testFuzz_executeHubInterestRateUpdates(address strategy) public {
+  function testFuzz_executeHubAssetConfigUpdates_ir(address strategy) public {
     vm.assume(strategy != EngineFlags.KEEP_CURRENT_ADDRESS);
     vm.assume(strategy != address(0));
 
-    IAaveV4ConfigEngine.InterestRateUpdate memory update = _defaultInterestRateUpdate();
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
     update.irStrategy = strategy;
+    // Skip fee and reinvestment
+    update.liquidityFee = EngineFlags.KEEP_CURRENT;
+    update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateInterestRateStrategyCalled(HUB, ASSET_ID, strategy, IR_DATA);
 
-    engine.executeHubInterestRateUpdates(_toInterestRateUpdateArray(update));
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  function test_executeHubInterestRateUpdates_revert() public {
+  function test_executeHubAssetConfigUpdates_irRevert() public {
     mockHubConfigurator.setShouldRevert(IHubConfigurator.updateInterestRateStrategy.selector, true);
 
-    IAaveV4ConfigEngine.InterestRateUpdate memory update = _defaultInterestRateUpdate();
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
+    // Skip fee and reinvestment
+    update.liquidityFee = EngineFlags.KEEP_CURRENT;
+    update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
 
     vm.expectRevert(MockHubConfigurator.UpdateInterestRateStrategyReverted.selector);
-    engine.executeHubInterestRateUpdates(_toInterestRateUpdateArray(update));
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  function test_executeHubSpokeCapsUpdates_both() public {
-    IAaveV4ConfigEngine.SpokeCapsUpdate memory update = _defaultSpokeCapsUpdate();
+  // ---------------------------------------------------------------------------
+  // AssetConfigUpdate tests — reinvestment controller scenarios
+  // ---------------------------------------------------------------------------
+
+  function test_executeHubAssetConfigUpdates_reinvestmentController() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
+    // Skip fee and IR
+    update.liquidityFee = EngineFlags.KEEP_CURRENT;
+    update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irData = '';
+
+    vm.expectEmit(address(mockHubConfigurator));
+    emit MockHubConfigurator.UpdateReinvestmentControllerCalled(
+      HUB,
+      ASSET_ID,
+      REINVESTMENT_CONTROLLER
+    );
+
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
+  }
+
+  function testFuzz_executeHubAssetConfigUpdates_reinvestmentController(address controller) public {
+    vm.assume(controller != address(0));
+    vm.assume(controller != EngineFlags.KEEP_CURRENT_ADDRESS);
+
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
+    update.reinvestmentController = controller;
+    // Skip fee and IR
+    update.liquidityFee = EngineFlags.KEEP_CURRENT;
+    update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irData = '';
+
+    vm.expectEmit(address(mockHubConfigurator));
+    emit MockHubConfigurator.UpdateReinvestmentControllerCalled(HUB, ASSET_ID, controller);
+
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
+  }
+
+  function test_executeHubAssetConfigUpdates_reinvestmentControllerRevert() public {
+    mockHubConfigurator.setShouldRevert(
+      IHubConfigurator.updateReinvestmentController.selector,
+      true
+    );
+
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
+    // Skip fee and IR
+    update.liquidityFee = EngineFlags.KEEP_CURRENT;
+    update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.irData = '';
+
+    vm.expectRevert(MockHubConfigurator.UpdateReinvestmentControllerReverted.selector);
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
+  }
+
+  // ---------------------------------------------------------------------------
+  // AssetConfigUpdate tests — combined scenario (all fields active)
+  // ---------------------------------------------------------------------------
+
+  function test_executeHubAssetConfigUpdates_allFields() public {
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
+
+    // Expect fee config
+    vm.expectEmit(address(mockHubConfigurator));
+    emit MockHubConfigurator.UpdateFeeConfigCalled(HUB, ASSET_ID, LIQUIDITY_FEE, FEE_RECEIVER);
+
+    // Expect IR strategy update
+    vm.expectEmit(address(mockHubConfigurator));
+    emit MockHubConfigurator.UpdateInterestRateStrategyCalled(HUB, ASSET_ID, IR_STRATEGY, IR_DATA);
+
+    // Expect reinvestment controller update
+    vm.expectEmit(address(mockHubConfigurator));
+    emit MockHubConfigurator.UpdateReinvestmentControllerCalled(
+      HUB,
+      ASSET_ID,
+      REINVESTMENT_CONTROLLER
+    );
+
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
+  }
+
+  // ---------------------------------------------------------------------------
+  // SpokeConfigUpdate tests — caps scenarios
+  // ---------------------------------------------------------------------------
+
+  function test_executeHubSpokeConfigUpdates_capsBoth() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
+    // Skip riskPremiumThreshold and status
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
+    update.active = EngineFlags.KEEP_CURRENT;
+    update.halted = EngineFlags.KEEP_CURRENT;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeCapsCalled(HUB, ASSET_ID, SPOKE, 1000, 500);
 
-    engine.executeHubSpokeCapsUpdates(_toSpokeCapsUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function test_executeHubSpokeCapsUpdates_addCapOnly() public {
-    IAaveV4ConfigEngine.SpokeCapsUpdate memory update = _defaultSpokeCapsUpdate();
+  function test_executeHubSpokeConfigUpdates_addCapOnly() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.drawCap = EngineFlags.KEEP_CURRENT;
+    // Skip riskPremiumThreshold and status
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
+    update.active = EngineFlags.KEEP_CURRENT;
+    update.halted = EngineFlags.KEEP_CURRENT;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeSupplyCapCalled(HUB, ASSET_ID, SPOKE, 1000);
 
-    engine.executeHubSpokeCapsUpdates(_toSpokeCapsUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function test_executeHubSpokeCapsUpdates_drawCapOnly() public {
-    IAaveV4ConfigEngine.SpokeCapsUpdate memory update = _defaultSpokeCapsUpdate();
+  function test_executeHubSpokeConfigUpdates_drawCapOnly() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = EngineFlags.KEEP_CURRENT;
+    // Skip riskPremiumThreshold and status
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
+    update.active = EngineFlags.KEEP_CURRENT;
+    update.halted = EngineFlags.KEEP_CURRENT;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeDrawCapCalled(HUB, ASSET_ID, SPOKE, 500);
 
-    engine.executeHubSpokeCapsUpdates(_toSpokeCapsUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function test_executeHubSpokeCapsUpdates_neither() public {
-    IAaveV4ConfigEngine.SpokeCapsUpdate memory update = _defaultSpokeCapsUpdate();
+  function test_executeHubSpokeConfigUpdates_capsNeither() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = EngineFlags.KEEP_CURRENT;
     update.drawCap = EngineFlags.KEEP_CURRENT;
+    // Skip riskPremiumThreshold and status
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
+    update.active = EngineFlags.KEEP_CURRENT;
+    update.halted = EngineFlags.KEEP_CURRENT;
 
     vm.recordLogs();
-    engine.executeHubSpokeCapsUpdates(_toSpokeCapsUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
-  function testFuzz_executeHubSpokeCapsUpdates(uint256 addCap, uint256 drawCap) public {
+  function testFuzz_executeHubSpokeConfigUpdates_caps(uint256 addCap, uint256 drawCap) public {
     vm.assume(addCap != EngineFlags.KEEP_CURRENT);
     vm.assume(drawCap != EngineFlags.KEEP_CURRENT);
 
-    IAaveV4ConfigEngine.SpokeCapsUpdate memory update = _defaultSpokeCapsUpdate();
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.addCap = addCap;
     update.drawCap = drawCap;
+    // Skip riskPremiumThreshold and status
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
+    update.active = EngineFlags.KEEP_CURRENT;
+    update.halted = EngineFlags.KEEP_CURRENT;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeCapsCalled(HUB, ASSET_ID, SPOKE, addCap, drawCap);
 
-    engine.executeHubSpokeCapsUpdates(_toSpokeCapsUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function test_executeHubSpokeCapsUpdates_revert() public {
+  function test_executeHubSpokeConfigUpdates_capsRevert() public {
     mockHubConfigurator.setShouldRevert(IHubConfigurator.updateSpokeCaps.selector, true);
 
-    IAaveV4ConfigEngine.SpokeCapsUpdate memory update = _defaultSpokeCapsUpdate();
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
+    // Skip riskPremiumThreshold and status
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
+    update.active = EngineFlags.KEEP_CURRENT;
+    update.halted = EngineFlags.KEEP_CURRENT;
 
     vm.expectRevert(MockHubConfigurator.UpdateSpokeCapsReverted.selector);
-    engine.executeHubSpokeCapsUpdates(_toSpokeCapsUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function test_executeHubSpokeStatusUpdates_both() public {
-    IAaveV4ConfigEngine.SpokeStatusUpdate memory update = _defaultSpokeStatusUpdate();
+  // ---------------------------------------------------------------------------
+  // SpokeConfigUpdate tests — status scenarios
+  // ---------------------------------------------------------------------------
+
+  function test_executeHubSpokeConfigUpdates_statusBoth() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     // active=ENABLED, halted=DISABLED from default
+    // Skip caps and riskPremiumThreshold
+    update.addCap = EngineFlags.KEEP_CURRENT;
+    update.drawCap = EngineFlags.KEEP_CURRENT;
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeActiveCalled(HUB, ASSET_ID, SPOKE, true);
@@ -286,55 +457,71 @@ contract HubEngineTest is BaseConfigEngineTest {
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeHaltedCalled(HUB, ASSET_ID, SPOKE, false);
 
-    engine.executeHubSpokeStatusUpdates(_toSpokeStatusUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function test_executeHubSpokeStatusUpdates_activeOnly() public {
-    IAaveV4ConfigEngine.SpokeStatusUpdate memory update = _defaultSpokeStatusUpdate();
+  function test_executeHubSpokeConfigUpdates_activeOnly() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.halted = EngineFlags.KEEP_CURRENT;
+    // Skip caps and riskPremiumThreshold
+    update.addCap = EngineFlags.KEEP_CURRENT;
+    update.drawCap = EngineFlags.KEEP_CURRENT;
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeActiveCalled(HUB, ASSET_ID, SPOKE, true);
 
     vm.recordLogs();
-    engine.executeHubSpokeStatusUpdates(_toSpokeStatusUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
     // Only one event should have been emitted (UpdateSpokeActiveCalled)
     assertEq(vm.getRecordedLogs().length, 1);
   }
 
-  function test_executeHubSpokeStatusUpdates_haltedOnly() public {
-    IAaveV4ConfigEngine.SpokeStatusUpdate memory update = _defaultSpokeStatusUpdate();
+  function test_executeHubSpokeConfigUpdates_haltedOnly() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.active = EngineFlags.KEEP_CURRENT;
     update.halted = EngineFlags.ENABLED;
+    // Skip caps and riskPremiumThreshold
+    update.addCap = EngineFlags.KEEP_CURRENT;
+    update.drawCap = EngineFlags.KEEP_CURRENT;
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeHaltedCalled(HUB, ASSET_ID, SPOKE, true);
 
     vm.recordLogs();
-    engine.executeHubSpokeStatusUpdates(_toSpokeStatusUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
 
     assertEq(vm.getRecordedLogs().length, 1);
   }
 
-  function test_executeHubSpokeStatusUpdates_neither() public {
-    IAaveV4ConfigEngine.SpokeStatusUpdate memory update = _defaultSpokeStatusUpdate();
+  function test_executeHubSpokeConfigUpdates_statusNeither() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.active = EngineFlags.KEEP_CURRENT;
     update.halted = EngineFlags.KEEP_CURRENT;
+    // Skip caps and riskPremiumThreshold
+    update.addCap = EngineFlags.KEEP_CURRENT;
+    update.drawCap = EngineFlags.KEEP_CURRENT;
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
 
     vm.recordLogs();
-    engine.executeHubSpokeStatusUpdates(_toSpokeStatusUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
-  function testFuzz_executeHubSpokeStatusUpdates(uint256 active, uint256 halted) public {
+  function testFuzz_executeHubSpokeConfigUpdates_status(uint256 active, uint256 halted) public {
     // Bound to valid flag values (ENABLED or DISABLED only, not KEEP_CURRENT)
     active = bound(active, 0, 1);
     halted = bound(halted, 0, 1);
 
-    IAaveV4ConfigEngine.SpokeStatusUpdate memory update = _defaultSpokeStatusUpdate();
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.active = active;
     update.halted = halted;
+    // Skip caps and riskPremiumThreshold
+    update.addCap = EngineFlags.KEEP_CURRENT;
+    update.drawCap = EngineFlags.KEEP_CURRENT;
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
 
     vm.expectEmit(address(mockHubConfigurator));
     emit MockHubConfigurator.UpdateSpokeActiveCalled(
@@ -352,146 +539,104 @@ contract HubEngineTest is BaseConfigEngineTest {
       EngineFlags.toBool(halted)
     );
 
-    engine.executeHubSpokeStatusUpdates(_toSpokeStatusUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function test_executeHubSpokeStatusUpdates_revert() public {
+  function test_executeHubSpokeConfigUpdates_statusRevert() public {
     mockHubConfigurator.setShouldRevert(IHubConfigurator.updateSpokeActive.selector, true);
 
-    IAaveV4ConfigEngine.SpokeStatusUpdate memory update = _defaultSpokeStatusUpdate();
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
+    // Skip caps and riskPremiumThreshold
+    update.addCap = EngineFlags.KEEP_CURRENT;
+    update.drawCap = EngineFlags.KEEP_CURRENT;
+    update.riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
 
     vm.expectRevert(MockHubConfigurator.UpdateSpokeActiveReverted.selector);
-    engine.executeHubSpokeStatusUpdates(_toSpokeStatusUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function test_executeHubReinvestmentControllerUpdates() public {
-    IAaveV4ConfigEngine.ReinvestmentControllerUpdate memory update = IAaveV4ConfigEngine
-      .ReinvestmentControllerUpdate({
-        hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: HUB,
-        assetId: ASSET_ID,
-        reinvestmentController: REINVESTMENT_CONTROLLER
-      });
+  // ---------------------------------------------------------------------------
+  // SpokeConfigUpdate tests — risk premium threshold scenarios
+  // ---------------------------------------------------------------------------
+
+  function test_executeHubSpokeConfigUpdates_riskPremiumThreshold() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
+    update.riskPremiumThreshold = 300;
+    // Skip caps and status
+    update.addCap = EngineFlags.KEEP_CURRENT;
+    update.drawCap = EngineFlags.KEEP_CURRENT;
+    update.active = EngineFlags.KEEP_CURRENT;
+    update.halted = EngineFlags.KEEP_CURRENT;
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.UpdateReinvestmentControllerCalled(
-      HUB,
-      ASSET_ID,
-      REINVESTMENT_CONTROLLER
-    );
+    emit MockHubConfigurator.UpdateSpokeRiskPremiumThresholdCalled(HUB, ASSET_ID, SPOKE, 300);
 
-    engine.executeHubReinvestmentControllerUpdates(_toReinvestmentControllerUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function testFuzz_executeHubReinvestmentControllerUpdates(address controller) public {
-    vm.assume(controller != address(0));
+  function testFuzz_executeHubSpokeConfigUpdates_riskPremiumThreshold(uint256 threshold) public {
+    vm.assume(threshold != EngineFlags.KEEP_CURRENT);
 
-    IAaveV4ConfigEngine.ReinvestmentControllerUpdate memory update = IAaveV4ConfigEngine
-      .ReinvestmentControllerUpdate({
-        hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: HUB,
-        assetId: ASSET_ID,
-        reinvestmentController: controller
-      });
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
+    update.riskPremiumThreshold = threshold;
+    // Skip caps and status
+    update.addCap = EngineFlags.KEEP_CURRENT;
+    update.drawCap = EngineFlags.KEEP_CURRENT;
+    update.active = EngineFlags.KEEP_CURRENT;
+    update.halted = EngineFlags.KEEP_CURRENT;
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.UpdateReinvestmentControllerCalled(HUB, ASSET_ID, controller);
+    emit MockHubConfigurator.UpdateSpokeRiskPremiumThresholdCalled(HUB, ASSET_ID, SPOKE, threshold);
 
-    engine.executeHubReinvestmentControllerUpdates(_toReinvestmentControllerUpdateArray(update));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function test_executeHubReinvestmentControllerUpdates_revert() public {
+  function test_executeHubSpokeConfigUpdates_riskPremiumThresholdRevert() public {
     mockHubConfigurator.setShouldRevert(
-      IHubConfigurator.updateReinvestmentController.selector,
+      IHubConfigurator.updateSpokeRiskPremiumThreshold.selector,
       true
     );
 
-    IAaveV4ConfigEngine.ReinvestmentControllerUpdate memory update = IAaveV4ConfigEngine
-      .ReinvestmentControllerUpdate({
-        hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: HUB,
-        assetId: ASSET_ID,
-        reinvestmentController: REINVESTMENT_CONTROLLER
-      });
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
+    update.riskPremiumThreshold = 300;
+    // Skip caps and status
+    update.addCap = EngineFlags.KEEP_CURRENT;
+    update.drawCap = EngineFlags.KEEP_CURRENT;
+    update.active = EngineFlags.KEEP_CURRENT;
+    update.halted = EngineFlags.KEEP_CURRENT;
 
-    vm.expectRevert(MockHubConfigurator.UpdateReinvestmentControllerReverted.selector);
-    engine.executeHubReinvestmentControllerUpdates(_toReinvestmentControllerUpdateArray(update));
+    vm.expectRevert(MockHubConfigurator.UpdateSpokeRiskPremiumThresholdReverted.selector);
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function test_executeHubSpokeAdditions() public {
-    IHub.SpokeConfig memory config = IHub.SpokeConfig({
-      addCap: 1000,
-      drawCap: 500,
-      riskPremiumThreshold: 100,
-      active: true,
-      halted: false
-    });
+  // ---------------------------------------------------------------------------
+  // SpokeConfigUpdate tests — combined scenario (all fields active)
+  // ---------------------------------------------------------------------------
 
-    IAaveV4ConfigEngine.SpokeAddition memory addition = IAaveV4ConfigEngine.SpokeAddition({
-      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      spoke: SPOKE,
-      assetId: ASSET_ID,
-      config: config
-    });
+  function test_executeHubSpokeConfigUpdates_allFields() public {
+    IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
+
+    // Expect caps update
+    vm.expectEmit(address(mockHubConfigurator));
+    emit MockHubConfigurator.UpdateSpokeCapsCalled(HUB, ASSET_ID, SPOKE, 1000, 500);
+
+    // Expect risk premium threshold update
+    vm.expectEmit(address(mockHubConfigurator));
+    emit MockHubConfigurator.UpdateSpokeRiskPremiumThresholdCalled(HUB, ASSET_ID, SPOKE, 100);
+
+    // Expect status updates
+    vm.expectEmit(address(mockHubConfigurator));
+    emit MockHubConfigurator.UpdateSpokeActiveCalled(HUB, ASSET_ID, SPOKE, true);
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.AddSpokeCalled(HUB, SPOKE, ASSET_ID, config);
+    emit MockHubConfigurator.UpdateSpokeHaltedCalled(HUB, ASSET_ID, SPOKE, false);
 
-    engine.executeHubSpokeAdditions(_toSpokeAdditionArray(addition));
+    engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function testFuzz_executeHubSpokeAdditions(
-    uint40 addCap,
-    uint40 drawCap,
-    uint24 riskPremiumThreshold,
-    bool active,
-    bool halted
-  ) public {
-    IHub.SpokeConfig memory config = IHub.SpokeConfig({
-      addCap: addCap,
-      drawCap: drawCap,
-      riskPremiumThreshold: riskPremiumThreshold,
-      active: active,
-      halted: halted
-    });
-
-    IAaveV4ConfigEngine.SpokeAddition memory addition = IAaveV4ConfigEngine.SpokeAddition({
-      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      spoke: SPOKE,
-      assetId: ASSET_ID,
-      config: config
-    });
-
-    vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.AddSpokeCalled(HUB, SPOKE, ASSET_ID, config);
-
-    engine.executeHubSpokeAdditions(_toSpokeAdditionArray(addition));
-  }
-
-  function test_executeHubSpokeAdditions_revert() public {
-    mockHubConfigurator.setShouldRevert(IHubConfigurator.addSpoke.selector, true);
-
-    IHub.SpokeConfig memory config = IHub.SpokeConfig({
-      addCap: 1000,
-      drawCap: 500,
-      riskPremiumThreshold: 100,
-      active: true,
-      halted: false
-    });
-
-    IAaveV4ConfigEngine.SpokeAddition memory addition = IAaveV4ConfigEngine.SpokeAddition({
-      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: HUB,
-      spoke: SPOKE,
-      assetId: ASSET_ID,
-      config: config
-    });
-
-    vm.expectRevert(MockHubConfigurator.AddSpokeReverted.selector);
-    engine.executeHubSpokeAdditions(_toSpokeAdditionArray(addition));
-  }
+  // ---------------------------------------------------------------------------
+  // SpokeToAssetsAdditions tests
+  // ---------------------------------------------------------------------------
 
   function test_executeHubSpokeToAssetsAdditions() public {
     uint256[] memory assetIds = new uint256[](2);
@@ -585,62 +730,9 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubSpokeToAssetsAdditions(_toSpokeToAssetsAdditionArray(addition));
   }
 
-  function test_executeHubSpokeRiskPremiumThresholdUpdates() public {
-    IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate memory update = IAaveV4ConfigEngine
-      .SpokeRiskPremiumThresholdUpdate({
-        hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: HUB,
-        assetId: ASSET_ID,
-        spoke: SPOKE,
-        riskPremiumThreshold: 300
-      });
-
-    vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.UpdateSpokeRiskPremiumThresholdCalled(HUB, ASSET_ID, SPOKE, 300);
-
-    engine.executeHubSpokeRiskPremiumThresholdUpdates(
-      _toSpokeRiskPremiumThresholdUpdateArray(update)
-    );
-  }
-
-  function testFuzz_executeHubSpokeRiskPremiumThresholdUpdates(uint256 threshold) public {
-    IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate memory update = IAaveV4ConfigEngine
-      .SpokeRiskPremiumThresholdUpdate({
-        hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: HUB,
-        assetId: ASSET_ID,
-        spoke: SPOKE,
-        riskPremiumThreshold: threshold
-      });
-
-    vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.UpdateSpokeRiskPremiumThresholdCalled(HUB, ASSET_ID, SPOKE, threshold);
-
-    engine.executeHubSpokeRiskPremiumThresholdUpdates(
-      _toSpokeRiskPremiumThresholdUpdateArray(update)
-    );
-  }
-
-  function test_executeHubSpokeRiskPremiumThresholdUpdates_revert() public {
-    mockHubConfigurator.setShouldRevert(
-      IHubConfigurator.updateSpokeRiskPremiumThreshold.selector,
-      true
-    );
-
-    IAaveV4ConfigEngine.SpokeRiskPremiumThresholdUpdate memory update = IAaveV4ConfigEngine
-      .SpokeRiskPremiumThresholdUpdate({
-        hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-        hub: HUB,
-        assetId: ASSET_ID,
-        spoke: SPOKE,
-        riskPremiumThreshold: 300
-      });
-
-    vm.expectRevert(MockHubConfigurator.UpdateSpokeRiskPremiumThresholdReverted.selector);
-    engine.executeHubSpokeRiskPremiumThresholdUpdates(
-      _toSpokeRiskPremiumThresholdUpdateArray(update)
-    );
-  }
+  // ---------------------------------------------------------------------------
+  // AssetHalt tests
+  // ---------------------------------------------------------------------------
 
   function test_executeHubAssetHalts() public {
     IAaveV4ConfigEngine.AssetHalt memory halt = IAaveV4ConfigEngine.AssetHalt({
@@ -680,6 +772,10 @@ contract HubEngineTest is BaseConfigEngineTest {
     vm.expectRevert(MockHubConfigurator.HaltAssetReverted.selector);
     engine.executeHubAssetHalts(_toAssetHaltArray(halt));
   }
+
+  // ---------------------------------------------------------------------------
+  // AssetDeactivation tests
+  // ---------------------------------------------------------------------------
 
   function test_executeHubAssetDeactivations() public {
     IAaveV4ConfigEngine.AssetDeactivation memory deactivation = IAaveV4ConfigEngine
@@ -723,6 +819,10 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetDeactivations(_toAssetDeactivationArray(deactivation));
   }
 
+  // ---------------------------------------------------------------------------
+  // AssetCapsReset tests
+  // ---------------------------------------------------------------------------
+
   function test_executeHubAssetCapsResets() public {
     IAaveV4ConfigEngine.AssetCapsReset memory reset = IAaveV4ConfigEngine.AssetCapsReset({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
@@ -761,6 +861,10 @@ contract HubEngineTest is BaseConfigEngineTest {
     vm.expectRevert(MockHubConfigurator.ResetAssetCapsReverted.selector);
     engine.executeHubAssetCapsResets(_toAssetCapsResetArray(reset));
   }
+
+  // ---------------------------------------------------------------------------
+  // SpokeHalt tests
+  // ---------------------------------------------------------------------------
 
   function test_executeHubSpokeHalts() public {
     IAaveV4ConfigEngine.SpokeHalt memory halt = IAaveV4ConfigEngine.SpokeHalt({
@@ -802,6 +906,10 @@ contract HubEngineTest is BaseConfigEngineTest {
     vm.expectRevert(MockHubConfigurator.HaltSpokeReverted.selector);
     engine.executeHubSpokeHalts(_toSpokeHaltArray(halt));
   }
+
+  // ---------------------------------------------------------------------------
+  // SpokeDeactivation tests
+  // ---------------------------------------------------------------------------
 
   function test_executeHubSpokeDeactivations() public {
     IAaveV4ConfigEngine.SpokeDeactivation memory deactivation = IAaveV4ConfigEngine
@@ -846,6 +954,10 @@ contract HubEngineTest is BaseConfigEngineTest {
     vm.expectRevert(MockHubConfigurator.DeactivateSpokeReverted.selector);
     engine.executeHubSpokeDeactivations(_toSpokeDeactivationArray(deactivation));
   }
+
+  // ---------------------------------------------------------------------------
+  // SpokeCapsReset tests
+  // ---------------------------------------------------------------------------
 
   function test_executeHubSpokeCapsResets() public {
     IAaveV4ConfigEngine.SpokeCapsReset memory reset = IAaveV4ConfigEngine.SpokeCapsReset({

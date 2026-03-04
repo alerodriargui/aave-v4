@@ -3,13 +3,14 @@
 pragma solidity ^0.8.0;
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {IPositionManagerEngine} from 'src/config-engine/interfaces/IPositionManagerEngine.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
 /// @title PositionManagerEngine
 /// @author Aave Labs
-/// @notice Library containing position manager logic for AaveV4ConfigEngine.
-library PositionManagerEngine {
+/// @notice Contract containing position manager logic for AaveV4ConfigEngine.
+contract PositionManagerEngine is IPositionManagerEngine {
   /// @notice Registers/deregisters spokes on position managers.
   /// @param registrations The spoke registrations to execute.
   function executePositionManagerSpokeRegistrations(
@@ -24,29 +25,21 @@ library PositionManagerEngine {
     }
   }
 
-  /// @notice Rescues ERC20 tokens from position managers.
-  /// @param rescues The token rescues to execute.
-  function executePositionManagerTokenRescues(
-    IAaveV4ConfigEngine.TokenRescue[] calldata rescues
-  ) external {
+  /// @notice Rescues ERC20 tokens and/or native assets from position managers.
+  /// @param rescues The rescues to execute.
+  function executePositionManagerRescues(IAaveV4ConfigEngine.Rescue[] calldata rescues) external {
     uint256 length = rescues.length;
     for (uint256 i; i < length; ++i) {
-      IRescuable(rescues[i].positionManager).rescueToken(
-        rescues[i].token,
-        rescues[i].to,
-        rescues[i].amount
-      );
-    }
-  }
-
-  /// @notice Rescues native assets from position managers.
-  /// @param rescues The native rescues to execute.
-  function executePositionManagerNativeRescues(
-    IAaveV4ConfigEngine.NativeRescue[] calldata rescues
-  ) external {
-    uint256 length = rescues.length;
-    for (uint256 i; i < length; ++i) {
-      IRescuable(rescues[i].positionManager).rescueNative(rescues[i].to, rescues[i].amount);
+      if (rescues[i].tokenAmount > 0) {
+        IRescuable(rescues[i].positionManager).rescueToken(
+          rescues[i].token,
+          rescues[i].to,
+          rescues[i].tokenAmount
+        );
+      }
+      if (rescues[i].nativeAmount > 0) {
+        IRescuable(rescues[i].positionManager).rescueNative(rescues[i].to, rescues[i].nativeAmount);
+      }
     }
   }
 
