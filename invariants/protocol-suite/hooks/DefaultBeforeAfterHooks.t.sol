@@ -33,7 +33,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
 
   struct Debt {
     uint256 drawn;
-    uint256 premium;
+    uint256 premiumRay;
     uint256 owed;
   }
 
@@ -130,14 +130,15 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
       IHub hub = IHub(hubs.at(i));
       uint256 assetCount = hub.getAssetCount();
       for (uint256 j; j < assetCount; j++) {
-        (uint256 drawn, uint256 premium) = hub.getAssetOwed(j);
+        (uint256 drawn, ) = hub.getAssetOwed(j);
+        uint256 premiumRay = hub.getAssetPremiumRay(j);
         defaultVars.assetVars[address(hub)][j] = AssetVars({
           asset: hub.getAsset(j),
           drawnRate: hub.getAssetDrawnRate(j),
           drawnIndex: hub.getAssetDrawnIndex(j),
           totalAssets: hub.getAddedAssets(j),
           totalShares: hub.getAddedShares(j),
-          debt: Debt({drawn: drawn, premium: premium, owed: drawn + premium})
+          debt: Debt({drawn: drawn, premiumRay: premiumRay, owed: drawn + premiumRay.fromRayUp()})
         });
       }
     }
@@ -150,12 +151,13 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
       for (uint256 j; j < assetCount; j++) {
         for (uint256 k; k < allSpokes.length; k++) {
           address spoke = allSpokes[k];
-          (uint256 drawn, uint256 premium) = hub.getSpokeOwed(j, spoke);
+          (uint256 drawn, ) = hub.getSpokeOwed(j, spoke);
+          uint256 premiumRay = hub.getSpokePremiumRay(j, spoke);
           defaultVars.spokeVars[address(hub)][j][spoke] = SpokeVars({
             spokeData: hub.getSpoke(j, spoke),
             addedAssets: hub.getSpokeAddedAssets(j, spoke),
             addedShares: hub.getSpokeAddedShares(j, spoke),
-            debt: Debt({drawn: drawn, premium: premium, owed: drawn + premium})
+            debt: Debt({drawn: drawn, premiumRay: premiumRay, owed: drawn + premiumRay.fromRayUp()})
           });
         }
       }
@@ -173,19 +175,21 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
       if (userInfo.reserveId == CHECK_ALL_RESERVES) {
         uint256 reserveCount = spoke.getReserveCount();
         for (uint256 j; j < reserveCount; ++j) {
-          (uint256 drawn, uint256 premium) = spoke.getUserDebt(j, userInfo.user);
+          (uint256 drawn, ) = spoke.getUserDebt(j, userInfo.user);
+          uint256 premiumRay = spoke.getUserPremiumDebtRay(j, userInfo.user);
           defaultVars.userVars[userInfo.spoke][j][userInfo.user] = UserVars({
             position: spoke.getUserPosition(j, userInfo.user),
-            debt: Debt({drawn: drawn, premium: premium, owed: drawn + premium})
+            debt: Debt({drawn: drawn, premiumRay: premiumRay, owed: drawn + premiumRay.fromRayUp()})
           });
         }
       } else {
         // Cache values for a specific reserve of the spoke, used after actions: supply, withdraw, borrow, repay, setUsingAsCollateral
         uint256 reserveId = userInfo.reserveId;
-        (uint256 drawn, uint256 premium) = spoke.getUserDebt(reserveId, userInfo.user);
+        (uint256 drawn, ) = spoke.getUserDebt(reserveId, userInfo.user);
+        uint256 premiumRay = spoke.getUserPremiumDebtRay(reserveId, userInfo.user);
         defaultVars.userVars[userInfo.spoke][reserveId][userInfo.user] = UserVars({
           position: spoke.getUserPosition(reserveId, userInfo.user),
-          debt: Debt({drawn: drawn, premium: premium, owed: drawn + premium})
+          debt: Debt({drawn: drawn, premiumRay: premiumRay, owed: drawn + premiumRay.fromRayUp()})
         });
       }
     }
@@ -306,7 +310,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     UserVars memory userVarsBefore = _userVarsBefore(spoke, reserveId, user);
     UserVars memory userVarsAfter = _userVarsAfter(spoke, reserveId, user);
 
-    if (userVarsAfter.debt.premium < userVarsBefore.debt.premium) {
+    if (userVarsAfter.debt.premiumRay < userVarsBefore.debt.premiumRay) {
       assertTrue(
         currentActionSignature == ISpokeHandler.repay.selector ||
           currentActionSignature == ISpokeHandler.liquidationCall.selector,
@@ -320,7 +324,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
           currentActionSignature == ISpokeHandler.liquidationCall.selector,
         GPOST_SP_B2
       );
-      assertEq(userVarsAfter.debt.premium, 0, GPOST_SP_B2);
+      assertEq(userVarsAfter.debt.premiumRay, 0, GPOST_SP_B2);
     }
   }
 

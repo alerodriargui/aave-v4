@@ -342,7 +342,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       for (uint256 j; j < reserveCount; j++) {
         UserVars memory varsBefore = _userVarsBefore(spoke, j, onBehalfOf);
         UserVars memory varsAfter = _userVarsAfter(spoke, j, onBehalfOf);
-        assertEq(varsBefore.debt.premium, varsAfter.debt.premium, HSPOST_HUB_M); // !todo add premium ray in those getters and check that here?
+        assertEq(varsBefore.debt.premiumRay, varsAfter.debt.premiumRay, HSPOST_HUB_M);
         assertEq(varsBefore.debt.owed, varsAfter.debt.owed, HSPOST_SP_F);
       }
     } else {
