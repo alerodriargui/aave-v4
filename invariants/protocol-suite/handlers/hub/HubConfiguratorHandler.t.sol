@@ -11,6 +11,8 @@ import {BaseHandler} from '../../base/BaseHandler.t.sol';
 
 /// @title HubConfiguratorHandler
 /// @notice Handler test contract for a set of actions
+/// @dev Inputs are bounded to Hub validation constraints so admin actions don't unnecessarily
+///      discard fuzzer runs.
 contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                      STATE VARIABLES                                      //
@@ -19,13 +21,14 @@ contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
   //                                          ACTIONS                                          //
   ///////////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                         OWNER ACTIONS                                     //
+  //                                        SPOKE CONFIG                                       //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function updateSpokeSupplyCap(uint256 addCap, uint8 i, uint8 j, uint8 k) external setup {
     address hub = _getRandomHub(i);
     uint256 assetId = _getRandomHubAssetId(hub, j);
     address spoke = _getRandomSpoke(k);
+    addCap = _bound(addCap, 0, MAX_ALLOWED_SPOKE_CAP);
     hubConfigurator.updateSpokeSupplyCap(hub, assetId, spoke, addCap);
   }
 
@@ -33,6 +36,7 @@ contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
     address hub = _getRandomHub(i);
     uint256 assetId = _getRandomHubAssetId(hub, j);
     address spoke = _getRandomSpoke(k);
+    drawCap = _bound(drawCap, 0, MAX_ALLOWED_SPOKE_CAP);
     hubConfigurator.updateSpokeDrawCap(hub, assetId, spoke, drawCap);
   }
 
@@ -45,6 +49,7 @@ contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
     address hub = _getRandomHub(i);
     uint256 assetId = _getRandomHubAssetId(hub, j);
     address spoke = _getRandomSpoke(k);
+    riskPremiumThreshold = _bound(riskPremiumThreshold, 0, MAX_RISK_PREMIUM_THRESHOLD);
     hubConfigurator.updateSpokeRiskPremiumThreshold(hub, assetId, spoke, riskPremiumThreshold);
   }
 

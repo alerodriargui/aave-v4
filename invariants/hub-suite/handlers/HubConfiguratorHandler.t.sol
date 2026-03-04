@@ -14,6 +14,8 @@ import {BaseHandler} from '../base/BaseHandler.t.sol';
 
 /// @title HubConfiguratorHandler
 /// @notice Handler test contract for a set of actions
+/// @dev Inputs are bounded to Hub validation constraints so admin actions don't unnecessarily
+///      discard fuzzer runs.
 contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                      STATE VARIABLES                                      //
@@ -22,18 +24,20 @@ contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
   //                                          ACTIONS                                          //
   ///////////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                         OWNER ACTIONS                                     //
+  //                                        SPOKE CONFIG                                       //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function updateSpokeSupplyCap(uint256 addCap, uint8 i, uint8 j) external setup {
     uint256 assetId = _getRandomBaseAssetId(i);
     address spoke = _getRandomActor(j);
+    addCap = _bound(addCap, 0, MAX_ALLOWED_SPOKE_CAP);
     hubConfigurator.updateSpokeSupplyCap(address(hub), assetId, spoke, addCap);
   }
 
   function updateSpokeDrawCap(uint256 drawCap, uint8 i, uint8 j) external setup {
     uint256 assetId = _getRandomBaseAssetId(i);
     address spoke = _getRandomActor(j);
+    drawCap = _bound(drawCap, 0, MAX_ALLOWED_SPOKE_CAP);
     hubConfigurator.updateSpokeDrawCap(address(hub), assetId, spoke, drawCap);
   }
 
@@ -44,6 +48,7 @@ contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
   ) external setup {
     uint256 assetId = _getRandomBaseAssetId(i);
     address spoke = _getRandomActor(j);
+    riskPremiumThreshold = _bound(riskPremiumThreshold, 0, MAX_RISK_PREMIUM_THRESHOLD);
     hubConfigurator.updateSpokeRiskPremiumThreshold(
       address(hub),
       assetId,
@@ -58,9 +63,13 @@ contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
     hubConfigurator.updateSpokeHalted(address(hub), assetId, spoke, halted);
   }
 
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                        ASSET CONFIG                                       //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
   function updateLiquidityFee(uint256 liquidityFee, uint8 i) external setup {
     uint256 assetId = _getRandomBaseAssetId(i);
-    liquidityFee = liquidityFee % PercentageMath.PERCENTAGE_FACTOR;
+    liquidityFee = _bound(liquidityFee, 0, PercentageMath.PERCENTAGE_FACTOR);
     hubConfigurator.updateLiquidityFee(address(hub), assetId, liquidityFee);
   }
 
