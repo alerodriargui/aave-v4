@@ -278,7 +278,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     if (spokeDataAfter.debt.owed > spokeDataBefore.debt.owed) {
       if (spokeConfig.drawCap != MAX_ALLOWED_SPOKE_CAP) {
         assertLe(
-          spokeDataAfter.debt.owed,
+          spokeDataAfter.debt.owed + spokeDataAfter.spokeData.deficitRay.fromRayUp(),
           spokeConfig.drawCap * MathUtils.uncheckedExp(10, decimals),
           GPOST_HUB_F
         );
