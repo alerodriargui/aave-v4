@@ -7,7 +7,6 @@ import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {Actor} from './Actor.sol';
 
 Vm constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
-uint256 constant UINT256_MAX = type(uint256).max;
 
 contract CommonHelpers {
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -17,44 +16,6 @@ contract CommonHelpers {
   /// @notice Helper function to randomize a uint256 seed with a string salt
   function _randomize(uint256 seed, string memory salt) internal pure returns (uint256) {
     return uint256(keccak256(abi.encodePacked(seed, salt)));
-  }
-
-  /// @notice Helper function to get a random value
-  function _getRandomValue(uint256 modulus) internal view returns (uint256) {
-    uint256 randomNumber = uint256(
-      keccak256(abi.encode(block.timestamp, block.prevrandao, msg.sender))
-    );
-    return randomNumber % modulus; // Adjust the modulus to the desired range
-  }
-
-  /// @notice Helper function to bound a value between a min and max
-  /// @dev Taken from forge-std's stdUtils, renamed to avoid conflict with forge-std's import on foundry replays.
-  function _bound2(uint256 x, uint256 min, uint256 max) internal pure returns (uint256) {
-    assert(min <= max);
-    // If x is between min and max, return x directly. This is to ensure that dictionary values
-    // do not get shifted if the min is nonzero. More info: https://github.com/foundry-rs/forge-std/issues/188
-    if (x >= min && x <= max) return x;
-
-    uint256 size = max - min + 1;
-
-    // If the value is 0, 1, 2, 3, wrap that to min, min+1, min+2, min+3. Similarly for the UINT256_MAX side.
-    // This helps ensure coverage of the min/max values.
-    if (x <= 3 && size > x) return min + x;
-    if (x >= UINT256_MAX - 3 && size > UINT256_MAX - x) return max - (UINT256_MAX - x);
-
-    // Otherwise, wrap x into the range [min, max], i.e. the range is inclusive.
-    if (x > max) {
-      uint256 diff = x - max;
-      uint256 rem = diff % size;
-      if (rem == 0) return max;
-      return min + rem - 1;
-    } else if (x < min) {
-      uint256 diff = min - x;
-      uint256 rem = diff % size;
-      if (rem == 0) return min;
-      return max - rem + 1;
-    }
-    return x; // This should never be reached due to the first check, but is needed to silence compiler warnings.
   }
 
   /// @notice Helper function to approve an amount of tokens to a spender, a proxy Actor

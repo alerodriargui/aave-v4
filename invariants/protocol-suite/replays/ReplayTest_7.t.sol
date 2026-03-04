@@ -54,8 +54,6 @@ contract ReplayTest7 is Invariants, Setup {
     _delay(62189);
     Tester.updateUserRiskPremium(101);
     _setUpActor(USER3);
-    _delay(590687);
-    Tester.setUsingAsCollateral(true, 111, 255);
     _delay(323286);
     Tester.donateUnderlyingToHub(194, 231, 231);
     _delay(505810);
@@ -89,6 +87,8 @@ contract ReplayTest7 is Invariants, Setup {
     _setUpActor(USER3);
     _delay(582766);
     Tester.updateUserRiskPremium(25);
+    _checkAllHubInvariants();
+    _checkAllSpokeInvariants();
   }
 
   function test_replay_7_repay() public {
