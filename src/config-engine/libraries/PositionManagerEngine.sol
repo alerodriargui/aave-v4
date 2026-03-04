@@ -3,14 +3,13 @@
 pragma solidity ^0.8.0;
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {IPositionManagerEngine} from 'src/config-engine/interfaces/IPositionManagerEngine.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
 
 /// @title PositionManagerEngine
 /// @author Aave Labs
-/// @notice Contract containing position manager logic for AaveV4ConfigEngine.
-contract PositionManagerEngine is IPositionManagerEngine {
+/// @notice Library containing position manager logic for AaveV4ConfigEngine.
+library PositionManagerEngine {
   /// @notice Registers/deregisters spokes on position managers.
   /// @param registrations The spoke registrations to execute.
   function executePositionManagerSpokeRegistrations(

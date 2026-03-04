@@ -3,15 +3,14 @@
 pragma solidity ^0.8.0;
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {ISpokeEngine} from 'src/config-engine/interfaces/ISpokeEngine.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 /// @title SpokeEngine
 /// @author Aave Labs
-/// @notice Contract containing spoke configurator logic for AaveV4ConfigEngine.
-contract SpokeEngine is ISpokeEngine {
+/// @notice Library containing spoke configurator logic for AaveV4ConfigEngine.
+library SpokeEngine {
   using SafeCast for uint256;
 
   /// @notice Lists new reserves on spokes.

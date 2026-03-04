@@ -14,10 +14,6 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {IHubEngine} from 'src/config-engine/interfaces/IHubEngine.sol';
-import {ISpokeEngine} from 'src/config-engine/interfaces/ISpokeEngine.sol';
-import {IAccessManagerEngine} from 'src/config-engine/interfaces/IAccessManagerEngine.sol';
-import {IPositionManagerEngine} from 'src/config-engine/interfaces/IPositionManagerEngine.sol';
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
 import {AaveV4Payload} from 'src/config-engine/AaveV4Payload.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
@@ -807,45 +803,5 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     emit MockPositionManagerForEngine.RenouncePositionManagerRoleCalled(SPOKE, USER);
 
     payload.execute();
-  }
-
-  function test_configEngine_constructor_revertsOnZeroHubEngine() public {
-    vm.expectRevert(AaveV4ConfigEngine.InvalidEngineAddress.selector);
-    new AaveV4ConfigEngine(
-      IHubEngine(address(0)),
-      ISpokeEngine(address(1)),
-      IAccessManagerEngine(address(1)),
-      IPositionManagerEngine(address(1))
-    );
-  }
-
-  function test_configEngine_constructor_revertsOnZeroSpokeEngine() public {
-    vm.expectRevert(AaveV4ConfigEngine.InvalidEngineAddress.selector);
-    new AaveV4ConfigEngine(
-      IHubEngine(address(1)),
-      ISpokeEngine(address(0)),
-      IAccessManagerEngine(address(1)),
-      IPositionManagerEngine(address(1))
-    );
-  }
-
-  function test_configEngine_constructor_revertsOnZeroAccessManagerEngine() public {
-    vm.expectRevert(AaveV4ConfigEngine.InvalidEngineAddress.selector);
-    new AaveV4ConfigEngine(
-      IHubEngine(address(1)),
-      ISpokeEngine(address(1)),
-      IAccessManagerEngine(address(0)),
-      IPositionManagerEngine(address(1))
-    );
-  }
-
-  function test_configEngine_constructor_revertsOnZeroPositionManagerEngine() public {
-    vm.expectRevert(AaveV4ConfigEngine.InvalidEngineAddress.selector);
-    new AaveV4ConfigEngine(
-      IHubEngine(address(1)),
-      ISpokeEngine(address(1)),
-      IAccessManagerEngine(address(1)),
-      IPositionManagerEngine(address(0))
-    );
   }
 }

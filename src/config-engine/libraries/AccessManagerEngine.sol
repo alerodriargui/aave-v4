@@ -3,13 +3,12 @@
 pragma solidity ^0.8.0;
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {IAccessManagerEngine} from 'src/config-engine/interfaces/IAccessManagerEngine.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 
 /// @title AccessManagerEngine
 /// @author Aave Labs
-/// @notice Contract containing access manager logic for AaveV4ConfigEngine.
-contract AccessManagerEngine is IAccessManagerEngine {
+/// @notice Library containing access manager logic for AaveV4ConfigEngine.
+library AccessManagerEngine {
   /// @notice Grants or revokes roles via AccessManager.
   /// @param memberships The role memberships to execute.
   function executeRoleMemberships(

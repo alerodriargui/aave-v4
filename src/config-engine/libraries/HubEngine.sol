@@ -5,13 +5,12 @@ pragma solidity ^0.8.0;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {IHubEngine} from 'src/config-engine/interfaces/IHubEngine.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
 /// @title HubEngine
 /// @author Aave Labs
-/// @notice Contract containing hub configurator logic for AaveV4ConfigEngine.
-contract HubEngine is IHubEngine {
+/// @notice Library containing hub configurator logic for AaveV4ConfigEngine.
+library HubEngine {
   using SafeCast for uint256;
 
   /// @notice Lists new assets on hubs via the HubConfigurator.

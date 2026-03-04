@@ -11,14 +11,6 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
 import {AaveV4ConfigEngine} from 'src/config-engine/AaveV4ConfigEngine.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {IHubEngine} from 'src/config-engine/interfaces/IHubEngine.sol';
-import {ISpokeEngine} from 'src/config-engine/interfaces/ISpokeEngine.sol';
-import {IAccessManagerEngine} from 'src/config-engine/interfaces/IAccessManagerEngine.sol';
-import {IPositionManagerEngine} from 'src/config-engine/interfaces/IPositionManagerEngine.sol';
-import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
-import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
-import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
-import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
 
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
@@ -58,16 +50,7 @@ abstract contract BaseConfigEngineTest is Test {
   MockPositionManagerForEngine public mockPositionManager;
 
   function setUp() public virtual {
-    HubEngine hubEngine = new HubEngine();
-    SpokeEngine spokeEngine = new SpokeEngine();
-    AccessManagerEngine accessManagerEngine = new AccessManagerEngine();
-    PositionManagerEngine positionManagerEngine = new PositionManagerEngine();
-    engine = new AaveV4ConfigEngine(
-      IHubEngine(address(hubEngine)),
-      ISpokeEngine(address(spokeEngine)),
-      IAccessManagerEngine(address(accessManagerEngine)),
-      IPositionManagerEngine(address(positionManagerEngine))
-    );
+    engine = new AaveV4ConfigEngine();
     mockHubConfigurator = new MockHubConfigurator();
     mockSpokeConfigurator = new MockSpokeConfigurator();
     mockAccessManager = new MockAccessManagerForEngine();
