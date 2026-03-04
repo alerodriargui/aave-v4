@@ -192,4 +192,8 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
   function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (address) {
     return spoke.getReserve(reserveId).underlying;
   }
+
+  function _underlying(address spoke, uint256 reserveId) internal view returns (address) {
+    return _underlying(ISpoke(spoke), reserveId);
+  }
 }
