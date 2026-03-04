@@ -21,7 +21,7 @@ abstract contract HubInvariantsSpec {
   //                                         HUB                                               //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  string constant INV_HUB_A2 = 'INV_HUB_A2: If hub assets = 0 => shares 0';
+  string constant INV_HUB_A = 'INV_HUB_A: If hub assets = 0 => shares 0';
 
   string constant INV_HUB_B =
     'INV_HUB_B: Sum of spoke debts on a single asset must be greater or equal than the total debt of the asset';

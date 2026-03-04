@@ -55,7 +55,7 @@ abstract contract HubInvariantAssertions is StdAsserts, HubInvariantsSpec {
     uint256 assets = hub.getAddedAssets(assetId);
 
     if (assets == 0) {
-      assertEq(hub.getAddedShares(assetId), 0, INV_HUB_A2);
+      assertEq(hub.getAddedShares(assetId), 0, INV_HUB_A);
     }
   }
 
