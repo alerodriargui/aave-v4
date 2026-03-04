@@ -18,7 +18,7 @@ abstract contract HubInvariantsSpec {
     /////////////////////////////////////////////////////////////////////////////////////////////*/
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                         HUB                                               //
+  //                                      ACCOUNTING                                           //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   string constant INV_HUB_A = 'INV_HUB_A: If hub assets = 0 => shares 0';
@@ -29,6 +29,22 @@ abstract contract HubInvariantsSpec {
   string constant INV_HUB_C =
     'INV_HUB_C: Sum of [baseDrawnShares/premiumDrawnShares/premiumOffsetRay] of individual (spoke/user) should match the corresponding value of the asset on the Hub';
 
+  string constant INV_HUB_G =
+    'INV_HUB_G: totalAddedAssets = sum of addedAssets of all registered spokes (including present & past treasury spoke) with a tolerance of SPOKE_COUNT'; // TODO check if tolerance is correct
+
+  string constant INV_HUB_H =
+    'INV_HUB_H: totalAddedShares = sum of addedShares of all registered spokes';
+
+  string constant INV_HUB_O =
+    'INV_HUB_O: sum of deficitRay across spokes for a given asset == total asset deficitRay';
+
+  string constant INV_HUB_P =
+    'INV_HUB_P: Premium offset should not exceed premium shares * drawnIndex';
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                       SOLVENCY                                            //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
   string constant INV_HUB_E_1 =
     'INV_HUB_E: total assets is equal to or greater than the supplied amount without taking into account the virtual assets and shares up to the burn interest to virtual shares';
 
@@ -38,23 +54,15 @@ abstract contract HubInvariantsSpec {
   string constant INV_HUB_F =
     'INV_HUB_F: hub.getTotalSuppliedAssets = totalAssets() = availableLiquidity + (totalDebtRay + deficitRay).fromRayUp + swept';
 
-  string constant INV_HUB_G =
-    'INV_HUB_G: totalAddedAssets = sum of addedAssets of all registered spokes (including present & past treasury spoke) with a tolerance of SPOKE_COUNT'; // TODO check if tolerance is correct
-
-  string constant INV_HUB_H =
-    'INV_HUB_H: totalAddedShares = sum of addedShares of all registered spokes';
-
   string constant INV_HUB_I =
     'INV_HUB_I: asset.underlying.balanceOf(hub) + asset.swept >= asset.liquidity';
 
   string constant INV_HUB_K =
     'INV_HUB_K: Asset.irStrategy should never be address(0) for any (currently/previously) registered asset';
 
-  string constant INV_HUB_O =
-    'INV_HUB_O: sum of deficitRay across spokes for a given asset == total asset deficitRay';
-
-  string constant INV_HUB_P =
-    'INV_HUB_P: Premium offset should not exceed premium shares * drawnIndex';
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                     MONOTONICITY                                          //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   string constant INV_HUB_Q =
     'INV_HUB_Q: Drawn index must be monotonically non-decreasing across invariant checks';
@@ -65,48 +73,6 @@ abstract contract HubInvariantsSpec {
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                         ERC4626                                           //
   ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  // Add
-  string constant HSPOST_HUB_ERC4626_ADD_A =
-    'HSPOST_HUB_ERC4626_ADD_A: After add, spoke addedAssets must increase by at most addedAmount';
-
-  string constant HSPOST_HUB_ERC4626_ADD_B =
-    'HSPOST_HUB_ERC4626_ADD_B: After add, spoke addedShares must increase by addedSharesAmount';
-
-  string constant HSPOST_HUB_ERC4626_ADD_C =
-    'HSPOST_HUB_ERC4626_ADD_C: previewAddedShares must be less than or equal to the added shares after the action';
-
-  // Remove
-  string constant HSPOST_HUB_ERC4626_REMOVE_A =
-    'HSPOST_HUB_ERC4626_REMOVE_A: After remove, spoke addedAssets must decrease by at least removedAmount';
-
-  string constant HSPOST_HUB_ERC4626_REMOVE_B =
-    'HSPOST_HUB_ERC4626_REMOVE_B: After remove, spoke addedShares must decrease by removedSharesAmount';
-
-  string constant HSPOST_HUB_ERC4626_REMOVE_C =
-    'HSPOST_HUB_ERC4626_REMOVE_C: previewRemovedShares must be greater than or equal to the removed shares after the action';
-
-  // Draw
-  string constant HSPOST_HUB_ERC4626_DRAW_A =
-    'HSPOST_HUB_ERC4626_DRAW_A: After draw, spoke drawnAssets must increase by at least drawnAmount';
-
-  string constant HSPOST_HUB_ERC4626_DRAW_B =
-    'HSPOST_HUB_ERC4626_DRAW_B: After draw, spoke drawnShares must increase by drawnSharesAmount';
-
-  string constant HSPOST_HUB_ERC4626_DRAW_C =
-    'HSPOST_HUB_ERC4626_DRAW_C: previewDrawnShares must be greater than or equal to the drawn shares after the action';
-
-  // Restore
-  string constant HSPOST_HUB_ERC4626_RESTORE_A =
-    'HSPOST_HUB_ERC4626_RESTORE_A: After restore, spoke drawnAssets must increase by at most drawnAmount';
-
-  string constant HSPOST_HUB_ERC4626_RESTORE_B =
-    'HSPOST_HUB_ERC4626_RESTORE_B: After restore, spoke drawnShares must decrease by restoredSharesAmount';
-
-  string constant HSPOST_HUB_ERC4626_RESTORE_C =
-    'HSPOST_HUB_ERC4626_RESTORE_C: previewRestoredShares must be less than or equal to the restored shares after the action';
-
-  // GENERIC
 
   string constant INV_HUB_ERC4626_A =
     'INV_HUB_ERC4626_A: Spoke cannot have non-zero assets and zero shares in add side without any premium';
@@ -123,8 +89,6 @@ abstract contract HubInvariantsSpec {
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                         ERC4626 ROUNDTRIP                                 //
   ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  /// @notice ROUNDTRIP
 
   /// @dev ERC4626: redeem(deposit(a)) <= a
   string constant INV_HUB_ERC4626_RT_A =
@@ -159,7 +123,7 @@ abstract contract HubInvariantsSpec {
     'INV_HUB_ERC4626_RT_H: previewAddByAssets(a) <= previewRemoveByAssets(a)';
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                          HUB: AVAILABILITY                                //
+  //                                     AVAILABILITY                                          //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   string constant INV_HUB_AVAILABILITY_A = 'INV_HUB_AVAILABILITY_A: getAddedAssets must not revert';

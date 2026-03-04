@@ -8,11 +8,8 @@ import {HubPostconditionsSpec} from '../../hub-suite/specs/HubPostconditionsSpec
 /// @dev Contains spoke postcondition strings. Hub postcondition strings are inherited from HubPostconditionsSpec.
 abstract contract PostconditionsSpec is HubPostconditionsSpec {
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                        SPOKE                                              //
+  //                                    SPOKE DEBT ORDERING                                    //
   ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  string constant GPOST_SP_A =
-    "GPOST_SP_A: Stored (user.premiumDrawnShares/user.baseDrawnShares) & calculated user risk premium (calculation based on user's position, via spoke.calculateUserAccountData) need to be the same right after an operation";
 
   string constant GPOST_SP_B =
     'GPOST_SP_B: Premium debt of an individual user can only decrease by calling repay or liquidationCall when premium debt is not zero';
@@ -22,7 +19,12 @@ abstract contract PostconditionsSpec is HubPostconditionsSpec {
 
   string constant HSPOST_SP_C = 'HSPOST_SP_C: User liability should decrease after repayment';
 
-  string constant HSPOST_SP_D = 'HSPOST_SP_D: Unhealthy users cannot borrow more';
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                      SPOKE RISK                                           //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  string constant GPOST_SP_A =
+    "GPOST_SP_A: Stored (user.premiumDrawnShares/user.baseDrawnShares) & calculated user risk premium (calculation based on user's position, via spoke.calculateUserAccountData) need to be the same right after an operation";
 
   string constant GPOST_SP_E =
     'GPOST_SP_E: DynamicRiskConfiguration for a user position is updated to latest reserve state whenever an action can potentially make their position less healthy';
@@ -34,11 +36,17 @@ abstract contract PostconditionsSpec is HubPostconditionsSpec {
   string constant HSPOST_SP_F =
     'HSPOST_SP_F: Total debt of a user should not change after updateUserRiskPremium';
 
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                    SPOKE SOLVENCY                                         //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  string constant HSPOST_SP_D = 'HSPOST_SP_D: Unhealthy users cannot borrow more';
+
   string constant GPOST_SP_H =
     'GPOST_SP_H: if user totalDebt == 0 and withdraw is called, user can withdraw all supplied';
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                  SPOKE: LIQUIDATION                                       //
+  //                                   SPOKE LIQUIDATION                                        //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   string constant HSPOST_SP_LIQ_A =

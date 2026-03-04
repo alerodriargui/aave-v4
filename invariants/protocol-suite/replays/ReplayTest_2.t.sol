@@ -48,7 +48,7 @@ contract ReplayTest2 is Invariants, Setup {
     Tester.updateUserRiskPremium(98);
     _delay(52383);
     Tester.updateUserRiskPremium(102);
-    invariant_INV_HUB();
+    _checkAllHubInvariants();
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

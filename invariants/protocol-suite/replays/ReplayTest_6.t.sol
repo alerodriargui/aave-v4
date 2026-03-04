@@ -43,7 +43,7 @@ contract ReplayTest6 is Invariants, Setup {
     _setUpActor(USER1);
     _delay(338347);
     Tester.freezeAllReserves(32);
-    invariant_INV_HUB();
+    _checkAllHubInvariants();
   }
 
   function test_replay_6_supply() public {
@@ -54,7 +54,7 @@ contract ReplayTest6 is Invariants, Setup {
     _setUpActor(USER1);
     _delay(467);
     Tester.supply(1327428228, 3, 151, 99);
-    invariant_INV_SP();
+    _checkAllSpokeInvariants();
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

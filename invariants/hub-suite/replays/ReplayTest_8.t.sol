@@ -42,7 +42,7 @@ contract ReplayTest8 is Invariants, Setup {
     Tester.refreshPremium(3, 0);
     _delay(1);
     Tester.refreshPremium(-3, 0);
-    invariant_INV_HUB();
+    _checkAllHubInvariants();
   }
 
   function test_replay_8_2() public {
@@ -51,7 +51,7 @@ contract ReplayTest8 is Invariants, Setup {
     Tester.draw(1, 0);
     _delay(5);
     Tester.restore(1, 0, 0, 0);
-    invariant_INV_HUB();
+    _checkAllHubInvariants();
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

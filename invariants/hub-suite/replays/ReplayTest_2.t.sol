@@ -54,7 +54,7 @@ contract ReplayTest2Hub is Invariants, Setup {
     Tester.draw(1, 1);
     _delay(1);
     Tester.payFeeShares(1, 0);
-    invariant_INV_HUB();
+    _checkAllHubInvariants();
   }
 
   /// @dev PASS

@@ -43,7 +43,7 @@ contract ReplayTest3Hub is Invariants, Setup {
     Tester.draw(1, 0);
     _delay(6343);
     Tester.add(6, 0);
-    invariant_INV_HUB();
+    _checkAllHubInvariants();
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

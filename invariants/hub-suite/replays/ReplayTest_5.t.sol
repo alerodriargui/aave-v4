@@ -41,7 +41,7 @@ contract ReplayTest5Hub is Invariants, Setup {
     _setUpActor(USER1);
     Tester.refreshPremium(9472849991, 0);
     _delay(1);
-    invariant_INV_HUB();
+    _checkAllHubInvariants();
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

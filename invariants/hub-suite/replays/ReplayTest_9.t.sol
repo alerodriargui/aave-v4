@@ -38,7 +38,7 @@ contract ReplayTest9 is Invariants, Setup {
     _delay(18880);
     _delay(23650);
     Tester.donateUnderlyingToHub(0, 0);
-    invariant_INV_HUB();
+    _checkAllHubInvariants();
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -31,59 +31,70 @@ abstract contract Invariants is SpokeInvariants, HubInvariantAssertions {
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                     BASE INVARIANTS                                       //
+  //                                    HUB ACCOUNTING                                         //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  function invariant_INV_HUB() public returns (bool) {
-    // Applied per hub
+  function invariant_INV_HUB_ACCOUNTING() public returns (bool) {
     for (uint256 i; i < hubs.length(); i++) {
       IHub hub = IHub(hubs.at(i));
-
-      // Applied per asset of the hub
       uint256 assetCount = hub.getAssetCount();
       for (uint256 j; j < assetCount; j++) {
         assert_INV_HUB_A(hub, j);
         assert_INV_HUB_B(hub, j);
         assert_INV_HUB_C(hub, j);
-        assert_INV_HUB_E(hub, j);
-        assert_INV_HUB_F(hub, j);
         assert_INV_HUB_GH(hub, j);
-        assert_INV_HUB_I(hub, j);
-        assert_INV_HUB_K(hub, j);
         assert_INV_HUB_O(hub, j);
         assert_INV_HUB_P(hub, j);
+      }
+    }
+    return true;
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                     HUB SOLVENCY                                          //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  function invariant_INV_HUB_SOLVENCY() public returns (bool) {
+    for (uint256 i; i < hubs.length(); i++) {
+      IHub hub = IHub(hubs.at(i));
+      uint256 assetCount = hub.getAssetCount();
+      for (uint256 j; j < assetCount; j++) {
+        assert_INV_HUB_E(hub, j);
+        assert_INV_HUB_F(hub, j);
+        assert_INV_HUB_I(hub, j);
+        assert_INV_HUB_K(hub, j);
+      }
+    }
+    return true;
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   HUB MONOTONICITY                                        //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  function invariant_INV_HUB_MONOTONICITY() public returns (bool) {
+    for (uint256 i; i < hubs.length(); i++) {
+      IHub hub = IHub(hubs.at(i));
+      uint256 assetCount = hub.getAssetCount();
+      for (uint256 j; j < assetCount; j++) {
         assert_INV_HUB_Q(hub, j);
         assert_INV_HUB_R(hub, j);
       }
     }
-
     return true;
   }
 
-  function invariant_INV_SP() public returns (bool) {
-    // Applied per spoke
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                      SPOKE SYNC                                           //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  function invariant_INV_SP_SYNC() public returns (bool) {
+    // Applied per user-facing spoke
     for (uint256 i; i < spokes.length(); i++) {
       ISpoke spoke = ISpoke(spokes.at(i));
-
-      // Applied per actor on the spoke
-      for (uint256 j; j < actors.length(); j++) {
-        assert_INV_SP_D(spoke, actors.at(j));
-      }
-
-      // Applied per reserve of the spoke
       uint256 reserveCount = spoke.getReserveCount();
       for (uint256 j; j < reserveCount; j++) {
         assert_INV_SP_A(spoke, j);
-        assert_INV_SP_C(spoke, j);
-        assert_INV_SP_E(spoke, j);
-        assert_INV_SP_F(spoke, j);
-
-        // Applied per actor per reserve of the spoke
-        for (uint256 k; k < actors.length(); k++) {
-          assert_INV_SP_B(spoke, j, actors.at(k));
-          assert_INV_SP_H(spoke, j, actors.at(k));
-          assert_INV_SP_I(spoke, j, actors.at(k));
-        }
       }
     }
 
@@ -99,5 +110,66 @@ abstract contract Invariants is SpokeInvariants, HubInvariantAssertions {
     }
 
     return true;
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   SPOKE ACCOUNTING                                        //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  function invariant_INV_SP_ACCOUNTING() public returns (bool) {
+    for (uint256 i; i < spokes.length(); i++) {
+      ISpoke spoke = ISpoke(spokes.at(i));
+      uint256 reserveCount = spoke.getReserveCount();
+      for (uint256 j; j < reserveCount; j++) {
+        assert_INV_SP_C(spoke, j);
+        assert_INV_SP_E(spoke, j);
+        assert_INV_SP_F(spoke, j);
+        for (uint256 k; k < actors.length(); k++) {
+          assert_INV_SP_B(spoke, j, actors.at(k));
+        }
+      }
+    }
+    return true;
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                      SPOKE RISK                                           //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  function invariant_INV_SP_RISK() public returns (bool) {
+    for (uint256 i; i < spokes.length(); i++) {
+      ISpoke spoke = ISpoke(spokes.at(i));
+
+      // Applied per actor on the spoke
+      for (uint256 j; j < actors.length(); j++) {
+        assert_INV_SP_D(spoke, actors.at(j));
+      }
+
+      // Applied per reserve per actor of the spoke
+      uint256 reserveCount = spoke.getReserveCount();
+      for (uint256 j; j < reserveCount; j++) {
+        for (uint256 k; k < actors.length(); k++) {
+          assert_INV_SP_H(spoke, j, actors.at(k));
+          assert_INV_SP_I(spoke, j, actors.at(k));
+        }
+      }
+    }
+    return true;
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                    REPLAY HELPERS                                         //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  function _checkAllHubInvariants() internal {
+    assertTrue(invariant_INV_HUB_ACCOUNTING());
+    assertTrue(invariant_INV_HUB_SOLVENCY());
+    assertTrue(invariant_INV_HUB_MONOTONICITY());
+  }
+
+  function _checkAllSpokeInvariants() internal {
+    assertTrue(invariant_INV_SP_SYNC());
+    assertTrue(invariant_INV_SP_ACCOUNTING());
+    assertTrue(invariant_INV_SP_RISK());
   }
 }

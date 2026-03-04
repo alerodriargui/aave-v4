@@ -44,7 +44,7 @@ contract ReplayTest3 is Invariants, Setup {
     _setUpActor(USER1);
     _delay(689004);
     Tester.setUsingAsCollateral(false, 15, 15);
-    invariant_INV_HUB();
+    _checkAllHubInvariants();
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
