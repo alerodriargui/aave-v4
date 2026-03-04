@@ -1,4 +1,4 @@
-name: Echidna-Invariants
+name: Invariants
 
 on:
   push:
@@ -16,7 +16,7 @@ env:
 
 jobs:
   echidna:
-    name: Echidna-Invariants (${{ matrix.mode }})
+    name: Echidna (${{ matrix.mode }})
     runs-on: ubuntu-latest
 
     strategy:
@@ -44,3 +44,36 @@ jobs:
           contract: Tester
           config: invariants/protocol-suite/_config/echidna_config_ci.yaml
           test-mode: ${{ matrix.mode }}
+
+  medusa:
+    name: Medusa
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run Foundry setup
+        uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
+        with:
+          FOUNDRY_VERSION: nightly
+
+      - name: Run Forge Build
+        run: forge build --build-info
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: false
+
+      - name: Install crytic-compile
+        run: pip install crytic-compile
+
+      - name: Install Medusa
+        run: go install github.com/crytic/medusa@latest
+
+      - name: Run Medusa
+        run: medusa fuzz --config invariants/protocol-suite/_config/medusa_config_ci.json
