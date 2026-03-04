@@ -60,7 +60,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _registerUserToCheck(spoke, reserveId, onBehalfOf);
 
     address underlying = ISpoke(spoke).getReserve(reserveId).underlying;
-    _mintAndApprove(underlying, address(actor), spoke, amount);
+    _tryMintAndApprove(underlying, address(actor), spoke, amount);
 
     _before();
     (bool ok, bytes memory ret) = actor.proxy(
@@ -159,7 +159,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _registerUserToCheck(spoke, reserveId, onBehalfOf);
 
     address underlying = ISpoke(spoke).getReserve(reserveId).underlying;
-    _mintAndApprove(underlying, address(actor), spoke, amount);
+    _tryMintAndApprove(underlying, address(actor), spoke, amount);
 
     _before();
     (bool ok, bytes memory ret) = actor.proxy(
@@ -246,7 +246,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       liquidationVars.liquidator
     );
 
-    _mintAndApprove(
+    _tryMintAndApprove(
       ISpoke(liquidationVars.spoke).getReserve(liquidationVars.debtReserveId).underlying,
       address(actor),
       liquidationVars.spoke,

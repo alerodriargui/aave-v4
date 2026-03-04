@@ -79,4 +79,26 @@ contract BaseHandler is HookAggregator {
     _mint(token, owner, amount);
     _approve(token, owner, spender, amount);
   }
+
+  /// @notice Best-effort mint — silently swallows overflow so the handler can proceed.
+  /// @dev Using a low-level call prevents the handler from reverting on mint failure
+  ///      (e.g. totalSupply overflow), which would cause the fuzzer to discard the
+  ///      entire call sequence. Spoke functions bound the passed amount to the user's
+  ///      actual balance (e.g. repay(type(uint256).max) repays only the owed debt),
+  ///      so even if minting the full amount overflows, the spoke will operate on
+  ///      whatever balance exists.
+  function _tryMint(address token, address receiver, uint256 amount) internal {
+    token.call(abi.encodeCall(MockERC20.mint, (receiver, amount)));
+  }
+
+  /// @notice Best-effort mint + approve for spoke handlers
+  function _tryMintAndApprove(
+    address token,
+    address owner,
+    address spender,
+    uint256 amount
+  ) internal {
+    _tryMint(token, owner, amount);
+    _approve(token, owner, spender, amount);
+  }
 }
