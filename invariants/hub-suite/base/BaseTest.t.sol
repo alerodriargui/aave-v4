@@ -30,7 +30,7 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
 
   /// @dev Actor proxy mechanism
   modifier setup() virtual {
-    actor = actors[msg.sender];
+    actor = userToActor[msg.sender];
     _;
     delete actor;
   }
@@ -64,7 +64,7 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
   /// @notice Get a random actor proxy address
   function _getRandomActor(uint256 _i) internal view returns (address) {
     uint256 _actorIndex = _i % NUMBER_OF_ACTORS;
-    return actorAddresses[_actorIndex];
+    return actors[_actorIndex];
   }
 
   /// @notice Helper function to get a random base asset

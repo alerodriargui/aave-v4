@@ -39,10 +39,10 @@ abstract contract BaseStorage {
   Actor internal actor;
 
   /// @notice Mapping of fuzzer user addresses to actors
-  mapping(address => Actor) internal actors;
+  mapping(address => Actor) internal userToActor;
 
   /// @notice Array of all actor addresses (simulating spokes)
-  address[] internal actorAddresses;
+  address[] internal actors;
 
   /// @notice The signature of the action that is being executed
   bytes4 internal currentActionSignature;

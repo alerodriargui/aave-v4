@@ -178,7 +178,7 @@ contract Setup is BaseTest {
     // Add SPOKE 1 assets to hub
     hub.addSpoke(
       usdcAssetId,
-      address(actors[USER1]),
+      address(userToActor[USER1]),
       IHub.SpokeConfig({
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
@@ -189,7 +189,7 @@ contract Setup is BaseTest {
     );
     hub.addSpoke(
       wethAssetId,
-      address(actors[USER1]),
+      address(userToActor[USER1]),
       IHub.SpokeConfig({
         addCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 3,
         drawCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 3,
@@ -200,7 +200,7 @@ contract Setup is BaseTest {
     );
     hub.addSpoke(
       wbtcAssetId,
-      address(actors[USER1]),
+      address(userToActor[USER1]),
       IHub.SpokeConfig({
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
@@ -213,7 +213,7 @@ contract Setup is BaseTest {
     // Add SPOKE 2 assets to hub
     hub.addSpoke(
       wethAssetId,
-      address(actors[USER2]),
+      address(userToActor[USER2]),
       IHub.SpokeConfig({
         addCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 2,
         drawCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 2,
@@ -224,7 +224,7 @@ contract Setup is BaseTest {
     );
     hub.addSpoke(
       wbtcAssetId,
-      address(actors[USER2]),
+      address(userToActor[USER2]),
       IHub.SpokeConfig({
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
@@ -237,7 +237,7 @@ contract Setup is BaseTest {
     // Add SPOKE 3 assets to hub
     hub.addSpoke(
       usdcAssetId,
-      address(actors[USER3]),
+      address(userToActor[USER3]),
       IHub.SpokeConfig({
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
@@ -248,7 +248,7 @@ contract Setup is BaseTest {
     );
     hub.addSpoke(
       wethAssetId,
-      address(actors[USER3]),
+      address(userToActor[USER3]),
       IHub.SpokeConfig({
         addCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 2,
         drawCap: (Constants.MAX_ALLOWED_SPOKE_CAP / 10) * 2,
@@ -259,7 +259,7 @@ contract Setup is BaseTest {
     );
     hub.addSpoke(
       wbtcAssetId,
-      address(actors[USER3]),
+      address(userToActor[USER3]),
       IHub.SpokeConfig({
         addCap: Constants.MAX_ALLOWED_SPOKE_CAP,
         drawCap: Constants.MAX_ALLOWED_SPOKE_CAP,
@@ -273,7 +273,7 @@ contract Setup is BaseTest {
     weth.approve(address(hub), type(uint256).max);
     wbtc.approve(address(hub), type(uint256).max);
 
-    accessManager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, address(actors[USER3]), 0);
+    accessManager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, address(userToActor[USER3]), 0);
     {
       bytes4[] memory selectors = new bytes4[](1);
       selectors[0] = IHub.eliminateDeficit.selector;
@@ -349,9 +349,9 @@ contract Setup is BaseTest {
     address[] memory contracts = new address[](1);
     contracts[0] = address(hub);
 
-    actorAddresses = ActorsUtils.setUpActors(addresses, tokens, contracts);
-    actors[USER1] = Actor(payable(actorAddresses[0]));
-    actors[USER2] = Actor(payable(actorAddresses[1]));
-    actors[USER3] = Actor(payable(actorAddresses[2]));
+    actors = ActorsUtils.setUpActors(addresses, tokens, contracts);
+    userToActor[USER1] = Actor(payable(actors[0]));
+    userToActor[USER2] = Actor(payable(actors[1]));
+    userToActor[USER3] = Actor(payable(actors[2]));
   }
 }

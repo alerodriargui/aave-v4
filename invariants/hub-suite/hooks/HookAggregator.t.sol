@@ -65,7 +65,7 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
       assert_GPOST_HUB_G(i);
 
       for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
-        address spoke = actorAddresses[j];
+        address spoke = actors[j];
         assert_GPOST_HUB_EF(i, spoke);
       }
     }

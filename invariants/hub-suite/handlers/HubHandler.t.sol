@@ -216,7 +216,7 @@ contract HubHandler is BaseHandler, IHubHandler {
   function eliminateDeficit(uint256 amount, uint8 i) external setup {
     uint256 assetId = _getRandomBaseAssetId(i);
     // only spoke3 is given deficit eliminator role
-    address spoke = address(actors[USER3]);
+    address spoke = address(userToActor[USER3]);
 
     _before();
     (bool ok, ) = actor.proxy(

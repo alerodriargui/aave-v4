@@ -26,7 +26,7 @@ abstract contract HubInvariants is HandlerAggregator, HubInvariantAssertions {
     uint256 count = NUMBER_OF_ACTORS;
     address[] memory spokes = new address[](count + 1);
     for (uint256 i; i < count; i++) {
-      spokes[i] = actorAddresses[i];
+      spokes[i] = actors[i];
     }
     spokes[count] = feeReceiver;
     return spokes;

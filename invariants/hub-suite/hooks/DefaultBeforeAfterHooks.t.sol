@@ -116,7 +116,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     uint256 assetCount = hub.getAssetCount();
     for (uint256 i; i < assetCount; ++i) {
       for (uint256 j; j < NUMBER_OF_ACTORS; ++j) {
-        address spoke = actorAddresses[j];
+        address spoke = actors[j];
         (uint256 drawn, uint256 premium) = hub.getSpokeOwed(i, spoke);
         vars.spokeDataVars[i][spoke] = SpokeDataVars({
           spokeData: hub.getSpoke(i, spoke),
