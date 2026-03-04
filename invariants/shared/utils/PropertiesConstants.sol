@@ -15,10 +15,9 @@ abstract contract PropertiesConstants {
 
   // Protocol constants
   uint256 constant SPOKE_COUNT = 3;
-  uint40 constant MAX_ALLOWED_SPOKE_CAP = type(uint40).max;
-
-  // Spoke validation constants
   uint256 constant PERCENTAGE_FACTOR = 1e4;
+  uint40 constant MAX_ALLOWED_SPOKE_CAP = type(uint40).max;
+  uint24 constant MAX_RISK_PREMIUM_THRESHOLD = type(uint24).max;
   uint256 constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00;
   uint64 constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
   uint256 constant MAX_TARGET_HEALTH_FACTOR = 2e18;
