@@ -42,7 +42,6 @@ abstract contract Invariants is SpokeInvariants, HubInvariantAssertions {
       // Applied per asset of the hub
       uint256 assetCount = hub.getAssetCount();
       for (uint256 j; j < assetCount; j++) {
-        // Common hub invariants (from HubInvariantAssertions)
         assert_INV_HUB_A(hub, j);
         assert_INV_HUB_B(hub, j);
         assert_INV_HUB_C(hub, j);

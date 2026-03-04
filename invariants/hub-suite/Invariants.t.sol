@@ -10,7 +10,6 @@ abstract contract Invariants is HubInvariants {
     uint256 assetCount = hub.getAssetCount();
 
     for (uint256 i; i < assetCount; i++) {
-      // HUB (parameterized assertions from HubInvariantAssertions)
       assert_INV_HUB_A(hub, i);
       assert_INV_HUB_B(hub, i);
       assert_INV_HUB_C(hub, i);

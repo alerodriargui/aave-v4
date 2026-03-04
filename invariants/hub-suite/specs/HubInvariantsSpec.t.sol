@@ -104,7 +104,7 @@ abstract contract HubInvariantsSpec {
     'HSPOST_HUB_ERC4626_RESTORE_B: After restore, spoke drawnShares must decrease by restoredSharesAmount';
 
   string constant HSPOST_HUB_ERC4626_RESTORE_C =
-    'HSPOST_HUB_SP_RESTORE_C: previewRestoredShares must be less than or equal to the restored shares after the action';
+    'HSPOST_HUB_ERC4626_RESTORE_C: previewRestoredShares must be less than or equal to the restored shares after the action';
 
   // GENERIC
 
@@ -124,17 +124,39 @@ abstract contract HubInvariantsSpec {
   //                                         ERC4626 ROUNDTRIP                                 //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  string constant HSPOST_HUB_ERC4626_RT_A =
-    'HSPOST_HUB_SP_ERC4626_RT_A: previewRemoveByShares(previewAddByAssets(amount)) <= shares added';
+  /// @notice ROUNDTRIP
 
-  string constant HSPOST_HUB_ERC4626_RT_B =
-    'HSPOST_HUB_SP_ERC4626_RT_B: remove(previewRemoveByShares(add(amount))) >= add(amount)';
+  /// @dev ERC4626: redeem(deposit(a)) <= a
+  string constant INV_HUB_ERC4626_RT_A =
+    'INV_HUB_ERC4626_RT_A: previewRemoveByShares(previewAddByAssets(a)) <= a';
 
-  string constant HSPOST_HUB_ERC4626_RT_C =
-    'HSPOST_HUB_SP_ERC4626_RT_C: previewAddByAssets(previewRemoveByShares(shares)) >= shares';
+  /// @dev ERC4626: s = deposit(a), s' = withdraw(a), s' >= s
+  string constant INV_HUB_ERC4626_RT_B =
+    'INV_HUB_ERC4626_RT_B: previewRemoveByAssets(a) >= previewAddByAssets(a)';
 
-  string constant HSPOST_HUB_ERC4626_RT_D =
-    'HSPOST_HUB_SP_ERC4626_RT_D: add(previewAddByShares(remove(amount))) <= shares removed';
+  /// @dev ERC4626: deposit(redeem(s)) <= s
+  string constant INV_HUB_ERC4626_RT_C =
+    'INV_HUB_ERC4626_RT_C: previewAddByAssets(previewRemoveByShares(s)) <= s';
+
+  /// @dev ERC4626: a = redeem(s), a' = mint(s), a' >= a
+  string constant INV_HUB_ERC4626_RT_D =
+    'INV_HUB_ERC4626_RT_D: previewAddByShares(s) >= previewRemoveByShares(s)';
+
+  /// @dev ERC4626: withdraw(mint(s)) >= s
+  string constant INV_HUB_ERC4626_RT_E =
+    'INV_HUB_ERC4626_RT_E: previewRemoveByAssets(previewAddByShares(s)) >= s';
+
+  /// @dev ERC4626: a = mint(s), a' = redeem(s), a' <= a
+  string constant INV_HUB_ERC4626_RT_F =
+    'INV_HUB_ERC4626_RT_F: previewRemoveByShares(s) <= previewAddByShares(s)';
+
+  /// @dev ERC4626: mint(withdraw(a)) >= a
+  string constant INV_HUB_ERC4626_RT_G =
+    'INV_HUB_ERC4626_RT_G: previewAddByShares(previewRemoveByAssets(a)) >= a';
+
+  /// @dev ERC4626: s = withdraw(a), s' = deposit(a), s' <= s
+  string constant INV_HUB_ERC4626_RT_H =
+    'INV_HUB_ERC4626_RT_H: previewAddByAssets(a) <= previewRemoveByAssets(a)';
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                          HUB: AVAILABILITY                                //

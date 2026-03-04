@@ -363,44 +363,73 @@ contract HubHandler is BaseHandler, IHubHandler {
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                           ROUNDTRIP                                       //
+  //                              ERC4626 ROUNDTRIP (STATELESS)                                //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  /// @dev Stateless roundtrip checks — pure preview calls, no state changes.
+
+  /// @dev A: previewRemoveByShares(previewAddByAssets(a)) <= a
   function roundtrip_ERC4626_RT_A(uint256 amount, uint8 i) external {
     uint256 assetId = _getRandomBaseAssetId(i);
-
-    uint256 previewSharesToAdd = hub.previewAddByAssets(assetId, amount);
-    uint256 previewAssetsToRemove = hub.previewRemoveByShares(assetId, previewSharesToAdd);
-
-    assertLe(previewAssetsToRemove, amount, HSPOST_HUB_ERC4626_RT_A);
+    uint256 shares = hub.previewAddByAssets(assetId, amount);
+    uint256 assets = hub.previewRemoveByShares(assetId, shares);
+    assertLe(assets, amount, INV_HUB_ERC4626_RT_A);
   }
 
+  /// @dev B: previewRemoveByAssets(a) >= previewAddByAssets(a)
   function roundtrip_ERC4626_RT_B(uint256 amount, uint8 i) external {
-    uint256 sharesAdded = add(amount, i);
-    uint256 previewAssetsToRemove = hub.previewRemoveByShares(
-      _getRandomBaseAssetId(i),
-      sharesAdded
-    );
-    uint256 sharesRemoved = remove(previewAssetsToRemove, i);
-
-    assertGe(sharesRemoved, sharesAdded, HSPOST_HUB_ERC4626_RT_B);
+    uint256 assetId = _getRandomBaseAssetId(i);
+    uint256 sDeposit = hub.previewAddByAssets(assetId, amount);
+    uint256 sWithdraw = hub.previewRemoveByAssets(assetId, amount);
+    assertGe(sWithdraw, sDeposit, INV_HUB_ERC4626_RT_B);
   }
 
+  /// @dev C: previewAddByAssets(previewRemoveByShares(s)) <= s
   function roundtrip_ERC4626_RT_C(uint256 shares, uint8 i) external {
     uint256 assetId = _getRandomBaseAssetId(i);
-
-    uint256 previewAssetsToRemove = hub.previewRemoveByShares(assetId, shares);
-    uint256 previewShares = hub.previewAddByAssets(assetId, previewAssetsToRemove);
-
-    assertLe(previewShares, shares, HSPOST_HUB_ERC4626_RT_C);
+    uint256 assets = hub.previewRemoveByShares(assetId, shares);
+    uint256 resultShares = hub.previewAddByAssets(assetId, assets);
+    assertLe(resultShares, shares, INV_HUB_ERC4626_RT_C);
   }
 
-  function roundtrip_ERC4626_RT_D(uint256 amount, uint8 i) external {
-    uint256 sharesRemoved = remove(amount, i);
-    uint256 previewAssetsToAdd = hub.previewAddByShares(_getRandomBaseAssetId(i), sharesRemoved);
-    uint256 sharesAdded = add(previewAssetsToAdd, i);
+  /// @dev D: previewAddByShares(s) >= previewRemoveByShares(s)
+  function roundtrip_ERC4626_RT_D(uint256 shares, uint8 i) external {
+    uint256 assetId = _getRandomBaseAssetId(i);
+    uint256 aRedeem = hub.previewRemoveByShares(assetId, shares);
+    uint256 aMint = hub.previewAddByShares(assetId, shares);
+    assertGe(aMint, aRedeem, INV_HUB_ERC4626_RT_D);
+  }
 
-    assertLe(sharesAdded, sharesRemoved, HSPOST_HUB_ERC4626_RT_D);
+  /// @dev E: previewRemoveByAssets(previewAddByShares(s)) >= s
+  function roundtrip_ERC4626_RT_E(uint256 shares, uint8 i) external {
+    uint256 assetId = _getRandomBaseAssetId(i);
+    uint256 assets = hub.previewAddByShares(assetId, shares);
+    uint256 resultShares = hub.previewRemoveByAssets(assetId, assets);
+    assertGe(resultShares, shares, INV_HUB_ERC4626_RT_E);
+  }
+
+  /// @dev F: previewRemoveByShares(s) <= previewAddByShares(s)
+  function roundtrip_ERC4626_RT_F(uint256 shares, uint8 i) external {
+    uint256 assetId = _getRandomBaseAssetId(i);
+    uint256 aMint = hub.previewAddByShares(assetId, shares);
+    uint256 aRedeem = hub.previewRemoveByShares(assetId, shares);
+    assertLe(aRedeem, aMint, INV_HUB_ERC4626_RT_F);
+  }
+
+  /// @dev G: previewAddByShares(previewRemoveByAssets(a)) >= a
+  function roundtrip_ERC4626_RT_G(uint256 amount, uint8 i) external {
+    uint256 assetId = _getRandomBaseAssetId(i);
+    uint256 shares = hub.previewRemoveByAssets(assetId, amount);
+    uint256 assets = hub.previewAddByShares(assetId, shares);
+    assertGe(assets, amount, INV_HUB_ERC4626_RT_G);
+  }
+
+  /// @dev H: previewAddByAssets(a) <= previewRemoveByAssets(a)
+  function roundtrip_ERC4626_RT_H(uint256 amount, uint8 i) external {
+    uint256 assetId = _getRandomBaseAssetId(i);
+    uint256 sWithdraw = hub.previewRemoveByAssets(assetId, amount);
+    uint256 sDeposit = hub.previewAddByAssets(assetId, amount);
+    assertLe(sDeposit, sWithdraw, INV_HUB_ERC4626_RT_H);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
