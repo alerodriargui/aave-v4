@@ -34,15 +34,15 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     inputs = _loadWarningsAndSanitizeInputs(inputs, deployer);
 
     logger.log('CHAIN ID', block.chainid);
-    logger.log('...Starting Aave V4 Batch Deployment...');
+    logger.logHeader1('Starting Aave V4 Batch Deployment');
     vm.startBroadcast(deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
       .deployAaveV4(logger, deployer, inputs, _getHubBytecode(), _getSpokeBytecode());
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
     _logDeploySummary(logger);
-    logger.log('...Batch Deployment Completed...');
-    logger.log('...Saving Logs...');
+    logger.logHeader1('Batch Deployment Completed');
+    logger.logHeader1('Saving Logs');
     logger.save({fileName: _outputFileName, withTimestamp: true});
   }
 

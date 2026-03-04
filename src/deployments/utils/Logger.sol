@@ -72,6 +72,18 @@ contract Logger {
     _log(value);
   }
 
+  function logHeader1(string memory value) public pure {
+    _logHeader1(value);
+  }
+
+  function logDetail(string memory label, address value) public pure {
+    _logDetail(label, value);
+  }
+
+  function logNewLine() public pure {
+    _logNewLine();
+  }
+
   function _write(string memory label, address value) internal {
     _json = vm.serializeAddress(_jsonKey, label, value);
   }
@@ -114,5 +126,17 @@ contract Logger {
 
   function _log(string memory value) internal pure {
     console.log(value);
+  }
+
+  function _logHeader1(string memory value) internal pure {
+    console.log('...%s...', value);
+  }
+
+  function _logDetail(string memory label, address value) internal pure {
+    console.log('  %s: %s', label, value);
+  }
+
+  function _logNewLine() internal pure {
+    console.log();
   }
 }

@@ -52,12 +52,12 @@ library AaveV4DeployOrchestration {
     });
 
     // Setup Configurator Roles
-    logger.log('...Setting HubConfigurator roles...');
+    logger.logHeader1('Setting HubConfigurator roles');
     AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles({
       accessManager: report.authorityBatchReport.accessManager,
       hubConfigurator: report.configuratorBatchReport.hubConfigurator
     });
-    logger.log('...Setting SpokeConfigurator roles...');
+    logger.logHeader1('Setting SpokeConfigurator roles');
     AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles({
       accessManager: report.authorityBatchReport.accessManager,
       spokeConfigurator: report.configuratorBatchReport.spokeConfigurator
@@ -114,7 +114,7 @@ library AaveV4DeployOrchestration {
       }
 
       if (deployInputs.accessManagerAdmin != initialAdmin) {
-        logger.log('...Granting AccessManager Root Admin role...');
+        logger.logHeader1('Granting AccessManager Root Admin role');
         AaveV4AccessManagerRolesProcedure.replaceDefaultAdminRole({
           accessManager: report.authorityBatchReport.accessManager,
           adminToAdd: deployInputs.accessManagerAdmin,
@@ -132,20 +132,20 @@ library AaveV4DeployOrchestration {
     address hubAdmin,
     address hubConfiguratorAdmin
   ) internal {
-    logger.log('...Granting Hub Admin role...');
+    logger.logHeader1('Granting Hub Admin role');
     AaveV4HubRolesProcedure.grantHubAllRoles({
       accessManager: report.authorityBatchReport.accessManager,
       admin: hubAdmin
     });
 
-    logger.log('...Granting Hub Configurator roles...');
+    logger.logHeader1('Granting Hub Configurator roles');
     AaveV4HubRolesProcedure.grantHubRole({
       accessManager: report.authorityBatchReport.accessManager,
       role: Roles.HUB_CONFIGURATOR_ROLE,
       admin: report.configuratorBatchReport.hubConfigurator
     });
 
-    logger.log('...Granting HubConfigurator Admin roles...');
+    logger.logHeader1('Granting HubConfigurator Admin roles');
     AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles({
       accessManager: report.authorityBatchReport.accessManager,
       admin: hubConfiguratorAdmin
@@ -158,20 +158,20 @@ library AaveV4DeployOrchestration {
     address spokeAdmin,
     address spokeConfiguratorAdmin
   ) internal {
-    logger.log('...Granting Spoke Admin role...');
+    logger.logHeader1('Granting Spoke Admin role');
     AaveV4SpokeRolesProcedure.grantSpokeAllRoles({
       accessManager: report.authorityBatchReport.accessManager,
       admin: spokeAdmin
     });
 
-    logger.log('...Granting Spoke Configurator roles...');
+    logger.logHeader1('Granting Spoke Configurator roles');
     AaveV4SpokeRolesProcedure.grantSpokeRole({
       accessManager: report.authorityBatchReport.accessManager,
       role: Roles.SPOKE_CONFIGURATOR_ROLE,
       admin: report.configuratorBatchReport.spokeConfigurator
     });
 
-    logger.log('...Granting SpokeConfigurator Admin roles...');
+    logger.logHeader1('Granting SpokeConfigurator Admin roles');
     AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles({
       accessManager: report.authorityBatchReport.accessManager,
       admin: spokeConfiguratorAdmin
@@ -183,12 +183,12 @@ library AaveV4DeployOrchestration {
     address accessManagerAdmin,
     bytes32 salt
   ) internal returns (BatchReports.AuthorityBatchReport memory report) {
-    logger.log('...Deploying AuthorityBatch...');
+    logger.logHeader1('Deploying AuthorityBatch');
 
     report = AaveV4DeployBase.deployAuthorityBatch({admin: accessManagerAdmin, salt: salt});
 
     logger.log('AccessManager', report.accessManager);
-    logger.log('');
+    logger.logNewLine();
     return report;
   }
 
@@ -198,7 +198,7 @@ library AaveV4DeployOrchestration {
     address spokeConfiguratorAuthority,
     bytes32 salt
   ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
-    logger.log('...Deploying ConfiguratorBatch...');
+    logger.logHeader1('Deploying ConfiguratorBatch');
 
     report = AaveV4DeployBase.deployConfiguratorBatch({
       hubConfiguratorAuthority: hubConfiguratorAuthority,
@@ -208,7 +208,7 @@ library AaveV4DeployOrchestration {
 
     logger.log('HubConfigurator', report.hubConfigurator);
     logger.log('SpokeConfigurator', report.spokeConfigurator);
-    logger.log('');
+    logger.logNewLine();
     return report;
   }
 
@@ -223,16 +223,17 @@ library AaveV4DeployOrchestration {
     uint256 hubCount = hubLabels.length;
     hubBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
     for (uint256 i; i < hubCount; ++i) {
+      bytes32 childSalt = _deriveChildSalt(salt, 'hub', hubLabels[i]);
       hubBatchReports[i] = _deployHub({
         logger: logger,
         treasurySpokeOwner: treasurySpokeOwner,
         authority: authority,
         label: hubLabels[i],
         hubBytecode: hubBytecode,
-        salt: keccak256(abi.encode(salt, 'hub', hubLabels[i]))
+        salt: childSalt
       });
     }
-    logger.log('');
+    logger.logNewLine();
     return hubBatchReports;
   }
 
@@ -270,6 +271,7 @@ library AaveV4DeployOrchestration {
     uint256 spokeCount = inputs.spokeLabels.length;
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
+      bytes32 childSalt = _deriveChildSalt(salt, 'spoke', inputs.spokeLabels[i]);
       spokeBatchReports[i] = _deploySpoke({
         logger: logger,
         spokeProxyAdminOwner: inputs.spokeProxyAdminOwner,
@@ -279,10 +281,10 @@ library AaveV4DeployOrchestration {
         maxUserReservesLimit: inputs.spokeMaxReservesLimits[i],
         oracleDecimals: inputs.spokeOracleDecimals[i],
         oracleDescription: inputs.spokeOracleDescriptions[i],
-        salt: keccak256(abi.encode(salt, 'spoke', inputs.spokeLabels[i]))
+        salt: childSalt
       });
     }
-    logger.log('');
+    logger.logNewLine();
     return spokeBatchReports;
   }
 
@@ -326,7 +328,7 @@ library AaveV4DeployOrchestration {
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
-    logger.log('...Deploying AaveV4SpokeInstanceBatch...');
+    logger.logHeader1('Deploying AaveV4SpokeInstanceBatch');
     report = AaveV4DeployBase.deploySpokeInstanceBatch({
       spokeProxyAdminOwner: spokeProxyAdminOwner,
       authority: authority,
@@ -346,7 +348,7 @@ library AaveV4DeployOrchestration {
     bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (BatchReports.HubBatchReport memory report) {
-    logger.log('...Deploying HubBatch...');
+    logger.logHeader1('Deploying HubBatch');
     report = AaveV4DeployBase.deployHubBatch({
       treasurySpokeOwner: treasurySpokeOwner,
       authority: authority,
@@ -364,7 +366,7 @@ library AaveV4DeployOrchestration {
     bool deploySignatureGateway,
     bytes32 salt
   ) internal returns (BatchReports.GatewaysBatchReport memory report) {
-    logger.log('...Deploying GatewayBatch...');
+    logger.logHeader1('Deploying GatewayBatch');
     report = AaveV4DeployBase.deployGatewaysBatch({
       owner: gatewayOwner,
       nativeWrapper: nativeWrapper,
@@ -387,9 +389,9 @@ library AaveV4DeployOrchestration {
     string memory label
   ) internal pure {
     logger.log(label);
-    logger.log('  SpokeInstance Proxy', report.spokeProxy);
-    logger.log('  SpokeInstance Implementation', report.spokeImplementation);
-    logger.log('  AaveOracle', report.aaveOracle);
+    logger.logDetail('SpokeInstance Proxy', report.spokeProxy);
+    logger.logDetail('SpokeInstance Implementation', report.spokeImplementation);
+    logger.logDetail('AaveOracle', report.aaveOracle);
   }
 
   function _setupSpokeRoles(
@@ -397,7 +399,7 @@ library AaveV4DeployOrchestration {
     BatchReports.SpokeInstanceBatchReport memory report,
     address authority
   ) internal {
-    logger.log('...Setting Spoke roles...');
+    logger.logHeader1('Setting Spoke roles');
     AaveV4SpokeRolesProcedure.setupSpokeAllRoles(authority, report.spokeProxy);
   }
 
@@ -407,9 +409,9 @@ library AaveV4DeployOrchestration {
     string memory label
   ) internal pure {
     logger.log(label);
-    logger.log('  Hub', report.hub);
-    logger.log('  InterestRateStrategy', report.irStrategy);
-    logger.log('  TreasurySpoke', report.treasurySpoke);
+    logger.logDetail('Hub', report.hub);
+    logger.logDetail('InterestRateStrategy', report.irStrategy);
+    logger.logDetail('TreasurySpoke', report.treasurySpoke);
   }
 
   function _setupHubRoles(
@@ -417,11 +419,19 @@ library AaveV4DeployOrchestration {
     BatchReports.HubBatchReport memory report,
     address authority
   ) internal {
-    logger.log('...Setting Hub roles...');
+    logger.logHeader1('Setting Hub roles');
     AaveV4HubRolesProcedure.setupHubAllRoles(authority, report.hub);
   }
 
   function _deriveSalt(bytes32 salt_) internal pure returns (bytes32) {
-    return keccak256(abi.encodePacked(SALT, salt_));
+    return keccak256(abi.encode(SALT, salt_));
+  }
+
+  function _deriveChildSalt(
+    bytes32 baseSalt,
+    string memory kind,
+    string memory label
+  ) internal pure returns (bytes32) {
+    return keccak256(abi.encode(baseSalt, kind, label));
   }
 }

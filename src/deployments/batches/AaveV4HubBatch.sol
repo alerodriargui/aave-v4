@@ -20,9 +20,13 @@ contract AaveV4HubBatch is
     bytes memory hubBytecode_,
     bytes32 salt_
   ) {
-    address hub = _deployHub(authority_, hubBytecode_, salt_);
-    address irStrategy = _deployInterestRateStrategy(hub, salt_);
-    address treasurySpoke = _deployTreasurySpoke(treasurySpokeOwner_, hub, salt_);
+    address hub = _deployHub({authority: authority_, hubBytecode: hubBytecode_, salt: salt_});
+    address irStrategy = _deployInterestRateStrategy({hub: hub, salt: salt_});
+    address treasurySpoke = _deployTreasurySpoke({
+      owner: treasurySpokeOwner_,
+      hub: hub,
+      salt: salt_
+    });
 
     _report = BatchReports.HubBatchReport({
       hub: hub,
