@@ -1,4 +1,4 @@
-# Enigma Dark – Fuzzing & Invariant Testing Suite
+# Fuzzing & Invariant Testing Suite
 
 A comprehensive handler-based invariant testing suite for the Aave v4 protocol. This suite performs deep stateful fuzzing across multiple hubs and spokes, validating critical system properties through automated property checking and postcondition verification.
 
@@ -23,6 +23,20 @@ Compatible with industry-standard fuzzing tools:
 
 ## Architecture
 
+### Dependencies
+
+Hub invariant assertions and spec strings are imported from hub-suite — not duplicated. Spoke-specific code is self-contained.
+
+```
+protocol-suite → hub-suite → shared/
+```
+
+| Imported from hub-suite  | Local file                       |
+| ------------------------ | -------------------------------- |
+| `HubInvariantsSpec`      | `specs/InvariantsSpec.t.sol`     |
+| `HubPostconditionsSpec`  | `specs/PostconditionsSpec.t.sol` |
+| `HubInvariantAssertions` | `Invariants.t.sol`               |
+
 ### Core Components
 
 **Setup Layer** (`Setup.t.sol`, `base/`)
@@ -31,20 +45,29 @@ Compatible with industry-standard fuzzing tools:
 - Configures distinct collateral factors, liquidation parameters, and interest rate curves
 - Initializes multiple actors with protocol permissions
 
+**Spec Layer** (`specs/`)
+
+- `InvariantsSpec` – inherits `HubInvariantsSpec` from hub-suite, adds spoke-specific strings (INV*SP*\*)
+- `PostconditionsSpec` – inherits `HubPostconditionsSpec` from hub-suite, adds spoke-specific strings (GPOST*SP*_, HSPOST*SP*_)
+
 **Handler Layer** (`handlers/`)
 
 - `SpokeHandler` – user operations (supply, borrow, repay, withdraw, liquidations)
-- `HubHandler` – liquidity management and treasury operations
-- `TreasurySpoke` – fee collection and distribution
-- `Configurator Handlers` – admin operations (reserve updates, risk parameter changes)
-- `Simulator Handlers` – price feeds, donation attacks
+- `TreasurySpokeHandler` – fee collection and distribution
+- `HubConfiguratorHandler`, `SpokeConfiguratorHandler` – admin operations
+- `PriceFeedSimulatorHandler`, `DonationAttackHandler` – simulation handlers
 
-**Verification Layer** (`hooks/`, `invariants/`)
+**Invariant Layer** (`invariants/`)
+
+- Hub invariant assertions imported from hub-suite via `HubInvariantAssertions` (INV_HUB_A through P)
+- `SpokeInvariants` – spoke-specific invariant assertions (INV_SP_A through H)
+- Protocol-suite-only stateful invariants Q and R defined inline in `Invariants.t.sol`
+
+**Verification Layer** (`hooks/`)
 
 - Before/after hooks with state snapshots
 - Global and handler-specific postcondition assertions
-- Hub invariants (liquidity accounting, share calculations, interest accrual)
-- Spoke invariants (position tracking, collateralization, debt limits)
+- Hub and spoke postconditions
 
 **Replay Layer** (`replays/`)
 
@@ -100,6 +123,7 @@ forge test --mc ReplayTest_1 -vvv
 ## Key Features
 
 - Multi-hub, multi-spoke testing for cross-protocol interactions
+- Hub invariant logic imported from hub-suite (single source of truth, no duplication)
 - Comprehensive postcondition checking after every state transition
 - Actor-based modeling for realistic multi-user scenarios
 - Admin operation fuzzing (config updates, parameter changes)

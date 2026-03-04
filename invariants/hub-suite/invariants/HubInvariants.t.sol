@@ -1,187 +1,40 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-// Libraries
-import {Premium} from 'src/hub/libraries/Premium.sol';
-import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
-import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
-import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
-import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
-
 // Interfaces
 import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 
 // Contracts
+import {HubInvariantAssertions} from './HubInvariantAssertions.t.sol';
 import {HandlerAggregator} from '../HandlerAggregator.t.sol';
 
 /// @title HubInvariants
-/// @notice Implements Hub Invariants for the protocol
-/// @dev Inherits HandlerAggregator to check actions in assertion testing mode
-abstract contract HubInvariants is HandlerAggregator {
-  using SafeCast for *;
-  using WadRayMath for *;
-
+/// @notice Implements Hub Invariants for the hub-suite.
+/// @dev Common invariant assertions are inherited from HubInvariantAssertions.
+///      This contract adds ERC4626 and AVAILABILITY invariants specific to the hub-suite.
+abstract contract HubInvariants is HandlerAggregator, HubInvariantAssertions {
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                           HUB                                             //
+  //                                   VIRTUAL OVERRIDES                                       //
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  function assert_INV_HUB_A(uint256 assetId) internal {
-    uint256 assets = hub.getAddedAssets(assetId);
 
-    if (assets == 0) {
-      assertEq(hub.getAddedShares(assetId), 0, INV_HUB_A2);
-    }
-  }
-
-  function assert_INV_HUB_B(uint256 assetId) internal {
-    // Sum per-spoke values
-    uint256 spokeCount = NUMBER_OF_ACTORS;
-    uint256 sumDebt;
-
-    for (uint256 i; i < spokeCount; i++) {
-      (uint256 d, uint256 p) = hub.getSpokeOwed(assetId, actorAddresses[i]);
-      sumDebt += d + p;
-    }
-
-    uint256 assetTotal = hub.getAssetTotalOwed(assetId); // drawn + premium
-    assertGe(sumDebt, assetTotal, INV_HUB_B);
-  }
-
-  function assert_INV_HUB_C(uint256 assetId) internal {
-    // Sum per-spoke values
-    uint256 spokeCount = NUMBER_OF_ACTORS;
-
-    uint256 sumDrawnShares;
-    uint256 sumPremDrawnShares;
-    int256 sumPremOffsetRay;
-
-    for (uint256 i; i < spokeCount; i++) {
-      address spoke = actorAddresses[i];
-      sumDrawnShares += hub.getSpokeDrawnShares(assetId, spoke);
-      (uint256 premiumDrawnShares, int256 premiumOffsetRay) = hub.getSpokePremiumData(
-        assetId,
-        spoke
-      );
-      sumPremDrawnShares += premiumDrawnShares;
-      sumPremOffsetRay += premiumOffsetRay;
-    }
-
-    // Asset totals
-    IHub.Asset memory asset = hub.getAsset(assetId);
-
-    // Checks
-    assertEq(sumDrawnShares, asset.drawnShares, INV_HUB_C);
-    assertEq(sumPremDrawnShares, asset.premiumShares, INV_HUB_C);
-    assertEq(sumPremOffsetRay, asset.premiumOffsetRay, INV_HUB_C);
-  }
-
-  function assert_INV_HUB_E(uint256 assetId) internal {
-    uint256 totalAssets = hub.getAddedAssets(assetId);
-    uint256 totalShares = hub.getAddedShares(assetId);
-
-    // interest accrued on virtual shares
-    uint256 burntInterest = totalAssets - hub.previewRemoveByShares(assetId, totalShares);
-
-    // Checks: totalAddedAssets ≈ previewRemoveByShares(totalAddedShares)
-    // Tolerance: the virtual offset (V=1e6) absorbs a fraction of accrued interest when
-    // converting all shares back to assets
-    assertApproxEqAbs(
-      totalAssets,
-      hub.previewRemoveByShares(assetId, totalShares), // round down
-      burntInterest,
-      INV_HUB_E_1
-    );
-
-    assertGe(
-      totalAssets + SharesMath.VIRTUAL_ASSETS,
-      hub.previewRemoveByShares(assetId, totalShares + SharesMath.VIRTUAL_ASSETS),
-      INV_HUB_E_2
-    );
-  }
-
-  function assert_INV_HUB_F(uint256 assetId) internal {
-    uint256 totalAssets = hub.getAddedAssets(assetId);
-    uint256 accruedFees = hub.getAssetAccruedFees(assetId);
-
-    IHub.Asset memory asset = hub.getAsset(assetId);
-    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-
-    uint256 premiumRay = Premium.calculatePremiumRay({
-      premiumShares: asset.premiumShares,
-      premiumOffsetRay: asset.premiumOffsetRay,
-      drawnIndex: drawnIndex
-    });
-    uint256 drawnRay = asset.drawnShares * drawnIndex;
-    uint256 aggregatedOwed = (drawnRay + premiumRay + asset.deficitRay).fromRayUp();
-
-    assertEq(totalAssets + accruedFees, asset.liquidity + aggregatedOwed + asset.swept, INV_HUB_F);
-  }
-
-  function assert_INV_HUB_GH(uint256 assetId) internal {
-    uint256 spokeCount = NUMBER_OF_ACTORS;
-    uint256 tolerancePerActor = hub.previewAddByShares(assetId, 1);
-
-    // Sum per-spoke values
-    uint256 totalAddedAssets;
-    uint256 totalAddedShares;
-    for (uint256 i; i < spokeCount; i++) {
-      totalAddedAssets += hub.getSpokeAddedAssets(assetId, actorAddresses[i]);
-      totalAddedShares += hub.getSpokeAddedShares(assetId, actorAddresses[i]);
-    }
+  /// @dev Returns actorAddresses + feeReceiver for the given hub and asset.
+  function _getSpokesForAsset(
+    IHub hub,
+    uint256 assetId
+  ) internal view override returns (address[] memory) {
     address feeReceiver = hub.getAsset(assetId).feeReceiver;
-    totalAddedAssets += hub.getSpokeAddedAssets(assetId, feeReceiver);
-    totalAddedShares += hub.getSpokeAddedShares(assetId, feeReceiver);
-
-    totalAddedAssets += _calculateBurntInterest(hub, assetId);
-
-    // Checks
-    uint256 addedShares = hub.getAddedShares(assetId);
-    if (addedShares > 0) {
-      assertApproxEqAbs(
-        totalAddedAssets,
-        hub.getAddedAssets(assetId),
-        (spokeCount + 2) * tolerancePerActor,
-        INV_HUB_G
-      );
+    uint256 count = NUMBER_OF_ACTORS;
+    address[] memory spokes = new address[](count + 1);
+    for (uint256 i; i < count; i++) {
+      spokes[i] = actorAddresses[i];
     }
-    assertEq(totalAddedShares, hub.getAddedShares(assetId), INV_HUB_H);
+    spokes[count] = feeReceiver;
+    return spokes;
   }
 
-  function assert_INV_HUB_I(uint256 assetId) internal {
-    // Get underlying from assetId
-    (address underlying, ) = hub.getAssetUnderlyingAndDecimals(assetId);
-
-    // Query values
-    uint256 liquidity = hub.getAssetLiquidity(assetId);
-    uint256 swept = hub.getAssetSwept(assetId);
-    uint256 underlyingBalance = IERC20(underlying).balanceOf(address(hub));
-
-    // Checks
-    assertGe(underlyingBalance + swept, liquidity, INV_HUB_I);
-  }
-
-  function assert_INV_HUB_K(uint256 assetId) internal {
-    /// @dev for this check to be meaningful, strategy configuration operations have to be integrated
-    IHub.AssetConfig memory assetConfig = hub.getAssetConfig(assetId);
-
-    // Checks
-    assertTrue(assetConfig.irStrategy != address(0), INV_HUB_K);
-  }
-
-  function assert_INV_HUB_O(uint256 assetId) internal {
-    uint256 spokeCount = NUMBER_OF_ACTORS;
-    uint256 totalDeficitRay;
-    for (uint256 i; i < spokeCount; i++) {
-      totalDeficitRay += hub.getSpokeDeficitRay(assetId, actorAddresses[i]);
-    }
-    assertEq(totalDeficitRay, hub.getAssetDeficitRay(assetId), INV_HUB_O);
-  }
-
-  function assert_INV_HUB_P(uint256 assetId) internal {
-    (uint256 premiumShares, int256 premiumOffsetRay) = hub.getAssetPremiumData(assetId);
-    uint256 drawnIndex = hub.getAssetDrawnIndex(assetId);
-    assertGe((premiumShares * drawnIndex).toInt256(), premiumOffsetRay, INV_HUB_P);
-  }
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  //                                    HUB: ERC4626                                           //
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function assert_INV_HUB_ERC4626_A(uint256 assetId, address spoke) internal {
     uint256 addedAssets = hub.getSpokeAddedAssets(assetId, spoke);

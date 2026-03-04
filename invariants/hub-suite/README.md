@@ -1,6 +1,8 @@
-# Enigma Dark – Hub-Focused Fuzzing & Invariant Testing Suite
+# Hub-Focused Fuzzing & Invariant Testing Suite
 
-A simplified handler-based invariant testing suite focused exclusively on the **Hub** component of the Aave v4 protocol. This suite performs deep stateful fuzzing against a single hub with actors simulating spokes, validating critical hub system properties through automated property checking and postcondition verification.
+A handler-based invariant testing suite focused exclusively on the **Hub** component of the Aave v4 protocol. This suite performs deep stateful fuzzing against a single hub with actors simulating spokes, validating critical hub system properties through automated property checking and postcondition verification.
+
+Hub-suite is the **canonical source** for all hub-related specs and invariant assertions. The protocol-suite imports from hub-suite — hub-suite has zero protocol-suite dependencies.
 
 ## Overview
 
@@ -23,24 +25,42 @@ All protocol actions are monitored by hooks that snapshot state and verify postc
 - Deploys a single Hub with a deterministic interest rate strategy
 - Configures 2 base assets (USDC, WETH) for simplicity and performance
 - Initializes multiple actors with spoke permissions registered on the hub
-- Simplified configuration compared to the full multi-hub, multi-spoke suite
+
+**Spec Layer** (`specs/`)
+
+- `HubInvariantsSpec` – canonical hub invariant string constants (INV*HUB*\_, ERC4626\_\_, AVAILABILITY\_\*)
+- `HubPostconditionsSpec` – canonical hub postcondition string constants (GPOST*HUB*_, HSPOST*HUB*_)
+- Protocol-suite inherits these specs; they are defined here only
 
 **Handler Layer** (`handlers/`)
 
-- `HubHandler` – hub liquidity operations (supply, draw, repay) through actor-spokes
+- `HubHandler` – hub liquidity operations (add, remove, draw, restore, etc.) through actor-spokes
 - `HubConfiguratorHandler` – admin operations (spoke cap updates, risk parameter changes)
-- Handlers expose hub interface to actors registered as spokes
+- `DonationAttackHandler` – simulates direct token transfers to the hub
 
-**Verification Layer** (`hooks/`, `invariants/`)
+**Invariant Layer** (`invariants/`)
+
+- `HubInvariantAssertions` – abstract parameterized hub invariant assertion logic (INV_HUB_A through P). Importable by other suites
+- `HubInvariants` – concrete invariants extending `HubInvariantAssertions`, adds ERC4626 and AVAILABILITY assertions specific to the hub-suite
+
+**Verification Layer** (`hooks/`)
 
 - Before/after hooks with state snapshots
 - Global and handler-specific postcondition assertions
-- Hub invariants (liquidity accounting, share calculations, interest accrual)
 
-**Utilities** (`utils/`)
+### Reuse by Protocol-Suite
 
-- Constants and assertion helpers
-- Random value generation for fuzzing inputs
+Hub-suite exports reusable abstracts that protocol-suite imports:
+
+```
+protocol-suite → hub-suite → shared/
+```
+
+| Hub-suite export         | Protocol-suite usage                                   |
+| ------------------------ | ------------------------------------------------------ |
+| `HubInvariantsSpec`      | Inherited by `InvariantsSpec` for hub string constants |
+| `HubPostconditionsSpec`  | Inherited by `PostconditionsSpec` for hub strings      |
+| `HubInvariantAssertions` | Inherited by `Invariants.t.sol` for hub assert logic   |
 
 ## How It Works
 
@@ -62,12 +82,12 @@ make echidna-hub-assert
 
 ## Key Features
 
-- **Simplified hub-focused testing** for specific hub component validation
+- **Canonical hub logic** — single source of truth for hub specs and invariant assertions
 - **Actor-based spoke simulation** – no custom spoke deployments, just actors as spokes
 - **Comprehensive postcondition checking** after every hub state transition
 - **Performance optimized** – minimal asset and spoke count for faster fuzzing
-- **Hub-specific invariants** validating liquidity accounting, interest calculations, and spoken cap constraints
+- **Reusable invariant abstracts** – `HubInvariantAssertions` importable by any suite
 
 ---
 
-**Note:** This suite complements the full multi-hub, multi-spoke suite by providing deep, focused testing of hub core functionality in isolation.
+**Note:** This suite complements the full multi-hub, multi-spoke protocol-suite by providing deep, focused testing of hub core functionality in isolation.

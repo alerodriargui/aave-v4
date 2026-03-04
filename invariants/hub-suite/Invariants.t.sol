@@ -10,17 +10,19 @@ abstract contract Invariants is HubInvariants {
     uint256 assetCount = hub.getAssetCount();
 
     for (uint256 i; i < assetCount; i++) {
-      // HUB
-      assert_INV_HUB_A(i);
-      assert_INV_HUB_B(i);
-      assert_INV_HUB_C(i);
-      assert_INV_HUB_E(i);
-      assert_INV_HUB_F(i);
-      assert_INV_HUB_GH(i);
-      assert_INV_HUB_I(i);
-      assert_INV_HUB_K(i);
-      assert_INV_HUB_O(i);
-      assert_INV_HUB_P(i);
+      // HUB (parameterized assertions from HubInvariantAssertions)
+      assert_INV_HUB_A(hub, i);
+      assert_INV_HUB_B(hub, i);
+      assert_INV_HUB_C(hub, i);
+      assert_INV_HUB_E(hub, i);
+      assert_INV_HUB_F(hub, i);
+      assert_INV_HUB_GH(hub, i);
+      assert_INV_HUB_I(hub, i);
+      assert_INV_HUB_K(hub, i);
+      assert_INV_HUB_O(hub, i);
+      assert_INV_HUB_P(hub, i);
+      assert_INV_HUB_Q(hub, i);
+      assert_INV_HUB_R(hub, i);
       for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
         assert_INV_HUB_ERC4626_A(i, actorAddresses[j]);
         assert_INV_HUB_ERC4626_B(i, actorAddresses[j]);
