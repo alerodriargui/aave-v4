@@ -10,11 +10,11 @@ balanceAddr: 0x1000000000000000000000000
 #balanceContract overrides balanceAddr for the contract address (2^128 = ~3e38)
 balanceContract: 0x1000000000000000000000000000000000000000000000000
 
-#testLimit is the number of test sequences to run (0 = unlimited, rely on timeout)
-testLimit: 0
+#testLimit is the number of test sequences to run
+testLimit: 10000000
 
-#timeout in seconds (5 hours)
-timeout: 18000
+#timeout in seconds
+timeout: 18000 # 5 hours
 
 #seqLen defines how many transactions are in a test sequence
 seqLen: 300
