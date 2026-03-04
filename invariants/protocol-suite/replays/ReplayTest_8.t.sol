@@ -226,6 +226,32 @@ contract ReplayTest7 is Invariants, Setup {
     );
   }
 
+  function test_replay_setUsingAsCollateral_1() public {
+    _setUpActor(USER3);
+    _delay(48);
+    Tester.setUsingAsCollateral(true, 0, 42);
+    _setUpActor(USER1);
+    Tester.addLiquidationFee(
+      13323504814495136016677116177882803507625235598720014455673974911556623963286,
+      124,
+      0
+    );
+    _setUpActor(USER3);
+    Tester.setUsingAsCollateral(false, 200, 146);
+  }
+
+  function test_updateUserDynamicConfig_1() public {
+    _setUpActor(USER3);
+    _delay(56);
+    Tester.addMaxLiquidationBonus(
+      172001014342743600581657909606579704666279210377953032615107995338039342389,
+      14,
+      0
+    );
+    _setUpActor(USER1);
+    Tester.updateUserDynamicConfig(0);
+  }
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                           HELPERS                                         //
   ///////////////////////////////////////////////////////////////////////////////////////////////

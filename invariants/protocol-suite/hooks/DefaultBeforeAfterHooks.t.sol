@@ -49,6 +49,8 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
   struct UserVars {
     ISpoke.UserPosition position;
     Debt debt;
+    bool collateral;
+    bool borrowing;
   }
 
   struct UserAccountDataVars {
@@ -168,6 +170,7 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
     for (uint256 i; i < usersToCheck.length; ++i) {
       UserInfo memory userInfo = usersToCheck[i];
       ISpoke spoke = ISpoke(userInfo.spoke);
+      address user = userInfo.spoke;
       defaultVars.userAccountDataVars[userInfo.spoke][userInfo.user].data = spoke
         .getUserAccountData(userInfo.user);
 
@@ -175,24 +178,30 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
       if (userInfo.reserveId == CHECK_ALL_RESERVES) {
         uint256 reserveCount = spoke.getReserveCount();
         for (uint256 j; j < reserveCount; ++j) {
-          (uint256 drawn, ) = spoke.getUserDebt(j, userInfo.user);
-          uint256 premiumRay = spoke.getUserPremiumDebtRay(j, userInfo.user);
-          defaultVars.userVars[userInfo.spoke][j][userInfo.user] = UserVars({
-            position: spoke.getUserPosition(j, userInfo.user),
-            debt: Debt({drawn: drawn, premiumRay: premiumRay, owed: drawn + premiumRay.fromRayUp()})
-          });
+          _setUserVars(defaultVars, spoke, j, user);
         }
       } else {
         // Cache values for a specific reserve of the spoke, used after actions: supply, withdraw, borrow, repay, setUsingAsCollateral
-        uint256 reserveId = userInfo.reserveId;
-        (uint256 drawn, ) = spoke.getUserDebt(reserveId, userInfo.user);
-        uint256 premiumRay = spoke.getUserPremiumDebtRay(reserveId, userInfo.user);
-        defaultVars.userVars[userInfo.spoke][reserveId][userInfo.user] = UserVars({
-          position: spoke.getUserPosition(reserveId, userInfo.user),
-          debt: Debt({drawn: drawn, premiumRay: premiumRay, owed: drawn + premiumRay.fromRayUp()})
-        });
+        _setUserVars(defaultVars, spoke, userInfo.reserveId, user);
       }
     }
+  }
+
+  function _setUserVars(
+    DefaultVars storage defaultVars,
+    ISpoke spoke,
+    uint256 reserveId,
+    address user
+  ) internal {
+    (uint256 drawn, ) = spoke.getUserDebt(reserveId, user);
+    uint256 premiumRay = spoke.getUserPremiumDebtRay(reserveId, user);
+    (bool collateral, bool borrowing) = spoke.getUserReserveStatus(reserveId, user);
+    defaultVars.userVars[address(spoke)][reserveId][user] = UserVars({
+      position: spoke.getUserPosition(reserveId, user),
+      debt: Debt({drawn: drawn, premiumRay: premiumRay, owed: drawn + premiumRay.fromRayUp()}),
+      collateral: collateral,
+      borrowing: borrowing
+    });
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -339,7 +348,11 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
       signature == ISpokeHandler.setUsingAsCollateral.selector ||
       signature == ISpokeHandler.updateUserDynamicConfig.selector
     ) {
-      assertEq(latestKey, userKey, GPOST_SP_E);
+      // Dynamic config keys are only refreshed for collateral positions
+      // (see _processUserAccountData — refresh happens inside `if (collateral)` only).
+      if (_userVarsBefore(spoke, reserveId, user).collateral) {
+        assertEq(latestKey, userKey, GPOST_SP_E);
+      }
     }
   }
 
