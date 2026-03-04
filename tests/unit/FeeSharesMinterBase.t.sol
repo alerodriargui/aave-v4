@@ -185,7 +185,7 @@ contract FeeSharesMinterBaseTest is HubBase {
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
 
-    // Inflate exhange rate
+    // Inflate exchange rate
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: daiAssetId,
@@ -492,7 +492,7 @@ contract FeeSharesMinterBaseTest is HubBase {
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
 
-    // Inflate exhange rate
+    // Inflate exchange rate
     _addAndDrawLiquidity({
       hub: hub1,
       assetId: daiAssetId,
