@@ -201,7 +201,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     );
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.reportDeficit, (assetId, drawnAmount, premiumDelta))
     );
@@ -219,7 +219,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     address spoke = address(actors[USER3]);
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       address(hub),
       abi.encodeCall(IHub.eliminateDeficit, (assetId, amount, spoke))
     );
@@ -242,7 +242,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     });
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta))
     );
@@ -266,7 +266,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     uint256 assetId = _getRandomBaseAssetId(i);
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta))
     );
@@ -289,7 +289,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     uint256 assetId = _getRandomBaseAssetId(i);
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.payFeeShares, (assetId, shares))
     );
@@ -305,7 +305,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     address toSpoke = _getRandomActor(j);
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       address(hub),
       abi.encodeCall(IHub.transferShares, (assetId, shares, toSpoke))
     );

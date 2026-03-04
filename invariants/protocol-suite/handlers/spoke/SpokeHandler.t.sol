@@ -63,7 +63,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _tryMintAndApprove(underlying, address(actor), spoke, amount);
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       spoke,
       abi.encodeCall(ISpokeBase.supply, (reserveId, amount, onBehalfOf))
     );
@@ -90,7 +90,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _registerUserToCheck(spoke, reserveId, onBehalfOf);
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       spoke,
       abi.encodeCall(ISpokeBase.withdraw, (reserveId, amount, onBehalfOf))
     );
@@ -130,7 +130,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     bool isHealthy = _isHealthy(spoke, onBehalfOf);
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       spoke,
       abi.encodeCall(ISpokeBase.borrow, (reserveId, amount, onBehalfOf))
     );
@@ -162,7 +162,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _tryMintAndApprove(underlying, address(actor), spoke, amount);
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       spoke,
       abi.encodeCall(ISpokeBase.repay, (reserveId, amount, onBehalfOf))
     );
@@ -254,7 +254,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     );
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       liquidationVars.spoke,
       abi.encodeCall(
         ISpokeBase.liquidationCall,
@@ -362,7 +362,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _registerUserToCheck(spoke, (usingAsCollateral ? reserveId : CHECK_ALL_RESERVES), onBehalfOf);
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
+    (bool ok, ) = actor.proxy(
       spoke,
       abi.encodeCall(ISpoke.setUsingAsCollateral, (reserveId, usingAsCollateral, onBehalfOf))
     );
@@ -383,10 +383,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _registerUserToCheck(spoke, CHECK_ALL_RESERVES, onBehalfOf);
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
-      spoke,
-      abi.encodeCall(ISpoke.updateUserRiskPremium, (onBehalfOf))
-    );
+    (bool ok, ) = actor.proxy(spoke, abi.encodeCall(ISpoke.updateUserRiskPremium, (onBehalfOf)));
 
     if (ok) {
       _after();
@@ -411,10 +408,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _registerUserToCheck(spoke, CHECK_ALL_RESERVES, onBehalfOf);
 
     _before();
-    (bool ok, bytes memory ret) = actor.proxy(
-      spoke,
-      abi.encodeCall(ISpoke.updateUserDynamicConfig, (onBehalfOf))
-    );
+    (bool ok, ) = actor.proxy(spoke, abi.encodeCall(ISpoke.updateUserDynamicConfig, (onBehalfOf)));
 
     if (ok) {
       _after();

@@ -88,7 +88,8 @@ contract BaseHandler is HookAggregator {
   ///      so even if minting the full amount overflows, the spoke will operate on
   ///      whatever balance exists.
   function _tryMint(address token, address receiver, uint256 amount) internal {
-    token.call(abi.encodeCall(MockERC20.mint, (receiver, amount)));
+    (bool ok, ) = token.call(abi.encodeCall(MockERC20.mint, (receiver, amount)));
+    ok; // suppress compiler warning
   }
 
   /// @notice Best-effort mint + approve for spoke handlers
