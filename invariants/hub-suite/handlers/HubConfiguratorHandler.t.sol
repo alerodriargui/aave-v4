@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+// Libraries
+import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
+
 // Interfaces
 import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IHubConfiguratorHandler} from './interfaces/IHubConfiguratorHandler.sol';
@@ -53,6 +56,12 @@ contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
     uint256 assetId = _getRandomBaseAssetId(i);
     address spoke = _getRandomActor(j);
     hubConfigurator.updateSpokeHalted(address(hub), assetId, spoke, halted);
+  }
+
+  function updateLiquidityFee(uint256 liquidityFee, uint8 i) external setup {
+    uint256 assetId = _getRandomBaseAssetId(i);
+    liquidityFee = liquidityFee % PercentageMath.PERCENTAGE_FACTOR;
+    hubConfigurator.updateLiquidityFee(address(hub), assetId, liquidityFee);
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
