@@ -62,6 +62,9 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     // Register user to check postconditions
     _registerUserToCheck(spoke, reserveId, onBehalfOf);
 
+    address underlying = ISpoke(spoke).getReserve(reserveId).underlying;
+    _mintAndApprove(underlying, address(actor), spoke, amount);
+
     _before();
     (success, returnData) = actor.proxy(
       spoke,
@@ -167,6 +170,9 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     // Register user to check postconditions
     _registerUserToCheck(spoke, reserveId, onBehalfOf);
 
+    address underlying = ISpoke(spoke).getReserve(reserveId).underlying;
+    _mintAndApprove(underlying, address(actor), spoke, amount);
+
     _before();
     (success, returnData) = actor.proxy(
       spoke,
@@ -253,6 +259,13 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       liquidationVars.spoke,
       liquidationVars.collateralReserveId,
       liquidationVars.liquidator
+    );
+
+    _mintAndApprove(
+      ISpoke(liquidationVars.spoke).getReserve(liquidationVars.debtReserveId).underlying,
+      address(actor),
+      liquidationVars.spoke,
+      debtToCover
     );
 
     _before();

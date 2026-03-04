@@ -2,7 +2,6 @@
 pragma solidity ^0.8.19;
 
 // Interfaces
-import {IERC20} from 'src/dependencies/openzeppelin/IERC20.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {IHubHandler} from './interfaces/IHubHandler.sol';
 
@@ -31,9 +30,9 @@ contract HubHandler is BaseHandler, IHubHandler {
     uint256 assetsBefore = hub.getSpokeAddedAssets(cachedTargetAssetId, address(actor));
     uint256 sharesBefore = hub.getSpokeAddedShares(cachedTargetAssetId, address(actor));
 
+    _mint(underlying, address(hub), amount);
+
     _before();
-    vm.prank(address(actor));
-    IERC20(underlying).transfer(address(hub), amount);
     (success, returnData) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.add, (targetAssetId, amount))
@@ -156,12 +155,9 @@ contract HubHandler is BaseHandler, IHubHandler {
       targetAssetId
     );
 
+    _mint(assetIdToUnderlying[cachedTargetAssetId], address(hub), drawnAmount + premiumAmount);
+
     _before();
-    vm.prank(address(actor));
-    IERC20(assetIdToUnderlying[cachedTargetAssetId]).transfer(
-      address(hub),
-      drawnAmount + premiumAmount
-    );
     (success, returnData) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.restore, (cachedTargetAssetId, drawnAmount, premiumDelta))
@@ -353,6 +349,9 @@ contract HubHandler is BaseHandler, IHubHandler {
 
   function reclaim(uint256 amount, uint8 i) external {
     targetAssetId = _getRandomBaseAssetId(i);
+    address underlying = assetIdToUnderlying[targetAssetId];
+
+    _mint(underlying, address(hub), amount);
 
     _before();
     try hub.reclaim(targetAssetId, amount) {

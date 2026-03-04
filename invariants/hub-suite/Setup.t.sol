@@ -116,7 +116,7 @@ contract Setup is BaseTest {
         liquidityFee: 5_00,
         feeReceiver: address(this),
         irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
+        reinvestmentController: address(this)
       }),
       new bytes(0)
     );
@@ -138,7 +138,7 @@ contract Setup is BaseTest {
         liquidityFee: 10_00,
         feeReceiver: address(this),
         irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
+        reinvestmentController: address(this)
       }),
       new bytes(0)
     );
@@ -160,7 +160,7 @@ contract Setup is BaseTest {
         liquidityFee: 5_00,
         feeReceiver: address(this),
         irStrategy: address(irStrategy),
-        reinvestmentController: address(0)
+        reinvestmentController: address(this)
       }),
       new bytes(0)
     );
@@ -268,11 +268,6 @@ contract Setup is BaseTest {
         halted: false
       })
     );
-
-    // Set reinvestment controller
-    hubConfigurator.updateReinvestmentController(address(hub), usdcAssetId, address(this));
-    hubConfigurator.updateReinvestmentController(address(hub), wethAssetId, address(this));
-    hubConfigurator.updateReinvestmentController(address(hub), wbtcAssetId, address(this));
 
     usdc.approve(address(hub), type(uint256).max);
     weth.approve(address(hub), type(uint256).max);
