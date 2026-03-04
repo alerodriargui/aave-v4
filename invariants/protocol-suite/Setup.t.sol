@@ -545,6 +545,8 @@ contract Setup is BaseTest {
     // Grant roles to configurators
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, address(spokeConfigurator), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this), 0);
 
     // Grant responsibilities to spokes
     {
@@ -596,7 +598,7 @@ contract Setup is BaseTest {
       accessManager.setTargetFunctionRole(
         address(hubConfigurator),
         selectors,
-        type(uint64).max // !todo public role, fix this
+        Roles.HUB_CONFIGURATOR_ROLE
       );
     }
 
@@ -630,7 +632,7 @@ contract Setup is BaseTest {
       accessManager.setTargetFunctionRole(
         address(spokeConfigurator),
         selectors,
-        type(uint64).max // !todo public role, fix this
+        Roles.SPOKE_CONFIGURATOR_ROLE
       );
     }
   }
