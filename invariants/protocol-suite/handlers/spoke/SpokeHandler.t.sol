@@ -48,9 +48,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function supply(uint256 amount, uint8 i, uint8 j, uint8 k) external setup {
-    bool success;
-    bytes memory returnData;
-
     // Get one of the three actors randomly
     address onBehalfOf = _getRandomActor(i);
 
@@ -66,12 +63,12 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _mintAndApprove(underlying, address(actor), spoke, amount);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       spoke,
       abi.encodeCall(ISpokeBase.supply, (reserveId, amount, onBehalfOf))
     );
 
-    if (success) {
+    if (ok) {
       _after();
     } else {
       revert('SpokeHandler: supply failed');
@@ -79,9 +76,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
   }
 
   function withdraw(uint256 amount, uint8 i, uint8 j, uint8 k) external setup {
-    bool success;
-    bytes memory returnData;
-
     // Get one of the three actors randomly
     address onBehalfOf = _getRandomActor(i);
 
@@ -96,7 +90,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _registerUserToCheck(spoke, reserveId, onBehalfOf);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       spoke,
       abi.encodeCall(ISpokeBase.withdraw, (reserveId, amount, onBehalfOf))
     );
@@ -110,10 +104,10 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       amount > 0 &&
       userAmount != 0
     ) {
-      assertTrue(success, GPOST_SP_H);
+      assertTrue(ok, GPOST_SP_H);
     }
 
-    if (success) {
+    if (ok) {
       _after();
     } else {
       revert('SpokeHandler: withdraw failed');
@@ -121,9 +115,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
   }
 
   function borrow(uint256 amount, uint8 i, uint8 j, uint8 k) external setup {
-    bool success;
-    bytes memory returnData;
-
     // Get one of the three actors randomly
     address onBehalfOf = _getRandomActor(i);
 
@@ -139,12 +130,12 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     bool isHealthy = _isHealthy(spoke, onBehalfOf);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       spoke,
       abi.encodeCall(ISpokeBase.borrow, (reserveId, amount, onBehalfOf))
     );
 
-    if (success) {
+    if (ok) {
       _after();
 
       ///// HSPOST /////
@@ -156,9 +147,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
   }
 
   function repay(uint256 amount, uint8 i, uint8 j, uint8 k) external setup {
-    bool success;
-    bytes memory returnData;
-
     // Get one of the three actors randomly
     address onBehalfOf = _getRandomActor(i);
 
@@ -174,12 +162,12 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _mintAndApprove(underlying, address(actor), spoke, amount);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       spoke,
       abi.encodeCall(ISpokeBase.repay, (reserveId, amount, onBehalfOf))
     );
 
-    if (success) {
+    if (ok) {
       _after();
 
       ///// HSPOST /////
@@ -202,9 +190,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     uint8 k,
     uint8 l
   ) external setup {
-    bool success;
-    bytes memory returnData;
-
     LiquidationVars memory liquidationVars;
 
     // Get one of the three actors randomly
@@ -269,7 +254,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     );
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       liquidationVars.spoke,
       abi.encodeCall(
         ISpokeBase.liquidationCall,
@@ -283,7 +268,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       )
     );
 
-    if (success) {
+    if (ok) {
       _after();
 
       // Calculate the debt liquidated from user-level snapshots (not reserve-level, which
@@ -356,9 +341,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
   }
 
   function setUsingAsCollateral(bool usingAsCollateral, uint8 i, uint8 j) external setup {
-    bool success;
-    bytes memory returnData;
-
     address onBehalfOf = address(actor);
 
     address spoke = _getRandomSpoke(i);
@@ -380,12 +362,12 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _registerUserToCheck(spoke, (usingAsCollateral ? reserveId : CHECK_ALL_RESERVES), onBehalfOf);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       spoke,
       abi.encodeCall(ISpoke.setUsingAsCollateral, (reserveId, usingAsCollateral, onBehalfOf))
     );
 
-    if (success) {
+    if (ok) {
       _after();
     } else {
       revert('SpokeHandler: setUsingAsCollateral failed');
@@ -393,9 +375,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
   }
 
   function updateUserRiskPremium(uint8 i) external setup {
-    bool success;
-    bytes memory returnData;
-
     address onBehalfOf = address(actor);
 
     address spoke = _getRandomSpoke(i);
@@ -404,12 +383,12 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _registerUserToCheck(spoke, CHECK_ALL_RESERVES, onBehalfOf);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       spoke,
       abi.encodeCall(ISpoke.updateUserRiskPremium, (onBehalfOf))
     );
 
-    if (success) {
+    if (ok) {
       _after();
       ///// HSPOST /////
       uint256 reserveCount = ISpoke(spoke).getReserveCount();
@@ -425,9 +404,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
   }
 
   function updateUserDynamicConfig(uint8 i) external setup {
-    bool success;
-    bytes memory returnData;
-
     address onBehalfOf = address(actor);
 
     address spoke = _getRandomSpoke(i);
@@ -435,12 +411,12 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     _registerUserToCheck(spoke, CHECK_ALL_RESERVES, onBehalfOf);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       spoke,
       abi.encodeCall(ISpoke.updateUserDynamicConfig, (onBehalfOf))
     );
 
-    if (success) {
+    if (ok) {
       _after();
     } else {
       revert('SpokeHandler: updateUserDynamicConfig failed');
@@ -448,7 +424,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
   }
 
   // todo add updateUserPositionManager
-  // todo check decoded returnData
+  // todo check decoded ret
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                         OWNER ACTIONS                                     //

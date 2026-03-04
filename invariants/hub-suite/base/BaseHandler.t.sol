@@ -42,13 +42,11 @@ contract BaseHandler is HookAggregator {
 
   /// @notice Helper function to approve an amount of tokens to a spender, a proxy Actor
   function _approve(address token, Actor actor_, address spender, uint256 amount) internal {
-    bool success;
-    bytes memory returnData;
-    (success, returnData) = actor_.proxy(
+    (bool ok, bytes memory ret) = actor_.proxy(
       token,
       abi.encodeWithSelector(0x095ea7b3, spender, amount)
     );
-    require(success, string(returnData));
+    require(ok, string(ret));
   }
 
   /// @notice Helper function to safely approve an amount of tokens to a spender

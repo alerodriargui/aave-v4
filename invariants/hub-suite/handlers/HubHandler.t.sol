@@ -20,8 +20,6 @@ contract HubHandler is BaseHandler, IHubHandler {
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function add(uint256 amount, uint8 i) public setup returns (uint256 addedShares) {
-    bool success;
-    bytes memory returnData;
     uint256 assetId = _getRandomBaseAssetId(i);
     address underlying = assetIdToUnderlying[assetId];
 
@@ -33,15 +31,15 @@ contract HubHandler is BaseHandler, IHubHandler {
     _mint(underlying, address(hub), amount);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.add, (assetId, amount))
     );
 
-    if (success) {
+    if (ok) {
       _after();
 
-      addedShares = uint256(abi.decode(returnData, (uint256)));
+      addedShares = uint256(abi.decode(ret, (uint256)));
 
       assertGe(
         assetsBefore + amount,
@@ -61,8 +59,6 @@ contract HubHandler is BaseHandler, IHubHandler {
   }
 
   function remove(uint256 amount, uint8 i) public setup returns (uint256 removedShares) {
-    bool success;
-    bytes memory returnData;
     uint256 assetId = _getRandomBaseAssetId(i);
 
     uint256 previewRemovedShares = hub.previewRemoveByAssets(assetId, amount);
@@ -71,15 +67,15 @@ contract HubHandler is BaseHandler, IHubHandler {
     uint256 sharesBefore = hub.getSpokeAddedShares(assetId, address(actor));
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.remove, (assetId, amount, address(actor)))
     );
 
-    if (success) {
+    if (ok) {
       _after();
 
-      removedShares = uint256(abi.decode(returnData, (uint256)));
+      removedShares = uint256(abi.decode(ret, (uint256)));
 
       assertGe(
         assetsBefore,
@@ -99,8 +95,6 @@ contract HubHandler is BaseHandler, IHubHandler {
   }
 
   function draw(uint256 amount, uint8 i) public setup returns (uint256 drawnShares) {
-    bool success;
-    bytes memory returnData;
     uint256 assetId = _getRandomBaseAssetId(i);
 
     uint256 previewDrawnShares = hub.previewDrawByAssets(assetId, amount);
@@ -109,15 +103,15 @@ contract HubHandler is BaseHandler, IHubHandler {
     uint256 sharesBefore = hub.getSpokeDrawnShares(assetId, address(actor));
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.draw, (assetId, amount, address(actor)))
     );
 
-    if (success) {
+    if (ok) {
       _after();
 
-      drawnShares = uint256(abi.decode(returnData, (uint256)));
+      drawnShares = uint256(abi.decode(ret, (uint256)));
 
       (uint256 drawnAfter, ) = hub.getSpokeOwed(assetId, address(actor));
 
@@ -140,8 +134,6 @@ contract HubHandler is BaseHandler, IHubHandler {
     int256 sharesDelta,
     uint8 i
   ) public setup returns (uint256 restoredDrawnShares) {
-    bool success;
-    bytes memory returnData;
     uint256 assetId = _getRandomBaseAssetId(i);
 
     uint256 previewRestoredShares = hub.previewRestoreByAssets(assetId, drawnAmount);
@@ -158,15 +150,15 @@ contract HubHandler is BaseHandler, IHubHandler {
     _mint(assetIdToUnderlying[assetId], address(hub), drawnAmount + premiumAmount);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.restore, (assetId, drawnAmount, premiumDelta))
     );
 
-    if (success) {
+    if (ok) {
       _after();
 
-      restoredDrawnShares = uint256(abi.decode(returnData, (uint256)));
+      restoredDrawnShares = uint256(abi.decode(ret, (uint256)));
 
       (uint256 drawnAfter, ) = hub.getSpokeOwed(assetId, address(actor));
 
@@ -200,8 +192,6 @@ contract HubHandler is BaseHandler, IHubHandler {
     int256 sharesDelta,
     uint8 i
   ) external setup {
-    bool success;
-    bytes memory returnData;
     uint256 assetId = _getRandomBaseAssetId(i);
 
     IHubBase.PremiumDelta memory premiumDelta = _calculatePremiumDelta(
@@ -211,12 +201,12 @@ contract HubHandler is BaseHandler, IHubHandler {
     );
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.reportDeficit, (assetId, drawnAmount, premiumDelta))
     );
 
-    if (success) {
+    if (ok) {
       _after();
     } else {
       revert('HubHandler: reportDeficit failed');
@@ -224,19 +214,17 @@ contract HubHandler is BaseHandler, IHubHandler {
   }
 
   function eliminateDeficit(uint256 amount, uint8 i) external setup {
-    bool success;
-    bytes memory returnData;
     uint256 assetId = _getRandomBaseAssetId(i);
     // only spoke3 is given deficit eliminator role
     address spoke = address(actors[USER3]);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       address(hub),
       abi.encodeCall(IHub.eliminateDeficit, (assetId, amount, spoke))
     );
 
-    if (success) {
+    if (ok) {
       _after();
     } else {
       revert('HubHandler: eliminateDeficit failed');
@@ -244,8 +232,6 @@ contract HubHandler is BaseHandler, IHubHandler {
   }
 
   function refreshPremium(int256 sharesDelta, uint8 i) external setup {
-    bool success;
-    bytes memory returnData;
     uint256 assetId = _getRandomBaseAssetId(i);
 
     int256 offsetRayDelta = sharesDelta * int256(hub.getAssetDrawnIndex(assetId));
@@ -256,12 +242,12 @@ contract HubHandler is BaseHandler, IHubHandler {
     });
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta))
     );
 
-    if (success) {
+    if (ok) {
       _after();
 
       // HSPOST_HUB_M: refreshPremium cannot change total premium debt (only redistribution)
@@ -277,17 +263,15 @@ contract HubHandler is BaseHandler, IHubHandler {
 
   // @dev broader `refreshPremium` to cover edge cases, above case exists for narrow happy path
   function refreshPremium(IHubBase.PremiumDelta memory premiumDelta, uint8 i) external setup {
-    bool success;
-    bytes memory returnData;
     uint256 assetId = _getRandomBaseAssetId(i);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta))
     );
 
-    if (success) {
+    if (ok) {
       _after();
 
       // HSPOST_HUB_M: refreshPremium cannot change total premium debt (only redistribution)
@@ -302,16 +286,14 @@ contract HubHandler is BaseHandler, IHubHandler {
   }
 
   function payFeeShares(uint256 shares, uint8 i) external setup {
-    bool success;
-    bytes memory returnData;
     uint256 assetId = _getRandomBaseAssetId(i);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       address(hub),
       abi.encodeCall(IHubBase.payFeeShares, (assetId, shares))
     );
-    if (success) {
+    if (ok) {
       _after();
     } else {
       revert('HubHandler: payFeeShares failed');
@@ -319,18 +301,16 @@ contract HubHandler is BaseHandler, IHubHandler {
   }
 
   function transferShares(uint256 shares, uint8 i, uint8 j) external setup {
-    bool success;
-    bytes memory returnData;
     uint256 assetId = _getRandomBaseAssetId(i);
     address toSpoke = _getRandomActor(j);
 
     _before();
-    (success, returnData) = actor.proxy(
+    (bool ok, bytes memory ret) = actor.proxy(
       address(hub),
       abi.encodeCall(IHub.transferShares, (assetId, shares, toSpoke))
     );
 
-    if (success) {
+    if (ok) {
       _after();
     } else {
       revert('HubHandler: transferShares failed');

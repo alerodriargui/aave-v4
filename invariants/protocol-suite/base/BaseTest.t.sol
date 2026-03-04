@@ -169,18 +169,17 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
 
   /// @notice Helper function to transfer tokens by actor
   function _transferByActor(address token, address to, uint256 amount) internal {
-    bool success;
-    bytes memory returnData;
-    (success, returnData) = actor.proxy(token, abi.encodeCall(IERC20.transfer, (to, amount)));
-    require(success, string(returnData));
+    (bool ok, bytes memory ret) = actor.proxy(token, abi.encodeCall(IERC20.transfer, (to, amount)));
+    require(ok, string(ret));
   }
 
   /// @notice Helper function to approve tokens by actor
   function _approveByActor(address token, address spender, uint256 amount) internal {
-    bool success;
-    bytes memory returnData;
-    (success, returnData) = actor.proxy(token, abi.encodeCall(IERC20.approve, (spender, amount)));
-    require(success, string(returnData));
+    (bool ok, bytes memory ret) = actor.proxy(
+      token,
+      abi.encodeCall(IERC20.approve, (spender, amount))
+    );
+    require(ok, string(ret));
   }
 
   /// @notice Helper function to calculate burnt interest in assets terms (originating from virtual shares)

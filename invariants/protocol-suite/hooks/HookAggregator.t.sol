@@ -48,8 +48,8 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
     // Store the message signature to avoid losing it inside the checkPostConditions call context
     _cacheCurrentActionSignature();
 
-    try this.checkPostConditions() {} catch (bytes memory returnData) {
-      ErrorHandlers.handleAssertionError(false, returnData, true, GPOST_CHECK_FAILED);
+    try this.checkPostConditions() {} catch (bytes memory ret) {
+      ErrorHandlers.handleAssertionError(false, ret, true, GPOST_CHECK_FAILED);
     }
   }
 
