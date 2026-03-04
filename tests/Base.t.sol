@@ -67,6 +67,7 @@ import {PositionStatusMap} from 'src/spoke/libraries/PositionStatusMap.sol';
 import {ReserveFlags, ReserveFlagsMap} from 'src/spoke/libraries/ReserveFlagsMap.sol';
 import {LiquidationLogic} from 'src/spoke/libraries/LiquidationLogic.sol';
 import {KeyValueList} from 'src/spoke/libraries/KeyValueList.sol';
+import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 
 // tokenization spoke
 import {TokenizationSpoke, ITokenizationSpoke} from 'src/spoke/TokenizationSpoke.sol';
@@ -122,7 +123,6 @@ import {MockERC1271Wallet} from 'tests/mocks/MockERC1271Wallet.sol';
 import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
-import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
 import {SpokeUtilsWrapper} from 'tests/mocks/SpokeUtilsWrapper.sol';
 

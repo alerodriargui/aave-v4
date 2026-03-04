@@ -10,9 +10,9 @@ contract AaveV4SignatureGatewayDeployProcedure is AaveV4DeployProcedureBase {
   function _deploySignatureGateway(address owner, bytes32 salt) internal returns (address) {
     require(owner != address(0), 'invalid owner');
     return
-      Create2Utils.create2Deploy(
-        salt,
-        abi.encodePacked(type(SignatureGateway).creationCode, abi.encode(owner))
-      );
+      Create2Utils.create2Deploy({
+        salt: salt,
+        bytecode: abi.encodePacked(type(SignatureGateway).creationCode, abi.encode(owner))
+      });
   }
 }

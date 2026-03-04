@@ -275,10 +275,10 @@ contract HubAccessTest is HubBase {
 
     // Set up the role for hub admin to call update asset config
     vm.startPrank(NEW_ADMIN);
-    newAuthority.grantRole(Roles.HUB_FEE_MINTER_ROLE, HUB_ADMIN, 0);
+    newAuthority.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_ADMIN, 0);
     bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = IHub.updateAssetConfig.selector;
-    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_FEE_MINTER_ROLE);
+    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_CONFIGURATOR_ROLE);
     vm.stopPrank();
 
     // Only Admin can change the authority contract
@@ -311,7 +311,7 @@ contract HubAccessTest is HubBase {
     // Now we also give the hub admin role capability to update spoke config on new authority
     selectors[0] = IHub.updateSpokeConfig.selector;
     vm.prank(NEW_ADMIN);
-    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_FEE_MINTER_ROLE);
+    newAuthority.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_CONFIGURATOR_ROLE);
 
     // Hub admin can now call update spoke config on the hub after authority change
     vm.prank(HUB_ADMIN);

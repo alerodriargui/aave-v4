@@ -15,9 +15,12 @@ contract AaveV4NativeTokenGatewayDeployProcedure is AaveV4DeployProcedureBase {
     require(nativeWrapper != address(0), 'invalid native wrapper');
     require(owner != address(0), 'invalid owner');
     return
-      Create2Utils.create2Deploy(
-        salt,
-        abi.encodePacked(type(NativeTokenGateway).creationCode, abi.encode(nativeWrapper, owner))
-      );
+      Create2Utils.create2Deploy({
+        salt: salt,
+        bytecode: abi.encodePacked(
+          type(NativeTokenGateway).creationCode,
+          abi.encode(nativeWrapper, owner)
+        )
+      });
   }
 }
