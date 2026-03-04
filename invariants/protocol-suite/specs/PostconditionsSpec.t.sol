@@ -24,14 +24,13 @@ abstract contract PostconditionsSpec is HubPostconditionsSpec {
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   string constant GPOST_SP_A =
-    "GPOST_SP_A: Stored (user.premiumDrawnShares/user.baseDrawnShares) & calculated user risk premium (calculation based on user's position, via spoke.calculateUserAccountData) need to be the same right after an operation";
+    "GPOST_SP_A: Stored (user.premiumDrawnShares/user.baseDrawnShares) & calculated user risk premium (calculation based on user's position, via spoke.calculateUserAccountData) are the same right after an operation";
 
   string constant GPOST_SP_E =
     'GPOST_SP_E: DynamicRiskConfiguration for a user position is updated to latest reserve state whenever an action can potentially make their position less healthy';
-  // - Updates on: borrow, withdraw, disableAsCollateral.
+  // - Updates on: borrow, withdraw, disableAsCollateral, updateUserDynamicConfig.
   // - Unchanged on: supply, repay, liquidate, updateUserRiskPremium, setUserPositionManager.
   // - Enabling collateral updates only the relevant reserve's dynamic config.
-  // - Exception: updateUserDynamicConfig explicitly refreshes the user's dynamic config.
 
   string constant HSPOST_SP_F =
     'HSPOST_SP_F: Total debt of a user should not change after updateUserRiskPremium';

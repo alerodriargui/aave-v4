@@ -348,8 +348,6 @@ abstract contract DefaultBeforeAfterHooks is BaseHooks {
       signature == ISpokeHandler.setUsingAsCollateral.selector ||
       signature == ISpokeHandler.updateUserDynamicConfig.selector
     ) {
-      // Dynamic config keys are only refreshed for collateral positions
-      // (see _processUserAccountData — refresh happens inside `if (collateral)` only).
       if (_userVarsBefore(spoke, reserveId, user).collateral) {
         assertEq(latestKey, userKey, GPOST_SP_E);
       }
