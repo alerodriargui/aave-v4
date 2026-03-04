@@ -262,7 +262,7 @@ contract HubHandler is BaseHandler, IHubHandler {
   }
 
   // @dev broader `refreshPremium` to cover edge cases, above case exists for narrow happy path
-  function refreshPremium(IHubBase.PremiumDelta memory premiumDelta, uint8 i) external setup {
+  function refreshPremiumBroad(IHubBase.PremiumDelta memory premiumDelta, uint8 i) external setup {
     uint256 assetId = _getRandomBaseAssetId(i);
 
     _before();

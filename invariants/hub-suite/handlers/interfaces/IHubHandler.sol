@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {IHubBase} from 'src/hub/interfaces/IHub.sol';
+
 /// @title IHubHandler
 /// @notice Interface for hub handler actions
 interface IHubHandler {
@@ -28,6 +30,8 @@ interface IHubHandler {
 
   function refreshPremium(int256 sharesDelta, uint8 i) external;
 
+  function refreshPremiumBroad(IHubBase.PremiumDelta memory premiumDelta, uint8 i) external;
+
   function payFeeShares(uint256 shares, uint8 i) external;
 
   function transferShares(uint256 shares, uint8 i, uint8 j) external;
@@ -35,4 +39,20 @@ interface IHubHandler {
   function sweep(uint256 amount, uint8 i) external;
 
   function reclaim(uint256 amount, uint8 i) external;
+
+  function roundtrip_ERC4626_RT_A(uint256 amount, uint8 i) external;
+
+  function roundtrip_ERC4626_RT_B(uint256 amount, uint8 i) external;
+
+  function roundtrip_ERC4626_RT_C(uint256 shares, uint8 i) external;
+
+  function roundtrip_ERC4626_RT_D(uint256 shares, uint8 i) external;
+
+  function roundtrip_ERC4626_RT_E(uint256 shares, uint8 i) external;
+
+  function roundtrip_ERC4626_RT_F(uint256 shares, uint8 i) external;
+
+  function roundtrip_ERC4626_RT_G(uint256 amount, uint8 i) external;
+
+  function roundtrip_ERC4626_RT_H(uint256 amount, uint8 i) external;
 }
