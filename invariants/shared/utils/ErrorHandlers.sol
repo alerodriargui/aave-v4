@@ -12,10 +12,6 @@ library ErrorHandlers {
   event AssertFail(string);
 
   /// @notice Checks if a call failed due to an assertion error and propagates the error if found.
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  //                                     ASSERTION ERRORS                                     //
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-
   /// @param success Indicates whether the call was successful.
   /// @param returnData The data returned from the call.
   function handleAssertionError(

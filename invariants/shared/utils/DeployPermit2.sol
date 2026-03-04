@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
-/// @notice helper to deploy permit2 from precompiled bytecode
-/// @dev useful if testing externally against permit2 and want to avoid
+/// @notice Helper to deploy permit2 from precompiled bytecode
+/// @dev Useful if testing externally against permit2 and want to avoid
 /// recompiling entirely and requiring viaIR compilation
 library DeployPermit2 {
   /// @notice deploy permit2

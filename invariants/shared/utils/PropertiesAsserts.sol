@@ -461,7 +461,6 @@ abstract contract PropertiesAsserts {
     uint256 x,
     uint256 y
   ) internal pure returns (bool result) {
-    /// @solidity memory-safe-assembly
     assembly {
       let m := not(0)
       let mm1 := mulmod(a, b, m)
@@ -490,7 +489,6 @@ library PropertiesLibString {
   }
 
   function toString(uint256 value) internal pure returns (string memory str) {
-    /// @solidity memory-safe-assembly
     assembly {
       // The maximum value of a uint256 contains 78 digits (1 byte per digit), but we allocate 160 bytes
       // to keep the free memory pointer word aligned. We'll need 1 word for the length, 1 word for the
