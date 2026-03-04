@@ -352,7 +352,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
   function updateUserDynamicConfig(uint8 i) external setup {
     address onBehalfOf = address(actor);
-
     address spoke = _getRandomSpoke(i);
 
     _registerUserToCheck(spoke, CHECK_ALL_RESERVES, onBehalfOf);
@@ -368,7 +367,23 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     }
   }
 
-  // todo add updateUserPositionManager
+  function setUserPositionManager(bool approve, uint8 i, uint8 j) external setup {
+    address spoke = _getRandomSpoke(i);
+    address positionManager = _getRandomActor(j);
+
+    _before();
+    (bool ok, ) = actor.proxy(
+      spoke,
+      abi.encodeCall(ISpoke.setUserPositionManager, (positionManager, approve))
+    );
+
+    if (ok) {
+      _after();
+    } else {
+      revert('SpokeHandler: setUserPositionManager failed');
+    }
+  }
+
   // todo check decoded ret
 
   ///////////////////////////////////////////////////////////////////////////////////////////////

@@ -19,4 +19,5 @@ interface ISpokeHandler {
   function setUsingAsCollateral(bool usingAsCollateral, uint8 i, uint8 j) external;
   function updateUserRiskPremium(uint8 i) external;
   function updateUserDynamicConfig(uint8 i) external;
+  function setUserPositionManager(bool approve, uint8 i, uint8 j) external;
 }
