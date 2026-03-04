@@ -41,14 +41,14 @@ protocol-suite → hub-suite → shared/
 
 **Setup Layer** (`Setup.t.sol`, `base/`)
 
-- Deploys 2-hub, 2-spoke architecture with deterministic addresses (CREATE3)
+- Deploys 2-hub, 2-spoke architecture with 2 treasury spokes
 - Configures distinct collateral factors, liquidation parameters, and interest rate curves
 - Initializes multiple actors with protocol permissions
 
 **Spec Layer** (`specs/`)
 
-- `InvariantsSpec` – inherits `HubInvariantsSpec` from hub-suite, adds spoke-specific strings (INV*SP*\*)
-- `PostconditionsSpec` – inherits `HubPostconditionsSpec` from hub-suite, adds spoke-specific strings (GPOST*SP*_, HSPOST*SP*_)
+- `InvariantsSpec` – inherits `HubInvariantsSpec` from hub-suite, adds spoke-specific strings (`INV_SP_*`)
+- `PostconditionsSpec` – inherits `HubPostconditionsSpec` from hub-suite, adds spoke-specific strings (`GPOST_SP_*`, `HSPOST_SP_*`)
 
 **Handler Layer** (`handlers/`)
 
@@ -59,9 +59,9 @@ protocol-suite → hub-suite → shared/
 
 **Invariant Layer** (`invariants/`)
 
-- Hub invariant assertions imported from hub-suite via `HubInvariantAssertions` (INV_HUB_A through P)
-- `SpokeInvariants` – spoke-specific invariant assertions (INV_SP_A through H)
-- Protocol-suite-only stateful invariants Q and R defined inline in `Invariants.t.sol`
+- Hub invariant assertions imported from hub-suite via `HubInvariantAssertions` (INV_HUB_A through R)
+- `SpokeInvariants` – spoke-specific invariant assertions (INV_SP_A through I)
+- Stateful hub invariants Q and R imported from hub-suite's `HubInvariantAssertions`
 
 **Verification Layer** (`hooks/`)
 

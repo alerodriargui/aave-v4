@@ -10,7 +10,7 @@ The suite tests a simplified hub-centric deployment with:
 
 - **1 Hub** with a single interest rate strategy
 - **Multiple Actors** simulating spoke behavior (registered as spokes in the hub)
-- **2 Base Assets** (USDC, WETH) to keep the asset surface simple and performant
+- **3 Base Assets** (USDC, WETH, WBTC) with varying decimals (6, 18, 8)
 - **Direct Hub Interactions** through handlers that expose hub functions
 - **Hub Configuration Management** through the HubConfigurator handler
 
@@ -23,13 +23,13 @@ All protocol actions are monitored by hooks that snapshot state and verify postc
 **Setup Layer** (`Setup.t.sol`, `base/`)
 
 - Deploys a single Hub with a deterministic interest rate strategy
-- Configures 2 base assets (USDC, WETH) for simplicity and performance
+- Configures 3 base assets (USDC, WETH, WBTC) with varying decimals
 - Initializes multiple actors with spoke permissions registered on the hub
 
 **Spec Layer** (`specs/`)
 
-- `HubInvariantsSpec` – canonical hub invariant string constants (INV*HUB*\_, ERC4626\_\_, AVAILABILITY\_\*)
-- `HubPostconditionsSpec` – canonical hub postcondition string constants (GPOST*HUB*_, HSPOST*HUB*_)
+- `HubInvariantsSpec` – canonical hub invariant string constants (`INV_HUB_*`, `ERC4626_*`, `AVAILABILITY_*`)
+- `HubPostconditionsSpec` – canonical hub postcondition string constants (`GPOST_HUB_*`, `HSPOST_HUB_*`)
 - Protocol-suite inherits these specs; they are defined here only
 
 **Handler Layer** (`handlers/`)
@@ -40,7 +40,7 @@ All protocol actions are monitored by hooks that snapshot state and verify postc
 
 **Invariant Layer** (`invariants/`)
 
-- `HubInvariantAssertions` – abstract parameterized hub invariant assertion logic (INV_HUB_A through P). Importable by other suites
+- `HubInvariantAssertions` – abstract parameterized hub invariant assertion logic (INV_HUB_A through R). Importable by other suites
 - `HubInvariants` – concrete invariants extending `HubInvariantAssertions`, adds ERC4626 and AVAILABILITY assertions specific to the hub-suite
 
 **Verification Layer** (`hooks/`)
