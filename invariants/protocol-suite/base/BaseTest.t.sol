@@ -26,7 +26,7 @@ import {BaseStorage} from './BaseStorage.t.sol';
 abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdUtils {
   using EnumerableSet for EnumerableSet.AddressSet;
 
-  bool internal IS_TEST = true; // todo! make public
+  bool public IS_TEST = true;
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                   ACTOR PROXY MECHANISM                                   //
@@ -187,5 +187,9 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
     uint256 totalAssets = hub_.getAddedAssets(assetId_);
     uint256 totalShares = hub_.getAddedShares(assetId_);
     return totalAssets - hub_.previewRemoveByShares(assetId_, totalShares);
+  }
+
+  function _underlying(ISpoke spoke, uint256 reserveId) internal view returns (address) {
+    return spoke.getReserve(reserveId).underlying;
   }
 }

@@ -109,7 +109,6 @@ abstract contract HookAggregator is DefaultBeforeAfterHooks {
       // Check properties for all reserves of the spoke, used after actions: updateUserRiskPremium, updateUserDynamicConfig
       if (reserveId == CHECK_ALL_RESERVES) {
         uint256 reserveCount = ISpoke(spoke).getReserveCount();
-        // Iterate through all reserves of the spoke
         for (uint256 j; j < reserveCount; j++) {
           assert_GPOST_SP_A(spoke, j, user);
           assert_GPOST_SP_B(spoke, j, user);

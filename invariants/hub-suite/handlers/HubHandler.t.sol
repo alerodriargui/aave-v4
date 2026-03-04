@@ -39,7 +39,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     if (ok) {
       _after();
 
-      addedShares = uint256(abi.decode(ret, (uint256)));
+      addedShares = abi.decode(ret, (uint256));
 
       assertGe(
         assetsBefore + amount,

@@ -48,19 +48,12 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function supply(uint256 amount, uint8 i, uint8 j, uint8 k) external setup {
-    // Get one of the three actors randomly
     address onBehalfOf = _getRandomActor(i);
-
     address spoke = _getRandomSpoke(j);
-
-    // Get one of the reserves IDs randomly
     uint256 reserveId = _getRandomReserveId(spoke, k);
+    _registerUserToCheck(spoke, reserveId, onBehalfOf); // register user to check post conditions
 
-    // Register user to check postconditions
-    _registerUserToCheck(spoke, reserveId, onBehalfOf);
-
-    address underlying = ISpoke(spoke).getReserve(reserveId).underlying;
-    _tryMintAndApprove(underlying, address(actor), spoke, amount);
+    _tryMintAndApprove(_underlying(spoke, reserveId), address(actor), spoke, amount);
 
     _before();
     (bool ok, ) = actor.proxy(
@@ -76,18 +69,11 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
   }
 
   function withdraw(uint256 amount, uint8 i, uint8 j, uint8 k) external setup {
-    // Get one of the three actors randomly
     address onBehalfOf = _getRandomActor(i);
-
     address spoke = _getRandomSpoke(j);
-
-    // Get one of the reserves IDs randomly
     uint256 reserveId = _getRandomReserveId(spoke, k);
-
-    uint256 userAmount = ISpoke(spoke).getUserSuppliedAssets(reserveId, onBehalfOf);
-
-    // Register user to check postconditions
-    _registerUserToCheck(spoke, reserveId, onBehalfOf);
+    _registerUserToCheck(spoke, reserveId, onBehalfOf); // register user to check post conditions
+    bool healthyBefore = _isHealthy(spoke, onBehalfOf);
 
     _before();
     (bool ok, ) = actor.proxy(
@@ -95,39 +81,22 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       abi.encodeCall(ISpokeBase.withdraw, (reserveId, amount, onBehalfOf))
     );
 
-    // GPOST_SP_H: debt-free user with valid auth and unblocked reserve must be able to withdraw
-    // todo make this "position healthy" after withdraw, add similar check on borrow
-    if (
-      _isAuthorized(spoke, onBehalfOf) &&
-      !_isReserveActionBlocked(spoke, reserveId, false, false) &&
-      _userVarsBefore(spoke, reserveId, onBehalfOf).debt.owed == 0 &&
-      amount > 0 &&
-      userAmount != 0
-    ) {
-      assertTrue(ok, GPOST_SP_H);
-    }
-
     if (ok) {
       _after();
+
+      assertTrue(healthyBefore, GPOST_SP_H);
+      assertTrue(_isHealthy(spoke, onBehalfOf), HSPOST_SP_I);
     } else {
       revert('SpokeHandler: withdraw failed');
     }
   }
 
   function borrow(uint256 amount, uint8 i, uint8 j, uint8 k) external setup {
-    // Get one of the three actors randomly
     address onBehalfOf = _getRandomActor(i);
-
     address spoke = _getRandomSpoke(j);
-
-    // Get one of the reserves IDs randomly
     uint256 reserveId = _getRandomReserveId(spoke, k);
-
-    // Register user to check postconditions
-    _registerUserToCheck(spoke, reserveId, onBehalfOf);
-
-    // Check if user is healthy
-    bool isHealthy = _isHealthy(spoke, onBehalfOf);
+    _registerUserToCheck(spoke, reserveId, onBehalfOf); // register user to check post conditions
+    bool healthyBefore = _isHealthy(spoke, onBehalfOf);
 
     _before();
     (bool ok, ) = actor.proxy(
@@ -138,28 +107,20 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     if (ok) {
       _after();
 
-      ///// HSPOST /////
-
-      assertTrue(isHealthy, HSPOST_SP_D);
+      assertTrue(healthyBefore, HSPOST_SP_D);
+      assertTrue(_isHealthy(spoke, onBehalfOf), HSPOST_SP_I);
     } else {
       revert('SpokeHandler: borrow failed');
     }
   }
 
   function repay(uint256 amount, uint8 i, uint8 j, uint8 k) external setup {
-    // Get one of the three actors randomly
     address onBehalfOf = _getRandomActor(i);
-
     address spoke = _getRandomSpoke(j);
-
-    // Get one of the reserves IDs randomly
     uint256 reserveId = _getRandomReserveId(spoke, k);
+    _registerUserToCheck(spoke, reserveId, onBehalfOf); // register user to check post conditions
 
-    // Register user to check postconditions
-    _registerUserToCheck(spoke, reserveId, onBehalfOf);
-
-    address underlying = ISpoke(spoke).getReserve(reserveId).underlying;
-    _tryMintAndApprove(underlying, address(actor), spoke, amount);
+    _tryMintAndApprove(_underlying(spoke, reserveId), address(actor), spoke, amount);
 
     _before();
     (bool ok, ) = actor.proxy(
@@ -169,8 +130,6 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
     if (ok) {
       _after();
-
-      ///// HSPOST /////
 
       assertLe(
         _userVarsAfter(spoke, reserveId, onBehalfOf).debt.owed,
@@ -191,15 +150,12 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     uint8 l
   ) external setup {
     LiquidationVars memory liquidationVars;
-
-    // Get one of the three actors randomly
     liquidationVars.spoke = _getRandomSpoke(j);
     liquidationVars.debtToCover = debtToCover;
 
     liquidationVars.violator = _getRandomActor(i);
     liquidationVars.liquidator = address(actor);
 
-    // Get both reserves IDs randomly and the collateral underlying asset
     liquidationVars.collateralReserveId = _getRandomReserveId(liquidationVars.spoke, k);
     liquidationVars.debtReserveId = _getRandomReserveId(liquidationVars.spoke, l);
     liquidationVars.underlying = ISpoke(liquidationVars.spoke)
@@ -224,7 +180,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         .balanceOf(address(actor));
     }
 
-    // Register users to check postconditions: liquidated user and liquidator for both reserves
+    // register users to check post conditions: liquidated user and liquidator for both reserves
     _registerUserToCheck(
       liquidationVars.spoke,
       liquidationVars.debtReserveId,
@@ -247,7 +203,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     );
 
     _tryMintAndApprove(
-      ISpoke(liquidationVars.spoke).getReserve(liquidationVars.debtReserveId).underlying,
+      _underlying(liquidationVars.spoke, liquidationVars.debtReserveId),
       address(actor),
       liquidationVars.spoke,
       debtToCover
@@ -295,7 +251,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
           .balanceOf(address(actor));
       }
 
-      ///// HSPOST /////
+      /// HSPOST ///
       assertLe(liquidationVars.debtLiquidated, violatorDebtVarsBefore.debt.owed, HSPOST_SP_LIQ_A);
 
       if (
@@ -342,19 +298,16 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
   function setUsingAsCollateral(bool usingAsCollateral, uint8 i, uint8 j) external setup {
     address onBehalfOf = address(actor);
-
     address spoke = _getRandomSpoke(i);
-
     uint256 reserveId = _getRandomReserveId(spoke, j);
 
     (bool isUsingAsCollateral, ) = ISpoke(spoke).getUserReserveStatus(reserveId, onBehalfOf);
-    // !todo remove this
     require(
       usingAsCollateral != isUsingAsCollateral,
       'SpokeHandler: usingAsCollateral already set'
-    );
+    ); // usingAsCollateral
 
-    // Register user to check postconditions
+    // register user to check post conditions
     /// @dev setUsingAsCollateral(reserveId, FALSE) all reserves in user position should be refreshed,
     ///      so we check all reserves in user position
     ///      setUsingAsCollateral(reserveId, TRUE) only reserveId in user position should be refreshed,
@@ -376,11 +329,8 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
   function updateUserRiskPremium(uint8 i) external setup {
     address onBehalfOf = address(actor);
-
     address spoke = _getRandomSpoke(i);
-
-    // Register user to check postconditions
-    _registerUserToCheck(spoke, CHECK_ALL_RESERVES, onBehalfOf);
+    _registerUserToCheck(spoke, CHECK_ALL_RESERVES, onBehalfOf); // register user to check post conditions
 
     _before();
     (bool ok, ) = actor.proxy(spoke, abi.encodeCall(ISpoke.updateUserRiskPremium, (onBehalfOf)));
@@ -412,6 +362,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
     if (ok) {
       _after();
+      assertTrue(_isHealthy(spoke, onBehalfOf), HSPOST_SP_I);
     } else {
       revert('SpokeHandler: updateUserDynamicConfig failed');
     }

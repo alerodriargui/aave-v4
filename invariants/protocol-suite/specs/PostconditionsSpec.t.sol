@@ -40,10 +40,12 @@ abstract contract PostconditionsSpec is HubPostconditionsSpec {
   //                                    SPOKE SOLVENCY                                         //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  string constant HSPOST_SP_D = 'HSPOST_SP_D: Unhealthy users cannot borrow more';
+  string constant HSPOST_SP_D = 'HSPOST_SP_D: Unhealthy user cannot borrow more';
 
-  string constant GPOST_SP_H =
-    'GPOST_SP_H: if user totalDebt == 0 and withdraw is called, user can withdraw all supplied';
+  string constant GPOST_SP_H = 'GPOST_SP_H: Unhealthy user cannot withdraw active collateral';
+
+  string constant HSPOST_SP_I =
+    'HSPOST_SP_I: User is healthy after borrow/withdraw/updateUserDynamicConfig';
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                   SPOKE LIQUIDATION                                        //
@@ -61,7 +63,7 @@ abstract contract PostconditionsSpec is HubPostconditionsSpec {
   string constant HSPOST_SP_LIQ_D =
     'HSPOST_SP_LIQ_D: Liquidation cannot result in an amount of liquidated debt > debtToCover';
 
-  string constant HSPOST_SP_LIQ_E = 'HSPOST_SP_LIQ_E: Only unhealthy users can be liquidated';
+  string constant HSPOST_SP_LIQ_E = 'HSPOST_SP_LIQ_E: Only unhealthy user can be liquidated';
 
   string constant HSPOST_SP_LIQ_G =
     'HSPOST_SP_LIQ_G: After liquidation, if debt remains, health factor should improve toward target';
