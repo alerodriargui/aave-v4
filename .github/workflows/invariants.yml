@@ -9,6 +9,9 @@ on:
 env:
   FOUNDRY_PROFILE: invariant
 
+permissions:
+  contents: read
+
 # ! todo uncomment before merging
 # concurrency:
 #   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -69,8 +72,8 @@ jobs:
           go-version: stable
           cache: false
 
-      - name: Install crytic-compile
-        run: pip install crytic-compile
+      - name: Install slither-analyzer
+        run: pip install slither-analyzer
 
       - name: Install Medusa
         run: go install github.com/crytic/medusa@latest
