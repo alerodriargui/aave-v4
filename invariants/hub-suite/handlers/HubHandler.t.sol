@@ -22,20 +22,20 @@ contract HubHandler is BaseHandler, IHubHandler {
   function add(uint256 amount, uint8 i) public setup returns (uint256 addedShares) {
     bool success;
     bytes memory returnData;
-    uint256 cachedTargetAssetId = targetAssetId = _getRandomBaseAssetId(i);
-    address underlying = assetIdToUnderlying[cachedTargetAssetId];
+    uint256 assetId = _getRandomBaseAssetId(i);
+    address underlying = assetIdToUnderlying[assetId];
 
-    uint256 previewAddedShares = hub.previewAddByAssets(cachedTargetAssetId, amount);
+    uint256 previewAddedShares = hub.previewAddByAssets(assetId, amount);
 
-    uint256 assetsBefore = hub.getSpokeAddedAssets(cachedTargetAssetId, address(actor));
-    uint256 sharesBefore = hub.getSpokeAddedShares(cachedTargetAssetId, address(actor));
+    uint256 assetsBefore = hub.getSpokeAddedAssets(assetId, address(actor));
+    uint256 sharesBefore = hub.getSpokeAddedShares(assetId, address(actor));
 
     _mint(underlying, address(hub), amount);
 
     _before();
     (success, returnData) = actor.proxy(
       address(hub),
-      abi.encodeCall(IHubBase.add, (targetAssetId, amount))
+      abi.encodeCall(IHubBase.add, (assetId, amount))
     );
 
     if (success) {
@@ -45,12 +45,12 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       assertGe(
         assetsBefore + amount,
-        hub.getSpokeAddedAssets(cachedTargetAssetId, address(actor)),
+        hub.getSpokeAddedAssets(assetId, address(actor)),
         HSPOST_HUB_ERC4626_ADD_A
       );
       assertEq(
         sharesBefore + addedShares,
-        hub.getSpokeAddedShares(cachedTargetAssetId, address(actor)),
+        hub.getSpokeAddedShares(assetId, address(actor)),
         HSPOST_HUB_ERC4626_ADD_B
       );
 
@@ -63,17 +63,17 @@ contract HubHandler is BaseHandler, IHubHandler {
   function remove(uint256 amount, uint8 i) public setup returns (uint256 removedShares) {
     bool success;
     bytes memory returnData;
-    uint256 cachedTargetAssetId = targetAssetId = _getRandomBaseAssetId(i);
+    uint256 assetId = _getRandomBaseAssetId(i);
 
-    uint256 previewRemovedShares = hub.previewRemoveByAssets(cachedTargetAssetId, amount);
+    uint256 previewRemovedShares = hub.previewRemoveByAssets(assetId, amount);
 
-    uint256 assetsBefore = hub.getSpokeAddedAssets(cachedTargetAssetId, address(actor));
-    uint256 sharesBefore = hub.getSpokeAddedShares(cachedTargetAssetId, address(actor));
+    uint256 assetsBefore = hub.getSpokeAddedAssets(assetId, address(actor));
+    uint256 sharesBefore = hub.getSpokeAddedShares(assetId, address(actor));
 
     _before();
     (success, returnData) = actor.proxy(
       address(hub),
-      abi.encodeCall(IHubBase.remove, (cachedTargetAssetId, amount, address(actor)))
+      abi.encodeCall(IHubBase.remove, (assetId, amount, address(actor)))
     );
 
     if (success) {
@@ -83,12 +83,12 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       assertGe(
         assetsBefore,
-        hub.getSpokeAddedAssets(cachedTargetAssetId, address(actor)) + amount,
+        hub.getSpokeAddedAssets(assetId, address(actor)) + amount,
         HSPOST_HUB_ERC4626_REMOVE_A
       );
       assertEq(
         sharesBefore,
-        hub.getSpokeAddedShares(cachedTargetAssetId, address(actor)) + removedShares,
+        hub.getSpokeAddedShares(assetId, address(actor)) + removedShares,
         HSPOST_HUB_ERC4626_REMOVE_B
       );
 
@@ -101,17 +101,17 @@ contract HubHandler is BaseHandler, IHubHandler {
   function draw(uint256 amount, uint8 i) public setup returns (uint256 drawnShares) {
     bool success;
     bytes memory returnData;
-    uint256 cachedTargetAssetId = targetAssetId = _getRandomBaseAssetId(i);
+    uint256 assetId = _getRandomBaseAssetId(i);
 
-    uint256 previewDrawnShares = hub.previewDrawByAssets(cachedTargetAssetId, amount);
+    uint256 previewDrawnShares = hub.previewDrawByAssets(assetId, amount);
 
-    (uint256 drawnBefore, ) = hub.getSpokeOwed(cachedTargetAssetId, address(actor));
-    uint256 sharesBefore = hub.getSpokeDrawnShares(cachedTargetAssetId, address(actor));
+    (uint256 drawnBefore, ) = hub.getSpokeOwed(assetId, address(actor));
+    uint256 sharesBefore = hub.getSpokeDrawnShares(assetId, address(actor));
 
     _before();
     (success, returnData) = actor.proxy(
       address(hub),
-      abi.encodeCall(IHubBase.draw, (cachedTargetAssetId, amount, address(actor)))
+      abi.encodeCall(IHubBase.draw, (assetId, amount, address(actor)))
     );
 
     if (success) {
@@ -119,12 +119,12 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       drawnShares = uint256(abi.decode(returnData, (uint256)));
 
-      (uint256 drawnAfter, ) = hub.getSpokeOwed(cachedTargetAssetId, address(actor));
+      (uint256 drawnAfter, ) = hub.getSpokeOwed(assetId, address(actor));
 
       assertLe(drawnBefore + amount, drawnAfter, HSPOST_HUB_ERC4626_DRAW_A);
       assertEq(
         sharesBefore + drawnShares,
-        hub.getSpokeDrawnShares(cachedTargetAssetId, address(actor)),
+        hub.getSpokeDrawnShares(assetId, address(actor)),
         HSPOST_HUB_ERC4626_DRAW_B
       );
 
@@ -142,25 +142,25 @@ contract HubHandler is BaseHandler, IHubHandler {
   ) public setup returns (uint256 restoredDrawnShares) {
     bool success;
     bytes memory returnData;
-    uint256 cachedTargetAssetId = targetAssetId = _getRandomBaseAssetId(i);
+    uint256 assetId = _getRandomBaseAssetId(i);
 
-    uint256 previewRestoredShares = hub.previewRestoreByAssets(cachedTargetAssetId, drawnAmount);
+    uint256 previewRestoredShares = hub.previewRestoreByAssets(assetId, drawnAmount);
 
-    (uint256 drawnBefore, ) = hub.getSpokeOwed(cachedTargetAssetId, address(actor));
-    uint256 drawnSharesBefore = hub.getSpokeDrawnShares(cachedTargetAssetId, address(actor));
+    (uint256 drawnBefore, ) = hub.getSpokeOwed(assetId, address(actor));
+    uint256 drawnSharesBefore = hub.getSpokeDrawnShares(assetId, address(actor));
 
     IHubBase.PremiumDelta memory premiumDelta = _calculatePremiumDelta(
       sharesDelta,
       premiumAmount,
-      targetAssetId
+      assetId
     );
 
-    _mint(assetIdToUnderlying[cachedTargetAssetId], address(hub), drawnAmount + premiumAmount);
+    _mint(assetIdToUnderlying[assetId], address(hub), drawnAmount + premiumAmount);
 
     _before();
     (success, returnData) = actor.proxy(
       address(hub),
-      abi.encodeCall(IHubBase.restore, (cachedTargetAssetId, drawnAmount, premiumDelta))
+      abi.encodeCall(IHubBase.restore, (assetId, drawnAmount, premiumDelta))
     );
 
     if (success) {
@@ -168,10 +168,10 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       restoredDrawnShares = uint256(abi.decode(returnData, (uint256)));
 
-      (uint256 drawnAfter, ) = hub.getSpokeOwed(cachedTargetAssetId, address(actor));
+      (uint256 drawnAfter, ) = hub.getSpokeOwed(assetId, address(actor));
 
       if (restoredDrawnShares > 0) {
-        uint256 tolerance = hub.previewRestoreByShares(cachedTargetAssetId, 1);
+        uint256 tolerance = hub.previewRestoreByShares(assetId, 1);
         assertApproxEqAbs(
           drawnBefore,
           drawnAfter + drawnAmount,
@@ -184,7 +184,7 @@ contract HubHandler is BaseHandler, IHubHandler {
       }
       assertEq(
         drawnSharesBefore,
-        hub.getSpokeDrawnShares(cachedTargetAssetId, address(actor)) + restoredDrawnShares,
+        hub.getSpokeDrawnShares(assetId, address(actor)) + restoredDrawnShares,
         HSPOST_HUB_ERC4626_RESTORE_B
       );
 
@@ -202,18 +202,18 @@ contract HubHandler is BaseHandler, IHubHandler {
   ) external setup {
     bool success;
     bytes memory returnData;
-    targetAssetId = _getRandomBaseAssetId(i);
+    uint256 assetId = _getRandomBaseAssetId(i);
 
     IHubBase.PremiumDelta memory premiumDelta = _calculatePremiumDelta(
       sharesDelta,
       premiumAmount,
-      targetAssetId
+      assetId
     );
 
     _before();
     (success, returnData) = actor.proxy(
       address(hub),
-      abi.encodeCall(IHubBase.reportDeficit, (targetAssetId, drawnAmount, premiumDelta))
+      abi.encodeCall(IHubBase.reportDeficit, (assetId, drawnAmount, premiumDelta))
     );
 
     if (success) {
@@ -226,13 +226,14 @@ contract HubHandler is BaseHandler, IHubHandler {
   function eliminateDeficit(uint256 amount, uint8 i) external setup {
     bool success;
     bytes memory returnData;
-    targetAssetId = _getRandomBaseAssetId(i);
-    address spoke = address(actors[USER3]); // todo move this to an auth handler?
+    uint256 assetId = _getRandomBaseAssetId(i);
+    // only spoke3 is given deficit eliminator role
+    address spoke = address(actors[USER3]);
 
     _before();
     (success, returnData) = actor.proxy(
       address(hub),
-      abi.encodeCall(IHub.eliminateDeficit, (targetAssetId, amount, spoke))
+      abi.encodeCall(IHub.eliminateDeficit, (assetId, amount, spoke))
     );
 
     if (success) {
@@ -245,9 +246,9 @@ contract HubHandler is BaseHandler, IHubHandler {
   function refreshPremium(int256 sharesDelta, uint8 i) external setup {
     bool success;
     bytes memory returnData;
-    targetAssetId = _getRandomBaseAssetId(i);
+    uint256 assetId = _getRandomBaseAssetId(i);
 
-    int256 offsetRayDelta = sharesDelta * int256(hub.getAssetDrawnIndex(targetAssetId));
+    int256 offsetRayDelta = sharesDelta * int256(hub.getAssetDrawnIndex(assetId));
     IHubBase.PremiumDelta memory premiumDelta = IHubBase.PremiumDelta({
       sharesDelta: sharesDelta,
       offsetRayDelta: offsetRayDelta,
@@ -257,7 +258,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     _before();
     (success, returnData) = actor.proxy(
       address(hub),
-      abi.encodeCall(IHubBase.refreshPremium, (targetAssetId, premiumDelta))
+      abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta))
     );
 
     if (success) {
@@ -265,8 +266,8 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       // HSPOST_HUB_M: refreshPremium cannot change total premium debt (only redistribution)
       assertEq(
-        _assetVarsAfter(targetAssetId).debt.premium,
-        _assetVarsBefore(targetAssetId).debt.premium,
+        _assetVarsAfter(assetId).debt.premium,
+        _assetVarsBefore(assetId).debt.premium,
         HSPOST_HUB_M
       );
     } else {
@@ -278,12 +279,12 @@ contract HubHandler is BaseHandler, IHubHandler {
   function refreshPremium(IHubBase.PremiumDelta memory premiumDelta, uint8 i) external setup {
     bool success;
     bytes memory returnData;
-    targetAssetId = _getRandomBaseAssetId(i);
+    uint256 assetId = _getRandomBaseAssetId(i);
 
     _before();
     (success, returnData) = actor.proxy(
       address(hub),
-      abi.encodeCall(IHubBase.refreshPremium, (targetAssetId, premiumDelta))
+      abi.encodeCall(IHubBase.refreshPremium, (assetId, premiumDelta))
     );
 
     if (success) {
@@ -291,8 +292,8 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       // HSPOST_HUB_M: refreshPremium cannot change total premium debt (only redistribution)
       assertEq(
-        _assetVarsAfter(targetAssetId).debt.premium,
-        _assetVarsBefore(targetAssetId).debt.premium,
+        _assetVarsAfter(assetId).debt.premium,
+        _assetVarsBefore(assetId).debt.premium,
         HSPOST_HUB_M
       );
     } else {
@@ -303,12 +304,12 @@ contract HubHandler is BaseHandler, IHubHandler {
   function payFeeShares(uint256 shares, uint8 i) external setup {
     bool success;
     bytes memory returnData;
-    targetAssetId = _getRandomBaseAssetId(i);
+    uint256 assetId = _getRandomBaseAssetId(i);
 
     _before();
     (success, returnData) = actor.proxy(
       address(hub),
-      abi.encodeCall(IHubBase.payFeeShares, (targetAssetId, shares))
+      abi.encodeCall(IHubBase.payFeeShares, (assetId, shares))
     );
     if (success) {
       _after();
@@ -320,13 +321,13 @@ contract HubHandler is BaseHandler, IHubHandler {
   function transferShares(uint256 shares, uint8 i, uint8 j) external setup {
     bool success;
     bytes memory returnData;
-    targetAssetId = _getRandomBaseAssetId(i);
+    uint256 assetId = _getRandomBaseAssetId(i);
     address toSpoke = _getRandomActor(j);
 
     _before();
     (success, returnData) = actor.proxy(
       address(hub),
-      abi.encodeCall(IHub.transferShares, (targetAssetId, shares, toSpoke))
+      abi.encodeCall(IHub.transferShares, (assetId, shares, toSpoke))
     );
 
     if (success) {
@@ -337,10 +338,11 @@ contract HubHandler is BaseHandler, IHubHandler {
   }
 
   function sweep(uint256 amount, uint8 i) external {
-    targetAssetId = _getRandomBaseAssetId(i);
+    uint256 assetId = _getRandomBaseAssetId(i);
 
     _before();
-    try hub.sweep(targetAssetId, amount) {
+    // handler is the reinvestmentController
+    try hub.sweep(assetId, amount) {
       _after();
     } catch {
       revert('HubHandler: sweep failed');
@@ -348,13 +350,14 @@ contract HubHandler is BaseHandler, IHubHandler {
   }
 
   function reclaim(uint256 amount, uint8 i) external {
-    targetAssetId = _getRandomBaseAssetId(i);
-    address underlying = assetIdToUnderlying[targetAssetId];
+    uint256 assetId = _getRandomBaseAssetId(i);
+    address underlying = assetIdToUnderlying[assetId];
 
     _mint(underlying, address(hub), amount);
 
     _before();
-    try hub.reclaim(targetAssetId, amount) {
+    // handler is the reinvestmentController
+    try hub.reclaim(assetId, amount) {
       _after();
     } catch {
       revert('HubHandler: reclaim failed');
