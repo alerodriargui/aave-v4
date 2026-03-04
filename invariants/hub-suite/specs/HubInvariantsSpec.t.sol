@@ -30,7 +30,7 @@ abstract contract HubInvariantsSpec {
     'INV_HUB_C: Sum of [baseDrawnShares/premiumDrawnShares/premiumOffsetRay] of individual (spoke/user) should match the corresponding value of the asset on the Hub';
 
   string constant INV_HUB_G =
-    'INV_HUB_G: totalAddedAssets = sum of addedAssets of all registered spokes (including present & past treasury spoke) with a tolerance of SPOKE_COUNT'; // TODO check if tolerance is correct
+    'INV_HUB_G: totalAddedAssets = sum of addedAssets of all registered spokes (including present & past treasury spoke) with a tolerance of SPOKE_COUNT';
 
   string constant INV_HUB_H =
     'INV_HUB_H: totalAddedShares = sum of addedShares of all registered spokes';

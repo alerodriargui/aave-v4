@@ -58,7 +58,7 @@ abstract contract HubPostconditionsSpec {
     'GPOST_HUB_E: if addedAssets for a spoke & assetId increase, addedAssets <= addCap * precision (when cap != MAX)';
 
   string constant GPOST_HUB_F =
-    'GPOST_HUB_F: if owed for a spoke & assetId increase, owed <= drawCap * precision (when cap != MAX)';
+    'GPOST_HUB_F: if owed for a spoke & assetId increase, owed + deficit <= drawCap * precision (when cap != MAX)';
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                         ERC4626                                           //
