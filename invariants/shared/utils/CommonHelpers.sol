@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
+pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
 import {MockERC20} from 'tests/mocks/MockERC20.sol';

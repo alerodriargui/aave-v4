@@ -1,5 +1,6 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+// SPDX-License-Identifier: UNLICENSED
+// Copyright (c) 2025 Aave Labs
+pragma solidity ^0.8.0;
 
 // Interfaces
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
