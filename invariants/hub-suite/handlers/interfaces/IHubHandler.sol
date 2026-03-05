@@ -41,6 +41,8 @@ interface IHubHandler {
 
   function reclaim(uint256 amount, uint8 i) external;
 
+  function mintFeeShares(uint8 i) external;
+
   function roundtrip_ERC4626_RT_A(uint256 amount, uint8 i) external;
 
   function roundtrip_ERC4626_RT_B(uint256 amount, uint8 i) external;

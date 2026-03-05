@@ -287,12 +287,15 @@ contract Setup is BaseTest {
     // Grant roles to configurators
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(this), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
+
     // Grant responsibilities on hubs
     {
-      bytes4[] memory selectors = new bytes4[](3);
+      bytes4[] memory selectors = new bytes4[](4);
       selectors[0] = IHub.updateSpokeConfig.selector;
       selectors[1] = IHub.setInterestRateData.selector;
       selectors[2] = IHub.updateAssetConfig.selector;
+      selectors[3] = IHub.mintFeeShares.selector;
       accessManager.setTargetFunctionRole(address(hub), selectors, Roles.HUB_ADMIN_ROLE);
     }
 
@@ -324,7 +327,7 @@ contract Setup is BaseTest {
       accessManager.setTargetFunctionRole(
         address(hubConfigurator),
         selectors,
-        accessManager.PUBLIC_ROLE()
+        Roles.HUB_CONFIGURATOR_ROLE
       );
     }
   }

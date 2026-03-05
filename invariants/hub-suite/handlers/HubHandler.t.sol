@@ -345,6 +345,16 @@ contract HubHandler is BaseHandler, IHubHandler {
     }
   }
 
+  function mintFeeShares(uint8 i) external {
+    uint256 assetId = _getRandomBaseAssetId(i);
+    _before();
+    try hub.mintFeeShares(assetId) {
+      _after();
+    } catch {
+      revert('HubHandler: mintFeeShares failed');
+    }
+  }
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                              ERC4626 ROUNDTRIP (STATELESS)                                //
   ///////////////////////////////////////////////////////////////////////////////////////////////
