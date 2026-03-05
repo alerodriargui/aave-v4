@@ -43,7 +43,7 @@ contract ReplayTest4 is Invariants, Setup {
     _setUpActor(USER1);
     Tester.draw(1, 0);
     _delay(150);
-    Tester.updateSpokeSupplyCap(0, 9, 50);
+    Tester.updateSpokeAddCap(0, 9, 50);
     Tester.add(9, 0);
   }
 
@@ -51,7 +51,7 @@ contract ReplayTest4 is Invariants, Setup {
   function test_replay_4_draw() public {
     _setUpActor(USER1);
     Tester.add(926436254396264375725066, 1);
-    Tester.updateSpokeSupplyCap(0, 1, 0);
+    Tester.updateSpokeAddCap(0, 1, 0);
     Tester.draw(68, 1);
     _delay(659719);
     Tester.draw(403197591059359279380077, 1);

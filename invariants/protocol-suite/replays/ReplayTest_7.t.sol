@@ -100,7 +100,7 @@ contract ReplayTest7 is Invariants, Setup {
     _delay(20833);
     Tester.borrow(2973933138, 65, 107, 12);
     _setUpActor(USER1);
-    Tester.updateSpokeSupplyCap(172, 180, 253, 253);
+    Tester.updateSpokeAddCap(172, 180, 253, 253);
     _setUpActor(USER3);
     _delay(997);
     Tester.repay(

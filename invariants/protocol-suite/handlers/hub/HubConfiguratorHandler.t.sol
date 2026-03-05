@@ -25,12 +25,12 @@ contract HubConfiguratorHandler is BaseHandler, IHubConfiguratorHandler {
   //                                        SPOKE CONFIG                                       //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  function updateSpokeSupplyCap(uint256 addCap, uint8 i, uint8 j, uint8 k) external setup {
+  function updateSpokeAddCap(uint256 addCap, uint8 i, uint8 j, uint8 k) external setup {
     address hub = _getRandomHub(i);
     uint256 assetId = _getRandomHubAssetId(hub, j);
     address spoke = _getRandomSpoke(k);
     addCap = _bound(addCap, 0, MAX_ALLOWED_SPOKE_CAP);
-    hubConfigurator.updateSpokeSupplyCap(hub, assetId, spoke, addCap);
+    hubConfigurator.updateSpokeAddCap(hub, assetId, spoke, addCap);
   }
 
   function updateSpokeDrawCap(uint256 drawCap, uint8 i, uint8 j, uint8 k) external setup {

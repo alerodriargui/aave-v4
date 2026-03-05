@@ -586,7 +586,7 @@ contract Setup is BaseTest {
       selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
       selectors[10] = IHubConfigurator.updateSpokeActive.selector;
       selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
-      selectors[12] = IHubConfigurator.updateSpokeSupplyCap.selector;
+      selectors[12] = IHubConfigurator.updateSpokeAddCap.selector;
       selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
       selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
       selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
