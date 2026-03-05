@@ -204,7 +204,7 @@ contract Setup is BaseTest {
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke1),
         irStrategy: address(irStrategy1),
-        reinvestmentController: address(0)
+        reinvestmentController: address(this)
       }),
       new bytes(0)
     );
@@ -224,7 +224,7 @@ contract Setup is BaseTest {
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke1),
         irStrategy: address(irStrategy1),
-        reinvestmentController: address(0)
+        reinvestmentController: address(this)
       }),
       new bytes(0)
     );
@@ -254,7 +254,7 @@ contract Setup is BaseTest {
         liquidityFee: 10_00,
         feeReceiver: address(treasurySpoke2),
         irStrategy: address(irStrategy2),
-        reinvestmentController: address(0)
+        reinvestmentController: address(this)
       }),
       new bytes(0)
     );
@@ -274,7 +274,7 @@ contract Setup is BaseTest {
         liquidityFee: 5_00,
         feeReceiver: address(treasurySpoke2),
         irStrategy: address(irStrategy2),
-        reinvestmentController: address(0)
+        reinvestmentController: address(this)
       }),
       new bytes(0)
     );
@@ -564,9 +564,10 @@ contract Setup is BaseTest {
 
     // Grant responsibilities to hubs
     {
-      bytes4[] memory selectors = new bytes4[](2);
+      bytes4[] memory selectors = new bytes4[](3);
       selectors[0] = IHub.updateSpokeConfig.selector;
       selectors[1] = IHub.setInterestRateData.selector;
+      selectors[2] = IHub.mintFeeShares.selector; // enables HubAdminHandler to materialize fee shares
       accessManager.setTargetFunctionRole(address(hub1), selectors, Roles.HUB_ADMIN_ROLE);
       accessManager.setTargetFunctionRole(address(hub2), selectors, Roles.HUB_ADMIN_ROLE);
     }
