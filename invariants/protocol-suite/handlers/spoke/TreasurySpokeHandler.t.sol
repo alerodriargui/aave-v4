@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 // Interfaces
 import {ITreasurySpokeHandler} from '../interfaces/ITreasurySpokeHandler.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 // Test Contracts
 import {BaseHandler} from '../../base/BaseHandler.t.sol';
@@ -16,13 +17,6 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
   //                                      STATE VARIABLES                                      //
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  /*
-
-        E.g. num of active pools
-        uint256 public activePools;
-
-        */
-
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                          ACTIONS                                          //
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -32,16 +26,13 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function supply(uint256 amount, uint8 i, uint8 j) external {
-    // TODO fix coverage issues
-    // Get one of the hub addresses randomly
-    address hubAddress = _getRandomHub(i);
-    address treasurySpoke = hubInfo[hubAddress].treasurySpoke;
-
-    // Get one of the reserves IDs randomly
-    uint256 reserveId = _getRandomReserveId(treasurySpoke, j);
+    address hub = _getRandomHub(i);
+    address spoke = hubInfo[hub].treasurySpoke;
+    uint256 reserveId = _getRandomReserveId(spoke, j);
+    _tryMintAndApprove(_underlying(spoke, reserveId), address(this), spoke, amount);
 
     _before();
-    try ITreasurySpoke(treasurySpoke).supply(reserveId, amount, msg.sender) {
+    try ISpoke(spoke).supply(reserveId, amount, msg.sender) {
       _after();
     } catch {
       revert('TreasurySpokeHandler: supply failed');
@@ -49,15 +40,12 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
   }
 
   function withdraw(uint256 amount, uint8 i, uint8 j) external {
-    // Get one of the hub addresses randomly
-    address hubAddress = _getRandomHub(i);
-    address treasurySpoke = hubInfo[hubAddress].treasurySpoke;
-
-    // Get one of the reserves IDs randomly
-    uint256 reserveId = _getRandomReserveId(treasurySpoke, j);
+    address hub = _getRandomHub(i);
+    address spoke = hubInfo[hub].treasurySpoke;
+    uint256 reserveId = _getRandomReserveId(spoke, j);
 
     _before();
-    try ITreasurySpoke(treasurySpoke).withdraw(reserveId, amount, msg.sender) {
+    try ISpoke(spoke).withdraw(reserveId, amount, msg.sender) {
       _after();
     } catch {
       revert('TreasurySpokeHandler: withdraw failed');
@@ -65,17 +53,12 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
   }
 
   function transfer(uint256 amount, uint8 i, uint8 j, uint8 k) external {
-    // Get one of the hub addresses randomly
-    address hubAddress = _getRandomHub(i);
-
-    // Get one of the assets IDs randomly
+    address hub = _getRandomHub(i);
     address asset = _getRandomBaseAsset(j);
-
-    // Get one of the actors randomly
     address to = _getRandomActor(k);
 
     _before();
-    try ITreasurySpoke(hubInfo[hubAddress].treasurySpoke).transfer(asset, to, amount) {
+    try ITreasurySpoke(hubInfo[hub].treasurySpoke).transfer(asset, to, amount) {
       _after();
     } catch {
       revert('TreasurySpokeHandler: transfer failed');
