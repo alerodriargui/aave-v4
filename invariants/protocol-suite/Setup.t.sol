@@ -546,6 +546,8 @@ contract Setup is BaseTest {
     // Grant roles to configurators
     accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(hubConfigurator), 0);
     accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, address(spokeConfigurator), 0);
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(this), 0);
+    accessManager.grantRole(Roles.SPOKE_ADMIN_ROLE, address(this), 0);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(this), 0);
 
@@ -665,6 +667,10 @@ contract Setup is BaseTest {
     for (uint256 i; i < actorAddresses.length; ++i) {
       userToActor[users[i]] = Actor(payable(actorAddresses[i]));
       actors.add(actorAddresses[i]);
+      // set all actors are valid position managers such that they can perform actions
+      // onBehalfOf after approval using setUserPositionManager handler
+      spoke1.updatePositionManager(actorAddresses[i], true);
+      spoke2.updatePositionManager(actorAddresses[i], true);
     }
   }
 }

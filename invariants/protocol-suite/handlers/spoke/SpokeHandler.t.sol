@@ -306,7 +306,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     require(
       usingAsCollateral != isUsingAsCollateral,
       'SpokeHandler: usingAsCollateral already set'
-    ); // usingAsCollateral
+    ); // usingAsCollateral is a noop
 
     // register user to check post conditions
     /// @dev setUsingAsCollateral(reserveId, FALSE) all reserves in user position should be refreshed,
@@ -338,7 +338,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
 
     if (ok) {
       _after();
-      ///// HSPOST /////
+      /// HSPOST ///
       uint256 reserveCount = ISpoke(spoke).getReserveCount();
       for (uint256 j; j < reserveCount; j++) {
         UserVars memory varsBefore = _userVarsBefore(spoke, j, onBehalfOf);
