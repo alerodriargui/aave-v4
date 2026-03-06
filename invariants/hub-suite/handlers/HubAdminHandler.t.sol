@@ -65,6 +65,7 @@ abstract contract HubAdminHandlerBase is CommonHelpers, IHubAdminHandler {
 
   /// @dev Hook invoked before each handler action. Concrete handlers wire this to the suite's _before() snapshot.
   function _beforeHook() internal virtual;
+
   /// @dev Hook invoked after each handler action. Concrete handlers wire this to the suite's _after() snapshot + postcondition checks.
   function _afterHook() internal virtual;
 
