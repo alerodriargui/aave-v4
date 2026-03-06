@@ -50,7 +50,6 @@ jobs:
 
       - name: Upload Echidna corpus
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: echidna-corpus-protocol-${{ matrix.mode }}
           path: corpus/
@@ -90,7 +89,33 @@ jobs:
 
       - name: Upload Medusa corpus
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: medusa-corpus-protocol
           path: corpus/
+
+  foundry:
+    name: Foundry
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Run Foundry setup
+        uses: bgd-labs/github-workflows/.github/actions/foundry-setup@main
+        with:
+          FOUNDRY_VERSION: nightly
+
+      - name: Run Forge Build
+        run: forge build --build-info
+
+      - name: Run Forge Test
+        run: forge test --mc TesterFoundry -vvv --show-progress
+
+      - name: Upload Foundry corpus
+        uses: actions/upload-artifact@v4
+        with:
+          name: foundry-corpus-protocol
+          path: invariants/protocol-suite/_corpus/foundry

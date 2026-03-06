@@ -65,7 +65,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     if (ok) {
       _after();
     } else {
-      revert('SpokeHandler: supply failed');
+      vm.assume(false);
     }
   }
 
@@ -88,7 +88,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       assertTrue(healthyBefore, GPOST_SP_H);
       assertTrue(_isHealthy(spoke, onBehalfOf), HSPOST_SP_I);
     } else {
-      revert('SpokeHandler: withdraw failed');
+      vm.assume(false);
     }
   }
 
@@ -111,7 +111,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       assertTrue(healthyBefore, HSPOST_SP_D);
       assertTrue(_isHealthy(spoke, onBehalfOf), HSPOST_SP_I);
     } else {
-      revert('SpokeHandler: borrow failed');
+      vm.assume(false);
     }
   }
 
@@ -138,7 +138,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         HSPOST_SP_C
       );
     } else {
-      revert('SpokeHandler: repay failed');
+      vm.assume(false);
     }
   }
 
@@ -293,7 +293,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         );
       }
     } else {
-      revert('SpokeHandler: liquidationCall failed');
+      vm.assume(false);
     }
   }
 
@@ -303,10 +303,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     uint256 reserveId = _getRandomReserveId(spoke, j);
 
     (bool isUsingAsCollateral, ) = ISpoke(spoke).getUserReserveStatus(reserveId, onBehalfOf);
-    require(
-      usingAsCollateral != isUsingAsCollateral,
-      'SpokeHandler: usingAsCollateral already set'
-    ); // usingAsCollateral is a noop
+    vm.assume(usingAsCollateral != isUsingAsCollateral); // usingAsCollateral is a noop
 
     // register user to check post conditions
     /// @dev setUsingAsCollateral(reserveId, FALSE) all reserves in user position should be refreshed,
@@ -324,7 +321,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     if (ok) {
       _after();
     } else {
-      revert('SpokeHandler: setUsingAsCollateral failed');
+      vm.assume(false);
     }
   }
 
@@ -347,7 +344,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
         assertEq(varsBefore.debt.owed, varsAfter.debt.owed, HSPOST_SP_F);
       }
     } else {
-      revert('SpokeHandler: updateUserRiskPremium failed');
+      vm.assume(false);
     }
   }
 
@@ -364,7 +361,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
       _after();
       assertTrue(_isHealthy(spoke, onBehalfOf), HSPOST_SP_I);
     } else {
-      revert('SpokeHandler: updateUserDynamicConfig failed');
+      vm.assume(false);
     }
   }
 
@@ -381,7 +378,7 @@ contract SpokeHandler is BaseHandler, ISpokeHandler {
     if (ok) {
       _after();
     } else {
-      revert('SpokeHandler: setUserPositionManager failed');
+      vm.assume(false);
     }
   }
 

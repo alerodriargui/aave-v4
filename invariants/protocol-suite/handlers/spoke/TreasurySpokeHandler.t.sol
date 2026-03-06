@@ -35,7 +35,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
     try ISpoke(spoke).supply(reserveId, amount, msg.sender) {
       _after();
     } catch {
-      revert('TreasurySpokeHandler: supply failed');
+      vm.assume(false);
     }
   }
 
@@ -48,7 +48,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
     try ISpoke(spoke).withdraw(reserveId, amount, msg.sender) {
       _after();
     } catch {
-      revert('TreasurySpokeHandler: withdraw failed');
+      vm.assume(false);
     }
   }
 
@@ -61,7 +61,7 @@ contract TreasurySpokeHandler is BaseHandler, ITreasurySpokeHandler {
     try ITreasurySpoke(hubInfo[hub].treasurySpoke).transfer(asset, to, amount) {
       _after();
     } catch {
-      revert('TreasurySpokeHandler: transfer failed');
+      vm.assume(false);
     }
   }
 

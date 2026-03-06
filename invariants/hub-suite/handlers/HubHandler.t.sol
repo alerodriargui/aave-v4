@@ -55,7 +55,7 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       assertLe(previewAddedShares, addedShares, HSPOST_HUB_ERC4626_ADD_C);
     } else {
-      revert('HubHandler: add failed');
+      vm.assume(false);
     }
   }
 
@@ -91,7 +91,7 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       assertGe(previewRemovedShares, removedShares, HSPOST_HUB_ERC4626_REMOVE_C);
     } else {
-      revert('HubHandler: remove failed');
+      vm.assume(false);
     }
   }
 
@@ -125,7 +125,7 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       assertGe(previewDrawnShares, drawnShares, HSPOST_HUB_ERC4626_DRAW_C);
     } else {
-      revert('HubHandler: draw failed');
+      vm.assume(false);
     }
   }
 
@@ -183,7 +183,7 @@ contract HubHandler is BaseHandler, IHubHandler {
 
       assertLe(previewRestoredShares, restoredDrawnShares, HSPOST_HUB_ERC4626_RESTORE_C);
     } else {
-      revert('HubHandler: restore failed');
+      vm.assume(false);
     }
   }
 
@@ -210,7 +210,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     if (ok) {
       _after();
     } else {
-      revert('HubHandler: reportDeficit failed');
+      vm.assume(false);
     }
   }
 
@@ -228,7 +228,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     if (ok) {
       _after();
     } else {
-      revert('HubHandler: eliminateDeficit failed');
+      vm.assume(false);
     }
   }
 
@@ -258,7 +258,7 @@ contract HubHandler is BaseHandler, IHubHandler {
         HSPOST_HUB_M
       );
     } else {
-      revert('HubHandler: refreshPremium failed');
+      vm.assume(false);
     }
   }
 
@@ -282,7 +282,7 @@ contract HubHandler is BaseHandler, IHubHandler {
         HSPOST_HUB_M
       );
     } else {
-      revert('HubHandler: refreshPremium failed');
+      vm.assume(false);
     }
   }
 
@@ -297,7 +297,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     if (ok) {
       _after();
     } else {
-      revert('HubHandler: payFeeShares failed');
+      vm.assume(false);
     }
   }
 
@@ -314,7 +314,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     if (ok) {
       _after();
     } else {
-      revert('HubHandler: transferShares failed');
+      vm.assume(false);
     }
   }
 
@@ -326,7 +326,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     try hub.sweep(assetId, amount) {
       _after();
     } catch {
-      revert('HubHandler: sweep failed');
+      vm.assume(false);
     }
   }
 
@@ -341,7 +341,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     try hub.reclaim(assetId, amount) {
       _after();
     } catch {
-      revert('HubHandler: reclaim failed');
+      vm.assume(false);
     }
   }
 
@@ -351,7 +351,7 @@ contract HubHandler is BaseHandler, IHubHandler {
     try hub.mintFeeShares(assetId) {
       _after();
     } catch {
-      revert('HubHandler: mintFeeShares failed');
+      vm.assume(false);
     }
   }
 

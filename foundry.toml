@@ -64,6 +64,24 @@ test = 'invariants/'
 additional_compiler_profiles = []
 compilation_restrictions = []
 
+[profile.invariant.invariant]
+fail_on_revert = false
+runs = 1000000
+depth = 300
+corpus_dir = "invariants/protocol-suite/_corpus/foundry"
+show_solidity = true
+show_metrics = true
+show_edge_coverage = true
+
+[profile.invariant.fuzz]
+seed = '0x1'
+include_storage = true
+include_push_bytes = true
+call_override = false
+dictionary_weight = 80
+shrink_sequence = true
+
+
 [rpc_endpoints]
 mainnet = "${RPC_MAINNET}"
 optimism = "${RPC_OPTIMISM}"
