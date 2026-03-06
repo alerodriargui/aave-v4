@@ -48,6 +48,13 @@ jobs:
           config: invariants/hub-suite/_config/echidna_config_ci.yaml
           test-mode: ${{ matrix.mode }}
 
+      - name: Upload Echidna corpus
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: echidna-corpus-hub-${{ matrix.mode }}
+          path: corpus/
+
   medusa:
     name: Medusa
     runs-on: ubuntu-latest
@@ -80,3 +87,10 @@ jobs:
 
       - name: Run Medusa
         run: medusa fuzz --config invariants/hub-suite/_config/medusa_config_ci.json
+
+      - name: Upload Medusa corpus
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: medusa-corpus-hub
+          path: corpus/
