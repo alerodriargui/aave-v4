@@ -72,7 +72,7 @@ contract MockHubConfigurator is IHubConfigurator {
 
   event UpdateSpokeHaltedCalled(address hub, uint256 assetId, address spoke, bool halted);
 
-  event UpdateSpokeSupplyCapCalled(address hub, uint256 assetId, address spoke, uint256 addCap);
+  event UpdateSpokeAddCapCalled(address hub, uint256 assetId, address spoke, uint256 addCap);
 
   event UpdateSpokeDrawCapCalled(address hub, uint256 assetId, address spoke, uint256 drawCap);
 
@@ -112,7 +112,7 @@ contract MockHubConfigurator is IHubConfigurator {
   error AddSpokeToAssetsReverted();
   error UpdateSpokeActiveReverted();
   error UpdateSpokeHaltedReverted();
-  error UpdateSpokeSupplyCapReverted();
+  error UpdateSpokeAddCapReverted();
   error UpdateSpokeDrawCapReverted();
   error UpdateSpokeRiskPremiumThresholdReverted();
   error UpdateSpokeCapsReverted();
@@ -248,14 +248,9 @@ contract MockHubConfigurator is IHubConfigurator {
     emit UpdateSpokeHaltedCalled(hub, assetId, spoke, halted);
   }
 
-  function updateSpokeSupplyCap(
-    address hub,
-    uint256 assetId,
-    address spoke,
-    uint256 addCap
-  ) external {
-    if (shouldRevert[msg.sig]) revert UpdateSpokeSupplyCapReverted();
-    emit UpdateSpokeSupplyCapCalled(hub, assetId, spoke, addCap);
+  function updateSpokeAddCap(address hub, uint256 assetId, address spoke, uint256 addCap) external {
+    if (shouldRevert[msg.sig]) revert UpdateSpokeAddCapReverted();
+    emit UpdateSpokeAddCapCalled(hub, assetId, spoke, addCap);
   }
 
   function updateSpokeDrawCap(

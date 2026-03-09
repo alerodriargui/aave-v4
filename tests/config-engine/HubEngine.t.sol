@@ -375,7 +375,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     update.halted = EngineFlags.KEEP_CURRENT;
 
     vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.UpdateSpokeSupplyCapCalled(HUB, ASSET_ID, SPOKE, 1000);
+    emit MockHubConfigurator.UpdateSpokeAddCapCalled(HUB, ASSET_ID, SPOKE, 1000);
 
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }

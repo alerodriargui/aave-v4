@@ -122,7 +122,7 @@ library HubEngine {
 
   /// @notice Updates spoke config (caps, risk premium threshold, status) on hubs.
   /// @dev Dispatches to the appropriate HubConfigurator methods based on sentinel values:
-  ///   Caps: both set → updateSpokeCaps; only add → updateSpokeSupplyCap; only draw → updateSpokeDrawCap.
+  ///   Caps: both set → updateSpokeCaps; only add → updateSpokeAddCap; only draw → updateSpokeDrawCap.
   ///   Risk premium threshold: set → updateSpokeRiskPremiumThreshold.
   ///   Status: active set → updateSpokeActive; halted set → updateSpokeHalted.
   /// @param updates The spoke config updates to execute.
@@ -144,7 +144,7 @@ library HubEngine {
           updates[i].drawCap
         );
       } else if (updateAdd) {
-        updates[i].hubConfigurator.updateSpokeSupplyCap(
+        updates[i].hubConfigurator.updateSpokeAddCap(
           updates[i].hub,
           updates[i].assetId,
           updates[i].spoke,
