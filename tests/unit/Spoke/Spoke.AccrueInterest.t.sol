@@ -256,7 +256,6 @@ contract SpokeAccrueInterestTest is SpokeBase {
     TestAmounts memory amounts,
     uint40 skipTime
   ) public {
-    vm.skip(true, 'pending rft');
     amounts = _bound(amounts);
     skipTime = bound(skipTime, 0, MAX_SKIP_TIME).toUint40();
 
