@@ -107,7 +107,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         startTime
       );
       _assertProtocolSupplyAndDebt({
+        spoke: spoke2,
         reserveId: testAmounts[i].reserveId,
+        user: bob,
         reserveName: testAmounts[i].name,
         expectedUserSupply: testAmounts[i].supplyAmount,
         expectedReserveSupply: MAX_SUPPLY_AMOUNT,
@@ -139,7 +141,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
         (interest * testAmounts[i].supplyAmount) / MAX_SUPPLY_AMOUNT;
 
       _assertProtocolSupplyAndDebt({
+        spoke: spoke2,
         reserveId: testAmounts[i].reserveId,
+        user: bob,
         reserveName: testAmounts[i].name,
         expectedUserSupply: expectedUserSupply,
         expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
@@ -193,7 +197,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           (interest * testAmounts[i].originalSupplyAmount) / MAX_SUPPLY_AMOUNT;
 
         _assertProtocolSupplyAndDebt({
+          spoke: spoke2,
           reserveId: testAmounts[i].reserveId,
+          user: bob,
           reserveName: testAmounts[i].name,
           expectedUserSupply: expectedUserSupply,
           expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
@@ -212,7 +218,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
       for (uint256 i = 0; i < 4; ++i) {
         if (testAmounts[i].originalBorrowAmount == 0) {
           _assertProtocolSupplyAndDebt({
+            spoke: spoke2,
             reserveId: testAmounts[i].reserveId,
+            user: bob,
             reserveName: testAmounts[i].name,
             expectedUserSupply: testAmounts[i].originalSupplyAmount,
             expectedReserveSupply: MAX_SUPPLY_AMOUNT,
@@ -245,7 +253,9 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
           (interest * testAmounts[i].originalSupplyAmount) / MAX_SUPPLY_AMOUNT;
 
         _assertProtocolSupplyAndDebt({
+          spoke: spoke2,
           reserveId: testAmounts[i].reserveId,
+          user: bob,
           reserveName: testAmounts[i].name,
           expectedUserSupply: expectedUserSupply,
           expectedReserveSupply: MAX_SUPPLY_AMOUNT + interest,
@@ -380,39 +390,5 @@ contract SpokeAccrueInterestScenarioTest is SpokeBase {
     );
 
     return amounts;
-  }
-
-  function _assertProtocolSupplyAndDebt(
-    uint256 reserveId,
-    string memory reserveName,
-    uint256 expectedUserSupply,
-    uint256 expectedReserveSupply,
-    uint256 expectedDrawnDebt,
-    uint256 expectedPremiumDebt,
-    string memory label
-  ) internal view {
-    _assertUserSupply(
-      spoke2,
-      reserveId,
-      bob,
-      expectedUserSupply,
-      string.concat(reserveName, label)
-    );
-    _assertReserveSupply(
-      spoke2,
-      reserveId,
-      expectedReserveSupply,
-      string.concat(reserveName, label)
-    );
-    _assertSpokeSupply(spoke2, reserveId, expectedReserveSupply, string.concat(reserveName, label));
-    _assertAssetSupply(spoke2, reserveId, expectedReserveSupply, string.concat(reserveName, label));
-    _assertSingleUserProtocolDebt(
-      spoke2,
-      reserveId,
-      bob,
-      expectedDrawnDebt,
-      expectedPremiumDebt,
-      string.concat(reserveName, label)
-    );
   }
 }
