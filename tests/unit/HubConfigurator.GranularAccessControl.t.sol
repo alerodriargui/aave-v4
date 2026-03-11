@@ -60,7 +60,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     spokeSelectors[1] = IHubConfigurator.addSpokeToAssets.selector;
     spokeSelectors[2] = IHubConfigurator.updateSpokeActive.selector;
     spokeSelectors[3] = IHubConfigurator.updateSpokeHalted.selector;
-    spokeSelectors[4] = IHubConfigurator.updateSpokeSupplyCap.selector;
+    spokeSelectors[4] = IHubConfigurator.updateSpokeAddCap.selector;
     spokeSelectors[5] = IHubConfigurator.updateSpokeDrawCap.selector;
     spokeSelectors[6] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
     spokeSelectors[7] = IHubConfigurator.updateSpokeCaps.selector;
@@ -77,9 +77,9 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
     encodedIrData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00,
-        baseVariableBorrowRate: 5_00,
-        variableRateSlope1: 5_00,
-        variableRateSlope2: 5_00
+        baseDrawnRate: 5_00,
+        rateGrowthBeforeOptimal: 5_00,
+        rateGrowthAfterOptimal: 5_00
       })
     );
 
@@ -164,10 +164,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
       abi.encodeCall(IHubConfigurator.updateSpokeHalted, (address(hub1), assetId, spokeAddr, true))
     );
     spokeManagerCalldata.push(
-      abi.encodeCall(
-        IHubConfigurator.updateSpokeSupplyCap,
-        (address(hub1), assetId, spokeAddr, 5000)
-      )
+      abi.encodeCall(IHubConfigurator.updateSpokeAddCap, (address(hub1), assetId, spokeAddr, 5000))
     );
     spokeManagerCalldata.push(
       abi.encodeCall(IHubConfigurator.updateSpokeDrawCap, (address(hub1), assetId, spokeAddr, 2500))

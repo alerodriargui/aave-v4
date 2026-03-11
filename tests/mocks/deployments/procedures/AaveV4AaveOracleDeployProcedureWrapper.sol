@@ -7,7 +7,7 @@ import {AaveV4AaveOracleDeployProcedure} from 'src/deployments/procedures/deploy
 contract AaveV4AaveOracleDeployProcedureWrapper is AaveV4AaveOracleDeployProcedure {
   bool public IS_TEST = true;
 
-  function deployAaveOracle(uint8 decimals, string memory description) external returns (address) {
-    return _deployAaveOracle(decimals, description);
+  function deployAaveOracle(uint8 decimals) external returns (address) {
+    return _deployAaveOracle(decimals);
   }
 }

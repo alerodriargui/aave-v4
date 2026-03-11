@@ -18,11 +18,10 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
     address authority_,
     bytes memory spokeBytecode_,
     uint8 oracleDecimals_,
-    string memory oracleDescription_,
     uint16 maxUserReservesLimit_,
     bytes32 salt_
   ) {
-    address aaveOracle = _deployAaveOracle(oracleDecimals_, oracleDescription_);
+    address aaveOracle = _deployAaveOracle(oracleDecimals_);
     (address spokeProxy, address spokeImplementation) = _deployUpgradeableSpokeInstance({
       spokeProxyAdminOwner: spokeProxyAdminOwner_,
       authority: authority_,
@@ -34,7 +33,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
     IAaveOracle(aaveOracle).setSpoke(spokeProxy);
 
     require(ISpoke(spokeProxy).ORACLE() == aaveOracle, 'spoke oracle mismatch');
-    require(IAaveOracle(aaveOracle).SPOKE() == spokeProxy, 'oracle spoke mismatch');
+    require(IAaveOracle(aaveOracle).spoke() == spokeProxy, 'oracle spoke mismatch');
 
     _report = BatchReports.SpokeInstanceBatchReport({
       aaveOracle: aaveOracle,

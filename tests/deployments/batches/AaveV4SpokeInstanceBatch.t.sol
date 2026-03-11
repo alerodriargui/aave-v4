@@ -15,7 +15,6 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
-      oracleDescription_: 'Test',
       maxUserReservesLimit_: 128,
       salt_: salt
     });
@@ -41,8 +40,8 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
   }
 
   function test_oracleWiring() public view {
-    assertEq(IPriceOracle(report.aaveOracle).SPOKE(), report.spokeProxy);
-    assertEq(IPriceOracle(report.aaveOracle).DECIMALS(), 8);
+    assertEq(IPriceOracle(report.aaveOracle).spoke(), report.spokeProxy);
+    assertEq(IPriceOracle(report.aaveOracle).decimals(), 8);
   }
 
   function test_revert_zeroAuthority() public {
@@ -52,7 +51,6 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       authority_: address(0),
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
-      oracleDescription_: 'Test',
       maxUserReservesLimit_: 128,
       salt_: salt
     });
@@ -65,7 +63,6 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
-      oracleDescription_: 'Test',
       maxUserReservesLimit_: 128,
       salt_: salt
     });
@@ -78,22 +75,8 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 0,
-      oracleDescription_: 'Test',
       maxUserReservesLimit_: 128,
       salt_: keccak256('zeroDecimalsSalt')
-    });
-  }
-
-  function test_revert_emptyOracleDescription() public {
-    vm.expectRevert('invalid oracle description');
-    new AaveV4SpokeInstanceBatch({
-      spokeProxyAdminOwner_: admin,
-      authority_: accessManager,
-      spokeBytecode_: spokeBytecode,
-      oracleDecimals_: 8,
-      oracleDescription_: '',
-      maxUserReservesLimit_: 128,
-      salt_: keccak256('emptyDescSalt')
     });
   }
 
@@ -104,7 +87,6 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
-      oracleDescription_: 'Test',
       maxUserReservesLimit_: 0,
       salt_: keccak256('zeroMaxReservesSalt')
     });
@@ -116,7 +98,6 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
-      oracleDescription_: 'Test',
       maxUserReservesLimit_: 128,
       salt_: keccak256('differentSalt')
     });

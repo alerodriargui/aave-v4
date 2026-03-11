@@ -73,9 +73,9 @@ contract AaveV4HubConfigProceduresTest is BatchBaseTest {
     bytes memory irData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00,
-        baseVariableBorrowRate: 5_00,
-        variableRateSlope1: 5_00,
-        variableRateSlope2: 5_00
+        baseDrawnRate: 5_00,
+        rateGrowthBeforeOptimal: 5_00,
+        rateGrowthAfterOptimal: 5_00
       })
     );
 
@@ -96,16 +96,16 @@ contract AaveV4HubConfigProceduresTest is BatchBaseTest {
     assertEq(config.reinvestmentController, reinvestmentController);
   }
 
-  function test_addAssetViaConfigurator_fuzz(address reinvestmentController) public {
+  function test_addAssetViaConfigurator_fuzz(address reinvestmentController_) public {
     // Each call to addAsset needs a unique underlying
     address fuzzUnderlying = address(new TestnetERC20('Fuzz Token', 'FUZZ', 18));
 
     bytes memory irData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00,
-        baseVariableBorrowRate: 5_00,
-        variableRateSlope1: 5_00,
-        variableRateSlope2: 5_00
+        baseDrawnRate: 5_00,
+        rateGrowthBeforeOptimal: 5_00,
+        rateGrowthAfterOptimal: 5_00
       })
     );
 
@@ -116,23 +116,23 @@ contract AaveV4HubConfigProceduresTest is BatchBaseTest {
       feeReceiver: treasurySpoke,
       liquidityFee: 0,
       irStrategy: irStrategy,
-      reinvestmentController: reinvestmentController,
+      reinvestmentController: reinvestmentController_,
       irData: irData
     });
 
     uint256 assetId = AaveV4HubConfigProcedures.addAssetViaConfigurator(hubConfigurator, params);
 
     IHub.AssetConfig memory config = IHub(hub).getAssetConfig(assetId);
-    assertEq(config.reinvestmentController, reinvestmentController);
+    assertEq(config.reinvestmentController, reinvestmentController_);
   }
 
   function test_addAssetViaConfigurator_withoutReinvestmentController() public {
     bytes memory irData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00,
-        baseVariableBorrowRate: 5_00,
-        variableRateSlope1: 5_00,
-        variableRateSlope2: 5_00
+        baseDrawnRate: 5_00,
+        rateGrowthBeforeOptimal: 5_00,
+        rateGrowthAfterOptimal: 5_00
       })
     );
 

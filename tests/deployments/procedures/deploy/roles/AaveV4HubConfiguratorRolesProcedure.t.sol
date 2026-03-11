@@ -246,7 +246,7 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(selectors[0], IHubConfigurator.resetAssetCaps.selector);
     assertEq(selectors[1], IHubConfigurator.resetSpokeCaps.selector);
     assertEq(selectors[2], IHubConfigurator.updateSpokeCaps.selector);
-    assertEq(selectors[3], IHubConfigurator.updateSpokeSupplyCap.selector);
+    assertEq(selectors[3], IHubConfigurator.updateSpokeAddCap.selector);
     assertEq(selectors[4], IHubConfigurator.updateSpokeDrawCap.selector);
   }
 

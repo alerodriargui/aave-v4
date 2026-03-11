@@ -17,9 +17,8 @@ contract AaveV4TreasurySpokeDeployProcedureTest is ProceduresBase {
       hub,
       salt
     );
-    assertNotEq(treasurySpoke, address(0));
     assertEq(Ownable(treasurySpoke).owner(), owner);
-    assertEq(address(ITreasurySpoke(treasurySpoke).HUB()), hub);
+    assertEq(Ownable(ProxyHelper.getProxyAdmin(treasurySpoke)).owner(), owner);
   }
 
   function test_deployTreasurySpoke_reverts() public {

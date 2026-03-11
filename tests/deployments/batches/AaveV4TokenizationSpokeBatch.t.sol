@@ -38,9 +38,9 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     bytes memory irData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00,
-        baseVariableBorrowRate: 5_00,
-        variableRateSlope1: 5_00,
-        variableRateSlope2: 5_00
+        baseDrawnRate: 5_00,
+        rateGrowthBeforeOptimal: 5_00,
+        rateGrowthAfterOptimal: 5_00
       })
     );
 
@@ -61,7 +61,7 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     // Deploy the TokenizationSpoke batch
     tokenizationSpokeBatch = new AaveV4TokenizationSpokeBatch(
       hub,
-      assetId,
+      underlying,
       admin,
       shareName,
       shareSymbol,
@@ -89,14 +89,14 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
 
   function test_revert_zeroHub() public {
     vm.expectRevert('invalid hub');
-    new AaveV4TokenizationSpokeBatch(address(0), assetId, admin, shareName, shareSymbol, salt);
+    new AaveV4TokenizationSpokeBatch(address(0), underlying, admin, shareName, shareSymbol, salt);
   }
 
   function test_revert_zeroSpokeProxyAdminOwner() public {
     vm.expectRevert('invalid spoke proxy admin owner');
     new AaveV4TokenizationSpokeBatch(
       hub,
-      assetId,
+      underlying,
       address(0),
       shareName,
       shareSymbol,
@@ -108,7 +108,7 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     vm.expectRevert('invalid share name');
     new AaveV4TokenizationSpokeBatch(
       hub,
-      assetId,
+      underlying,
       admin,
       '',
       shareSymbol,
@@ -120,7 +120,7 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     vm.expectRevert('invalid share symbol');
     new AaveV4TokenizationSpokeBatch(
       hub,
-      assetId,
+      underlying,
       admin,
       shareName,
       '',
@@ -128,11 +128,11 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     );
   }
 
-  function test_revert_invalidAssetId() public {
+  function test_revert_invalidUnderlying() public {
     vm.expectRevert();
     new AaveV4TokenizationSpokeBatch(
       hub,
-      999,
+      makeAddr('nonExistentUnderlying'),
       admin,
       shareName,
       shareSymbol,
@@ -143,7 +143,7 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
   function test_differentSaltProducesDifferentAddress() public {
     AaveV4TokenizationSpokeBatch newBatch = new AaveV4TokenizationSpokeBatch(
       hub,
-      assetId,
+      underlying,
       admin,
       shareName,
       shareSymbol,

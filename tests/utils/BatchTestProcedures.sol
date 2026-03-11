@@ -125,7 +125,6 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     inputs.spokeLabels = _spokeLabels;
     inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(_spokeLabels.length);
     inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(_spokeLabels.length);
-    inputs.spokeOracleDescriptions = _defaultSpokeOracleDescriptions(_spokeLabels);
     inputs.nativeWrapper = _weth9;
     inputs.deployNativeTokenGateway = true;
     inputs.deploySignatureGateway = true;
@@ -148,15 +147,6 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     decimals = new uint8[](count);
     for (uint256 i; i < count; i++) {
       decimals[i] = Constants.ORACLE_DECIMALS;
-    }
-  }
-
-  function _defaultSpokeOracleDescriptions(
-    string[] memory labels
-  ) internal pure returns (string[] memory descriptions) {
-    descriptions = new string[](labels.length);
-    for (uint256 i; i < labels.length; i++) {
-      descriptions[i] = string.concat(labels[i], ' (USD)');
     }
   }
 
@@ -240,19 +230,14 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     string memory label
   ) internal view {
     assertEq(
-      IAaveOracle(report.report.aaveOracle).SPOKE(),
+      IAaveOracle(report.report.aaveOracle).spoke(),
       report.report.spokeProxy,
       string.concat(label, ' spoke on oracle')
     );
     assertEq(
-      IAaveOracle(report.report.aaveOracle).DECIMALS(),
+      IAaveOracle(report.report.aaveOracle).decimals(),
       Constants.ORACLE_DECIMALS,
       string.concat(label, ' oracle decimals')
-    );
-    assertEq(
-      IAaveOracle(report.report.aaveOracle).DESCRIPTION(),
-      string.concat(report.label, Constants.ORACLE_SUFFIX),
-      string.concat(label, ' oracle description')
     );
   }
 
@@ -302,10 +287,10 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     OrchestrationReports.HubDeploymentReport memory report,
     string memory label
   ) internal view {
-    assertEq(
-      address(ITreasurySpoke(report.report.treasurySpoke).HUB()),
-      report.report.hub,
-      string.concat(label, ' hub on treasury spoke')
+    assertNotEq(
+      report.report.treasurySpoke,
+      address(0),
+      string.concat(label, ' treasury spoke deployed')
     );
   }
 

@@ -280,7 +280,6 @@ library AaveV4DeployOrchestration {
         spokeBytecode: spokeBytecode,
         maxUserReservesLimit: inputs.spokeMaxReservesLimits[i],
         oracleDecimals: inputs.spokeOracleDecimals[i],
-        oracleDescription: inputs.spokeOracleDescriptions[i],
         salt: childSalt
       });
     }
@@ -296,7 +295,6 @@ library AaveV4DeployOrchestration {
     bytes memory spokeBytecode,
     uint16 maxUserReservesLimit,
     uint8 oracleDecimals,
-    string memory oracleDescription,
     bytes32 salt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport memory) {
     OrchestrationReports.SpokeDeploymentReport memory spokeReport;
@@ -308,7 +306,6 @@ library AaveV4DeployOrchestration {
       authority: authority,
       spokeBytecode: spokeBytecode,
       oracleDecimals: oracleDecimals,
-      oracleDescription: oracleDescription,
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
@@ -324,7 +321,6 @@ library AaveV4DeployOrchestration {
     address authority,
     bytes memory spokeBytecode,
     uint8 oracleDecimals,
-    string memory oracleDescription,
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
@@ -334,7 +330,6 @@ library AaveV4DeployOrchestration {
       authority: authority,
       spokeBytecode: spokeBytecode,
       oracleDecimals: oracleDecimals,
-      oracleDescription: oracleDescription,
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });

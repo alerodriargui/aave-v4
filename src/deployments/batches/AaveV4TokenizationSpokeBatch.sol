@@ -11,7 +11,7 @@ contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure 
 
   constructor(
     address hub_,
-    uint256 assetId_,
+    address underlying_,
     address spokeProxyAdminOwner_,
     string memory shareName_,
     string memory shareSymbol_,
@@ -22,7 +22,7 @@ contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure 
       address tokenizationSpokeImplementation
     ) = _deployUpgradeableTokenizationSpokeInstance({
         hub: hub_,
-        assetId: assetId_,
+        underlying: underlying_,
         spokeProxyAdminOwner: spokeProxyAdminOwner_,
         shareName: shareName_,
         shareSymbol: shareSymbol_,

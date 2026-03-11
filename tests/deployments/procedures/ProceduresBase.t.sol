@@ -51,7 +51,6 @@ contract ProceduresBase is Create2TestHelper {
   address public nativeWrapper = makeAddr('nativeWrapper');
   address public accessManagerAdmin = makeAddr('accessManagerAdmin');
   uint8 public oracleDecimals = 8;
-  string public oracleDescription = 'Oracle Description';
   uint16 public maxUserReservesLimit = Constants.MAX_ALLOWED_USER_RESERVES_LIMIT;
   address public spoke = makeAddr('spoke');
   address public aaveOracle;
@@ -68,7 +67,7 @@ contract ProceduresBase is Create2TestHelper {
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
 
     accessManager = address(new AccessManagerEnumerable(accessManagerAdmin));
-    aaveOracle = address(new AaveOracle(oracleDecimals, oracleDescription));
+    aaveOracle = address(new AaveOracle(oracleDecimals));
     salt = keccak256('testSalt');
   }
 }

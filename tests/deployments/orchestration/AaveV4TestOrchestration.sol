@@ -93,11 +93,6 @@ library AaveV4TestOrchestration {
           authority: report.accessManager,
           spokeBytecode: spokeBytecode,
           oracleDecimals: Constants.ORACLE_DECIMALS,
-          oracleDescription: string.concat(
-            'Spoke ',
-            string(abi.encode(i)),
-            Constants.ORACLE_SUFFIX
-          ),
           maxUserReservesLimit: Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
           salt: keccak256(abi.encodePacked(salt, 'spoke-', string(abi.encode(i))))
         });

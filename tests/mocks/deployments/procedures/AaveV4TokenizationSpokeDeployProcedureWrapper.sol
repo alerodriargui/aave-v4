@@ -9,7 +9,7 @@ contract AaveV4TokenizationSpokeDeployProcedureWrapper is AaveV4TokenizationSpok
 
   function deployUpgradeableTokenizationSpokeInstance(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spokeProxyAdminOwner,
     string memory shareName,
     string memory shareSymbol,
@@ -18,7 +18,7 @@ contract AaveV4TokenizationSpokeDeployProcedureWrapper is AaveV4TokenizationSpok
     return
       _deployUpgradeableTokenizationSpokeInstance(
         hub,
-        assetId,
+        underlying,
         spokeProxyAdminOwner,
         shareName,
         shareSymbol,

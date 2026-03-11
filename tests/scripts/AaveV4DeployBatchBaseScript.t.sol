@@ -40,7 +40,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.spokeLabels = ['spoke1', 'spoke2', 'spoke3'];
     _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(3);
     _inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(3);
-    _inputs.spokeOracleDescriptions = _defaultSpokeOracleDescriptions(_inputs.spokeLabels);
+
     _inputs.accessManagerAdmin = makeAddr('accessManagerAdmin');
     _inputs.hubAdmin = makeAddr('hubAdmin');
     _inputs.hubConfiguratorAdmin = makeAddr('hubConfiguratorAdmin');
@@ -237,7 +237,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     _inputs.spokeLabels = ['spoke1', 'spoke1'];
     _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(2);
     _inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(2);
-    _inputs.spokeOracleDescriptions = _defaultSpokeOracleDescriptions(_inputs.spokeLabels);
+
     vm.expectRevert('duplicate spoke label: spoke1');
     _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
   }
@@ -289,15 +289,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     decimals = new uint8[](count);
     for (uint256 i; i < count; i++) {
       decimals[i] = Constants.ORACLE_DECIMALS;
-    }
-  }
-
-  function _defaultSpokeOracleDescriptions(
-    string[] memory labels
-  ) internal pure returns (string[] memory descriptions) {
-    descriptions = new string[](labels.length);
-    for (uint256 i; i < labels.length; i++) {
-      descriptions[i] = string.concat(labels[i], ' (USD)');
     }
   }
 }

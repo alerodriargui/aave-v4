@@ -39,9 +39,9 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     bytes memory irData = abi.encode(
       IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 90_00,
-        baseVariableBorrowRate: 5_00,
-        variableRateSlope1: 5_00,
-        variableRateSlope2: 5_00
+        baseDrawnRate: 5_00,
+        rateGrowthBeforeOptimal: 5_00,
+        rateGrowthAfterOptimal: 5_00
       })
     );
 
@@ -59,7 +59,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     (address tokenizationSpokeProxy, address tokenizationSpokeImplementation) = wrapper
       .deployUpgradeableTokenizationSpokeInstance(
         deployedHub,
-        assetId,
+        underlying,
         owner,
         shareName,
         shareSymbol,
@@ -81,7 +81,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     vm.expectRevert('invalid hub');
     wrapper.deployUpgradeableTokenizationSpokeInstance({
       hub: address(0),
-      assetId: assetId,
+      underlying: underlying,
       spokeProxyAdminOwner: owner,
       shareName: shareName,
       shareSymbol: shareSymbol,
@@ -91,7 +91,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     vm.expectRevert('invalid spoke proxy admin owner');
     wrapper.deployUpgradeableTokenizationSpokeInstance({
       hub: deployedHub,
-      assetId: assetId,
+      underlying: underlying,
       spokeProxyAdminOwner: address(0),
       shareName: shareName,
       shareSymbol: shareSymbol,
@@ -101,7 +101,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     vm.expectRevert('invalid share name');
     wrapper.deployUpgradeableTokenizationSpokeInstance({
       hub: deployedHub,
-      assetId: assetId,
+      underlying: underlying,
       spokeProxyAdminOwner: owner,
       shareName: '',
       shareSymbol: shareSymbol,
@@ -111,7 +111,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     vm.expectRevert('invalid share symbol');
     wrapper.deployUpgradeableTokenizationSpokeInstance({
       hub: deployedHub,
-      assetId: assetId,
+      underlying: underlying,
       spokeProxyAdminOwner: owner,
       shareName: shareName,
       shareSymbol: '',
@@ -125,7 +125,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     vm.expectRevert(Create2Utils.FailedCreate2FactoryCall.selector);
     wrapper.deployUpgradeableTokenizationSpokeInstance({
       hub: deployedHub,
-      assetId: 999,
+      underlying: makeAddr('nonExistentUnderlying'),
       spokeProxyAdminOwner: owner,
       shareName: shareName,
       shareSymbol: shareSymbol,

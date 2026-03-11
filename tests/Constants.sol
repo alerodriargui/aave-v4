@@ -24,4 +24,10 @@ library Constants {
   /// @dev Deployments
   uint8 public constant ORACLE_DECIMALS = 8;
   string public constant ORACLE_SUFFIX = ' (USD)';
+
+  /// @dev AssetInterestRateStrategy Constants
+  uint256 internal constant MAX_ALLOWED_DRAWN_RATE = 1000_00; // 1000.00% in BPS
+  uint256 internal constant MIN_ALLOWED_DRAWN_RATE = 0; // not defined in AssetInterestRateStrategy
+  uint256 internal constant MIN_OPTIMAL_RATIO = 1_00; // 1.00% in BPS
+  uint256 internal constant MAX_OPTIMAL_RATIO = 99_00; // 99.00% in BPS
 }

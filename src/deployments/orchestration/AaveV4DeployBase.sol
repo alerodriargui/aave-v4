@@ -53,7 +53,6 @@ library AaveV4DeployBase {
     address authority,
     bytes memory spokeBytecode,
     uint8 oracleDecimals,
-    string memory oracleDescription,
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
@@ -62,7 +61,6 @@ library AaveV4DeployBase {
       authority_: authority,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: oracleDecimals,
-      oracleDescription_: oracleDescription,
       maxUserReservesLimit_: maxUserReservesLimit,
       salt_: salt
     });

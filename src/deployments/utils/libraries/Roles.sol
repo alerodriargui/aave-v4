@@ -124,7 +124,7 @@ library Roles {
     selectors[0] = IHubConfigurator.resetAssetCaps.selector;
     selectors[1] = IHubConfigurator.resetSpokeCaps.selector;
     selectors[2] = IHubConfigurator.updateSpokeCaps.selector;
-    selectors[3] = IHubConfigurator.updateSpokeSupplyCap.selector;
+    selectors[3] = IHubConfigurator.updateSpokeAddCap.selector;
     selectors[4] = IHubConfigurator.updateSpokeDrawCap.selector;
     return selectors;
   }

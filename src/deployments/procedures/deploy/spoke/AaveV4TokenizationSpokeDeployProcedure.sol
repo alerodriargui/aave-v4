@@ -11,7 +11,7 @@ import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
   function _deployUpgradeableTokenizationSpokeInstance(
     address hub,
-    uint256 assetId,
+    address underlying,
     address spokeProxyAdminOwner,
     string memory shareName,
     string memory shareSymbol,
@@ -24,7 +24,7 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
 
     tokenizationSpokeImplementation = Create2Utils.create2Deploy({
       salt: salt,
-      bytecode: _getTokenizationSpokeInstanceInitCode(hub, assetId)
+      bytecode: _getTokenizationSpokeInstanceInitCode(hub, underlying)
     });
 
     tokenizationSpokeProxy = Create2Utils.proxify({
@@ -39,16 +39,17 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
       'tokenization spoke hub mismatch'
     );
     require(
-      ITokenizationSpoke(tokenizationSpokeProxy).assetId() == assetId,
-      'tokenization spoke assetId mismatch'
+      ITokenizationSpoke(tokenizationSpokeProxy).asset() == underlying,
+      'tokenization spoke underlying mismatch'
     );
 
     return (tokenizationSpokeProxy, tokenizationSpokeImplementation);
   }
   function _getTokenizationSpokeInstanceInitCode(
     address hub,
-    uint256 assetId
+    address underlying
   ) internal pure returns (bytes memory) {
-    return abi.encodePacked(type(TokenizationSpokeInstance).creationCode, abi.encode(hub, assetId));
+    return
+      abi.encodePacked(type(TokenizationSpokeInstance).creationCode, abi.encode(hub, underlying));
   }
 }

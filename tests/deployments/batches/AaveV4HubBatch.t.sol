@@ -34,9 +34,9 @@ contract AaveV4HubBatchTest is BatchBaseTest {
   }
 
   function test_treasurySpoke() public view {
-    TreasurySpoke spoke = TreasurySpoke(report.treasurySpoke);
-    assertEq(spoke.owner(), admin);
-    assertEq(address(spoke.HUB()), report.hub);
+    assertNotEq(report.treasurySpoke, address(0));
+    assertEq(Ownable(report.treasurySpoke).owner(), admin);
+    assertEq(Ownable(ProxyHelper.getProxyAdmin(report.treasurySpoke)).owner(), admin);
   }
 
   function test_revert_zeroAuthority() public {

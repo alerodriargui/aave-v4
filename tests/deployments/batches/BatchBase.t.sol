@@ -9,6 +9,7 @@ import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
+import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
