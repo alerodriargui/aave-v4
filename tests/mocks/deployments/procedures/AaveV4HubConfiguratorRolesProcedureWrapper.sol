@@ -37,8 +37,20 @@ contract AaveV4HubConfiguratorRolesProcedureWrapper {
     );
   }
 
-  function getHubConfiguratorFeeUpdaterRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getHubConfiguratorFeeUpdaterRoleSelectors();
+  function getHubConfiguratorLiquidityFeeUpdaterRoleSelectors()
+    external
+    pure
+    returns (bytes4[] memory)
+  {
+    return Roles.getHubConfiguratorLiquidityFeeUpdaterRoleSelectors();
+  }
+
+  function getHubConfiguratorFeeConfiguratorRoleSelectors()
+    external
+    pure
+    returns (bytes4[] memory)
+  {
+    return Roles.getHubConfiguratorFeeConfiguratorRoleSelectors();
   }
 
   function getHubConfiguratorReinvestmentUpdaterRoleSelectors()
@@ -49,31 +61,55 @@ contract AaveV4HubConfiguratorRolesProcedureWrapper {
     return Roles.getHubConfiguratorReinvestmentUpdaterRoleSelectors();
   }
 
+  function getHubConfiguratorHalterRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorHalterRoleSelectors();
+  }
+
+  function getHubConfiguratorDeactivatorRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorDeactivatorRoleSelectors();
+  }
+
+  function getHubConfiguratorCapsResetterRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorCapsResetterRoleSelectors();
+  }
+
+  function getHubConfiguratorCapsUpdaterRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorCapsUpdaterRoleSelectors();
+  }
+
+  function getHubConfiguratorDrawCapUpdaterRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorDrawCapUpdaterRoleSelectors();
+  }
+
+  function getHubConfiguratorAddCapUpdaterRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorAddCapUpdaterRoleSelectors();
+  }
+
+  function getHubConfiguratorSpokeRiskAdminRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorSpokeRiskAdminRoleSelectors();
+  }
+
+  function getHubConfiguratorInterestRateStrategyUpdaterRoleSelectors()
+    external
+    pure
+    returns (bytes4[] memory)
+  {
+    return Roles.getHubConfiguratorInterestRateStrategyUpdaterRoleSelectors();
+  }
+
+  function getHubConfiguratorInterestRateDataUpdaterRoleSelectors()
+    external
+    pure
+    returns (bytes4[] memory)
+  {
+    return Roles.getHubConfiguratorInterestRateDataUpdaterRoleSelectors();
+  }
+
   function getHubConfiguratorAssetListerRoleSelectors() external pure returns (bytes4[] memory) {
     return Roles.getHubConfiguratorAssetListerRoleSelectors();
   }
 
   function getHubConfiguratorSpokeAdderRoleSelectors() external pure returns (bytes4[] memory) {
     return Roles.getHubConfiguratorSpokeAdderRoleSelectors();
-  }
-
-  function getHubConfiguratorInterestRateUpdaterRoleSelectors()
-    external
-    pure
-    returns (bytes4[] memory)
-  {
-    return Roles.getHubConfiguratorInterestRateUpdaterRoleSelectors();
-  }
-
-  function getHubConfiguratorHalterRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getHubConfiguratorHalterRoleSelectors();
-  }
-
-  function getHubConfiguratorActivaterRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getHubConfiguratorActivaterRoleSelectors();
-  }
-
-  function getHubConfiguratorCapSetterRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getHubConfiguratorCapSetterRoleSelectors();
   }
 }

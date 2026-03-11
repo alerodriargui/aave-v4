@@ -1517,13 +1517,13 @@ abstract contract Base is BatchTestProcedures {
   function grantDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
     IAccessManager manager = IAccessManager(hub.authority());
     vm.prank(ADMIN);
-    manager.grantRole(Roles.HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE, target, 0);
+    manager.grantRole(Roles.HUB_DEFICIT_ELIMINATOR_ROLE, target, 0);
   }
 
   function revokeDeficitEliminatorRole(IHub hub, address target) internal pausePrank {
     IAccessManager manager = IAccessManager(hub.authority());
     vm.prank(ADMIN);
-    manager.revokeRole(Roles.HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE, target);
+    manager.revokeRole(Roles.HUB_DEFICIT_ELIMINATOR_ROLE, target);
   }
 
   function getUserInfo(

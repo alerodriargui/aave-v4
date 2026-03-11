@@ -70,4 +70,27 @@ contract ProceduresBase is Create2TestHelper {
     aaveOracle = address(new AaveOracle(oracleDecimals));
     salt = keccak256('testSalt');
   }
+
+  function _assertCanCall(address target, bytes4[] memory selectors) internal {
+    for (uint256 idx; idx < selectors.length; idx++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        admin,
+        target,
+        selectors[idx]
+      );
+      assertTrue(allowed);
+      assertEq(delay, 0);
+    }
+
+    address unauthorized = makeAddr('unauthorized');
+    for (uint256 idx; idx < selectors.length; idx++) {
+      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
+        unauthorized,
+        target,
+        selectors[idx]
+      );
+      assertFalse(allowed);
+      assertEq(delay, 0);
+    }
+  }
 }

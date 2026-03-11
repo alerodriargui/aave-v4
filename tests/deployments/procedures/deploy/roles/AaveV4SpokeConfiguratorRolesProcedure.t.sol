@@ -19,14 +19,14 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     vm.expectRevert('zero address');
     wrapper.grantSpokeConfiguratorRole({
       accessManager: address(0),
-      role: Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE,
       admin: admin
     });
 
     vm.expectRevert('zero address');
     wrapper.grantSpokeConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE,
       admin: address(0)
     });
   }
@@ -46,13 +46,13 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupSpokeConfiguratorRole_reverts() public {
-    bytes4[] memory selectors = wrapper.getSpokeConfiguratorAdminRoleSelectors();
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorPriceAdminRoleSelectors();
 
     vm.expectRevert('zero address');
     wrapper.setupSpokeConfiguratorRole({
       accessManager: address(0),
       spokeConfigurator: spokeConfigurator,
-      role: Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE,
       selectors: selectors
     });
 
@@ -60,7 +60,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     wrapper.setupSpokeConfiguratorRole({
       accessManager: accessManager,
       spokeConfigurator: address(0),
-      role: Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE,
       selectors: selectors
     });
   }
@@ -69,35 +69,22 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantSpokeConfiguratorAllRoles({accessManager: accessManager, admin: admin});
 
-    (bool hasAdmin, ) = IAccessManager(accessManager).hasRole(
-      Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
-      admin
-    );
-    assertTrue(hasAdmin);
-
-    (bool hasLiquidationUpdater, ) = IAccessManager(accessManager).hasRole(
+    uint64[9] memory roles = [
+      Roles.SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE,
+      Roles.SPOKE_CONFIGURATOR_RESERVE_ADMIN_ROLE,
+      Roles.SPOKE_CONFIGURATOR_DYNAMIC_RESERVE_ADMIN_ROLE,
+      Roles.SPOKE_CONFIGURATOR_POSITION_MANAGER_ADMIN_ROLE,
       Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
-      admin
-    );
-    assertTrue(hasLiquidationUpdater);
-
-    (bool hasReserveAdder, ) = IAccessManager(accessManager).hasRole(
+      Roles.SPOKE_CONFIGURATOR_DYNAMIC_LIQUIDATION_UPDATER_ROLE,
       Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE,
-      admin
-    );
-    assertTrue(hasReserveAdder);
-
-    (bool hasFreezer, ) = IAccessManager(accessManager).hasRole(
       Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
-      admin
-    );
-    assertTrue(hasFreezer);
+      Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE
+    ];
 
-    (bool hasPauser, ) = IAccessManager(accessManager).hasRole(
-      Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
-      admin
-    );
-    assertTrue(hasPauser);
+    for (uint256 idx; idx < roles.length; idx++) {
+      (bool hasRole, ) = IAccessManager(accessManager).hasRole(roles[idx], admin);
+      assertTrue(hasRole);
+    }
   }
 
   function test_setupSpokeConfiguratorRoles() public {
@@ -110,9 +97,30 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
         spokeConfigurator,
+        ISpokeConfigurator.updateReservePriceSource.selector
+      ),
+      Roles.SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        spokeConfigurator,
         ISpokeConfigurator.updateBorrowable.selector
       ),
-      Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE
+      Roles.SPOKE_CONFIGURATOR_RESERVE_ADMIN_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        spokeConfigurator,
+        ISpokeConfigurator.addCollateralFactor.selector
+      ),
+      Roles.SPOKE_CONFIGURATOR_DYNAMIC_RESERVE_ADMIN_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        spokeConfigurator,
+        ISpokeConfigurator.updatePositionManager.selector
+      ),
+      Roles.SPOKE_CONFIGURATOR_POSITION_MANAGER_ADMIN_ROLE
     );
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
@@ -120,6 +128,13 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
         ISpokeConfigurator.updateLiquidationConfig.selector
       ),
       Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE
+    );
+    assertEq(
+      IAccessManager(accessManager).getTargetFunctionRole(
+        spokeConfigurator,
+        ISpokeConfigurator.addMaxLiquidationBonus.selector
+      ),
+      Roles.SPOKE_CONFIGURATOR_DYNAMIC_LIQUIDATION_UPDATER_ROLE
     );
     assertEq(
       IAccessManager(accessManager).getTargetFunctionRole(
@@ -149,31 +164,52 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     IAccessManager(accessManager).grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, _wrapper, 0);
   }
 
-  function test_getSpokeConfiguratorAdminRoleSelectors() public view {
-    bytes4[] memory selectors = wrapper.getSpokeConfiguratorAdminRoleSelectors();
-    assertEq(selectors.length, 9);
+  function test_getSpokeConfiguratorPriceAdminRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorPriceAdminRoleSelectors();
+    assertEq(selectors.length, 1);
     assertEq(selectors[0], ISpokeConfigurator.updateReservePriceSource.selector);
-    assertEq(selectors[1], ISpokeConfigurator.updateBorrowable.selector);
-    assertEq(selectors[2], ISpokeConfigurator.updateReceiveSharesEnabled.selector);
-    assertEq(selectors[3], ISpokeConfigurator.updateCollateralRisk.selector);
-    assertEq(selectors[4], ISpokeConfigurator.addCollateralFactor.selector);
-    assertEq(selectors[5], ISpokeConfigurator.updateCollateralFactor.selector);
-    assertEq(selectors[6], ISpokeConfigurator.addDynamicReserveConfig.selector);
-    assertEq(selectors[7], ISpokeConfigurator.updateDynamicReserveConfig.selector);
-    assertEq(selectors[8], ISpokeConfigurator.updatePositionManager.selector);
+  }
+
+  function test_getSpokeConfiguratorReserveAdminRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorReserveAdminRoleSelectors();
+    assertEq(selectors.length, 3);
+    assertEq(selectors[0], ISpokeConfigurator.updateCollateralRisk.selector);
+    assertEq(selectors[1], ISpokeConfigurator.updateReceiveSharesEnabled.selector);
+    assertEq(selectors[2], ISpokeConfigurator.updateBorrowable.selector);
+  }
+
+  function test_getSpokeConfiguratorDynamicReserveAdminRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorDynamicReserveAdminRoleSelectors();
+    assertEq(selectors.length, 4);
+    assertEq(selectors[0], ISpokeConfigurator.addCollateralFactor.selector);
+    assertEq(selectors[1], ISpokeConfigurator.updateCollateralFactor.selector);
+    assertEq(selectors[2], ISpokeConfigurator.addDynamicReserveConfig.selector);
+    assertEq(selectors[3], ISpokeConfigurator.updateDynamicReserveConfig.selector);
+  }
+
+  function test_getSpokeConfiguratorPositionManagerAdminRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorPositionManagerAdminRoleSelectors();
+    assertEq(selectors.length, 1);
+    assertEq(selectors[0], ISpokeConfigurator.updatePositionManager.selector);
   }
 
   function test_getSpokeConfiguratorLiquidationUpdaterRoleSelectors() public view {
     bytes4[] memory selectors = wrapper.getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
-    assertEq(selectors.length, 8);
+    assertEq(selectors.length, 4);
     assertEq(selectors[0], ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector);
     assertEq(selectors[1], ISpokeConfigurator.updateHealthFactorForMaxBonus.selector);
     assertEq(selectors[2], ISpokeConfigurator.updateLiquidationBonusFactor.selector);
     assertEq(selectors[3], ISpokeConfigurator.updateLiquidationConfig.selector);
-    assertEq(selectors[4], ISpokeConfigurator.addMaxLiquidationBonus.selector);
-    assertEq(selectors[5], ISpokeConfigurator.updateMaxLiquidationBonus.selector);
-    assertEq(selectors[6], ISpokeConfigurator.addLiquidationFee.selector);
-    assertEq(selectors[7], ISpokeConfigurator.updateLiquidationFee.selector);
+  }
+
+  function test_getSpokeConfiguratorDynamicLiquidationUpdaterRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper
+      .getSpokeConfiguratorDynamicLiquidationUpdaterRoleSelectors();
+    assertEq(selectors.length, 4);
+    assertEq(selectors[0], ISpokeConfigurator.addMaxLiquidationBonus.selector);
+    assertEq(selectors[1], ISpokeConfigurator.updateMaxLiquidationBonus.selector);
+    assertEq(selectors[2], ISpokeConfigurator.addLiquidationFee.selector);
+    assertEq(selectors[3], ISpokeConfigurator.updateLiquidationFee.selector);
   }
 
   function test_getSpokeConfiguratorReserveAdderRoleSelectors() public view {
@@ -198,39 +234,72 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     assertEq(selectors[2], ISpokeConfigurator.pauseReserve.selector);
   }
 
-  function test_canCall_spokeConfiguratorAdminRole() public {
+  function test_canCall_spokePriceAdminRole() public {
     _grantAdminToWrapper(address(wrapper));
     wrapper.grantSpokeConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE,
       admin: admin
     });
-    bytes4[] memory selectors = wrapper.getSpokeConfiguratorAdminRoleSelectors();
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorPriceAdminRoleSelectors();
     wrapper.setupSpokeConfiguratorRole({
       accessManager: accessManager,
       spokeConfigurator: spokeConfigurator,
-      role: Roles.SPOKE_CONFIGURATOR_ADMIN_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE,
       selectors: selectors
     });
-    for (uint256 i = 0; i < selectors.length; i++) {
-      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
-        admin,
-        spokeConfigurator,
-        selectors[i]
-      );
-      assertTrue(allowed);
-      assertEq(delay, 0);
-    }
+    _assertCanCall(spokeConfigurator, selectors);
+  }
 
-    address unauthorized = makeAddr('unauthorized');
-    for (uint256 i = 0; i < selectors.length; i++) {
-      (bool allowed, ) = IAccessManager(accessManager).canCall(
-        unauthorized,
-        spokeConfigurator,
-        selectors[i]
-      );
-      assertFalse(allowed);
-    }
+  function test_canCall_spokeReserveAdminRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantSpokeConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.SPOKE_CONFIGURATOR_RESERVE_ADMIN_ROLE,
+      admin: admin
+    });
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorReserveAdminRoleSelectors();
+    wrapper.setupSpokeConfiguratorRole({
+      accessManager: accessManager,
+      spokeConfigurator: spokeConfigurator,
+      role: Roles.SPOKE_CONFIGURATOR_RESERVE_ADMIN_ROLE,
+      selectors: selectors
+    });
+    _assertCanCall(spokeConfigurator, selectors);
+  }
+
+  function test_canCall_spokeDynamicReserveAdminRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantSpokeConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.SPOKE_CONFIGURATOR_DYNAMIC_RESERVE_ADMIN_ROLE,
+      admin: admin
+    });
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorDynamicReserveAdminRoleSelectors();
+    wrapper.setupSpokeConfiguratorRole({
+      accessManager: accessManager,
+      spokeConfigurator: spokeConfigurator,
+      role: Roles.SPOKE_CONFIGURATOR_DYNAMIC_RESERVE_ADMIN_ROLE,
+      selectors: selectors
+    });
+    _assertCanCall(spokeConfigurator, selectors);
+  }
+
+  function test_canCall_spokePositionManagerAdminRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantSpokeConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.SPOKE_CONFIGURATOR_POSITION_MANAGER_ADMIN_ROLE,
+      admin: admin
+    });
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorPositionManagerAdminRoleSelectors();
+    wrapper.setupSpokeConfiguratorRole({
+      accessManager: accessManager,
+      spokeConfigurator: spokeConfigurator,
+      role: Roles.SPOKE_CONFIGURATOR_POSITION_MANAGER_ADMIN_ROLE,
+      selectors: selectors
+    });
+    _assertCanCall(spokeConfigurator, selectors);
   }
 
   function test_canCall_spokeLiquidationUpdaterRole() public {
@@ -247,25 +316,25 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
       role: Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE,
       selectors: selectors
     });
-    for (uint256 i = 0; i < selectors.length; i++) {
-      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
-        admin,
-        spokeConfigurator,
-        selectors[i]
-      );
-      assertTrue(allowed);
-      assertEq(delay, 0);
-    }
+    _assertCanCall(spokeConfigurator, selectors);
+  }
 
-    address unauthorized = makeAddr('unauthorized');
-    for (uint256 i = 0; i < selectors.length; i++) {
-      (bool allowed, ) = IAccessManager(accessManager).canCall(
-        unauthorized,
-        spokeConfigurator,
-        selectors[i]
-      );
-      assertFalse(allowed);
-    }
+  function test_canCall_spokeDynamicLiquidationUpdaterRole() public {
+    _grantAdminToWrapper(address(wrapper));
+    wrapper.grantSpokeConfiguratorRole({
+      accessManager: accessManager,
+      role: Roles.SPOKE_CONFIGURATOR_DYNAMIC_LIQUIDATION_UPDATER_ROLE,
+      admin: admin
+    });
+    bytes4[] memory selectors = wrapper
+      .getSpokeConfiguratorDynamicLiquidationUpdaterRoleSelectors();
+    wrapper.setupSpokeConfiguratorRole({
+      accessManager: accessManager,
+      spokeConfigurator: spokeConfigurator,
+      role: Roles.SPOKE_CONFIGURATOR_DYNAMIC_LIQUIDATION_UPDATER_ROLE,
+      selectors: selectors
+    });
+    _assertCanCall(spokeConfigurator, selectors);
   }
 
   function test_canCall_spokeReserveAdderRole() public {
@@ -282,25 +351,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
       role: Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE,
       selectors: selectors
     });
-    for (uint256 i = 0; i < selectors.length; i++) {
-      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
-        admin,
-        spokeConfigurator,
-        selectors[i]
-      );
-      assertTrue(allowed);
-      assertEq(delay, 0);
-    }
-
-    address unauthorized = makeAddr('unauthorized');
-    for (uint256 i = 0; i < selectors.length; i++) {
-      (bool allowed, ) = IAccessManager(accessManager).canCall(
-        unauthorized,
-        spokeConfigurator,
-        selectors[i]
-      );
-      assertFalse(allowed);
-    }
+    _assertCanCall(spokeConfigurator, selectors);
   }
 
   function test_canCall_spokeFreezerRole() public {
@@ -317,25 +368,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
       role: Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE,
       selectors: selectors
     });
-    for (uint256 i = 0; i < selectors.length; i++) {
-      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
-        admin,
-        spokeConfigurator,
-        selectors[i]
-      );
-      assertTrue(allowed);
-      assertEq(delay, 0);
-    }
-
-    address unauthorized = makeAddr('unauthorized');
-    for (uint256 i = 0; i < selectors.length; i++) {
-      (bool allowed, ) = IAccessManager(accessManager).canCall(
-        unauthorized,
-        spokeConfigurator,
-        selectors[i]
-      );
-      assertFalse(allowed);
-    }
+    _assertCanCall(spokeConfigurator, selectors);
   }
 
   function test_canCall_spokePauserRole() public {
@@ -352,25 +385,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
       role: Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE,
       selectors: selectors
     });
-    for (uint256 i = 0; i < selectors.length; i++) {
-      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
-        admin,
-        spokeConfigurator,
-        selectors[i]
-      );
-      assertTrue(allowed);
-      assertEq(delay, 0);
-    }
-
-    address unauthorized = makeAddr('unauthorized');
-    for (uint256 i = 0; i < selectors.length; i++) {
-      (bool allowed, ) = IAccessManager(accessManager).canCall(
-        unauthorized,
-        spokeConfigurator,
-        selectors[i]
-      );
-      assertFalse(allowed);
-    }
+    _assertCanCall(spokeConfigurator, selectors);
   }
 
   function test_canCall_spokeConfiguratorAllRoles() public {
@@ -381,60 +396,19 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
       spokeConfigurator: spokeConfigurator
     });
 
-    bytes4[] memory adminSelectors = wrapper.getSpokeConfiguratorAdminRoleSelectors();
-    for (uint256 i = 0; i < adminSelectors.length; i++) {
-      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
-        admin,
-        spokeConfigurator,
-        adminSelectors[i]
-      );
-      assertTrue(allowed);
-      assertEq(delay, 0);
-    }
+    bytes4[][9] memory selectorGroups;
+    selectorGroups[0] = wrapper.getSpokeConfiguratorPriceAdminRoleSelectors();
+    selectorGroups[1] = wrapper.getSpokeConfiguratorReserveAdminRoleSelectors();
+    selectorGroups[2] = wrapper.getSpokeConfiguratorDynamicReserveAdminRoleSelectors();
+    selectorGroups[3] = wrapper.getSpokeConfiguratorPositionManagerAdminRoleSelectors();
+    selectorGroups[4] = wrapper.getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
+    selectorGroups[5] = wrapper.getSpokeConfiguratorDynamicLiquidationUpdaterRoleSelectors();
+    selectorGroups[6] = wrapper.getSpokeConfiguratorReserveAdderRoleSelectors();
+    selectorGroups[7] = wrapper.getSpokeConfiguratorFreezerRoleSelectors();
+    selectorGroups[8] = wrapper.getSpokeConfiguratorPauserRoleSelectors();
 
-    bytes4[] memory liquidationUpdaterSelectors = wrapper
-      .getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
-    for (uint256 i = 0; i < liquidationUpdaterSelectors.length; i++) {
-      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
-        admin,
-        spokeConfigurator,
-        liquidationUpdaterSelectors[i]
-      );
-      assertTrue(allowed);
-      assertEq(delay, 0);
-    }
-
-    bytes4[] memory reserveAdderSelectors = wrapper.getSpokeConfiguratorReserveAdderRoleSelectors();
-    for (uint256 i = 0; i < reserveAdderSelectors.length; i++) {
-      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
-        admin,
-        spokeConfigurator,
-        reserveAdderSelectors[i]
-      );
-      assertTrue(allowed);
-      assertEq(delay, 0);
-    }
-
-    bytes4[] memory freezerSelectors = wrapper.getSpokeConfiguratorFreezerRoleSelectors();
-    for (uint256 i = 0; i < freezerSelectors.length; i++) {
-      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
-        admin,
-        spokeConfigurator,
-        freezerSelectors[i]
-      );
-      assertTrue(allowed);
-      assertEq(delay, 0);
-    }
-
-    bytes4[] memory pauserSelectors = wrapper.getSpokeConfiguratorPauserRoleSelectors();
-    for (uint256 i = 0; i < pauserSelectors.length; i++) {
-      (bool allowed, uint32 delay) = IAccessManager(accessManager).canCall(
-        admin,
-        spokeConfigurator,
-        pauserSelectors[i]
-      );
-      assertTrue(allowed);
-      assertEq(delay, 0);
+    for (uint256 group; group < selectorGroups.length; group++) {
+      _assertCanCall(spokeConfigurator, selectorGroups[group]);
     }
   }
 }

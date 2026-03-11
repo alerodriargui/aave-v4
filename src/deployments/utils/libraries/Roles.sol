@@ -10,33 +10,50 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 /// @title Roles library
 /// @author Aave Labs
 /// @notice Defines the different roles used by the protocol and their target selectors.
+/// Role IDs are namespaced by domain: Hub (1-99), HubConfigurator (100-199),
+/// Spoke (200-299), SpokeConfigurator (300-399).
 library Roles {
   // AccessManager roles
   uint64 public constant ACCESS_MANAGER_DEFAULT_ADMIN = 0;
+
   // Hub roles
   uint64 public constant HUB_CONFIGURATOR_ROLE = 1;
   uint64 public constant HUB_FEE_MINTER_ROLE = 2;
-  // Spoke roles
-  uint64 public constant SPOKE_USER_POSITION_UPDATER_ROLE = 3;
-  uint64 public constant SPOKE_CONFIGURATOR_ROLE = 4;
-  // HubConfigurator roles
-  uint64 public constant HUB_CONFIGURATOR_FEE_UPDATER_ROLE = 5;
-  uint64 public constant HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE = 6;
-  uint64 public constant HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE = 7;
-  uint64 public constant HUB_CONFIGURATOR_HALTER_ROLE = 8;
-  uint64 public constant HUB_CONFIGURATOR_DEACTIVATER_ROLE = 9;
-  uint64 public constant HUB_CONFIGURATOR_CAPS_UDPATER_ROLE = 10;
-  uint64 public constant HUB_CONFIGURATOR_INTEREST_RATE_UPDATER_ROLE = 11;
-  uint64 public constant HUB_CONFIGURATOR_ASSET_LISTER_ROLE = 12;
-  uint64 public constant HUB_CONFIGURATOR_SPOKE_ADDER_ROLE = 13;
-  // SpokeConfigurator roles
-  uint64 public constant SPOKE_CONFIGURATOR_ADMIN_ROLE = 14;
-  uint64 public constant SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE = 15;
-  uint64 public constant SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE = 16;
-  uint64 public constant SPOKE_CONFIGURATOR_FREEZER_ROLE = 17;
-  uint64 public constant SPOKE_CONFIGURATOR_PAUSER_ROLE = 18;
+  uint64 public constant HUB_DEFICIT_ELIMINATOR_ROLE = 3;
 
-  // hub configurator role on Hub
+  // HubConfigurator roles
+  uint64 public constant HUB_CONFIGURATOR_LIQUIDITY_FEE_UPDATER_ROLE = 100;
+  uint64 public constant HUB_CONFIGURATOR_FEE_CONFIGURATOR_ROLE = 101;
+  uint64 public constant HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE = 102;
+  uint64 public constant HUB_CONFIGURATOR_HALTER_ROLE = 103;
+  uint64 public constant HUB_CONFIGURATOR_DEACTIVATOR_ROLE = 104;
+  uint64 public constant HUB_CONFIGURATOR_CAPS_RESETTER_ROLE = 105;
+  uint64 public constant HUB_CONFIGURATOR_CAPS_UPDATER_ROLE = 106;
+  uint64 public constant HUB_CONFIGURATOR_DRAW_CAP_UPDATER_ROLE = 107;
+  uint64 public constant HUB_CONFIGURATOR_ADD_CAP_UPDATER_ROLE = 108;
+  uint64 public constant HUB_CONFIGURATOR_SPOKE_RISK_ADMIN_ROLE = 109;
+  uint64 public constant HUB_CONFIGURATOR_INTEREST_RATE_STRATEGY_UPDATER_ROLE = 110;
+  uint64 public constant HUB_CONFIGURATOR_INTEREST_RATE_DATA_UPDATER_ROLE = 111;
+  uint64 public constant HUB_CONFIGURATOR_ASSET_LISTER_ROLE = 112;
+  uint64 public constant HUB_CONFIGURATOR_SPOKE_ADDER_ROLE = 113;
+
+  // Spoke roles
+  uint64 public constant SPOKE_USER_POSITION_UPDATER_ROLE = 200;
+  uint64 public constant SPOKE_CONFIGURATOR_ROLE = 201;
+
+  // SpokeConfigurator roles
+  uint64 public constant SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE = 301;
+  uint64 public constant SPOKE_CONFIGURATOR_RESERVE_ADMIN_ROLE = 302;
+  uint64 public constant SPOKE_CONFIGURATOR_DYNAMIC_RESERVE_ADMIN_ROLE = 303;
+  uint64 public constant SPOKE_CONFIGURATOR_POSITION_MANAGER_ADMIN_ROLE = 304;
+  uint64 public constant SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE = 305;
+  uint64 public constant SPOKE_CONFIGURATOR_DYNAMIC_LIQUIDATION_UPDATER_ROLE = 306;
+  uint64 public constant SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE = 307;
+  uint64 public constant SPOKE_CONFIGURATOR_FREEZER_ROLE = 308;
+  uint64 public constant SPOKE_CONFIGURATOR_PAUSER_ROLE = 309;
+
+  // ─── Hub selector getters ───
+
   function getHubConfiguratorRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](5);
     selectors[0] = IHub.addAsset.selector;
@@ -53,17 +70,32 @@ library Roles {
     return selectors;
   }
 
-  function getDeficitEliminatorRoleSelectors() internal pure returns (bytes4[] memory) {
+  function getHubDeficitEliminatorRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = IHub.eliminateDeficit.selector;
     return selectors;
   }
 
-  function getHubConfiguratorFeeUpdaterRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](3);
+  // ─── HubConfigurator selector getters ───
+
+  function getHubConfiguratorLiquidityFeeUpdaterRoleSelectors()
+    internal
+    pure
+    returns (bytes4[] memory)
+  {
+    bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = IHubConfigurator.updateLiquidityFee.selector;
-    selectors[1] = IHubConfigurator.updateFeeReceiver.selector;
-    selectors[2] = IHubConfigurator.updateFeeConfig.selector;
+    return selectors;
+  }
+
+  function getHubConfiguratorFeeConfiguratorRoleSelectors()
+    internal
+    pure
+    returns (bytes4[] memory)
+  {
+    bytes4[] memory selectors = new bytes4[](2);
+    selectors[0] = IHubConfigurator.updateFeeReceiver.selector;
+    selectors[1] = IHubConfigurator.updateFeeConfig.selector;
     return selectors;
   }
 
@@ -77,32 +109,6 @@ library Roles {
     return selectors;
   }
 
-  function getHubConfiguratorAssetListerRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](2);
-    selectors[0] = IHubConfigurator.addAsset.selector;
-    selectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
-    return selectors;
-  }
-
-  function getHubConfiguratorSpokeAdderRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](3);
-    selectors[0] = IHubConfigurator.addSpoke.selector;
-    selectors[1] = IHubConfigurator.addSpokeToAssets.selector;
-    selectors[2] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
-    return selectors;
-  }
-
-  function getHubConfiguratorInterestRateUpdaterRoleSelectors()
-    internal
-    pure
-    returns (bytes4[] memory)
-  {
-    bytes4[] memory selectors = new bytes4[](2);
-    selectors[0] = IHubConfigurator.updateInterestRateStrategy.selector;
-    selectors[1] = IHubConfigurator.updateInterestRateData.selector;
-    return selectors;
-  }
-
   function getHubConfiguratorHalterRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](3);
     selectors[0] = IHubConfigurator.haltAsset.selector;
@@ -111,7 +117,7 @@ library Roles {
     return selectors;
   }
 
-  function getHubConfiguratorActivaterRoleSelectors() internal pure returns (bytes4[] memory) {
+  function getHubConfiguratorDeactivatorRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](3);
     selectors[0] = IHubConfigurator.deactivateAsset.selector;
     selectors[1] = IHubConfigurator.deactivateSpoke.selector;
@@ -119,15 +125,72 @@ library Roles {
     return selectors;
   }
 
-  function getHubConfiguratorCapSetterRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](5);
+  function getHubConfiguratorCapsResetterRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](2);
     selectors[0] = IHubConfigurator.resetAssetCaps.selector;
     selectors[1] = IHubConfigurator.resetSpokeCaps.selector;
-    selectors[2] = IHubConfigurator.updateSpokeCaps.selector;
-    selectors[3] = IHubConfigurator.updateSpokeAddCap.selector;
-    selectors[4] = IHubConfigurator.updateSpokeDrawCap.selector;
     return selectors;
   }
+
+  function getHubConfiguratorCapsUpdaterRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = IHubConfigurator.updateSpokeCaps.selector;
+    return selectors;
+  }
+
+  function getHubConfiguratorDrawCapUpdaterRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = IHubConfigurator.updateSpokeDrawCap.selector;
+    return selectors;
+  }
+
+  function getHubConfiguratorAddCapUpdaterRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = IHubConfigurator.updateSpokeAddCap.selector;
+    return selectors;
+  }
+
+  function getHubConfiguratorSpokeRiskAdminRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
+    return selectors;
+  }
+
+  function getHubConfiguratorInterestRateStrategyUpdaterRoleSelectors()
+    internal
+    pure
+    returns (bytes4[] memory)
+  {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = IHubConfigurator.updateInterestRateStrategy.selector;
+    return selectors;
+  }
+
+  function getHubConfiguratorInterestRateDataUpdaterRoleSelectors()
+    internal
+    pure
+    returns (bytes4[] memory)
+  {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = IHubConfigurator.updateInterestRateData.selector;
+    return selectors;
+  }
+
+  function getHubConfiguratorAssetListerRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](2);
+    selectors[0] = IHubConfigurator.addAsset.selector;
+    selectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
+    return selectors;
+  }
+
+  function getHubConfiguratorSpokeAdderRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](2);
+    selectors[0] = IHubConfigurator.addSpoke.selector;
+    selectors[1] = IHubConfigurator.addSpokeToAssets.selector;
+    return selectors;
+  }
+
+  // ─── Spoke selector getters ───
 
   function getSpokePositionUpdaterRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](2);
@@ -136,7 +199,6 @@ library Roles {
     return selectors;
   }
 
-  // spoke configurator role on Spoke
   function getSpokeConfiguratorRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](7);
     selectors[0] = ISpoke.updateLiquidationConfig.selector;
@@ -149,17 +211,42 @@ library Roles {
     return selectors;
   }
 
-  function getSpokeConfiguratorAdminRoleSelectors() internal pure returns (bytes4[] memory) {
-    bytes4[] memory selectors = new bytes4[](9);
+  // ─── SpokeConfigurator selector getters ───
+
+  function getSpokeConfiguratorPriceAdminRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
-    selectors[1] = ISpokeConfigurator.updateBorrowable.selector;
-    selectors[2] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    selectors[3] = ISpokeConfigurator.updateCollateralRisk.selector;
-    selectors[4] = ISpokeConfigurator.addCollateralFactor.selector;
-    selectors[5] = ISpokeConfigurator.updateCollateralFactor.selector;
-    selectors[6] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    selectors[7] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    selectors[8] = ISpokeConfigurator.updatePositionManager.selector;
+    return selectors;
+  }
+
+  function getSpokeConfiguratorReserveAdminRoleSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](3);
+    selectors[0] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[1] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[2] = ISpokeConfigurator.updateBorrowable.selector;
+    return selectors;
+  }
+
+  function getSpokeConfiguratorDynamicReserveAdminRoleSelectors()
+    internal
+    pure
+    returns (bytes4[] memory)
+  {
+    bytes4[] memory selectors = new bytes4[](4);
+    selectors[0] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[1] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[2] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[3] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    return selectors;
+  }
+
+  function getSpokeConfiguratorPositionManagerAdminRoleSelectors()
+    internal
+    pure
+    returns (bytes4[] memory)
+  {
+    bytes4[] memory selectors = new bytes4[](1);
+    selectors[0] = ISpokeConfigurator.updatePositionManager.selector;
     return selectors;
   }
 
@@ -168,15 +255,24 @@ library Roles {
     pure
     returns (bytes4[] memory)
   {
-    bytes4[] memory selectors = new bytes4[](8);
+    bytes4[] memory selectors = new bytes4[](4);
     selectors[0] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
     selectors[1] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
     selectors[2] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
     selectors[3] = ISpokeConfigurator.updateLiquidationConfig.selector;
-    selectors[4] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    selectors[5] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    selectors[6] = ISpokeConfigurator.addLiquidationFee.selector;
-    selectors[7] = ISpokeConfigurator.updateLiquidationFee.selector;
+    return selectors;
+  }
+
+  function getSpokeConfiguratorDynamicLiquidationUpdaterRoleSelectors()
+    internal
+    pure
+    returns (bytes4[] memory)
+  {
+    bytes4[] memory selectors = new bytes4[](4);
+    selectors[0] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[1] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[2] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[3] = ISpokeConfigurator.updateLiquidationFee.selector;
     return selectors;
   }
 

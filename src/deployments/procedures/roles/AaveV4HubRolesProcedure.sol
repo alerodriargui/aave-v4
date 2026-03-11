@@ -10,9 +10,11 @@ library AaveV4HubRolesProcedure {
   /// @notice Grants all Hub granular roles to `admin`:
   ///   - HUB_CONFIGURATOR_ROLE
   ///   - HUB_FEE_MINTER_ROLE
+  ///   - HUB_DEFICIT_ELIMINATOR_ROLE
   function grantHubAllRoles(address accessManager, address admin) internal {
     grantHubRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, admin);
     grantHubRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, admin);
+    grantHubRole(accessManager, Roles.HUB_DEFICIT_ELIMINATOR_ROLE, admin);
   }
 
   function grantHubRole(address accessManager, uint64 role, address admin) internal {
@@ -31,8 +33,8 @@ library AaveV4HubRolesProcedure {
     setupHubRole(
       accessManager,
       hub,
-      Roles.HUB_CONFIGURATOR_DEFICIT_ELIMINATOR_ROLE,
-      Roles.getDeficitEliminatorRoleSelectors()
+      Roles.HUB_DEFICIT_ELIMINATOR_ROLE,
+      Roles.getHubDeficitEliminatorRoleSelectors()
     );
     setupHubRole(
       accessManager,
