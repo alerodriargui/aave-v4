@@ -65,9 +65,9 @@ additional_compiler_profiles = []
 compilation_restrictions = []
 
 [profile.invariant.invariant]
-fail_on_revert = false
-runs = 1000000
-depth = 300
+fail_on_revert = true
+runs = 10000
+depth = 1000
 corpus_dir = "invariants/protocol-suite/_corpus/foundry"
 show_solidity = true
 show_metrics = true
