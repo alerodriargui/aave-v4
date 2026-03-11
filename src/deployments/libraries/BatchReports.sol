@@ -21,6 +21,9 @@ library BatchReports {
   struct HubBatchReport {
     address hub;
     address irStrategy;
+  }
+
+  struct TreasurySpokeBatchReport {
     address treasurySpoke;
   }
 

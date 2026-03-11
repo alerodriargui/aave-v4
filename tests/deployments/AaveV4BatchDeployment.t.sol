@@ -99,18 +99,10 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     }
   }
 
-  /// @dev Reverts as treasurySpoke is always deployed if hubs are being deployed
-  /// and owner is needed on initial deployment
-  function testAaveV4BatchDeployment_fuzz_withZeroTreasurySpokeOwner(
-    bool withoutHubs,
-    bool grantRoles
-  ) public {
+  /// @dev Reverts as treasurySpoke is always deployed and owner is required
+  function testAaveV4BatchDeployment_fuzz_withZeroTreasurySpokeOwner(bool grantRoles) public {
     _inputs.treasurySpokeOwner = address(0);
     _inputs.grantRoles = grantRoles;
-
-    if (withoutHubs) {
-      _inputs.hubLabels = new string[](0);
-    }
 
     (bool isExpectedError, bytes memory errorMessage) = _getExpectedError();
     if (isExpectedError) {
@@ -320,10 +312,12 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
   /// @dev Predicts the first revert error based on execution order in deployAaveV4:
   ///      1. AuthorityBatch (deployer as initial admin)
-  ///      2. Hubs (treasurySpokeOwner)
-  ///      3. Spokes (spokeProxyAdminOwner)
-  ///      4. Gateways (gatewayOwner, nativeWrapper)
-  ///      5. Roles (hubAdmin, hubConfiguratorAdmin, spokeAdmin, spokeConfiguratorAdmin, accessManagerAdmin)
+  ///      2. ConfiguratorBatch
+  ///      3. TreasurySpokeBatch (treasurySpokeOwner)
+  ///      4. Hubs
+  ///      5. Spokes (spokeProxyAdminOwner)
+  ///      6. Gateways (gatewayOwner, nativeWrapper)
+  ///      7. Roles (hubAdmin, hubConfiguratorAdmin, spokeAdmin, spokeConfiguratorAdmin, accessManagerAdmin)
   function _getExpectedError()
     internal
     view
@@ -332,8 +326,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     // 1. deployer is initial admin for access manager
     if (_deployer == address(0)) return (true, bytes('invalid admin'));
 
-    // 2. hubs require treasury owner when deployed
-    if (_inputs.hubLabels.length > 0 && _inputs.treasurySpokeOwner == address(0)) {
+    // 2. treasury spoke requires owner
+    if (_inputs.treasurySpokeOwner == address(0)) {
       return (true, bytes('invalid owner'));
     }
 

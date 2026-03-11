@@ -27,6 +27,7 @@ import {AaveV4TokenizationSpokeDeployProcedureWrapper} from 'tests/mocks/deploym
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
+import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
@@ -54,7 +55,7 @@ contract ProceduresBase is Create2TestHelper {
   uint16 public maxUserReservesLimit = Constants.MAX_ALLOWED_USER_RESERVES_LIMIT;
   address public spoke = makeAddr('spoke');
   address public aaveOracle;
-  address public treasurySpoke = makeAddr('treasurySpoke');
+  address public feeReceiver = makeAddr('feeReceiver');
   address public admin = makeAddr('admin');
   bytes32 public salt;
   bytes internal hubBytecode;
@@ -65,7 +66,6 @@ contract ProceduresBase is Create2TestHelper {
 
     hubBytecode = vm.getCode('src/hub/Hub.sol:Hub');
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
-
     accessManager = address(new AccessManagerEnumerable(accessManagerAdmin));
     aaveOracle = address(new AaveOracle(oracleDecimals));
     salt = keccak256('testSalt');

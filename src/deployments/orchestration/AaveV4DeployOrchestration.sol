@@ -65,10 +65,16 @@ library AaveV4DeployOrchestration {
       spokeConfigurator: report.configuratorBatchReport.spokeConfigurator
     });
 
+    // Deploy TreasurySpoke Batch (single instance for all hubs)
+    report.treasurySpokeBatchReport = _deployTreasurySpokeBatch({
+      logger: logger,
+      treasurySpokeOwner: deployInputs.treasurySpokeOwner,
+      salt: salt
+    });
+
     // Deploy Hub Batches
     report.hubBatchReports = _deployHubs({
       logger: logger,
-      treasurySpokeOwner: deployInputs.treasurySpokeOwner,
       authority: accessManager,
       hubLabels: deployInputs.hubLabels,
       hubBytecode: hubBytecode,
@@ -214,7 +220,6 @@ library AaveV4DeployOrchestration {
 
   function _deployHubs(
     Logger logger,
-    address treasurySpokeOwner,
     address authority,
     string[] memory hubLabels,
     bytes memory hubBytecode,
@@ -226,7 +231,6 @@ library AaveV4DeployOrchestration {
       bytes32 childSalt = _deriveChildSalt(salt, 'hub', hubLabels[i]);
       hubBatchReports[i] = _deployHub({
         logger: logger,
-        treasurySpokeOwner: treasurySpokeOwner,
         authority: authority,
         label: hubLabels[i],
         hubBytecode: hubBytecode,
@@ -239,7 +243,6 @@ library AaveV4DeployOrchestration {
 
   function _deployHub(
     Logger logger,
-    address treasurySpokeOwner,
     address authority,
     string memory label,
     bytes memory hubBytecode,
@@ -249,7 +252,6 @@ library AaveV4DeployOrchestration {
     hubReport.label = label;
     hubReport.report = _deployHubBatch({
       logger: logger,
-      treasurySpokeOwner: treasurySpokeOwner,
       authority: authority,
       hubBytecode: hubBytecode,
       salt: salt
@@ -336,16 +338,26 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  function _deployHubBatch(
+  function _deployTreasurySpokeBatch(
     Logger logger,
     address treasurySpokeOwner,
+    bytes32 salt
+  ) internal returns (BatchReports.TreasurySpokeBatchReport memory report) {
+    logger.logHeader1('Deploying TreasurySpokeBatch');
+    report = AaveV4DeployBase.deployTreasurySpokeBatch({owner: treasurySpokeOwner, salt: salt});
+    logger.log('TreasurySpoke', report.treasurySpoke);
+    logger.logNewLine();
+    return report;
+  }
+
+  function _deployHubBatch(
+    Logger logger,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (BatchReports.HubBatchReport memory report) {
     logger.logHeader1('Deploying HubBatch');
     report = AaveV4DeployBase.deployHubBatch({
-      treasurySpokeOwner: treasurySpokeOwner,
       authority: authority,
       hubBytecode: hubBytecode,
       salt: salt
@@ -406,7 +418,6 @@ library AaveV4DeployOrchestration {
     logger.log(label);
     logger.logDetail('Hub', report.hub);
     logger.logDetail('InterestRateStrategy', report.irStrategy);
-    logger.logDetail('TreasurySpoke', report.treasurySpoke);
   }
 
   function _setupHubRoles(

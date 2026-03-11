@@ -12,9 +12,10 @@ contract MetadataLogger is Logger {
     _write('AccessManager', report.authorityBatchReport.accessManager);
     _write('HubConfigurator', report.configuratorBatchReport.hubConfigurator);
     _write('SpokeConfigurator', report.configuratorBatchReport.spokeConfigurator);
+    _write('TreasurySpoke', report.treasurySpokeBatchReport.treasurySpoke);
 
     for (uint256 i; i < report.hubBatchReports.length; i++) {
-      Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](3);
+      Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](2);
       hubEntries[0] = Logger.AddressEntry({
         label: 'Hub',
         value: report.hubBatchReports[i].report.hub
@@ -22,10 +23,6 @@ contract MetadataLogger is Logger {
       hubEntries[1] = Logger.AddressEntry({
         label: 'InterestRateStrategy',
         value: report.hubBatchReports[i].report.irStrategy
-      });
-      hubEntries[2] = Logger.AddressEntry({
-        label: 'TreasurySpoke',
-        value: report.hubBatchReports[i].report.treasurySpoke
       });
       _writeGroup(report.hubBatchReports[i].label, hubEntries);
     }

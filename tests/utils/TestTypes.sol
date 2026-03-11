@@ -34,7 +34,6 @@ library TestTypes {
   struct TestHubReport {
     address hub;
     address irStrategy;
-    address treasurySpoke;
   }
 
   struct TestSpokeReport {
@@ -54,6 +53,7 @@ library TestTypes {
 
   struct TestEnvReport {
     address accessManager;
+    address treasurySpoke;
     TestHubReport[] hubReports;
     TestSpokeReport[] spokeReports;
     TestGatewaysReport gatewaysReport;

@@ -7,13 +7,8 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
 
 contract AaveV4TreasurySpokeDeployProcedure is AaveV4DeployProcedureBase {
-  function _deployTreasurySpoke(
-    address owner,
-    address hub,
-    bytes32 salt
-  ) internal returns (address) {
+  function _deployTreasurySpoke(address owner, bytes32 salt) internal returns (address) {
     require(owner != address(0), 'invalid owner');
-    require(hub != address(0), 'invalid hub');
     address implementation = Create2Utils.create2Deploy(
       salt,
       type(TreasurySpokeInstance).creationCode

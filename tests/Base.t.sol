@@ -175,7 +175,6 @@ abstract contract Base is BatchTestProcedures {
   IHub[] internal _hubs;
   ISpoke[] internal _spokes;
   IAaveOracle[] internal _oracles;
-  ITreasurySpoke[] internal _treasurySpokes;
   AssetInterestRateStrategy[] internal _irStrategies;
   IAccessManager[] internal _accessManagers;
 
@@ -372,7 +371,7 @@ abstract contract Base is BatchTestProcedures {
     // todo rm when tests adapted to multiple hubs and spokes
     hub1 = IHub(report.hubReports[0].hub);
     irStrategy = AssetInterestRateStrategy(report.hubReports[0].irStrategy);
-    treasurySpoke = ITreasurySpoke(report.hubReports[0].treasurySpoke);
+    treasurySpoke = ITreasurySpoke(report.treasurySpoke);
     spoke1 = ISpoke(report.spokeReports[0].spoke);
     spoke2 = ISpoke(report.spokeReports[1].spoke);
     spoke3 = ISpoke(report.spokeReports[2].spoke);
@@ -401,15 +400,11 @@ abstract contract Base is BatchTestProcedures {
     for (uint256 i; i < numHubs; ++i) {
       _hubs.push(IHub(report.hubReports[i].hub));
       _irStrategies.push(AssetInterestRateStrategy(report.hubReports[i].irStrategy));
-      _treasurySpokes.push(ITreasurySpoke(report.hubReports[i].treasurySpoke));
 
       vm.label(report.hubReports[i].hub, string.concat('hub', string(abi.encode(i))));
       vm.label(report.hubReports[i].irStrategy, string.concat('irStrategy', string(abi.encode(i))));
-      vm.label(
-        report.hubReports[i].treasurySpoke,
-        string.concat('treasurySpoke', string(abi.encode(i)))
-      );
     }
+    vm.label(report.treasurySpoke, 'treasurySpoke');
 
     for (uint256 i; i < numSpokes; ++i) {
       _spokes.push(ISpoke(report.spokeReports[i].spoke));
@@ -534,8 +529,8 @@ abstract contract Base is BatchTestProcedures {
         tokenList.usdy.approve(spoke, UINT256_MAX);
         tokenList.usdz.approve(spoke, UINT256_MAX);
       }
-      for (uint256 y; y < _treasurySpokes.length; ++y) {
-        address spoke = address(_treasurySpokes[y]);
+      {
+        address spoke = address(treasurySpoke);
         tokenList.weth.approve(spoke, UINT256_MAX);
         tokenList.usdx.approve(spoke, UINT256_MAX);
         tokenList.dai.approve(spoke, UINT256_MAX);
@@ -1113,18 +1108,15 @@ abstract contract Base is BatchTestProcedures {
   ) internal returns (TestTypes.TestHubReport memory report) {
     report = AaveV4TestOrchestration.deployTestHub(
       address(accessManager),
-      TREASURY_ADMIN,
       _getHubBytecode(),
       label,
       keccak256(abi.encodePacked(label))
     );
     _hubs.push(IHub(report.hub));
     _irStrategies.push(AssetInterestRateStrategy(report.irStrategy));
-    _treasurySpokes.push(ITreasurySpoke(report.treasurySpoke));
 
     vm.label(report.hub, string.concat('Hub', label));
     vm.label(report.irStrategy, string.concat('IrStrategy', label));
-    vm.label(report.treasurySpoke, string.concat('TreasurySpoke', label));
 
     ConfigData.AddAssetParams[] memory assetParams = new ConfigData.AddAssetParams[](
       assetsList.length
@@ -1134,7 +1126,7 @@ abstract contract Base is BatchTestProcedures {
         hub: report.hub,
         underlying: address(assetsList[i].underlying),
         decimals: assetsList[i].underlying.decimals(),
-        feeReceiver: report.treasurySpoke,
+        feeReceiver: address(treasurySpoke),
         liquidityFee: assetsList[i].liquidityFee,
         irStrategy: report.irStrategy,
         irData: assetsList[i].irData,

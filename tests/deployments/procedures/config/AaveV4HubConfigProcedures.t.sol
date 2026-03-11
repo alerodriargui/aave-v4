@@ -15,7 +15,6 @@ import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 contract AaveV4HubConfigProceduresTest is BatchBaseTest {
   address public hub;
   address public irStrategy;
-  address public treasurySpoke;
   address public hubConfigurator;
   address public underlying;
   address public reinvestmentController = makeAddr('reinvestmentController');
@@ -25,7 +24,6 @@ contract AaveV4HubConfigProceduresTest is BatchBaseTest {
 
     // Deploy Hub
     AaveV4HubBatch hubBatch = new AaveV4HubBatch({
-      treasurySpokeOwner_: admin,
       authority_: accessManager,
       hubBytecode_: hubBytecode,
       salt_: salt
@@ -33,7 +31,6 @@ contract AaveV4HubConfigProceduresTest is BatchBaseTest {
     BatchReports.HubBatchReport memory hubReport = hubBatch.getReport();
     hub = hubReport.hub;
     irStrategy = hubReport.irStrategy;
-    treasurySpoke = hubReport.treasurySpoke;
 
     // Deploy HubConfigurator
     AaveV4ConfiguratorBatch configuratorBatch = new AaveV4ConfiguratorBatch({
@@ -83,7 +80,7 @@ contract AaveV4HubConfigProceduresTest is BatchBaseTest {
       hub: hub,
       underlying: underlying,
       decimals: 18,
-      feeReceiver: treasurySpoke,
+      feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: irStrategy,
       reinvestmentController: reinvestmentController,
@@ -113,7 +110,7 @@ contract AaveV4HubConfigProceduresTest is BatchBaseTest {
       hub: hub,
       underlying: fuzzUnderlying,
       decimals: 18,
-      feeReceiver: treasurySpoke,
+      feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: irStrategy,
       reinvestmentController: reinvestmentController_,
@@ -140,7 +137,7 @@ contract AaveV4HubConfigProceduresTest is BatchBaseTest {
       hub: hub,
       underlying: underlying,
       decimals: 18,
-      feeReceiver: treasurySpoke,
+      feeReceiver: feeReceiver,
       liquidityFee: 0,
       irStrategy: irStrategy,
       reinvestmentController: address(0),

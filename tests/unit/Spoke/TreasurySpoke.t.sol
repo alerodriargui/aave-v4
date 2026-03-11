@@ -40,22 +40,11 @@ contract TreasurySpokeTest is SpokeBase {
     });
 
     hub2.addSpoke(daiAssetId, address(spoke1), spokeConfig);
-
-    // Register treasurySpoke as a spoke on hub2 for all assets
-    for (uint256 i; i < hub2.getAssetCount(); ++i) {
-      hub2.addSpoke(i, address(treasurySpoke), spokeConfig);
-    }
     vm.stopPrank();
 
     // Approve dai for hub2
     vm.startPrank(alice);
     tokenList.dai.approve(address(hub2), type(uint256).max);
-    vm.stopPrank();
-
-    // Approve tokens for treasurySpoke to supply to hub2
-    vm.startPrank(TREASURY_ADMIN);
-    tokenList.dai.approve(address(hub2), type(uint256).max);
-    tokenList.usdx.approve(address(hub2), type(uint256).max);
     vm.stopPrank();
   }
 
@@ -427,10 +416,9 @@ contract TreasurySpokeTest is SpokeBase {
 
     uint256 assetId = spoke1.getReserve(reserveId).assetId;
     (address underlying, ) = hub.getAssetUnderlyingAndDecimals(assetId);
-    ITreasurySpoke feeReceiver = ITreasurySpoke(hub.getAsset(assetId).feeReceiver);
     updateLiquidityFee(hub, spoke1.getReserve(reserveId).assetId, 100_00);
 
-    assertEq(feeReceiver.getSuppliedShares(address(hub), underlying), 0);
+    assertEq(treasurySpoke.getSuppliedShares(address(hub), underlying), 0);
 
     // create debt
     address tempUser = _openDebtPosition(spoke1, reserveId, amount, true);
@@ -440,19 +428,19 @@ contract TreasurySpokeTest is SpokeBase {
 
     uint256 expectedFeeAmount = _calcUnrealizedFees(hub, assetId);
     Utils.mintFeeShares(hub, assetId, ADMIN);
-    uint256 fees = feeReceiver.getSuppliedAssets(address(hub), underlying);
+    uint256 fees = treasurySpoke.getSuppliedAssets(address(hub), underlying);
 
     assertEq(fees, expectedFeeAmount, 'supplied amount of fees');
     assertEq(hub.getAsset(assetId).realizedFees, 0, 'realized fees after minting');
     assertApproxEqAbs(
-      hub.getSpokeAddedAssets(assetId, address(feeReceiver)),
+      hub.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       hub.getAssetTotalOwed(assetId) - amount,
       3,
       'treasury spoke supplied amount on hub'
     );
     assertApproxEqAbs(
       fees,
-      hub.getSpokeAddedAssets(assetId, address(feeReceiver)),
+      hub.getSpokeAddedAssets(assetId, address(treasurySpoke)),
       3,
       'treasury spoke supplied amount on spoke'
     );
@@ -464,12 +452,12 @@ contract TreasurySpokeTest is SpokeBase {
       deal(address(asset), tempUser, UINT256_MAX);
       Utils.repay(spoke1, reserveId, tempUser, UINT256_MAX, tempUser);
       vm.prank(TREASURY_ADMIN);
-      feeReceiver.withdraw(address(hub), underlying, fees);
+      treasurySpoke.withdraw(address(hub), underlying, fees);
 
       assertEq(balanceBefore + fees, asset.balanceOf(TREASURY_ADMIN), 'Treasury admin balance');
       assertEq(
         0,
-        hub.getSpokeAddedAssets(assetId, address(feeReceiver)),
+        hub.getSpokeAddedAssets(assetId, address(treasurySpoke)),
         'treasury spoke remaining supplied amount'
       );
     }
@@ -518,9 +506,5 @@ contract TreasurySpokeTest is SpokeBase {
       1,
       'hub2 reserve supplied shares'
     );
-  }
-
-  function _treasurySpoke() internal view returns (ISpoke) {
-    return ISpoke(address(treasurySpoke));
   }
 }

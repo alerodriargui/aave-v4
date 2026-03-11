@@ -18,6 +18,7 @@ import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
+import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
 
@@ -33,6 +34,7 @@ import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 
 contract BatchBaseTest is Create2TestHelper {
   address public admin = makeAddr('admin');
+  address public feeReceiver = makeAddr('feeReceiver');
   bytes32 public salt;
   address public accessManager;
   address public nativeWrapper;

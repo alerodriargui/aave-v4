@@ -10,6 +10,7 @@ import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4Configurato
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
+import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 
 library AaveV4DeployBase {
   function deployAuthorityBatch(
@@ -33,14 +34,23 @@ library AaveV4DeployBase {
     return configuratorBatch.getReport();
   }
 
+  function deployTreasurySpokeBatch(
+    address owner,
+    bytes32 salt
+  ) internal returns (BatchReports.TreasurySpokeBatchReport memory) {
+    AaveV4TreasurySpokeBatch treasurySpokeBatch = new AaveV4TreasurySpokeBatch({
+      owner_: owner,
+      salt_: salt
+    });
+    return treasurySpokeBatch.getReport();
+  }
+
   function deployHubBatch(
-    address treasurySpokeOwner,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (BatchReports.HubBatchReport memory) {
     AaveV4HubBatch hubBatch = new AaveV4HubBatch({
-      treasurySpokeOwner_: treasurySpokeOwner,
       authority_: authority,
       hubBytecode_: hubBytecode,
       salt_: salt

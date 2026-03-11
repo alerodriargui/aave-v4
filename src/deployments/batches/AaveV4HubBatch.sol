@@ -5,34 +5,15 @@ pragma solidity ^0.8.0;
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4HubDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubDeployProcedure.sol';
 import {AaveV4InterestRateStrategyDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4InterestRateStrategyDeployProcedure.sol';
-import {AaveV4TreasurySpokeDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4TreasurySpokeDeployProcedure.sol';
 
-contract AaveV4HubBatch is
-  AaveV4HubDeployProcedure,
-  AaveV4InterestRateStrategyDeployProcedure,
-  AaveV4TreasurySpokeDeployProcedure
-{
+contract AaveV4HubBatch is AaveV4HubDeployProcedure, AaveV4InterestRateStrategyDeployProcedure {
   BatchReports.HubBatchReport internal _report;
 
-  constructor(
-    address treasurySpokeOwner_,
-    address authority_,
-    bytes memory hubBytecode_,
-    bytes32 salt_
-  ) {
+  constructor(address authority_, bytes memory hubBytecode_, bytes32 salt_) {
     address hub = _deployHub({authority: authority_, hubBytecode: hubBytecode_, salt: salt_});
     address irStrategy = _deployInterestRateStrategy({hub: hub, salt: salt_});
-    address treasurySpoke = _deployTreasurySpoke({
-      owner: treasurySpokeOwner_,
-      hub: hub,
-      salt: salt_
-    });
 
-    _report = BatchReports.HubBatchReport({
-      hub: hub,
-      irStrategy: irStrategy,
-      treasurySpoke: treasurySpoke
-    });
+    _report = BatchReports.HubBatchReport({hub: hub, irStrategy: irStrategy});
   }
 
   function getReport() external view returns (BatchReports.HubBatchReport memory) {

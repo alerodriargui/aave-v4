@@ -18,6 +18,7 @@ library OrchestrationReports {
   struct FullDeploymentReport {
     BatchReports.AuthorityBatchReport authorityBatchReport;
     BatchReports.ConfiguratorBatchReport configuratorBatchReport;
+    BatchReports.TreasurySpokeBatchReport treasurySpokeBatchReport;
     SpokeDeploymentReport[] spokeInstanceBatchReports;
     HubDeploymentReport[] hubBatchReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;

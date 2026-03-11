@@ -10,7 +10,6 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
 
   address public hub;
   address public irStrategy;
-  address public treasurySpoke;
   uint256 public assetId;
   address public underlying;
   string public shareName = 'Core Hub DAI';
@@ -21,7 +20,6 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
 
     // Deploy a Hub with asset
     AaveV4HubBatch hubBatch = new AaveV4HubBatch({
-      treasurySpokeOwner_: admin,
       authority_: accessManager,
       hubBytecode_: hubBytecode,
       salt_: salt
@@ -29,7 +27,6 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     BatchReports.HubBatchReport memory hubReport = hubBatch.getReport();
     hub = hubReport.hub;
     irStrategy = hubReport.irStrategy;
-    treasurySpoke = hubReport.treasurySpoke;
 
     // Deploy test token and add asset
     TestnetERC20 testToken = new TestnetERC20('Test DAI', 'tDAI', 18);
@@ -52,7 +49,7 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     assetId = IHub(hub).addAsset({
       underlying: underlying,
       decimals: 18,
-      feeReceiver: treasurySpoke,
+      feeReceiver: feeReceiver,
       irStrategy: irStrategy,
       irData: irData
     });

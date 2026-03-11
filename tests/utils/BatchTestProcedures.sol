@@ -168,10 +168,10 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     assertNotEq(report.authorityBatchReport.accessManager, address(0), 'AccessManager');
     assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
     assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
+    assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
     for (uint256 i = 0; i < report.hubBatchReports.length; i++) {
       assertNotEq(report.hubBatchReports[i].report.hub, address(0), 'Hub');
       assertNotEq(report.hubBatchReports[i].report.irStrategy, address(0), 'IRStrategy');
-      assertNotEq(report.hubBatchReports[i].report.treasurySpoke, address(0), 'TreasurySpoke');
     }
     for (uint256 i = 0; i < report.spokeInstanceBatchReports.length; i++) {
       assertNotEq(report.spokeInstanceBatchReports[i].report.spokeProxy, address(0), 'SpokeProxy');
@@ -256,8 +256,8 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
         label: label
       });
       _checkInterestRateStrategyDeployment({report: hubReport, label: label});
-      _checkTreasurySpokeDeployment({report: hubReport, label: label});
     }
+    _checkTreasurySpokeDeployment(report);
   }
 
   function _checkHubDeployment(
@@ -284,13 +284,12 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   }
 
   function _checkTreasurySpokeDeployment(
-    OrchestrationReports.HubDeploymentReport memory report,
-    string memory label
+    OrchestrationReports.FullDeploymentReport memory report
   ) internal view {
     assertNotEq(
-      report.report.treasurySpoke,
+      report.treasurySpokeBatchReport.treasurySpoke,
       address(0),
-      string.concat(label, ' treasury spoke deployed')
+      'treasury spoke deployed'
     );
   }
 
@@ -483,12 +482,8 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
         'HubFeeMinterRoleCount'
       );
     }
+    _checkTreasurySpokeRoles(report.treasurySpokeBatchReport.treasurySpoke, inputs);
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
-      _checkTreasurySpokeRoles(
-        report.hubBatchReports[i].report.treasurySpoke,
-        inputs,
-        inputs.hubLabels[i]
-      );
       for (uint256 j = 0; j < _hubFeeMinterRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
@@ -512,14 +507,9 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkTreasurySpokeRoles(
     address treasurySpoke,
-    FullDeployInputs memory inputs,
-    string memory label
+    FullDeployInputs memory inputs
   ) internal view {
-    assertEq(
-      Ownable(treasurySpoke).owner(),
-      inputs.treasurySpokeOwner,
-      string.concat(label, ' treasury spoke owner')
-    );
+    assertEq(Ownable(treasurySpoke).owner(), inputs.treasurySpokeOwner, 'treasury spoke owner');
   }
 
   function _checkHubConfiguratorRoles(

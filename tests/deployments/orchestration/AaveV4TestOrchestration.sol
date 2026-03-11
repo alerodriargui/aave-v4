@@ -27,6 +27,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
+import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 
 import {TestTypes} from 'tests/utils/TestTypes.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
@@ -72,17 +73,23 @@ library AaveV4TestOrchestration {
     // Deploy Access Batch
     report.accessManager = AaveV4DeployBase.deployAuthorityBatch(admin, salt).accessManager;
 
+    // Deploy TreasurySpoke Batch (single instance for all hubs)
+    report.treasurySpoke = AaveV4DeployBase
+      .deployTreasurySpokeBatch({
+        owner: treasuryAdmin,
+        salt: keccak256(abi.encodePacked(salt, 'treasurySpoke'))
+      })
+      .treasurySpoke;
+
     // Deploy Hub Batches
     for (uint256 i; i < hubCount; ++i) {
       BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
-        treasurySpokeOwner: treasuryAdmin,
         authority: report.accessManager,
         hubBytecode: hubBytecode,
         salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i))))
       });
       report.hubReports[i].hub = hubReport.hub;
       report.hubReports[i].irStrategy = hubReport.irStrategy;
-      report.hubReports[i].treasurySpoke = hubReport.treasurySpoke;
     }
 
     // Deploy Spoke Instance Batches
@@ -126,21 +133,18 @@ library AaveV4TestOrchestration {
 
   function deployTestHub(
     address accessManager,
-    address treasuryAdmin,
     bytes memory hubBytecode,
     string memory label,
     bytes32 salt
   ) external returns (TestTypes.TestHubReport memory) {
     TestTypes.TestHubReport memory report;
     BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
-      treasurySpokeOwner: treasuryAdmin,
       authority: accessManager,
       hubBytecode: hubBytecode,
       salt: keccak256(abi.encodePacked(salt, 'hub-', label))
     });
     report.hub = hubReport.hub;
     report.irStrategy = hubReport.irStrategy;
-    report.treasurySpoke = hubReport.treasurySpoke;
 
     return report;
   }

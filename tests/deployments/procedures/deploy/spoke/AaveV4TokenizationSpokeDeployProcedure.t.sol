@@ -18,7 +18,6 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
 
     // TokenizationSpokeInstance constructor requires hub
     AaveV4HubBatch hubBatch = new AaveV4HubBatch({
-      treasurySpokeOwner_: admin,
       authority_: accessManager,
       hubBytecode_: hubBytecode,
       salt_: salt
@@ -49,7 +48,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     assetId = IHub(deployedHub).addAsset({
       underlying: underlying,
       decimals: 18,
-      feeReceiver: hubReport.treasurySpoke,
+      feeReceiver: feeReceiver,
       irStrategy: hubReport.irStrategy,
       irData: irData
     });
