@@ -46,7 +46,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     logger.save({fileName: _outputFileName, withTimestamp: true});
   }
 
-  /// @dev Override to provide deployment inputs from any source (hardcoded, env vars, JSON, etc).
+  /// @dev Override to provide deployment inputs from any source.
   function _getDeployInputs() internal virtual returns (FullDeployInputs memory);
 
   function _loadWarningsAndSanitizeInputs(

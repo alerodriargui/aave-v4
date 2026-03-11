@@ -35,11 +35,11 @@ coverage :
 # Pre-deploy LiquidationLogic library (required before deploying spokes)
 deploy-precompile :;
 	FOUNDRY_PROFILE=${CHAIN} forge script scripts/LibraryPreCompile.s.sol \
-	--rpc-url ${CHAIN} --account ${ACCOUNT} \
-	--broadcast --ffi
+	--rpc-url ${CHAIN} --account ${ACCOUNT} --ffi \
+	$(if ${DRY},, --broadcast --verify) \
 
 # Flow 1: Deploy contracts + grant roles (no asset/reserve configuration)
 deploy-contracts :;
 	FOUNDRY_PROFILE=${CHAIN} forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
 	--rpc-url ${CHAIN} --account ${ACCOUNT} --slow \
-	--broadcast
+	$(if ${DRY},, --broadcast --verify) \

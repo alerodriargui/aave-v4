@@ -84,6 +84,10 @@ contract Logger {
     _logNewLine();
   }
 
+  function _write(string memory label, bytes32 value) internal {
+    _json = vm.serializeBytes32(_jsonKey, label, value);
+  }
+
   function _write(string memory label, address value) internal {
     _json = vm.serializeAddress(_jsonKey, label, value);
   }

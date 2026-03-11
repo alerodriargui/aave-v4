@@ -33,6 +33,7 @@ library AaveV4DeployOrchestration {
     bytes memory spokeBytecode
   ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
     bytes32 salt = _deriveSalt(deployInputs.salt);
+    report.salt = deployInputs.salt;
 
     // Deploy Access Batch
     // initialize with deployer as access manager admin
