@@ -336,7 +336,8 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
 
-    uint256 deficitAmountRay = uint256(drawnShares) * asset.drawnIndex +
+    uint256 deficitAmountRay = uint256(drawnShares) *
+      asset.drawnIndex +
       premiumDelta.restoredPremiumRay;
     asset.deficitRay += deficitAmountRay.toUint200();
     spoke.deficitRay += deficitAmountRay.toUint200();
@@ -492,21 +493,33 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHubBase
   function previewDrawByAssets(uint256 assetId, uint256 assets) external view returns (uint256) {
+    if (assetId >= _assetCount || assets == 0) {
+      return assets;
+    }
     return _assets[assetId].toDrawnSharesUp(assets);
   }
 
   /// @inheritdoc IHubBase
   function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
+    if (assetId >= _assetCount || shares == 0) {
+      return shares;
+    }
     return _assets[assetId].toDrawnAssetsDown(shares);
   }
 
   /// @inheritdoc IHubBase
   function previewRestoreByAssets(uint256 assetId, uint256 assets) external view returns (uint256) {
+    if (assetId >= _assetCount || assets == 0) {
+      return assets;
+    }
     return _assets[assetId].toDrawnSharesDown(assets);
   }
 
   /// @inheritdoc IHubBase
   function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
+    if (assetId >= _assetCount || shares == 0) {
+      return shares;
+    }
     return _assets[assetId].toDrawnAssetsUp(shares);
   }
 
@@ -841,7 +854,7 @@ contract Hub is IHub, AccessManaged {
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-          asset.toAddedAssetsUp(spoke.addedShares) + amount,
+        asset.toAddedAssetsUp(spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
   }
@@ -870,7 +883,7 @@ contract Hub is IHub, AccessManaged {
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
         drawCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-          owed + amount + uint256(spoke.deficitRay).fromRayUp(),
+        owed + amount + uint256(spoke.deficitRay).fromRayUp(),
       DrawCapExceeded(drawCap)
     );
   }
@@ -930,7 +943,7 @@ contract Hub is IHub, AccessManaged {
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-          asset.toAddedAssetsUp(receiver.addedShares + shares),
+        asset.toAddedAssetsUp(receiver.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }

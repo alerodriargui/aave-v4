@@ -185,6 +185,7 @@ interface IHubBase {
 
   /// @notice Converts the specified amount of assets to shares amount drawn upon a `draw` action.
   /// @dev Rounds up to the nearest shares amount.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param assets The amount of assets to convert to shares amount.
   /// @return The amount of shares converted from assets amount.
@@ -192,6 +193,7 @@ interface IHubBase {
 
   /// @notice Converts the specified amount of shares to assets amount drawn upon a `draw` action.
   /// @dev Rounds down to the nearest assets amount.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of shares to convert to assets amount.
   /// @return The amount of assets converted from shares amount.
@@ -199,6 +201,7 @@ interface IHubBase {
 
   /// @notice Converts the specified amount of assets to shares amount restored upon a `restore` action.
   /// @dev Rounds down to the nearest shares amount.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param assets The amount of assets to convert to shares amount.
   /// @return The amount of shares converted from assets amount.
@@ -206,6 +209,7 @@ interface IHubBase {
 
   /// @notice Converts the specified amount of shares to assets amount restored upon a `restore` action.
   /// @dev Rounds up to the nearest assets amount.
+  /// @dev Defaults to a 1:1 exchange rate.
   /// @param assetId The identifier of the asset.
   /// @param shares The amount of drawn shares to convert to assets amount.
   /// @return The amount of assets converted from shares amount.
