@@ -2,10 +2,10 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 /// @title IAaveV4ConfigEngine
 /// @author Aave Labs
@@ -14,15 +14,15 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 /// All numeric fields in config structs use uint256 so that type(uint256).max can serve as
 /// the universal KEEP_CURRENT sentinel. Boolean fields use uint256 (0=false, 1=true, KEEP_CURRENT=skip).
 interface IAaveV4ConfigEngine {
-  /// @notice Parameters for listing a new asset on a hub.
-  /// @param hubConfigurator The HubConfigurator to use for this action.
-  /// @param hub The address of the Hub.
-  /// @param underlying The address of the underlying asset.
-  /// @param decimals Explicit decimals (0 means use addAsset which auto-detects decimals).
-  /// @param feeReceiver The address of the fee receiver spoke.
-  /// @param liquidityFee The liquidity fee of the asset, in BPS.
-  /// @param irStrategy The address of the interest rate strategy contract.
-  /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
+  /// @notice Parameters for listing a new asset on a Hub.
+  /// @dev hubConfigurator The HubConfigurator to use for this action.
+  /// @dev hub The address of the Hub.
+  /// @dev underlying The address of the underlying asset.
+  /// @dev decimals Explicit decimals (0 means use addAsset which auto-detects decimals).
+  /// @dev feeReceiver The address of the fee receiver Spoke.
+  /// @dev liquidityFee The liquidity fee of the asset, in BPS.
+  /// @dev irStrategy The address of the interest rate strategy contract.
+  /// @dev irData The interest rate data to apply to the given asset, encoded in bytes.
   struct AssetListing {
     IHubConfigurator hubConfigurator;
     address hub;
@@ -34,16 +34,16 @@ interface IAaveV4ConfigEngine {
     bytes irData;
   }
 
-  /// @notice Parameters for updating asset config (fee, interest rate, reinvestment) on a hub.
-  /// @param hubConfigurator The HubConfigurator to use for this action.
-  /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
-  /// @param liquidityFee The new liquidity fee (KEEP_CURRENT to skip).
-  /// @param feeReceiver The new fee receiver (KEEP_CURRENT_ADDRESS to skip).
-  /// @param irStrategy The new interest rate strategy (KEEP_CURRENT_ADDRESS to skip strategy update).
-  /// @param irData The interest rate data. If irStrategy != KEEP_CURRENT_ADDRESS, calls updateInterestRateStrategy.
+  /// @notice Parameters for updating asset config (fee, interest rate, reinvestment) on a Hub.
+  /// @dev hubConfigurator The HubConfigurator to use for this action.
+  /// @dev hub The address of the Hub.
+  /// @dev assetId The identifier of the asset.
+  /// @dev liquidityFee The new liquidity fee (KEEP_CURRENT to skip).
+  /// @dev feeReceiver The new fee receiver (KEEP_CURRENT_ADDRESS to skip).
+  /// @dev irStrategy The new interest rate strategy (KEEP_CURRENT_ADDRESS to skip strategy update).
+  /// @dev irData The interest rate data. If irStrategy != KEEP_CURRENT_ADDRESS, calls updateInterestRateStrategy.
   ///   Otherwise if irData.length > 0, calls updateInterestRateData.
-  /// @param reinvestmentController The new reinvestment controller (KEEP_CURRENT_ADDRESS to skip).
+  /// @dev reinvestmentController The new reinvestment controller (KEEP_CURRENT_ADDRESS to skip).
   struct AssetConfigUpdate {
     IHubConfigurator hubConfigurator;
     address hub;
@@ -55,12 +55,12 @@ interface IAaveV4ConfigEngine {
     address reinvestmentController;
   }
 
-  /// @notice Parameters for registering a spoke for multiple assets on a hub.
-  /// @param hubConfigurator The HubConfigurator to use for this action.
-  /// @param hub The address of the Hub.
-  /// @param spoke The address of the Spoke.
-  /// @param assetIds The list of asset identifiers to register the spoke for.
-  /// @param configs The list of Spoke configurations to register.
+  /// @notice Parameters for registering a Spoke for multiple assets on a Hub.
+  /// @dev hubConfigurator The HubConfigurator to use for this action.
+  /// @dev hub The address of the Hub.
+  /// @dev spoke The address of the Spoke.
+  /// @dev assetIds The list of asset identifiers to register the Spoke for.
+  /// @dev configs The list of Spoke configurations to register.
   struct SpokeToAssetsAddition {
     IHubConfigurator hubConfigurator;
     address hub;
@@ -69,16 +69,16 @@ interface IAaveV4ConfigEngine {
     IHub.SpokeConfig[] configs;
   }
 
-  /// @notice Parameters for updating spoke config (caps, risk premium threshold, status) on a hub.
-  /// @param hubConfigurator The HubConfigurator to use for this action.
-  /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
-  /// @param spoke The address of the Spoke.
-  /// @param addCap The new add cap (KEEP_CURRENT to skip).
-  /// @param drawCap The new draw cap (KEEP_CURRENT to skip).
-  /// @param riskPremiumThreshold The new risk premium threshold (KEEP_CURRENT to skip).
-  /// @param active New active flag (0=false, 1=true, KEEP_CURRENT=skip).
-  /// @param halted New halted flag (0=false, 1=true, KEEP_CURRENT=skip).
+  /// @notice Parameters for updating Spoke config (caps, risk premium threshold, status) on a Hub.
+  /// @dev hubConfigurator The HubConfigurator to use for this action.
+  /// @dev hub The address of the Hub.
+  /// @dev assetId The identifier of the asset.
+  /// @dev spoke The address of the Spoke.
+  /// @dev addCap The new add cap (KEEP_CURRENT to skip).
+  /// @dev drawCap The new draw cap (KEEP_CURRENT to skip).
+  /// @dev riskPremiumThreshold The new risk premium threshold (KEEP_CURRENT to skip).
+  /// @dev active New active flag (0=false, 1=true, KEEP_CURRENT=skip).
+  /// @dev halted New halted flag (0=false, 1=true, KEEP_CURRENT=skip).
   struct SpokeConfigUpdate {
     IHubConfigurator hubConfigurator;
     address hub;
@@ -91,74 +91,74 @@ interface IAaveV4ConfigEngine {
     uint256 halted;
   }
 
-  /// @notice Parameters for halting an asset on a hub.
-  /// @param hubConfigurator The HubConfigurator to use for this action.
-  /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
+  /// @notice Parameters for halting an asset on a Hub.
+  /// @dev hubConfigurator The HubConfigurator to use for this action.
+  /// @dev hub The address of the Hub.
+  /// @dev assetId The identifier of the asset.
   struct AssetHalt {
     IHubConfigurator hubConfigurator;
     address hub;
     uint256 assetId;
   }
 
-  /// @notice Parameters for deactivating an asset on a hub.
-  /// @param hubConfigurator The HubConfigurator to use for this action.
-  /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
+  /// @notice Parameters for deactivating an asset on a Hub.
+  /// @dev hubConfigurator The HubConfigurator to use for this action.
+  /// @dev hub The address of the Hub.
+  /// @dev assetId The identifier of the asset.
   struct AssetDeactivation {
     IHubConfigurator hubConfigurator;
     address hub;
     uint256 assetId;
   }
 
-  /// @notice Parameters for resetting asset caps on a hub.
-  /// @param hubConfigurator The HubConfigurator to use for this action.
-  /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
+  /// @notice Parameters for resetting asset caps on a Hub to 0.
+  /// @dev hubConfigurator The HubConfigurator to use for this action.
+  /// @dev hub The address of the Hub.
+  /// @dev assetId The identifier of the asset.
   struct AssetCapsReset {
     IHubConfigurator hubConfigurator;
     address hub;
     uint256 assetId;
   }
 
-  /// @notice Parameters for halting a spoke on a hub.
-  /// @param hubConfigurator The HubConfigurator to use for this action.
-  /// @param hub The address of the Hub.
-  /// @param spoke The address of the Spoke.
+  /// @notice Parameters for halting a Spoke on a Hub.
+  /// @dev hubConfigurator The HubConfigurator to use for this action.
+  /// @dev hub The address of the Hub.
+  /// @dev spoke The address of the Spoke.
   struct SpokeHalt {
     IHubConfigurator hubConfigurator;
     address hub;
     address spoke;
   }
 
-  /// @notice Parameters for deactivating a spoke on a hub.
-  /// @param hubConfigurator The HubConfigurator to use for this action.
-  /// @param hub The address of the Hub.
-  /// @param spoke The address of the Spoke.
+  /// @notice Parameters for deactivating a Spoke on a Hub.
+  /// @dev hubConfigurator The HubConfigurator to use for this action.
+  /// @dev hub The address of the Hub.
+  /// @dev spoke The address of the Spoke.
   struct SpokeDeactivation {
     IHubConfigurator hubConfigurator;
     address hub;
     address spoke;
   }
 
-  /// @notice Parameters for resetting spoke caps on a hub.
-  /// @param hubConfigurator The HubConfigurator to use for this action.
-  /// @param hub The address of the Hub.
-  /// @param spoke The address of the Spoke.
+  /// @notice Parameters for resetting Spoke caps on a Hub.
+  /// @dev hubConfigurator The HubConfigurator to use for this action.
+  /// @dev hub The address of the Hub.
+  /// @dev spoke The address of the Spoke.
   struct SpokeCapsReset {
     IHubConfigurator hubConfigurator;
     address hub;
     address spoke;
   }
 
-  /// @notice Parameters for listing a new reserve on a spoke.
-  /// @param spokeConfigurator The SpokeConfigurator to use for this action.
-  /// @param spoke The address of the Spoke.
-  /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
-  /// @param priceSource The address of the price source.
-  /// @param config The configuration of the reserve.
-  /// @param dynamicConfig The dynamic configuration of the reserve.
+  /// @notice Parameters for listing a new reserve on a Spoke.
+  /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
+  /// @dev spoke The address of the Spoke.
+  /// @dev hub The address of the Hub.
+  /// @dev assetId The identifier of the asset.
+  /// @dev priceSource The address of the price source.
+  /// @dev config The configuration of the reserve.
+  /// @dev dynamicConfig The dynamic configuration of the reserve.
   struct ReserveListing {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
@@ -169,16 +169,16 @@ interface IAaveV4ConfigEngine {
     ISpoke.DynamicReserveConfig dynamicConfig;
   }
 
-  /// @notice Parameters for updating reserve config on a spoke.
-  /// @param spokeConfigurator The SpokeConfigurator to use for this action.
-  /// @param spoke The address of the Spoke.
-  /// @param reserveId The identifier of the reserve.
-  /// @param priceSource The new price source address (KEEP_CURRENT_ADDRESS to skip).
-  /// @param collateralRisk New collateral risk (KEEP_CURRENT to skip).
-  /// @param paused New paused flag (0=false, 1=true, KEEP_CURRENT=skip).
-  /// @param frozen New frozen flag (0=false, 1=true, KEEP_CURRENT=skip).
-  /// @param borrowable New borrowable flag (0=false, 1=true, KEEP_CURRENT=skip).
-  /// @param receiveSharesEnabled New receiveSharesEnabled flag (0=false, 1=true, KEEP_CURRENT=skip).
+  /// @notice Parameters for updating reserve config on a Spoke.
+  /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
+  /// @dev spoke The address of the Spoke.
+  /// @dev reserveId The identifier of the reserve.
+  /// @dev priceSource The new price source address (KEEP_CURRENT_ADDRESS to skip).
+  /// @dev collateralRisk New collateral risk (KEEP_CURRENT to skip).
+  /// @dev paused New paused flag (0=false, 1=true, KEEP_CURRENT=skip).
+  /// @dev frozen New frozen flag (0=false, 1=true, KEEP_CURRENT=skip).
+  /// @dev borrowable New borrowable flag (0=false, 1=true, KEEP_CURRENT=skip).
+  /// @dev receiveSharesEnabled New receiveSharesEnabled flag (0=false, 1=true, KEEP_CURRENT=skip).
   struct ReserveConfigUpdate {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
@@ -191,12 +191,12 @@ interface IAaveV4ConfigEngine {
     uint256 receiveSharesEnabled;
   }
 
-  /// @notice Parameters for updating liquidation config on a spoke.
-  /// @param spokeConfigurator The SpokeConfigurator to use for this action.
-  /// @param spoke The address of the Spoke.
-  /// @param targetHealthFactor The new target health factor (KEEP_CURRENT to skip).
-  /// @param healthFactorForMaxBonus The new health factor for max bonus (KEEP_CURRENT to skip).
-  /// @param liquidationBonusFactor The new liquidation bonus factor (KEEP_CURRENT to skip).
+  /// @notice Parameters for updating liquidation config on a Spoke.
+  /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
+  /// @dev spoke The address of the Spoke.
+  /// @dev targetHealthFactor The new target health factor (KEEP_CURRENT to skip).
+  /// @dev healthFactorForMaxBonus The new health factor for max bonus (KEEP_CURRENT to skip).
+  /// @dev liquidationBonusFactor The new liquidation bonus factor (KEEP_CURRENT to skip).
   struct LiquidationConfigUpdate {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
@@ -205,11 +205,11 @@ interface IAaveV4ConfigEngine {
     uint256 liquidationBonusFactor;
   }
 
-  /// @notice Parameters for adding a dynamic reserve config on a spoke.
-  /// @param spokeConfigurator The SpokeConfigurator to use for this action.
-  /// @param spoke The address of the Spoke.
-  /// @param reserveId The identifier of the reserve.
-  /// @param dynamicConfig The new dynamic config.
+  /// @notice Parameters for adding a dynamic reserve config on a Spoke.
+  /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
+  /// @dev spoke The address of the Spoke.
+  /// @dev reserveId The identifier of the reserve.
+  /// @dev dynamicConfig The new dynamic config.
   struct DynamicReserveConfigAddition {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
@@ -217,14 +217,14 @@ interface IAaveV4ConfigEngine {
     ISpoke.DynamicReserveConfig dynamicConfig;
   }
 
-  /// @notice Parameters for updating a dynamic reserve config on a spoke.
-  /// @param spokeConfigurator The SpokeConfigurator to use for this action.
-  /// @param spoke The address of the Spoke.
-  /// @param reserveId The identifier of the reserve.
-  /// @param dynamicConfigKey The key of the dynamic config to update.
-  /// @param collateralFactor New collateral factor (KEEP_CURRENT to skip).
-  /// @param maxLiquidationBonus New max liquidation bonus (KEEP_CURRENT to skip).
-  /// @param liquidationFee New liquidation fee (KEEP_CURRENT to skip).
+  /// @notice Parameters for updating a dynamic reserve config on a Spoke.
+  /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
+  /// @dev spoke The address of the Spoke.
+  /// @dev reserveId The identifier of the reserve.
+  /// @dev dynamicConfigKey The key of the dynamic config to update.
+  /// @dev collateralFactor New collateral factor (KEEP_CURRENT to skip).
+  /// @dev maxLiquidationBonus New max liquidation bonus (KEEP_CURRENT to skip).
+  /// @dev liquidationFee New liquidation fee (KEEP_CURRENT to skip).
   struct DynamicReserveConfigUpdate {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
@@ -235,27 +235,27 @@ interface IAaveV4ConfigEngine {
     uint256 liquidationFee;
   }
 
-  /// @notice Parameters for pausing all reserves on a spoke.
-  /// @param spokeConfigurator The SpokeConfigurator to use for this action.
-  /// @param spoke The address of the Spoke.
+  /// @notice Parameters for pausing all reserves on a Spoke.
+  /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
+  /// @dev spoke The address of the Spoke.
   struct SpokePause {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
   }
 
-  /// @notice Parameters for freezing all reserves on a spoke.
-  /// @param spokeConfigurator The SpokeConfigurator to use for this action.
-  /// @param spoke The address of the Spoke.
+  /// @notice Parameters for freezing all reserves on a Spoke.
+  /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
+  /// @dev spoke The address of the Spoke.
   struct SpokeFreeze {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
   }
 
-  /// @notice Parameters for updating a position manager on a spoke.
-  /// @param spokeConfigurator The SpokeConfigurator to use for this action.
-  /// @param spoke The address of the Spoke.
-  /// @param positionManager The address of the position manager.
-  /// @param active The new active flag.
+  /// @notice Parameters for updating a position manager on a Spoke.
+  /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
+  /// @dev spoke The address of the Spoke.
+  /// @dev positionManager The address of the position manager.
+  /// @dev active The new active flag.
   struct PositionManagerUpdate {
     ISpokeConfigurator spokeConfigurator;
     address spoke;
@@ -263,10 +263,10 @@ interface IAaveV4ConfigEngine {
     bool active;
   }
 
-  /// @notice Parameters for registering/deregistering a spoke on a position manager.
-  /// @param positionManager The position manager address.
-  /// @param spoke The address of the spoke.
-  /// @param registered Whether to register (true) or deregister (false) the spoke.
+  /// @notice Parameters for registering/deregistering a Spoke on a position manager.
+  /// @dev positionManager The position manager address.
+  /// @dev spoke The address of the Spoke.
+  /// @dev registered Whether to register (true) or deregister (false) the Spoke.
   struct SpokeRegistration {
     address positionManager;
     address spoke;
@@ -274,11 +274,11 @@ interface IAaveV4ConfigEngine {
   }
 
   /// @notice Parameters for rescuing ERC20 tokens and/or native assets from a position manager.
-  /// @param positionManager The position manager address.
-  /// @param token The address of the ERC20 token to rescue (only used if tokenAmount > 0).
-  /// @param to The address to send the rescued assets to.
-  /// @param tokenAmount The amount of ERC20 tokens to rescue (calls rescueToken if > 0).
-  /// @param nativeAmount The amount of native assets to rescue (calls rescueNative if > 0).
+  /// @dev positionManager The position manager address.
+  /// @dev token The address of the ERC20 token to rescue (only used if tokenAmount > 0).
+  /// @dev to The address to send the rescued assets to.
+  /// @dev tokenAmount The amount of ERC20 tokens to rescue (calls rescueToken if > 0).
+  /// @dev nativeAmount The amount of native assets to rescue (calls rescueNative if > 0).
   struct Rescue {
     address positionManager;
     address token;
@@ -287,10 +287,10 @@ interface IAaveV4ConfigEngine {
     uint256 nativeAmount;
   }
 
-  /// @notice Parameters for renouncing the position manager role for a user on a spoke.
-  /// @param positionManager The position manager address.
-  /// @param spoke The address of the spoke.
-  /// @param user The address of the user to renounce the role for.
+  /// @notice Parameters for renouncing the position manager role for a user on a Spoke.
+  /// @dev positionManager The position manager address.
+  /// @dev spoke The address of the Spoke.
+  /// @dev user The address of the user to renounce the role for.
   struct PositionManagerRoleRenouncement {
     address positionManager;
     address spoke;
@@ -298,13 +298,13 @@ interface IAaveV4ConfigEngine {
   }
 
   /// @notice Parameters for granting or revoking a role via AccessManager.
-  /// When granted=true → grantRole(roleId, account, executionDelay).
-  /// When granted=false → revokeRole(roleId, account). executionDelay is ignored.
-  /// @param authority The AccessManager address.
-  /// @param roleId The role identifier.
-  /// @param account The account to grant/revoke the role to/from.
-  /// @param granted Whether to grant (true) or revoke (false) the role.
-  /// @param executionDelay The execution delay for the account (only used when granted=true).
+  /// @dev When granted=true → grantRole(roleId, account, executionDelay).
+  /// @dev When granted=false → revokeRole(roleId, account). executionDelay is ignored.
+  /// @dev authority The AccessManager address.
+  /// @dev roleId The role identifier.
+  /// @dev account The account to grant/revoke the role to/from.
+  /// @dev granted Whether to grant (true) or revoke (false) the role.
+  /// @dev executionDelay The execution delay for the account (only used when granted=true).
   struct RoleMembership {
     address authority;
     uint64 roleId;
@@ -314,14 +314,14 @@ interface IAaveV4ConfigEngine {
   }
 
   /// @notice Parameters for updating role configuration via AccessManager.
-  /// Uses type-specific sentinels to skip fields: type(uint64).max for admin/guardian,
+  /// @dev Uses type-specific sentinels to skip fields: type(uint64).max for admin/guardian,
   /// type(uint32).max for grantDelay, empty string for label.
-  /// @param authority The AccessManager address.
-  /// @param roleId The role identifier.
-  /// @param admin The new admin role identifier (type(uint64).max to skip).
-  /// @param guardian The new guardian role identifier (type(uint64).max to skip).
-  /// @param grantDelay The new grant delay (type(uint32).max to skip).
-  /// @param label The label string (empty string to skip).
+  /// @dev authority The AccessManager address.
+  /// @dev roleId The role identifier.
+  /// @dev admin The new admin role identifier (type(uint64).max to skip).
+  /// @dev guardian The new guardian role identifier (type(uint64).max to skip).
+  /// @dev grantDelay The new grant delay (type(uint32).max to skip).
+  /// @dev label The label string (empty string to skip).
   struct RoleUpdate {
     address authority;
     uint64 roleId;
@@ -332,10 +332,10 @@ interface IAaveV4ConfigEngine {
   }
 
   /// @notice Parameters for setting target function roles via AccessManager.
-  /// @param authority The AccessManager address.
-  /// @param target The target contract address.
-  /// @param selectors The function selectors.
-  /// @param roleId The role identifier.
+  /// @dev authority The AccessManager address.
+  /// @dev target The target contract address.
+  /// @dev selectors The function selectors.
+  /// @dev roleId The role identifier.
   struct TargetFunctionRoleUpdate {
     address authority;
     address target;
@@ -344,95 +344,95 @@ interface IAaveV4ConfigEngine {
   }
 
   /// @notice Parameters for setting target admin delay via AccessManager.
-  /// @param authority The AccessManager address.
-  /// @param target The target contract address.
-  /// @param newDelay The new admin delay.
+  /// @dev authority The AccessManager address.
+  /// @dev target The target contract address.
+  /// @dev newDelay The new admin delay.
   struct TargetAdminDelayUpdate {
     address authority;
     address target;
     uint32 newDelay;
   }
 
-  /// @notice Lists new assets on hubs via the HubConfigurator.
+  /// @notice Lists new assets on Hubs via the HubConfigurator.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(AssetListing[] calldata listings) external;
 
-  /// @notice Updates asset config (fee, interest rate, reinvestment) on hubs.
+  /// @notice Updates asset config (fee, interest rate, reinvestment) on Hubs.
   /// @param updates The asset config updates to execute.
   function executeHubAssetConfigUpdates(AssetConfigUpdate[] calldata updates) external;
 
-  /// @notice Registers spokes for multiple assets on hubs.
-  /// @param additions The spoke-to-assets additions to execute.
+  /// @notice Registers Spokes for multiple assets on Hubs.
+  /// @param additions The Spoke-to-assets additions to execute.
   function executeHubSpokeToAssetsAdditions(SpokeToAssetsAddition[] calldata additions) external;
 
-  /// @notice Updates spoke config (caps, risk premium threshold, status) on hubs.
-  /// @param updates The spoke config updates to execute.
+  /// @notice Updates Spoke config (caps, risk premium threshold, status) on Hubs.
+  /// @param updates The Spoke config updates to execute.
   function executeHubSpokeConfigUpdates(SpokeConfigUpdate[] calldata updates) external;
 
-  /// @notice Halts assets on hubs.
+  /// @notice Halts assets on Hubs.
   /// @param halts The asset halts to execute.
   function executeHubAssetHalts(AssetHalt[] calldata halts) external;
 
-  /// @notice Deactivates assets on hubs.
+  /// @notice Deactivates assets on Hubs.
   /// @param deactivations The asset deactivations to execute.
   function executeHubAssetDeactivations(AssetDeactivation[] calldata deactivations) external;
 
-  /// @notice Resets asset caps on hubs.
+  /// @notice Resets asset caps on Hubs.
   /// @param resets The asset caps resets to execute.
   function executeHubAssetCapsResets(AssetCapsReset[] calldata resets) external;
 
-  /// @notice Halts spokes on hubs.
-  /// @param halts The spoke halts to execute.
+  /// @notice Halts Spokes on Hubs.
+  /// @param halts The Spoke halts to execute.
   function executeHubSpokeHalts(SpokeHalt[] calldata halts) external;
 
-  /// @notice Deactivates spokes on hubs.
-  /// @param deactivations The spoke deactivations to execute.
+  /// @notice Deactivates Spokes on Hubs.
+  /// @param deactivations The Spoke deactivations to execute.
   function executeHubSpokeDeactivations(SpokeDeactivation[] calldata deactivations) external;
 
-  /// @notice Resets spoke caps on hubs.
-  /// @param resets The spoke caps resets to execute.
+  /// @notice Resets Spoke caps on Hubs.
+  /// @param resets The Spoke caps resets to execute.
   function executeHubSpokeCapsResets(SpokeCapsReset[] calldata resets) external;
 
-  /// @notice Lists new reserves on spokes.
+  /// @notice Lists new reserves on Spokes.
   /// @param listings The reserve listings to execute.
   function executeSpokeReserveListings(ReserveListing[] calldata listings) external;
 
-  /// @notice Updates reserve config on spokes.
+  /// @notice Updates reserve config on Spokes.
   /// @param updates The reserve config updates to execute.
   function executeSpokeReserveConfigUpdates(ReserveConfigUpdate[] calldata updates) external;
 
-  /// @notice Updates liquidation config on spokes.
+  /// @notice Updates liquidation config on Spokes.
   /// @param updates The liquidation config updates to execute.
   function executeSpokeLiquidationConfigUpdates(
     LiquidationConfigUpdate[] calldata updates
   ) external;
 
-  /// @notice Adds dynamic reserve configs on spokes.
+  /// @notice Adds dynamic reserve configs on Spokes.
   /// @param additions The dynamic reserve config additions to execute.
   function executeSpokeDynamicReserveConfigAdditions(
     DynamicReserveConfigAddition[] calldata additions
   ) external;
 
-  /// @notice Updates dynamic reserve configs on spokes.
+  /// @notice Updates dynamic reserve configs on Spokes.
   /// @param updates The dynamic reserve config updates to execute.
   function executeSpokeDynamicReserveConfigUpdates(
     DynamicReserveConfigUpdate[] calldata updates
   ) external;
 
-  /// @notice Pauses all reserves on spokes.
-  /// @param pauses The spoke pauses to execute.
-  function executeSpokeAllReservesPauses(SpokePause[] calldata pauses) external;
+  /// @notice Pauses all reserves on Spokes.
+  /// @param pauses The pauses to execute on Spokes.
+  function executeSpokesPauseAllReserves(SpokePause[] calldata pauses) external;
 
-  /// @notice Freezes all reserves on spokes.
-  /// @param freezes The spoke freezes to execute.
-  function executeSpokeAllReservesFreezes(SpokeFreeze[] calldata freezes) external;
+  /// @notice Freezes all reserves on Spokes.
+  /// @param freezes The freezes to execute on Spokes
+  function executeSpokesFreezeAllReserves(SpokeFreeze[] calldata freezes) external;
 
-  /// @notice Updates position managers on spokes.
+  /// @notice Updates position managers on Spokes.
   /// @param updates The position manager updates to execute.
   function executeSpokePositionManagerUpdates(PositionManagerUpdate[] calldata updates) external;
 
-  /// @notice Registers/deregisters spokes on position managers.
-  /// @param registrations The spoke registrations to execute.
+  /// @notice Registers/deregisters Spokes on position managers.
+  /// @param registrations The Spoke registrations to execute.
   function executePositionManagerSpokeRegistrations(
     SpokeRegistration[] calldata registrations
   ) external;
@@ -441,7 +441,7 @@ interface IAaveV4ConfigEngine {
   /// @param rescues The rescues to execute.
   function executePositionManagerRescues(Rescue[] calldata rescues) external;
 
-  /// @notice Renounces position manager roles for users on spokes.
+  /// @notice Renounces position manager roles for users on Spokes.
   /// @param renouncements The role renouncements to execute.
   function executePositionManagerRoleRenouncements(
     PositionManagerRoleRenouncement[] calldata renouncements

@@ -7,12 +7,11 @@ import {BaseConfigEngineTest} from 'tests/config-engine/BaseConfigEngine.t.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
 import {MockAccessManagerForEngine} from 'tests/mocks/config-engine/MockAccessManagerForEngine.sol';
 
 contract AccessManagerEngineTest is BaseConfigEngineTest {
-  // --- RoleMembership tests ---
-
   function test_executeRoleMemberships_grant_concrete() public {
     IAaveV4ConfigEngine.RoleMembership[] memory memberships = _toRoleMembershipArray(
       IAaveV4ConfigEngine.RoleMembership({
@@ -119,8 +118,6 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     engine.executeRoleMemberships(memberships);
   }
 
-  // --- RoleUpdate tests ---
-
   function test_executeRoleUpdates_allFields() public {
     IAaveV4ConfigEngine.RoleUpdate[] memory updates = _toRoleUpdateArray(
       IAaveV4ConfigEngine.RoleUpdate({
@@ -151,8 +148,8 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
         authority: address(mockAccessManager),
         roleId: 5,
         admin: 1,
-        guardian: type(uint64).max,
-        grantDelay: type(uint32).max,
+        guardian: EngineFlags.KEEP_CURRENT_UINT64,
+        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
         label: ''
       })
     );
@@ -168,9 +165,9 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       IAaveV4ConfigEngine.RoleUpdate({
         authority: address(mockAccessManager),
         roleId: 5,
-        admin: type(uint64).max,
+        admin: EngineFlags.KEEP_CURRENT_UINT64,
         guardian: 2,
-        grantDelay: type(uint32).max,
+        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
         label: ''
       })
     );
@@ -186,8 +183,8 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       IAaveV4ConfigEngine.RoleUpdate({
         authority: address(mockAccessManager),
         roleId: 5,
-        admin: type(uint64).max,
-        guardian: type(uint64).max,
+        admin: EngineFlags.KEEP_CURRENT_UINT64,
+        guardian: EngineFlags.KEEP_CURRENT_UINT64,
         grantDelay: 3600,
         label: ''
       })
@@ -204,9 +201,9 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       IAaveV4ConfigEngine.RoleUpdate({
         authority: address(mockAccessManager),
         roleId: 5,
-        admin: type(uint64).max,
-        guardian: type(uint64).max,
-        grantDelay: type(uint32).max,
+        admin: EngineFlags.KEEP_CURRENT_UINT64,
+        guardian: EngineFlags.KEEP_CURRENT_UINT64,
+        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
         label: 'FEE_UPDATER'
       })
     );
@@ -222,9 +219,9 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       IAaveV4ConfigEngine.RoleUpdate({
         authority: address(mockAccessManager),
         roleId: 5,
-        admin: type(uint64).max,
-        guardian: type(uint64).max,
-        grantDelay: type(uint32).max,
+        admin: EngineFlags.KEEP_CURRENT_UINT64,
+        guardian: EngineFlags.KEEP_CURRENT_UINT64,
+        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
         label: ''
       })
     );
@@ -242,9 +239,9 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     uint32 grantDelay
   ) public {
     // Use non-sentinel values so all 4 calls are made
-    vm.assume(admin != type(uint64).max);
-    vm.assume(guardian != type(uint64).max);
-    vm.assume(grantDelay != type(uint32).max);
+    vm.assume(admin != EngineFlags.KEEP_CURRENT_UINT64);
+    vm.assume(guardian != EngineFlags.KEEP_CURRENT_UINT64);
+    vm.assume(grantDelay != EngineFlags.KEEP_CURRENT_UINT32);
 
     string memory label = 'FUZZ_LABEL';
 
@@ -279,8 +276,8 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
         authority: address(mockAccessManager),
         roleId: 5,
         admin: 1,
-        guardian: type(uint64).max,
-        grantDelay: type(uint32).max,
+        guardian: EngineFlags.KEEP_CURRENT_UINT64,
+        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
         label: ''
       })
     );
@@ -296,9 +293,9 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       IAaveV4ConfigEngine.RoleUpdate({
         authority: address(mockAccessManager),
         roleId: 5,
-        admin: type(uint64).max,
+        admin: EngineFlags.KEEP_CURRENT_UINT64,
         guardian: 2,
-        grantDelay: type(uint32).max,
+        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
         label: ''
       })
     );
@@ -314,8 +311,8 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       IAaveV4ConfigEngine.RoleUpdate({
         authority: address(mockAccessManager),
         roleId: 5,
-        admin: type(uint64).max,
-        guardian: type(uint64).max,
+        admin: EngineFlags.KEEP_CURRENT_UINT64,
+        guardian: EngineFlags.KEEP_CURRENT_UINT64,
         grantDelay: 3600,
         label: ''
       })
@@ -332,9 +329,9 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       IAaveV4ConfigEngine.RoleUpdate({
         authority: address(mockAccessManager),
         roleId: 5,
-        admin: type(uint64).max,
-        guardian: type(uint64).max,
-        grantDelay: type(uint32).max,
+        admin: EngineFlags.KEEP_CURRENT_UINT64,
+        guardian: EngineFlags.KEEP_CURRENT_UINT64,
+        grantDelay: EngineFlags.KEEP_CURRENT_UINT32,
         label: 'FEE_UPDATER'
       })
     );
@@ -342,8 +339,6 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     vm.expectRevert(MockAccessManagerForEngine.LabelRoleReverted.selector);
     engine.executeRoleUpdates(updates);
   }
-
-  // --- TargetFunctionRoleUpdate tests (unchanged) ---
 
   function test_executeTargetFunctionRoleUpdates_concrete() public {
     bytes4[] memory selectors = new bytes4[](2);
@@ -409,8 +404,6 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     vm.expectRevert(MockAccessManagerForEngine.SetTargetFunctionRoleReverted.selector);
     engine.executeTargetFunctionRoleUpdates(updates);
   }
-
-  // --- TargetAdminDelayUpdate tests (unchanged) ---
 
   function test_executeTargetAdminDelayUpdates_concrete() public {
     IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory updates = _toTargetAdminDelayUpdateArray(

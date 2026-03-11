@@ -2,16 +2,17 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 import {IRescuable} from 'src/interfaces/IRescuable.sol';
+import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
+
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @title PositionManagerEngine
 /// @author Aave Labs
 /// @notice Library containing position manager logic for AaveV4ConfigEngine.
 library PositionManagerEngine {
-  /// @notice Registers/deregisters spokes on position managers.
-  /// @param registrations The spoke registrations to execute.
+  /// @notice Registers/deregisters Spokes on position managers.
+  /// @param registrations The Spoke registrations to execute.
   function executePositionManagerSpokeRegistrations(
     IAaveV4ConfigEngine.SpokeRegistration[] calldata registrations
   ) external {
@@ -42,7 +43,7 @@ library PositionManagerEngine {
     }
   }
 
-  /// @notice Renounces position manager roles for users on spokes.
+  /// @notice Renounces position manager roles for users on Spokes.
   /// @param renouncements The role renouncements to execute.
   function executePositionManagerRoleRenouncements(
     IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] calldata renouncements

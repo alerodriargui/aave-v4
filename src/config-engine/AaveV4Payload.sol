@@ -2,8 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
+
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @title AaveV4Payload
 /// @author Aave Labs
@@ -33,6 +34,240 @@ abstract contract AaveV4Payload {
     _executeAccessManagerActions();
     _executePositionManagerActions();
     _postExecute();
+  }
+
+  /// @notice Returns the Hub asset listings to execute. Override to provide listings.
+  /// @return An array of AssetListing structs (empty by default).
+  function hubAssetListings() public virtual returns (IAaveV4ConfigEngine.AssetListing[] memory) {
+    return new IAaveV4ConfigEngine.AssetListing[](0);
+  }
+
+  /// @notice Returns the Hub asset config updates to execute. Override to provide updates.
+  /// @return An array of AssetConfigUpdate structs (empty by default).
+  function hubAssetConfigUpdates()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.AssetConfigUpdate[] memory)
+  {
+    return new IAaveV4ConfigEngine.AssetConfigUpdate[](0);
+  }
+
+  /// @notice Returns the Hub Spoke-to-assets additions to execute. Override to provide additions.
+  /// @return An array of SpokeToAssetsAddition structs (empty by default).
+  function hubSpokeToAssetsAdditions()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.SpokeToAssetsAddition[] memory)
+  {
+    return new IAaveV4ConfigEngine.SpokeToAssetsAddition[](0);
+  }
+
+  /// @notice Returns the Hub Spoke config updates to execute. Override to provide updates.
+  /// @return An array of SpokeConfigUpdate structs (empty by default).
+  function hubSpokeConfigUpdates()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.SpokeConfigUpdate[] memory)
+  {
+    return new IAaveV4ConfigEngine.SpokeConfigUpdate[](0);
+  }
+
+  /// @notice Returns the Hub asset halts to execute. Override to provide halts.
+  /// @return An array of AssetHalt structs (empty by default).
+  function hubAssetHalts() public virtual returns (IAaveV4ConfigEngine.AssetHalt[] memory) {
+    return new IAaveV4ConfigEngine.AssetHalt[](0);
+  }
+
+  /// @notice Returns the Hub asset deactivations to execute. Override to provide deactivations.
+  /// @return An array of AssetDeactivation structs (empty by default).
+  function hubAssetDeactivations()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.AssetDeactivation[] memory)
+  {
+    return new IAaveV4ConfigEngine.AssetDeactivation[](0);
+  }
+
+  /// @notice Returns the Hub asset caps resets to execute. Override to provide resets.
+  /// @return An array of AssetCapsReset structs (empty by default).
+  function hubAssetCapsResets()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.AssetCapsReset[] memory)
+  {
+    return new IAaveV4ConfigEngine.AssetCapsReset[](0);
+  }
+
+  /// @notice Returns the Hub Spoke halts to execute. Override to provide halts.
+  /// @return An array of SpokeHalt structs (empty by default).
+  function hubSpokeHalts() public virtual returns (IAaveV4ConfigEngine.SpokeHalt[] memory) {
+    return new IAaveV4ConfigEngine.SpokeHalt[](0);
+  }
+
+  /// @notice Returns the Hub Spoke deactivations to execute. Override to provide deactivations.
+  /// @return An array of SpokeDeactivation structs (empty by default).
+  function hubSpokeDeactivations()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.SpokeDeactivation[] memory)
+  {
+    return new IAaveV4ConfigEngine.SpokeDeactivation[](0);
+  }
+
+  /// @notice Returns the Hub Spoke caps resets to execute. Override to provide resets.
+  /// @return An array of SpokeCapsReset structs (empty by default).
+  function hubSpokeCapsResets()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.SpokeCapsReset[] memory)
+  {
+    return new IAaveV4ConfigEngine.SpokeCapsReset[](0);
+  }
+
+  /// @notice Returns the Spoke reserve listings to execute. Override to provide listings.
+  /// @return An array of ReserveListing structs (empty by default).
+  function spokeReserveListings()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.ReserveListing[] memory)
+  {
+    return new IAaveV4ConfigEngine.ReserveListing[](0);
+  }
+
+  /// @notice Returns the Spoke reserve config updates to execute. Override to provide updates.
+  /// @return An array of ReserveConfigUpdate structs (empty by default).
+  function spokeReserveConfigUpdates()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.ReserveConfigUpdate[] memory)
+  {
+    return new IAaveV4ConfigEngine.ReserveConfigUpdate[](0);
+  }
+
+  /// @notice Returns the Spoke liquidation config updates to execute. Override to provide updates.
+  /// @return An array of LiquidationConfigUpdate structs (empty by default).
+  function spokeLiquidationConfigUpdates()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.LiquidationConfigUpdate[] memory)
+  {
+    return new IAaveV4ConfigEngine.LiquidationConfigUpdate[](0);
+  }
+
+  /// @notice Returns the Spoke dynamic reserve config additions to execute. Override to provide additions.
+  /// @return An array of DynamicReserveConfigAddition structs (empty by default).
+  function spokeDynamicReserveConfigAdditions()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition[] memory)
+  {
+    return new IAaveV4ConfigEngine.DynamicReserveConfigAddition[](0);
+  }
+
+  /// @notice Returns the Spoke dynamic reserve config updates to execute. Override to provide updates.
+  /// @return An array of DynamicReserveConfigUpdate structs (empty by default).
+  function spokeDynamicReserveConfigUpdates()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] memory)
+  {
+    return new IAaveV4ConfigEngine.DynamicReserveConfigUpdate[](0);
+  }
+
+  /// @notice Returns the Spoke all-reserves pauses to execute. Override to provide pauses.
+  /// @return An array of SpokePause structs (empty by default).
+  function spokeAllReservesPauses()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.SpokePause[] memory)
+  {
+    return new IAaveV4ConfigEngine.SpokePause[](0);
+  }
+
+  /// @notice Returns the Spoke all-reserves freezes to execute. Override to provide freezes.
+  /// @return An array of SpokeFreeze structs (empty by default).
+  function spokeAllReservesFreezes()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.SpokeFreeze[] memory)
+  {
+    return new IAaveV4ConfigEngine.SpokeFreeze[](0);
+  }
+
+  /// @notice Returns the Spoke position manager updates to execute. Override to provide updates.
+  /// @return An array of PositionManagerUpdate structs (empty by default).
+  function spokePositionManagerUpdates()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.PositionManagerUpdate[] memory)
+  {
+    return new IAaveV4ConfigEngine.PositionManagerUpdate[](0);
+  }
+
+  /// @notice Returns the access manager role memberships to execute. Override to provide memberships.
+  /// @return An array of RoleMembership structs (empty by default).
+  function accessManagerRoleMemberships()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.RoleMembership[] memory)
+  {
+    return new IAaveV4ConfigEngine.RoleMembership[](0);
+  }
+
+  /// @notice Returns the access manager role updates to execute. Override to provide updates.
+  /// @return An array of RoleUpdate structs (empty by default).
+  function accessManagerRoleUpdates()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.RoleUpdate[] memory)
+  {
+    return new IAaveV4ConfigEngine.RoleUpdate[](0);
+  }
+
+  /// @notice Returns the access manager target function role updates to execute. Override to provide updates.
+  /// @return An array of TargetFunctionRoleUpdate structs (empty by default).
+  function accessManagerTargetFunctionRoleUpdates()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.TargetFunctionRoleUpdate[] memory)
+  {
+    return new IAaveV4ConfigEngine.TargetFunctionRoleUpdate[](0);
+  }
+
+  /// @notice Returns the access manager target admin delay updates to execute. Override to provide updates.
+  /// @return An array of TargetAdminDelayUpdate structs (empty by default).
+  function accessManagerTargetAdminDelayUpdates()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory)
+  {
+    return new IAaveV4ConfigEngine.TargetAdminDelayUpdate[](0);
+  }
+
+  /// @notice Returns the position manager Spoke registrations to execute. Override to provide registrations.
+  /// @return An array of SpokeRegistration structs (empty by default).
+  function positionManagerSpokeRegistrations()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.SpokeRegistration[] memory)
+  {
+    return new IAaveV4ConfigEngine.SpokeRegistration[](0);
+  }
+
+  /// @notice Returns the position manager rescues to execute. Override to provide rescues.
+  /// @return An array of Rescue structs (empty by default).
+  function positionManagerRescues() public virtual returns (IAaveV4ConfigEngine.Rescue[] memory) {
+    return new IAaveV4ConfigEngine.Rescue[](0);
+  }
+
+  /// @notice Returns the position manager role renouncements to execute. Override to provide renouncements.
+  /// @return An array of PositionManagerRoleRenouncement structs (empty by default).
+  function positionManagerRoleRenouncements()
+    public
+    virtual
+    returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory)
+  {
+    return new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](0);
   }
 
   /// @notice Executes all hub-related configuration actions via delegatecall to the engine.
@@ -103,7 +338,7 @@ abstract contract AaveV4Payload {
     }
   }
 
-  /// @notice Executes all spoke-related configuration actions via delegatecall to the engine.
+  /// @notice Executes all Spoke-related configuration actions via delegatecall to the engine.
   function _executeSpokeActions() internal {
     IAaveV4ConfigEngine.ReserveListing[] memory reserveListings = spokeReserveListings();
     if (reserveListings.length > 0) {
@@ -147,14 +382,14 @@ abstract contract AaveV4Payload {
     IAaveV4ConfigEngine.SpokePause[] memory allPauses = spokeAllReservesPauses();
     if (allPauses.length > 0) {
       _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokeAllReservesPauses, (allPauses))
+        abi.encodeCall(IAaveV4ConfigEngine.executeSpokesPauseAllReserves, (allPauses))
       );
     }
 
     IAaveV4ConfigEngine.SpokeFreeze[] memory allFreezes = spokeAllReservesFreezes();
     if (allFreezes.length > 0) {
       _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokeAllReservesFreezes, (allFreezes))
+        abi.encodeCall(IAaveV4ConfigEngine.executeSpokesFreezeAllReserves, (allFreezes))
       );
     }
 
@@ -166,7 +401,7 @@ abstract contract AaveV4Payload {
     }
   }
 
-  /// @notice Executes all access manager configuration actions via delegatecall to the engine.
+  /// @notice Executes all Access Manager configuration actions via delegatecall to the engine.
   function _executeAccessManagerActions() internal {
     IAaveV4ConfigEngine.RoleMembership[] memory memberships = accessManagerRoleMemberships();
     if (memberships.length > 0) {
@@ -197,7 +432,7 @@ abstract contract AaveV4Payload {
     }
   }
 
-  /// @notice Executes all position manager configuration actions via delegatecall to the engine.
+  /// @notice Executes all Position Manager configuration actions via delegatecall to the engine.
   function _executePositionManagerActions() internal {
     IAaveV4ConfigEngine.SpokeRegistration[] memory spokeRegs = positionManagerSpokeRegistrations();
     if (spokeRegs.length > 0) {
@@ -230,240 +465,7 @@ abstract contract AaveV4Payload {
 
   /// @notice Hook called before executing any actions. Override to add pre-execution logic.
   function _preExecute() internal virtual {}
+
   /// @notice Hook called after executing all actions. Override to add post-execution logic.
   function _postExecute() internal virtual {}
-
-  /// @notice Returns the hub asset listings to execute. Override to provide listings.
-  /// @return An array of AssetListing structs (empty by default).
-  function hubAssetListings() public virtual returns (IAaveV4ConfigEngine.AssetListing[] memory) {
-    return new IAaveV4ConfigEngine.AssetListing[](0);
-  }
-
-  /// @notice Returns the hub asset config updates to execute. Override to provide updates.
-  /// @return An array of AssetConfigUpdate structs (empty by default).
-  function hubAssetConfigUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.AssetConfigUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.AssetConfigUpdate[](0);
-  }
-
-  /// @notice Returns the hub spoke-to-assets additions to execute. Override to provide additions.
-  /// @return An array of SpokeToAssetsAddition structs (empty by default).
-  function hubSpokeToAssetsAdditions()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.SpokeToAssetsAddition[] memory)
-  {
-    return new IAaveV4ConfigEngine.SpokeToAssetsAddition[](0);
-  }
-
-  /// @notice Returns the hub spoke config updates to execute. Override to provide updates.
-  /// @return An array of SpokeConfigUpdate structs (empty by default).
-  function hubSpokeConfigUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.SpokeConfigUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.SpokeConfigUpdate[](0);
-  }
-
-  /// @notice Returns the hub asset halts to execute. Override to provide halts.
-  /// @return An array of AssetHalt structs (empty by default).
-  function hubAssetHalts() public virtual returns (IAaveV4ConfigEngine.AssetHalt[] memory) {
-    return new IAaveV4ConfigEngine.AssetHalt[](0);
-  }
-
-  /// @notice Returns the hub asset deactivations to execute. Override to provide deactivations.
-  /// @return An array of AssetDeactivation structs (empty by default).
-  function hubAssetDeactivations()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.AssetDeactivation[] memory)
-  {
-    return new IAaveV4ConfigEngine.AssetDeactivation[](0);
-  }
-
-  /// @notice Returns the hub asset caps resets to execute. Override to provide resets.
-  /// @return An array of AssetCapsReset structs (empty by default).
-  function hubAssetCapsResets()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.AssetCapsReset[] memory)
-  {
-    return new IAaveV4ConfigEngine.AssetCapsReset[](0);
-  }
-
-  /// @notice Returns the hub spoke halts to execute. Override to provide halts.
-  /// @return An array of SpokeHalt structs (empty by default).
-  function hubSpokeHalts() public virtual returns (IAaveV4ConfigEngine.SpokeHalt[] memory) {
-    return new IAaveV4ConfigEngine.SpokeHalt[](0);
-  }
-
-  /// @notice Returns the hub spoke deactivations to execute. Override to provide deactivations.
-  /// @return An array of SpokeDeactivation structs (empty by default).
-  function hubSpokeDeactivations()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.SpokeDeactivation[] memory)
-  {
-    return new IAaveV4ConfigEngine.SpokeDeactivation[](0);
-  }
-
-  /// @notice Returns the hub spoke caps resets to execute. Override to provide resets.
-  /// @return An array of SpokeCapsReset structs (empty by default).
-  function hubSpokeCapsResets()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.SpokeCapsReset[] memory)
-  {
-    return new IAaveV4ConfigEngine.SpokeCapsReset[](0);
-  }
-
-  /// @notice Returns the spoke reserve listings to execute. Override to provide listings.
-  /// @return An array of ReserveListing structs (empty by default).
-  function spokeReserveListings()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.ReserveListing[] memory)
-  {
-    return new IAaveV4ConfigEngine.ReserveListing[](0);
-  }
-
-  /// @notice Returns the spoke reserve config updates to execute. Override to provide updates.
-  /// @return An array of ReserveConfigUpdate structs (empty by default).
-  function spokeReserveConfigUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.ReserveConfigUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.ReserveConfigUpdate[](0);
-  }
-
-  /// @notice Returns the spoke liquidation config updates to execute. Override to provide updates.
-  /// @return An array of LiquidationConfigUpdate structs (empty by default).
-  function spokeLiquidationConfigUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.LiquidationConfigUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.LiquidationConfigUpdate[](0);
-  }
-
-  /// @notice Returns the spoke dynamic reserve config additions to execute. Override to provide additions.
-  /// @return An array of DynamicReserveConfigAddition structs (empty by default).
-  function spokeDynamicReserveConfigAdditions()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition[] memory)
-  {
-    return new IAaveV4ConfigEngine.DynamicReserveConfigAddition[](0);
-  }
-
-  /// @notice Returns the spoke dynamic reserve config updates to execute. Override to provide updates.
-  /// @return An array of DynamicReserveConfigUpdate structs (empty by default).
-  function spokeDynamicReserveConfigUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.DynamicReserveConfigUpdate[](0);
-  }
-
-  /// @notice Returns the spoke all-reserves pauses to execute. Override to provide pauses.
-  /// @return An array of SpokePause structs (empty by default).
-  function spokeAllReservesPauses()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.SpokePause[] memory)
-  {
-    return new IAaveV4ConfigEngine.SpokePause[](0);
-  }
-
-  /// @notice Returns the spoke all-reserves freezes to execute. Override to provide freezes.
-  /// @return An array of SpokeFreeze structs (empty by default).
-  function spokeAllReservesFreezes()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.SpokeFreeze[] memory)
-  {
-    return new IAaveV4ConfigEngine.SpokeFreeze[](0);
-  }
-
-  /// @notice Returns the spoke position manager updates to execute. Override to provide updates.
-  /// @return An array of PositionManagerUpdate structs (empty by default).
-  function spokePositionManagerUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.PositionManagerUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.PositionManagerUpdate[](0);
-  }
-
-  /// @notice Returns the access manager role memberships to execute. Override to provide memberships.
-  /// @return An array of RoleMembership structs (empty by default).
-  function accessManagerRoleMemberships()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleMembership[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleMembership[](0);
-  }
-
-  /// @notice Returns the access manager role updates to execute. Override to provide updates.
-  /// @return An array of RoleUpdate structs (empty by default).
-  function accessManagerRoleUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.RoleUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.RoleUpdate[](0);
-  }
-
-  /// @notice Returns the access manager target function role updates to execute. Override to provide updates.
-  /// @return An array of TargetFunctionRoleUpdate structs (empty by default).
-  function accessManagerTargetFunctionRoleUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.TargetFunctionRoleUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.TargetFunctionRoleUpdate[](0);
-  }
-
-  /// @notice Returns the access manager target admin delay updates to execute. Override to provide updates.
-  /// @return An array of TargetAdminDelayUpdate structs (empty by default).
-  function accessManagerTargetAdminDelayUpdates()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory)
-  {
-    return new IAaveV4ConfigEngine.TargetAdminDelayUpdate[](0);
-  }
-
-  /// @notice Returns the position manager spoke registrations to execute. Override to provide registrations.
-  /// @return An array of SpokeRegistration structs (empty by default).
-  function positionManagerSpokeRegistrations()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.SpokeRegistration[] memory)
-  {
-    return new IAaveV4ConfigEngine.SpokeRegistration[](0);
-  }
-
-  /// @notice Returns the position manager rescues to execute. Override to provide rescues.
-  /// @return An array of Rescue structs (empty by default).
-  function positionManagerRescues() public virtual returns (IAaveV4ConfigEngine.Rescue[] memory) {
-    return new IAaveV4ConfigEngine.Rescue[](0);
-  }
-
-  /// @notice Returns the position manager role renouncements to execute. Override to provide renouncements.
-  /// @return An array of PositionManagerRoleRenouncement structs (empty by default).
-  function positionManagerRoleRenouncements()
-    public
-    virtual
-    returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory)
-  {
-    return new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](0);
-  }
 }

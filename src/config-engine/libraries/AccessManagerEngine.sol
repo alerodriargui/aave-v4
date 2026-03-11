@@ -2,8 +2,11 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
+import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
+
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
+
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @title AccessManagerEngine
 /// @author Aave Labs
@@ -37,13 +40,13 @@ library AccessManagerEngine {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
       IAccessManager authority = IAccessManager(updates[i].authority);
-      if (updates[i].admin != type(uint64).max) {
+      if (updates[i].admin != EngineFlags.KEEP_CURRENT_UINT64) {
         authority.setRoleAdmin(updates[i].roleId, updates[i].admin);
       }
-      if (updates[i].guardian != type(uint64).max) {
+      if (updates[i].guardian != EngineFlags.KEEP_CURRENT_UINT64) {
         authority.setRoleGuardian(updates[i].roleId, updates[i].guardian);
       }
-      if (updates[i].grantDelay != type(uint32).max) {
+      if (updates[i].grantDelay != EngineFlags.KEEP_CURRENT_UINT32) {
         authority.setGrantDelay(updates[i].roleId, updates[i].grantDelay);
       }
       if (bytes(updates[i].label).length > 0) {

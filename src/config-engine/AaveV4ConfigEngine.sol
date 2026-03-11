@@ -2,11 +2,12 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {HubEngine} from 'src/config-engine/libraries/HubEngine.sol';
 import {SpokeEngine} from 'src/config-engine/libraries/SpokeEngine.sol';
 import {AccessManagerEngine} from 'src/config-engine/libraries/AccessManagerEngine.sol';
 import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManagerEngine.sol';
+
+import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @title AaveV4ConfigEngine
 /// @author Aave Labs
@@ -95,13 +96,13 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokeAllReservesPauses(SpokePause[] calldata pauses) external {
-    SpokeEngine.executeSpokeAllReservesPauses(pauses);
+  function executeSpokesPauseAllReserves(SpokePause[] calldata pauses) external {
+    SpokeEngine.executeSpokesPauseAllReserves(pauses);
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokeAllReservesFreezes(SpokeFreeze[] calldata freezes) external {
-    SpokeEngine.executeSpokeAllReservesFreezes(freezes);
+  function executeSpokesFreezeAllReserves(SpokeFreeze[] calldata freezes) external {
+    SpokeEngine.executeSpokesFreezeAllReserves(freezes);
   }
 
   /// @inheritdoc IAaveV4ConfigEngine

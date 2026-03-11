@@ -73,7 +73,7 @@ contract EngineFlagsTest is Test {
   }
 
   function test_constants() public pure {
-    assertEq(EngineFlags.KEEP_CURRENT, type(uint256).max);
+    assertEq(EngineFlags.KEEP_CURRENT, type(uint256).max - 1);
     assertEq(EngineFlags.KEEP_CURRENT_ADDRESS, address(type(uint160).max));
     assertEq(EngineFlags.ENABLED, 1);
     assertEq(EngineFlags.DISABLED, 0);

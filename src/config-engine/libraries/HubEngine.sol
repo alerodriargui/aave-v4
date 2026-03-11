@@ -3,9 +3,9 @@
 pragma solidity ^0.8.0;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
-import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
 /// @title HubEngine
 /// @author Aave Labs
@@ -13,7 +13,7 @@ import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 library HubEngine {
   using SafeCast for uint256;
 
-  /// @notice Lists new assets on hubs via the HubConfigurator.
+  /// @notice Lists new assets on Hubs via the HubConfigurator.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
     uint256 length = listings.length;
@@ -41,7 +41,7 @@ library HubEngine {
     }
   }
 
-  /// @notice Updates asset config (fee, interest rate, reinvestment) for assets on hubs.
+  /// @notice Updates asset config (fee, interest rate, reinvestment) for assets on Hubs.
   /// @dev Dispatches to the appropriate HubConfigurator methods based on sentinel values:
   ///   Fee: both set → updateFeeConfig; only fee → updateLiquidityFee; only receiver → updateFeeReceiver.
   ///   IR: strategy set → updateInterestRateStrategy; strategy kept + irData → updateInterestRateData.
@@ -104,8 +104,8 @@ library HubEngine {
     }
   }
 
-  /// @notice Registers spokes for multiple assets on hubs.
-  /// @param additions The spoke-to-assets additions to execute.
+  /// @notice Registers Spokes for multiple assets on Hubs.
+  /// @param additions The Spoke-to-assets additions to execute.
   function executeHubSpokeToAssetsAdditions(
     IAaveV4ConfigEngine.SpokeToAssetsAddition[] calldata additions
   ) external {
@@ -120,12 +120,12 @@ library HubEngine {
     }
   }
 
-  /// @notice Updates spoke config (caps, risk premium threshold, status) on hubs.
+  /// @notice Updates Spoke config (caps, risk premium threshold, status) on Hubs.
   /// @dev Dispatches to the appropriate HubConfigurator methods based on sentinel values:
   ///   Caps: both set → updateSpokeCaps; only add → updateSpokeAddCap; only draw → updateSpokeDrawCap.
   ///   Risk premium threshold: set → updateSpokeRiskPremiumThreshold.
   ///   Status: active set → updateSpokeActive; halted set → updateSpokeHalted.
-  /// @param updates The spoke config updates to execute.
+  /// @param updates The Spoke config updates to execute.
   function executeHubSpokeConfigUpdates(
     IAaveV4ConfigEngine.SpokeConfigUpdate[] calldata updates
   ) external {
@@ -189,7 +189,7 @@ library HubEngine {
     }
   }
 
-  /// @notice Halts assets on hubs.
+  /// @notice Halts assets on Hubs.
   /// @param halts The asset halts to execute.
   function executeHubAssetHalts(IAaveV4ConfigEngine.AssetHalt[] calldata halts) external {
     uint256 length = halts.length;
@@ -198,7 +198,7 @@ library HubEngine {
     }
   }
 
-  /// @notice Deactivates assets on hubs.
+  /// @notice Deactivates assets on Hubs.
   /// @param deactivations The asset deactivations to execute.
   function executeHubAssetDeactivations(
     IAaveV4ConfigEngine.AssetDeactivation[] calldata deactivations
@@ -212,7 +212,7 @@ library HubEngine {
     }
   }
 
-  /// @notice Resets asset caps on hubs.
+  /// @notice Resets asset caps on Hubs.
   /// @param resets The asset caps resets to execute.
   function executeHubAssetCapsResets(
     IAaveV4ConfigEngine.AssetCapsReset[] calldata resets
@@ -223,8 +223,8 @@ library HubEngine {
     }
   }
 
-  /// @notice Halts spokes on hubs.
-  /// @param halts The spoke halts to execute.
+  /// @notice Halts Spokes on Hubs.
+  /// @param halts The Spoke halts to execute.
   function executeHubSpokeHalts(IAaveV4ConfigEngine.SpokeHalt[] calldata halts) external {
     uint256 length = halts.length;
     for (uint256 i; i < length; ++i) {
@@ -232,8 +232,8 @@ library HubEngine {
     }
   }
 
-  /// @notice Deactivates spokes on hubs.
-  /// @param deactivations The spoke deactivations to execute.
+  /// @notice Deactivates Spokes on Hubs.
+  /// @param deactivations The Spoke deactivations to execute.
   function executeHubSpokeDeactivations(
     IAaveV4ConfigEngine.SpokeDeactivation[] calldata deactivations
   ) external {
@@ -246,8 +246,8 @@ library HubEngine {
     }
   }
 
-  /// @notice Resets spoke caps on hubs.
-  /// @param resets The spoke caps resets to execute.
+  /// @notice Resets Spoke caps on Hubs.
+  /// @param resets The Spoke caps resets to execute.
   function executeHubSpokeCapsResets(
     IAaveV4ConfigEngine.SpokeCapsReset[] calldata resets
   ) external {
