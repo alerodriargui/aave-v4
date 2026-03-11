@@ -501,7 +501,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHubBase
   function previewDrawByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
-    if (assetId >= _assetCount || shares == 0) {
+    if (assetId >= _assetCount) {
       return shares;
     }
     return _assets[assetId].toDrawnAssetsDown(shares);
@@ -517,7 +517,7 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHubBase
   function previewRestoreByShares(uint256 assetId, uint256 shares) external view returns (uint256) {
-    if (assetId >= _assetCount || shares == 0) {
+    if (assetId >= _assetCount) {
       return shares;
     }
     return _assets[assetId].toDrawnAssetsUp(shares);
