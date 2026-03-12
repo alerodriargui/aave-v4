@@ -58,8 +58,8 @@ contract DeployV4 is Script {
     // Clear old PM addresses so deployPositionManagers deploys fresh ones
     report.signatureGateway = address(0);
     report.nativeTokenGateway = address(0);
-    report.allowancePositionManager = address(0);
-    report.supplyRepayPositionManager = address(0);
+    report.giverPositionManager = address(0);
+    report.takerPositionManager = address(0);
     report.configPositionManager = address(0);
 
     DeployPositionManagers.deployPositionManagers(report, json);

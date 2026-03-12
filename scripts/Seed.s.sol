@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {Script, stdJson, console2 as console} from 'forge-std/Script.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {ISpoke, ISpokeBase} from 'src/spoke/interfaces/ISpoke.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
@@ -12,7 +12,7 @@ import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {ConfigReader} from './ConfigReader.sol';
 import {DeployReader} from './DeployReader.sol';
 import {ScriptUtils} from './ScriptUtils.sol';
-import {LiquidationVictim} from 'tests/mocks/LiquidationVictim.sol';
+// import {LiquidationVictim} from 'tests/mocks/LiquidationVictim.sol'; // TODO: re-enable when LiquidationVictim mock is available
 
 /// @title Seed
 /// @notice Standalone seed script for Aave V4. Reads config + deploy JSON, performs
@@ -75,18 +75,19 @@ contract Seed is Script {
     for (uint256 i; _config.reserveExists(i); i++) _withdraw(i);
   }
 
-  /// @notice Set up a liquidatable position on each spoke, crash the price, and liquidate.
-  ///         Emits liquidation events for backend indexing.
-  function liquidate() external {
-    _loadState();
-    vm.startBroadcast();
-    LiquidationVictim victim = new LiquidationVictim();
-
-    for (uint256 si = 0; _config.spokeExists(si); si++) {
-      string memory key = _config.spokeKey(si);
-      _liquidateSpoke(key, victim);
-    }
-  }
+  // TODO: re-enable when LiquidationVictim mock is available
+  // /// @notice Set up a liquidatable position on each spoke, crash the price, and liquidate.
+  // ///         Emits liquidation events for backend indexing.
+  // function liquidate() external {
+  //   _loadState();
+  //   vm.startBroadcast();
+  //   LiquidationVictim victim = new LiquidationVictim();
+  //
+  //   for (uint256 si = 0; _config.spokeExists(si); si++) {
+  //     string memory key = _config.spokeKey(si);
+  //     _liquidateSpoke(key, victim);
+  //   }
+  // }
 
   // ==================== Actions ====================
 
@@ -139,9 +140,9 @@ contract Seed is Script {
     IERC20(token).forceApprove(address(spoke), amount * 10);
     (, address caller, ) = vm.readCallers();
     bytes[] memory actions = new bytes[](3);
-    actions[0] = abi.encodeCall(ISpokeBase.supply, (reserveId, amount * 10, caller));
+    actions[0] = abi.encodeCall(ISpoke.supply, (reserveId, amount * 10, caller));
     actions[1] = abi.encodeCall(ISpoke.setUsingAsCollateral, (reserveId, true, caller));
-    actions[2] = abi.encodeCall(ISpokeBase.borrow, (reserveId, amount, caller));
+    actions[2] = abi.encodeCall(ISpoke.borrow, (reserveId, amount, caller));
     spoke.multicall(actions);
 
     console.log('borrow', res.assetKey, res.spokeKey);
@@ -188,13 +189,14 @@ contract Seed is Script {
     console.log('  amount', amount);
   }
 
-  // ==================== Liquidation ====================
+  // ==================== Liquidation (commented out — LiquidationVictim mock not available) ====================
 
+  // TODO: re-enable when LiquidationVictim mock is available
+  /*
   function _liquidateSpoke(string memory spokeKey, LiquidationVictim victim) internal {
     ISpoke spoke = ISpoke(_deploy.spoke(spokeKey));
     address oracle = _deploy.oracle(spokeKey);
 
-    // Resolve pair (scoped to free stack slots for found/collIdx/debtIdx)
     address collToken;
     address debtToken;
     uint256 collReserveId;
@@ -207,13 +209,10 @@ contract Seed is Script {
         return;
       }
       (collToken, debtToken, collReserveId, debtReserveId, collateralFactor) = _resolveLiqPair(
-        spoke,
-        collIdx,
-        debtIdx
+        spoke, collIdx, debtIdx
       );
     }
 
-    // Step 1: Seed debt liquidity so the hub has tokens available to borrow
     {
       uint256 liquidityAmount = _getAmount(2000e8, oracle, debtReserveId, debtToken);
       _mintTokens(debtToken, liquidityAmount);
@@ -222,30 +221,20 @@ contract Seed is Script {
       spoke.supply(debtReserveId, liquidityAmount, caller);
     }
 
-    // Step 2: Fund victim and open position (supply collateral + borrow)
     {
       uint256 supplyAmount = _getAmount(1000e8, oracle, collReserveId, collToken);
       uint256 borrowUsd = (uint256(1000e8) * collateralFactor * 80) / (10000 * 100);
       uint256 borrowAmount = _getAmount(borrowUsd, oracle, debtReserveId, debtToken);
       _mintTokens(collToken, supplyAmount);
       IERC20(collToken).safeTransfer(address(victim), supplyAmount);
-      victim.openPosition(
-        spoke,
-        collToken,
-        collReserveId,
-        supplyAmount,
-        debtReserveId,
-        borrowAmount
-      );
+      victim.openPosition(spoke, collToken, collReserveId, supplyAmount, debtReserveId, borrowAmount);
     }
 
     console.log('liquidate:', spokeKey);
 
-    // Step 3: Crash collateral price to 50% → HF drops well below 1.0
     uint256 originalPrice = IAaveOracle(oracle).getReservePrice(collReserveId);
     _setPrice(spoke, collReserveId, originalPrice / 2);
 
-    // Step 4: Liquidate
     {
       uint256 debtToCover = spoke.getUserTotalDebt(debtReserveId, address(victim));
       _mintTokens(debtToken, debtToCover);
@@ -254,25 +243,11 @@ contract Seed is Script {
       console.log('  liquidated debt', debtToCover);
     }
 
-    // Step 5: Restore original price so subsequent spokes are unaffected
     _setPrice(spoke, collReserveId, originalPrice);
   }
 
-  /// @dev Resolve reserve addresses from config indices. Separated to avoid stack-too-deep.
-  function _resolveLiqPair(
-    ISpoke spoke,
-    uint256 collIdx,
-    uint256 debtIdx
-  )
-    internal
-    view
-    returns (
-      address collToken,
-      address debtToken,
-      uint256 collReserveId,
-      uint256 debtReserveId,
-      uint16 collateralFactor
-    )
+  function _resolveLiqPair(ISpoke spoke, uint256 collIdx, uint256 debtIdx) internal view
+    returns (address collToken, address debtToken, uint256 collReserveId, uint256 debtReserveId, uint16 collateralFactor)
   {
     ConfigReader.ReserveConfig memory collConf = _config.readReserve(collIdx);
     ConfigReader.ReserveConfig memory debtConf = _config.readReserve(debtIdx);
@@ -286,33 +261,30 @@ contract Seed is Script {
     debtReserveId = spoke.getReserveId(address(debtHub), debtHub.getAssetId(debtToken));
   }
 
-  /// @dev Find a (collateral, debt) reserve index pair on the same spoke with different tokens.
-  function _findLiquidationPair(
-    string memory spokeKey
-  ) internal view returns (bool found, uint256 collIdx, uint256 debtIdx) {
+  function _findLiquidationPair(string memory spokeKey) internal view
+    returns (bool found, uint256 collIdx, uint256 debtIdx)
+  {
     for (uint256 i = 0; _config.reserveExists(i); i++) {
       ConfigReader.ReserveConfig memory r = _config.readReserve(i);
       if (!ScriptUtils.strEq(r.spokeKey, spokeKey)) continue;
       if (r.collateralFactor == 0 || r.paused || r.frozen) continue;
-
       for (uint256 j = 0; _config.reserveExists(j); j++) {
         ConfigReader.ReserveConfig memory r2 = _config.readReserve(j);
         if (!ScriptUtils.strEq(r2.spokeKey, spokeKey)) continue;
         if (!r2.borrowable || r2.paused) continue;
-        if (ScriptUtils.strEq(r.assetKey, r2.assetKey)) continue; // need different tokens
-
+        if (ScriptUtils.strEq(r.assetKey, r2.assetKey)) continue;
         return (true, i, j);
       }
     }
     return (false, 0, 0);
   }
 
-  /// @dev Deploy a new MockPriceFeed at `newPrice` and swap the reserve's price source.
   function _setPrice(ISpoke spoke, uint256 reserveId, uint256 newPrice) internal {
     uint8 oracleDecimals = IAaveOracle(spoke.ORACLE()).DECIMALS();
     address feed = address(new MockPriceFeed(oracleDecimals, 'SEED', newPrice));
     spoke.updateReservePriceSource(reserveId, feed);
   }
+  */
 
   // ==================== Utilities ====================
 

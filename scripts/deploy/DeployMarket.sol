@@ -141,7 +141,7 @@ library DeployMarket {
 
     address ts;
     {
-      address impl = address(new TokenizationSpokeInstance(hubRpt.hub, aid));
+      address impl = address(new TokenizationSpokeInstance(hubRpt.hub, token));
       string memory shareName = string.concat(hubPrefix, ' ', asset.tokenKey);
       string memory shareSymbol = string.concat('t', asset.tokenKey, '-', hubPrefix);
       ts = DeployUtils.proxify(

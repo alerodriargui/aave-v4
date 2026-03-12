@@ -39,8 +39,8 @@ struct DeployReport {
   address accessManager;
   address signatureGateway;
   address nativeTokenGateway;
-  address allowancePositionManager;
-  address supplyRepayPositionManager;
+  address giverPositionManager;
+  address takerPositionManager;
   address configPositionManager;
   address hubConfigurator;
   address spokeConfigurator;

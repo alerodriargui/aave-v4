@@ -164,12 +164,12 @@ library ConfigReader {
     return json.readBoolOr('.periphery.deployNativeTokenGateway', false);
   }
 
-  function deployAllowancePositionManager(string memory json) internal view returns (bool) {
-    return json.readBoolOr('.periphery.deployAllowancePositionManager', false);
+  function deployGiverPositionManager(string memory json) internal view returns (bool) {
+    return json.readBoolOr('.periphery.deployGiverPositionManager', false);
   }
 
-  function deploySupplyRepayPositionManager(string memory json) internal view returns (bool) {
-    return json.readBoolOr('.periphery.deploySupplyRepayPositionManager', false);
+  function deployTakerPositionManager(string memory json) internal view returns (bool) {
+    return json.readBoolOr('.periphery.deployTakerPositionManager', false);
   }
 
   function deployConfigPositionManager(string memory json) internal view returns (bool) {
@@ -211,14 +211,14 @@ library ConfigReader {
           optimalUsageRatio: json
             .readUint(string.concat(base, '.irData.optimalUsageRatio'))
             .toUint16(),
-          baseVariableBorrowRate: json
-            .readUint(string.concat(base, '.irData.baseVariableBorrowRate'))
+          baseDrawnRate: json
+            .readUint(string.concat(base, '.irData.baseDrawnRate'))
             .toUint32(),
-          variableRateSlope1: json
-            .readUint(string.concat(base, '.irData.variableRateSlope1'))
+          rateGrowthBeforeOptimal: json
+            .readUint(string.concat(base, '.irData.rateGrowthBeforeOptimal'))
             .toUint32(),
-          variableRateSlope2: json
-            .readUint(string.concat(base, '.irData.variableRateSlope2'))
+          rateGrowthAfterOptimal: json
+            .readUint(string.concat(base, '.irData.rateGrowthAfterOptimal'))
             .toUint32()
         }),
         tokenizeEnabled: _resolveBool(

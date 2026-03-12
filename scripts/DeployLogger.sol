@@ -90,9 +90,9 @@ library DeployLogger {
     // console.log('liquidityFee\t\t\t\t', conf.liquidityFee);
     // console.log('irStrategy\t\t\t\t', irStrategy);
     // console.log('irStrategy.optimalUsageRatio\t', conf.irData.optimalUsageRatio);
-    // console.log('irStrategy.baseVariableBorrowRate\t', conf.irData.baseVariableBorrowRate);
-    // console.log('irStrategy.variableRateSlope1\t', conf.irData.variableRateSlope1);
-    // console.log('irStrategy.variableRateSlope2\t', conf.irData.variableRateSlope2);
+    // console.log('irStrategy.baseDrawnRate\t', conf.irData.baseDrawnRate);
+    // console.log('irStrategy.rateGrowthBeforeOptimal\t', conf.irData.rateGrowthBeforeOptimal);
+    // console.log('irStrategy.rateGrowthAfterOptimal\t', conf.irData.rateGrowthAfterOptimal);
     // console.log();
 
     string memory f1 = string.concat(
@@ -114,11 +114,11 @@ library DeployLogger {
     string memory f3 = string.concat(
       _uint('optimalUsageRatio', uint256(conf.irData.optimalUsageRatio)),
       ',',
-      _uint('baseVariableBorrowRate', uint256(conf.irData.baseVariableBorrowRate)),
+      _uint('baseDrawnRate', uint256(conf.irData.baseDrawnRate)),
       ',',
-      _uint('variableRateSlope1', uint256(conf.irData.variableRateSlope1)),
+      _uint('rateGrowthBeforeOptimal', uint256(conf.irData.rateGrowthBeforeOptimal)),
       ',',
-      _uint('variableRateSlope2', uint256(conf.irData.variableRateSlope2))
+      _uint('rateGrowthAfterOptimal', uint256(conf.irData.rateGrowthAfterOptimal))
     );
     _writeLine(_wrap('assetListed', string.concat(f1, f2, f3)));
   }

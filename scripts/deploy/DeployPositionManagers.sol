@@ -7,8 +7,8 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
-import {AllowancePositionManager} from 'src/position-manager/AllowancePositionManager.sol';
-import {SupplyRepayPositionManager} from 'src/position-manager/SupplyRepayPositionManager.sol';
+import {GiverPositionManager} from 'src/position-manager/GiverPositionManager.sol';
+import {TakerPositionManager} from 'src/position-manager/TakerPositionManager.sol';
 import {ConfigPositionManager} from 'src/position-manager/ConfigPositionManager.sol';
 import {ConfigReader} from '../ConfigReader.sol';
 import {DeployLogger} from '../DeployLogger.sol';
@@ -36,13 +36,13 @@ library DeployPositionManagers {
       report.nativeTokenGateway = address(new NativeTokenGateway(nativeToken, caller));
       DeployLogger.logPeriphery('nativeTokenGateway', report.nativeTokenGateway);
     }
-    if (json.deployAllowancePositionManager()) {
-      report.allowancePositionManager = address(new AllowancePositionManager(caller));
-      DeployLogger.logPeriphery('allowancePositionManager', report.allowancePositionManager);
+    if (json.deployGiverPositionManager()) {
+      report.giverPositionManager = address(new GiverPositionManager(caller));
+      DeployLogger.logPeriphery('giverPositionManager', report.giverPositionManager);
     }
-    if (json.deploySupplyRepayPositionManager()) {
-      report.supplyRepayPositionManager = address(new SupplyRepayPositionManager(caller));
-      DeployLogger.logPeriphery('supplyRepayPositionManager', report.supplyRepayPositionManager);
+    if (json.deployTakerPositionManager()) {
+      report.takerPositionManager = address(new TakerPositionManager(caller));
+      DeployLogger.logPeriphery('takerPositionManager', report.takerPositionManager);
     }
     if (json.deployConfigPositionManager()) {
       report.configPositionManager = address(new ConfigPositionManager(caller));
@@ -57,8 +57,8 @@ library DeployPositionManagers {
       ISpoke spoke = ISpoke(report.spokes[i].spoke);
       _registerPm(spoke, report.signatureGateway);
       _registerPm(spoke, report.nativeTokenGateway);
-      _registerPm(spoke, report.allowancePositionManager);
-      _registerPm(spoke, report.supplyRepayPositionManager);
+      _registerPm(spoke, report.giverPositionManager);
+      _registerPm(spoke, report.takerPositionManager);
       _registerPm(spoke, report.configPositionManager);
     }
   }

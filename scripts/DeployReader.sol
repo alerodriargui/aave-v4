@@ -27,12 +27,12 @@ library DeployReader {
     return json.readAddress('.nativeTokenGateway');
   }
 
-  function allowancePositionManager(string memory json) internal view returns (address) {
-    return json.readAddressOr('.allowancePositionManager', address(0));
+  function giverPositionManager(string memory json) internal view returns (address) {
+    return json.readAddressOr('.giverPositionManager', address(0));
   }
 
-  function supplyRepayPositionManager(string memory json) internal view returns (address) {
-    return json.readAddressOr('.supplyRepayPositionManager', address(0));
+  function takerPositionManager(string memory json) internal view returns (address) {
+    return json.readAddressOr('.takerPositionManager', address(0));
   }
 
   function configPositionManager(string memory json) internal view returns (address) {

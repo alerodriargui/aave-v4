@@ -108,33 +108,33 @@
   ],
 
   "assets": [
-    { "tokenKey": "WETH",  "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9000, "baseVariableBorrowRate": 0, "variableRateSlope1": 270, "variableRateSlope2": 8000 } },
-    { "tokenKey": "wstETH", "hubKey": "PRIME_HUB", "liquidityFee": 500, "irData": { "optimalUsageRatio": 9000, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 8500 } },
-    { "tokenKey": "USDT",  "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
-    { "tokenKey": "USDC",  "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
-    { "tokenKey": "GHO",   "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+    { "tokenKey": "WETH",  "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9000, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 270, "rateGrowthAfterOptimal": 8000 } },
+    { "tokenKey": "wstETH", "hubKey": "PRIME_HUB", "liquidityFee": 500, "irData": { "optimalUsageRatio": 9000, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 8500 } },
+    { "tokenKey": "USDT",  "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } },
+    { "tokenKey": "USDC",  "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } },
+    { "tokenKey": "GHO",   "hubKey": "PRIME_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } },
 
-    { "tokenKey": "WETH",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9000, "baseVariableBorrowRate": 0, "variableRateSlope1": 270, "variableRateSlope2": 8000 } },
-    { "tokenKey": "wstETH", "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9000, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 8500 } },
-    { "tokenKey": "WBTC",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 8000, "baseVariableBorrowRate": 0, "variableRateSlope1": 400, "variableRateSlope2": 6000 } },
-    { "tokenKey": "cbBTC", "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 8000, "baseVariableBorrowRate": 0, "variableRateSlope1": 400, "variableRateSlope2": 6000 } },
-    { "tokenKey": "AAVE",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 4500, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 30000 } },
-    { "tokenKey": "USDC",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
-    { "tokenKey": "USDT",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
-    { "tokenKey": "GHO",   "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+    { "tokenKey": "WETH",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9000, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 270, "rateGrowthAfterOptimal": 8000 } },
+    { "tokenKey": "wstETH", "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9000, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 8500 } },
+    { "tokenKey": "WBTC",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 8000, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 400, "rateGrowthAfterOptimal": 6000 } },
+    { "tokenKey": "cbBTC", "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 8000, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 400, "rateGrowthAfterOptimal": 6000 } },
+    { "tokenKey": "AAVE",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 4500, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 30000 } },
+    { "tokenKey": "USDC",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } },
+    { "tokenKey": "USDT",  "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } },
+    { "tokenKey": "GHO",   "hubKey": "CORE_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } },
 
-    { "tokenKey": "PT_sUSDe", "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 4500, "baseVariableBorrowRate": 0, "variableRateSlope1": 1000, "variableRateSlope2": 30000 } },
-    { "tokenKey": "sUSDe", "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9000, "baseVariableBorrowRate": 0, "variableRateSlope1": 625, "variableRateSlope2": 4000 } },
-    { "tokenKey": "USDC",  "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
-    { "tokenKey": "USDT",  "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
-    { "tokenKey": "GHO",   "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
+    { "tokenKey": "PT_sUSDe", "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 4500, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 1000, "rateGrowthAfterOptimal": 30000 } },
+    { "tokenKey": "sUSDe", "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9000, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 625, "rateGrowthAfterOptimal": 4000 } },
+    { "tokenKey": "USDC",  "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } },
+    { "tokenKey": "USDT",  "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } },
+    { "tokenKey": "GHO",   "hubKey": "ETHENA_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } },
 
-    { "tokenKey": "UNI",   "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 4500, "baseVariableBorrowRate": 0, "variableRateSlope1": 700, "variableRateSlope2": 30000 } },
-    { "tokenKey": "LDO",   "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 4500, "baseVariableBorrowRate": 0, "variableRateSlope1": 700, "variableRateSlope2": 30000 } },
-    { "tokenKey": "1INCH", "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 4500, "baseVariableBorrowRate": 0, "variableRateSlope1": 900, "variableRateSlope2": 30000 } },
-    { "tokenKey": "USDC",  "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
-    { "tokenKey": "USDT",  "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } },
-    { "tokenKey": "GHO",   "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 9200, "baseVariableBorrowRate": 0, "variableRateSlope1": 550, "variableRateSlope2": 3500 } }
+    { "tokenKey": "UNI",   "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 4500, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 700, "rateGrowthAfterOptimal": 30000 } },
+    { "tokenKey": "LDO",   "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 4500, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 700, "rateGrowthAfterOptimal": 30000 } },
+    { "tokenKey": "1INCH", "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 4500, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 900, "rateGrowthAfterOptimal": 30000 } },
+    { "tokenKey": "USDC",  "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } },
+    { "tokenKey": "USDT",  "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } },
+    { "tokenKey": "GHO",   "hubKey": "FRONTIER_HUB", "irData": { "optimalUsageRatio": 9200, "baseDrawnRate": 0, "rateGrowthBeforeOptimal": 550, "rateGrowthAfterOptimal": 3500 } }
   ],
 
   "spokeRegistrations": [
@@ -210,8 +210,8 @@
     "nativeTokenKey": "WETH",
     "deploySignatureGateway": true,
     "deployNativeTokenGateway": true,
-    "deployAllowancePositionManager": true,
-    "deploySupplyRepayPositionManager": true,
+    "deployGiverPositionManager": true,
+    "deployTakerPositionManager": true,
     "deployConfigPositionManager": true
   }
 }

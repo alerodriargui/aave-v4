@@ -9,20 +9,20 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
-import {AllowancePositionManager} from 'src/position-manager/AllowancePositionManager.sol';
-import {SupplyRepayPositionManager} from 'src/position-manager/SupplyRepayPositionManager.sol';
+import {GiverPositionManager} from 'src/position-manager/GiverPositionManager.sol';
+import {TakerPositionManager} from 'src/position-manager/TakerPositionManager.sol';
 import {ConfigPositionManager} from 'src/position-manager/ConfigPositionManager.sol';
 import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
 import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 
-import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
+import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {AaveOracle, IAaveOracle} from 'src/spoke/AaveOracle.sol';
-import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
+import {IPriceFeed} from 'src/spoke/interfaces/IPriceFeed.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {DeployUtils} from 'tests/DeployUtils.sol';
@@ -61,8 +61,8 @@ contract Deploy is Script, StdAssertions {
 
   address internal signatureGateway;
   address internal nativeTokenGateway;
-  address internal allowancePositionManager;
-  address internal supplyRepayPositionManager;
+  address internal giverPositionManager;
+  address internal takerPositionManager;
   address internal configPositionManager;
 
   // ==================== Configurators ====================
@@ -74,7 +74,7 @@ contract Deploy is Script, StdAssertions {
 
   struct HubState {
     IHub hub;
-    TreasurySpoke treasury;
+    address treasury;
     AssetInterestRateStrategy irStrategy;
   }
   mapping(string key => HubState conf) internal hubs;
@@ -157,9 +157,15 @@ contract Deploy is Script, StdAssertions {
       DeployLogger.logSection(hubKey);
 
       IHub hub = DeployUtils.deployHub(address(accessManager), keccak256(abi.encodePacked(hubKey)));
+      address treasuryImpl = address(new TreasurySpokeInstance());
+      address treasury = DeployUtils.proxify(
+        treasuryImpl,
+        admin,
+        abi.encodeCall(TreasurySpokeInstance.initialize, (admin))
+      );
       hubs[hubKey] = HubState(
         hub,
-        new TreasurySpoke(admin, address(hub)),
+        treasury,
         new AssetInterestRateStrategy(address(hub))
       );
       _hubKeys.push(hubKey);
@@ -217,13 +223,13 @@ contract Deploy is Script, StdAssertions {
       );
       DeployLogger.logPeriphery('nativeTokenGateway', nativeTokenGateway);
     }
-    if (_json.deployAllowancePositionManager()) {
-      allowancePositionManager = address(new AllowancePositionManager(caller));
-      DeployLogger.logPeriphery('allowancePositionManager', allowancePositionManager);
+    if (_json.deployGiverPositionManager()) {
+      giverPositionManager = address(new GiverPositionManager(caller));
+      DeployLogger.logPeriphery('giverPositionManager', giverPositionManager);
     }
-    if (_json.deploySupplyRepayPositionManager()) {
-      supplyRepayPositionManager = address(new SupplyRepayPositionManager(caller));
-      DeployLogger.logPeriphery('supplyRepayPositionManager', supplyRepayPositionManager);
+    if (_json.deployTakerPositionManager()) {
+      takerPositionManager = address(new TakerPositionManager(caller));
+      DeployLogger.logPeriphery('takerPositionManager', takerPositionManager);
     }
     if (_json.deployConfigPositionManager()) {
       configPositionManager = address(new ConfigPositionManager(caller));
@@ -237,8 +243,8 @@ contract Deploy is Script, StdAssertions {
       ISpoke spoke = _spoke(_spokeKeys[i]);
       _registerPm(spoke, signatureGateway);
       _registerPm(spoke, nativeTokenGateway);
-      _registerPm(spoke, allowancePositionManager);
-      _registerPm(spoke, supplyRepayPositionManager);
+      _registerPm(spoke, giverPositionManager);
+      _registerPm(spoke, takerPositionManager);
       _registerPm(spoke, configPositionManager);
     }
   }
@@ -264,7 +270,7 @@ contract Deploy is Script, StdAssertions {
       ConfigReader.SpokeDeployConfig memory sc = _json.readSpoke(si);
       _spokeKeys.push(sc.key);
 
-      IAaveOracle oracle = new AaveOracle(sc.oracleDecimals, string.concat(sc.key, ' (USD)'));
+      IAaveOracle oracle = new AaveOracle(sc.oracleDecimals);
 
       ISpoke spoke = SpokeDeployUtils.deploySpoke(
         address(oracle),
@@ -276,7 +282,7 @@ contract Deploy is Script, StdAssertions {
       oracle.setSpoke(address(spoke));
 
       assertEq(spoke.ORACLE(), address(oracle));
-      assertEq(oracle.SPOKE(), address(spoke));
+      assertEq(oracle.spoke(), address(spoke));
 
       spokes[sc.key] = SpokeState(spoke, address(oracle));
       DeployLogger.logSpokeDeployed(sc.key, address(spoke));
@@ -309,7 +315,7 @@ contract Deploy is Script, StdAssertions {
     // Deploy impl + proxy
     address ts;
     {
-      address impl = address(new TokenizationSpokeInstance(address(hub), assetId));
+      address impl = address(new TokenizationSpokeInstance(address(hub), _token(asset.tokenKey).token));
       string memory shareName = string.concat(hubPrefix, ' ', asset.tokenKey);
       string memory shareSymbol = string.concat('t', asset.tokenKey, '-', hubPrefix);
       ts = DeployUtils.proxify(
@@ -564,8 +570,8 @@ contract Deploy is Script, StdAssertions {
     vm.serializeAddress(root, 'accessManager', address(accessManager));
     vm.serializeAddress(root, 'signatureGateway', signatureGateway);
     vm.serializeAddress(root, 'nativeTokenGateway', nativeTokenGateway);
-    vm.serializeAddress(root, 'allowancePositionManager', allowancePositionManager);
-    vm.serializeAddress(root, 'supplyRepayPositionManager', supplyRepayPositionManager);
+    vm.serializeAddress(root, 'giverPositionManager', giverPositionManager);
+    vm.serializeAddress(root, 'takerPositionManager', takerPositionManager);
     vm.serializeAddress(root, 'configPositionManager', configPositionManager);
     vm.serializeAddress(root, 'hubConfigurator', hubConfigurator);
     vm.serializeAddress(root, 'spokeConfigurator', spokeConfigurator);
@@ -594,7 +600,7 @@ contract Deploy is Script, StdAssertions {
       string memory key = _hubKeys[i];
       hubs[key].hub = IHub(deploy.hub(key));
       hubs[key].irStrategy = AssetInterestRateStrategy(deploy.irStrategy(key));
-      hubs[key].treasury = TreasurySpoke(deploy.treasury(key));
+      hubs[key].treasury = deploy.treasury(key);
       vm.label(address(hubs[key].hub), key);
     }
 
@@ -617,8 +623,8 @@ contract Deploy is Script, StdAssertions {
 
     signatureGateway = deploy.signatureGateway();
     nativeTokenGateway = deploy.nativeTokenGateway();
-    allowancePositionManager = deploy.allowancePositionManager();
-    supplyRepayPositionManager = deploy.supplyRepayPositionManager();
+    giverPositionManager = deploy.giverPositionManager();
+    takerPositionManager = deploy.takerPositionManager();
     configPositionManager = deploy.configPositionManager();
     hubConfigurator = deploy.hubConfigurator();
     spokeConfigurator = deploy.spokeConfigurator();
@@ -646,7 +652,7 @@ contract Deploy is Script, StdAssertions {
     ISpoke.Reserve memory r = spoke.getReserve(reserveId);
     address source = oracle.getReserveSource(reserveId);
     uint256 price = oracle.getReservePrice(reserveId);
-    int256 latestAnswer = AggregatorV3Interface(source).latestAnswer();
+    int256 latestAnswer = IPriceFeed(source).latestAnswer();
 
     console.log('reserveId:', reserveId);
     console.log('underlying:', r.underlying);
@@ -682,7 +688,7 @@ contract Deploy is Script, StdAssertions {
       selectors[9] = IHubConfigurator.addSpokeToAssets.selector;
       selectors[10] = IHubConfigurator.updateSpokeActive.selector;
       selectors[11] = IHubConfigurator.updateSpokeHalted.selector;
-      selectors[12] = IHubConfigurator.updateSpokeSupplyCap.selector;
+      selectors[12] = IHubConfigurator.updateSpokeAddCap.selector;
       selectors[13] = IHubConfigurator.updateSpokeDrawCap.selector;
       selectors[14] = IHubConfigurator.updateSpokeRiskPremiumThreshold.selector;
       selectors[15] = IHubConfigurator.updateSpokeCaps.selector;
@@ -695,34 +701,33 @@ contract Deploy is Script, StdAssertions {
       accessManager.setTargetFunctionRole(hubConfigurator, selectors, Roles.HUB_CONFIGURATOR_ROLE);
     }
 
-    // Level 2: Map SpokeConfigurator functions to SPOKE_CONFIGURATOR_ROLE (25 selectors)
+    // Level 2: Map SpokeConfigurator functions to SPOKE_CONFIGURATOR_ROLE (24 selectors)
     {
-      bytes4[] memory selectors = new bytes4[](25);
+      bytes4[] memory selectors = new bytes4[](24);
       selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
       selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
       selectors[2] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
       selectors[3] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
       selectors[4] = ISpokeConfigurator.updateLiquidationConfig.selector;
-      selectors[5] = ISpokeConfigurator.updateMaxReserves.selector;
-      selectors[6] = ISpokeConfigurator.addReserve.selector;
-      selectors[7] = ISpokeConfigurator.updatePaused.selector;
-      selectors[8] = ISpokeConfigurator.updateFrozen.selector;
-      selectors[9] = ISpokeConfigurator.updateBorrowable.selector;
-      selectors[10] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-      selectors[11] = ISpokeConfigurator.updateCollateralRisk.selector;
-      selectors[12] = ISpokeConfigurator.addCollateralFactor.selector;
-      selectors[13] = ISpokeConfigurator.updateCollateralFactor.selector;
-      selectors[14] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-      selectors[15] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-      selectors[16] = ISpokeConfigurator.addLiquidationFee.selector;
-      selectors[17] = ISpokeConfigurator.updateLiquidationFee.selector;
-      selectors[18] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-      selectors[19] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-      selectors[20] = ISpokeConfigurator.pauseAllReserves.selector;
-      selectors[21] = ISpokeConfigurator.freezeAllReserves.selector;
-      selectors[22] = ISpokeConfigurator.pauseReserve.selector;
-      selectors[23] = ISpokeConfigurator.freezeReserve.selector;
-      selectors[24] = ISpokeConfigurator.updatePositionManager.selector;
+      selectors[5] = ISpokeConfigurator.addReserve.selector;
+      selectors[6] = ISpokeConfigurator.updatePaused.selector;
+      selectors[7] = ISpokeConfigurator.updateFrozen.selector;
+      selectors[8] = ISpokeConfigurator.updateBorrowable.selector;
+      selectors[9] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+      selectors[10] = ISpokeConfigurator.updateCollateralRisk.selector;
+      selectors[11] = ISpokeConfigurator.addCollateralFactor.selector;
+      selectors[12] = ISpokeConfigurator.updateCollateralFactor.selector;
+      selectors[13] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+      selectors[14] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+      selectors[15] = ISpokeConfigurator.addLiquidationFee.selector;
+      selectors[16] = ISpokeConfigurator.updateLiquidationFee.selector;
+      selectors[17] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+      selectors[18] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+      selectors[19] = ISpokeConfigurator.pauseAllReserves.selector;
+      selectors[20] = ISpokeConfigurator.freezeAllReserves.selector;
+      selectors[21] = ISpokeConfigurator.pauseReserve.selector;
+      selectors[22] = ISpokeConfigurator.freezeReserve.selector;
+      selectors[23] = ISpokeConfigurator.updatePositionManager.selector;
       accessManager.setTargetFunctionRole(
         spokeConfigurator,
         selectors,

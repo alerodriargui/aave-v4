@@ -7,7 +7,7 @@ import {console2 as console} from 'forge-std/console2.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
-import {TreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
+import {TreasurySpokeInstance} from 'src/spoke/instances/TreasurySpokeInstance.sol';
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {AaveOracle, IAaveOracle} from 'src/spoke/AaveOracle.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
@@ -71,7 +71,7 @@ library DeployInfra {
     for (uint256 si = 0; json.spokeExists(si); si++) {
       ConfigReader.SpokeDeployConfig memory sc = json.readSpoke(si);
 
-      IAaveOracle oracle = new AaveOracle(sc.oracleDecimals, string.concat(sc.key, ' (USD)'));
+      IAaveOracle oracle = new AaveOracle(sc.oracleDecimals);
 
       ISpoke spoke = SpokeDeployUtils.deploySpoke(
         address(oracle),
@@ -83,7 +83,7 @@ library DeployInfra {
       oracle.setSpoke(address(spoke));
 
       require(spoke.ORACLE() == address(oracle), 'spoke.ORACLE mismatch');
-      require(oracle.SPOKE() == address(spoke), 'oracle.SPOKE mismatch');
+      require(oracle.spoke() == address(spoke), 'oracle.spoke mismatch');
 
       report.pushSpoke(sc.key, address(spoke), address(oracle));
       DeployLogger.logSpokeDeployed(sc.key, address(spoke));
@@ -99,7 +99,12 @@ library DeployInfra {
       DeployLogger.logSection(hubKey);
 
       IHub hub = DeployUtils.deployHub(report.accessManager, keccak256(abi.encodePacked(hubKey)));
-      address treasury = address(new TreasurySpoke(report.admin, address(hub)));
+      address treasuryImpl = address(new TreasurySpokeInstance());
+      address treasury = DeployUtils.proxify(
+        treasuryImpl,
+        report.admin,
+        abi.encodeCall(TreasurySpokeInstance.initialize, (report.admin))
+      );
       address irStrategy = address(new AssetInterestRateStrategy(address(hub)));
 
       report.pushHub(hubKey, address(hub), treasury, irStrategy);
