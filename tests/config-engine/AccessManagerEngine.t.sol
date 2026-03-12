@@ -9,7 +9,7 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
-import {MockAccessManagerForEngine} from 'tests/mocks/config-engine/MockAccessManagerForEngine.sol';
+import {MockAccessManager} from 'tests/mocks/config-engine/MockAccessManager.sol';
 
 contract AccessManagerEngineTest is BaseConfigEngineTest {
   function test_executeRoleMemberships_grant_concrete() public {
@@ -24,7 +24,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(5, ACCOUNT, 100);
+    emit MockAccessManager.GrantRoleCalled(5, ACCOUNT, 100);
 
     engine.executeRoleMemberships(memberships);
   }
@@ -41,7 +41,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.RevokeRoleCalled(5, ACCOUNT);
+    emit MockAccessManager.RevokeRoleCalled(5, ACCOUNT);
 
     engine.executeRoleMemberships(memberships);
   }
@@ -62,7 +62,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.GrantRoleCalled(roleId, account, executionDelay);
+    emit MockAccessManager.GrantRoleCalled(roleId, account, executionDelay);
 
     engine.executeRoleMemberships(memberships);
   }
@@ -79,7 +79,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.RevokeRoleCalled(roleId, account);
+    emit MockAccessManager.RevokeRoleCalled(roleId, account);
 
     engine.executeRoleMemberships(memberships);
   }
@@ -97,7 +97,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    vm.expectRevert(MockAccessManagerForEngine.GrantRoleReverted.selector);
+    vm.expectRevert(MockAccessManager.GrantRoleReverted.selector);
     engine.executeRoleMemberships(memberships);
   }
 
@@ -114,7 +114,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    vm.expectRevert(MockAccessManagerForEngine.RevokeRoleReverted.selector);
+    vm.expectRevert(MockAccessManager.RevokeRoleReverted.selector);
     engine.executeRoleMemberships(memberships);
   }
 
@@ -131,13 +131,13 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetRoleAdminCalled(5, 1);
+    emit MockAccessManager.SetRoleAdminCalled(5, 1);
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetRoleGuardianCalled(5, 2);
+    emit MockAccessManager.SetRoleGuardianCalled(5, 2);
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetGrantDelayCalled(5, 3600);
+    emit MockAccessManager.SetGrantDelayCalled(5, 3600);
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.LabelRoleCalled(5, 'FEE_UPDATER');
+    emit MockAccessManager.LabelRoleCalled(5, 'FEE_UPDATER');
 
     engine.executeRoleUpdates(updates);
   }
@@ -155,7 +155,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetRoleAdminCalled(5, 1);
+    emit MockAccessManager.SetRoleAdminCalled(5, 1);
 
     engine.executeRoleUpdates(updates);
   }
@@ -173,7 +173,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetRoleGuardianCalled(5, 2);
+    emit MockAccessManager.SetRoleGuardianCalled(5, 2);
 
     engine.executeRoleUpdates(updates);
   }
@@ -191,7 +191,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetGrantDelayCalled(5, 3600);
+    emit MockAccessManager.SetGrantDelayCalled(5, 3600);
 
     engine.executeRoleUpdates(updates);
   }
@@ -209,7 +209,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.LabelRoleCalled(5, 'FEE_UPDATER');
+    emit MockAccessManager.LabelRoleCalled(5, 'FEE_UPDATER');
 
     engine.executeRoleUpdates(updates);
   }
@@ -257,13 +257,13 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetRoleAdminCalled(roleId, admin);
+    emit MockAccessManager.SetRoleAdminCalled(roleId, admin);
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetRoleGuardianCalled(roleId, guardian);
+    emit MockAccessManager.SetRoleGuardianCalled(roleId, guardian);
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetGrantDelayCalled(roleId, grantDelay);
+    emit MockAccessManager.SetGrantDelayCalled(roleId, grantDelay);
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.LabelRoleCalled(roleId, label);
+    emit MockAccessManager.LabelRoleCalled(roleId, label);
 
     engine.executeRoleUpdates(updates);
   }
@@ -282,7 +282,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    vm.expectRevert(MockAccessManagerForEngine.SetRoleAdminReverted.selector);
+    vm.expectRevert(MockAccessManager.SetRoleAdminReverted.selector);
     engine.executeRoleUpdates(updates);
   }
 
@@ -300,7 +300,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    vm.expectRevert(MockAccessManagerForEngine.SetRoleGuardianReverted.selector);
+    vm.expectRevert(MockAccessManager.SetRoleGuardianReverted.selector);
     engine.executeRoleUpdates(updates);
   }
 
@@ -318,7 +318,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    vm.expectRevert(MockAccessManagerForEngine.SetGrantDelayReverted.selector);
+    vm.expectRevert(MockAccessManager.SetGrantDelayReverted.selector);
     engine.executeRoleUpdates(updates);
   }
 
@@ -336,7 +336,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    vm.expectRevert(MockAccessManagerForEngine.LabelRoleReverted.selector);
+    vm.expectRevert(MockAccessManager.LabelRoleReverted.selector);
     engine.executeRoleUpdates(updates);
   }
 
@@ -356,7 +356,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetTargetFunctionRoleCalled(TARGET, selectors, 5);
+    emit MockAccessManager.SetTargetFunctionRoleCalled(TARGET, selectors, 5);
 
     engine.executeTargetFunctionRoleUpdates(updates);
   }
@@ -380,7 +380,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetTargetFunctionRoleCalled(target, selectors, roleId);
+    emit MockAccessManager.SetTargetFunctionRoleCalled(target, selectors, roleId);
 
     engine.executeTargetFunctionRoleUpdates(updates);
   }
@@ -401,7 +401,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
         })
       );
 
-    vm.expectRevert(MockAccessManagerForEngine.SetTargetFunctionRoleReverted.selector);
+    vm.expectRevert(MockAccessManager.SetTargetFunctionRoleReverted.selector);
     engine.executeTargetFunctionRoleUpdates(updates);
   }
 
@@ -415,7 +415,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetTargetAdminDelayCalled(TARGET, 7200);
+    emit MockAccessManager.SetTargetAdminDelayCalled(TARGET, 7200);
 
     engine.executeTargetAdminDelayUpdates(updates);
   }
@@ -430,7 +430,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockAccessManager));
-    emit MockAccessManagerForEngine.SetTargetAdminDelayCalled(target, newDelay);
+    emit MockAccessManager.SetTargetAdminDelayCalled(target, newDelay);
 
     engine.executeTargetAdminDelayUpdates(updates);
   }
@@ -446,7 +446,7 @@ contract AccessManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    vm.expectRevert(MockAccessManagerForEngine.SetTargetAdminDelayReverted.selector);
+    vm.expectRevert(MockAccessManager.SetTargetAdminDelayReverted.selector);
     engine.executeTargetAdminDelayUpdates(updates);
   }
 }

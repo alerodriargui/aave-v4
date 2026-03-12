@@ -16,9 +16,9 @@ import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 
 import {MockHubConfigurator} from 'tests/mocks/config-engine/MockHubConfigurator.sol';
 import {MockSpokeConfigurator} from 'tests/mocks/config-engine/MockSpokeConfigurator.sol';
-import {MockAccessManagerForEngine} from 'tests/mocks/config-engine/MockAccessManagerForEngine.sol';
+import {MockAccessManager} from 'tests/mocks/config-engine/MockAccessManager.sol';
 import {MockSpokeReader} from 'tests/mocks/config-engine/MockSpokeReader.sol';
-import {MockPositionManagerForEngine} from 'tests/mocks/config-engine/MockPositionManagerForEngine.sol';
+import {MockPositionManager} from 'tests/mocks/config-engine/MockPositionManager.sol';
 
 abstract contract BaseConfigEngineTest is Test {
   uint256 constant ASSET_ID = 1;
@@ -45,20 +45,20 @@ abstract contract BaseConfigEngineTest is Test {
   AaveV4ConfigEngine public engine;
   MockHubConfigurator public mockHubConfigurator;
   MockSpokeConfigurator public mockSpokeConfigurator;
-  MockAccessManagerForEngine public mockAccessManager;
+  MockAccessManager public mockAccessManager;
   MockSpokeReader public mockSpokeReader;
-  MockPositionManagerForEngine public mockPositionManager;
+  MockPositionManager public mockPositionManager;
 
   function setUp() public virtual {
     engine = new AaveV4ConfigEngine();
     mockHubConfigurator = new MockHubConfigurator();
     mockSpokeConfigurator = new MockSpokeConfigurator();
-    mockAccessManager = new MockAccessManagerForEngine();
+    mockAccessManager = new MockAccessManager();
     mockSpokeReader = new MockSpokeReader();
-    mockPositionManager = new MockPositionManagerForEngine();
+    mockPositionManager = new MockPositionManager();
   }
 
-  // Helper: default AssetListing (decimals=0 -> addAsset branch)
+  /// Default AssetListing (decimals=0 -> addAsset branch)
   function _defaultAssetListing() internal view returns (IAaveV4ConfigEngine.AssetListing memory) {
     return
       IAaveV4ConfigEngine.AssetListing({
@@ -73,7 +73,7 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  // Helper: default AssetConfigUpdate (all fields set)
+  /// Default AssetConfigUpdate (all fields set)
   function _defaultAssetConfigUpdate()
     internal
     view
@@ -92,7 +92,7 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  // Helper: default SpokeConfigUpdate (all fields set)
+  /// Default SpokeConfigUpdate (all fields set)
   function _defaultSpokeConfigUpdate()
     internal
     view
@@ -112,7 +112,7 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  // Helper: default ReserveConfigUpdate (all fields set)
+  /// Default ReserveConfigUpdate (all fields set)
   function _defaultReserveConfigUpdate()
     internal
     view
@@ -132,7 +132,7 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  // Helper: default LiquidationConfigUpdate (all fields set)
+  /// Default LiquidationConfigUpdate (all fields set)
   function _defaultLiquidationConfigUpdate()
     internal
     view
@@ -148,7 +148,7 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  // Helper: default DynamicReserveConfigUpdate (all fields set)
+  /// Default DynamicReserveConfigUpdate (all fields set)
   function _defaultDynamicReserveConfigUpdate()
     internal
     view
@@ -414,5 +414,21 @@ abstract contract BaseConfigEngineTest is Test {
   ) internal pure returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory arr) {
     arr = new IAaveV4ConfigEngine.PositionManagerRoleRenouncement[](1);
     arr[0] = item;
+  }
+
+  function _setupDynamicReserveConfig(
+    uint16 collateralFactor,
+    uint32 maxLiquidationBonus,
+    uint16 liquidationFee
+  ) internal {
+    mockSpokeReader.setDynamicReserveConfig(
+      RESERVE_ID,
+      uint32(DYNAMIC_CONFIG_KEY),
+      ISpoke.DynamicReserveConfig({
+        collateralFactor: collateralFactor,
+        maxLiquidationBonus: maxLiquidationBonus,
+        liquidationFee: liquidationFee
+      })
+    );
   }
 }

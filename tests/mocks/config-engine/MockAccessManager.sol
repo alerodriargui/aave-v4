@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 
-contract MockAccessManagerForEngine is IAccessManager {
+contract MockAccessManager is IAccessManager {
   mapping(bytes4 => bool) public shouldRevert;
 
   event GrantRoleCalled(uint64 roleId, address account, uint32 executionDelay);

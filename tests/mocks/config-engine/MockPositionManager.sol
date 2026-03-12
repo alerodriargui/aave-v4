@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-contract MockPositionManagerForEngine {
+contract MockPositionManager {
   mapping(bytes4 => bool) public shouldRevert;
 
   event RegisterSpokeCalled(address spoke, bool registered);

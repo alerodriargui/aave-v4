@@ -8,7 +8,7 @@ import {IRescuable} from 'src/interfaces/IRescuable.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
-import {MockPositionManagerForEngine} from 'tests/mocks/config-engine/MockPositionManagerForEngine.sol';
+import {MockPositionManager} from 'tests/mocks/config-engine/MockPositionManager.sol';
 
 contract PositionManagerEngineTest is BaseConfigEngineTest {
   function test_executePositionManagerSpokeRegistrations_concrete() public {
@@ -21,7 +21,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManagerForEngine.RegisterSpokeCalled(SPOKE, true);
+    emit MockPositionManager.RegisterSpokeCalled(SPOKE, true);
 
     engine.executePositionManagerSpokeRegistrations(regs);
   }
@@ -39,7 +39,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManagerForEngine.RegisterSpokeCalled(spoke, registered);
+    emit MockPositionManager.RegisterSpokeCalled(spoke, registered);
 
     engine.executePositionManagerSpokeRegistrations(regs);
   }
@@ -55,7 +55,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    vm.expectRevert(MockPositionManagerForEngine.RegisterSpokeReverted.selector);
+    vm.expectRevert(MockPositionManager.RegisterSpokeReverted.selector);
     engine.executePositionManagerSpokeRegistrations(regs);
   }
 
@@ -71,7 +71,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManagerForEngine.RescueTokenCalled(TOKEN, RESCUE_TO, RESCUE_AMOUNT);
+    emit MockPositionManager.RescueTokenCalled(TOKEN, RESCUE_TO, RESCUE_AMOUNT);
 
     engine.executePositionManagerRescues(rescues);
   }
@@ -88,7 +88,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManagerForEngine.RescueNativeCalled(RESCUE_TO, RESCUE_AMOUNT);
+    emit MockPositionManager.RescueNativeCalled(RESCUE_TO, RESCUE_AMOUNT);
 
     engine.executePositionManagerRescues(rescues);
   }
@@ -105,9 +105,9 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManagerForEngine.RescueTokenCalled(TOKEN, RESCUE_TO, RESCUE_AMOUNT);
+    emit MockPositionManager.RescueTokenCalled(TOKEN, RESCUE_TO, RESCUE_AMOUNT);
     vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManagerForEngine.RescueNativeCalled(RESCUE_TO, RESCUE_AMOUNT);
+    emit MockPositionManager.RescueNativeCalled(RESCUE_TO, RESCUE_AMOUNT);
 
     engine.executePositionManagerRescues(rescues);
   }
@@ -148,11 +148,11 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
 
     if (tokenAmount > 0) {
       vm.expectEmit(address(mockPositionManager));
-      emit MockPositionManagerForEngine.RescueTokenCalled(token, to, tokenAmount);
+      emit MockPositionManager.RescueTokenCalled(token, to, tokenAmount);
     }
     if (nativeAmount > 0) {
       vm.expectEmit(address(mockPositionManager));
-      emit MockPositionManagerForEngine.RescueNativeCalled(to, nativeAmount);
+      emit MockPositionManager.RescueNativeCalled(to, nativeAmount);
     }
 
     engine.executePositionManagerRescues(rescues);
@@ -171,7 +171,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    vm.expectRevert(MockPositionManagerForEngine.RescueTokenReverted.selector);
+    vm.expectRevert(MockPositionManager.RescueTokenReverted.selector);
     engine.executePositionManagerRescues(rescues);
   }
 
@@ -188,7 +188,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       })
     );
 
-    vm.expectRevert(MockPositionManagerForEngine.RescueNativeReverted.selector);
+    vm.expectRevert(MockPositionManager.RescueNativeReverted.selector);
     engine.executePositionManagerRescues(rescues);
   }
 
@@ -203,7 +203,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       );
 
     vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManagerForEngine.RenouncePositionManagerRoleCalled(SPOKE, USER);
+    emit MockPositionManager.RenouncePositionManagerRoleCalled(SPOKE, USER);
 
     engine.executePositionManagerRoleRenouncements(renouncements);
   }
@@ -219,7 +219,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
       );
 
     vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManagerForEngine.RenouncePositionManagerRoleCalled(spoke, user);
+    emit MockPositionManager.RenouncePositionManagerRoleCalled(spoke, user);
 
     engine.executePositionManagerRoleRenouncements(renouncements);
   }
@@ -239,7 +239,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
         })
       );
 
-    vm.expectRevert(MockPositionManagerForEngine.RenouncePositionManagerRoleReverted.selector);
+    vm.expectRevert(MockPositionManager.RenouncePositionManagerRoleReverted.selector);
     engine.executePositionManagerRoleRenouncements(renouncements);
   }
 }

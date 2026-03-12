@@ -353,22 +353,6 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     engine.executeSpokeLiquidationConfigUpdates(_toLiquidationConfigUpdateArray(update));
   }
 
-  function _setupDynamicReserveConfig(
-    uint16 collateralFactor,
-    uint32 maxLiquidationBonus,
-    uint16 liquidationFee
-  ) internal {
-    mockSpokeReader.setDynamicReserveConfig(
-      RESERVE_ID,
-      uint32(DYNAMIC_CONFIG_KEY),
-      ISpoke.DynamicReserveConfig({
-        collateralFactor: collateralFactor,
-        maxLiquidationBonus: maxLiquidationBonus,
-        liquidationFee: liquidationFee
-      })
-    );
-  }
-
   function test_executeSpokeDynamicReserveConfigUpdates_allUpdated() public {
     _setupDynamicReserveConfig(5000, 10000, 200);
 
@@ -402,7 +386,6 @@ contract SpokeEngineTest is BaseConfigEngineTest {
         liquidationFee: EngineFlags.KEEP_CURRENT
       });
 
-    // When all fields are KEEP_CURRENT the external write call should be skipped entirely.
     vm.recordLogs();
     engine.executeSpokeDynamicReserveConfigUpdates(_toDynamicReserveConfigUpdateArray(update));
     assertEq(vm.getRecordedLogs().length, 0);
