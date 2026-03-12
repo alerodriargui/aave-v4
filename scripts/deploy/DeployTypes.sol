@@ -57,7 +57,10 @@ struct DeployReport {
 library DeployReportLib {
   // ==================== Hub ====================
 
-  function findHub(DeployReport storage self, string memory key) internal view returns (HubReport storage) {
+  function findHub(
+    DeployReport storage self,
+    string memory key
+  ) internal view returns (HubReport storage) {
     for (uint256 i; i < self.hubs.length; ++i) {
       if (ScriptUtils.strEq(self.hubs[i].key, key)) return self.hubs[i];
     }
@@ -90,7 +93,10 @@ library DeployReportLib {
     revert(string.concat('spoke not found: ', key));
   }
 
-  function spokeAddress(DeployReport storage self, string memory key) internal view returns (ISpoke) {
+  function spokeAddress(
+    DeployReport storage self,
+    string memory key
+  ) internal view returns (ISpoke) {
     return ISpoke(findSpoke(self, key).spoke);
   }
 

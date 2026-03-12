@@ -33,7 +33,11 @@ library ReportIO {
       string memory TREASURIES;
       for (uint256 i; i < report.hubs.length; ++i) {
         HUBS = vm.serializeAddress('hub', report.hubs[i].key, report.hubs[i].hub);
-        IR_STRATEGIES = vm.serializeAddress('irStrategy', report.hubs[i].key, report.hubs[i].irStrategy);
+        IR_STRATEGIES = vm.serializeAddress(
+          'irStrategy',
+          report.hubs[i].key,
+          report.hubs[i].irStrategy
+        );
         TREASURIES = vm.serializeAddress('treasury', report.hubs[i].key, report.hubs[i].treasury);
       }
       vm.serializeString(root, 'hub', HUBS);
@@ -66,7 +70,11 @@ library ReportIO {
     {
       string memory TOKENIZED;
       for (uint256 i; i < report.tokenized.length; ++i) {
-        TOKENIZED = vm.serializeAddress('tokenized', report.tokenized[i].key, report.tokenized[i].spoke);
+        TOKENIZED = vm.serializeAddress(
+          'tokenized',
+          report.tokenized[i].key,
+          report.tokenized[i].spoke
+        );
       }
       if (report.tokenized.length > 0) {
         vm.serializeString(root, 'tokenized', TOKENIZED);

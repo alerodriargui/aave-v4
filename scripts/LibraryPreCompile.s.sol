@@ -41,8 +41,6 @@ contract LibraryPreCompile is Script {
     SpokeDeployUtils._deployAndWriteLibrariesConfig();
     vm.stopBroadcast();
 
-    console.log(
-      'LibraryPreCompile: FOUNDRY_LIBRARIES set. Run the main deploy script.'
-    );
+    console.log('LibraryPreCompile: FOUNDRY_LIBRARIES set. Run the main deploy script.');
   }
 }

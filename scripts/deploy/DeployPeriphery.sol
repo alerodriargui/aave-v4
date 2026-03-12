@@ -169,16 +169,25 @@ library DeployPeriphery {
 
     // Verify all hubs and spokes use the same AccessManager
     for (uint256 i; i < report.hubs.length; ++i) {
-      require(IHub(report.hubs[i].hub).authority() == report.accessManager, 'hub authority mismatch');
+      require(
+        IHub(report.hubs[i].hub).authority() == report.accessManager,
+        'hub authority mismatch'
+      );
     }
     for (uint256 i; i < report.spokes.length; ++i) {
-      require(ISpoke(report.spokes[i].spoke).authority() == report.accessManager, 'spoke authority mismatch');
+      require(
+        ISpoke(report.spokes[i].spoke).authority() == report.accessManager,
+        'spoke authority mismatch'
+      );
     }
   }
 
   // ==================== Private: Reserve Processing ====================
 
-  function _processReserve(DeployReport storage report, ConfigReader.ReserveConfig memory conf) private {
+  function _processReserve(
+    DeployReport storage report,
+    ConfigReader.ReserveConfig memory conf
+  ) private {
     IHub hub = report.hubAddress(conf.hubKey);
     ISpoke spoke = ISpoke(report.findSpoke(conf.spokeKey).spoke);
     address token = report.findToken(conf.assetKey).token;
@@ -205,13 +214,20 @@ library DeployPeriphery {
       'ReserveConfig mismatch'
     );
     require(
-      keccak256(abi.encode(spoke.getDynamicReserveConfig(reserveId, spoke.getReserve(reserveId).dynamicConfigKey))) ==
-        keccak256(abi.encode(dyn)),
+      keccak256(
+        abi.encode(
+          spoke.getDynamicReserveConfig(reserveId, spoke.getReserve(reserveId).dynamicConfigKey)
+        )
+      ) == keccak256(abi.encode(dyn)),
       'DynamicReserveConfig mismatch'
     );
 
     DeployLogger.logReserveListed(
-      conf, reserveId, aid, st, dyn,
+      conf,
+      reserveId,
+      aid,
+      st,
+      dyn,
       IAaveOracle(spoke.ORACLE()).getReserveSource(reserveId),
       IAaveOracle(spoke.ORACLE()).getReservePrice(reserveId)
     );

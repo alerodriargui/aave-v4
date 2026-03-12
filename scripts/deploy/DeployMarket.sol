@@ -59,8 +59,9 @@ library DeployMarket {
     );
 
     require(
-      keccak256(abi.encode(IAssetInterestRateStrategy(hubRpt.irStrategy).getInterestRateData(aid))) ==
-        keccak256(abi.encode(conf.irData)),
+      keccak256(
+        abi.encode(IAssetInterestRateStrategy(hubRpt.irStrategy).getInterestRateData(aid))
+      ) == keccak256(abi.encode(conf.irData)),
       'IR data mismatch'
     );
 

@@ -190,23 +190,52 @@ library ConfigReader {
     return _readAsset(json, i, true);
   }
 
-  function _readAsset(string memory json, uint i, bool strict) private view returns (AssetConfig memory) {
+  function _readAsset(
+    string memory json,
+    uint i,
+    bool strict
+  ) private view returns (AssetConfig memory) {
     string memory base = string.concat('.assets[', vm.toString(i), ']');
-    return AssetConfig({
-      tokenKey: json.readString(string.concat(base, '.tokenKey')),
-      hubKey: json.readString(string.concat(base, '.hubKey')),
-      liquidityFee: _resolveUint(json, string.concat(base, '.liquidityFee'), '.defaults.asset.liquidityFee', DEFAULT_LIQUIDITY_FEE, strict).toUint16(),
-      irData: IAssetInterestRateStrategy.InterestRateData({
-        optimalUsageRatio: json.readUint(string.concat(base, '.irData.optimalUsageRatio')).toUint16(),
-        baseVariableBorrowRate: json.readUint(string.concat(base, '.irData.baseVariableBorrowRate')).toUint32(),
-        variableRateSlope1: json.readUint(string.concat(base, '.irData.variableRateSlope1')).toUint32(),
-        variableRateSlope2: json.readUint(string.concat(base, '.irData.variableRateSlope2')).toUint32()
-      }),
-      tokenizeEnabled: _resolveBool(
-        json, string.concat(base, '.tokenize.enabled'), '.defaults.tokenize.enabled', DEFAULT_TOKENIZE_ENABLED, strict
-      ),
-      tokenizeAddCap: _resolveUint(json, string.concat(base, '.tokenize.addCap'), '.defaults.tokenize.addCap', DEFAULT_TOKENIZE_ADD_CAP, strict).toUint40()
-    });
+    return
+      AssetConfig({
+        tokenKey: json.readString(string.concat(base, '.tokenKey')),
+        hubKey: json.readString(string.concat(base, '.hubKey')),
+        liquidityFee: _resolveUint(
+          json,
+          string.concat(base, '.liquidityFee'),
+          '.defaults.asset.liquidityFee',
+          DEFAULT_LIQUIDITY_FEE,
+          strict
+        ).toUint16(),
+        irData: IAssetInterestRateStrategy.InterestRateData({
+          optimalUsageRatio: json
+            .readUint(string.concat(base, '.irData.optimalUsageRatio'))
+            .toUint16(),
+          baseVariableBorrowRate: json
+            .readUint(string.concat(base, '.irData.baseVariableBorrowRate'))
+            .toUint32(),
+          variableRateSlope1: json
+            .readUint(string.concat(base, '.irData.variableRateSlope1'))
+            .toUint32(),
+          variableRateSlope2: json
+            .readUint(string.concat(base, '.irData.variableRateSlope2'))
+            .toUint32()
+        }),
+        tokenizeEnabled: _resolveBool(
+          json,
+          string.concat(base, '.tokenize.enabled'),
+          '.defaults.tokenize.enabled',
+          DEFAULT_TOKENIZE_ENABLED,
+          strict
+        ),
+        tokenizeAddCap: _resolveUint(
+          json,
+          string.concat(base, '.tokenize.addCap'),
+          '.defaults.tokenize.addCap',
+          DEFAULT_TOKENIZE_ADD_CAP,
+          strict
+        ).toUint40()
+      });
   }
 
   // ==================== Spoke Deploy Reader ====================
@@ -215,22 +244,44 @@ library ConfigReader {
     return _readSpoke(json, i, false);
   }
 
-  function readSpokeStrict(string memory json, uint i) internal view returns (SpokeDeployConfig memory) {
+  function readSpokeStrict(
+    string memory json,
+    uint i
+  ) internal view returns (SpokeDeployConfig memory) {
     return _readSpoke(json, i, true);
   }
 
-  function _readSpoke(string memory json, uint i, bool strict) private view returns (SpokeDeployConfig memory) {
+  function _readSpoke(
+    string memory json,
+    uint i,
+    bool strict
+  ) private view returns (SpokeDeployConfig memory) {
     string memory base = string.concat('.spokes[', vm.toString(i), ']');
-    return SpokeDeployConfig({
-      key: json.readString(string.concat(base, '.key')),
-      oracleDecimals: _resolveUint(json, string.concat(base, '.oracleDecimals'), '.defaults.spoke.oracleDecimals', DEFAULT_ORACLE_DECIMALS, strict).toUint8(),
-      maxUserReservesLimit: _resolveUint(
-        json, string.concat(base, '.maxUserReservesLimit'), '.defaults.spoke.maxUserReservesLimit', DEFAULT_MAX_USER_RESERVES_LIMIT, strict
-      ).toUint16(),
-      registerOnPositionManagers: _resolveBool(
-        json, string.concat(base, '.registerOnPositionManagers'), '', DEFAULT_REGISTER_ON_POSITION_MANAGERS, strict
-      )
-    });
+    return
+      SpokeDeployConfig({
+        key: json.readString(string.concat(base, '.key')),
+        oracleDecimals: _resolveUint(
+          json,
+          string.concat(base, '.oracleDecimals'),
+          '.defaults.spoke.oracleDecimals',
+          DEFAULT_ORACLE_DECIMALS,
+          strict
+        ).toUint8(),
+        maxUserReservesLimit: _resolveUint(
+          json,
+          string.concat(base, '.maxUserReservesLimit'),
+          '.defaults.spoke.maxUserReservesLimit',
+          DEFAULT_MAX_USER_RESERVES_LIMIT,
+          strict
+        ).toUint16(),
+        registerOnPositionManagers: _resolveBool(
+          json,
+          string.concat(base, '.registerOnPositionManagers'),
+          '',
+          DEFAULT_REGISTER_ON_POSITION_MANAGERS,
+          strict
+        )
+      });
   }
 
   // ==================== Spoke Registration Reader ====================
@@ -239,28 +290,48 @@ library ConfigReader {
     return _readSpokeReg(json, i, false);
   }
 
-  function readSpokeRegStrict(string memory json, uint i) internal view returns (SpokeRegConfig memory) {
+  function readSpokeRegStrict(
+    string memory json,
+    uint i
+  ) internal view returns (SpokeRegConfig memory) {
     return _readSpokeReg(json, i, true);
   }
 
-  function _readSpokeReg(string memory json, uint i, bool strict) private view returns (SpokeRegConfig memory) {
+  function _readSpokeReg(
+    string memory json,
+    uint i,
+    bool strict
+  ) private view returns (SpokeRegConfig memory) {
     string memory base = string.concat('.spokeRegistrations[', vm.toString(i), ']');
-    return SpokeRegConfig({
-      assetKey: json.readString(string.concat(base, '.assetKey')),
-      hubKey: json.readString(string.concat(base, '.hubKey')),
-      spokeKey: json.readString(string.concat(base, '.spokeKey')),
-      addCap: json.readUint(string.concat(base, '.addCap')).toUint40(),
-      drawCap: json.readUint(string.concat(base, '.drawCap')).toUint40(),
-      riskPremiumThreshold: _resolveUint(
-        json,
-        string.concat(base, '.riskPremiumThreshold'),
-        '.defaults.spokeRegistration.riskPremiumThreshold',
-        DEFAULT_RISK_PREMIUM_THRESHOLD,
-        strict
-      ).toUint24(),
-      active: _resolveBool(json, string.concat(base, '.active'), '.defaults.spokeRegistration.active', DEFAULT_SPOKE_REG_ACTIVE, strict),
-      halted: _resolveBool(json, string.concat(base, '.halted'), '.defaults.spokeRegistration.halted', DEFAULT_SPOKE_REG_HALTED, strict)
-    });
+    return
+      SpokeRegConfig({
+        assetKey: json.readString(string.concat(base, '.assetKey')),
+        hubKey: json.readString(string.concat(base, '.hubKey')),
+        spokeKey: json.readString(string.concat(base, '.spokeKey')),
+        addCap: json.readUint(string.concat(base, '.addCap')).toUint40(),
+        drawCap: json.readUint(string.concat(base, '.drawCap')).toUint40(),
+        riskPremiumThreshold: _resolveUint(
+          json,
+          string.concat(base, '.riskPremiumThreshold'),
+          '.defaults.spokeRegistration.riskPremiumThreshold',
+          DEFAULT_RISK_PREMIUM_THRESHOLD,
+          strict
+        ).toUint24(),
+        active: _resolveBool(
+          json,
+          string.concat(base, '.active'),
+          '.defaults.spokeRegistration.active',
+          DEFAULT_SPOKE_REG_ACTIVE,
+          strict
+        ),
+        halted: _resolveBool(
+          json,
+          string.concat(base, '.halted'),
+          '.defaults.spokeRegistration.halted',
+          DEFAULT_SPOKE_REG_HALTED,
+          strict
+        )
+      });
   }
 
   // ==================== Reserve Reader ====================
@@ -269,29 +340,63 @@ library ConfigReader {
     return _readReserve(json, i, false);
   }
 
-  function readReserveStrict(string memory json, uint i) internal view returns (ReserveConfig memory) {
+  function readReserveStrict(
+    string memory json,
+    uint i
+  ) internal view returns (ReserveConfig memory) {
     return _readReserve(json, i, true);
   }
 
-  function _readReserve(string memory json, uint i, bool strict) private view returns (ReserveConfig memory) {
+  function _readReserve(
+    string memory json,
+    uint i,
+    bool strict
+  ) private view returns (ReserveConfig memory) {
     string memory base = string.concat('.reserves[', vm.toString(i), ']');
-    return ReserveConfig({
-      spokeKey: json.readString(string.concat(base, '.spokeKey')),
-      assetKey: json.readString(string.concat(base, '.assetKey')),
-      hubKey: json.readString(string.concat(base, '.hubKey')),
-      borrowable: json.readBool(string.concat(base, '.borrowable')),
-      collateralRisk: json.readUint(string.concat(base, '.collateralRisk')).toUint24(),
-      collateralFactor: json.readUint(string.concat(base, '.collateralFactor')).toUint16(),
-      maxLiquidationBonus: _resolveUint(
-        json, string.concat(base, '.maxLiquidationBonus'), '.defaults.reserve.maxLiquidationBonus', DEFAULT_MAX_LIQUIDATION_BONUS, strict
-      ).toUint32(),
-      liquidationFee: _resolveUint(json, string.concat(base, '.liquidationFee'), '.defaults.reserve.liquidationFee', DEFAULT_RESERVE_LIQUIDATION_FEE, strict).toUint16(),
-      receiveSharesEnabled: _resolveBool(
-        json, string.concat(base, '.receiveSharesEnabled'), '.defaults.reserve.receiveSharesEnabled', DEFAULT_RECEIVE_SHARES_ENABLED, strict
-      ),
-      frozen: _resolveBool(json, string.concat(base, '.frozen'), '.defaults.reserve.frozen', DEFAULT_FROZEN, strict),
-      paused: _resolveBool(json, string.concat(base, '.paused'), '.defaults.reserve.paused', DEFAULT_PAUSED, strict)
-    });
+    return
+      ReserveConfig({
+        spokeKey: json.readString(string.concat(base, '.spokeKey')),
+        assetKey: json.readString(string.concat(base, '.assetKey')),
+        hubKey: json.readString(string.concat(base, '.hubKey')),
+        borrowable: json.readBool(string.concat(base, '.borrowable')),
+        collateralRisk: json.readUint(string.concat(base, '.collateralRisk')).toUint24(),
+        collateralFactor: json.readUint(string.concat(base, '.collateralFactor')).toUint16(),
+        maxLiquidationBonus: _resolveUint(
+          json,
+          string.concat(base, '.maxLiquidationBonus'),
+          '.defaults.reserve.maxLiquidationBonus',
+          DEFAULT_MAX_LIQUIDATION_BONUS,
+          strict
+        ).toUint32(),
+        liquidationFee: _resolveUint(
+          json,
+          string.concat(base, '.liquidationFee'),
+          '.defaults.reserve.liquidationFee',
+          DEFAULT_RESERVE_LIQUIDATION_FEE,
+          strict
+        ).toUint16(),
+        receiveSharesEnabled: _resolveBool(
+          json,
+          string.concat(base, '.receiveSharesEnabled'),
+          '.defaults.reserve.receiveSharesEnabled',
+          DEFAULT_RECEIVE_SHARES_ENABLED,
+          strict
+        ),
+        frozen: _resolveBool(
+          json,
+          string.concat(base, '.frozen'),
+          '.defaults.reserve.frozen',
+          DEFAULT_FROZEN,
+          strict
+        ),
+        paused: _resolveBool(
+          json,
+          string.concat(base, '.paused'),
+          '.defaults.reserve.paused',
+          DEFAULT_PAUSED,
+          strict
+        )
+      });
   }
 
   // ==================== Liquidation Config Reader ====================
@@ -320,11 +425,24 @@ library ConfigReader {
     if (!exists && strict) revert('liquidationConfig: missing (strict)');
     string memory defBase = '.defaults.spoke.liquidationConfig';
     if (!exists) {
-      return ISpoke.LiquidationConfig({
-        targetHealthFactor: json.readUintOr(string.concat(defBase, '.targetHealthFactor'), DEFAULT_TARGET_HEALTH_FACTOR).toUint128(),
-        healthFactorForMaxBonus: json.readUintOr(string.concat(defBase, '.healthFactorForMaxBonus'), DEFAULT_HEALTH_FACTOR_FOR_MAX_BONUS).toUint64(),
-        liquidationBonusFactor: json.readUintOr(string.concat(defBase, '.liquidationBonusFactor'), DEFAULT_LIQUIDATION_BONUS_FACTOR).toUint16()
-      });
+      return
+        ISpoke.LiquidationConfig({
+          targetHealthFactor: json
+            .readUintOr(string.concat(defBase, '.targetHealthFactor'), DEFAULT_TARGET_HEALTH_FACTOR)
+            .toUint128(),
+          healthFactorForMaxBonus: json
+            .readUintOr(
+              string.concat(defBase, '.healthFactorForMaxBonus'),
+              DEFAULT_HEALTH_FACTOR_FOR_MAX_BONUS
+            )
+            .toUint64(),
+          liquidationBonusFactor: json
+            .readUintOr(
+              string.concat(defBase, '.liquidationBonusFactor'),
+              DEFAULT_LIQUIDATION_BONUS_FACTOR
+            )
+            .toUint16()
+        });
     }
     lc = ISpoke.LiquidationConfig({
       targetHealthFactor: _resolveUint(

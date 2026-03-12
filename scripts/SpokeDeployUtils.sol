@@ -63,9 +63,7 @@ library SpokeDeployUtils {
 
   function deployLiquidationLogic() internal returns (address) {
     Create2Utils.loadCreate2Factory();
-    bytes memory bytecode = vm.getCode(
-      'src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic'
-    );
+    bytes memory bytecode = vm.getCode('src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic');
     return Create2Utils.create2Deploy(bytes32(0), bytecode);
   }
 

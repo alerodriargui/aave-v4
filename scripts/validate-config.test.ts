@@ -1,45 +1,102 @@
-import { describe, it, expect } from 'bun:test';
+import {describe, it, expect} from 'bun:test';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { validate, type DeployConfig, type ValidationResult } from './validate-config.ts';
+import {fileURLToPath} from 'url';
+import {validate, type DeployConfig, type ValidationResult} from './validate-config.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROD_CONFIG = JSON.parse(
-  fs.readFileSync(path.resolve(__dirname, '../config/mainnet.json'), 'utf8')
+  fs.readFileSync(path.resolve(__dirname, '../config/mainnet.json'), 'utf8'),
 );
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function minimal(): DeployConfig {
   return {
-    defaults: { spokeRegistration: { riskPremiumThreshold: 100000, active: true, halted: false }, reserve: { receiveSharesEnabled: true, frozen: false, paused: false } },
-    tokens: {
-      WETH: { address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', priceFeed: '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419' },
-      USDC: { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', priceFeed: '0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6' },
+    defaults: {
+      spokeRegistration: {riskPremiumThreshold: 100000, active: true, halted: false},
+      reserve: {receiveSharesEnabled: true, frozen: false, paused: false},
     },
-    hubs: [{ key: 'HUB_A' }],
-    spokes: [{ key: 'SPOKE_A' }],
+    tokens: {
+      WETH: {
+        address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+        priceFeed: '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419',
+      },
+      USDC: {
+        address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        priceFeed: '0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6',
+      },
+    },
+    hubs: [{key: 'HUB_A'}],
+    spokes: [{key: 'SPOKE_A'}],
     assets: [
-      { tokenKey: 'WETH', hubKey: 'HUB_A', liquidityFee: 1000, irData: { optimalUsageRatio: 9000, baseVariableBorrowRate: 0, variableRateSlope1: 270, variableRateSlope2: 8000 } },
-      { tokenKey: 'USDC', hubKey: 'HUB_A', liquidityFee: 1000, irData: { optimalUsageRatio: 9200, baseVariableBorrowRate: 0, variableRateSlope1: 550, variableRateSlope2: 3500 } },
+      {
+        tokenKey: 'WETH',
+        hubKey: 'HUB_A',
+        liquidityFee: 1000,
+        irData: {
+          optimalUsageRatio: 9000,
+          baseVariableBorrowRate: 0,
+          variableRateSlope1: 270,
+          variableRateSlope2: 8000,
+        },
+      },
+      {
+        tokenKey: 'USDC',
+        hubKey: 'HUB_A',
+        liquidityFee: 1000,
+        irData: {
+          optimalUsageRatio: 9200,
+          baseVariableBorrowRate: 0,
+          variableRateSlope1: 550,
+          variableRateSlope2: 3500,
+        },
+      },
     ],
     spokeRegistrations: [
-      { assetKey: 'WETH', hubKey: 'HUB_A', spokeKey: 'SPOKE_A', addCap: 225, drawCap: 200 },
-      { assetKey: 'USDC', hubKey: 'HUB_A', spokeKey: 'SPOKE_A', addCap: 3000000, drawCap: 2760000 },
+      {assetKey: 'WETH', hubKey: 'HUB_A', spokeKey: 'SPOKE_A', addCap: 225, drawCap: 200},
+      {assetKey: 'USDC', hubKey: 'HUB_A', spokeKey: 'SPOKE_A', addCap: 3000000, drawCap: 2760000},
     ],
     reserves: [
-      { spokeKey: 'SPOKE_A', hubKey: 'HUB_A', assetKey: 'WETH', collateralRisk: 0, borrowable: true, collateralFactor: 8500, maxLiquidationBonus: 10500, liquidationFee: 1000 },
-      { spokeKey: 'SPOKE_A', hubKey: 'HUB_A', assetKey: 'USDC', collateralRisk: 0, borrowable: true, collateralFactor: 8300, maxLiquidationBonus: 10000, liquidationFee: 1000 },
+      {
+        spokeKey: 'SPOKE_A',
+        hubKey: 'HUB_A',
+        assetKey: 'WETH',
+        collateralRisk: 0,
+        borrowable: true,
+        collateralFactor: 8500,
+        maxLiquidationBonus: 10500,
+        liquidationFee: 1000,
+      },
+      {
+        spokeKey: 'SPOKE_A',
+        hubKey: 'HUB_A',
+        assetKey: 'USDC',
+        collateralRisk: 0,
+        borrowable: true,
+        collateralFactor: 8300,
+        maxLiquidationBonus: 10000,
+        liquidationFee: 1000,
+      },
     ],
-    periphery: { nativeTokenKey: 'WETH', deploySignatureGateway: true, deployNativeTokenGateway: true },
+    periphery: {
+      nativeTokenKey: 'WETH',
+      deploySignatureGateway: true,
+      deployNativeTokenGateway: true,
+    },
   };
 }
 
-function clone<T>(obj: T): T { return JSON.parse(JSON.stringify(obj)); }
+function clone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
 
-function hasError(result: ValidationResult, code: string) { return result.errors.some(e => e.code === code); }
-function hasWarning(result: ValidationResult, code: string) { return result.warnings.some(w => w.code === code); }
+function hasError(result: ValidationResult, code: string) {
+  return result.errors.some((e) => e.code === code);
+}
+function hasWarning(result: ValidationResult, code: string) {
+  return result.warnings.some((w) => w.code === code);
+}
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
@@ -113,7 +170,7 @@ describe('E3: invalid spoke reference', () => {
 describe('E4: duplicate asset', () => {
   it('detects same tokenKey+hubKey twice', () => {
     const c = clone(minimal());
-    c.assets.push({ ...c.assets[0] });
+    c.assets.push({...c.assets[0]});
     expect(hasError(validate(c), 'E4')).toBe(true);
   });
 });
@@ -121,7 +178,7 @@ describe('E4: duplicate asset', () => {
 describe('E5: duplicate spoke registration', () => {
   it('detects same assetKey+hubKey+spokeKey twice', () => {
     const c = clone(minimal());
-    c.spokeRegistrations.push({ ...c.spokeRegistrations[0] });
+    c.spokeRegistrations.push({...c.spokeRegistrations[0]});
     expect(hasError(validate(c), 'E5')).toBe(true);
   });
 });
@@ -129,7 +186,7 @@ describe('E5: duplicate spoke registration', () => {
 describe('E6: duplicate reserve', () => {
   it('detects same spokeKey+hubKey+assetKey twice', () => {
     const c = clone(minimal());
-    c.reserves.push({ ...c.reserves[0] });
+    c.reserves.push({...c.reserves[0]});
     expect(hasError(validate(c), 'E6')).toBe(true);
   });
 });
@@ -137,8 +194,14 @@ describe('E6: duplicate reserve', () => {
 describe('E7: missing asset for spoke registration', () => {
   it('detects spoke reg referencing non-existent asset', () => {
     const c = clone(minimal());
-    c.hubs.push({ key: 'HUB_B' });
-    c.spokeRegistrations.push({ assetKey: 'WETH', hubKey: 'HUB_B', spokeKey: 'SPOKE_A', addCap: 100, drawCap: 50 });
+    c.hubs.push({key: 'HUB_B'});
+    c.spokeRegistrations.push({
+      assetKey: 'WETH',
+      hubKey: 'HUB_B',
+      spokeKey: 'SPOKE_A',
+      addCap: 100,
+      drawCap: 50,
+    });
     expect(hasError(validate(c), 'E7')).toBe(true);
   });
 });
@@ -146,9 +209,24 @@ describe('E7: missing asset for spoke registration', () => {
 describe('E8: missing asset for reserve', () => {
   it('detects reserve referencing non-existent asset', () => {
     const c = clone(minimal());
-    c.hubs.push({ key: 'HUB_B' });
-    c.spokeRegistrations.push({ assetKey: 'WETH', hubKey: 'HUB_B', spokeKey: 'SPOKE_A', addCap: 100, drawCap: 50 });
-    c.reserves.push({ spokeKey: 'SPOKE_A', hubKey: 'HUB_B', assetKey: 'WETH', collateralRisk: 0, borrowable: true, collateralFactor: 8500, maxLiquidationBonus: 10500, liquidationFee: 1000 });
+    c.hubs.push({key: 'HUB_B'});
+    c.spokeRegistrations.push({
+      assetKey: 'WETH',
+      hubKey: 'HUB_B',
+      spokeKey: 'SPOKE_A',
+      addCap: 100,
+      drawCap: 50,
+    });
+    c.reserves.push({
+      spokeKey: 'SPOKE_A',
+      hubKey: 'HUB_B',
+      assetKey: 'WETH',
+      collateralRisk: 0,
+      borrowable: true,
+      collateralFactor: 8500,
+      maxLiquidationBonus: 10500,
+      liquidationFee: 1000,
+    });
     expect(hasError(validate(c), 'E8')).toBe(true);
   });
 });
@@ -156,8 +234,17 @@ describe('E8: missing asset for reserve', () => {
 describe('E9: missing spoke registration for reserve', () => {
   it('detects reserve without spoke registration', () => {
     const c = clone(minimal());
-    c.spokes.push({ key: 'SPOKE_B' });
-    c.reserves.push({ spokeKey: 'SPOKE_B', hubKey: 'HUB_A', assetKey: 'WETH', collateralRisk: 0, borrowable: true, collateralFactor: 8500, maxLiquidationBonus: 10500, liquidationFee: 1000 });
+    c.spokes.push({key: 'SPOKE_B'});
+    c.reserves.push({
+      spokeKey: 'SPOKE_B',
+      hubKey: 'HUB_A',
+      assetKey: 'WETH',
+      collateralRisk: 0,
+      borrowable: true,
+      collateralFactor: 8500,
+      maxLiquidationBonus: 10500,
+      liquidationFee: 1000,
+    });
     expect(hasError(validate(c), 'E9')).toBe(true);
   });
 });
@@ -368,9 +455,28 @@ describe('W4: collateralFactor=0 AND borrowable=false', () => {
 describe('W6: spoke registration with no reserve', () => {
   it('warns on orphan spoke registration', () => {
     const c = clone(minimal());
-    c.tokens['AAVE'] = { address: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', priceFeed: '0xbd7F896e60B650C01caf2d7279a1148189A68884' };
-    c.assets.push({ tokenKey: 'AAVE', hubKey: 'HUB_A', liquidityFee: 1000, irData: { optimalUsageRatio: 4500, baseVariableBorrowRate: 0, variableRateSlope1: 550, variableRateSlope2: 30000 } });
-    c.spokeRegistrations.push({ assetKey: 'AAVE', hubKey: 'HUB_A', spokeKey: 'SPOKE_A', addCap: 100, drawCap: 50 });
+    c.tokens['AAVE'] = {
+      address: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9',
+      priceFeed: '0xbd7F896e60B650C01caf2d7279a1148189A68884',
+    };
+    c.assets.push({
+      tokenKey: 'AAVE',
+      hubKey: 'HUB_A',
+      liquidityFee: 1000,
+      irData: {
+        optimalUsageRatio: 4500,
+        baseVariableBorrowRate: 0,
+        variableRateSlope1: 550,
+        variableRateSlope2: 30000,
+      },
+    });
+    c.spokeRegistrations.push({
+      assetKey: 'AAVE',
+      hubKey: 'HUB_A',
+      spokeKey: 'SPOKE_A',
+      addCap: 100,
+      drawCap: 50,
+    });
     expect(hasWarning(validate(c), 'W6')).toBe(true);
   });
 });
@@ -384,7 +490,10 @@ describe('W7: mock price feed', () => {
 
   it('no warning when mock token not used in any reserve', () => {
     const c = clone(minimal());
-    c.tokens['MOCK'] = { address: '0x1111111111111111111111111111111111111111', priceFeed: '0x0000000000000000000000000000000000000000' };
+    c.tokens['MOCK'] = {
+      address: '0x1111111111111111111111111111111111111111',
+      priceFeed: '0x0000000000000000000000000000000000000000',
+    };
     expect(hasWarning(validate(c), 'W7')).toBe(false);
   });
 });
@@ -392,25 +501,25 @@ describe('W7: mock price feed', () => {
 describe('E19: tokenize drawCap must be 0', () => {
   it('errors when per-asset drawCap is non-zero', () => {
     const c = clone(minimal());
-    c.assets[0].tokenize = { drawCap: 100 };
+    c.assets[0].tokenize = {drawCap: 100};
     expect(hasError(validate(c), 'E19')).toBe(true);
   });
 
   it('errors when defaults.tokenize.drawCap is non-zero', () => {
     const c = clone(minimal());
-    c.defaults = { ...c.defaults, tokenize: { drawCap: 1000 } };
+    c.defaults = {...c.defaults, tokenize: {drawCap: 1000}};
     expect(hasError(validate(c), 'E19')).toBe(true);
   });
 
   it('no error when drawCap is 0', () => {
     const c = clone(minimal());
-    c.assets[0].tokenize = { drawCap: 0 };
+    c.assets[0].tokenize = {drawCap: 0};
     expect(hasError(validate(c), 'E19')).toBe(false);
   });
 
   it('no error when drawCap is omitted', () => {
     const c = clone(minimal());
-    c.assets[0].tokenize = { enabled: true };
+    c.assets[0].tokenize = {enabled: true};
     expect(hasError(validate(c), 'E19')).toBe(false);
   });
 
@@ -423,19 +532,19 @@ describe('E19: tokenize drawCap must be 0', () => {
 describe('E20: unknown keys (via Zod strict)', () => {
   it('errors on unknown key in defaults.tokenize', () => {
     const c: any = clone(minimal());
-    c.defaults.tokenize = { enabled: true, foo: 123 };
+    c.defaults.tokenize = {enabled: true, foo: 123};
     expect(hasError(validate(c), 'E20')).toBe(true);
   });
 
   it('errors on unknown key in per-asset tokenize', () => {
     const c: any = clone(minimal());
-    c.assets[0].tokenize = { enabled: true, riskPremium: 500 };
+    c.assets[0].tokenize = {enabled: true, riskPremium: 500};
     expect(hasError(validate(c), 'E20')).toBe(true);
   });
 
   it('no error with only allowed tokenize keys', () => {
     const c = clone(minimal());
-    c.assets[0].tokenize = { enabled: true, addCap: 500 };
+    c.assets[0].tokenize = {enabled: true, addCap: 500};
     expect(hasError(validate(c), 'E20')).toBe(false);
   });
 
@@ -453,13 +562,13 @@ describe('E20: unknown keys (via Zod strict)', () => {
 
   it('errors on unknown key in defaults.spoke', () => {
     const c: any = clone(minimal());
-    c.defaults.spoke = { oracleDecimals: 8, badKey: 1 };
+    c.defaults.spoke = {oracleDecimals: 8, badKey: 1};
     expect(hasError(validate(c), 'E20')).toBe(true);
   });
 
   it('errors on unknown key in defaults.spoke.liquidationConfig', () => {
     const c: any = clone(minimal());
-    c.defaults.spoke = { liquidationConfig: { targetHealthFactor: '1050000000000000000', extra: 1 } };
+    c.defaults.spoke = {liquidationConfig: {targetHealthFactor: '1050000000000000000', extra: 1}};
     expect(hasError(validate(c), 'E20')).toBe(true);
   });
 
@@ -471,7 +580,7 @@ describe('E20: unknown keys (via Zod strict)', () => {
 
   it('errors on unknown key in defaults.asset', () => {
     const c: any = clone(minimal());
-    c.defaults.asset = { liquidityFee: 1000, irData: {} };
+    c.defaults.asset = {liquidityFee: 1000, irData: {}};
     expect(hasError(validate(c), 'E20')).toBe(true);
   });
 
@@ -495,7 +604,7 @@ describe('E20: unknown keys (via Zod strict)', () => {
 
   it('errors on unknown key in spoke liquidationConfig', () => {
     const c: any = clone(minimal());
-    c.spokes[0].liquidationConfig = { targetHealthFactor: '1050000000000000000', bonus: 100 };
+    c.spokes[0].liquidationConfig = {targetHealthFactor: '1050000000000000000', bonus: 100};
     expect(hasError(validate(c), 'E20')).toBe(true);
   });
 

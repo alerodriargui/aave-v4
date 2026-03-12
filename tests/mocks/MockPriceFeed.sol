@@ -26,8 +26,4 @@ contract MockPriceFeed is IPriceFeed {
   function latestAnswer() external view override returns (int256) {
     return _price;
   }
-
-  function latestAnswer() external view returns (int256) {
-    return _price;
-  }
 }

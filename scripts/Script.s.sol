@@ -156,10 +156,7 @@ contract Deploy is Script, StdAssertions {
       string memory hubKey = _json.hubKey(hi);
       DeployLogger.logSection(hubKey);
 
-      IHub hub = DeployUtils.deployHub(
-        address(accessManager),
-        keccak256(abi.encodePacked(hubKey))
-      );
+      IHub hub = DeployUtils.deployHub(address(accessManager), keccak256(abi.encodePacked(hubKey)));
       hubs[hubKey] = HubState(
         hub,
         new TreasurySpoke(admin, address(hub)),
@@ -554,7 +551,11 @@ contract Deploy is Script, StdAssertions {
     if (_tokenizationSpokeKeys.length > 0) {
       string memory tsJson;
       for (uint256 i; i < _tokenizationSpokeKeys.length; ++i) {
-        tsJson = vm.serializeAddress('tokenized', _tokenizationSpokeKeys[i], tokenizationSpokes[_tokenizationSpokeKeys[i]]);
+        tsJson = vm.serializeAddress(
+          'tokenized',
+          _tokenizationSpokeKeys[i],
+          tokenizationSpokes[_tokenizationSpokeKeys[i]]
+        );
       }
       vm.serializeString(root, 'tokenized', tsJson);
     }
@@ -740,7 +741,10 @@ contract Deploy is Script, StdAssertions {
 
   // ==================== Utilities ====================
 
-  function _deployMockPriceFeed(uint256 price, string memory description) internal returns (address) {
+  function _deployMockPriceFeed(
+    uint256 price,
+    string memory description
+  ) internal returns (address) {
     return address(new MockPriceFeed(8, description, price));
   }
 }
