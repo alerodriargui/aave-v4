@@ -97,10 +97,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetListings(_toAssetListingArray(listing));
   }
 
-  // ---------------------------------------------------------------------------
-  // AssetConfigUpdate tests — fee config scenarios
-  // ---------------------------------------------------------------------------
-
   function test_executeHubAssetConfigUpdates_feeBoth() public {
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
     // Skip IR and reinvestment
@@ -189,10 +185,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  // ---------------------------------------------------------------------------
-  // AssetConfigUpdate tests — interest rate scenarios
-  // ---------------------------------------------------------------------------
-
   function test_executeHubAssetConfigUpdates_strategyChange() public {
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
     // Skip fee and reinvestment
@@ -266,10 +258,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  // ---------------------------------------------------------------------------
-  // AssetConfigUpdate tests — reinvestment controller scenarios
-  // ---------------------------------------------------------------------------
-
   function test_executeHubAssetConfigUpdates_reinvestmentController() public {
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
     // Skip fee and IR
@@ -323,10 +311,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  // ---------------------------------------------------------------------------
-  // AssetConfigUpdate tests — combined scenario (all fields active)
-  // ---------------------------------------------------------------------------
-
   function test_executeHubAssetConfigUpdates_allFields() public {
     IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
 
@@ -348,10 +332,6 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
-
-  // ---------------------------------------------------------------------------
-  // SpokeConfigUpdate tests — caps scenarios
-  // ---------------------------------------------------------------------------
 
   function test_executeHubSpokeConfigUpdates_capsBoth() public {
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
@@ -438,10 +418,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     vm.expectRevert(MockHubConfigurator.UpdateSpokeCapsReverted.selector);
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
-
-  // ---------------------------------------------------------------------------
-  // SpokeConfigUpdate tests — status scenarios
-  // ---------------------------------------------------------------------------
 
   function test_executeHubSpokeConfigUpdates_statusBoth() public {
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
@@ -555,10 +531,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  // ---------------------------------------------------------------------------
-  // SpokeConfigUpdate tests — risk premium threshold scenarios
-  // ---------------------------------------------------------------------------
-
   function test_executeHubSpokeConfigUpdates_riskPremiumThreshold() public {
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
     update.riskPremiumThreshold = 300;
@@ -609,10 +581,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  // ---------------------------------------------------------------------------
-  // SpokeConfigUpdate tests — combined scenario (all fields active)
-  // ---------------------------------------------------------------------------
-
   function test_executeHubSpokeConfigUpdates_allFields() public {
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
 
@@ -633,10 +601,6 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
-
-  // ---------------------------------------------------------------------------
-  // SpokeToAssetsAdditions tests
-  // ---------------------------------------------------------------------------
 
   function test_executeHubSpokeToAssetsAdditions() public {
     uint256[] memory assetIds = new uint256[](2);
@@ -730,10 +694,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubSpokeToAssetsAdditions(_toSpokeToAssetsAdditionArray(addition));
   }
 
-  // ---------------------------------------------------------------------------
-  // AssetHalt tests
-  // ---------------------------------------------------------------------------
-
   function test_executeHubAssetHalts() public {
     IAaveV4ConfigEngine.AssetHalt memory halt = IAaveV4ConfigEngine.AssetHalt({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
@@ -772,10 +732,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     vm.expectRevert(MockHubConfigurator.HaltAssetReverted.selector);
     engine.executeHubAssetHalts(_toAssetHaltArray(halt));
   }
-
-  // ---------------------------------------------------------------------------
-  // AssetDeactivation tests
-  // ---------------------------------------------------------------------------
 
   function test_executeHubAssetDeactivations() public {
     IAaveV4ConfigEngine.AssetDeactivation memory deactivation = IAaveV4ConfigEngine
@@ -819,10 +775,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetDeactivations(_toAssetDeactivationArray(deactivation));
   }
 
-  // ---------------------------------------------------------------------------
-  // AssetCapsReset tests
-  // ---------------------------------------------------------------------------
-
   function test_executeHubAssetCapsResets() public {
     IAaveV4ConfigEngine.AssetCapsReset memory reset = IAaveV4ConfigEngine.AssetCapsReset({
       hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
@@ -861,10 +813,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     vm.expectRevert(MockHubConfigurator.ResetAssetCapsReverted.selector);
     engine.executeHubAssetCapsResets(_toAssetCapsResetArray(reset));
   }
-
-  // ---------------------------------------------------------------------------
-  // SpokeHalt tests
-  // ---------------------------------------------------------------------------
 
   function test_executeHubSpokeHalts() public {
     IAaveV4ConfigEngine.SpokeHalt memory halt = IAaveV4ConfigEngine.SpokeHalt({
@@ -906,10 +854,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     vm.expectRevert(MockHubConfigurator.HaltSpokeReverted.selector);
     engine.executeHubSpokeHalts(_toSpokeHaltArray(halt));
   }
-
-  // ---------------------------------------------------------------------------
-  // SpokeDeactivation tests
-  // ---------------------------------------------------------------------------
 
   function test_executeHubSpokeDeactivations() public {
     IAaveV4ConfigEngine.SpokeDeactivation memory deactivation = IAaveV4ConfigEngine
@@ -954,10 +898,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     vm.expectRevert(MockHubConfigurator.DeactivateSpokeReverted.selector);
     engine.executeHubSpokeDeactivations(_toSpokeDeactivationArray(deactivation));
   }
-
-  // ---------------------------------------------------------------------------
-  // SpokeCapsReset tests
-  // ---------------------------------------------------------------------------
 
   function test_executeHubSpokeCapsResets() public {
     IAaveV4ConfigEngine.SpokeCapsReset memory reset = IAaveV4ConfigEngine.SpokeCapsReset({

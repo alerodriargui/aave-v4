@@ -52,7 +52,6 @@ library HubEngine {
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
-      // Fee dispatch
       bool updateFee = updates[i].liquidityFee != EngineFlags.KEEP_CURRENT;
       bool updateReceiver = updates[i].feeReceiver != EngineFlags.KEEP_CURRENT_ADDRESS;
 
@@ -77,7 +76,6 @@ library HubEngine {
         );
       }
 
-      // Interest rate dispatch
       if (updates[i].irStrategy != EngineFlags.KEEP_CURRENT_ADDRESS) {
         updates[i].hubConfigurator.updateInterestRateStrategy(
           updates[i].hub,
@@ -93,7 +91,6 @@ library HubEngine {
         );
       }
 
-      // Reinvestment controller dispatch
       if (updates[i].reinvestmentController != EngineFlags.KEEP_CURRENT_ADDRESS) {
         updates[i].hubConfigurator.updateReinvestmentController(
           updates[i].hub,
@@ -131,7 +128,6 @@ library HubEngine {
   ) external {
     uint256 length = updates.length;
     for (uint256 i; i < length; ++i) {
-      // Caps dispatch
       bool updateAdd = updates[i].addCap != EngineFlags.KEEP_CURRENT;
       bool updateDraw = updates[i].drawCap != EngineFlags.KEEP_CURRENT;
 
@@ -159,7 +155,6 @@ library HubEngine {
         );
       }
 
-      // Risk premium threshold dispatch
       if (updates[i].riskPremiumThreshold != EngineFlags.KEEP_CURRENT) {
         updates[i].hubConfigurator.updateSpokeRiskPremiumThreshold(
           updates[i].hub,
@@ -169,7 +164,6 @@ library HubEngine {
         );
       }
 
-      // Status dispatch
       if (updates[i].active != EngineFlags.KEEP_CURRENT) {
         updates[i].hubConfigurator.updateSpokeActive(
           updates[i].hub,
