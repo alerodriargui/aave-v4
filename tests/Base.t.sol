@@ -215,8 +215,6 @@ abstract contract Base is BatchTestProcedures {
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
   address internal HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
   address internal SPOKE_CONFIGURATOR_ADMIN = makeAddr('SPOKE_CONFIGURATOR_ADMIN');
-  address internal HUB_CONFIGURATOR = makeAddr('HUB_CONFIGURATOR');
-  address internal SPOKE_CONFIGURATOR = makeAddr('SPOKE_CONFIGURATOR');
 
   TestTypes.TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
@@ -435,18 +433,18 @@ abstract contract Base is BatchTestProcedures {
     AaveV4TestOrchestration.setRolesTestEnv(report);
     AaveV4TestOrchestration.grantRolesTestEnv(report, ADMIN, HUB_ADMIN, SPOKE_ADMIN);
 
-    // Grant HubConfigurator granular roles to HUB_CONFIGURATOR so it can call
+    // Grant HubConfigurator granular roles to HUB_CONFIGURATOR_ADMIN so it can call
     // HubConfigurator functions (deactivateAsset, resetAssetCaps, haltAsset, etc.)
     AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles(
       report.accessManager,
-      HUB_CONFIGURATOR
+      HUB_CONFIGURATOR_ADMIN
     );
 
-    // Grant SpokeConfigurator granular roles to SPOKE_CONFIGURATOR so it can call
+    // Grant SpokeConfigurator granular roles to SPOKE_CONFIGURATOR_ADMIN so it can call
     // SpokeConfigurator functions (addReserve, updateMaxReserves, freezeReserve, etc.)
     AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles(
       report.accessManager,
-      SPOKE_CONFIGURATOR
+      SPOKE_CONFIGURATOR_ADMIN
     );
 
     IAccessManager(report.accessManager).renounceRole(

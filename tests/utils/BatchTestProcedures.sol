@@ -118,6 +118,9 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       ? inputs.spokeConfiguratorAdmin
       : _deployer;
     inputs.gatewayOwner = inputs.gatewayOwner != address(0) ? inputs.gatewayOwner : _deployer;
+    inputs.positionManagerOwner = inputs.positionManagerOwner != address(0)
+      ? inputs.positionManagerOwner
+      : _deployer;
 
     // Sync parallel arrays with spokeLabels length
     inputs.hubLabels = _hubLabels;
@@ -127,6 +130,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     inputs.nativeWrapper = _weth9;
     inputs.deployNativeTokenGateway = true;
     inputs.deploySignatureGateway = true;
+    inputs.deployPositionManagers = true;
 
     return inputs;
   }
@@ -162,6 +166,29 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       assertNotEq(report.gatewaysBatchReport.signatureGateway, address(0), 'SignatureGateway');
     } else {
       assertEq(report.gatewaysBatchReport.signatureGateway, address(0), 'Zero SignatureGateway');
+    }
+    if (inputs.deployPositionManagers) {
+      assertNotEq(
+        report.positionManagerBatchReport.giverPositionManager,
+        address(0),
+        'GiverPositionManager'
+      );
+      assertNotEq(
+        report.positionManagerBatchReport.takerPositionManager,
+        address(0),
+        'TakerPositionManager'
+      );
+    } else {
+      assertEq(
+        report.positionManagerBatchReport.giverPositionManager,
+        address(0),
+        'Zero GiverPositionManager'
+      );
+      assertEq(
+        report.positionManagerBatchReport.takerPositionManager,
+        address(0),
+        'Zero TakerPositionManager'
+      );
     }
 
     assertNotEq(report.authorityBatchReport.accessManager, address(0), 'AccessManager');

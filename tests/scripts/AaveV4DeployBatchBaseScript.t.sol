@@ -8,6 +8,8 @@ import {Constants} from 'tests/Constants.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
+  // use harness to expose internal functions for testing
+
   constructor() AaveV4DeployBatchBaseScript('out.json') {}
 
   function loadWarningsAndSanitizeInputs(
@@ -36,23 +38,27 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
   function setUp() public {
     _harness = new AaveV4DeployBatchBaseScriptHarness();
 
-    _inputs.hubLabels = ['hub1', 'hub2', 'hub3'];
-    _inputs.spokeLabels = ['spoke1', 'spoke2', 'spoke3'];
-    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(3);
-    _inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(3);
-
-    _inputs.accessManagerAdmin = makeAddr('accessManagerAdmin');
-    _inputs.hubAdmin = makeAddr('hubAdmin');
-    _inputs.hubConfiguratorAdmin = makeAddr('hubConfiguratorAdmin');
-    _inputs.treasurySpokeOwner = makeAddr('treasurySpokeOwner');
-    _inputs.spokeAdmin = makeAddr('spokeAdmin');
-    _inputs.spokeProxyAdminOwner = makeAddr('spokeProxyAdminOwner');
-    _inputs.spokeConfiguratorAdmin = makeAddr('spokeConfiguratorAdmin');
-    _inputs.gatewayOwner = makeAddr('gatewayOwner');
-    _inputs.nativeWrapper = address(new WETH9());
-    _inputs.deployNativeTokenGateway = true;
-    _inputs.deploySignatureGateway = true;
-    _inputs.grantRoles = true;
+    _inputs = InputUtils.FullDeployInputs({
+      accessManagerAdmin: makeAddr('accessManagerAdmin'),
+      hubAdmin: makeAddr('hubAdmin'),
+      hubConfiguratorAdmin: makeAddr('hubConfiguratorAdmin'),
+      treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
+      spokeAdmin: makeAddr('spokeAdmin'),
+      spokeProxyAdminOwner: makeAddr('spokeProxyAdminOwner'),
+      spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
+      gatewayOwner: makeAddr('gatewayOwner'),
+      positionManagerOwner: makeAddr('positionManagerOwner'),
+      nativeWrapper: address(new WETH9()),
+      deployNativeTokenGateway: true,
+      deploySignatureGateway: true,
+      deployPositionManagers: true,
+      grantRoles: true,
+      hubLabels: _toArray('hub1', 'hub2', 'hub3'),
+      spokeLabels: _toArray('spoke1', 'spoke2', 'spoke3'),
+      spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(3),
+      spokeOracleDecimals: _defaultSpokeOracleDecimals(3),
+      salt: bytes32(0)
+    });
 
     _deployer = makeAddr('deployer');
   }
@@ -211,6 +217,24 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(sanitized, expected);
   }
 
+  function test_loadWarningsAndSanitizeInputs_withZeroPositionManagerOwner_fuzz(
+    bool grantRoles
+  ) public {
+    _inputs.positionManagerOwner = address(0);
+    _inputs.grantRoles = grantRoles;
+    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
+      _inputs,
+      _deployer
+    );
+    InputUtils.FullDeployInputs memory expected = _inputs;
+    expected.positionManagerOwner = _deployer;
+    if (!grantRoles) {
+      expected.treasurySpokeOwner = _deployer;
+      expected.spokeProxyAdminOwner = _deployer;
+    }
+    assertEq(sanitized, expected);
+  }
+
   function test_loadWarningsAndSanitizeInputs_withZeroNativeWrapper_fuzz(bool grantRoles) public {
     _inputs.nativeWrapper = address(0);
     _inputs.grantRoles = grantRoles;
@@ -264,9 +288,11 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.spokeConfiguratorAdmin, b.spokeConfiguratorAdmin, 'spoke configurator admin');
     assertEq(a.spokeAdmin, b.spokeAdmin, 'spoke admin');
     assertEq(a.gatewayOwner, b.gatewayOwner, 'gateway owner');
+    assertEq(a.positionManagerOwner, b.positionManagerOwner, 'position manager owner');
     assertEq(a.nativeWrapper, b.nativeWrapper, 'native wrapper');
     assertEq(a.deployNativeTokenGateway, b.deployNativeTokenGateway, 'deploy native token gateway');
     assertEq(a.deploySignatureGateway, b.deploySignatureGateway, 'deploy signature gateway');
+    assertEq(a.deployPositionManagers, b.deployPositionManagers, 'deploy position managers');
     assertEq(a.grantRoles, b.grantRoles, 'grant roles');
     assertEq(a.hubLabels, b.hubLabels, 'hub labels');
     assertEq(a.spokeLabels, b.spokeLabels, 'spoke labels');
@@ -290,5 +316,16 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     for (uint256 i; i < count; i++) {
       decimals[i] = Constants.ORACLE_DECIMALS;
     }
+  }
+
+  function _toArray(
+    string memory a,
+    string memory b,
+    string memory c
+  ) internal pure returns (string[] memory arr) {
+    arr = new string[](3);
+    arr[0] = a;
+    arr[1] = b;
+    arr[2] = c;
   }
 }

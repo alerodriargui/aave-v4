@@ -17,9 +17,11 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       spokeAdmin: makeAddr('spokeAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
+      positionManagerOwner: makeAddr('positionManagerOwner'),
       nativeWrapper: _weth9,
       deployNativeTokenGateway: true,
       deploySignatureGateway: true,
+      deployPositionManagers: true,
       grantRoles: true,
       hubLabels: _hubLabels,
       spokeLabels: _spokeLabels,
@@ -210,6 +212,42 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     checkedV4Deployment();
   }
 
+  function testAaveV4BatchDeployment_withZeroPositionManagerOwner_withPositionManagers_reverts()
+    public
+  {
+    _inputs.positionManagerOwner = address(0);
+    _inputs.deployPositionManagers = true;
+
+    vm.expectRevert('invalid owner');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withZeroPositionManagerOwner_withoutPositionManagers() public {
+    _inputs.positionManagerOwner = address(0);
+    _inputs.deployPositionManagers = false;
+
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withoutPositionManagers() public {
+    _inputs.deployPositionManagers = false;
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withMismatchedSpokeMaxReservesLimits_reverts() public {
+    _inputs.spokeMaxReservesLimits = new uint16[](0);
+
+    vm.expectRevert('spoke labels/limits length mismatch');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withMismatchedSpokeOracleDecimals_reverts() public {
+    _inputs.spokeOracleDecimals = new uint8[](0);
+
+    vm.expectRevert('spoke labels/decimals length mismatch');
+    this.checkedV4Deployment();
+  }
+
   function testAaveV4BatchDeployment_withZeroDeployer_reverts() public {
     _deployer = address(0);
 
@@ -303,6 +341,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     assertNotEq(deployInputs.spokeProxyAdminOwner, address(0));
     assertNotEq(deployInputs.spokeConfiguratorAdmin, address(0));
     assertNotEq(deployInputs.gatewayOwner, address(0));
+    assertNotEq(deployInputs.positionManagerOwner, address(0));
     assertNotEq(deployInputs.hubAdmin, address(0));
     assertNotEq(deployInputs.spokeAdmin, address(0));
 
@@ -317,7 +356,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   ///      4. Hubs
   ///      5. Spokes (spokeProxyAdminOwner)
   ///      6. Gateways (gatewayOwner, nativeWrapper)
-  ///      7. Roles (hubAdmin, hubConfiguratorAdmin, spokeAdmin, spokeConfiguratorAdmin, accessManagerAdmin)
+  ///      7. PositionManagers (positionManagerOwner)
+  ///      8. Roles (hubAdmin, hubConfiguratorAdmin, spokeAdmin, spokeConfiguratorAdmin, accessManagerAdmin)
   function _getExpectedError()
     internal
     view
@@ -336,7 +376,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       return (true, bytes('invalid spoke proxy admin owner'));
     }
 
-    // 4. gateways: native gateway checks nativeWrapper first, then owner;
+    // 4. gateways: native gateway checks nativeWrapper, then owner;
     //    signature gateway checks owner
     if (_inputs.deployNativeTokenGateway && _inputs.nativeWrapper == address(0)) {
       return (true, bytes('invalid native wrapper'));
@@ -345,6 +385,11 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       (_inputs.deployNativeTokenGateway || _inputs.deploySignatureGateway) &&
       _inputs.gatewayOwner == address(0)
     ) {
+      return (true, bytes('invalid owner'));
+    }
+
+    // 5. position managers require owner when deployed
+    if (_inputs.deployPositionManagers && _inputs.positionManagerOwner == address(0)) {
       return (true, bytes('invalid owner'));
     }
 

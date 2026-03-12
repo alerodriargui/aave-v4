@@ -37,7 +37,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateReservePriceSource(reserveId, newPriceSource);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateReservePriceSource(spokeAddr, reserveId, newPriceSource);
   }
 
@@ -61,7 +61,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationTargetHealthFactor(spokeAddr, newTargetHealthFactor);
 
     assertEq(spoke.getLiquidationConfig(), expectedLiquidationConfig);
@@ -87,7 +87,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateHealthFactorForMaxBonus(spokeAddr, newHealthFactorForMaxBonus);
 
     assertEq(spoke.getLiquidationConfig().healthFactorForMaxBonus, newHealthFactorForMaxBonus);
@@ -113,7 +113,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateLiquidationConfig(expectedLiquidationConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationBonusFactor(spokeAddr, newLiquidationBonusFactor);
 
     assertEq(spoke.getLiquidationConfig(), expectedLiquidationConfig);
@@ -147,7 +147,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateLiquidationConfig(newLiquidationConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationConfig(spokeAddr, newLiquidationConfig);
 
     assertEq(spoke.getLiquidationConfig(), newLiquidationConfig);
@@ -196,7 +196,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     emit ISpoke.UpdateReserveConfig(expectedReserveId, config);
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(expectedReserveId, 0, dynamicConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     uint256 actualReserveId = spokeConfigurator.addReserve({
       spoke: spokeAddr,
       hub: address(hub1),
@@ -229,7 +229,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       );
       vm.expectEmit(address(spoke));
       emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
-      vm.prank(SPOKE_CONFIGURATOR);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updatePaused(spokeAddr, reserveId, expectedReserveConfig.paused);
 
       assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
@@ -256,7 +256,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       );
       vm.expectEmit(address(spoke));
       emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
-      vm.prank(SPOKE_CONFIGURATOR);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updateFrozen(spokeAddr, reserveId, expectedReserveConfig.frozen);
 
       assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
@@ -283,7 +283,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       );
       vm.expectEmit(address(spoke));
       emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
-      vm.prank(SPOKE_CONFIGURATOR);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updateBorrowable(spokeAddr, reserveId, expectedReserveConfig.borrowable);
 
       assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
@@ -310,7 +310,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       );
       vm.expectEmit(address(spoke));
       emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
-      vm.prank(SPOKE_CONFIGURATOR);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updateReceiveSharesEnabled(
         spokeAddr,
         reserveId,
@@ -341,7 +341,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateReserveConfig(reserveId, expectedReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateCollateralRisk(spokeAddr, reserveId, newCollateralRisk);
 
     assertEq(spoke.getReserveConfig(reserveId), expectedReserveConfig);
@@ -370,7 +370,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     uint32 dynamicConfigKey = spokeConfigurator.addCollateralFactor(
       spokeAddr,
       reserveId,
@@ -414,7 +414,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       dynamicConfigKey,
       expectedDynamicReserveConfig
     );
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateCollateralFactor(
       spokeAddr,
       reserveId,
@@ -451,7 +451,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     uint32 dynamicConfigKey = spokeConfigurator.addMaxLiquidationBonus(
       spokeAddr,
       reserveId,
@@ -495,7 +495,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       dynamicConfigKey,
       expectedDynamicReserveConfig
     );
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateMaxLiquidationBonus(
       spokeAddr,
       reserveId,
@@ -532,7 +532,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, expectedDynamicReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     uint32 dynamicConfigKey = spokeConfigurator.addLiquidationFee(
       spokeAddr,
       reserveId,
@@ -576,7 +576,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       dynamicConfigKey,
       expectedDynamicReserveConfig
     );
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateLiquidationFee(
       spokeAddr,
       reserveId,
@@ -621,7 +621,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.AddDynamicReserveConfig(reserveId, expectedConfigKey, newDynamicReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     uint32 actualConfigKey = spokeConfigurator.addDynamicReserveConfig(
       spokeAddr,
       reserveId,
@@ -671,7 +671,7 @@ contract SpokeConfiguratorTest is SpokeBase {
 
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateDynamicReserveConfig(reserveId, configKeyToUpdate, newDynamicReserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.updateDynamicReserveConfig(
       spokeAddr,
       reserveId,
@@ -702,7 +702,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       emit ISpoke.UpdateReserveConfig(reserveIdx, reserveConfig);
     }
 
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.pauseAllReserves(spokeAddr);
 
     for (uint256 reserveIdx; reserveIdx < spoke.getReserveCount(); ++reserveIdx) {
@@ -727,7 +727,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateReserveConfig(reserveId, reserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.pauseReserve(spokeAddr, reserveId);
 
     assertTrue(spoke.getReserveConfig(reserveId).paused);
@@ -750,7 +750,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       emit ISpoke.UpdateReserveConfig(id, reserveConfig);
     }
 
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.freezeAllReserves(spokeAddr);
 
     for (uint256 id; id < spoke.getReserveCount(); ++id) {
@@ -775,7 +775,7 @@ contract SpokeConfiguratorTest is SpokeBase {
     );
     vm.expectEmit(address(spoke));
     emit ISpoke.UpdateReserveConfig(reserveId, reserveConfig);
-    vm.prank(SPOKE_CONFIGURATOR);
+    vm.prank(SPOKE_CONFIGURATOR_ADMIN);
     spokeConfigurator.freezeReserve(spokeAddr, reserveId);
 
     assertTrue(spoke.getReserveConfig(reserveId).frozen);
@@ -799,7 +799,7 @@ contract SpokeConfiguratorTest is SpokeBase {
       );
       vm.expectEmit(address(spoke));
       emit ISpoke.UpdatePositionManager(newPositionManager, active);
-      vm.prank(SPOKE_CONFIGURATOR);
+      vm.prank(SPOKE_CONFIGURATOR_ADMIN);
       spokeConfigurator.updatePositionManager(spokeAddr, newPositionManager, active);
       assertEq(spoke.isPositionManagerActive(newPositionManager), active);
     }

@@ -22,6 +22,7 @@ library OrchestrationReports {
     SpokeDeploymentReport[] spokeInstanceBatchReports;
     HubDeploymentReport[] hubBatchReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;
+    BatchReports.PositionManagerBatchReport positionManagerBatchReport;
     bytes32 salt;
   }
 }

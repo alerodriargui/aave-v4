@@ -32,6 +32,11 @@ library BatchReports {
     address nativeGateway;
   }
 
+  struct PositionManagerBatchReport {
+    address giverPositionManager;
+    address takerPositionManager;
+  }
+
   struct TokenizationSpokeBatchReport {
     address tokenizationSpokeImplementation;
     address tokenizationSpokeProxy;

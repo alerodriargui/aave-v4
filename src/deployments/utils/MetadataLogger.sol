@@ -45,7 +45,17 @@ contract MetadataLogger is Logger {
       _writeGroup(report.spokeInstanceBatchReports[i].label, spokeInstanceEntries);
     }
 
-    _write('SignatureGateway', report.gatewaysBatchReport.signatureGateway);
-    _write('NativeTokenGateway', report.gatewaysBatchReport.nativeGateway);
+    if (report.gatewaysBatchReport.signatureGateway != address(0)) {
+      _write('SignatureGateway', report.gatewaysBatchReport.signatureGateway);
+    }
+    if (report.gatewaysBatchReport.nativeGateway != address(0)) {
+      _write('NativeTokenGateway', report.gatewaysBatchReport.nativeGateway);
+    }
+    if (report.positionManagerBatchReport.giverPositionManager != address(0)) {
+      _write('GiverPositionManager', report.positionManagerBatchReport.giverPositionManager);
+    }
+    if (report.positionManagerBatchReport.takerPositionManager != address(0)) {
+      _write('TakerPositionManager', report.positionManagerBatchReport.takerPositionManager);
+    }
   }
 }

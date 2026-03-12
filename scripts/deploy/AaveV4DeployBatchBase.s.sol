@@ -101,6 +101,13 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
       _appendSummary('SignatureGateway: skipped (deploySignatureGateway is false)');
     }
 
+    // PositionManagers
+    if (inputs.deployPositionManagers) {
+      _appendSummary('PositionManagers (Giver/Taker) will be deployed');
+    } else {
+      _appendSummary('PositionManagers: skipped (deployPositionManagers is false)');
+    }
+
     // Roles
     if (inputs.grantRoles) {
       _appendSummary('Roles: will be granted during deployment');
@@ -108,9 +115,9 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
       _appendSummary('Roles: deferred (not granted during deployment)');
     }
 
-    _appendSummary('========================================');
+    _appendSummary('--------------------------------------------------');
 
-    // ==================== Zero Address Sanitization ====================
+    // Sanitize zero addresses
     if (inputs.grantRoles) {
       if (inputs.accessManagerAdmin == address(0)) {
         _logWarning(string.concat('Access Manager Admin', message, outcome));
@@ -148,6 +155,10 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     if (inputs.gatewayOwner == address(0)) {
       _logWarning(string.concat('Gateway owner', message, outcome));
       sanitizedInputs.gatewayOwner = deployer;
+    }
+    if (inputs.positionManagerOwner == address(0)) {
+      _logWarning(string.concat('Position Manager owner', message, outcome));
+      sanitizedInputs.positionManagerOwner = deployer;
     }
     if (inputs.salt == bytes32(0)) {
       _logWarning('salt is zero');

@@ -34,8 +34,8 @@ contract AaveV4GatewayBatch is
     }
 
     _report = BatchReports.GatewaysBatchReport({
-      nativeGateway: nativeGateway,
-      signatureGateway: signatureGateway
+      signatureGateway: signatureGateway,
+      nativeGateway: nativeGateway
     });
   }
 

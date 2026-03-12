@@ -6,25 +6,21 @@ import {Vm} from 'forge-std/Vm.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 /// @title SpokeDeployUtils
-/// @notice Utilities for deploying LiquidationLogic (external library) and managing
-///         the FOUNDRY_LIBRARIES env var that Foundry uses for library linking.
+/// @notice Utilities for deploying LiquidationLogic as an external library.
 /// @dev LiquidationLogic must be deployed before SpokeInstance because SpokeInstance
-///      is compiled with via-ir and has 3 placeholder references to the library.
-///      The workflow is:
-///        1. Run LibraryPreCompile.s.sol → deploys library, writes FOUNDRY_LIBRARIES to .env
-///        2. Run the main deploy script → Foundry auto-links via FOUNDRY_LIBRARIES
+/// is compiled with via-ir and has references to the library.
+/// 1. Run LibraryPreCompile.s.sol to deploy library, writes FOUNDRY_LIBRARIES to .env
+/// 2. Run the main deploy script to link via FOUNDRY_LIBRARIES
 library SpokeDeployUtils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
-
-  bytes internal constant CREATE2_FACTORY_BYTECODE =
-    hex'7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
 
   // ==================== Library Deployment ====================
 
   /// @notice Deploys LiquidationLogic via CREATE2 with salt=0.
+  /// @dev The CREATE2 factory must already be deployed on the target chain.
+  ///      For Anvil, etch it beforehand (see scripts/deploy/AaveV4DeployBatchAnvil.s.sol).
   /// @return The deployed library address.
   function deployLiquidationLogic() internal returns (address) {
-    _ensureCreate2Factory();
     bytes memory bytecode = vm.getCode('src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic');
     return Create2Utils.create2Deploy(bytes32(0), bytecode);
   }
@@ -108,13 +104,5 @@ library SpokeDeployUtils {
 
     bytes memory res = vm.ffi(getAddressCommand);
     return abi.decode(res, (address));
-  }
-
-  // ==================== Internal ====================
-
-  /// @dev Ensures the CREATE2 factory is available (etches it in test/local environments).
-  function _ensureCreate2Factory() private {
-    if (Create2Utils.CREATE2_FACTORY.code.length > 0) return;
-    vm.etch(Create2Utils.CREATE2_FACTORY, CREATE2_FACTORY_BYTECODE);
   }
 }

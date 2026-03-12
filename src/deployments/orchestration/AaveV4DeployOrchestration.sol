@@ -4,21 +4,19 @@ pragma solidity ^0.8.0;
 
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
 import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
-
+import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
-
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 
@@ -99,6 +97,15 @@ library AaveV4DeployOrchestration {
         nativeWrapper: deployInputs.nativeWrapper,
         deployNativeTokenGateway: deployInputs.deployNativeTokenGateway,
         deploySignatureGateway: deployInputs.deploySignatureGateway,
+        salt: salt
+      });
+    }
+
+    // Deploy Position Managers Batch if flag is enabled
+    if (deployInputs.deployPositionManagers) {
+      report.positionManagerBatchReport = _deployPositionManagerBatch({
+        logger: logger,
+        positionManagerOwner: deployInputs.positionManagerOwner,
         salt: salt
       });
     }
@@ -272,6 +279,14 @@ library AaveV4DeployOrchestration {
     bytes32 salt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
     uint256 spokeCount = inputs.spokeLabels.length;
+    require(
+      spokeCount == inputs.spokeMaxReservesLimits.length,
+      'spoke labels/limits length mismatch'
+    );
+    require(
+      spokeCount == inputs.spokeOracleDecimals.length,
+      'spoke labels/decimals length mismatch'
+    );
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
       bytes32 childSalt = _deriveChildSalt(salt, 'spoke', inputs.spokeLabels[i]);
@@ -388,6 +403,18 @@ library AaveV4DeployOrchestration {
     if (deploySignatureGateway) {
       logger.log('SignatureGateway', report.signatureGateway);
     }
+    return report;
+  }
+
+  function _deployPositionManagerBatch(
+    Logger logger,
+    address positionManagerOwner,
+    bytes32 salt
+  ) internal returns (BatchReports.PositionManagerBatchReport memory report) {
+    logger.logHeader1('Deploying PositionManagerBatch');
+    report = AaveV4DeployBase.deployPositionManagerBatch({owner: positionManagerOwner, salt: salt});
+    logger.logDetail('GiverPositionManager', report.giverPositionManager);
+    logger.logDetail('TakerPositionManager', report.takerPositionManager);
     return report;
   }
 

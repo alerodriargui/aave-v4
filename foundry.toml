@@ -16,7 +16,6 @@ optimizer_runs = 444444444444
 bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
-ffi = true
 dynamic_test_linking = true
 
 additional_compiler_profiles = [

@@ -53,7 +53,7 @@ contract SpokeConfigTest is SpokeBase {
     vm.assume(
       caller != SPOKE_ADMIN &&
         caller != ADMIN &&
-        caller != SPOKE_CONFIGURATOR &&
+        caller != SPOKE_CONFIGURATOR_ADMIN &&
         caller != address(spokeConfigurator) &&
         caller != ProxyHelper.getProxyAdmin(address(spoke1))
     );
