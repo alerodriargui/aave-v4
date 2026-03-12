@@ -19,11 +19,10 @@ import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/ro
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
+import {Constants} from 'tests/Constants.sol';
 
 library AaveV4DeployOrchestration {
   bytes32 public constant SALT = keccak256('AAVE_V4');
-
-  uint8 public constant SPOKE_ORACLE_DECIMALS = 8;
 
   function deployAaveV4(
     Logger logger,
@@ -295,7 +294,7 @@ library AaveV4DeployOrchestration {
         label: inputs.spokeLabels[i],
         spokeBytecode: spokeBytecode,
         maxUserReservesLimit: inputs.spokeMaxReservesLimits[i],
-        oracleDecimals: SPOKE_ORACLE_DECIMALS,
+        oracleDecimals: Constants.ORACLE_DECIMALS,
         salt: childSalt
       });
     }
