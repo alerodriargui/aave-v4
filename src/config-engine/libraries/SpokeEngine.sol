@@ -204,28 +204,6 @@ library SpokeEngine {
     }
   }
 
-  /// @notice Pauses all reserves on Spokes.
-  /// @param pauses The pauses to execute on Spokes.
-  function executeSpokesPauseAllReserves(
-    IAaveV4ConfigEngine.SpokePause[] calldata pauses
-  ) external {
-    uint256 length = pauses.length;
-    for (uint256 i; i < length; ++i) {
-      pauses[i].spokeConfigurator.pauseAllReserves(pauses[i].spoke);
-    }
-  }
-
-  /// @notice Freezes all reserves on Spokes.
-  /// @param freezes The freezes to execute on Spokes.
-  function executeSpokesFreezeAllReserves(
-    IAaveV4ConfigEngine.SpokeFreeze[] calldata freezes
-  ) external {
-    uint256 length = freezes.length;
-    for (uint256 i; i < length; ++i) {
-      freezes[i].spokeConfigurator.freezeAllReserves(freezes[i].spoke);
-    }
-  }
-
   /// @notice Updates position managers on Spokes.
   /// @param updates The position manager updates to execute on Spokes.
   function executeSpokePositionManagerUpdates(

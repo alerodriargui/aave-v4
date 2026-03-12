@@ -28,8 +28,6 @@ abstract contract BaseConfigEngineTest is Test {
   uint256 constant RESERVE_ID = 2;
   uint256 constant LIQUIDITY_FEE = 500;
   uint256 constant DYNAMIC_CONFIG_KEY = 3;
-  uint256 constant RESCUE_AMOUNT = 1000e18;
-
   IAssetInterestRateStrategy.InterestRateData internal IR_DATA =
     IAssetInterestRateStrategy.InterestRateData({
       optimalUsageRatio: 8000,
@@ -47,8 +45,6 @@ abstract contract BaseConfigEngineTest is Test {
   address internal TARGET = makeAddr('TARGET');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
   address internal REINVESTMENT_CONTROLLER = makeAddr('REINVESTMENT_CONTROLLER');
-  address internal TOKEN = makeAddr('TOKEN');
-  address internal RESCUE_TO = makeAddr('RESCUE_TO');
   address internal USER = makeAddr('USER');
 
   AaveV4ConfigEngine public engine;
@@ -238,13 +234,6 @@ abstract contract BaseConfigEngineTest is Test {
     arr[0] = item;
   }
 
-  function _toSpokeHaltArray(
-    IAaveV4ConfigEngine.SpokeHalt memory item
-  ) internal pure returns (IAaveV4ConfigEngine.SpokeHalt[] memory arr) {
-    arr = new IAaveV4ConfigEngine.SpokeHalt[](1);
-    arr[0] = item;
-  }
-
   function _toSpokeDeactivationArray(
     IAaveV4ConfigEngine.SpokeDeactivation memory item
   ) internal pure returns (IAaveV4ConfigEngine.SpokeDeactivation[] memory arr) {
@@ -329,20 +318,6 @@ abstract contract BaseConfigEngineTest is Test {
     arr[0] = item;
   }
 
-  function _toSpokePauseArray(
-    IAaveV4ConfigEngine.SpokePause memory item
-  ) internal pure returns (IAaveV4ConfigEngine.SpokePause[] memory arr) {
-    arr = new IAaveV4ConfigEngine.SpokePause[](1);
-    arr[0] = item;
-  }
-
-  function _toSpokeFreezeArray(
-    IAaveV4ConfigEngine.SpokeFreeze memory item
-  ) internal pure returns (IAaveV4ConfigEngine.SpokeFreeze[] memory arr) {
-    arr = new IAaveV4ConfigEngine.SpokeFreeze[](1);
-    arr[0] = item;
-  }
-
   function _toPositionManagerUpdateArray(
     IAaveV4ConfigEngine.PositionManagerUpdate memory item
   ) internal pure returns (IAaveV4ConfigEngine.PositionManagerUpdate[] memory arr) {
@@ -396,22 +371,6 @@ abstract contract BaseConfigEngineTest is Test {
       });
   }
 
-  function _defaultSpokePause() internal view returns (IAaveV4ConfigEngine.SpokePause memory) {
-    return
-      IAaveV4ConfigEngine.SpokePause({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE
-      });
-  }
-
-  function _defaultSpokeFreeze() internal view returns (IAaveV4ConfigEngine.SpokeFreeze memory) {
-    return
-      IAaveV4ConfigEngine.SpokeFreeze({
-        spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-        spoke: SPOKE
-      });
-  }
-
   function _defaultPositionManagerUpdate()
     internal
     view
@@ -430,13 +389,6 @@ abstract contract BaseConfigEngineTest is Test {
     IAaveV4ConfigEngine.SpokeRegistration memory item
   ) internal pure returns (IAaveV4ConfigEngine.SpokeRegistration[] memory arr) {
     arr = new IAaveV4ConfigEngine.SpokeRegistration[](1);
-    arr[0] = item;
-  }
-
-  function _toRescueArray(
-    IAaveV4ConfigEngine.Rescue memory item
-  ) internal pure returns (IAaveV4ConfigEngine.Rescue[] memory arr) {
-    arr = new IAaveV4ConfigEngine.Rescue[](1);
     arr[0] = item;
   }
 

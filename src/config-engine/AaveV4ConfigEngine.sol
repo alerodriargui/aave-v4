@@ -50,11 +50,6 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
-  function executeHubSpokeHalts(SpokeHalt[] calldata halts) external {
-    HubEngine.executeHubSpokeHalts(halts);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
   function executeHubSpokeDeactivations(SpokeDeactivation[] calldata deactivations) external {
     HubEngine.executeHubSpokeDeactivations(deactivations);
   }
@@ -96,16 +91,6 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
   }
 
   /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokesPauseAllReserves(SpokePause[] calldata pauses) external {
-    SpokeEngine.executeSpokesPauseAllReserves(pauses);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executeSpokesFreezeAllReserves(SpokeFreeze[] calldata freezes) external {
-    SpokeEngine.executeSpokesFreezeAllReserves(freezes);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
   function executeSpokePositionManagerUpdates(PositionManagerUpdate[] calldata updates) external {
     SpokeEngine.executeSpokePositionManagerUpdates(updates);
   }
@@ -115,11 +100,6 @@ contract AaveV4ConfigEngine is IAaveV4ConfigEngine {
     SpokeRegistration[] calldata registrations
   ) external {
     PositionManagerEngine.executePositionManagerSpokeRegistrations(registrations);
-  }
-
-  /// @inheritdoc IAaveV4ConfigEngine
-  function executePositionManagerRescues(Rescue[] calldata rescues) external {
-    PositionManagerEngine.executePositionManagerRescues(rescues);
   }
 
   /// @inheritdoc IAaveV4ConfigEngine

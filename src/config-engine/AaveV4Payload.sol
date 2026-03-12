@@ -108,12 +108,6 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.AssetCapsReset[](0);
   }
 
-  /// @notice Returns the Hub Spoke halts to execute. Override to provide halts.
-  /// @return An array of SpokeHalt structs (empty by default).
-  function hubSpokeHalts() public view virtual returns (IAaveV4ConfigEngine.SpokeHalt[] memory) {
-    return new IAaveV4ConfigEngine.SpokeHalt[](0);
-  }
-
   /// @notice Returns the Hub Spoke deactivations to execute. Override to provide deactivations.
   /// @return An array of SpokeDeactivation structs (empty by default).
   function hubSpokeDeactivations()
@@ -191,28 +185,6 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.DynamicReserveConfigUpdate[](0);
   }
 
-  /// @notice Returns the Spoke all-reserves pauses to execute. Override to provide pauses.
-  /// @return An array of SpokePause structs (empty by default).
-  function spokeAllReservesPauses()
-    public
-    view
-    virtual
-    returns (IAaveV4ConfigEngine.SpokePause[] memory)
-  {
-    return new IAaveV4ConfigEngine.SpokePause[](0);
-  }
-
-  /// @notice Returns the Spoke all-reserves freezes to execute. Override to provide freezes.
-  /// @return An array of SpokeFreeze structs (empty by default).
-  function spokeAllReservesFreezes()
-    public
-    view
-    virtual
-    returns (IAaveV4ConfigEngine.SpokeFreeze[] memory)
-  {
-    return new IAaveV4ConfigEngine.SpokeFreeze[](0);
-  }
-
   /// @notice Returns the Spoke position manager updates to execute. Override to provide updates.
   /// @return An array of PositionManagerUpdate structs (empty by default).
   function spokePositionManagerUpdates()
@@ -279,17 +251,6 @@ abstract contract AaveV4Payload {
     return new IAaveV4ConfigEngine.SpokeRegistration[](0);
   }
 
-  /// @notice Returns the position manager rescues to execute. Override to provide rescues.
-  /// @return An array of Rescue structs (empty by default).
-  function positionManagerRescues()
-    public
-    view
-    virtual
-    returns (IAaveV4ConfigEngine.Rescue[] memory)
-  {
-    return new IAaveV4ConfigEngine.Rescue[](0);
-  }
-
   /// @notice Returns the position manager role renouncements to execute. Override to provide renouncements.
   /// @return An array of PositionManagerRoleRenouncement structs (empty by default).
   function positionManagerRoleRenouncements()
@@ -349,11 +310,6 @@ abstract contract AaveV4Payload {
       );
     }
 
-    IAaveV4ConfigEngine.SpokeHalt[] memory spokeHalts = hubSpokeHalts();
-    if (spokeHalts.length > 0) {
-      _delegateCallEngine(abi.encodeCall(IAaveV4ConfigEngine.executeHubSpokeHalts, (spokeHalts)));
-    }
-
     IAaveV4ConfigEngine.SpokeDeactivation[] memory spokeDeactivations = hubSpokeDeactivations();
     if (spokeDeactivations.length > 0) {
       _delegateCallEngine(
@@ -410,20 +366,6 @@ abstract contract AaveV4Payload {
       );
     }
 
-    IAaveV4ConfigEngine.SpokePause[] memory allPauses = spokeAllReservesPauses();
-    if (allPauses.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokesPauseAllReserves, (allPauses))
-      );
-    }
-
-    IAaveV4ConfigEngine.SpokeFreeze[] memory allFreezes = spokeAllReservesFreezes();
-    if (allFreezes.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executeSpokesFreezeAllReserves, (allFreezes))
-      );
-    }
-
     IAaveV4ConfigEngine.PositionManagerUpdate[] memory pmUpdates = spokePositionManagerUpdates();
     if (pmUpdates.length > 0) {
       _delegateCallEngine(
@@ -469,13 +411,6 @@ abstract contract AaveV4Payload {
     if (spokeRegs.length > 0) {
       _delegateCallEngine(
         abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerSpokeRegistrations, (spokeRegs))
-      );
-    }
-
-    IAaveV4ConfigEngine.Rescue[] memory rescues = positionManagerRescues();
-    if (rescues.length > 0) {
-      _delegateCallEngine(
-        abi.encodeCall(IAaveV4ConfigEngine.executePositionManagerRescues, (rescues))
       );
     }
 

@@ -129,16 +129,6 @@ interface IAaveV4ConfigEngine {
     address underlying;
   }
 
-  /// @notice Parameters for halting a Spoke on a Hub.
-  /// @dev hubConfigurator The HubConfigurator to use for this action.
-  /// @dev hub The address of the Hub.
-  /// @dev spoke The address of the Spoke.
-  struct SpokeHalt {
-    IHubConfigurator hubConfigurator;
-    address hub;
-    address spoke;
-  }
-
   /// @notice Parameters for deactivating a Spoke on a Hub.
   /// @dev hubConfigurator The HubConfigurator to use for this action.
   /// @dev hub The address of the Hub.
@@ -249,22 +239,6 @@ interface IAaveV4ConfigEngine {
     uint256 liquidationFee;
   }
 
-  /// @notice Parameters for pausing all reserves on a Spoke.
-  /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
-  /// @dev spoke The address of the Spoke.
-  struct SpokePause {
-    ISpokeConfigurator spokeConfigurator;
-    address spoke;
-  }
-
-  /// @notice Parameters for freezing all reserves on a Spoke.
-  /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
-  /// @dev spoke The address of the Spoke.
-  struct SpokeFreeze {
-    ISpokeConfigurator spokeConfigurator;
-    address spoke;
-  }
-
   /// @notice Parameters for updating a position manager on a Spoke.
   /// @dev spokeConfigurator The SpokeConfigurator to use for this action.
   /// @dev spoke The address of the Spoke.
@@ -285,20 +259,6 @@ interface IAaveV4ConfigEngine {
     address positionManager;
     address spoke;
     bool registered;
-  }
-
-  /// @notice Parameters for rescuing ERC20 tokens and/or native assets from a position manager.
-  /// @dev positionManager The position manager address.
-  /// @dev token The address of the ERC20 token to rescue (only used if tokenAmount > 0).
-  /// @dev to The address to send the rescued assets to.
-  /// @dev tokenAmount The amount of ERC20 tokens to rescue (calls rescueToken if > 0).
-  /// @dev nativeAmount The amount of native assets to rescue (calls rescueNative if > 0).
-  struct Rescue {
-    address positionManager;
-    address token;
-    address to;
-    uint256 tokenAmount;
-    uint256 nativeAmount;
   }
 
   /// @notice Parameters for renouncing the position manager role for a user on a Spoke.
@@ -395,10 +355,6 @@ interface IAaveV4ConfigEngine {
   /// @param resets The asset caps resets to execute.
   function executeHubAssetCapsResets(AssetCapsReset[] calldata resets) external;
 
-  /// @notice Halts Spokes on Hubs.
-  /// @param halts The Spoke halts to execute.
-  function executeHubSpokeHalts(SpokeHalt[] calldata halts) external;
-
   /// @notice Deactivates Spokes on Hubs.
   /// @param deactivations The Spoke deactivations to execute.
   function executeHubSpokeDeactivations(SpokeDeactivation[] calldata deactivations) external;
@@ -433,14 +389,6 @@ interface IAaveV4ConfigEngine {
     DynamicReserveConfigUpdate[] calldata updates
   ) external;
 
-  /// @notice Pauses all reserves on Spokes.
-  /// @param pauses The pauses to execute on Spokes.
-  function executeSpokesPauseAllReserves(SpokePause[] calldata pauses) external;
-
-  /// @notice Freezes all reserves on Spokes.
-  /// @param freezes The freezes to execute on Spokes
-  function executeSpokesFreezeAllReserves(SpokeFreeze[] calldata freezes) external;
-
   /// @notice Updates position managers on Spokes.
   /// @param updates The position manager updates to execute.
   function executeSpokePositionManagerUpdates(PositionManagerUpdate[] calldata updates) external;
@@ -450,10 +398,6 @@ interface IAaveV4ConfigEngine {
   function executePositionManagerSpokeRegistrations(
     SpokeRegistration[] calldata registrations
   ) external;
-
-  /// @notice Rescues ERC20 tokens and/or native assets from position managers.
-  /// @param rescues The rescues to execute.
-  function executePositionManagerRescues(Rescue[] calldata rescues) external;
 
   /// @notice Renounces position manager roles for users on Spokes.
   /// @param renouncements The role renouncements to execute.

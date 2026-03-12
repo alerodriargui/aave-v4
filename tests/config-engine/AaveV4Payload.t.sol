@@ -63,15 +63,18 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   }
 
   function test_execute_spokeAction_delegatesCorrectly() public {
-    IAaveV4ConfigEngine.SpokePause[] memory pauses = new IAaveV4ConfigEngine.SpokePause[](1);
-    pauses[0] = IAaveV4ConfigEngine.SpokePause({
+    IAaveV4ConfigEngine.PositionManagerUpdate[]
+      memory updates = new IAaveV4ConfigEngine.PositionManagerUpdate[](1);
+    updates[0] = IAaveV4ConfigEngine.PositionManagerUpdate({
       spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE
+      spoke: SPOKE,
+      positionManager: POSITION_MANAGER,
+      active: true
     });
-    payload.setSpokeAllReservesPauses(pauses);
+    payload.setSpokePositionManagerUpdates(updates);
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.PauseAllReservesCalled(SPOKE);
+    emit MockSpokeConfigurator.UpdatePositionManagerCalled(SPOKE, POSITION_MANAGER, true);
 
     payload.execute();
   }
@@ -105,12 +108,15 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.setHubAssetHalts(halts);
 
     // Spoke action
-    IAaveV4ConfigEngine.SpokePause[] memory pauses = new IAaveV4ConfigEngine.SpokePause[](1);
-    pauses[0] = IAaveV4ConfigEngine.SpokePause({
+    IAaveV4ConfigEngine.PositionManagerUpdate[]
+      memory pmUpdates = new IAaveV4ConfigEngine.PositionManagerUpdate[](1);
+    pmUpdates[0] = IAaveV4ConfigEngine.PositionManagerUpdate({
       spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE
+      spoke: SPOKE,
+      positionManager: POSITION_MANAGER,
+      active: true
     });
-    payload.setSpokeAllReservesPauses(pauses);
+    payload.setSpokePositionManagerUpdates(pmUpdates);
 
     // Access manager action
     IAaveV4ConfigEngine.RoleMembership[]
@@ -129,7 +135,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     emit MockHubConfigurator.HaltAssetCalled(address(mockHub), ASSET_ID);
 
     vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.PauseAllReservesCalled(SPOKE);
+    emit MockSpokeConfigurator.UpdatePositionManagerCalled(SPOKE, POSITION_MANAGER, true);
 
     vm.expectEmit(address(mockAccessManager));
     emit MockAccessManager.GrantRoleCalled(Roles.HUB_CONFIGURATOR_ROLE, ACCOUNT, 0);
@@ -422,21 +428,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_hubSpokeHalts() public {
-    IAaveV4ConfigEngine.SpokeHalt[] memory halts = new IAaveV4ConfigEngine.SpokeHalt[](1);
-    halts[0] = IAaveV4ConfigEngine.SpokeHalt({
-      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: address(mockHub),
-      spoke: SPOKE
-    });
-    payload.setHubSpokeHalts(halts);
-
-    vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.HaltSpokeCalled(address(mockHub), SPOKE);
-
-    payload.execute();
-  }
-
   function test_execute_hubSpokeDeactivations() public {
     IAaveV4ConfigEngine.SpokeDeactivation[]
       memory deactivations = new IAaveV4ConfigEngine.SpokeDeactivation[](1);
@@ -639,20 +630,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     payload.execute();
   }
 
-  function test_execute_spokeAllReservesFreezes() public {
-    IAaveV4ConfigEngine.SpokeFreeze[] memory freezes = new IAaveV4ConfigEngine.SpokeFreeze[](1);
-    freezes[0] = IAaveV4ConfigEngine.SpokeFreeze({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: SPOKE
-    });
-    payload.setSpokeAllReservesFreezes(freezes);
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.FreezeAllReservesCalled(SPOKE);
-
-    payload.execute();
-  }
-
   function test_execute_spokePositionManagerUpdates() public {
     IAaveV4ConfigEngine.PositionManagerUpdate[]
       memory updates = new IAaveV4ConfigEngine.PositionManagerUpdate[](1);
@@ -819,25 +796,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     vm.expectEmit(address(mockPositionManager));
     emit MockPositionManager.RegisterSpokeCalled(SPOKE, true);
-
-    payload.execute();
-  }
-
-  function test_execute_positionManagerRescues() public {
-    IAaveV4ConfigEngine.Rescue[] memory rescues = new IAaveV4ConfigEngine.Rescue[](1);
-    rescues[0] = IAaveV4ConfigEngine.Rescue({
-      positionManager: address(mockPositionManager),
-      token: TOKEN,
-      to: RESCUE_TO,
-      tokenAmount: RESCUE_AMOUNT,
-      nativeAmount: RESCUE_AMOUNT
-    });
-    payload.setPositionManagerRescues(rescues);
-
-    vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManager.RescueTokenCalled(TOKEN, RESCUE_TO, RESCUE_AMOUNT);
-    vm.expectEmit(address(mockPositionManager));
-    emit MockPositionManager.RescueNativeCalled(RESCUE_TO, RESCUE_AMOUNT);
 
     payload.execute();
   }

@@ -57,10 +57,6 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     assertEq(minimal.hubAssetCapsResets().length, 0);
   }
 
-  function test_hubSpokeHalts_returnsEmpty() public view {
-    assertEq(minimal.hubSpokeHalts().length, 0);
-  }
-
   function test_hubSpokeDeactivations_returnsEmpty() public view {
     assertEq(minimal.hubSpokeDeactivations().length, 0);
   }
@@ -89,14 +85,6 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     assertEq(minimal.spokeDynamicReserveConfigUpdates().length, 0);
   }
 
-  function test_spokeAllReservesPauses_returnsEmpty() public view {
-    assertEq(minimal.spokeAllReservesPauses().length, 0);
-  }
-
-  function test_spokeAllReservesFreezes_returnsEmpty() public view {
-    assertEq(minimal.spokeAllReservesFreezes().length, 0);
-  }
-
   function test_spokePositionManagerUpdates_returnsEmpty() public view {
     assertEq(minimal.spokePositionManagerUpdates().length, 0);
   }
@@ -119,10 +107,6 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
 
   function test_positionManagerSpokeRegistrations_returnsEmpty() public view {
     assertEq(minimal.positionManagerSpokeRegistrations().length, 0);
-  }
-
-  function test_positionManagerRescues_returnsEmpty() public view {
-    assertEq(minimal.positionManagerRescues().length, 0);
   }
 
   function test_positionManagerRoleRenouncements_returnsEmpty() public view {

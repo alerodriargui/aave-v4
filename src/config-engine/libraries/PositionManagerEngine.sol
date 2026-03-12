@@ -2,7 +2,6 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {IRescuable} from 'src/interfaces/IRescuable.sol';
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
@@ -22,24 +21,6 @@ library PositionManagerEngine {
         registrations[i].spoke,
         registrations[i].registered
       );
-    }
-  }
-
-  /// @notice Rescues ERC20 tokens and/or native assets from position managers.
-  /// @param rescues The rescues to execute.
-  function executePositionManagerRescues(IAaveV4ConfigEngine.Rescue[] calldata rescues) external {
-    uint256 length = rescues.length;
-    for (uint256 i; i < length; ++i) {
-      if (rescues[i].tokenAmount > 0) {
-        IRescuable(rescues[i].positionManager).rescueToken(
-          rescues[i].token,
-          rescues[i].to,
-          rescues[i].tokenAmount
-        );
-      }
-      if (rescues[i].nativeAmount > 0) {
-        IRescuable(rescues[i].positionManager).rescueNative(rescues[i].to, rescues[i].nativeAmount);
-      }
     }
   }
 

@@ -632,66 +632,6 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     );
   }
 
-  function test_executeSpokeAllReservesPauses_concrete() public {
-    IAaveV4ConfigEngine.SpokePause memory pause = _defaultSpokePause();
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.PauseAllReservesCalled(SPOKE);
-
-    engine.executeSpokesPauseAllReserves(_toSpokePauseArray(pause));
-  }
-
-  function testFuzz_executeSpokeAllReservesPauses(address spoke) public {
-    IAaveV4ConfigEngine.SpokePause memory pause = IAaveV4ConfigEngine.SpokePause({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: spoke
-    });
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.PauseAllReservesCalled(spoke);
-
-    engine.executeSpokesPauseAllReserves(_toSpokePauseArray(pause));
-  }
-
-  function test_executeSpokeAllReservesPauses_revert() public {
-    mockSpokeConfigurator.setShouldRevert(ISpokeConfigurator.pauseAllReserves.selector, true);
-
-    IAaveV4ConfigEngine.SpokePause memory pause = _defaultSpokePause();
-
-    vm.expectRevert(MockSpokeConfigurator.PauseAllReservesReverted.selector);
-    engine.executeSpokesPauseAllReserves(_toSpokePauseArray(pause));
-  }
-
-  function test_executeSpokeAllReservesFreezes_concrete() public {
-    IAaveV4ConfigEngine.SpokeFreeze memory freeze = _defaultSpokeFreeze();
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.FreezeAllReservesCalled(SPOKE);
-
-    engine.executeSpokesFreezeAllReserves(_toSpokeFreezeArray(freeze));
-  }
-
-  function testFuzz_executeSpokeAllReservesFreezes(address spoke) public {
-    IAaveV4ConfigEngine.SpokeFreeze memory freeze = IAaveV4ConfigEngine.SpokeFreeze({
-      spokeConfigurator: ISpokeConfigurator(address(mockSpokeConfigurator)),
-      spoke: spoke
-    });
-
-    vm.expectEmit(address(mockSpokeConfigurator));
-    emit MockSpokeConfigurator.FreezeAllReservesCalled(spoke);
-
-    engine.executeSpokesFreezeAllReserves(_toSpokeFreezeArray(freeze));
-  }
-
-  function test_executeSpokeAllReservesFreezes_revert() public {
-    mockSpokeConfigurator.setShouldRevert(ISpokeConfigurator.freezeAllReserves.selector, true);
-
-    IAaveV4ConfigEngine.SpokeFreeze memory freeze = _defaultSpokeFreeze();
-
-    vm.expectRevert(MockSpokeConfigurator.FreezeAllReservesReverted.selector);
-    engine.executeSpokesFreezeAllReserves(_toSpokeFreezeArray(freeze));
-  }
-
   function test_executeSpokePositionManagerUpdates_concrete() public {
     IAaveV4ConfigEngine.PositionManagerUpdate memory update = _defaultPositionManagerUpdate();
 

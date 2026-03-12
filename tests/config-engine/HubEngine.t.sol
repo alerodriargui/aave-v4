@@ -903,47 +903,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetCapsResets(_toAssetCapsResetArray(reset));
   }
 
-  function test_executeHubSpokeHalts() public {
-    IAaveV4ConfigEngine.SpokeHalt memory halt = IAaveV4ConfigEngine.SpokeHalt({
-      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: address(mockHub),
-      spoke: SPOKE
-    });
-
-    vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.HaltSpokeCalled(address(mockHub), SPOKE);
-
-    engine.executeHubSpokeHalts(_toSpokeHaltArray(halt));
-  }
-
-  function testFuzz_executeHubSpokeHalts(address spoke) public {
-    vm.assume(spoke != address(0));
-
-    IAaveV4ConfigEngine.SpokeHalt memory halt = IAaveV4ConfigEngine.SpokeHalt({
-      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: address(mockHub),
-      spoke: spoke
-    });
-
-    vm.expectEmit(address(mockHubConfigurator));
-    emit MockHubConfigurator.HaltSpokeCalled(address(mockHub), spoke);
-
-    engine.executeHubSpokeHalts(_toSpokeHaltArray(halt));
-  }
-
-  function test_executeHubSpokeHalts_revert() public {
-    mockHubConfigurator.setShouldRevert(IHubConfigurator.haltSpoke.selector, true);
-
-    IAaveV4ConfigEngine.SpokeHalt memory halt = IAaveV4ConfigEngine.SpokeHalt({
-      hubConfigurator: IHubConfigurator(address(mockHubConfigurator)),
-      hub: address(mockHub),
-      spoke: SPOKE
-    });
-
-    vm.expectRevert(MockHubConfigurator.HaltSpokeReverted.selector);
-    engine.executeHubSpokeHalts(_toSpokeHaltArray(halt));
-  }
-
   function test_executeHubSpokeDeactivations() public {
     IAaveV4ConfigEngine.SpokeDeactivation memory deactivation = IAaveV4ConfigEngine
       .SpokeDeactivation({

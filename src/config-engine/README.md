@@ -31,7 +31,6 @@ The four groups, and the virtual functions in each, are listed below.
 | `hubAssetHalts()`             | `AssetHalt`             | Halt an asset                                                |
 | `hubAssetDeactivations()`     | `AssetDeactivation`     | Deactivate an asset                                          |
 | `hubAssetCapsResets()`        | `AssetCapsReset`        | Reset asset caps                                             |
-| `hubSpokeHalts()`             | `SpokeHalt`             | Halt a Spoke                                                 |
 | `hubSpokeDeactivations()`     | `SpokeDeactivation`     | Deactivate a Spoke                                           |
 | `hubSpokeCapsResets()`        | `SpokeCapsReset`        | Reset Spoke caps                                             |
 
@@ -44,8 +43,6 @@ The four groups, and the virtual functions in each, are listed below.
 | `spokeLiquidationConfigUpdates()`      | `LiquidationConfigUpdate`      | Update liquidation config                                                              |
 | `spokeDynamicReserveConfigAdditions()` | `DynamicReserveConfigAddition` | Add a dynamic reserve config                                                           |
 | `spokeDynamicReserveConfigUpdates()`   | `DynamicReserveConfigUpdate`   | Update a dynamic reserve config                                                        |
-| `spokeAllReservesPauses()`             | `SpokePause`                   | Pause all reserves on a Spoke                                                          |
-| `spokeAllReservesFreezes()`            | `SpokeFreeze`                  | Freeze all reserves on a Spoke                                                         |
 | `spokePositionManagerUpdates()`        | `PositionManagerUpdate`        | Activate/deactivate a PositionManager on a Spoke                                       |
 
 #### AccessManager actions (`_executeAccessManagerActions`)
@@ -62,7 +59,6 @@ The four groups, and the virtual functions in each, are listed below.
 | Function                              | Struct                            | Purpose                                   |
 | ------------------------------------- | --------------------------------- | ----------------------------------------- |
 | `positionManagerSpokeRegistrations()` | `SpokeRegistration`               | Register/deregister a Spoke               |
-| `positionManagerRescues()`            | `Rescue`                          | Rescue ERC-20 tokens and/or native assets |
 | `positionManagerRoleRenouncements()`  | `PositionManagerRoleRenouncement` | Renounce a PositionManager role           |
 
 ## Internal aspects to consider
@@ -89,18 +85,15 @@ When `execute()` is called, actions run in the following fixed order:
    5. Asset halts
    6. Asset deactivations
    7. Asset caps resets
-   8. Spoke halts
-   9. Spoke deactivations
-   10. Spoke caps resets
+   8. Spoke deactivations
+   9. Spoke caps resets
 3. **Spoke actions** (in order):
    1. Reserve listings
    2. Reserve config updates
    3. Liquidation config updates
    4. Dynamic reserve config additions
    5. Dynamic reserve config updates
-   6. All-reserves pauses
-   7. All-reserves freezes
-   8. Position manager updates
+   6. Position manager updates
 4. **AccessManager actions** (in order):
    1. Role memberships (grants / revocations)
    2. Role updates (admin, guardian, grant delay, label)
@@ -108,8 +101,7 @@ When `execute()` is called, actions run in the following fixed order:
    4. Target admin delay updates
 5. **PositionManager actions** (in order):
    1. Spoke registrations
-   2. Rescues
-   3. Role renouncements
+   2. Role renouncements
 6. `_postExecute()`
 
 ### The `KEEP_CURRENT` sentinel pattern

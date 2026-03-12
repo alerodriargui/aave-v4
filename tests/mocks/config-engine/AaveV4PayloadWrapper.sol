@@ -23,7 +23,6 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   IAaveV4ConfigEngine.AssetHalt[] private _hubAssetHalts;
   IAaveV4ConfigEngine.AssetDeactivation[] private _hubAssetDeactivations;
   IAaveV4ConfigEngine.AssetCapsReset[] private _hubAssetCapsResets;
-  IAaveV4ConfigEngine.SpokeHalt[] private _hubSpokeHalts;
   IAaveV4ConfigEngine.SpokeDeactivation[] private _hubSpokeDeactivations;
   IAaveV4ConfigEngine.SpokeCapsReset[] private _hubSpokeCapsResets;
 
@@ -33,13 +32,10 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   IAaveV4ConfigEngine.LiquidationConfigUpdate[] private _spokeLiquidationConfigUpdates;
   IAaveV4ConfigEngine.DynamicReserveConfigAddition[] private _spokeDynamicReserveConfigAdditions;
   IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] private _spokeDynamicReserveConfigUpdates;
-  IAaveV4ConfigEngine.SpokePause[] private _spokeAllReservesPauses;
-  IAaveV4ConfigEngine.SpokeFreeze[] private _spokeAllReservesFreezes;
   IAaveV4ConfigEngine.PositionManagerUpdate[] private _spokePositionManagerUpdates;
 
   // Position manager action storage
   IAaveV4ConfigEngine.SpokeRegistration[] private _positionManagerSpokeRegistrations;
-  IAaveV4ConfigEngine.Rescue[] private _positionManagerRescues;
   IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] private _positionManagerRoleRenouncements;
 
   // Access manager action storage
@@ -98,11 +94,6 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     for (uint256 i = 0; i < items.length; i++) _hubAssetCapsResets.push(items[i]);
   }
 
-  function setHubSpokeHalts(IAaveV4ConfigEngine.SpokeHalt[] memory items) external {
-    delete _hubSpokeHalts;
-    for (uint256 i = 0; i < items.length; i++) _hubSpokeHalts.push(items[i]);
-  }
-
   function setHubSpokeDeactivations(IAaveV4ConfigEngine.SpokeDeactivation[] memory items) external {
     delete _hubSpokeDeactivations;
     for (uint256 i = 0; i < items.length; i++) _hubSpokeDeactivations.push(items[i]);
@@ -147,16 +138,6 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     for (uint256 i = 0; i < items.length; i++) _spokeDynamicReserveConfigUpdates.push(items[i]);
   }
 
-  function setSpokeAllReservesPauses(IAaveV4ConfigEngine.SpokePause[] memory items) external {
-    delete _spokeAllReservesPauses;
-    for (uint256 i = 0; i < items.length; i++) _spokeAllReservesPauses.push(items[i]);
-  }
-
-  function setSpokeAllReservesFreezes(IAaveV4ConfigEngine.SpokeFreeze[] memory items) external {
-    delete _spokeAllReservesFreezes;
-    for (uint256 i = 0; i < items.length; i++) _spokeAllReservesFreezes.push(items[i]);
-  }
-
   function setSpokePositionManagerUpdates(
     IAaveV4ConfigEngine.PositionManagerUpdate[] memory items
   ) external {
@@ -170,11 +151,6 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   ) external {
     delete _positionManagerSpokeRegistrations;
     for (uint256 i = 0; i < items.length; i++) _positionManagerSpokeRegistrations.push(items[i]);
-  }
-
-  function setPositionManagerRescues(IAaveV4ConfigEngine.Rescue[] memory items) external {
-    delete _positionManagerRescues;
-    for (uint256 i = 0; i < items.length; i++) _positionManagerRescues.push(items[i]);
   }
 
   function setPositionManagerRoleRenouncements(
@@ -276,10 +252,6 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     return _hubAssetCapsResets;
   }
 
-  function hubSpokeHalts() public view override returns (IAaveV4ConfigEngine.SpokeHalt[] memory) {
-    return _hubSpokeHalts;
-  }
-
   function hubSpokeDeactivations()
     public
     view
@@ -343,24 +315,6 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     return _spokeDynamicReserveConfigUpdates;
   }
 
-  function spokeAllReservesPauses()
-    public
-    view
-    override
-    returns (IAaveV4ConfigEngine.SpokePause[] memory)
-  {
-    return _spokeAllReservesPauses;
-  }
-
-  function spokeAllReservesFreezes()
-    public
-    view
-    override
-    returns (IAaveV4ConfigEngine.SpokeFreeze[] memory)
-  {
-    return _spokeAllReservesFreezes;
-  }
-
   function spokePositionManagerUpdates()
     public
     view
@@ -416,15 +370,6 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     returns (IAaveV4ConfigEngine.SpokeRegistration[] memory)
   {
     return _positionManagerSpokeRegistrations;
-  }
-
-  function positionManagerRescues()
-    public
-    view
-    override
-    returns (IAaveV4ConfigEngine.Rescue[] memory)
-  {
-    return _positionManagerRescues;
   }
 
   function positionManagerRoleRenouncements()

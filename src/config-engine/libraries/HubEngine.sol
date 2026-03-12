@@ -237,15 +237,6 @@ library HubEngine {
     }
   }
 
-  /// @notice Halts Spokes on Hubs.
-  /// @param halts The Spoke halts to execute.
-  function executeHubSpokeHalts(IAaveV4ConfigEngine.SpokeHalt[] calldata halts) external {
-    uint256 length = halts.length;
-    for (uint256 i; i < length; ++i) {
-      halts[i].hubConfigurator.haltSpoke(halts[i].hub, halts[i].spoke);
-    }
-  }
-
   /// @notice Deactivates Spokes on Hubs.
   /// @param deactivations The Spoke deactivations to execute.
   function executeHubSpokeDeactivations(
