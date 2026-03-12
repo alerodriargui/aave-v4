@@ -280,10 +280,8 @@ library AaveV4DeployOrchestration {
     bytes32 salt
   ) internal returns (OrchestrationReports.SpokeDeploymentReport[] memory spokeBatchReports) {
     uint256 spokeCount = inputs.spokeLabels.length;
-    require(
-      spokeCount == inputs.spokeMaxReservesLimits.length,
-      'spoke labels/limits length mismatch'
-    );
+    uint256 limitsLen = inputs.spokeMaxReservesLimits.length;
+    require(limitsLen == spokeCount || limitsLen == 0, 'spoke labels/limits length mismatch');
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
       bytes32 childSalt = _deriveChildSalt(salt, 'spoke', inputs.spokeLabels[i]);
@@ -293,7 +291,9 @@ library AaveV4DeployOrchestration {
         authority: authority,
         label: inputs.spokeLabels[i],
         spokeBytecode: spokeBytecode,
-        maxUserReservesLimit: inputs.spokeMaxReservesLimits[i],
+        maxUserReservesLimit: limitsLen > 0
+          ? inputs.spokeMaxReservesLimits[i]
+          : Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
         oracleDecimals: Constants.ORACLE_DECIMALS,
         salt: childSalt
       });

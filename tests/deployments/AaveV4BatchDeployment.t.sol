@@ -231,8 +231,14 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     checkedV4Deployment();
   }
 
-  function testAaveV4BatchDeployment_withMismatchedSpokeMaxReservesLimits_reverts() public {
+  function testAaveV4BatchDeployment_withEmptySpokeMaxReservesLimits_usesDefaults() public {
     _inputs.spokeMaxReservesLimits = new uint16[](0);
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withMismatchedSpokeMaxReservesLimits_reverts() public {
+    _inputs.spokeMaxReservesLimits = new uint16[](1);
+    _inputs.spokeMaxReservesLimits[0] = 128;
 
     vm.expectRevert('spoke labels/limits length mismatch');
     this.checkedV4Deployment();

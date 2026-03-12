@@ -35,7 +35,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
 
     logger.log('CHAIN ID', block.chainid);
     logger.logHeader1('Starting Aave V4 Batch Deployment');
-    vm.startBroadcast(deployer);
+    vm.startBroadcast();
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
       .deployAaveV4(logger, deployer, inputs, _getHubBytecode(), _getSpokeBytecode());
     vm.stopBroadcast();
