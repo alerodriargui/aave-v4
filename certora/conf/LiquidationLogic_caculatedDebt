@@ -1,0 +1,18 @@
+{
+	"build_cache": true,
+	"files": [
+		"certora/harness/LiquidationLogicHarness.sol"
+	],
+	"global_timeout": 7200,
+	"group_id": "09aff96d-b64a-4607-a69c-b6e18cb4e83a",
+	"msg": "Parallel splitter",
+	"prover_args": [
+		"  -destructiveOptimizations twostage -splitParallel true -splitParallelInitialDepth 4 -splitParallelTimelimit 7200"
+	],
+	"rule": [
+		"computedDebtRayToLiquidateIsLessThanTotalDebtValue"
+	],
+	"rule_sanity": "basic",
+	"smt_timeout": 7200,
+	"verify": "LiquidationLogicHarness:certora/spec/libs/LiquidationLogic.spec"
+}
