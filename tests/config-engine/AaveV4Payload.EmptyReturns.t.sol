@@ -29,103 +29,103 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
     minimal.execute();
   }
 
-  function test_hubAssetListings_returnsEmpty() public {
+  function test_hubAssetListings_returnsEmpty() public view {
     assertEq(minimal.hubAssetListings().length, 0);
   }
 
-  function test_hubAssetConfigUpdates_returnsEmpty() public {
+  function test_hubAssetConfigUpdates_returnsEmpty() public view {
     assertEq(minimal.hubAssetConfigUpdates().length, 0);
   }
 
-  function test_hubSpokeToAssetsAdditions_returnsEmpty() public {
+  function test_hubSpokeToAssetsAdditions_returnsEmpty() public view {
     assertEq(minimal.hubSpokeToAssetsAdditions().length, 0);
   }
 
-  function test_hubSpokeConfigUpdates_returnsEmpty() public {
+  function test_hubSpokeConfigUpdates_returnsEmpty() public view {
     assertEq(minimal.hubSpokeConfigUpdates().length, 0);
   }
 
-  function test_hubAssetHalts_returnsEmpty() public {
+  function test_hubAssetHalts_returnsEmpty() public view {
     assertEq(minimal.hubAssetHalts().length, 0);
   }
 
-  function test_hubAssetDeactivations_returnsEmpty() public {
+  function test_hubAssetDeactivations_returnsEmpty() public view {
     assertEq(minimal.hubAssetDeactivations().length, 0);
   }
 
-  function test_hubAssetCapsResets_returnsEmpty() public {
+  function test_hubAssetCapsResets_returnsEmpty() public view {
     assertEq(minimal.hubAssetCapsResets().length, 0);
   }
 
-  function test_hubSpokeHalts_returnsEmpty() public {
+  function test_hubSpokeHalts_returnsEmpty() public view {
     assertEq(minimal.hubSpokeHalts().length, 0);
   }
 
-  function test_hubSpokeDeactivations_returnsEmpty() public {
+  function test_hubSpokeDeactivations_returnsEmpty() public view {
     assertEq(minimal.hubSpokeDeactivations().length, 0);
   }
 
-  function test_hubSpokeCapsResets_returnsEmpty() public {
+  function test_hubSpokeCapsResets_returnsEmpty() public view {
     assertEq(minimal.hubSpokeCapsResets().length, 0);
   }
 
-  function test_spokeReserveListings_returnsEmpty() public {
+  function test_spokeReserveListings_returnsEmpty() public view {
     assertEq(minimal.spokeReserveListings().length, 0);
   }
 
-  function test_spokeReserveConfigUpdates_returnsEmpty() public {
+  function test_spokeReserveConfigUpdates_returnsEmpty() public view {
     assertEq(minimal.spokeReserveConfigUpdates().length, 0);
   }
 
-  function test_spokeLiquidationConfigUpdates_returnsEmpty() public {
+  function test_spokeLiquidationConfigUpdates_returnsEmpty() public view {
     assertEq(minimal.spokeLiquidationConfigUpdates().length, 0);
   }
 
-  function test_spokeDynamicReserveConfigAdditions_returnsEmpty() public {
+  function test_spokeDynamicReserveConfigAdditions_returnsEmpty() public view {
     assertEq(minimal.spokeDynamicReserveConfigAdditions().length, 0);
   }
 
-  function test_spokeDynamicReserveConfigUpdates_returnsEmpty() public {
+  function test_spokeDynamicReserveConfigUpdates_returnsEmpty() public view {
     assertEq(minimal.spokeDynamicReserveConfigUpdates().length, 0);
   }
 
-  function test_spokeAllReservesPauses_returnsEmpty() public {
+  function test_spokeAllReservesPauses_returnsEmpty() public view {
     assertEq(minimal.spokeAllReservesPauses().length, 0);
   }
 
-  function test_spokeAllReservesFreezes_returnsEmpty() public {
+  function test_spokeAllReservesFreezes_returnsEmpty() public view {
     assertEq(minimal.spokeAllReservesFreezes().length, 0);
   }
 
-  function test_spokePositionManagerUpdates_returnsEmpty() public {
+  function test_spokePositionManagerUpdates_returnsEmpty() public view {
     assertEq(minimal.spokePositionManagerUpdates().length, 0);
   }
 
-  function test_accessManagerRoleMemberships_returnsEmpty() public {
+  function test_accessManagerRoleMemberships_returnsEmpty() public view {
     assertEq(minimal.accessManagerRoleMemberships().length, 0);
   }
 
-  function test_accessManagerRoleUpdates_returnsEmpty() public {
+  function test_accessManagerRoleUpdates_returnsEmpty() public view {
     assertEq(minimal.accessManagerRoleUpdates().length, 0);
   }
 
-  function test_accessManagerTargetFunctionRoleUpdates_returnsEmpty() public {
+  function test_accessManagerTargetFunctionRoleUpdates_returnsEmpty() public view {
     assertEq(minimal.accessManagerTargetFunctionRoleUpdates().length, 0);
   }
 
-  function test_accessManagerTargetAdminDelayUpdates_returnsEmpty() public {
+  function test_accessManagerTargetAdminDelayUpdates_returnsEmpty() public view {
     assertEq(minimal.accessManagerTargetAdminDelayUpdates().length, 0);
   }
 
-  function test_positionManagerSpokeRegistrations_returnsEmpty() public {
+  function test_positionManagerSpokeRegistrations_returnsEmpty() public view {
     assertEq(minimal.positionManagerSpokeRegistrations().length, 0);
   }
 
-  function test_positionManagerRescues_returnsEmpty() public {
+  function test_positionManagerRescues_returnsEmpty() public view {
     assertEq(minimal.positionManagerRescues().length, 0);
   }
 
-  function test_positionManagerRoleRenouncements_returnsEmpty() public {
+  function test_positionManagerRoleRenouncements_returnsEmpty() public view {
     assertEq(minimal.positionManagerRoleRenouncements().length, 0);
   }
 }

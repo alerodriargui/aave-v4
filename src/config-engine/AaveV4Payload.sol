@@ -38,7 +38,12 @@ abstract contract AaveV4Payload {
 
   /// @notice Returns the Hub asset listings to execute. Override to provide listings.
   /// @return An array of AssetListing structs (empty by default).
-  function hubAssetListings() public virtual returns (IAaveV4ConfigEngine.AssetListing[] memory) {
+  function hubAssetListings()
+    public
+    view
+    virtual
+    returns (IAaveV4ConfigEngine.AssetListing[] memory)
+  {
     return new IAaveV4ConfigEngine.AssetListing[](0);
   }
 
@@ -46,6 +51,7 @@ abstract contract AaveV4Payload {
   /// @return An array of AssetConfigUpdate structs (empty by default).
   function hubAssetConfigUpdates()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.AssetConfigUpdate[] memory)
   {
@@ -56,6 +62,7 @@ abstract contract AaveV4Payload {
   /// @return An array of SpokeToAssetsAddition structs (empty by default).
   function hubSpokeToAssetsAdditions()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.SpokeToAssetsAddition[] memory)
   {
@@ -66,6 +73,7 @@ abstract contract AaveV4Payload {
   /// @return An array of SpokeConfigUpdate structs (empty by default).
   function hubSpokeConfigUpdates()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.SpokeConfigUpdate[] memory)
   {
@@ -74,7 +82,7 @@ abstract contract AaveV4Payload {
 
   /// @notice Returns the Hub asset halts to execute. Override to provide halts.
   /// @return An array of AssetHalt structs (empty by default).
-  function hubAssetHalts() public virtual returns (IAaveV4ConfigEngine.AssetHalt[] memory) {
+  function hubAssetHalts() public view virtual returns (IAaveV4ConfigEngine.AssetHalt[] memory) {
     return new IAaveV4ConfigEngine.AssetHalt[](0);
   }
 
@@ -82,6 +90,7 @@ abstract contract AaveV4Payload {
   /// @return An array of AssetDeactivation structs (empty by default).
   function hubAssetDeactivations()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.AssetDeactivation[] memory)
   {
@@ -92,6 +101,7 @@ abstract contract AaveV4Payload {
   /// @return An array of AssetCapsReset structs (empty by default).
   function hubAssetCapsResets()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.AssetCapsReset[] memory)
   {
@@ -100,7 +110,7 @@ abstract contract AaveV4Payload {
 
   /// @notice Returns the Hub Spoke halts to execute. Override to provide halts.
   /// @return An array of SpokeHalt structs (empty by default).
-  function hubSpokeHalts() public virtual returns (IAaveV4ConfigEngine.SpokeHalt[] memory) {
+  function hubSpokeHalts() public view virtual returns (IAaveV4ConfigEngine.SpokeHalt[] memory) {
     return new IAaveV4ConfigEngine.SpokeHalt[](0);
   }
 
@@ -108,6 +118,7 @@ abstract contract AaveV4Payload {
   /// @return An array of SpokeDeactivation structs (empty by default).
   function hubSpokeDeactivations()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.SpokeDeactivation[] memory)
   {
@@ -118,6 +129,7 @@ abstract contract AaveV4Payload {
   /// @return An array of SpokeCapsReset structs (empty by default).
   function hubSpokeCapsResets()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.SpokeCapsReset[] memory)
   {
@@ -128,6 +140,7 @@ abstract contract AaveV4Payload {
   /// @return An array of ReserveListing structs (empty by default).
   function spokeReserveListings()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.ReserveListing[] memory)
   {
@@ -138,6 +151,7 @@ abstract contract AaveV4Payload {
   /// @return An array of ReserveConfigUpdate structs (empty by default).
   function spokeReserveConfigUpdates()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.ReserveConfigUpdate[] memory)
   {
@@ -148,6 +162,7 @@ abstract contract AaveV4Payload {
   /// @return An array of LiquidationConfigUpdate structs (empty by default).
   function spokeLiquidationConfigUpdates()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.LiquidationConfigUpdate[] memory)
   {
@@ -158,6 +173,7 @@ abstract contract AaveV4Payload {
   /// @return An array of DynamicReserveConfigAddition structs (empty by default).
   function spokeDynamicReserveConfigAdditions()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.DynamicReserveConfigAddition[] memory)
   {
@@ -168,6 +184,7 @@ abstract contract AaveV4Payload {
   /// @return An array of DynamicReserveConfigUpdate structs (empty by default).
   function spokeDynamicReserveConfigUpdates()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] memory)
   {
@@ -178,6 +195,7 @@ abstract contract AaveV4Payload {
   /// @return An array of SpokePause structs (empty by default).
   function spokeAllReservesPauses()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.SpokePause[] memory)
   {
@@ -188,6 +206,7 @@ abstract contract AaveV4Payload {
   /// @return An array of SpokeFreeze structs (empty by default).
   function spokeAllReservesFreezes()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.SpokeFreeze[] memory)
   {
@@ -198,6 +217,7 @@ abstract contract AaveV4Payload {
   /// @return An array of PositionManagerUpdate structs (empty by default).
   function spokePositionManagerUpdates()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.PositionManagerUpdate[] memory)
   {
@@ -208,6 +228,7 @@ abstract contract AaveV4Payload {
   /// @return An array of RoleMembership structs (empty by default).
   function accessManagerRoleMemberships()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.RoleMembership[] memory)
   {
@@ -218,6 +239,7 @@ abstract contract AaveV4Payload {
   /// @return An array of RoleUpdate structs (empty by default).
   function accessManagerRoleUpdates()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.RoleUpdate[] memory)
   {
@@ -228,6 +250,7 @@ abstract contract AaveV4Payload {
   /// @return An array of TargetFunctionRoleUpdate structs (empty by default).
   function accessManagerTargetFunctionRoleUpdates()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.TargetFunctionRoleUpdate[] memory)
   {
@@ -238,6 +261,7 @@ abstract contract AaveV4Payload {
   /// @return An array of TargetAdminDelayUpdate structs (empty by default).
   function accessManagerTargetAdminDelayUpdates()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.TargetAdminDelayUpdate[] memory)
   {
@@ -248,6 +272,7 @@ abstract contract AaveV4Payload {
   /// @return An array of SpokeRegistration structs (empty by default).
   function positionManagerSpokeRegistrations()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.SpokeRegistration[] memory)
   {
@@ -256,7 +281,12 @@ abstract contract AaveV4Payload {
 
   /// @notice Returns the position manager rescues to execute. Override to provide rescues.
   /// @return An array of Rescue structs (empty by default).
-  function positionManagerRescues() public virtual returns (IAaveV4ConfigEngine.Rescue[] memory) {
+  function positionManagerRescues()
+    public
+    view
+    virtual
+    returns (IAaveV4ConfigEngine.Rescue[] memory)
+  {
     return new IAaveV4ConfigEngine.Rescue[](0);
   }
 
@@ -264,6 +294,7 @@ abstract contract AaveV4Payload {
   /// @return An array of PositionManagerRoleRenouncement structs (empty by default).
   function positionManagerRoleRenouncements()
     public
+    view
     virtual
     returns (IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory)
   {
