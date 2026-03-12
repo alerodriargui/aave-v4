@@ -150,6 +150,17 @@ library LiquidationLogic {
     uint256 liquidationBonus;
   }
 
+  struct CalculateDebtFromCollateralParams {
+    IHubBase collateralReserveHub;
+    uint256 collateralReserveAssetId;
+    uint256 collateralAssetUnit;
+    uint256 collateralAssetPrice;
+    uint256 collateralSharesToLiquidate;
+    uint256 debtAssetUnit;
+    uint256 debtAssetPrice;
+    uint256 liquidationBonus;
+  }
+
   struct CalculateLiquidationAmountsParams {
     IHubBase collateralReserveHub;
     uint256 collateralReserveAssetId;
@@ -182,8 +193,11 @@ library LiquidationLogic {
   /// @dev See Spoke.HEALTH_FACTOR_LIQUIDATION_THRESHOLD docs
   uint64 public constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD = 1e18;
 
-  /// @dev See Spoke.DUST_LIQUIDATION_THRESHOLD docs
-  uint256 public constant DUST_LIQUIDATION_THRESHOLD = 1000e26;
+  /// @dev See Spoke.COLLATERAL_DUST_LIQUIDATION_THRESHOLD docs
+  uint256 public constant COLLATERAL_DUST_LIQUIDATION_THRESHOLD = 500e26;
+
+  /// @dev See Spoke.DEBT_DUST_LIQUIDATION_THRESHOLD docs
+  uint256 public constant DEBT_DUST_LIQUIDATION_THRESHOLD = 1000e26;
 
   /// @notice Liquidates a user position.
   /// @param reserves The mapping of reserves per reserve id.
@@ -577,7 +591,7 @@ library LiquidationLogic {
     // To prevent accumulation of dust, one of the following conditions is enforced:
     // 1. liquidate all debt
     // 2. liquidate all collateral
-    // 3. leave at least `DUST_LIQUIDATION_THRESHOLD` of collateral and debt (in value terms)
+    // 3. leave at least `COLLATERAL_DUST_LIQUIDATION_THRESHOLD` of collateral and at least `DEBT_DUST_LIQUIDATION_THRESHOLD` of debt (in value terms)
     (uint256 drawnSharesToLiquidate, uint256 premiumDebtRayToLiquidate) = _calculateDebtToLiquidate(
       CalculateDebtToLiquidateParams({
         drawnShares: params.drawnShares,
@@ -620,7 +634,7 @@ library LiquidationLogic {
         collateralRemaining.toValue({
           decimals: params.collateralAssetDecimals,
           price: params.collateralAssetPrice
-        }) < DUST_LIQUIDATION_THRESHOLD;
+        }) < COLLATERAL_DUST_LIQUIDATION_THRESHOLD;
     }
 
     // debt is fully liquidated if and only if all drawn shares are liquidated
@@ -633,17 +647,17 @@ library LiquidationLogic {
       // - `debtRayToLiquidate` is decreased if `collateralSharesToLiquidate > params.suppliedShares` (if so, debt dust could remain).
       // - `debtRayToLiquidate` is increased if `(leavesCollateralDust && drawnSharesToLiquidate < params.drawnShares)`,
       // ensuring collateral reserve is fully liquidated (potentially bypassing the target health factor).
-      uint256 debtRayToLiquidate = Math.mulDiv(
-        params.collateralReserveHub.previewAddByShares(
-          params.collateralReserveAssetId,
-          collateralSharesToLiquidate
-        ),
-        params.collateralAssetPrice *
-          debtAssetUnit *
-          PercentageMath.PERCENTAGE_FACTOR *
-          WadRayMath.RAY,
-        params.debtAssetPrice * collateralAssetUnit * liquidationBonus,
-        Math.Rounding.Ceil
+      uint256 debtRayToLiquidate = _calculateDebtFromCollateral(
+        CalculateDebtFromCollateralParams({
+          collateralReserveHub: params.collateralReserveHub,
+          collateralReserveAssetId: params.collateralReserveAssetId,
+          collateralAssetUnit: collateralAssetUnit,
+          collateralAssetPrice: params.collateralAssetPrice,
+          collateralSharesToLiquidate: collateralSharesToLiquidate,
+          debtAssetUnit: debtAssetUnit,
+          debtAssetPrice: params.debtAssetPrice,
+          liquidationBonus: liquidationBonus
+        })
       );
 
       if (debtRayToLiquidate <= params.premiumDebtRay) {
@@ -655,29 +669,6 @@ library LiquidationLogic {
         drawnSharesToLiquidate = (debtRayToLiquidate - premiumDebtRayToLiquidate).divUp(
           params.drawnIndex
         );
-
-        // `drawnSharesToLiquidate` may exceed `params.drawnShares` due to rounding.
-        if (drawnSharesToLiquidate > params.drawnShares) {
-          drawnSharesToLiquidate = params.drawnShares;
-
-          // `collateralSharesToLiquidate` may exceed `params.suppliedShares` due to rounding.
-          // If this happens, simply cap `collateralSharesToLiquidate` to `params.suppliedShares` since
-          // debt to liquidate would be the same (it is already calculated based on `params.suppliedShares`).
-          collateralSharesToLiquidate = _calculateCollateralToLiquidate(
-            CalculateCollateralToLiquidateParams({
-              collateralReserveHub: params.collateralReserveHub,
-              collateralReserveAssetId: params.collateralReserveAssetId,
-              collateralAssetUnit: collateralAssetUnit,
-              collateralAssetPrice: params.collateralAssetPrice,
-              drawnSharesToLiquidate: drawnSharesToLiquidate,
-              premiumDebtRayToLiquidate: premiumDebtRayToLiquidate,
-              drawnIndex: params.drawnIndex,
-              debtAssetUnit: debtAssetUnit,
-              debtAssetPrice: params.debtAssetPrice,
-              liquidationBonus: liquidationBonus
-            })
-          ).min(params.suppliedShares);
-        }
       }
     }
 
@@ -711,22 +702,35 @@ library LiquidationLogic {
     uint256 debtRayToLiquidate = params.drawnSharesToLiquidate * params.drawnIndex +
       params.premiumDebtRayToLiquidate;
 
-    uint256 collateralToLiquidate = Math.mulDiv(
-      debtRayToLiquidate,
-      params.debtAssetPrice * params.collateralAssetUnit * params.liquidationBonus,
-      params.debtAssetUnit *
-        params.collateralAssetPrice *
-        PercentageMath.PERCENTAGE_FACTOR *
-        WadRayMath.RAY,
-      Math.Rounding.Floor
-    );
-
     uint256 collateralSharesToLiquidate = params.collateralReserveHub.previewAddByAssets(
       params.collateralReserveAssetId,
-      collateralToLiquidate
-    );
+      debtRayToLiquidate * params.debtAssetPrice * params.liquidationBonus
+    ) /
+      (params.debtAssetUnit *
+        params.collateralAssetPrice *
+        PercentageMath.PERCENTAGE_FACTOR *
+        (WadRayMath.RAY / params.collateralAssetUnit));
 
     return collateralSharesToLiquidate;
+  }
+
+  /// @notice Calculates the amount of debt (in ray) corresponding to given collateral shares.
+  /// @return The amount of debt in ray, rounded up.
+  function _calculateDebtFromCollateral(
+    CalculateDebtFromCollateralParams memory params
+  ) internal view returns (uint256) {
+    return
+      params
+        .collateralReserveHub
+        .previewAddByShares(
+          params.collateralReserveAssetId,
+          params.collateralSharesToLiquidate *
+            params.collateralAssetPrice *
+            params.debtAssetUnit *
+            PercentageMath.PERCENTAGE_FACTOR *
+            (WadRayMath.RAY / params.collateralAssetUnit)
+        )
+        .divUp(params.debtAssetPrice * params.liquidationBonus);
   }
 
   /// @notice Calculates the amount of drawn shares and premium debt that should be liquidated.
@@ -780,7 +784,7 @@ library LiquidationLogic {
     // debt is fully liquidated if and only if all drawn shares are liquidated (premium debt is always liquidated first)
     bool leavesDebtDust = (drawnSharesToLiquidate < params.drawnShares) &&
       debtRayRemaining.toValue({decimals: params.debtAssetDecimals, price: params.debtAssetPrice}) <
-        DUST_LIQUIDATION_THRESHOLD.toRay();
+        DEBT_DUST_LIQUIDATION_THRESHOLD.toRay();
 
     if (leavesDebtDust) {
       // target health factor is bypassed to prevent leaving dust

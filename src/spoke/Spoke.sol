@@ -82,10 +82,15 @@ abstract contract Spoke is
   uint64 internal constant HEALTH_FACTOR_LIQUIDATION_THRESHOLD =
     LiquidationLogic.HEALTH_FACTOR_LIQUIDATION_THRESHOLD;
 
-  /// @dev The maximum amount considered as dust for a user's collateral and debt balances after a liquidation.
+  /// @dev The maximum amount considered as dust for a user's collateral after a liquidation.
+  /// @dev Worth 500 USD, expressed in units of Value. 1e26 represents 1 USD.
+  uint256 internal constant COLLATERAL_DUST_LIQUIDATION_THRESHOLD =
+    LiquidationLogic.COLLATERAL_DUST_LIQUIDATION_THRESHOLD;
+
+  /// @dev The maximum amount considered as dust for a user's debt after a liquidation.
   /// @dev Worth 1000 USD, expressed in units of Value. 1e26 represents 1 USD.
-  uint256 internal constant DUST_LIQUIDATION_THRESHOLD =
-    LiquidationLogic.DUST_LIQUIDATION_THRESHOLD;
+  uint256 internal constant DEBT_DUST_LIQUIDATION_THRESHOLD =
+    LiquidationLogic.DEBT_DUST_LIQUIDATION_THRESHOLD;
 
   /// @notice Modifier that checks if the caller is an approved positionManager for `onBehalfOf`.
   modifier onlyPositionManager(address onBehalfOf) {

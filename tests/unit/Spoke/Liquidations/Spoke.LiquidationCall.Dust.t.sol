@@ -93,7 +93,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     assertLt(
       _getCollateralValue(_spoke, _daiReserveId(_spoke), alice) -
         _convertAmountToValue(_spoke, _usdxReserveId(_spoke), debtRayToTarget.fromRayUp()),
-      LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
+      LiquidationLogic.DEBT_DUST_LIQUIDATION_THRESHOLD
     );
 
     // debtToTarget would result in dust collateral, therefore reverts
@@ -171,7 +171,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
       debtToCover;
     assertLt(
       _convertAmountToValue(_spoke, _usdxReserveId(_spoke), theoreticalRemainingDebt),
-      LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
+      LiquidationLogic.DEBT_DUST_LIQUIDATION_THRESHOLD
     );
 
     vm.startPrank(liquidator);
@@ -261,7 +261,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
         _usdxReserveId(_spoke),
         _spoke.getUserTotalDebt(_usdxReserveId(_spoke), alice)
       ),
-      LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
+      LiquidationLogic.DEBT_DUST_LIQUIDATION_THRESHOLD
     );
   }
 
@@ -329,7 +329,7 @@ contract SpokeLiquidationCallDustTest is SpokeLiquidationCallBaseTest {
     // dust is allowed on coll reserve
     assertLt(
       _getCollateralValue(_spoke, _daiReserveId(_spoke), alice),
-      LiquidationLogic.DUST_LIQUIDATION_THRESHOLD
+      LiquidationLogic.COLLATERAL_DUST_LIQUIDATION_THRESHOLD
     );
   }
 

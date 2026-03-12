@@ -131,12 +131,12 @@ contract LiquidationLogicBaseTest is SpokeBase {
     LiquidationLogic.CalculateDebtToLiquidateParams memory params
   ) internal virtual returns (LiquidationLogic.CalculateDebtToLiquidateParams memory) {
     params = _bound(params);
-    // bound price such that 1 drawn share is worth less than DUST_LIQUIDATION_THRESHOLD
+    // bound price such that 1 drawn share is worth less than DEBT_DUST_LIQUIDATION_THRESHOLD
     params.debtAssetPrice = bound(
       params.debtAssetPrice,
       1,
       _convertDecimals(
-        LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
+        LiquidationLogic.DEBT_DUST_LIQUIDATION_THRESHOLD,
         18,
         params.debtAssetDecimals,
         false
@@ -157,7 +157,7 @@ contract LiquidationLogicBaseTest is SpokeBase {
       debtRayToLiquidate + 1,
       debtRayToLiquidate +
         _convertValueToAmount(
-          LiquidationLogic.DUST_LIQUIDATION_THRESHOLD - 1,
+          LiquidationLogic.DEBT_DUST_LIQUIDATION_THRESHOLD - 1,
           params.debtAssetPrice,
           params.debtAssetUnit
         ).toRay()
