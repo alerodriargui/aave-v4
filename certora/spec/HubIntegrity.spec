@@ -354,9 +354,11 @@ rule reportDeficitSameAsPreviewRestoreByAssets(uint256 assetId, uint256 drawnAmo
     IHubBase.PremiumDelta premiumDelta;
     requireAllInvariants(assetId, e);
     storage init = lastStorage;
-    uint256 resultPreview = previewRestoreByAssets(e, assetId, drawnAmount);
-    uint256 resultReportDeficit = reportDeficit(e, assetId, drawnAmount, premiumDelta);
-    assert resultReportDeficit == resultPreview;
+    uint256 previewedDrawnShares = previewRestoreByAssets(e, assetId, drawnAmount);
+    uint256 resultDrawnShares;
+    uint256 resultDeficit;
+    resultDrawnShares, resultDeficit = reportDeficit(e, assetId, drawnAmount, premiumDelta);
+    assert resultDrawnShares == previewedDrawnShares;
 }
 
 /**
