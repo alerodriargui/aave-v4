@@ -54,12 +54,12 @@ library AaveV4DeployOrchestration {
     });
 
     // Setup Configurator Roles
-    logger.logHeader1('Setting HubConfigurator roles');
+    logger.logHeader1('setting HubConfigurator roles');
     AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles({
       accessManager: accessManager,
       hubConfigurator: report.configuratorBatchReport.hubConfigurator
     });
-    logger.logHeader1('Setting SpokeConfigurator roles');
+    logger.logHeader1('setting SpokeConfigurator roles');
     AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles({
       accessManager: accessManager,
       spokeConfigurator: report.configuratorBatchReport.spokeConfigurator
@@ -131,7 +131,7 @@ library AaveV4DeployOrchestration {
       }
 
       if (deployInputs.accessManagerAdmin != initialAdmin) {
-        logger.logHeader1('Granting AccessManager Root Admin role');
+        logger.logHeader1('granting AccessManager Root Admin role');
         AaveV4AccessManagerRolesProcedure.replaceDefaultAdminRole({
           accessManager: accessManager,
           adminToAdd: deployInputs.accessManagerAdmin,
@@ -151,17 +151,17 @@ library AaveV4DeployOrchestration {
   ) internal {
     address accessManager = report.authorityBatchReport.accessManager;
 
-    logger.logHeader1('Granting Hub Admin role');
+    logger.logHeader1('granting Hub Admin role');
     AaveV4HubRolesProcedure.grantHubAllRoles({accessManager: accessManager, admin: hubAdmin});
 
-    logger.logHeader1('Granting Hub Configurator roles');
+    logger.logHeader1('granting Hub Configurator roles');
     AaveV4HubRolesProcedure.grantHubRole({
       accessManager: accessManager,
       role: Roles.HUB_CONFIGURATOR_ROLE,
       admin: report.configuratorBatchReport.hubConfigurator
     });
 
-    logger.logHeader1('Granting HubConfigurator Admin roles');
+    logger.logHeader1('granting HubConfigurator Admin roles');
     AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles({
       accessManager: accessManager,
       admin: hubConfiguratorAdmin
@@ -176,17 +176,17 @@ library AaveV4DeployOrchestration {
   ) internal {
     address accessManager = report.authorityBatchReport.accessManager;
 
-    logger.logHeader1('Granting Spoke Admin role');
+    logger.logHeader1('granting Spoke Admin role');
     AaveV4SpokeRolesProcedure.grantSpokeAllRoles({accessManager: accessManager, admin: spokeAdmin});
 
-    logger.logHeader1('Granting Spoke Configurator roles');
+    logger.logHeader1('granting Spoke Configurator roles');
     AaveV4SpokeRolesProcedure.grantSpokeRole({
       accessManager: accessManager,
       role: Roles.SPOKE_CONFIGURATOR_ROLE,
       admin: report.configuratorBatchReport.spokeConfigurator
     });
 
-    logger.logHeader1('Granting SpokeConfigurator Admin roles');
+    logger.logHeader1('granting SpokeConfigurator Admin roles');
     AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles({
       accessManager: accessManager,
       admin: spokeConfiguratorAdmin
@@ -198,7 +198,7 @@ library AaveV4DeployOrchestration {
     address accessManagerAdmin,
     bytes32 salt
   ) internal returns (BatchReports.AuthorityBatchReport memory report) {
-    logger.logHeader1('Deploying AuthorityBatch');
+    logger.logHeader1('deploying AuthorityBatch');
 
     report = AaveV4DeployBase.deployAuthorityBatch({admin: accessManagerAdmin, salt: salt});
 
@@ -213,7 +213,7 @@ library AaveV4DeployOrchestration {
     address spokeConfiguratorAuthority,
     bytes32 salt
   ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
-    logger.logHeader1('Deploying ConfiguratorBatch');
+    logger.logHeader1('deploying ConfiguratorBatch');
 
     report = AaveV4DeployBase.deployConfiguratorBatch({
       hubConfiguratorAuthority: hubConfiguratorAuthority,
@@ -339,7 +339,7 @@ library AaveV4DeployOrchestration {
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
-    logger.logHeader1('Deploying AaveV4SpokeInstanceBatch');
+    logger.logHeader1('deploying AaveV4SpokeInstanceBatch');
     report = AaveV4DeployBase.deploySpokeInstanceBatch({
       spokeProxyAdminOwner: spokeProxyAdminOwner,
       authority: authority,
@@ -356,7 +356,7 @@ library AaveV4DeployOrchestration {
     address treasurySpokeOwner,
     bytes32 salt
   ) internal returns (BatchReports.TreasurySpokeBatchReport memory report) {
-    logger.logHeader1('Deploying TreasurySpokeBatch');
+    logger.logHeader1('deploying TreasurySpokeBatch');
     report = AaveV4DeployBase.deployTreasurySpokeBatch({owner: treasurySpokeOwner, salt: salt});
     logger.log('TreasurySpoke', report.treasurySpoke);
     logger.logNewLine();
@@ -369,7 +369,7 @@ library AaveV4DeployOrchestration {
     bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (BatchReports.HubBatchReport memory report) {
-    logger.logHeader1('Deploying HubBatch');
+    logger.logHeader1('deploying HubBatch');
     report = AaveV4DeployBase.deployHubBatch({
       authority: authority,
       hubBytecode: hubBytecode,
@@ -386,7 +386,7 @@ library AaveV4DeployOrchestration {
     bool deploySignatureGateway,
     bytes32 salt
   ) internal returns (BatchReports.GatewaysBatchReport memory report) {
-    logger.logHeader1('Deploying GatewayBatch');
+    logger.logHeader1('deploying GatewayBatch');
     report = AaveV4DeployBase.deployGatewaysBatch({
       owner: gatewayOwner,
       nativeWrapper: nativeWrapper,
@@ -408,7 +408,7 @@ library AaveV4DeployOrchestration {
     address positionManagerOwner,
     bytes32 salt
   ) internal returns (BatchReports.PositionManagerBatchReport memory report) {
-    logger.logHeader1('Deploying PositionManagerBatch');
+    logger.logHeader1('deploying PositionManagerBatch');
     report = AaveV4DeployBase.deployPositionManagerBatch({owner: positionManagerOwner, salt: salt});
     logger.logDetail('GiverPositionManager', report.giverPositionManager);
     logger.logDetail('TakerPositionManager', report.takerPositionManager);
@@ -432,7 +432,7 @@ library AaveV4DeployOrchestration {
     BatchReports.SpokeInstanceBatchReport memory report,
     address authority
   ) internal {
-    logger.logHeader1('Setting Spoke roles');
+    logger.logHeader1('setting Spoke roles');
     AaveV4SpokeRolesProcedure.setupSpokeAllRoles(authority, report.spokeProxy);
   }
 
@@ -451,7 +451,7 @@ library AaveV4DeployOrchestration {
     BatchReports.HubBatchReport memory report,
     address authority
   ) internal {
-    logger.logHeader1('Setting Hub roles');
+    logger.logHeader1('setting Hub roles');
     AaveV4HubRolesProcedure.setupHubAllRoles(authority, report.hub);
   }
 
