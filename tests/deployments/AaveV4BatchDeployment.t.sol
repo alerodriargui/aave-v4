@@ -26,7 +26,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       hubLabels: _hubLabels,
       spokeLabels: _spokeLabels,
       spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(_spokeLabels.length),
-      spokeOracleDecimals: _defaultSpokeOracleDecimals(_spokeLabels.length),
       salt: bytes32(0)
     });
   }
@@ -66,7 +65,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   function testAaveV4BatchDeployment_withoutSpokes() public {
     _inputs.spokeLabels = new string[](0);
     _inputs.spokeMaxReservesLimits = new uint16[](0);
-    _inputs.spokeOracleDecimals = new uint8[](0);
 
     checkedV4Deployment();
   }
@@ -124,7 +122,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     if (withoutSpokes) {
       _inputs.spokeLabels = new string[](0);
       _inputs.spokeMaxReservesLimits = new uint16[](0);
-      _inputs.spokeOracleDecimals = new uint8[](0);
     }
 
     (bool isExpectedError, bytes memory errorMessage) = _getExpectedError();
@@ -241,13 +238,6 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     this.checkedV4Deployment();
   }
 
-  function testAaveV4BatchDeployment_withMismatchedSpokeOracleDecimals_reverts() public {
-    _inputs.spokeOracleDecimals = new uint8[](0);
-
-    vm.expectRevert('spoke labels/decimals length mismatch');
-    this.checkedV4Deployment();
-  }
-
   function testAaveV4BatchDeployment_withZeroDeployer_reverts() public {
     _deployer = address(0);
 
@@ -274,11 +264,9 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     if (withoutSpokes) {
       deployInputs.spokeLabels = new string[](0);
       deployInputs.spokeMaxReservesLimits = new uint16[](0);
-      deployInputs.spokeOracleDecimals = new uint8[](0);
     } else {
       deployInputs.spokeLabels = _inputs.spokeLabels;
       deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
-      deployInputs.spokeOracleDecimals = _inputs.spokeOracleDecimals;
     }
     _deployer = deployer;
     _inputs = deployInputs;
@@ -311,11 +299,9 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     if (withoutSpokes) {
       deployInputs.spokeLabels = new string[](0);
       deployInputs.spokeMaxReservesLimits = new uint16[](0);
-      deployInputs.spokeOracleDecimals = new uint8[](0);
     } else {
       deployInputs.spokeLabels = _inputs.spokeLabels;
       deployInputs.spokeMaxReservesLimits = _inputs.spokeMaxReservesLimits;
-      deployInputs.spokeOracleDecimals = _inputs.spokeOracleDecimals;
     }
     _deployer = deployer;
     _inputs = deployInputs;

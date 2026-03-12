@@ -20,7 +20,6 @@ contract InputUtils {
   /// @dev hubLabels An array of hub labels; the number of hub labels defines the number of hubs to deploy.
   /// @dev spokeLabels An array of spoke labels; the number of spoke labels defines the number of spokes to deploy.
   /// @dev spokeMaxReservesLimits Per-spoke max user reserves limit (parallel to spokeLabels).
-  /// @dev spokeOracleDecimals Per-spoke oracle decimal precision (parallel to spokeLabels).
   /// @dev salt Root salt for deterministic CREATE2 deployment; orchestration derives per-batch salts.
   struct FullDeployInputs {
     address accessManagerAdmin;
@@ -40,7 +39,6 @@ contract InputUtils {
     string[] hubLabels;
     string[] spokeLabels;
     uint16[] spokeMaxReservesLimits;
-    uint8[] spokeOracleDecimals;
     bytes32 salt;
   }
 

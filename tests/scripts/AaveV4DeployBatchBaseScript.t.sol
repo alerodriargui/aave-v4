@@ -56,7 +56,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       hubLabels: _toArray('hub1', 'hub2', 'hub3'),
       spokeLabels: _toArray('spoke1', 'spoke2', 'spoke3'),
       spokeMaxReservesLimits: _defaultSpokeMaxReservesLimits(3),
-      spokeOracleDecimals: _defaultSpokeOracleDecimals(3),
       salt: bytes32(0)
     });
 
@@ -260,7 +259,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
   function test_loadWarningsAndSanitizeInputs_revertsWith_duplicateSpokeLabel() public {
     _inputs.spokeLabels = ['spoke1', 'spoke1'];
     _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(2);
-    _inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(2);
 
     vm.expectRevert('duplicate spoke label: spoke1');
     _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
@@ -306,15 +304,6 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     limits = new uint16[](count);
     for (uint256 i; i < count; i++) {
       limits[i] = Constants.MAX_ALLOWED_USER_RESERVES_LIMIT;
-    }
-  }
-
-  function _defaultSpokeOracleDecimals(
-    uint256 count
-  ) internal pure returns (uint8[] memory decimals) {
-    decimals = new uint8[](count);
-    for (uint256 i; i < count; i++) {
-      decimals[i] = Constants.ORACLE_DECIMALS;
     }
   }
 

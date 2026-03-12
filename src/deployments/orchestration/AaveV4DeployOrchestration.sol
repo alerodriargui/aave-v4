@@ -23,6 +23,8 @@ import {Logger} from 'src/deployments/utils/Logger.sol';
 library AaveV4DeployOrchestration {
   bytes32 public constant SALT = keccak256('AAVE_V4');
 
+  uint8 public constant SPOKE_ORACLE_DECIMALS = 8;
+
   function deployAaveV4(
     Logger logger,
     address deployer,
@@ -283,10 +285,6 @@ library AaveV4DeployOrchestration {
       spokeCount == inputs.spokeMaxReservesLimits.length,
       'spoke labels/limits length mismatch'
     );
-    require(
-      spokeCount == inputs.spokeOracleDecimals.length,
-      'spoke labels/decimals length mismatch'
-    );
     spokeBatchReports = new OrchestrationReports.SpokeDeploymentReport[](spokeCount);
     for (uint256 i; i < spokeCount; ++i) {
       bytes32 childSalt = _deriveChildSalt(salt, 'spoke', inputs.spokeLabels[i]);
@@ -297,7 +295,7 @@ library AaveV4DeployOrchestration {
         label: inputs.spokeLabels[i],
         spokeBytecode: spokeBytecode,
         maxUserReservesLimit: inputs.spokeMaxReservesLimits[i],
-        oracleDecimals: inputs.spokeOracleDecimals[i],
+        oracleDecimals: SPOKE_ORACLE_DECIMALS,
         salt: childSalt
       });
     }

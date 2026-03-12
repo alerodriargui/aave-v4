@@ -126,7 +126,6 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     inputs.hubLabels = _hubLabels;
     inputs.spokeLabels = _spokeLabels;
     inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(_spokeLabels.length);
-    inputs.spokeOracleDecimals = _defaultSpokeOracleDecimals(_spokeLabels.length);
     inputs.nativeWrapper = _weth9;
     inputs.deployNativeTokenGateway = true;
     inputs.deploySignatureGateway = true;
@@ -141,15 +140,6 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     limits = new uint16[](count);
     for (uint256 i; i < count; i++) {
       limits[i] = Constants.MAX_ALLOWED_USER_RESERVES_LIMIT;
-    }
-  }
-
-  function _defaultSpokeOracleDecimals(
-    uint256 count
-  ) internal pure returns (uint8[] memory decimals) {
-    decimals = new uint8[](count);
-    for (uint256 i; i < count; i++) {
-      decimals[i] = Constants.ORACLE_DECIMALS;
     }
   }
 
