@@ -35,6 +35,7 @@ library BatchReports {
   struct PositionManagerBatchReport {
     address giverPositionManager;
     address takerPositionManager;
+    address configPositionManager;
   }
 
   struct TokenizationSpokeBatchReport {

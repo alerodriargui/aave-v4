@@ -6,6 +6,7 @@ import 'tests/deployments/batches/BatchBase.t.sol';
 import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
 import {GiverPositionManager} from 'src/position-manager/GiverPositionManager.sol';
 import {TakerPositionManager} from 'src/position-manager/TakerPositionManager.sol';
+import {ConfigPositionManager} from 'src/position-manager/ConfigPositionManager.sol';
 
 contract AaveV4PositionManagerBatchTest is BatchBaseTest {
   AaveV4PositionManagerBatch public batch;
@@ -20,6 +21,7 @@ contract AaveV4PositionManagerBatchTest is BatchBaseTest {
   function test_getReport() public view {
     assertNotEq(report.giverPositionManager, address(0));
     assertNotEq(report.takerPositionManager, address(0));
+    assertNotEq(report.configPositionManager, address(0));
   }
 
   function test_giverPositionManagerOwner() public view {
@@ -28,6 +30,10 @@ contract AaveV4PositionManagerBatchTest is BatchBaseTest {
 
   function test_takerPositionManagerOwner() public view {
     assertEq(Ownable(report.takerPositionManager).owner(), admin);
+  }
+
+  function test_configPositionManagerOwner() public view {
+    assertEq(Ownable(report.configPositionManager).owner(), admin);
   }
 
   function test_revert_zeroOwner() public {
@@ -42,5 +48,6 @@ contract AaveV4PositionManagerBatchTest is BatchBaseTest {
     });
     assertNotEq(report.giverPositionManager, newBatch.getReport().giverPositionManager);
     assertNotEq(report.takerPositionManager, newBatch.getReport().takerPositionManager);
+    assertNotEq(report.configPositionManager, newBatch.getReport().configPositionManager);
   }
 }

@@ -168,6 +168,11 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
         address(0),
         'TakerPositionManager'
       );
+      assertNotEq(
+        report.positionManagerBatchReport.configPositionManager,
+        address(0),
+        'ConfigPositionManager'
+      );
     } else {
       assertEq(
         report.positionManagerBatchReport.giverPositionManager,
@@ -178,6 +183,11 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
         report.positionManagerBatchReport.takerPositionManager,
         address(0),
         'Zero TakerPositionManager'
+      );
+      assertEq(
+        report.positionManagerBatchReport.configPositionManager,
+        address(0),
+        'Zero ConfigPositionManager'
       );
     }
 

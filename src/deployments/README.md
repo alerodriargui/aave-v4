@@ -67,6 +67,7 @@ src/deployments/
     AaveV4HubBatch              Hub, InterestRateStrategy
     AaveV4SpokeInstanceBatch    SpokeInstance (proxy), AaveOracle
     AaveV4GatewayBatch          NativeTokenGateway, SignatureGateway
+    AaveV4PositionManagerBatch  GiverPositionManager, TakerPositionManager, ConfigPositionManager
 
   orchestration/              High-level orchestrators
     AaveV4DeployOrchestration   Main entry: deployAaveV4() -- calls batches in order
@@ -163,6 +164,7 @@ FullDeployInputs                 (transport struct: addresses, labels, per-spoke
        +-- deploySpokes(spokeLabels, spokeMaxReservesLimits)
        |                               --> SpokeProxy[], AaveOracle[]
        +-- deployGateways()            --> NativeTokenGateway, SignatureGateway
+       +-- deployPositionManagers()   --> GiverPositionManager, TakerPositionManager, ConfigPositionManager
        +-- grantRoles() (if enabled)   --> admin role grants + DEFAULT_ADMIN transfer
        |
        v

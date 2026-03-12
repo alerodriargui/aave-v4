@@ -413,6 +413,7 @@ library AaveV4DeployOrchestration {
     report = AaveV4DeployBase.deployPositionManagerBatch({owner: positionManagerOwner, salt: salt});
     logger.logDetail('GiverPositionManager', report.giverPositionManager);
     logger.logDetail('TakerPositionManager', report.takerPositionManager);
+    logger.logDetail('ConfigPositionManager', report.configPositionManager);
     return report;
   }
 
