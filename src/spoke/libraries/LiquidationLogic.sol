@@ -625,7 +625,7 @@ library LiquidationLogic {
 
     // debt is fully liquidated if and only if all drawn shares are liquidated
     if (
-      collateralSharesToLiquidate > params.suppliedShares ||
+      collateralSharesToLiquidate >= params.suppliedShares ||
       (leavesCollateralDust && drawnSharesToLiquidate < params.drawnShares)
     ) {
       collateralSharesToLiquidate = params.suppliedShares;

@@ -811,6 +811,76 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     vm.revertToState(snapshot);
   }
 
+  // Demonstrates the boundary in _calculateLiquidationAmounts where
+  // collateralSharesToLiquidate == suppliedShares exactly
+  // With CF=80%, LB=105%, HF=0.84 (= CF*LB), debtToTarget equals total debt.
+  // Collateral needed = debt * LB * debtPrice / collateralPrice = 80 * 1.05 / 0.8 = 105 = suppliedShares.
+  function test_liquidationCall_exactCollateralMatch() public {
+    // targetHF = 1, healthFactorForMaxBonus = 0.84 ensures max LB at HF = 0.84
+    _updateLiquidationConfig(
+      spoke,
+      ISpoke.LiquidationConfig({
+        targetHealthFactor: 1e18,
+        healthFactorForMaxBonus: 0.84e18,
+        liquidationBonusFactor: 100_00
+      })
+    );
+
+    // No liquidation fee and no collateral risk
+    _updateLiquidationFee(spoke, _wethReserveId(spoke), 0);
+    _updateCollateralRisk(spoke, _wethReserveId(spoke), 0);
+
+    // Mock same price for both assets ($1)
+    _mockReservePrice(spoke, _wethReserveId(spoke), 1e8);
+    _mockReservePrice(spoke, _daiReserveId(spoke), 1e8);
+
+    // Supply 105e18 WETH (collateral), borrow 80e18 DAI (within 105 * 0.80 = 84 limit)
+    _increaseCollateralSupply(spoke, _wethReserveId(spoke), 105e18, user);
+    _increaseReserveDebt(spoke, _daiReserveId(spoke), 80e18, user);
+
+    // HF = 105 * 0.80 / 80 = 1.05 (healthy)
+    ISpoke.UserAccountData memory preData = spoke.getUserAccountData(user);
+    assertApproxEqAbs(
+      preData.healthFactor,
+      1.05e18,
+      0.001e18,
+      'before price change: health factor'
+    );
+
+    // Drop WETH price to $0.80 → HF = 105 * 0.80 * 0.80 / 80 = 0.84
+    _mockReservePrice(spoke, _wethReserveId(spoke), 0.8e8);
+
+    ISpoke.UserAccountData memory preLiqData = spoke.getUserAccountData(user);
+    assertApproxEqAbs(
+      preLiqData.healthFactor,
+      0.84e18,
+      0.001e18,
+      'before liquidation: health factor'
+    );
+
+    // Liquidate: all debt (80) * LB (1.05) = $84 collateral value / $0.80 = 105 WETH = exactly all collateral
+    _checkedLiquidationCall(
+      CheckedLiquidationCallParams({
+        spoke: spoke,
+        collateralReserveId: _wethReserveId(spoke),
+        debtReserveId: _daiReserveId(spoke),
+        user: user,
+        debtToCover: type(uint256).max,
+        liquidator: liquidator,
+        isSolvent: true,
+        receiveShares: false
+      })
+    );
+
+    // All collateral liquidated, all debt liquidated
+    assertEq(
+      spoke.getUserSuppliedAssets(_wethReserveId(spoke), user),
+      0,
+      'post: collateral should be 0'
+    );
+    assertEq(spoke.getUserTotalDebt(_daiReserveId(spoke), user), 0, 'post: debt should be 0');
+  }
+
   /// @dev a halted peripheral asset won't block a liquidation
   function test_scenario_halted_asset() public {
     uint256 collateralReserveId = _wethReserveId(spoke);

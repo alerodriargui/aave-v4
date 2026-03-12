@@ -61,7 +61,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
 
     params.suppliedShares = bound(
       params.suppliedShares,
-      expectedLiquidationAmounts.collateralSharesToLiquidate,
+      expectedLiquidationAmounts.collateralSharesToLiquidate + 1,
       expectedLiquidationAmounts.collateralSharesToLiquidate + MAX_SUPPLY_AMOUNT
     );
 
@@ -90,6 +90,40 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     if (expectedLiquidationAmounts.drawnSharesToLiquidate < params.drawnShares) {
       expectedLiquidationAmounts = _calculateAdjustedLiquidationAmounts(params);
     }
+
+    LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
+      .calculateLiquidationAmounts(params);
+
+    assertApproxEqAbs(liquidationAmounts, expectedLiquidationAmounts);
+  }
+
+  // Demo the boundary for suppliedShares == collateralSharesToLiquidate
+  // Enters the adjusted path
+  // Recomputes debt to ensure it is consistent with the actual collateral being taken.
+  function test_calculateLiquidationAmounts_fuzz_ExactCollateral(
+    LiquidationLogic.CalculateLiquidationAmountsParams memory params
+  ) public {
+    params = _bound(params);
+    LiquidationLogic.LiquidationAmounts
+      memory rawLiquidationAmounts = _calculateRawLiquidationAmounts(params);
+    vm.assume(rawLiquidationAmounts.collateralSharesToLiquidate > 0);
+
+    // Set suppliedShares to exactly the raw collateral
+    params.suppliedShares = rawLiquidationAmounts.collateralSharesToLiquidate;
+
+    // Recompute debt to ensure it is consistent with the actual collateral being taken.
+    LiquidationLogic.LiquidationAmounts
+      memory expectedLiquidationAmounts = _calculateAdjustedLiquidationAmounts(params);
+
+    params.debtToCover = bound(
+      params.debtToCover,
+      _calculateDebtAssetsToRestore(
+        expectedLiquidationAmounts.drawnSharesToLiquidate,
+        expectedLiquidationAmounts.premiumDebtRayToLiquidate,
+        params.drawnIndex
+      ),
+      MAX_SUPPLY_AMOUNT
+    );
 
     LiquidationLogic.LiquidationAmounts memory liquidationAmounts = liquidationLogicWrapper
       .calculateLiquidationAmounts(params);
@@ -143,7 +177,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     }
     LiquidationLogic.LiquidationAmounts
       memory rawLiquidationAmounts = _calculateRawLiquidationAmounts(params);
-    params.suppliedShares = rawLiquidationAmounts.collateralSharesToLiquidate;
+    params.suppliedShares = rawLiquidationAmounts.collateralSharesToLiquidate + 1;
 
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.calculateLiquidationAmounts(params);
