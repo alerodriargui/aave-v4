@@ -7,9 +7,9 @@ import 'tests/unit/Hub/HubBase.t.sol';
 contract HubConfiguratorGranularAccessControlTest is HubBase {
   using SafeCast for uint256;
 
-  // Granular role constants
-  uint64 constant ASSET_MANAGER_ROLE = 100;
-  uint64 constant SPOKE_MANAGER_ROLE = 101;
+  // Granular role constants (must not collide with Roles.sol IDs 0-113, 200-309)
+  uint64 constant ASSET_MANAGER_ROLE = 1000;
+  uint64 constant SPOKE_MANAGER_ROLE = 1001;
 
   // Role holders
   address ASSET_MANAGER = makeAddr('ASSET_MANAGER');
@@ -190,8 +190,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
   }
 
   function test_fuzz_unauthorized_cannotCall_assetManagerMethods(address caller) public {
-    vm.assume(caller != ASSET_MANAGER);
-    vm.assume(caller != address(0));
+    vm.assume(caller != ASSET_MANAGER && caller != address(0) && caller != address(manager));
 
     for (uint256 i = 0; i < assetManagerCalldata.length; ++i) {
       vm.prank(caller);
@@ -205,8 +204,7 @@ contract HubConfiguratorGranularAccessControlTest is HubBase {
   }
 
   function test_fuzz_unauthorized_cannotCall_spokeManagerMethods(address caller) public {
-    vm.assume(caller != SPOKE_MANAGER);
-    vm.assume(caller != address(0));
+    vm.assume(caller != SPOKE_MANAGER && caller != address(0) && caller != address(manager));
 
     for (uint256 i = 0; i < spokeManagerCalldata.length; ++i) {
       vm.prank(caller);

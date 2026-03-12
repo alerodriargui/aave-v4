@@ -54,16 +54,7 @@ library AaveV4DeployOrchestration {
     });
 
     // Setup Configurator Roles
-    logger.logHeader1('setting HubConfigurator roles');
-    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles({
-      accessManager: accessManager,
-      hubConfigurator: report.configuratorBatchReport.hubConfigurator
-    });
-    logger.logHeader1('setting SpokeConfigurator roles');
-    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles({
-      accessManager: accessManager,
-      spokeConfigurator: report.configuratorBatchReport.spokeConfigurator
-    });
+    _setupConfiguratorRoles(logger, report);
 
     // Deploy TreasurySpoke Batch (single instance for all hubs)
     report.treasurySpokeBatchReport = _deployTreasurySpokeBatch({
@@ -141,6 +132,24 @@ library AaveV4DeployOrchestration {
     }
 
     return report;
+  }
+
+  /// @dev Setup roles for the hub and spoke configurators
+  function _setupConfiguratorRoles(
+    Logger logger,
+    OrchestrationReports.FullDeploymentReport memory report
+  ) internal {
+    logger.logHeader1('setting HubConfigurator roles');
+    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles({
+      accessManager: report.authorityBatchReport.accessManager,
+      hubConfigurator: report.configuratorBatchReport.hubConfigurator
+    });
+
+    logger.logHeader1('setting SpokeConfigurator roles');
+    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles({
+      accessManager: report.authorityBatchReport.accessManager,
+      spokeConfigurator: report.configuratorBatchReport.spokeConfigurator
+    });
   }
 
   function _grantHubRoles(
