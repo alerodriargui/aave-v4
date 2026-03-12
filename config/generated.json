@@ -1376,6 +1376,9 @@
   "periphery": {
     "nativeTokenKey": "WETH",
     "deploySignatureGateway": true,
-    "deployNativeTokenGateway": true
+    "deployNativeTokenGateway": true,
+    "deployAllowancePositionManager": true,
+    "deploySupplyRepayPositionManager": true,
+    "deployConfigPositionManager": true
   }
 }

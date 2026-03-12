@@ -9,7 +9,7 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {IPriceOracle} from 'src/spoke/interfaces/IPriceOracle.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
-import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
+import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
@@ -37,6 +37,9 @@ contract DeployValidation is Test {
   address internal _admin;
   address internal _sigGateway;
   address internal _nativeGateway;
+  address internal _allowancePm;
+  address internal _supplyRepayPm;
+  address internal _configPm;
   address internal _hubConfiguratorAddr;
   address internal _spokeConfiguratorAddr;
 
@@ -56,6 +59,9 @@ contract DeployValidation is Test {
     _admin = _deploy.admin();
     _sigGateway = _deploy.signatureGateway();
     _nativeGateway = _deploy.nativeTokenGateway();
+    _allowancePm = _deploy.allowancePositionManager();
+    _supplyRepayPm = _deploy.supplyRepayPositionManager();
+    _configPm = _deploy.configPositionManager();
     _hubConfiguratorAddr = _deploy.hubConfigurator();
     _spokeConfiguratorAddr = _deploy.spokeConfigurator();
 
@@ -388,47 +394,37 @@ contract DeployValidation is Test {
   // ==================== Test: Position Managers ====================
 
   function test_positionManagers() public view {
-    bool deploySigGw = _config.deploySignatureGateway();
-    bool deployNativeGw = _config.deployNativeTokenGateway();
+    address[5] memory pms = [_sigGateway, _nativeGateway, _allowancePm, _supplyRepayPm, _configPm];
+    bool[5] memory enabled = [
+      _config.deploySignatureGateway(),
+      _config.deployNativeTokenGateway(),
+      _config.deployAllowancePositionManager(),
+      _config.deploySupplyRepayPositionManager(),
+      _config.deployConfigPositionManager()
+    ];
+    string[5] memory names = ['sigGateway', 'nativeGateway', 'allowancePM', 'supplyRepayPM', 'configPM'];
 
     for (uint256 i; _config.spokeExists(i); i++) {
       ConfigReader.SpokeDeployConfig memory sc = _config.readSpoke(i);
       address spokeAddr = _deploy.spoke(sc.key);
       ISpoke spoke = ISpoke(spokeAddr);
 
-      if (sc.registerOnPositionManagers) {
-        if (deploySigGw) {
-          assertTrue(
-            spoke.isPositionManagerActive(_sigGateway),
-            string.concat(sc.key, ': sigGateway not active PM')
-          );
-          assertTrue(
-            IGatewayBase(_sigGateway).isSpokeRegistered(spokeAddr),
-            string.concat(sc.key, ': not registered on sigGateway')
-          );
-        }
+      for (uint256 p; p < 5; ++p) {
+        if (!enabled[p]) continue;
 
-        if (deployNativeGw) {
+        if (sc.registerOnPositionManagers) {
           assertTrue(
-            spoke.isPositionManagerActive(_nativeGateway),
-            string.concat(sc.key, ': nativeGateway not active PM')
+            spoke.isPositionManagerActive(pms[p]),
+            string.concat(sc.key, ': ', names[p], ' not active PM')
           );
           assertTrue(
-            IGatewayBase(_nativeGateway).isSpokeRegistered(spokeAddr),
-            string.concat(sc.key, ': not registered on nativeGateway')
+            IPositionManagerBase(pms[p]).isSpokeRegistered(spokeAddr),
+            string.concat(sc.key, ': not registered on ', names[p])
           );
-        }
-      } else {
-        if (deploySigGw) {
+        } else {
           assertFalse(
-            spoke.isPositionManagerActive(_sigGateway),
-            string.concat(sc.key, ': sigGateway should not be active PM')
-          );
-        }
-        if (deployNativeGw) {
-          assertFalse(
-            spoke.isPositionManagerActive(_nativeGateway),
-            string.concat(sc.key, ': nativeGateway should not be active PM')
+            spoke.isPositionManagerActive(pms[p]),
+            string.concat(sc.key, ': ', names[p], ' should not be active PM')
           );
         }
       }

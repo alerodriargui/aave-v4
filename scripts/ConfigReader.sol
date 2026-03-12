@@ -164,6 +164,18 @@ library ConfigReader {
     return json.readBoolOr('.periphery.deployNativeTokenGateway', false);
   }
 
+  function deployAllowancePositionManager(string memory json) internal view returns (bool) {
+    return json.readBoolOr('.periphery.deployAllowancePositionManager', false);
+  }
+
+  function deploySupplyRepayPositionManager(string memory json) internal view returns (bool) {
+    return json.readBoolOr('.periphery.deploySupplyRepayPositionManager', false);
+  }
+
+  function deployConfigPositionManager(string memory json) internal view returns (bool) {
+    return json.readBoolOr('.periphery.deployConfigPositionManager', false);
+  }
+
   function nativeTokenKey(string memory json) internal pure returns (string memory) {
     return json.readString('.periphery.nativeTokenKey');
   }

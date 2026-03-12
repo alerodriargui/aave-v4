@@ -6,9 +6,6 @@ import {Vm} from 'forge-std/Vm.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
-import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
-import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
-import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
 import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
@@ -95,41 +92,6 @@ library DeployPeriphery {
       ISpoke.LiquidationConfig memory lc = json.readLiquidationConfig(i);
       ISpoke(report.spokes[i].spoke).updateLiquidationConfig(lc);
       DeployLogger.logLiquidationConfig(report.spokes[i].key, lc);
-    }
-  }
-
-  /// @notice Deploy SignatureGateway + NativeTokenGateway, register as PMs.
-  function deployGateways(DeployReport storage report, string memory json) internal {
-    (, address caller, ) = vm.readCallers();
-
-    bool deploySigGw = json.deploySignatureGateway();
-    bool deployNativeGw = json.deployNativeTokenGateway();
-
-    if (deploySigGw) {
-      report.signatureGateway = address(new SignatureGateway(caller));
-      DeployLogger.logPeriphery('signatureGateway', report.signatureGateway);
-    }
-    if (deployNativeGw) {
-      address nativeToken = report.findToken(json.nativeTokenKey()).token;
-      report.nativeTokenGateway = address(new NativeTokenGateway(nativeToken, caller));
-      DeployLogger.logPeriphery('nativeTokenGateway', report.nativeTokenGateway);
-    }
-
-    for (uint256 i; i < report.spokes.length; ++i) {
-      ConfigReader.SpokeDeployConfig memory sc = json.readSpoke(i);
-      if (!sc.registerOnPositionManagers) continue;
-
-      ISpoke spoke = ISpoke(report.spokes[i].spoke);
-      DeployLogger.logMessage('positionManagerRegistered', string.concat('registered for: ', report.spokes[i].key));
-
-      if (deploySigGw) {
-        IGatewayBase(report.signatureGateway).registerSpoke(address(spoke), true);
-        spoke.updatePositionManager(report.signatureGateway, true);
-      }
-      if (deployNativeGw) {
-        IGatewayBase(report.nativeTokenGateway).registerSpoke(address(spoke), true);
-        spoke.updatePositionManager(report.nativeTokenGateway, true);
-      }
     }
   }
 

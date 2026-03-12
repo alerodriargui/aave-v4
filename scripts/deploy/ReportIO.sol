@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import {Vm} from 'forge-std/Vm.sol';
-import {console2 as console} from 'forge-std/console2.sol';
 import {stdJson} from 'forge-std/StdJson.sol';
 import {ConfigReader} from '../ConfigReader.sol';
 import {DeployReader} from '../DeployReader.sol';
@@ -80,6 +79,9 @@ library ReportIO {
       vm.serializeAddress(root, 'accessManager', report.accessManager);
       vm.serializeAddress(root, 'signatureGateway', report.signatureGateway);
       vm.serializeAddress(root, 'nativeTokenGateway', report.nativeTokenGateway);
+      vm.serializeAddress(root, 'allowancePositionManager', report.allowancePositionManager);
+      vm.serializeAddress(root, 'supplyRepayPositionManager', report.supplyRepayPositionManager);
+      vm.serializeAddress(root, 'configPositionManager', report.configPositionManager);
       vm.serializeAddress(root, 'hubConfigurator', report.hubConfigurator);
       vm.serializeAddress(root, 'spokeConfigurator', report.spokeConfigurator);
     }
@@ -139,6 +141,9 @@ library ReportIO {
     // Scalar fields
     report.signatureGateway = deploy.signatureGateway();
     report.nativeTokenGateway = deploy.nativeTokenGateway();
+    report.allowancePositionManager = deploy.allowancePositionManager();
+    report.supplyRepayPositionManager = deploy.supplyRepayPositionManager();
+    report.configPositionManager = deploy.configPositionManager();
     report.hubConfigurator = deploy.hubConfigurator();
     report.spokeConfigurator = deploy.spokeConfigurator();
   }

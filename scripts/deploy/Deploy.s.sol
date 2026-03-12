@@ -8,6 +8,7 @@ import {DeployReport} from './DeployTypes.sol';
 import {DeployInfra} from './DeployInfra.sol';
 import {DeployMarket} from './DeployMarket.sol';
 import {DeployPeriphery} from './DeployPeriphery.sol';
+import {DeployPositionManagers} from './DeployPositionManagers.sol';
 import {ReportIO} from './ReportIO.sol';
 
 contract DeployV4 is Script {
@@ -32,13 +33,38 @@ contract DeployV4 is Script {
     // Phase 4: Reserves — reserve listing + liquidation configs
     DeployPeriphery.setUpReserves(report, json);
 
-    // Phase 5: Periphery — gateways + PM registration
-    DeployPeriphery.deployGateways(report, json);
+    // Phase 5: Position managers — deploy + spoke registration
+    DeployPositionManagers.deployPositionManagers(report, json);
 
     // Phase 6: Configurators — deploy + Level 1+2 role setup
     DeployPeriphery.deployConfigurators(report);
 
     // Output
+    report.commit = ScriptUtils.commit();
+    ReportIO.writeReport(report, outputPath);
+
+    vm.stopBroadcast();
+  }
+
+  /// @notice Redeploy position managers on an existing deployment.
+  /// Loads state from deploy.json, deploys fresh PMs, registers on all spokes, writes updated deploy.json.
+  function redeployPositionManagers() external {
+    string memory json = vm.readFile(vm.envOr('CONFIG_PATH', string('config/mainnet.json')));
+    string memory outputPath = vm.envOr('DEPLOY_PATH', string('./output/deploy.json'));
+    ReportIO.readReport(report, outputPath, json);
+
+    vm.startBroadcast();
+
+    // Clear old PM addresses so deployPositionManagers deploys fresh ones
+    report.signatureGateway = address(0);
+    report.nativeTokenGateway = address(0);
+    report.allowancePositionManager = address(0);
+    report.supplyRepayPositionManager = address(0);
+    report.configPositionManager = address(0);
+
+    DeployPositionManagers.deployPositionManagers(report, json);
+
+    // Update output
     report.commit = ScriptUtils.commit();
     ReportIO.writeReport(report, outputPath);
 

@@ -27,6 +27,18 @@ library DeployReader {
     return json.readAddress('.nativeTokenGateway');
   }
 
+  function allowancePositionManager(string memory json) internal view returns (address) {
+    return json.readAddressOr('.allowancePositionManager', address(0));
+  }
+
+  function supplyRepayPositionManager(string memory json) internal view returns (address) {
+    return json.readAddressOr('.supplyRepayPositionManager', address(0));
+  }
+
+  function configPositionManager(string memory json) internal view returns (address) {
+    return json.readAddressOr('.configPositionManager', address(0));
+  }
+
   function hubConfigurator(string memory json) internal pure returns (address) {
     return json.readAddress('.hubConfigurator');
   }

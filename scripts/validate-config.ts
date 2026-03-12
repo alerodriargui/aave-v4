@@ -80,6 +80,9 @@ const PeripherySchema = z.object({
   nativeTokenKey: z.string(),
   deploySignatureGateway: z.boolean().optional(),
   deployNativeTokenGateway: z.boolean().optional(),
+  deployAllowancePositionManager: z.boolean().optional(),
+  deploySupplyRepayPositionManager: z.boolean().optional(),
+  deployConfigPositionManager: z.boolean().optional(),
 }).strict();
 
 const DefaultsSchema = z.object({

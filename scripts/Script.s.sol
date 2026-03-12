@@ -2,13 +2,16 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {Script, stdJson} from 'forge-std/Script.sol';
+import {Script, stdJson, console2 as console} from 'forge-std/Script.sol';
 import {StdAssertions} from 'forge-std/StdAssertions.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
 import {SignatureGateway} from 'src/position-manager/SignatureGateway.sol';
 import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
-import {IGatewayBase} from 'src/position-manager/interfaces/IGatewayBase.sol';
+import {AllowancePositionManager} from 'src/position-manager/AllowancePositionManager.sol';
+import {SupplyRepayPositionManager} from 'src/position-manager/SupplyRepayPositionManager.sol';
+import {ConfigPositionManager} from 'src/position-manager/ConfigPositionManager.sol';
 import {HubConfigurator} from 'src/hub/HubConfigurator.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
 import {SpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
@@ -19,6 +22,7 @@ import {AccessManager} from 'src/dependencies/openzeppelin/AccessManager.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
 import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {AaveOracle, IAaveOracle} from 'src/spoke/AaveOracle.sol';
+import {AggregatorV3Interface} from 'src/dependencies/chainlink/AggregatorV3Interface.sol';
 import {Roles} from 'src/libraries/types/Roles.sol';
 import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
 import {DeployUtils} from 'tests/DeployUtils.sol';
@@ -57,6 +61,9 @@ contract Deploy is Script, StdAssertions {
 
   address internal signatureGateway;
   address internal nativeTokenGateway;
+  address internal allowancePositionManager;
+  address internal supplyRepayPositionManager;
+  address internal configPositionManager;
 
   // ==================== Configurators ====================
 
@@ -203,18 +210,27 @@ contract Deploy is Script, StdAssertions {
   function deployPeriphery() public {
     (, address caller, ) = vm.readCallers();
 
-    bool deploySigGw = _json.deploySignatureGateway();
-    bool deployNativeGw = _json.deployNativeTokenGateway();
-
-    if (deploySigGw) {
+    if (_json.deploySignatureGateway()) {
       signatureGateway = address(new SignatureGateway(caller));
       DeployLogger.logPeriphery('signatureGateway', signatureGateway);
     }
-    if (deployNativeGw) {
+    if (_json.deployNativeTokenGateway()) {
       nativeTokenGateway = address(
         new NativeTokenGateway(tokens[_json.nativeTokenKey()].token, caller)
       );
       DeployLogger.logPeriphery('nativeTokenGateway', nativeTokenGateway);
+    }
+    if (_json.deployAllowancePositionManager()) {
+      allowancePositionManager = address(new AllowancePositionManager(caller));
+      DeployLogger.logPeriphery('allowancePositionManager', allowancePositionManager);
+    }
+    if (_json.deploySupplyRepayPositionManager()) {
+      supplyRepayPositionManager = address(new SupplyRepayPositionManager(caller));
+      DeployLogger.logPeriphery('supplyRepayPositionManager', supplyRepayPositionManager);
+    }
+    if (_json.deployConfigPositionManager()) {
+      configPositionManager = address(new ConfigPositionManager(caller));
+      DeployLogger.logPeriphery('configPositionManager', configPositionManager);
     }
 
     for (uint256 i; i < _spokeKeys.length; ++i) {
@@ -222,19 +238,18 @@ contract Deploy is Script, StdAssertions {
       if (!sc.registerOnPositionManagers) continue;
 
       ISpoke spoke = _spoke(_spokeKeys[i]);
-      DeployLogger.logMessage(
-        'positionManagerRegistered',
-        string.concat('registered for: ', _spokeKeys[i])
-      );
-      if (deploySigGw) {
-        IGatewayBase(signatureGateway).registerSpoke(address(spoke), true);
-        spoke.updatePositionManager(signatureGateway, true);
-      }
-      if (deployNativeGw) {
-        IGatewayBase(nativeTokenGateway).registerSpoke(address(spoke), true);
-        spoke.updatePositionManager(nativeTokenGateway, true);
-      }
+      _registerPm(spoke, signatureGateway);
+      _registerPm(spoke, nativeTokenGateway);
+      _registerPm(spoke, allowancePositionManager);
+      _registerPm(spoke, supplyRepayPositionManager);
+      _registerPm(spoke, configPositionManager);
     }
+  }
+
+  function _registerPm(ISpoke spoke, address pm) internal {
+    if (pm == address(0)) return;
+    IPositionManagerBase(pm).registerSpoke(address(spoke), true);
+    spoke.updatePositionManager(pm, true);
   }
 
   // ==================== Spoke Deployment ====================
@@ -548,6 +563,9 @@ contract Deploy is Script, StdAssertions {
     vm.serializeAddress(root, 'accessManager', address(accessManager));
     vm.serializeAddress(root, 'signatureGateway', signatureGateway);
     vm.serializeAddress(root, 'nativeTokenGateway', nativeTokenGateway);
+    vm.serializeAddress(root, 'allowancePositionManager', allowancePositionManager);
+    vm.serializeAddress(root, 'supplyRepayPositionManager', supplyRepayPositionManager);
+    vm.serializeAddress(root, 'configPositionManager', configPositionManager);
     vm.serializeAddress(root, 'hubConfigurator', hubConfigurator);
     vm.serializeAddress(root, 'spokeConfigurator', spokeConfigurator);
     root = vm.serializeString(root, 'commit', ScriptUtils.commit());
@@ -598,11 +616,42 @@ contract Deploy is Script, StdAssertions {
 
     signatureGateway = deploy.signatureGateway();
     nativeTokenGateway = deploy.nativeTokenGateway();
+    allowancePositionManager = deploy.allowancePositionManager();
+    supplyRepayPositionManager = deploy.supplyRepayPositionManager();
+    configPositionManager = deploy.configPositionManager();
     hubConfigurator = deploy.hubConfigurator();
     spokeConfigurator = deploy.spokeConfigurator();
 
     hubSetup = true;
     tokenSetup = true;
+  }
+
+  // ==================== Debug ====================
+
+  /// @notice Debug: print reserve info for a specific reserve on a spoke.
+  function debugReserve(string calldata spokeKey, uint256 reserveId) external {
+    string memory deploy = vm.readFile(vm.envOr('DEPLOY_PATH', string('./output/deploy.json')));
+
+    ISpoke spoke = ISpoke(deploy.spoke(spokeKey));
+    address deployOracle = deploy.oracle(spokeKey);
+    address spokeOracle = spoke.ORACLE();
+
+    console.log('spoke:', spokeKey, address(spoke));
+    console.log('oracle (deploy.json):', deployOracle);
+    console.log('oracle (spoke.ORACLE):', spokeOracle);
+    require(deployOracle == spokeOracle, 'oracle mismatch: deploy.json vs spoke.ORACLE()');
+
+    IAaveOracle oracle = IAaveOracle(spokeOracle);
+    ISpoke.Reserve memory r = spoke.getReserve(reserveId);
+    address source = oracle.getReserveSource(reserveId);
+    uint256 price = oracle.getReservePrice(reserveId);
+    int256 latestAnswer = AggregatorV3Interface(source).latestAnswer();
+
+    console.log('reserveId:', reserveId);
+    console.log('underlying:', r.underlying);
+    console.log('priceSource:', source);
+    console.log('price:', price);
+    console.log('latestAnswer:', latestAnswer);
   }
 
   // ==================== Configurator Deployment ====================
