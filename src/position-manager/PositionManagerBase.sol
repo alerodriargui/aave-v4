@@ -14,16 +14,18 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @title PositionManagerBase
 /// @author Aave Labs
 /// @notice Base implementation for position manager common functionalities.
+/// @dev This base contract is not mandatory for position managers, it only implements optional convenience methods for position managers.
+/// @dev Contract must be an active and approved user position manager in order to execute spoke actions on a user's behalf.
 /// @dev The `_multicallEnabled()` function must be implemented to specify whether multicall is enabled.
 abstract contract PositionManagerBase is
   IPositionManagerBase,
-  IntentConsumer,
   Ownable2Step,
+  IntentConsumer,
   Rescuable,
   Multicall
 {
   /// @dev Map of registered spokes.
-  mapping(address => bool) internal _registeredSpokes;
+  mapping(address spoke => bool registered) internal _registeredSpokes;
 
   /// @notice Modifier that checks if the specified spoke is registered.
   modifier onlyRegisteredSpoke(address spoke) {
