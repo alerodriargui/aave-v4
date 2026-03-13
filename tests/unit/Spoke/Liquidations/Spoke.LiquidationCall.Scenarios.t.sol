@@ -468,7 +468,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     assertEq(userDebtPositionBefore.drawnShares, 1, 'User should have 1 drawn share of DAI');
     assertEq(
-      userDebtPositionBefore.premiumShares * 1.1e27 -
+      userDebtPositionBefore.premiumShares *
+        1.1e27 -
         userDebtPositionBefore.premiumOffsetRay.toUint256(),
       0.1e27,
       'User should have 0.1 premium'
@@ -811,74 +812,70 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     vm.revertToState(snapshot);
   }
 
-  // Demonstrates the boundary in _calculateLiquidationAmounts where
-  // collateralSharesToLiquidate == suppliedShares exactly
-  // With CF=80%, LB=105%, HF=0.84 (= CF*LB), debtToTarget equals total debt.
-  // Collateral needed = debt * LB * debtPrice / collateralPrice = 80 * 1.05 / 0.8 = 105 = suppliedShares.
-  function test_liquidationCall_exactCollateralMatch() public {
-    // targetHF = 1, healthFactorForMaxBonus = 0.84 ensures max LB at HF = 0.84
+  /// Testing the monotonicity of the liquidation call
+  /// If collateralSharesToLiquidate == suppliedShares exactly,
+  /// recalculate the debt to liquidate, benefitting the liquidator
+  function test_liquidationCall_scenario9() public {
     _updateLiquidationConfig(
       spoke,
       ISpoke.LiquidationConfig({
-        targetHealthFactor: 1e18,
-        healthFactorForMaxBonus: 0.84e18,
+        targetHealthFactor: 2e18,
+        healthFactorForMaxBonus: 0.5e18,
         liquidationBonusFactor: 100_00
       })
     );
+    _updateMaxLiquidationBonus(spoke, _usdxReserveId(spoke), 100_00);
+    _updateLiquidationFee(spoke, _usdxReserveId(spoke), 0);
+    _updateCollateralRisk(spoke, _usdxReserveId(spoke), 0);
+    // supply shares price is ~4
+    _mockSupplySharePrice(hub1, usdxAssetId, 400_000e6, 100_000e6);
+    // usdx collateral
+    _mockReservePrice(spoke, _usdxReserveId(spoke), 2_100_000e8 * 1e6);
 
-    // No liquidation fee and no collateral risk
-    _updateLiquidationFee(spoke, _wethReserveId(spoke), 0);
-    _updateCollateralRisk(spoke, _wethReserveId(spoke), 0);
+    // Collateral: 173 wei of USDX, 173 / 4 -> 43 shares (rounded down)
+    _increaseCollateralSupply(spoke, _usdxReserveId(spoke), 173, user);
+    assertEq(spoke.getUserSuppliedShares(_usdxReserveId(spoke), user), 43);
 
-    // Mock same price for both assets ($1)
-    _mockReservePrice(spoke, _wethReserveId(spoke), 1e8);
-    _mockReservePrice(spoke, _daiReserveId(spoke), 1e8);
+    // Mock drawn rate to 50%
+    _mockDrawnRateBps(50_00);
 
-    // Supply 105e18 WETH (collateral), borrow 80e18 DAI (within 105 * 0.80 = 84 limit)
-    _increaseCollateralSupply(spoke, _wethReserveId(spoke), 105e18, user);
-    _increaseReserveDebt(spoke, _daiReserveId(spoke), 80e18, user);
+    // Borrow: 130 wei of WETH => 130 shares
+    _increaseReserveDebt(spoke, _wethReserveId(spoke), 130, user);
 
-    // HF = 105 * 0.80 / 80 = 1.05 (healthy)
-    ISpoke.UserAccountData memory preData = spoke.getUserAccountData(user);
-    assertApproxEqAbs(
-      preData.healthFactor,
-      1.05e18,
-      0.001e18,
-      'before price change: health factor'
-    );
+    // Skip 1 year to increase drawn index to 1.5
+    skip(365 days);
+    assertEq(hub1.getAssetDrawnIndex(wethAssetId), 1.5e27);
 
-    // Drop WETH price to $0.80 → HF = 105 * 0.80 * 0.80 / 80 = 0.84
-    _mockReservePrice(spoke, _wethReserveId(spoke), 0.8e8);
+    // 130 * 1.5 = 195 debt assets
+    assertEq(spoke.getUserTotalDebt(_wethReserveId(spoke), user), 195);
 
-    ISpoke.UserAccountData memory preLiqData = spoke.getUserAccountData(user);
-    assertApproxEqAbs(
-      preLiqData.healthFactor,
-      0.84e18,
-      0.001e18,
-      'before liquidation: health factor'
-    );
+    // increase debt price so that user is unhealthy
+    // now debt worth is 195 * $2 = $390
+    _mockReservePrice(spoke, _wethReserveId(spoke), 2e8 * 1e18 * 1e6);
 
-    // Liquidate: all debt (80) * LB (1.05) = $84 collateral value / $0.80 = 105 WETH = exactly all collateral
-    _checkedLiquidationCall(
-      CheckedLiquidationCallParams({
-        spoke: spoke,
-        collateralReserveId: _wethReserveId(spoke),
-        debtReserveId: _daiReserveId(spoke),
-        user: user,
-        debtToCover: type(uint256).max,
-        liquidator: liquidator,
-        isSolvent: true,
-        receiveShares: false
-      })
-    );
+    // User is liquidatable
+    assertLe(spoke.getUserAccountData(user).healthFactor, 1e18, 'User should be unhealthy');
+    uint256 liquidatorDebtBefore = tokenList.weth.balanceOf(liquidator);
 
-    // All collateral liquidated, all debt liquidated
-    assertEq(
-      spoke.getUserSuppliedAssets(_wethReserveId(spoke), user),
-      0,
-      'post: collateral should be 0'
-    );
-    assertEq(spoke.getUserTotalDebt(_daiReserveId(spoke), user), 0, 'post: debt should be 0');
+    // liquidate 184 debt assets, 184 / 1.5 -> 122 drawn shares to liquidate (rounded down)
+    // 122 drawn shares to liquidate -> 183 debt assets, $366 collateral value
+    // -> 174 collateralToLiquidate -> 43 collateralSharesToLiquidate (rounded down), full exact liquidation
+    vm.prank(liquidator);
+    spoke.liquidationCall({
+      collateralReserveId: _usdxReserveId(spoke),
+      debtReserveId: _wethReserveId(spoke),
+      user: user,
+      debtToCover: 184,
+      receiveShares: false
+    });
+
+    uint256 liquidatorDebtAfter = tokenList.weth.balanceOf(liquidator);
+    // without recalculation, the debt to liquidate would be 183 (drawnShares to liquidate 122)
+    // now with recalculation, the debt to liquidate is 182 (drawnShares to liquidate 121)
+    assertEq(stdMath.delta(liquidatorDebtBefore, liquidatorDebtAfter), 182);
+    // remaining debt shares are anyway reported as deficit, as collateral is fully liquidated
+    assertEq(spoke.getUserPosition(_wethReserveId(spoke), user).drawnShares, 0);
+    assertEq(spoke.getUserSuppliedShares(_usdxReserveId(spoke), user), 0);
   }
 
   /// @dev a halted peripheral asset won't block a liquidation
