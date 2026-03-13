@@ -5,11 +5,9 @@ pragma solidity ^0.8.0;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {EngineFlags} from 'src/config-engine/libraries/EngineFlags.sol';
 import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
-
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IAssetInterestRateStrategy} from 'src/hub/interfaces/IAssetInterestRateStrategy.sol';
-
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @title HubEngine
@@ -19,7 +17,7 @@ library HubEngine {
   using SafeCast for uint256;
 
   /// @notice Thrown when tokenization is requested but the name or symbol is empty.
-  error InvalidTokenizationConfig();
+  error InvalidTokenizationSpokeConfig();
 
   /// @notice Lists new assets on Hubs via the HubConfigurator.
   /// @dev When `tokenization.addCap > 0`, also deploys a TokenizationSpoke (impl + proxy) via
@@ -94,23 +92,7 @@ library HubEngine {
         );
       }
 
-      if (updates[i].irStrategy != EngineFlags.KEEP_CURRENT_ADDRESS) {
-        updates[i].hubConfigurator.updateInterestRateStrategy(
-          updates[i].hub,
-          assetId,
-          updates[i].irStrategy,
-          abi.encode(updates[i].irData)
-        );
-      } else {
-        bytes memory mergedIrData = _mergeInterestRateData(
-          updates[i].hub,
-          assetId,
-          updates[i].irData
-        );
-        if (mergedIrData.length > 0) {
-          updates[i].hubConfigurator.updateInterestRateData(updates[i].hub, assetId, mergedIrData);
-        }
-      }
+      _updateInterestRateStrategy(assetId, updates[i]);
 
       if (updates[i].reinvestmentController != EngineFlags.KEEP_CURRENT_ADDRESS) {
         updates[i].hubConfigurator.updateReinvestmentController(
@@ -158,32 +140,7 @@ library HubEngine {
     for (uint256 i; i < length; ++i) {
       uint256 assetId = IHubBase(updates[i].hub).getAssetId(updates[i].underlying);
 
-      bool updateAdd = updates[i].addCap != EngineFlags.KEEP_CURRENT;
-      bool updateDraw = updates[i].drawCap != EngineFlags.KEEP_CURRENT;
-
-      if (updateAdd && updateDraw) {
-        updates[i].hubConfigurator.updateSpokeCaps(
-          updates[i].hub,
-          assetId,
-          updates[i].spoke,
-          updates[i].addCap,
-          updates[i].drawCap
-        );
-      } else if (updateAdd) {
-        updates[i].hubConfigurator.updateSpokeAddCap(
-          updates[i].hub,
-          assetId,
-          updates[i].spoke,
-          updates[i].addCap
-        );
-      } else if (updateDraw) {
-        updates[i].hubConfigurator.updateSpokeDrawCap(
-          updates[i].hub,
-          assetId,
-          updates[i].spoke,
-          updates[i].drawCap
-        );
-      }
+      _updateSpokeCaps(assetId, updates[i]);
 
       if (updates[i].riskPremiumThreshold != EngineFlags.KEEP_CURRENT) {
         updates[i].hubConfigurator.updateSpokeRiskPremiumThreshold(
@@ -279,7 +236,7 @@ library HubEngine {
     if (
       bytes(listing.tokenization.name).length == 0 || bytes(listing.tokenization.symbol).length == 0
     ) {
-      revert InvalidTokenizationConfig();
+      revert InvalidTokenizationSpokeConfig();
     }
 
     address proxy = TokenizationSpokeDeployer.deploy(
@@ -327,11 +284,65 @@ library HubEngine {
       irStrategy
     ).getInterestRateData(assetId);
 
-    if (updateOptimal) current.optimalUsageRatio = irData.optimalUsageRatio;
-    if (updateBase) current.baseDrawnRate = irData.baseDrawnRate;
-    if (updateBefore) current.rateGrowthBeforeOptimal = irData.rateGrowthBeforeOptimal;
-    if (updateAfter) current.rateGrowthAfterOptimal = irData.rateGrowthAfterOptimal;
+    if (updateOptimal) {
+      current.optimalUsageRatio = irData.optimalUsageRatio;
+    }
+    if (updateBase) {
+      current.baseDrawnRate = irData.baseDrawnRate;
+    }
+    if (updateBefore) {
+      current.rateGrowthBeforeOptimal = irData.rateGrowthBeforeOptimal;
+    }
+    if (updateAfter) {
+      current.rateGrowthAfterOptimal = irData.rateGrowthAfterOptimal;
+    }
 
     return abi.encode(current);
+  }
+
+  /// @dev Updates the interest rate strategy or data for the given asset.
+  ///   If a new strategy address is provided, replaces the strategy entirely;
+  ///   otherwise merges individual rate parameters into the existing data.
+  function _updateInterestRateStrategy(
+    uint256 assetId,
+    IAaveV4ConfigEngine.AssetConfigUpdate calldata update
+  ) private {
+    if (update.irStrategy != EngineFlags.KEEP_CURRENT_ADDRESS) {
+      update.hubConfigurator.updateInterestRateStrategy(
+        update.hub,
+        assetId,
+        update.irStrategy,
+        abi.encode(update.irData)
+      );
+    } else {
+      bytes memory mergedIrData = _mergeInterestRateData(update.hub, assetId, update.irData);
+      if (mergedIrData.length > 0) {
+        update.hubConfigurator.updateInterestRateData(update.hub, assetId, mergedIrData);
+      }
+    }
+  }
+
+  /// @dev Updates spoke add/draw caps, calling the most specific configurator method
+  ///   depending on which caps changed (both, add-only, or draw-only).
+  function _updateSpokeCaps(
+    uint256 assetId,
+    IAaveV4ConfigEngine.SpokeConfigUpdate calldata update
+  ) private {
+    bool updateAdd = update.addCap != EngineFlags.KEEP_CURRENT;
+    bool updateDraw = update.drawCap != EngineFlags.KEEP_CURRENT;
+
+    if (updateAdd && updateDraw) {
+      update.hubConfigurator.updateSpokeCaps(
+        update.hub,
+        assetId,
+        update.spoke,
+        update.addCap,
+        update.drawCap
+      );
+    } else if (updateAdd) {
+      update.hubConfigurator.updateSpokeAddCap(update.hub, assetId, update.spoke, update.addCap);
+    } else if (updateDraw) {
+      update.hubConfigurator.updateSpokeDrawCap(update.hub, assetId, update.spoke, update.drawCap);
+    }
   }
 }

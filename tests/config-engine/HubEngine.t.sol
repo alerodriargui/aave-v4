@@ -51,7 +51,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetListings(_toAssetListingArray(listing));
   }
 
-  function testFuzz_executeHubAssetListings(uint256 decimals) public {
+  function test_fuzz_executeHubAssetListings(uint256 decimals) public {
     decimals = bound(decimals, 0, 255);
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.decimals = decimals;
@@ -162,7 +162,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
-  function testFuzz_executeHubAssetConfigUpdates_fee(uint256 fee, address receiver) public {
+  function test_fuzz_executeHubAssetConfigUpdates_fee(uint256 fee, address receiver) public {
     vm.assume(fee != EngineFlags.KEEP_CURRENT);
     vm.assume(receiver != EngineFlags.KEEP_CURRENT_ADDRESS);
     vm.assume(receiver != address(0));
@@ -246,7 +246,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
-  function testFuzz_executeHubAssetConfigUpdates_ir(address strategy) public {
+  function test_fuzz_executeHubAssetConfigUpdates_ir(address strategy) public {
     vm.assume(strategy != EngineFlags.KEEP_CURRENT_ADDRESS);
     vm.assume(strategy != address(0));
 
@@ -299,7 +299,9 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
   }
 
-  function testFuzz_executeHubAssetConfigUpdates_reinvestmentController(address controller) public {
+  function test_fuzz_executeHubAssetConfigUpdates_reinvestmentController(
+    address controller
+  ) public {
     vm.assume(controller != address(0));
     vm.assume(controller != EngineFlags.KEEP_CURRENT_ADDRESS);
 
@@ -425,7 +427,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
-  function testFuzz_executeHubSpokeConfigUpdates_caps(uint256 addCap, uint256 drawCap) public {
+  function test_fuzz_executeHubSpokeConfigUpdates_caps(uint256 addCap, uint256 drawCap) public {
     vm.assume(addCap != EngineFlags.KEEP_CURRENT);
     vm.assume(drawCap != EngineFlags.KEEP_CURRENT);
 
@@ -529,7 +531,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
-  function testFuzz_executeHubSpokeConfigUpdates_status(uint256 active, uint256 halted) public {
+  function test_fuzz_executeHubSpokeConfigUpdates_status(uint256 active, uint256 halted) public {
     // Bound to valid flag values (ENABLED or DISABLED only, not KEEP_CURRENT)
     active = bound(active, 0, 1);
     halted = bound(halted, 0, 1);
@@ -594,7 +596,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubSpokeConfigUpdates(_toSpokeConfigUpdateArray(update));
   }
 
-  function testFuzz_executeHubSpokeConfigUpdates_riskPremiumThreshold(uint256 threshold) public {
+  function test_fuzz_executeHubSpokeConfigUpdates_riskPremiumThreshold(uint256 threshold) public {
     vm.assume(threshold != EngineFlags.KEEP_CURRENT);
 
     IAaveV4ConfigEngine.SpokeConfigUpdate memory update = _defaultSpokeConfigUpdate();
@@ -714,7 +716,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubSpokeToAssetsAdditions(_toSpokeToAssetsAdditionArray(addition));
   }
 
-  function testFuzz_executeHubSpokeToAssetsAdditions(uint40 addCap, uint40 drawCap) public {
+  function test_fuzz_executeHubSpokeToAssetsAdditions(uint40 addCap, uint40 drawCap) public {
     IAaveV4ConfigEngine.SpokeAssetConfig[]
       memory assets = new IAaveV4ConfigEngine.SpokeAssetConfig[](1);
     assets[0] = IAaveV4ConfigEngine.SpokeAssetConfig({
@@ -794,7 +796,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetHalts(_toAssetHaltArray(halt));
   }
 
-  function testFuzz_executeHubAssetHalts(address underlying, uint256 assetId) public {
+  function test_fuzz_executeHubAssetHalts(address underlying, uint256 assetId) public {
     mockHub.setAssetId(underlying, assetId);
 
     IAaveV4ConfigEngine.AssetHalt memory halt = IAaveV4ConfigEngine.AssetHalt({
@@ -836,7 +838,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetDeactivations(_toAssetDeactivationArray(deactivation));
   }
 
-  function testFuzz_executeHubAssetDeactivations(address underlying, uint256 assetId) public {
+  function test_fuzz_executeHubAssetDeactivations(address underlying, uint256 assetId) public {
     mockHub.setAssetId(underlying, assetId);
 
     IAaveV4ConfigEngine.AssetDeactivation memory deactivation = IAaveV4ConfigEngine
@@ -879,7 +881,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubAssetCapsResets(_toAssetCapsResetArray(reset));
   }
 
-  function testFuzz_executeHubAssetCapsResets(address underlying, uint256 assetId) public {
+  function test_fuzz_executeHubAssetCapsResets(address underlying, uint256 assetId) public {
     mockHub.setAssetId(underlying, assetId);
 
     IAaveV4ConfigEngine.AssetCapsReset memory reset = IAaveV4ConfigEngine.AssetCapsReset({
@@ -921,7 +923,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubSpokeDeactivations(_toSpokeDeactivationArray(deactivation));
   }
 
-  function testFuzz_executeHubSpokeDeactivations(address spoke) public {
+  function test_fuzz_executeHubSpokeDeactivations(address spoke) public {
     vm.assume(spoke != address(0));
 
     IAaveV4ConfigEngine.SpokeDeactivation memory deactivation = IAaveV4ConfigEngine
@@ -964,7 +966,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     engine.executeHubSpokeCapsResets(_toSpokeCapsResetArray(reset));
   }
 
-  function testFuzz_executeHubSpokeCapsResets(address spoke) public {
+  function test_fuzz_executeHubSpokeCapsResets(address spoke) public {
     vm.assume(spoke != address(0));
 
     IAaveV4ConfigEngine.SpokeCapsReset memory reset = IAaveV4ConfigEngine.SpokeCapsReset({
@@ -994,7 +996,7 @@ contract HubEngineTest is BaseConfigEngineTest {
 
   function test_executeHubAssetListings_withTokenization() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
-    listing.tokenization = IAaveV4ConfigEngine.TokenizationConfig({
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
       name: 'Tokenized USDC',
       symbol: 'tUSDC'
@@ -1025,7 +1027,7 @@ contract HubEngineTest is BaseConfigEngineTest {
 
   function test_executeHubAssetListings_tokenization_deterministicAddress() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
-    listing.tokenization = IAaveV4ConfigEngine.TokenizationConfig({
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
       name: 'Tokenized USDC',
       symbol: 'tUSDC'
@@ -1060,25 +1062,25 @@ contract HubEngineTest is BaseConfigEngineTest {
 
   function test_executeHubAssetListings_tokenization_revert_emptyName() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
-    listing.tokenization = IAaveV4ConfigEngine.TokenizationConfig({
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
       name: '',
       symbol: 'tUSDC'
     });
 
-    vm.expectRevert(HubEngine.InvalidTokenizationConfig.selector);
+    vm.expectRevert(HubEngine.InvalidTokenizationSpokeConfig.selector);
     engine.executeHubAssetListings(_toAssetListingArray(listing));
   }
 
   function test_executeHubAssetListings_tokenization_revert_emptySymbol() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
-    listing.tokenization = IAaveV4ConfigEngine.TokenizationConfig({
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
       addCap: 1000,
       name: 'Tokenized USDC',
       symbol: ''
     });
 
-    vm.expectRevert(HubEngine.InvalidTokenizationConfig.selector);
+    vm.expectRevert(HubEngine.InvalidTokenizationSpokeConfig.selector);
     engine.executeHubAssetListings(_toAssetListingArray(listing));
   }
 }

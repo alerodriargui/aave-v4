@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import {Address} from 'src/dependencies/openzeppelin/Address.sol';
-
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @title AaveV4Payload
@@ -18,10 +17,10 @@ abstract contract AaveV4Payload {
   /// @dev Thrown when the config engine address is zero.
   error InvalidConfigEngine();
 
-  /// @param configEngine The IAaveV4ConfigEngine implementation to delegatecall into.
-  constructor(IAaveV4ConfigEngine configEngine) {
-    require(address(configEngine) != address(0), InvalidConfigEngine());
-    CONFIG_ENGINE = configEngine;
+  /// @param configEngine_ The IAaveV4ConfigEngine implementation to delegatecall into.
+  constructor(IAaveV4ConfigEngine configEngine_) {
+    require(address(configEngine_) != address(0), InvalidConfigEngine());
+    CONFIG_ENGINE = configEngine_;
   }
 
   /// @notice Main execution entry point called by governance. Runs all configured actions.

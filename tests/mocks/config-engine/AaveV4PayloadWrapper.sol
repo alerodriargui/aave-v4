@@ -60,12 +60,16 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
   // Hub setters
   function setHubAssetListings(IAaveV4ConfigEngine.AssetListing[] memory items) external {
     delete _hubAssetListings;
-    for (uint256 i = 0; i < items.length; i++) _hubAssetListings.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _hubAssetListings.push(items[i]);
+    }
   }
 
   function setHubAssetConfigUpdates(IAaveV4ConfigEngine.AssetConfigUpdate[] memory items) external {
     delete _hubAssetConfigUpdates;
-    for (uint256 i = 0; i < items.length; i++) _hubAssetConfigUpdates.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _hubAssetConfigUpdates.push(items[i]);
+    }
   }
 
   function setHubSpokeToAssetsAdditions(
@@ -76,73 +80,97 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
 
   function setHubSpokeConfigUpdates(IAaveV4ConfigEngine.SpokeConfigUpdate[] memory items) external {
     delete _hubSpokeConfigUpdates;
-    for (uint256 i = 0; i < items.length; i++) _hubSpokeConfigUpdates.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _hubSpokeConfigUpdates.push(items[i]);
+    }
   }
 
   function setHubAssetHalts(IAaveV4ConfigEngine.AssetHalt[] memory items) external {
     delete _hubAssetHalts;
-    for (uint256 i = 0; i < items.length; i++) _hubAssetHalts.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _hubAssetHalts.push(items[i]);
+    }
   }
 
   function setHubAssetDeactivations(IAaveV4ConfigEngine.AssetDeactivation[] memory items) external {
     delete _hubAssetDeactivations;
-    for (uint256 i = 0; i < items.length; i++) _hubAssetDeactivations.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _hubAssetDeactivations.push(items[i]);
+    }
   }
 
   function setHubAssetCapsResets(IAaveV4ConfigEngine.AssetCapsReset[] memory items) external {
     delete _hubAssetCapsResets;
-    for (uint256 i = 0; i < items.length; i++) _hubAssetCapsResets.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _hubAssetCapsResets.push(items[i]);
+    }
   }
 
   function setHubSpokeDeactivations(IAaveV4ConfigEngine.SpokeDeactivation[] memory items) external {
     delete _hubSpokeDeactivations;
-    for (uint256 i = 0; i < items.length; i++) _hubSpokeDeactivations.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _hubSpokeDeactivations.push(items[i]);
+    }
   }
 
   function setHubSpokeCapsResets(IAaveV4ConfigEngine.SpokeCapsReset[] memory items) external {
     delete _hubSpokeCapsResets;
-    for (uint256 i = 0; i < items.length; i++) _hubSpokeCapsResets.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _hubSpokeCapsResets.push(items[i]);
+    }
   }
 
   // Spoke setters
   function setSpokeReserveListings(IAaveV4ConfigEngine.ReserveListing[] memory items) external {
     delete _spokeReserveListings;
-    for (uint256 i = 0; i < items.length; i++) _spokeReserveListings.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _spokeReserveListings.push(items[i]);
+    }
   }
 
   function setSpokeReserveConfigUpdates(
     IAaveV4ConfigEngine.ReserveConfigUpdate[] memory items
   ) external {
     delete _spokeReserveConfigUpdates;
-    for (uint256 i = 0; i < items.length; i++) _spokeReserveConfigUpdates.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _spokeReserveConfigUpdates.push(items[i]);
+    }
   }
 
   function setSpokeLiquidationConfigUpdates(
     IAaveV4ConfigEngine.LiquidationConfigUpdate[] memory items
   ) external {
     delete _spokeLiquidationConfigUpdates;
-    for (uint256 i = 0; i < items.length; i++) _spokeLiquidationConfigUpdates.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _spokeLiquidationConfigUpdates.push(items[i]);
+    }
   }
 
   function setSpokeDynamicReserveConfigAdditions(
     IAaveV4ConfigEngine.DynamicReserveConfigAddition[] memory items
   ) external {
     delete _spokeDynamicReserveConfigAdditions;
-    for (uint256 i = 0; i < items.length; i++) _spokeDynamicReserveConfigAdditions.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _spokeDynamicReserveConfigAdditions.push(items[i]);
+    }
   }
 
   function setSpokeDynamicReserveConfigUpdates(
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] memory items
   ) external {
     delete _spokeDynamicReserveConfigUpdates;
-    for (uint256 i = 0; i < items.length; i++) _spokeDynamicReserveConfigUpdates.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _spokeDynamicReserveConfigUpdates.push(items[i]);
+    }
   }
 
   function setSpokePositionManagerUpdates(
     IAaveV4ConfigEngine.PositionManagerUpdate[] memory items
   ) external {
     delete _spokePositionManagerUpdates;
-    for (uint256 i = 0; i < items.length; i++) _spokePositionManagerUpdates.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _spokePositionManagerUpdates.push(items[i]);
+    }
   }
 
   // Position manager setters
@@ -150,14 +178,18 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     IAaveV4ConfigEngine.SpokeRegistration[] memory items
   ) external {
     delete _positionManagerSpokeRegistrations;
-    for (uint256 i = 0; i < items.length; i++) _positionManagerSpokeRegistrations.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _positionManagerSpokeRegistrations.push(items[i]);
+    }
   }
 
   function setPositionManagerRoleRenouncements(
     IAaveV4ConfigEngine.PositionManagerRoleRenouncement[] memory items
   ) external {
     delete _positionManagerRoleRenouncements;
-    for (uint256 i = 0; i < items.length; i++) _positionManagerRoleRenouncements.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _positionManagerRoleRenouncements.push(items[i]);
+    }
   }
 
   // Access manager setters
@@ -165,7 +197,9 @@ contract AaveV4PayloadWrapper is AaveV4Payload {
     IAaveV4ConfigEngine.RoleMembership[] memory items
   ) external {
     delete _accessManagerRoleMemberships;
-    for (uint256 i = 0; i < items.length; i++) _accessManagerRoleMemberships.push(items[i]);
+    for (uint256 i = 0; i < items.length; i++) {
+      _accessManagerRoleMemberships.push(items[i]);
+    }
   }
 
   function setAccessManagerRoleUpdates(IAaveV4ConfigEngine.RoleUpdate[] memory items) external {

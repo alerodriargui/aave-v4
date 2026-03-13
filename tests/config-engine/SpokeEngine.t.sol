@@ -175,7 +175,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     engine.executeSpokeReserveConfigUpdates(_toReserveConfigUpdateArray(update));
   }
 
-  function testFuzz_executeSpokeReserveConfigUpdates(
+  function test_fuzz_executeSpokeReserveConfigUpdates(
     address priceSource_,
     uint256 collateralRisk,
     bool paused_,
@@ -354,7 +354,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     assertEq(vm.getRecordedLogs().length, 0);
   }
 
-  function testFuzz_executeSpokeLiquidationConfigUpdates(
+  function test_fuzz_executeSpokeLiquidationConfigUpdates(
     uint256 targetHealthFactor,
     uint256 healthFactorForMaxBonus,
     uint256 liquidationBonusFactor
@@ -509,7 +509,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     engine.executeSpokeReserveListings(_toReserveListingArray(listing));
   }
 
-  function testFuzz_executeSpokeReserveListings(
+  function test_fuzz_executeSpokeReserveListings(
     uint24 collateralRisk,
     bool paused,
     bool frozen,
@@ -585,7 +585,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     );
   }
 
-  function testFuzz_executeSpokeDynamicReserveConfigAdditions(
+  function test_fuzz_executeSpokeDynamicReserveConfigAdditions(
     uint16 collateralFactor,
     uint32 maxLiquidationBonus,
     uint16 liquidationFee
@@ -641,7 +641,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     engine.executeSpokePositionManagerUpdates(_toPositionManagerUpdateArray(update));
   }
 
-  function testFuzz_executeSpokePositionManagerUpdates(
+  function test_fuzz_executeSpokePositionManagerUpdates(
     address positionManager,
     bool active
   ) public {

@@ -19,7 +19,7 @@ interface IAaveV4ConfigEngine {
   /// @dev addCap The add cap for the TokenizationSpoke (0 means no tokenization).
   /// @dev name The name for the TokenizationSpoke.
   /// @dev symbol The symbol for the TokenizationSpoke.
-  struct TokenizationConfig {
+  struct TokenizationSpokeConfig {
     uint256 addCap;
     string name;
     string symbol;
@@ -29,7 +29,7 @@ interface IAaveV4ConfigEngine {
   /// @dev hubConfigurator The HubConfigurator to use for this action.
   /// @dev hub The address of the Hub.
   /// @dev underlying The address of the underlying asset.
-  /// @dev decimals Explicit decimals (0 means use addAsset which auto-detects decimals).
+  /// @dev decimals Explicit decimals (0 means use `addAsset` which reads decimals from token).
   /// @dev feeReceiver The address of the fee receiver Spoke.
   /// @dev liquidityFee The liquidity fee of the asset, in BPS.
   /// @dev irStrategy The address of the interest rate strategy contract.
@@ -44,7 +44,7 @@ interface IAaveV4ConfigEngine {
     uint256 liquidityFee;
     address irStrategy;
     IAssetInterestRateStrategy.InterestRateData irData;
-    TokenizationConfig tokenization;
+    TokenizationSpokeConfig tokenization;
   }
 
   /// @notice Parameters for updating asset config (fee, interest rate, reinvestment) on a Hub.

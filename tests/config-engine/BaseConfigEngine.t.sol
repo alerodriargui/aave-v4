@@ -101,7 +101,7 @@ abstract contract BaseConfigEngineTest is Test {
         liquidityFee: LIQUIDITY_FEE,
         irStrategy: IR_STRATEGY,
         irData: IR_DATA,
-        tokenization: IAaveV4ConfigEngine.TokenizationConfig({addCap: 0, name: '', symbol: ''})
+        tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({addCap: 0, name: '', symbol: ''})
       });
   }
 

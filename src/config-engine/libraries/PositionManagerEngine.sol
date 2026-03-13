@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
-
 import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEngine.sol';
 
 /// @title PositionManagerEngine

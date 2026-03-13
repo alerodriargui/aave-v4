@@ -36,7 +36,9 @@ contract MockSpokeReader {
     uint256 reserveId,
     uint32 dynamicConfigKey
   ) external view returns (ISpoke.DynamicReserveConfig memory) {
-    if (shouldRevertOnRead) revert(REVERT_MSG);
+    if (shouldRevertOnRead) {
+      revert(REVERT_MSG);
+    }
     return _configs[keccak256(abi.encode(reserveId, dynamicConfigKey))];
   }
 }

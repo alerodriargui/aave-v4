@@ -32,22 +32,30 @@ contract MockAccessManager is IAccessManager {
   }
 
   function grantRole(uint64 roleId, address account, uint32 executionDelay) external {
-    if (shouldRevert[msg.sig]) revert GrantRoleReverted();
+    if (shouldRevert[msg.sig]) {
+      revert GrantRoleReverted();
+    }
     emit GrantRoleCalled(roleId, account, executionDelay);
   }
 
   function revokeRole(uint64 roleId, address account) external {
-    if (shouldRevert[msg.sig]) revert RevokeRoleReverted();
+    if (shouldRevert[msg.sig]) {
+      revert RevokeRoleReverted();
+    }
     emit RevokeRoleCalled(roleId, account);
   }
 
   function setRoleAdmin(uint64 roleId, uint64 admin) external {
-    if (shouldRevert[msg.sig]) revert SetRoleAdminReverted();
+    if (shouldRevert[msg.sig]) {
+      revert SetRoleAdminReverted();
+    }
     emit SetRoleAdminCalled(roleId, admin);
   }
 
   function setRoleGuardian(uint64 roleId, uint64 guardian) external {
-    if (shouldRevert[msg.sig]) revert SetRoleGuardianReverted();
+    if (shouldRevert[msg.sig]) {
+      revert SetRoleGuardianReverted();
+    }
     emit SetRoleGuardianCalled(roleId, guardian);
   }
 
@@ -56,27 +64,37 @@ contract MockAccessManager is IAccessManager {
     bytes4[] calldata selectors,
     uint64 roleId
   ) external {
-    if (shouldRevert[msg.sig]) revert SetTargetFunctionRoleReverted();
+    if (shouldRevert[msg.sig]) {
+      revert SetTargetFunctionRoleReverted();
+    }
     emit SetTargetFunctionRoleCalled(target, selectors, roleId);
   }
 
   function setTargetClosed(address target, bool closed) external {
-    if (shouldRevert[msg.sig]) revert SetTargetClosedReverted();
+    if (shouldRevert[msg.sig]) {
+      revert SetTargetClosedReverted();
+    }
     emit SetTargetClosedCalled(target, closed);
   }
 
   function labelRole(uint64 roleId, string calldata label) external {
-    if (shouldRevert[msg.sig]) revert LabelRoleReverted();
+    if (shouldRevert[msg.sig]) {
+      revert LabelRoleReverted();
+    }
     emit LabelRoleCalled(roleId, label);
   }
 
   function setGrantDelay(uint64 roleId, uint32 newDelay) external {
-    if (shouldRevert[msg.sig]) revert SetGrantDelayReverted();
+    if (shouldRevert[msg.sig]) {
+      revert SetGrantDelayReverted();
+    }
     emit SetGrantDelayCalled(roleId, newDelay);
   }
 
   function setTargetAdminDelay(address target, uint32 newDelay) external {
-    if (shouldRevert[msg.sig]) revert SetTargetAdminDelayReverted();
+    if (shouldRevert[msg.sig]) {
+      revert SetTargetAdminDelayReverted();
+    }
     emit SetTargetAdminDelayCalled(target, newDelay);
   }
 

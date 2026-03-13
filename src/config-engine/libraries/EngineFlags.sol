@@ -10,15 +10,19 @@ library EngineFlags {
   error InvalidBoolValue(uint256 value);
 
   /// @dev Sentinel value to keep the current uint value.
-  uint256 internal constant KEEP_CURRENT = type(uint256).max - 1;
+  /// Strongly assumes that the value `type(uint256).max - 256` will never be used, which seems reasonable.
+  uint256 internal constant KEEP_CURRENT = type(uint256).max - 256;
   /// @dev Sentinel address to keep the current address value.
   address internal constant KEEP_CURRENT_ADDRESS = address(type(uint160).max);
   /// @dev Sentinel value to keep the current uint64 value.
-  uint64 internal constant KEEP_CURRENT_UINT64 = type(uint64).max - 1;
+  /// Strongly assumes that the value `type(uint64).max - 64` will never be used, which seems reasonable.
+  uint64 internal constant KEEP_CURRENT_UINT64 = type(uint64).max - 64;
   /// @dev Sentinel value to keep the current uint32 value.
-  uint32 internal constant KEEP_CURRENT_UINT32 = type(uint32).max - 1;
+  /// Strongly assumes that the value `type(uint32).max - 32` will never be used, which seems reasonable.
+  uint32 internal constant KEEP_CURRENT_UINT32 = type(uint32).max - 32;
   /// @dev Sentinel value to keep the current uint16 value.
-  uint16 internal constant KEEP_CURRENT_UINT16 = type(uint16).max - 1;
+  /// Strongly assumes that the value `type(uint16).max - 16` will never be used, which seems reasonable.
+  uint16 internal constant KEEP_CURRENT_UINT16 = type(uint16).max - 16;
 
   /// @dev Convenience constant representing an enabled boolean flag (1).
   uint256 internal constant ENABLED = 1;
