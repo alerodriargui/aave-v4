@@ -4,37 +4,28 @@ pragma solidity ^0.8.0;
 
 import 'forge-std/Vm.sol';
 
+import {TestTypes} from 'tests/utils/TestTypes.sol';
+import {Constants} from 'tests/Constants.sol';
+import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
-
-import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
-import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
-
-import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
-
-import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
-
-import {AaveV4HubConfigProcedures} from 'src/deployments/procedures/config/AaveV4HubConfigProcedures.sol';
-
-import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-
-import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
-
-import {TestTypes} from 'tests/utils/TestTypes.sol';
+import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
+import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
+import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
+import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
+import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
-
-import {Constants} from 'tests/Constants.sol';
-
-import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
+import {IHub} from 'src/hub/interfaces/IHub.sol';
+import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
+import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 
 library AaveV4TestOrchestration {
   bool public constant IS_TEST = true;
@@ -71,7 +62,9 @@ library AaveV4TestOrchestration {
     report.spokeReports = new TestTypes.TestSpokeReport[](spokeCount);
 
     // Deploy Access Batch
-    report.accessManager = AaveV4DeployBase.deployAuthorityBatch(admin, salt).accessManager;
+    report.accessManager = AaveV4DeployBase
+      .deployAuthorityBatch({admin: admin, salt: salt})
+      .accessManager;
 
     // Deploy TreasurySpoke Batch (single instance for all hubs)
     report.treasurySpoke = AaveV4DeployBase
@@ -313,10 +306,15 @@ library AaveV4TestOrchestration {
   ) public returns (uint256[] memory) {
     uint256[] memory assetIds = new uint256[](paramsList.length);
     for (uint256 i; i < paramsList.length; ++i) {
-      assetIds[i] = AaveV4HubConfigProcedures.addAssetViaConfigurator(
-        hubConfigurator,
-        paramsList[i]
-      );
+      assetIds[i] = IHubConfigurator(hubConfigurator).addAssetWithDecimals({
+        hub: paramsList[i].hub,
+        underlying: paramsList[i].underlying,
+        decimals: paramsList[i].decimals,
+        feeReceiver: paramsList[i].feeReceiver,
+        liquidityFee: paramsList[i].liquidityFee,
+        irStrategy: paramsList[i].irStrategy,
+        irData: paramsList[i].irData
+      });
     }
     return assetIds;
   }

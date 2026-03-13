@@ -31,7 +31,7 @@ library AaveV4DeployOrchestration {
     bytes memory hubBytecode,
     bytes memory spokeBytecode
   ) internal returns (OrchestrationReports.FullDeploymentReport memory report) {
-    bytes32 salt = _deriveSalt(deployInputs.salt);
+    bytes32 salt = _deriveSalt({deployer: deployer, salt: deployInputs.salt});
     report.salt = deployInputs.salt;
 
     // Deploy Access Batch
@@ -54,7 +54,7 @@ library AaveV4DeployOrchestration {
     });
 
     // Setup Configurator Roles
-    _setupConfiguratorRoles(logger, report);
+    _setupConfiguratorRoles({logger: logger, report: report});
 
     // Deploy TreasurySpoke Batch (single instance for all hubs)
     report.treasurySpokeBatchReport = _deployTreasurySpokeBatch({
@@ -134,108 +134,6 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  /// @dev Setup roles for the hub and spoke configurators
-  function _setupConfiguratorRoles(
-    Logger logger,
-    OrchestrationReports.FullDeploymentReport memory report
-  ) internal {
-    logger.logHeader1('setting HubConfigurator roles');
-    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles({
-      accessManager: report.authorityBatchReport.accessManager,
-      hubConfigurator: report.configuratorBatchReport.hubConfigurator
-    });
-
-    logger.logHeader1('setting SpokeConfigurator roles');
-    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles({
-      accessManager: report.authorityBatchReport.accessManager,
-      spokeConfigurator: report.configuratorBatchReport.spokeConfigurator
-    });
-  }
-
-  function _grantHubRoles(
-    Logger logger,
-    OrchestrationReports.FullDeploymentReport memory report,
-    address hubAdmin,
-    address hubConfiguratorAdmin
-  ) internal {
-    address accessManager = report.authorityBatchReport.accessManager;
-
-    logger.logHeader1('granting Hub Admin role');
-    AaveV4HubRolesProcedure.grantHubAllRoles({accessManager: accessManager, admin: hubAdmin});
-
-    logger.logHeader1('granting Hub Configurator roles');
-    AaveV4HubRolesProcedure.grantHubRole({
-      accessManager: accessManager,
-      role: Roles.HUB_CONFIGURATOR_ROLE,
-      admin: report.configuratorBatchReport.hubConfigurator
-    });
-
-    logger.logHeader1('granting HubConfigurator Admin roles');
-    AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles({
-      accessManager: accessManager,
-      admin: hubConfiguratorAdmin
-    });
-  }
-
-  function _grantSpokeRoles(
-    Logger logger,
-    OrchestrationReports.FullDeploymentReport memory report,
-    address spokeAdmin,
-    address spokeConfiguratorAdmin
-  ) internal {
-    address accessManager = report.authorityBatchReport.accessManager;
-
-    logger.logHeader1('granting Spoke Admin role');
-    AaveV4SpokeRolesProcedure.grantSpokeAllRoles({accessManager: accessManager, admin: spokeAdmin});
-
-    logger.logHeader1('granting Spoke Configurator roles');
-    AaveV4SpokeRolesProcedure.grantSpokeRole({
-      accessManager: accessManager,
-      role: Roles.SPOKE_CONFIGURATOR_ROLE,
-      admin: report.configuratorBatchReport.spokeConfigurator
-    });
-
-    logger.logHeader1('granting SpokeConfigurator Admin roles');
-    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles({
-      accessManager: accessManager,
-      admin: spokeConfiguratorAdmin
-    });
-  }
-
-  function _deployAuthorityBatch(
-    Logger logger,
-    address accessManagerAdmin,
-    bytes32 salt
-  ) internal returns (BatchReports.AuthorityBatchReport memory report) {
-    logger.logHeader1('deploying AuthorityBatch');
-
-    report = AaveV4DeployBase.deployAuthorityBatch({admin: accessManagerAdmin, salt: salt});
-
-    logger.log('AccessManager', report.accessManager);
-    logger.logNewLine();
-    return report;
-  }
-
-  function _deployConfiguratorBatch(
-    Logger logger,
-    address hubConfiguratorAuthority,
-    address spokeConfiguratorAuthority,
-    bytes32 salt
-  ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
-    logger.logHeader1('deploying ConfiguratorBatch');
-
-    report = AaveV4DeployBase.deployConfiguratorBatch({
-      hubConfiguratorAuthority: hubConfiguratorAuthority,
-      spokeConfiguratorAuthority: spokeConfiguratorAuthority,
-      salt: salt
-    });
-
-    logger.log('HubConfigurator', report.hubConfigurator);
-    logger.log('SpokeConfigurator', report.spokeConfigurator);
-    logger.logNewLine();
-    return report;
-  }
-
   function _deployHubs(
     Logger logger,
     address authority,
@@ -275,8 +173,8 @@ library AaveV4DeployOrchestration {
       salt: salt
     });
 
-    _logHubReport(logger, hubReport.report, label);
-    _setupHubRoles(logger, hubReport.report, authority);
+    _logHubReport({logger: logger, report: hubReport.report, label: label});
+    _setupHubRoles({logger: logger, report: hubReport.report, accessManager: authority});
 
     return hubReport;
   }
@@ -333,10 +231,59 @@ library AaveV4DeployOrchestration {
       maxUserReservesLimit: maxUserReservesLimit,
       salt: salt
     });
-    _logSpokeReport(logger, spokeReport.report, label);
-    _setupSpokeRoles(logger, spokeReport.report, authority);
+    _logSpokeReport({logger: logger, report: spokeReport.report, label: label});
+    _setupSpokeRoles({logger: logger, report: spokeReport.report, accessManager: authority});
 
     return spokeReport;
+  }
+
+  function _deployHubBatch(
+    Logger logger,
+    address authority,
+    bytes memory hubBytecode,
+    bytes32 salt
+  ) internal returns (BatchReports.HubBatchReport memory report) {
+    logger.logHeader1('deploying HubBatch');
+    report = AaveV4DeployBase.deployHubBatch({
+      authority: authority,
+      hubBytecode: hubBytecode,
+      salt: salt
+    });
+    return report;
+  }
+
+  function _deployAuthorityBatch(
+    Logger logger,
+    address accessManagerAdmin,
+    bytes32 salt
+  ) internal returns (BatchReports.AuthorityBatchReport memory report) {
+    logger.logHeader1('deploying AuthorityBatch');
+
+    report = AaveV4DeployBase.deployAuthorityBatch({admin: accessManagerAdmin, salt: salt});
+
+    logger.log('AccessManager', report.accessManager);
+    logger.logNewLine();
+    return report;
+  }
+
+  function _deployConfiguratorBatch(
+    Logger logger,
+    address hubConfiguratorAuthority,
+    address spokeConfiguratorAuthority,
+    bytes32 salt
+  ) internal returns (BatchReports.ConfiguratorBatchReport memory report) {
+    logger.logHeader1('deploying ConfiguratorBatch');
+
+    report = AaveV4DeployBase.deployConfiguratorBatch({
+      hubConfiguratorAuthority: hubConfiguratorAuthority,
+      spokeConfiguratorAuthority: spokeConfiguratorAuthority,
+      salt: salt
+    });
+
+    logger.log('HubConfigurator', report.hubConfigurator);
+    logger.log('SpokeConfigurator', report.spokeConfigurator);
+    logger.logNewLine();
+    return report;
   }
 
   function _deploySpokeInstanceBatch(
@@ -369,21 +316,6 @@ library AaveV4DeployOrchestration {
     report = AaveV4DeployBase.deployTreasurySpokeBatch({owner: treasurySpokeOwner, salt: salt});
     logger.log('TreasurySpoke', report.treasurySpoke);
     logger.logNewLine();
-    return report;
-  }
-
-  function _deployHubBatch(
-    Logger logger,
-    address authority,
-    bytes memory hubBytecode,
-    bytes32 salt
-  ) internal returns (BatchReports.HubBatchReport memory report) {
-    logger.logHeader1('deploying HubBatch');
-    report = AaveV4DeployBase.deployHubBatch({
-      authority: authority,
-      hubBytecode: hubBytecode,
-      salt: salt
-    });
     return report;
   }
 
@@ -425,24 +357,93 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  function _logSpokeReport(
+  /// @dev Setup roles for the hub and spoke configurators
+  function _setupConfiguratorRoles(
     Logger logger,
-    BatchReports.SpokeInstanceBatchReport memory report,
-    string memory label
-  ) internal pure {
-    logger.log(label);
-    logger.logDetail('SpokeInstance Proxy', report.spokeProxy);
-    logger.logDetail('SpokeInstance Implementation', report.spokeImplementation);
-    logger.logDetail('AaveOracle', report.aaveOracle);
+    OrchestrationReports.FullDeploymentReport memory report
+  ) internal {
+    logger.logHeader1('setting HubConfigurator roles');
+    AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles({
+      accessManager: report.authorityBatchReport.accessManager,
+      hubConfigurator: report.configuratorBatchReport.hubConfigurator
+    });
+
+    logger.logHeader1('setting SpokeConfigurator roles');
+    AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles({
+      accessManager: report.authorityBatchReport.accessManager,
+      spokeConfigurator: report.configuratorBatchReport.spokeConfigurator
+    });
   }
 
   function _setupSpokeRoles(
     Logger logger,
     BatchReports.SpokeInstanceBatchReport memory report,
-    address authority
+    address accessManager
   ) internal {
     logger.logHeader1('setting Spoke roles');
-    AaveV4SpokeRolesProcedure.setupSpokeAllRoles(authority, report.spokeProxy);
+    AaveV4SpokeRolesProcedure.setupSpokeAllRoles({
+      accessManager: accessManager,
+      spoke: report.spokeProxy
+    });
+  }
+
+  function _setupHubRoles(
+    Logger logger,
+    BatchReports.HubBatchReport memory report,
+    address accessManager
+  ) internal {
+    logger.logHeader1('setting Hub roles');
+    AaveV4HubRolesProcedure.setupHubAllRoles({accessManager: accessManager, hub: report.hub});
+  }
+
+  function _grantHubRoles(
+    Logger logger,
+    OrchestrationReports.FullDeploymentReport memory report,
+    address hubAdmin,
+    address hubConfiguratorAdmin
+  ) internal {
+    address accessManager = report.authorityBatchReport.accessManager;
+
+    logger.logHeader1('granting Hub Admin role');
+    AaveV4HubRolesProcedure.grantHubAllRoles({accessManager: accessManager, admin: hubAdmin});
+
+    logger.logHeader1('granting Hub Configurator roles');
+    AaveV4HubRolesProcedure.grantHubRole({
+      accessManager: accessManager,
+      role: Roles.HUB_CONFIGURATOR_ROLE,
+      admin: report.configuratorBatchReport.hubConfigurator
+    });
+
+    logger.logHeader1('granting HubConfigurator Admin roles');
+    AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles({
+      accessManager: accessManager,
+      admin: hubConfiguratorAdmin
+    });
+  }
+
+  function _grantSpokeRoles(
+    Logger logger,
+    OrchestrationReports.FullDeploymentReport memory report,
+    address spokeAdmin,
+    address spokeConfiguratorAdmin
+  ) internal {
+    address accessManager = report.authorityBatchReport.accessManager;
+
+    logger.logHeader1('granting Spoke Admin role');
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles({accessManager: accessManager, admin: spokeAdmin});
+
+    logger.logHeader1('granting Spoke Configurator roles');
+    AaveV4SpokeRolesProcedure.grantSpokeRole({
+      accessManager: accessManager,
+      role: Roles.SPOKE_CONFIGURATOR_ROLE,
+      admin: report.configuratorBatchReport.spokeConfigurator
+    });
+
+    logger.logHeader1('granting SpokeConfigurator Admin roles');
+    AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles({
+      accessManager: accessManager,
+      admin: spokeConfiguratorAdmin
+    });
   }
 
   function _logHubReport(
@@ -455,24 +456,34 @@ library AaveV4DeployOrchestration {
     logger.logDetail('InterestRateStrategy', report.irStrategy);
   }
 
-  function _setupHubRoles(
+  function _logSpokeReport(
     Logger logger,
-    BatchReports.HubBatchReport memory report,
-    address authority
-  ) internal {
-    logger.logHeader1('setting Hub roles');
-    AaveV4HubRolesProcedure.setupHubAllRoles(authority, report.hub);
+    BatchReports.SpokeInstanceBatchReport memory report,
+    string memory label
+  ) internal pure {
+    logger.log(label);
+    logger.logDetail('SpokeInstance Proxy', report.spokeProxy);
+    logger.logDetail('SpokeInstance Implementation', report.spokeImplementation);
+    logger.logDetail('AaveOracle', report.aaveOracle);
   }
 
-  function _deriveSalt(bytes32 salt_) internal pure returns (bytes32) {
-    return keccak256(abi.encode(SALT, salt_));
+  /// @dev Derives the root salt with deployer address in the first 160 bits
+  ///      and the remaining 96 bits from the user-provided salt.
+  ///      Layout: [deployer (160 bits) | truncated_hash (96 bits)]
+  function _deriveSalt(address deployer, bytes32 salt) internal pure returns (bytes32) {
+    return bytes32(bytes20(deployer)) | (keccak256(abi.encode(SALT, salt)) >> 160);
   }
 
+  /// @dev Derives a child salt from a base salt, contract type, and label.
+  /// @param baseSalt The base salt to derive the child salt from.
+  /// @param contractType The type of the contract (e.g. 'hub', 'spoke').
+  /// @param label The label of the contract to be deployed.
+  /// @return The derived child salt.
   function _deriveChildSalt(
     bytes32 baseSalt,
-    string memory kind,
+    string memory contractType,
     string memory label
   ) internal pure returns (bytes32) {
-    return keccak256(abi.encode(baseSalt, kind, label));
+    return keccak256(abi.encode(baseSalt, contractType, label));
   }
 }

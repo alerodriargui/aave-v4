@@ -22,18 +22,18 @@ library AaveV4SpokeRolesProcedure {
   }
 
   function setupSpokeAllRoles(address accessManager, address spoke) internal {
-    setupSpokeRole(
-      accessManager,
-      spoke,
-      Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
-      Roles.getSpokePositionUpdaterRoleSelectors()
-    );
-    setupSpokeRole(
-      accessManager,
-      spoke,
-      Roles.SPOKE_CONFIGURATOR_ROLE,
-      Roles.getSpokeConfiguratorRoleSelectors()
-    );
+    setupSpokeRole({
+      accessManager: accessManager,
+      spoke: spoke,
+      roleId: Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
+      selectors: Roles.getSpokePositionUpdaterRoleSelectors()
+    });
+    setupSpokeRole({
+      accessManager: accessManager,
+      spoke: spoke,
+      roleId: Roles.SPOKE_CONFIGURATOR_ROLE,
+      selectors: Roles.getSpokeConfiguratorRoleSelectors()
+    });
   }
 
   function setupSpokeRole(

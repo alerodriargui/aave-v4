@@ -151,22 +151,92 @@ Roles are namespaced by contract domain: Hub (1-3), HubConfigurator (100-113), S
 ## Data Flow
 
 ```
-FullDeployInputs                 (transport struct: addresses, labels, per-spoke config, salt)
-       |
-       v
-  AaveV4DeployOrchestration.deployAaveV4()
-       |
-       +-- deployAuthorityBatch()         --> AccessManager
-       +-- deployConfiguratorBatch()   --> HubConfigurator, SpokeConfigurator
-       +-- setupConfiguratorRoles()    --> selector->role mappings
-       +-- deployTreasurySpokeBatch()   --> TreasurySpoke
-       +-- deployHubs(hubLabels)       --> Hub[], IRStrategy[]
-       +-- deploySpokes(spokeLabels, spokeMaxReservesLimits)
-       |                               --> SpokeProxy[], AaveOracle[]
-       +-- deployGateways()            --> NativeTokenGateway, SignatureGateway
-       +-- deployPositionManagers()   --> GiverPositionManager, TakerPositionManager, ConfigPositionManager
-       +-- grantRoles() (if enabled)   --> admin role grants + DEFAULT_ADMIN transfer
-       |
-       v
-  FullDeploymentReport            (all deployed addresses)
+AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
+  run()
+    _getDeployInputs()                              override per chain in extended script
+    vm.startBroadcast()
+    _loadWarningsAndSanitizeInputs()                validate labels, default zero addrs to deployer
+    |
+    +-- AaveV4DeployOrchestration.deployAaveV4()    (library — all calls execute as deployer)
+    |     |
+    |     +-- _deriveSalt(deployer, salt)            [deployer(160b) | hash(SALT,salt)(96b)]
+    |     |
+    |     +-- _deployAuthorityBatch()
+    |     |     AaveV4DeployBase.deployAuthorityBatch()
+    |     |       new AaveV4AuthorityBatch(admin, salt)
+    |     |         AaveV4AccessManagerEnumerableDeployProcedure._deployAccessManagerEnumerable()
+    |     |           Create2Utils.create2Deploy() --> AccessManagerEnumerable
+    |     |
+    |     +-- _deployConfiguratorBatch()
+    |     |     AaveV4DeployBase.deployConfiguratorBatch()
+    |     |       new AaveV4ConfiguratorBatch(hubAuth, spokeAuth, salt)
+    |     |         AaveV4HubConfiguratorDeployProcedure._deployHubConfigurator()
+    |     |           Create2Utils.create2Deploy() --> HubConfigurator
+    |     |         AaveV4SpokeConfiguratorDeployProcedure._deploySpokeConfigurator()
+    |     |           Create2Utils.create2Deploy() --> SpokeConfigurator
+    |     |
+    |     +-- _setupConfiguratorRoles()
+    |     |     AaveV4HubConfiguratorRolesProcedure.setupHubConfiguratorAllRoles()
+    |     |       AccessManager.setTargetFunctionRole()  (selector -> role mappings for HubConfigurator)
+    |     |     AaveV4SpokeConfiguratorRolesProcedure.setupSpokeConfiguratorAllRoles()
+    |     |       AccessManager.setTargetFunctionRole()  (selector -> role mappings for SpokeConfigurator)
+    |     |
+    |     +-- _deployTreasurySpokeBatch()
+    |     |     AaveV4DeployBase.deployTreasurySpokeBatch()
+    |     |       new AaveV4TreasurySpokeBatch(owner, salt)
+    |     |         Create2Utils.create2Deploy() --> TreasurySpoke
+    |     |
+    |     +-- _deployHubs(hubLabels)                for each hub label:
+    |     |     _deployHub()
+    |     |       _deployHubBatch()
+    |     |         AaveV4DeployBase.deployHubBatch()
+    |     |           new AaveV4HubBatch(authority, hubBytecode, salt)
+    |     |             Create2Utils.create2Deploy() --> Hub, InterestRateStrategy
+    |     |       _setupHubRoles()
+    |     |         AaveV4HubRolesProcedure.setupHubAllRoles()
+    |     |           AccessManager.setTargetFunctionRole()  (selector -> role mappings for Hub)
+    |     |
+    |     +-- _deploySpokes(spokeLabels)            for each spoke label:
+    |     |     _deploySpoke()
+    |     |       _deploySpokeInstanceBatch()
+    |     |         AaveV4DeployBase.deploySpokeInstanceBatch()
+    |     |           new AaveV4SpokeInstanceBatch(proxyAdmin, authority, bytecode, ...)
+    |     |             new AaveOracle()             (non-deterministic, needs setSpoke post-deploy)
+    |     |             Create2Utils.proxify()    --> SpokeInstance (proxy + impl)
+    |     |       _setupSpokeRoles()
+    |     |         AaveV4SpokeRolesProcedure.setupSpokeAllRoles()
+    |     |           AccessManager.setTargetFunctionRole()  (selector -> role mappings for Spoke)
+    |     |
+    |     +-- _deployGatewayBatch()                 (if deployNativeTokenGateway || deploySignatureGateway)
+    |     |     AaveV4DeployBase.deployGatewaysBatch()
+    |     |       new AaveV4GatewayBatch(owner, nativeWrapper, flags, salt)
+    |     |         Create2Utils.create2Deploy() --> NativeTokenGateway, SignatureGateway
+    |     |
+    |     +-- _deployPositionManagerBatch()         (if deployPositionManagers)
+    |     |     AaveV4DeployBase.deployPositionManagerBatch()
+    |     |       new AaveV4PositionManagerBatch(owner, salt)
+    |     |         Create2Utils.create2Deploy() --> GiverPositionManager
+    |     |         Create2Utils.create2Deploy() --> TakerPositionManager
+    |     |         Create2Utils.create2Deploy() --> ConfigPositionManager
+    |     |
+    |     +-- grantRoles (if grantRoles == true)
+    |     |     _grantHubRoles()
+    |     |       AaveV4HubRolesProcedure.grantHubAllRoles()         hubAdmin gets roles 1-3
+    |     |       AaveV4HubRolesProcedure.grantHubRole()             HubConfigurator gets role 1
+    |     |       AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles()
+    |     |                                                          hubConfiguratorAdmin gets roles 100-113
+    |     |     _grantSpokeRoles()
+    |     |       AaveV4SpokeRolesProcedure.grantSpokeAllRoles()     spokeAdmin gets roles 200-201
+    |     |       AaveV4SpokeRolesProcedure.grantSpokeRole()         SpokeConfigurator gets role 201
+    |     |       AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles()
+    |     |                                                          spokeConfiguratorAdmin gets roles 301-309
+    |     |     AaveV4AccessManagerRolesProcedure.replaceDefaultAdminRole()
+    |     |       grant role 0 to accessManagerAdmin, revoke from deployer
+    |     |
+    |     v
+    |   FullDeploymentReport                        (all deployed addresses + salt)
+    |
+    vm.stopBroadcast()
+    MetadataLogger.writeJsonReportMarket()          write JSON report
+    logger.save()                                   save logs to output/reports/deployments/
 ```

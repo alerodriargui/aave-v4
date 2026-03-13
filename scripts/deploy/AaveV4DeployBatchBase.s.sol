@@ -64,58 +64,12 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     _validateUniqueLabels(inputs.spokeLabels, 'spoke');
 
     _appendSummary('========== DEPLOYMENT SUMMARY ==========');
-    // Hubs
-    if (inputs.hubLabels.length > 0) {
-      _appendSummary(string.concat('hubs to deploy: ', vm.toString(inputs.hubLabels.length)));
-      for (uint256 i; i < inputs.hubLabels.length; i++) {
-        _appendSummary(string.concat('  - ', inputs.hubLabels[i]));
-      }
-    } else {
-      _logWarning('no hubs will be deployed');
-    }
-
-    // Spokes
-    if (inputs.spokeLabels.length > 0) {
-      _appendSummary(string.concat('spokes to deploy: ', vm.toString(inputs.spokeLabels.length)));
-      for (uint256 i; i < inputs.spokeLabels.length; i++) {
-        _appendSummary(string.concat('  - ', inputs.spokeLabels[i]));
-      }
-    } else {
-      _logWarning('no spokes will be deployed');
-    }
-
-    // NativeTokenGateway
-    if (inputs.deployNativeTokenGateway) {
-      if (inputs.nativeWrapper == address(0)) {
-        _logWarning('deployNativeTokenGateway is true but nativeWrapper is zero address');
-      } else {
-        _appendSummary('nativeTokenGateway will be deployed');
-      }
-    } else {
-      _appendSummary('nativeTokenGateway: skipped (deployNativeTokenGateway is false)');
-    }
-
-    // SignatureGateway
-    if (inputs.deploySignatureGateway) {
-      _appendSummary('signatureGateway will be deployed');
-    } else {
-      _appendSummary('signatureGateway: skipped (deploySignatureGateway is false)');
-    }
-
-    // PositionManagers
-    if (inputs.deployPositionManagers) {
-      _appendSummary('positionManagers (giver/taker/config) will be deployed');
-    } else {
-      _appendSummary('positionManagers: skipped (deployPositionManagers is false)');
-    }
-
-    // Roles
-    if (inputs.grantRoles) {
-      _appendSummary('roles: will be granted during deployment');
-    } else {
-      _appendSummary('roles: deferred (not granted during deployment)');
-    }
-
+    _logHubs(inputs);
+    _logSpokes(inputs);
+    _logNativeTokenGateway(inputs);
+    _logSignatureGateway(inputs);
+    _logPositionManagers(inputs);
+    _logRoles(inputs);
     _appendSummary('--------------------------------------------------');
 
     // Sanitize zero addresses
@@ -167,6 +121,64 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
 
     _executeUserPrompt();
     return sanitizedInputs;
+  }
+
+  function _logHubs(FullDeployInputs memory inputs) internal {
+    if (inputs.hubLabels.length > 0) {
+      _appendSummary(string.concat('hubs to deploy: ', vm.toString(inputs.hubLabels.length)));
+      for (uint256 i; i < inputs.hubLabels.length; i++) {
+        _appendSummary(string.concat('  - ', inputs.hubLabels[i]));
+      }
+    } else {
+      _logWarning('no hubs will be deployed');
+    }
+  }
+
+  function _logSpokes(FullDeployInputs memory inputs) internal {
+    if (inputs.spokeLabels.length > 0) {
+      _appendSummary(string.concat('spokes to deploy: ', vm.toString(inputs.spokeLabels.length)));
+      for (uint256 i; i < inputs.spokeLabels.length; i++) {
+        _appendSummary(string.concat('  - ', inputs.spokeLabels[i]));
+      }
+    } else {
+      _logWarning('no spokes will be deployed');
+    }
+  }
+
+  function _logNativeTokenGateway(FullDeployInputs memory inputs) internal {
+    if (inputs.deployNativeTokenGateway) {
+      if (inputs.nativeWrapper == address(0)) {
+        _logWarning('deployNativeTokenGateway is true but nativeWrapper is zero address');
+      } else {
+        _appendSummary('nativeTokenGateway will be deployed');
+      }
+    } else {
+      _appendSummary('nativeTokenGateway: skipped (deployNativeTokenGateway is false)');
+    }
+  }
+
+  function _logSignatureGateway(FullDeployInputs memory inputs) internal {
+    if (inputs.deploySignatureGateway) {
+      _appendSummary('signatureGateway will be deployed');
+    } else {
+      _appendSummary('signatureGateway: skipped (deploySignatureGateway is false)');
+    }
+  }
+
+  function _logPositionManagers(FullDeployInputs memory inputs) internal {
+    if (inputs.deployPositionManagers) {
+      _appendSummary('positionManagers (giver/taker/config) will be deployed');
+    } else {
+      _appendSummary('positionManagers: skipped (deployPositionManagers is false)');
+    }
+  }
+
+  function _logRoles(FullDeployInputs memory inputs) internal {
+    if (inputs.grantRoles) {
+      _appendSummary('roles: will be granted during deployment');
+    } else {
+      _appendSummary('roles: deferred (not granted during deployment)');
+    }
   }
 
   function _executeUserPrompt() internal virtual {
