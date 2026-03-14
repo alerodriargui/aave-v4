@@ -197,8 +197,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
         expectedLiquidationAmounts.drawnSharesToLiquidate,
         expectedLiquidationAmounts.premiumDebtRayToLiquidate,
         params.drawnIndex
-      ) -
-      1;
+      ) - 1;
 
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.calculateLiquidationAmounts(params);
@@ -322,8 +321,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
 
     (uint256 drawnSharesToLiquidate, uint256 premiumDebtRayToLiquidate) = liquidationLogicWrapper
       .calculateDebtToLiquidate(_getCalculateDebtToLiquidateParams(params));
-    uint256 debtRayToLiquidate = drawnSharesToLiquidate *
-      params.drawnIndex +
+    uint256 debtRayToLiquidate = drawnSharesToLiquidate * params.drawnIndex +
       premiumDebtRayToLiquidate;
     uint256 collateralToLiquidate = Math.mulDiv(
       debtRayToLiquidate,
