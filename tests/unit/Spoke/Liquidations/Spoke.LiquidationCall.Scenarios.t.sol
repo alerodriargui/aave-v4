@@ -468,7 +468,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     );
     assertEq(userDebtPositionBefore.drawnShares, 1, 'User should have 1 drawn share of DAI');
     assertEq(
-      userDebtPositionBefore.premiumShares * 1.1e27 -
+      userDebtPositionBefore.premiumShares *
+        1.1e27 -
         userDebtPositionBefore.premiumOffsetRay.toUint256(),
       0.1e27,
       'User should have 0.1 premium'
@@ -857,7 +858,8 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
     uint256 liquidatorDebtBefore = tokenList.weth.balanceOf(liquidator);
 
     // liquidate 184 debt assets, 184 / 1.5 -> 122 drawn shares to liquidate (rounded down)
-    // 122 drawn shares to liquidate -> 183 debt assets, $366 collateral value
+    // before recalculation:
+    // 122 drawn shares to liquidate -> 183 debt assets (drawnAmountToRestore), $366 collateral value actual debt liquidated
     // -> 174 collateralToLiquidate -> 43 collateralSharesToLiquidate (rounded down), full exact liquidation
     vm.prank(liquidator);
     spoke.liquidationCall({
@@ -870,7 +872,7 @@ contract SpokeLiquidationCallScenariosTest is SpokeLiquidationCallBaseTest {
 
     uint256 liquidatorDebtAfter = tokenList.weth.balanceOf(liquidator);
     // without recalculation, the debt to liquidate would be 183 (drawnShares to liquidate 122)
-    // now with recalculation, the debt to liquidate is 182 (drawnShares to liquidate 121)
+    // with recalculation, the debt to liquidate is 182 (drawnShares to liquidate 121)
     assertEq(stdMath.delta(liquidatorDebtBefore, liquidatorDebtAfter), 182);
     // remaining debt shares are anyway reported as deficit, as collateral is fully liquidated
     assertEq(spoke.getUserPosition(_wethReserveId(spoke), user).drawnShares, 0);

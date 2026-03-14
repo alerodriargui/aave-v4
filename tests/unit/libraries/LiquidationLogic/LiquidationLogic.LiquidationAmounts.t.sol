@@ -115,6 +115,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     LiquidationLogic.LiquidationAmounts
       memory expectedLiquidationAmounts = _calculateAdjustedLiquidationAmounts(params);
 
+    // bound debtToCover to ensure it is sufficient to avoid dust condition with remaining collateral
     params.debtToCover = bound(
       params.debtToCover,
       _calculateDebtAssetsToRestore(
@@ -129,6 +130,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       .calculateLiquidationAmounts(params);
 
     assertApproxEqAbs(liquidationAmounts, expectedLiquidationAmounts);
+    assertEq(liquidationAmounts.collateralSharesToLiquidate, params.suppliedShares);
   }
 
   function test_calculateLiquidationAmounts_fuzz_InsufficientCollateral(
@@ -195,7 +197,8 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
         expectedLiquidationAmounts.drawnSharesToLiquidate,
         expectedLiquidationAmounts.premiumDebtRayToLiquidate,
         params.drawnIndex
-      ) - 1;
+      ) -
+      1;
 
     vm.expectRevert(ISpoke.MustNotLeaveDust.selector);
     liquidationLogicWrapper.calculateLiquidationAmounts(params);
@@ -319,7 +322,8 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
 
     (uint256 drawnSharesToLiquidate, uint256 premiumDebtRayToLiquidate) = liquidationLogicWrapper
       .calculateDebtToLiquidate(_getCalculateDebtToLiquidateParams(params));
-    uint256 debtRayToLiquidate = drawnSharesToLiquidate * params.drawnIndex +
+    uint256 debtRayToLiquidate = drawnSharesToLiquidate *
+      params.drawnIndex +
       premiumDebtRayToLiquidate;
     uint256 collateralToLiquidate = Math.mulDiv(
       debtRayToLiquidate,
