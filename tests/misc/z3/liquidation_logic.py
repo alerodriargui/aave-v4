@@ -94,7 +94,7 @@ leavesDebtDust = And(
         debtAssetDecimals,
         debtAssetPrice,
     )
-    < 2 * DUST_LIQUIDATION_THRESHOLD * RAY,
+    < DEBT_DUST_LIQUIDATION_THRESHOLD * RAY,
 )
 s.add(
     Or(
@@ -202,7 +202,7 @@ leavesCollateralDust = And(
         collateralAssetDecimals,
         collateralAssetPrice,
     )
-    < DUST_LIQUIDATION_THRESHOLD,
+    < COLLATERAL_DUST_LIQUIDATION_THRESHOLD,
 )
 #  with liquidationBonus2
 leavesCollateralDust2 = And(
@@ -216,7 +216,7 @@ leavesCollateralDust2 = And(
         collateralAssetDecimals,
         collateralAssetPrice,
     )
-    < DUST_LIQUIDATION_THRESHOLD,
+    < COLLATERAL_DUST_LIQUIDATION_THRESHOLD,
 )
 #  with 0 liquidation bonus
 leavesCollateralDust0 = And(
@@ -230,7 +230,7 @@ leavesCollateralDust0 = And(
         collateralAssetDecimals,
         collateralAssetPrice,
     )
-    < DUST_LIQUIDATION_THRESHOLD,
+    < COLLATERAL_DUST_LIQUIDATION_THRESHOLD,
 )
 
 # Conditions to recalculate debt are not enforced here, to make the proof more general
