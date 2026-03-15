@@ -1,25 +1,26 @@
 from z3 import *
 
-WAD = IntVal(10**18)
-RAY = IntVal(10**27)
-PERCENTAGE_FACTOR = IntVal(10**4)
+WAD = int(10**18)
+RAY = int(10**27)
+PERCENTAGE_FACTOR = int(10**4)
 
-VIRTUAL_SHARES = IntVal(10**6)
-VIRTUAL_ASSETS = IntVal(10**6)
+VIRTUAL_SHARES = int(10**6)
+VIRTUAL_ASSETS = int(10**6)
 
-MAX_PRICE = IntVal(10**16)
-MAX_SUPPLY_AMOUNT = IntVal(10**30)
+MIN_PRICE = int(1)
+MAX_PRICE = int(10**16)
+MAX_SUPPLY_AMOUNT = int(10**30)
 
-MIN_DECIMALS = IntVal(6)
-MAX_DECIMALS = IntVal(18)
+MIN_DECIMALS = int(6)
+MAX_DECIMALS = int(18)
 
 MIN_DRAWN_INDEX = RAY
-MAX_DRAWN_INDEX = 100 * RAY
-MAX_SUPPLY_PRICE = IntVal(100)
+MAX_DRAWN_INDEX = int(100 * RAY)
+MAX_SUPPLY_PRICE = int(100)
 
 MIN_LIQUIDATION_BONUS = PERCENTAGE_FACTOR
 MAX_LIQUIDATION_BONUS = PERCENTAGE_FACTOR * PERCENTAGE_FACTOR - 1
-DUST_LIQUIDATION_THRESHOLD = IntVal(1000 * 10**26)
+DUST_LIQUIDATION_THRESHOLD = int(1000 * 10**26)
 
 
 def mulDivDown(a, num, den):
@@ -32,6 +33,10 @@ def mulDivUp(a, num, den):
 
 def divUp(a, b):
     return (a + b - 1) / b
+
+
+def divDown(a, b):
+    return a / b
 
 
 def rayMulUp(a, b):
@@ -53,11 +58,14 @@ def fromRayUp(a):
 def toRay(a):
     return a * RAY
 
+
 def min(a, b):
     return If(a <= b, a, b)
 
+
 def zeroFloorSub(a, b):
     return If(a > b, a - b, 0)
+
 
 def toAddedSharesDown(assets, totalAddedAssets, addedShares):
     return mulDivDown(
@@ -118,7 +126,7 @@ def proveValid(s, propertyDescription, property, assumptions=[], variables=[]):
     elif result == unsat:
         print(f"✅ Property is valid.")
     elif result == unknown:
-        print("❓ Timed out or unknown.")
+        print("❓ Timed out or unknown:", s.reason_unknown())
 
     print("=" * len(propertyDescriptionOutput))
 
@@ -138,6 +146,6 @@ def proveSatisfiable(s, propertyDescription, property, assumptions=[], variables
     elif result == unsat:
         print("❌ Property is unsatisfiable.")
     elif result == unknown:
-        print("❓ Timed out or unknown.")
+        print("❓ Timed out or unknown:", s.reason_unknown())
 
     print("=" * len(propertyDescriptionOutput))
