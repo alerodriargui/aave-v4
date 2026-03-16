@@ -105,6 +105,12 @@ library AaveV4HubConfiguratorRolesProcedure {
     setupHubConfiguratorRole(
       accessManager,
       hubConfigurator,
+      Roles.HUB_CONFIGURATOR_SPOKE_RISK_ADMIN_ROLE,
+      Roles.getHubConfiguratorSpokeRiskAdminRoleSelectors()
+    );
+    setupHubConfiguratorRole(
+      accessManager,
+      hubConfigurator,
       Roles.HUB_CONFIGURATOR_INTEREST_RATE_STRATEGY_UPDATER_ROLE,
       Roles.getHubConfiguratorInterestRateStrategyUpdaterRoleSelectors()
     );
@@ -119,12 +125,6 @@ library AaveV4HubConfiguratorRolesProcedure {
       hubConfigurator,
       Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE,
       Roles.getHubConfiguratorAssetListerRoleSelectors()
-    );
-    setupHubConfiguratorRole(
-      accessManager,
-      hubConfigurator,
-      Roles.HUB_CONFIGURATOR_SPOKE_RISK_ADMIN_ROLE,
-      Roles.getHubConfiguratorSpokeRiskAdminRoleSelectors()
     );
     setupHubConfiguratorRole(
       accessManager,

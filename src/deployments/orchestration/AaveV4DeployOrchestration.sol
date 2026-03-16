@@ -5,12 +5,6 @@ pragma solidity ^0.8.0;
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
-import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
-import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
-import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
-import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
-import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
@@ -19,7 +13,7 @@ import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/ro
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
-import {Constants} from 'tests/Constants.sol';
+import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 
 library AaveV4DeployOrchestration {
   bytes32 public constant SALT = keccak256('AAVE_V4');
@@ -200,8 +194,8 @@ library AaveV4DeployOrchestration {
         spokeBytecode: spokeBytecode,
         maxUserReservesLimit: limitsLen > 0
           ? inputs.spokeMaxReservesLimits[i]
-          : Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
-        oracleDecimals: Constants.ORACLE_DECIMALS,
+          : DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+        oracleDecimals: DeployConstants.ORACLE_DECIMALS,
         salt: childSalt
       });
     }

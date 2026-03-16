@@ -32,7 +32,7 @@ This deploys `LiquidationLogic` via CREATE2 and writes `FOUNDRY_LIBRARIES` to `.
 make deploy-contracts
 ```
 
-This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → Configurators → TreasurySpoke → Hubs → Spokes → Gateways → role grants → DEFAULT_ADMIN transfer.
+This runs `AaveV4DeployOrchestration.deployAaveV4()`, which deploys batches in order: AccessManager → Configurators → TreasurySpoke → Hubs → Spokes → Gateways → PositionManagers → role grants → DEFAULT_ADMIN transfer.
 
 ### LiquidationLogic Pre-deployment
 

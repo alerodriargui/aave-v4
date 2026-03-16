@@ -2,6 +2,8 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
+
 library Constants {
   bool public constant IS_TEST = true;
 
@@ -19,11 +21,11 @@ library Constants {
   uint24 public constant MAX_ALLOWED_COLLATERAL_RISK = 1000_00; // 1000.00%
   uint256 public constant MAX_ALLOWED_DYNAMIC_CONFIG_KEY = type(uint32).max;
   uint256 public constant MAX_ALLOWED_ASSET_ID = type(uint16).max;
-  uint16 public constant MAX_ALLOWED_USER_RESERVES_LIMIT = type(uint16).max;
+  uint16 public constant MAX_ALLOWED_USER_RESERVES_LIMIT =
+    DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT;
 
-  /// @dev Deployments
-  uint8 public constant ORACLE_DECIMALS = 8;
-  string public constant ORACLE_SUFFIX = ' (USD)';
+  /// @dev AaveOracle Constants
+  uint8 public constant ORACLE_DECIMALS = DeployConstants.ORACLE_DECIMALS;
 
   /// @dev AssetInterestRateStrategy Constants
   uint256 internal constant MAX_ALLOWED_DRAWN_RATE = 1000_00; // 1000.00% in BPS

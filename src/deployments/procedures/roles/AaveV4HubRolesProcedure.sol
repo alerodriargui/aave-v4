@@ -33,14 +33,14 @@ library AaveV4HubRolesProcedure {
     setupHubRole(
       accessManager,
       hub,
-      Roles.HUB_DEFICIT_ELIMINATOR_ROLE,
-      Roles.getHubDeficitEliminatorRoleSelectors()
+      Roles.HUB_FEE_MINTER_ROLE,
+      Roles.getHubFeeMinterRoleSelectors()
     );
     setupHubRole(
       accessManager,
       hub,
-      Roles.HUB_FEE_MINTER_ROLE,
-      Roles.getHubFeeMinterRoleSelectors()
+      Roles.HUB_DEFICIT_ELIMINATOR_ROLE,
+      Roles.getHubDeficitEliminatorRoleSelectors()
     );
   }
 
