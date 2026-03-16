@@ -18,10 +18,6 @@ from typing import Any, Optional
 
 from web3 import Web3
 
-# ---------------------------------------------------------------------------
-# ABI loading from Forge artifacts
-# ---------------------------------------------------------------------------
-
 ARTIFACTS_DIR = Path(__file__).resolve().parent.parent.parent / "out"
 
 
@@ -154,9 +150,6 @@ def _first_diff_offset(a: bytes | bytearray, b: bytes | bytearray) -> int:
             return i
     return min(len(a), len(b))
 
-# ---------------------------------------------------------------------------
-# VerificationResult
-# ---------------------------------------------------------------------------
 
 GREEN = "\033[92m"
 RED = "\033[91m"
@@ -192,11 +185,6 @@ class VerificationResult:
             return 1
         print("  All checks passed.")
         return 0
-
-
-# ---------------------------------------------------------------------------
-# Data models
-# ---------------------------------------------------------------------------
 
 
 @dataclass
@@ -330,11 +318,6 @@ class ConfigInput:
         return section[field_name]
 
 
-# ---------------------------------------------------------------------------
-# ContractCaller
-# ---------------------------------------------------------------------------
-
-
 class ContractCaller:
     def __init__(self, w3: Web3) -> None:
         self.w3 = w3
@@ -377,6 +360,149 @@ class ContractCaller:
 
     def call_oracle(self, addr: str, fn_name: str, *args: Any) -> Any:
         return self._call(addr, self.oracle_abi, fn_name, *args)
+
+
+# ---------------------------------------------------------------------------
+# Batch RPC infrastructure
+# ---------------------------------------------------------------------------
+
+_SENTINEL = object()
+
+MAX_BATCH_SIZE = 100
+
+
+class BatchCallManager:
+    """Wraps web3.py batch_requests() to execute many eth_call requests in one
+    JSON-RPC batch.  Accepts a list of (key, contract_call_builder) tuples,
+    executes them in chunks of *max_batch_size*, and returns a dict keyed by
+    the caller-provided keys."""
+
+    def __init__(self, w3: Web3, max_batch_size: int = MAX_BATCH_SIZE) -> None:
+        self.w3 = w3
+        self.max_batch_size = max_batch_size
+
+    def execute(
+        self, calls: list[tuple[str, Any]]
+    ) -> tuple[dict[str, Any], dict[str, str]]:
+        """Execute *calls* — a list of ``(key, contract_fn_call)`` where
+        ``contract_fn_call`` is e.g.
+        ``contract.functions.getAssetId(token_addr)`` (no ``.call()``).
+
+        Returns ``(results, errors)`` dicts keyed by *key*.
+        """
+        results: dict[str, Any] = {}
+        errors: dict[str, str] = {}
+        if not calls:
+            return results, errors
+
+        # Process in chunks to respect node batch-size limits
+        for chunk_start in range(0, len(calls), self.max_batch_size):
+            chunk = calls[chunk_start : chunk_start + self.max_batch_size]
+            chunk_keys = [k for k, _ in chunk]
+
+            batch = self.w3.batch_requests()
+            for _key, fn_call in chunk:
+                batch.add(fn_call)
+
+            try:
+                responses = batch.execute()
+            except Exception as e:
+                for key in chunk_keys:
+                    errors[key] = str(e)
+                continue
+
+            for i, key in enumerate(chunk_keys):
+                try:
+                    results[key] = responses[i]
+                except Exception as e:
+                    errors[key] = str(e)
+
+        return results, errors
+
+
+@dataclass
+class DeploymentCache:
+    """Pre-fetched shared data used across all verify functions."""
+    # (hub_addr, token_addr) -> asset_id or None
+    asset_ids: dict[tuple[str, str], int | None] = field(default_factory=dict)
+    # (spoke_addr, hub_addr, asset_id) -> reserve_id or None
+    reserve_ids: dict[tuple[str, str, int], int | None] = field(default_factory=dict)
+
+
+def prefetch_shared_data(
+    batch_mgr: BatchCallManager,
+    caller: ContractCaller,
+    report: DeployReport,
+    config: ConfigInput,
+) -> DeploymentCache:
+    """Pre-fetch all asset_ids and reserve_ids in 2 batch round-trips."""
+    cache = DeploymentCache()
+
+    # Collect all unique (hub_addr, token_addr) pairs
+    hub_token_pairs: dict[tuple[str, str], str] = {}  # -> key for dedup
+    for entry in config.assets:
+        hub_info = report.hub_by_label(entry["hubKey"])
+        token_addr = Web3.to_checksum_address(config.tokens_by_key[entry["tokenKey"]]["address"])
+        hub_addr = Web3.to_checksum_address(hub_info.address)
+        hub_token_pairs[(hub_addr, token_addr)] = f"{hub_addr}:{token_addr}"
+    for entry in config.spoke_registrations:
+        hub_info = report.hub_by_label(entry["hubKey"])
+        token_addr = Web3.to_checksum_address(config.tokens_by_key[entry["assetKey"]]["address"])
+        hub_addr = Web3.to_checksum_address(hub_info.address)
+        hub_token_pairs[(hub_addr, token_addr)] = f"{hub_addr}:{token_addr}"
+    for entry in config.reserves:
+        hub_info = report.hub_by_label(entry["hubKey"])
+        token_addr = Web3.to_checksum_address(config.tokens_by_key[entry["assetKey"]]["address"])
+        hub_addr = Web3.to_checksum_address(hub_info.address)
+        hub_token_pairs[(hub_addr, token_addr)] = f"{hub_addr}:{token_addr}"
+
+    # Round 1: batch all getAssetId calls
+    asset_id_calls: list[tuple[str, Any]] = []
+    for (hub_addr, token_addr), key in hub_token_pairs.items():
+        contract = batch_mgr.w3.eth.contract(
+            address=hub_addr, abi=caller.hub_abi
+        )
+        asset_id_calls.append((key, contract.functions.getAssetId(token_addr)))
+
+    results, errors = batch_mgr.execute(asset_id_calls)
+    for (hub_addr, token_addr), key in hub_token_pairs.items():
+        if key in errors:
+            print(f"  {RED}CALL FAILED{RESET} getAssetId prefetch for {key}: {errors[key]}")
+            cache.asset_ids[(hub_addr, token_addr)] = None
+        else:
+            cache.asset_ids[(hub_addr, token_addr)] = results.get(key)
+
+    # Collect all unique (spoke_addr, hub_addr, asset_id) for reserves + oracles
+    reserve_id_keys: dict[tuple[str, str, int], str] = {}
+    for entry in config.reserves:
+        hub_info = report.hub_by_label(entry["hubKey"])
+        spoke_info = report.spoke_by_label(entry["spokeKey"])
+        token_addr = Web3.to_checksum_address(config.tokens_by_key[entry["assetKey"]]["address"])
+        hub_addr = Web3.to_checksum_address(hub_info.address)
+        spoke_addr = Web3.to_checksum_address(spoke_info.proxy)
+        asset_id = cache.asset_ids.get((hub_addr, token_addr))
+        if asset_id is None:
+            continue
+        triple = (spoke_addr, hub_addr, asset_id)
+        reserve_id_keys[triple] = f"{spoke_addr}:{hub_addr}:{asset_id}"
+
+    # Round 2: batch all getReserveId calls
+    reserve_id_calls: list[tuple[str, Any]] = []
+    for (spoke_addr, hub_addr, asset_id), key in reserve_id_keys.items():
+        contract = batch_mgr.w3.eth.contract(
+            address=spoke_addr, abi=caller.spoke_abi
+        )
+        reserve_id_calls.append((key, contract.functions.getReserveId(hub_addr, asset_id)))
+
+    results, errors = batch_mgr.execute(reserve_id_calls)
+    for (spoke_addr, hub_addr, asset_id), key in reserve_id_keys.items():
+        if key in errors:
+            print(f"  {RED}CALL FAILED{RESET} getReserveId prefetch for {key}: {errors[key]}")
+            cache.reserve_ids[(spoke_addr, hub_addr, asset_id)] = None
+        else:
+            cache.reserve_ids[(spoke_addr, hub_addr, asset_id)] = results.get(key)
+
+    return cache
 
 
 # ---------------------------------------------------------------------------
@@ -485,56 +611,92 @@ def verify_bytecode(
 
 
 def verify_hub_assets(
+    batch_mgr: BatchCallManager,
     caller: ContractCaller,
+    cache: DeploymentCache,
     report: DeployReport,
     config: ConfigInput,
     result: VerificationResult,
 ) -> None:
     result.section("Hub Assets & Interest Rate Configuration")
+
+    # Build batch: getInterestRateData + getAssetConfig for each asset
+    ir_calls: list[tuple[str, Any]] = []
+    cfg_calls: list[tuple[str, Any]] = []
+    valid_entries: list[tuple[str, dict, HubInfo, int]] = []
+
     for entry in config.assets:
         hub_key = entry["hubKey"]
         token_key = entry["tokenKey"]
         hub_info = report.hub_by_label(hub_key)
         token_addr = Web3.to_checksum_address(config.tokens_by_key[token_key]["address"])
+        hub_addr = Web3.to_checksum_address(hub_info.address)
         label = f"{hub_key}/{token_key}"
 
-        asset_id = caller.call_hub(hub_info.address, "getAssetId", token_addr)
+        asset_id = cache.asset_ids.get((hub_addr, token_addr))
         if asset_id is None:
             result.error(label, "valid assetId", "call failed")
             continue
 
-        # Interest rate data
-        ir_data = caller.call_ir_strategy(
-            hub_info.ir_strategy, "getInterestRateData", asset_id
-        )
-        if ir_data is None:
-            result.error(f"{label}/IR", "interest rate data", "call failed")
-        else:
-            ir_input = entry["irData"]
-            _check(result, f"{label}/optimalUsageRatio", ir_input["optimalUsageRatio"], ir_data[0])
-            _check(result, f"{label}/baseDrawnRate", ir_input["baseDrawnRate"], ir_data[1])
-            _check(result, f"{label}/rateGrowthBeforeOptimal", ir_input["rateGrowthBeforeOptimal"], ir_data[2])
-            _check(result, f"{label}/rateGrowthAfterOptimal", ir_input["rateGrowthAfterOptimal"], ir_data[3])
+        valid_entries.append((label, entry, hub_info, asset_id))
 
-        # Asset config — liquidityFee
-        asset_cfg = caller.call_hub(hub_info.address, "getAssetConfig", asset_id)
-        if asset_cfg is None:
-            result.error(f"{label}/assetConfig", "asset config", "call failed")
+        ir_contract = batch_mgr.w3.eth.contract(
+            address=Web3.to_checksum_address(hub_info.ir_strategy),
+            abi=caller.ir_strategy_abi,
+        )
+        ir_calls.append((f"{label}/IR", ir_contract.functions.getInterestRateData(asset_id)))
+
+        hub_contract = batch_mgr.w3.eth.contract(
+            address=hub_addr, abi=caller.hub_abi,
+        )
+        cfg_calls.append((f"{label}/cfg", hub_contract.functions.getAssetConfig(asset_id)))
+
+    ir_results, ir_errors = batch_mgr.execute(ir_calls)
+    cfg_results, cfg_errors = batch_mgr.execute(cfg_calls)
+
+    for label, entry, hub_info, asset_id in valid_entries:
+        ir_key = f"{label}/IR"
+        if ir_key in ir_errors:
+            result.error(ir_key, "interest rate data", f"call failed: {ir_errors[ir_key]}")
         else:
-            expected_fee = entry.get(
-                "liquidityFee",
-                config.defaults.get("asset", {}).get("liquidityFee", 0),
-            )
-            _check(result, f"{label}/liquidityFee", expected_fee, asset_cfg[1])
+            ir_data = ir_results.get(ir_key)
+            if ir_data is None:
+                result.error(ir_key, "interest rate data", "call failed")
+            else:
+                ir_input = entry["irData"]
+                _check(result, f"{label}/optimalUsageRatio", ir_input["optimalUsageRatio"], ir_data[0])
+                _check(result, f"{label}/baseDrawnRate", ir_input["baseDrawnRate"], ir_data[1])
+                _check(result, f"{label}/rateGrowthBeforeOptimal", ir_input["rateGrowthBeforeOptimal"], ir_data[2])
+                _check(result, f"{label}/rateGrowthAfterOptimal", ir_input["rateGrowthAfterOptimal"], ir_data[3])
+
+        cfg_key = f"{label}/cfg"
+        if cfg_key in cfg_errors:
+            result.error(f"{label}/assetConfig", "asset config", f"call failed: {cfg_errors[cfg_key]}")
+        else:
+            asset_cfg = cfg_results.get(cfg_key)
+            if asset_cfg is None:
+                result.error(f"{label}/assetConfig", "asset config", "call failed")
+            else:
+                expected_fee = entry.get(
+                    "liquidityFee",
+                    config.defaults.get("asset", {}).get("liquidityFee", 0),
+                )
+                _check(result, f"{label}/liquidityFee", expected_fee, asset_cfg[1])
 
 
 def verify_spoke_registrations(
+    batch_mgr: BatchCallManager,
     caller: ContractCaller,
+    cache: DeploymentCache,
     report: DeployReport,
     config: ConfigInput,
     result: VerificationResult,
 ) -> None:
     result.section("Spoke Registrations (Hub-side)")
+
+    spoke_cfg_calls: list[tuple[str, Any]] = []
+    valid_entries: list[tuple[str, dict]] = []
+
     for entry in config.spoke_registrations:
         hub_key = entry["hubKey"]
         spoke_key = entry["spokeKey"]
@@ -542,17 +704,28 @@ def verify_spoke_registrations(
         hub_info = report.hub_by_label(hub_key)
         spoke_info = report.spoke_by_label(spoke_key)
         token_addr = Web3.to_checksum_address(config.tokens_by_key[asset_key]["address"])
+        hub_addr = Web3.to_checksum_address(hub_info.address)
         label = f"{hub_key}/{spoke_key}/{asset_key}"
 
-        asset_id = caller.call_hub(hub_info.address, "getAssetId", token_addr)
+        asset_id = cache.asset_ids.get((hub_addr, token_addr))
         if asset_id is None:
             result.error(label, "valid assetId", "call failed")
             continue
 
         spoke_proxy = Web3.to_checksum_address(spoke_info.proxy)
-        spoke_cfg = caller.call_hub(
-            hub_info.address, "getSpokeConfig", asset_id, spoke_proxy
+        hub_contract = batch_mgr.w3.eth.contract(
+            address=hub_addr, abi=caller.hub_abi,
         )
+        spoke_cfg_calls.append((label, hub_contract.functions.getSpokeConfig(asset_id, spoke_proxy)))
+        valid_entries.append((label, entry))
+
+    results, errors = batch_mgr.execute(spoke_cfg_calls)
+
+    for label, entry in valid_entries:
+        if label in errors:
+            result.error(f"{label}/spokeConfig", "spoke config", f"call failed: {errors[label]}")
+            continue
+        spoke_cfg = results.get(label)
         if spoke_cfg is None:
             result.error(f"{label}/spokeConfig", "spoke config", "call failed")
             continue
@@ -580,12 +753,20 @@ def verify_spoke_registrations(
 
 
 def verify_reserves(
+    batch_mgr: BatchCallManager,
     caller: ContractCaller,
+    cache: DeploymentCache,
     report: DeployReport,
     config: ConfigInput,
     result: VerificationResult,
 ) -> None:
     result.section("Reserve Configuration (Spoke-side)")
+
+    # Batch A: getReserveConfig + getReserve for each reserve
+    rcfg_calls: list[tuple[str, Any]] = []
+    reserve_calls: list[tuple[str, Any]] = []
+    valid_entries: list[tuple[str, dict, str, int]] = []  # label, entry, spoke_addr, reserve_id
+
     for entry in config.reserves:
         hub_key = entry["hubKey"]
         spoke_key = entry["spokeKey"]
@@ -593,95 +774,142 @@ def verify_reserves(
         hub_info = report.hub_by_label(hub_key)
         spoke_info = report.spoke_by_label(spoke_key)
         token_addr = Web3.to_checksum_address(config.tokens_by_key[asset_key]["address"])
+        hub_addr = Web3.to_checksum_address(hub_info.address)
+        spoke_addr = Web3.to_checksum_address(spoke_info.proxy)
         label = f"{spoke_key}/{hub_key}/{asset_key}"
 
-        asset_id = caller.call_hub(hub_info.address, "getAssetId", token_addr)
+        asset_id = cache.asset_ids.get((hub_addr, token_addr))
         if asset_id is None:
             result.error(label, "valid assetId", "call failed")
             continue
 
-        hub_addr = Web3.to_checksum_address(hub_info.address)
-        reserve_id = caller.call_spoke(
-            spoke_info.proxy, "getReserveId", hub_addr, asset_id
-        )
+        reserve_id = cache.reserve_ids.get((spoke_addr, hub_addr, asset_id))
         if reserve_id is None:
             result.error(f"{label}/reserveId", "valid reserveId", "call failed")
             continue
 
-        # ReserveConfig
-        rcfg = caller.call_spoke(spoke_info.proxy, "getReserveConfig", reserve_id)
-        if rcfg is None:
-            result.error(f"{label}/reserveConfig", "reserve config", "call failed")
-        else:
-            _check(result, f"{label}/collateralRisk", entry["collateralRisk"], rcfg[0])
-            _check(
-                result,
-                f"{label}/paused",
-                config.resolve_default(entry, "paused", "reserve"),
-                rcfg[1],
-            )
-            _check(
-                result,
-                f"{label}/frozen",
-                config.resolve_default(entry, "frozen", "reserve"),
-                rcfg[2],
-            )
-            _check(result, f"{label}/borrowable", entry["borrowable"], rcfg[3])
-            _check(
-                result,
-                f"{label}/receiveSharesEnabled",
-                config.resolve_default(entry, "receiveSharesEnabled", "reserve"),
-                rcfg[4],
-            )
+        valid_entries.append((label, entry, spoke_addr, reserve_id))
 
-        # Reserve struct for dynamicConfigKey
-        reserve = caller.call_spoke(spoke_info.proxy, "getReserve", reserve_id)
+        spoke_contract = batch_mgr.w3.eth.contract(
+            address=spoke_addr, abi=caller.spoke_abi,
+        )
+        rcfg_calls.append((f"{label}/rcfg", spoke_contract.functions.getReserveConfig(reserve_id)))
+        reserve_calls.append((f"{label}/reserve", spoke_contract.functions.getReserve(reserve_id)))
+
+    rcfg_results, rcfg_errors = batch_mgr.execute(rcfg_calls)
+    reserve_results, reserve_errors = batch_mgr.execute(reserve_calls)
+
+    # Check ReserveConfig results and build Batch B for getDynamicReserveConfig
+    drc_calls: list[tuple[str, Any]] = []
+    drc_entries: list[tuple[str, dict]] = []
+
+    for label, entry, spoke_addr, reserve_id in valid_entries:
+        rcfg_key = f"{label}/rcfg"
+        if rcfg_key in rcfg_errors:
+            result.error(f"{label}/reserveConfig", "reserve config", f"call failed: {rcfg_errors[rcfg_key]}")
+        else:
+            rcfg = rcfg_results.get(rcfg_key)
+            if rcfg is None:
+                result.error(f"{label}/reserveConfig", "reserve config", "call failed")
+            else:
+                _check(result, f"{label}/collateralRisk", entry["collateralRisk"], rcfg[0])
+                _check(
+                    result,
+                    f"{label}/paused",
+                    config.resolve_default(entry, "paused", "reserve"),
+                    rcfg[1],
+                )
+                _check(
+                    result,
+                    f"{label}/frozen",
+                    config.resolve_default(entry, "frozen", "reserve"),
+                    rcfg[2],
+                )
+                _check(result, f"{label}/borrowable", entry["borrowable"], rcfg[3])
+                _check(
+                    result,
+                    f"{label}/receiveSharesEnabled",
+                    config.resolve_default(entry, "receiveSharesEnabled", "reserve"),
+                    rcfg[4],
+                )
+
+        reserve_key = f"{label}/reserve"
+        if reserve_key in reserve_errors:
+            result.error(f"{label}/reserve", "reserve data", f"call failed: {reserve_errors[reserve_key]}")
+            continue
+        reserve = reserve_results.get(reserve_key)
         if reserve is None:
             result.error(f"{label}/reserve", "reserve data", "call failed")
             continue
 
-        dynamic_config_key = reserve[6]  # dynamicConfigKey
-
-        # DynamicReserveConfig
-        drc = caller.call_spoke(
-            spoke_info.proxy, "getDynamicReserveConfig", reserve_id, dynamic_config_key
+        dynamic_config_key = reserve[6]
+        spoke_contract = batch_mgr.w3.eth.contract(
+            address=spoke_addr, abi=caller.spoke_abi,
         )
-        if drc is None:
-            result.error(f"{label}/dynamicReserveConfig", "dynamic config", "call failed")
+        drc_calls.append((f"{label}/drc", spoke_contract.functions.getDynamicReserveConfig(reserve_id, dynamic_config_key)))
+        drc_entries.append((label, entry))
+
+    # Batch B: getDynamicReserveConfig
+    drc_results, drc_errors = batch_mgr.execute(drc_calls)
+
+    for label, entry in drc_entries:
+        drc_key = f"{label}/drc"
+        if drc_key in drc_errors:
+            result.error(f"{label}/dynamicReserveConfig", "dynamic config", f"call failed: {drc_errors[drc_key]}")
         else:
-            _check(
-                result,
-                f"{label}/collateralFactor",
-                entry.get("collateralFactor", 0),
-                drc[0],
-            )
-            _check(
-                result,
-                f"{label}/maxLiquidationBonus",
-                config.resolve_default(entry, "maxLiquidationBonus", "reserve"),
-                drc[1],
-            )
-            _check(
-                result,
-                f"{label}/liquidationFee",
-                config.resolve_default(entry, "liquidationFee", "reserve"),
-                drc[2],
-            )
+            drc = drc_results.get(drc_key)
+            if drc is None:
+                result.error(f"{label}/dynamicReserveConfig", "dynamic config", "call failed")
+            else:
+                _check(
+                    result,
+                    f"{label}/collateralFactor",
+                    entry.get("collateralFactor", 0),
+                    drc[0],
+                )
+                _check(
+                    result,
+                    f"{label}/maxLiquidationBonus",
+                    config.resolve_default(entry, "maxLiquidationBonus", "reserve"),
+                    drc[1],
+                )
+                _check(
+                    result,
+                    f"{label}/liquidationFee",
+                    config.resolve_default(entry, "liquidationFee", "reserve"),
+                    drc[2],
+                )
 
 
 def verify_liquidation_configs(
+    batch_mgr: BatchCallManager,
     caller: ContractCaller,
     report: DeployReport,
     config: ConfigInput,
     result: VerificationResult,
 ) -> None:
     result.section("Liquidation Configuration")
+
+    calls: list[tuple[str, Any]] = []
+    entries: list[tuple[str, dict]] = []
+
     for spoke_entry in config.spokes_by_key.values():
         spoke_key = spoke_entry["key"]
         spoke_info = report.spoke_by_label(spoke_key)
-        label = spoke_key
+        spoke_contract = batch_mgr.w3.eth.contract(
+            address=Web3.to_checksum_address(spoke_info.proxy),
+            abi=caller.spoke_abi,
+        )
+        calls.append((spoke_key, spoke_contract.functions.getLiquidationConfig()))
+        entries.append((spoke_key, spoke_entry))
 
-        liq_cfg = caller.call_spoke(spoke_info.proxy, "getLiquidationConfig")
+    results, errors = batch_mgr.execute(calls)
+
+    for label, spoke_entry in entries:
+        if label in errors:
+            result.error(f"{label}/liquidationConfig", "liquidation config", f"call failed: {errors[label]}")
+            continue
+        liq_cfg = results.get(label)
         if liq_cfg is None:
             result.error(f"{label}/liquidationConfig", "liquidation config", "call failed")
             continue
@@ -705,7 +933,9 @@ def verify_liquidation_configs(
 
 
 def verify_oracles(
+    batch_mgr: BatchCallManager,
     caller: ContractCaller,
+    cache: DeploymentCache,
     report: DeployReport,
     config: ConfigInput,
     result: VerificationResult,
@@ -713,17 +943,25 @@ def verify_oracles(
     result.section("Oracle Configuration")
     expected_decimals = config.defaults.get("spoke", {}).get("oracleDecimals", 8)
 
+    # Batch all decimals() + getReserveSource() calls
+    calls: list[tuple[str, Any]] = []
+
+    # Track decimals calls for output
+    decimals_keys: list[tuple[str, str]] = []  # (key, label)
+    # Track source calls
+    source_entries: list[tuple[str, str, str]] = []  # (key, res_label, asset_key)
+
     for spoke_info in report.spokes:
-        oracle_addr = spoke_info.oracle
+        oracle_addr = Web3.to_checksum_address(spoke_info.oracle)
         label = spoke_info.label
 
-        decimals = caller.call_oracle(oracle_addr, "decimals")
-        if decimals is None:
-            result.error(f"{label}/oracle/decimals", "decimals", "call failed")
-        else:
-            _check(result, f"{label}/oracle/decimals", expected_decimals, decimals)
+        oracle_contract = batch_mgr.w3.eth.contract(
+            address=oracle_addr, abi=caller.oracle_abi,
+        )
+        dec_key = f"{label}/oracle/decimals"
+        calls.append((dec_key, oracle_contract.functions.decimals()))
+        decimals_keys.append((dec_key, label))
 
-        # Verify price feed sources for reserves on this spoke
         for entry in config.reserves:
             if entry["spokeKey"] != spoke_info.label:
                 continue
@@ -734,22 +972,41 @@ def verify_oracles(
             token_addr = Web3.to_checksum_address(
                 config.tokens_by_key[asset_key]["address"]
             )
+            hub_addr = Web3.to_checksum_address(hub_info.address)
+            spoke_addr = Web3.to_checksum_address(spoke_info.proxy)
             res_label = f"{label}/{hub_key}/{asset_key}"
 
-            asset_id = caller.call_hub(hub_info.address, "getAssetId", token_addr)
+            asset_id = cache.asset_ids.get((hub_addr, token_addr))
             if asset_id is None:
                 result.error(f"{res_label}/oracle/source", "valid assetId", "call failed")
                 continue
 
-            hub_addr = Web3.to_checksum_address(hub_info.address)
-            reserve_id = caller.call_spoke(
-                spoke_info.proxy, "getReserveId", hub_addr, asset_id
-            )
+            reserve_id = cache.reserve_ids.get((spoke_addr, hub_addr, asset_id))
             if reserve_id is None:
                 result.error(f"{res_label}/oracle/source", "valid reserveId", "call failed")
                 continue
 
-            source = caller.call_oracle(oracle_addr, "getReserveSource", reserve_id)
+            src_key = f"{res_label}/oracle/source"
+            calls.append((src_key, oracle_contract.functions.getReserveSource(reserve_id)))
+            source_entries.append((src_key, res_label, asset_key))
+
+    results, errors = batch_mgr.execute(calls)
+
+    for dec_key, label in decimals_keys:
+        if dec_key in errors:
+            result.error(f"{label}/oracle/decimals", "decimals", f"call failed: {errors[dec_key]}")
+        else:
+            decimals = results.get(dec_key)
+            if decimals is None:
+                result.error(f"{label}/oracle/decimals", "decimals", "call failed")
+            else:
+                _check(result, f"{label}/oracle/decimals", expected_decimals, decimals)
+
+    for src_key, res_label, asset_key in source_entries:
+        if src_key in errors:
+            result.error(f"{res_label}/oracle/source", "source address", f"call failed: {errors[src_key]}")
+        else:
+            source = results.get(src_key)
             if source is None:
                 result.error(f"{res_label}/oracle/source", "source address", "call failed")
             else:
@@ -757,11 +1014,6 @@ def verify_oracles(
                     config.tokens_by_key[asset_key]["priceFeed"]
                 )
                 _check(result, f"{res_label}/oracle/source", expected_feed, source)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def _check(
@@ -778,11 +1030,6 @@ def _check(
         result.ok(label, str(actual))
     else:
         result.error(label, expected, actual)
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 
 def main() -> None:
@@ -811,13 +1058,19 @@ def main() -> None:
 
     caller = ContractCaller(w3)
     result = VerificationResult()
+    batch_mgr = BatchCallManager(w3)
 
+    # Bytecode verification stays sequential (uses get_code/get_storage_at)
     verify_bytecode(caller, report, result)
-    verify_hub_assets(caller, report, config, result)
-    verify_spoke_registrations(caller, report, config, result)
-    verify_reserves(caller, report, config, result)
-    verify_liquidation_configs(caller, report, config, result)
-    verify_oracles(caller, report, config, result)
+
+    # Pre-fetch shared lookups (asset_ids, reserve_ids) in 2 batch round-trips
+    cache = prefetch_shared_data(batch_mgr, caller, report, config)
+
+    verify_hub_assets(batch_mgr, caller, cache, report, config, result)
+    verify_spoke_registrations(batch_mgr, caller, cache, report, config, result)
+    verify_reserves(batch_mgr, caller, cache, report, config, result)
+    verify_liquidation_configs(batch_mgr, caller, report, config, result)
+    verify_oracles(batch_mgr, caller, cache, report, config, result)
 
     sys.exit(result.summary())
 
