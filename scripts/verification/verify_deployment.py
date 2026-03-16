@@ -281,6 +281,30 @@ class DeployReport:
                 pairs.append((name, addr))
         return pairs
 
+    def all_report_keys(self) -> list[tuple[str, str]]:
+        pairs: list[tuple[str, str]] = [
+            ("accessManager", self.access_manager),
+            ("hubConfigurator", self.hub_configurator),
+            ("spokeConfigurator", self.spoke_configurator),
+            ("treasurySpoke", self.treasury_spoke),
+        ]
+        for h in self.hubs:
+            pairs.append((h.label, h.address))
+            pairs.append((h.label, h.ir_strategy))
+        for s in self.spokes:
+            pairs.append((s.label, s.proxy))
+            pairs.append((s.label, s.oracle))
+        for name, addr in [
+            ("signatureGateway", self.signature_gateway),
+            ("nativeTokenGateway", self.native_token_gateway),
+            ("giverPositionManager", self.giver_position_manager),
+            ("takerPositionManager", self.taker_position_manager),
+            ("configPositionManager", self.config_position_manager),
+        ]:
+            if addr:
+                pairs.append((name, addr))
+        return pairs
+
     def hub_by_label(self, label: str) -> HubInfo:
         for h in self.hubs:
             if h.label == label:
@@ -325,6 +349,13 @@ class ContractCaller:
         self.spoke_abi = load_abi("ISpoke.sol", "ISpoke")
         self.ir_strategy_abi = load_abi("IAssetInterestRateStrategy.sol", "IAssetInterestRateStrategy")
         self.oracle_abi = load_abi("IAaveOracle.sol", "IAaveOracle")
+        self.tokenization_spoke_abi = load_abi("ITokenizationSpoke.sol", "ITokenizationSpoke")
+        self.access_manager_abi = load_abi(
+            "IAccessManagerEnumerable.sol", "IAccessManagerEnumerable"
+        )
+        self.position_manager_base_abi = load_abi(
+            "IPositionManagerBase.sol", "IPositionManagerBase"
+        )
 
     ERC1967_IMPL_SLOT = int(
         "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc", 16
@@ -339,14 +370,15 @@ class ContractCaller:
         )
         return Web3.to_checksum_address("0x" + raw[-20:].hex())
 
-    def _call(self, address: str, abi: list, fn_name: str, *args: Any) -> Any:
+    def _call(self, address: str, abi: list, fn_name: str, *args: Any, silent: bool = False) -> Any:
         try:
             contract = self.w3.eth.contract(
                 address=Web3.to_checksum_address(address), abi=abi
             )
             return contract.functions[fn_name](*args).call()
         except Exception as e:
-            print(f"  {RED}CALL FAILED{RESET} {fn_name}({', '.join(str(a) for a in args)}) on {address}: {e}")
+            if not silent:
+                print(f"  {RED}CALL FAILED{RESET} {fn_name}({', '.join(str(a) for a in args)}) on {address}: {e}")
             return None
 
     def call_hub(self, hub_addr: str, fn_name: str, *args: Any) -> Any:
@@ -360,6 +392,12 @@ class ContractCaller:
 
     def call_oracle(self, addr: str, fn_name: str, *args: Any) -> Any:
         return self._call(addr, self.oracle_abi, fn_name, *args)
+
+    def call_tokenization_spoke(self, addr: str, fn_name: str, *args: Any, silent: bool = False) -> Any:
+        return self._call(addr, self.tokenization_spoke_abi, fn_name, *args, silent=silent)
+
+    def call_access_manager(self, addr: str, fn_name: str, *args: Any) -> Any:
+        return self._call(addr, self.access_manager_abi, fn_name, *args)
 
 
 # ---------------------------------------------------------------------------
@@ -1032,6 +1070,566 @@ def _check(
         result.error(label, expected, actual)
 
 
+def load_method_selectors(sol_file: str, contract_name: str) -> dict[str, str]:
+    """Return {function_name_prefix: "0x" + hex_selector} from Forge artifact.
+
+    Keys are the function name (part before the first '('), values are the
+    4-byte hex selector prefixed with "0x".  When multiple overloads share
+    a name, all are returned keyed by their full signature.
+    """
+    path = ARTIFACTS_DIR / sol_file / f"{contract_name}.json"
+    if not path.exists():
+        sys.exit(f"Artifact not found: {path}\nRun `forge build` first.")
+    with open(path) as f:
+        mids = json.load(f)["methodIdentifiers"]
+    result: dict[str, str] = {}
+    for sig, sel_hex in mids.items():
+        result[sig] = "0x" + sel_hex
+    return result
+
+
+def _selectors_for_names(
+    method_ids: dict[str, str], names: list[str]
+) -> list[tuple[str, bytes]]:
+    """Given methodIdentifiers dict and a list of function name prefixes,
+    return [(full_signature, 4-byte selector)] for each match."""
+    out: list[tuple[str, bytes]] = []
+    for name in names:
+        matches = [
+            (sig, bytes.fromhex(sel[2:]))
+            for sig, sel in method_ids.items()
+            if sig.split("(")[0] == name
+        ]
+        if not matches:
+            print(f"  {RED}WARNING{RESET} selector not found for '{name}'")
+        out.extend(matches)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Role constants (mirroring Roles.sol)
+# ---------------------------------------------------------------------------
+
+ROLE_NAMES: dict[int, str] = {
+    0: "ACCESS_MANAGER_DEFAULT_ADMIN",
+    1: "HUB_CONFIGURATOR_ROLE",
+    2: "HUB_FEE_MINTER_ROLE",
+    3: "HUB_DEFICIT_ELIMINATOR_ROLE",
+    100: "HUB_CONFIGURATOR_LIQUIDITY_FEE_UPDATER_ROLE",
+    101: "HUB_CONFIGURATOR_FEE_CONFIGURATOR_ROLE",
+    102: "HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE",
+    103: "HUB_CONFIGURATOR_HALTER_ROLE",
+    104: "HUB_CONFIGURATOR_DEACTIVATOR_ROLE",
+    105: "HUB_CONFIGURATOR_CAPS_RESETTER_ROLE",
+    106: "HUB_CONFIGURATOR_CAPS_UPDATER_ROLE",
+    107: "HUB_CONFIGURATOR_DRAW_CAP_UPDATER_ROLE",
+    108: "HUB_CONFIGURATOR_ADD_CAP_UPDATER_ROLE",
+    109: "HUB_CONFIGURATOR_SPOKE_RISK_ADMIN_ROLE",
+    110: "HUB_CONFIGURATOR_INTEREST_RATE_STRATEGY_UPDATER_ROLE",
+    111: "HUB_CONFIGURATOR_INTEREST_RATE_DATA_UPDATER_ROLE",
+    112: "HUB_CONFIGURATOR_ASSET_LISTER_ROLE",
+    113: "HUB_CONFIGURATOR_SPOKE_ADDER_ROLE",
+    200: "SPOKE_USER_POSITION_UPDATER_ROLE",
+    201: "SPOKE_CONFIGURATOR_ROLE",
+    301: "SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE",
+    302: "SPOKE_CONFIGURATOR_RESERVE_ADMIN_ROLE",
+    303: "SPOKE_CONFIGURATOR_DYNAMIC_RESERVE_ADMIN_ROLE",
+    304: "SPOKE_CONFIGURATOR_POSITION_MANAGER_ADMIN_ROLE",
+    305: "SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE",
+    306: "SPOKE_CONFIGURATOR_DYNAMIC_LIQUIDATION_UPDATER_ROLE",
+    307: "SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE",
+    308: "SPOKE_CONFIGURATOR_FREEZER_ROLE",
+    309: "SPOKE_CONFIGURATOR_PAUSER_ROLE",
+}
+
+# role_id -> list of function name prefixes (matched against methodIdentifiers)
+HUB_ROLE_FUNCTIONS: dict[int, list[str]] = {
+    1: ["addAsset", "updateAssetConfig", "addSpoke", "updateSpokeConfig", "setInterestRateData"],
+    2: ["mintFeeShares"],
+    3: ["eliminateDeficit"],
+}
+
+HUB_CONFIGURATOR_ROLE_FUNCTIONS: dict[int, list[str]] = {
+    100: ["updateLiquidityFee"],
+    101: ["updateFeeReceiver", "updateFeeConfig"],
+    102: ["updateReinvestmentController"],
+    103: ["haltAsset", "haltSpoke", "updateSpokeHalted"],
+    104: ["deactivateAsset", "deactivateSpoke", "updateSpokeActive"],
+    105: ["resetAssetCaps", "resetSpokeCaps"],
+    106: ["updateSpokeCaps"],
+    107: ["updateSpokeDrawCap"],
+    108: ["updateSpokeAddCap"],
+    109: ["updateSpokeRiskPremiumThreshold"],
+    110: ["updateInterestRateStrategy"],
+    111: ["updateInterestRateData"],
+    112: ["addAsset", "addAssetWithDecimals"],
+    113: ["addSpoke", "addSpokeToAssets"],
+}
+
+SPOKE_ROLE_FUNCTIONS: dict[int, list[str]] = {
+    200: ["updateUserDynamicConfig", "updateUserRiskPremium"],
+    201: [
+        "updateLiquidationConfig", "addReserve", "updateReserveConfig",
+        "updateDynamicReserveConfig", "addDynamicReserveConfig",
+        "updatePositionManager", "updateReservePriceSource",
+    ],
+}
+
+SPOKE_CONFIGURATOR_ROLE_FUNCTIONS: dict[int, list[str]] = {
+    301: ["updateReservePriceSource"],
+    302: ["updateCollateralRisk", "updateReceiveSharesEnabled", "updateBorrowable"],
+    303: ["addCollateralFactor", "updateCollateralFactor", "addDynamicReserveConfig", "updateDynamicReserveConfig"],
+    304: ["updatePositionManager"],
+    305: ["updateLiquidationTargetHealthFactor", "updateHealthFactorForMaxBonus", "updateLiquidationBonusFactor", "updateLiquidationConfig"],
+    306: ["addMaxLiquidationBonus", "updateMaxLiquidationBonus", "addLiquidationFee", "updateLiquidationFee"],
+    307: ["addReserve"],
+    308: ["updateFrozen", "freezeAllReserves", "freezeReserve"],
+    309: ["updatePaused", "pauseAllReserves", "pauseReserve"],
+}
+
+
+# ---------------------------------------------------------------------------
+# TokenizationSpoke verification
+# ---------------------------------------------------------------------------
+
+
+def verify_tokenization_spokes(
+    batch_mgr: BatchCallManager,
+    caller: ContractCaller,
+    cache: DeploymentCache,
+    report: DeployReport,
+    config: ConfigInput,
+    result: VerificationResult,
+) -> None:
+    result.section("TokenizationSpoke Verification")
+
+    # Collect assets that have a tokenize section
+    tokenize_entries: list[tuple[str, dict, str, int]] = []  # (label, tokenize_cfg, hub_addr, asset_id)
+    for entry in config.assets:
+        tok = entry.get("tokenize")
+        if not tok or not tok.get("name"):
+            continue
+        hub_key = entry["hubKey"]
+        token_key = entry["tokenKey"]
+        hub_info = report.hub_by_label(hub_key)
+        token_addr = Web3.to_checksum_address(config.tokens_by_key[token_key]["address"])
+        hub_addr = Web3.to_checksum_address(hub_info.address)
+        asset_id = cache.asset_ids.get((hub_addr, token_addr))
+        if asset_id is None:
+            result.error(f"{hub_key}/{token_key}/tokenize", "valid assetId", "call failed")
+            continue
+        label = f"{hub_key}/{token_key}"
+        tokenize_entries.append((label, tok, hub_addr, asset_id))
+
+    if not tokenize_entries:
+        print("  No tokenization entries found in config.")
+        return
+
+    # Round 1: batch getSpokeCount for each (hub, assetId)
+    count_calls: list[tuple[str, Any]] = []
+    for label, _tok, hub_addr, asset_id in tokenize_entries:
+        hub_contract = batch_mgr.w3.eth.contract(
+            address=hub_addr, abi=caller.hub_abi,
+        )
+        count_calls.append((label, hub_contract.functions.getSpokeCount(asset_id)))
+
+    count_results, count_errors = batch_mgr.execute(count_calls)
+
+    # Round 2: batch getSpokeAddress for each index
+    addr_calls: list[tuple[str, Any]] = []
+    addr_meta: list[tuple[str, dict, str, int, int]] = []  # label, tok, hub_addr, asset_id, index
+    for label, tok, hub_addr, asset_id in tokenize_entries:
+        if label in count_errors:
+            result.error(f"{label}/spokeCount", "spoke count", f"call failed: {count_errors[label]}")
+            continue
+        count = count_results.get(label)
+        if count is None:
+            result.error(f"{label}/spokeCount", "spoke count", "call failed")
+            continue
+        hub_contract = batch_mgr.w3.eth.contract(
+            address=hub_addr, abi=caller.hub_abi,
+        )
+        for idx in range(count):
+            key = f"{label}/spoke/{idx}"
+            addr_calls.append((key, hub_contract.functions.getSpokeAddress(asset_id, idx)))
+            addr_meta.append((label, tok, hub_addr, asset_id, idx))
+
+    addr_results, addr_errors = batch_mgr.execute(addr_calls)
+
+    # Round 3: Probe each spoke with sequential name()/symbol() calls.
+    # Batching these is unsafe because name() reverts on non-TokenizationSpoke
+    # contracts, which poisons the entire batch chunk.
+    label_spokes: dict[str, list[str]] = {}
+    spoke_names: dict[str, str] = {}   # spoke_addr -> name
+    spoke_symbols: dict[str, str] = {} # spoke_addr -> symbol
+    for label, tok, hub_addr, asset_id, idx in addr_meta:
+        key = f"{label}/spoke/{idx}"
+        if key in addr_errors:
+            continue
+        spoke_addr = addr_results.get(key)
+        if spoke_addr is None:
+            continue
+        spoke_addr = Web3.to_checksum_address(spoke_addr)
+        label_spokes.setdefault(label, []).append(spoke_addr)
+
+        if spoke_addr not in spoke_names:
+            name_val = caller.call_tokenization_spoke(spoke_addr, "name", silent=True)
+            if name_val and isinstance(name_val, str):
+                spoke_names[spoke_addr] = name_val
+                symbol_val = caller.call_tokenization_spoke(spoke_addr, "symbol", silent=True)
+                spoke_symbols[spoke_addr] = symbol_val if isinstance(symbol_val, str) else ""
+
+    # Round 4: Batch getSpokeConfig only for confirmed TokenizationSpoke candidates
+    config_calls: list[tuple[str, Any]] = []
+    for label, tok, hub_addr, asset_id in tokenize_entries:
+        for spoke_addr in label_spokes.get(label, []):
+            if spoke_addr in spoke_names:
+                hub_contract = batch_mgr.w3.eth.contract(
+                    address=hub_addr, abi=caller.hub_abi,
+                )
+                config_calls.append((
+                    f"{label}/{spoke_addr}/config",
+                    hub_contract.functions.getSpokeConfig(asset_id, spoke_addr),
+                ))
+
+    config_results, config_errors = batch_mgr.execute(config_calls)
+
+    # Match discovered TokenizationSpokes against config expectations
+    for label, tok, hub_addr, asset_id in tokenize_entries:
+        expected_name = tok["name"]
+        expected_symbol = tok["symbol"]
+        expected_add_cap = tok["addCap"]
+        spokes = label_spokes.get(label, [])
+
+        found = False
+        for spoke_addr in spokes:
+            name_val = spoke_names.get(spoke_addr)
+            if not name_val:
+                continue
+            symbol_val = spoke_symbols.get(spoke_addr, "")
+
+            if name_val == expected_name and symbol_val == expected_symbol:
+                found = True
+                result.ok(f"{label}/tokenize", f'name="{name_val}", symbol="{symbol_val}"')
+                config_key = f"{label}/{spoke_addr}/config"
+                if config_key in config_errors:
+                    result.error(f"{label}/tokenize/addCap", expected_add_cap, "config call failed")
+                else:
+                    spoke_cfg = config_results.get(config_key)
+                    if spoke_cfg is not None:
+                        _check(result, f"{label}/tokenize/addCap", expected_add_cap, spoke_cfg[0])
+                    else:
+                        result.error(f"{label}/tokenize/addCap", expected_add_cap, "config call failed")
+                break
+
+        if not found:
+            result.error(
+                f"{label}/tokenize",
+                f'TokenizationSpoke name="{expected_name}" symbol="{expected_symbol}"',
+                f"not found among {len(spokes)} spokes",
+            )
+
+
+# ---------------------------------------------------------------------------
+# Role verification
+# ---------------------------------------------------------------------------
+
+
+def _build_selector_role_map(
+    method_ids: dict[str, str],
+    role_functions: dict[int, list[str]],
+) -> list[tuple[str, bytes, int]]:
+    """Return [(function_signature, 4-byte selector, expected_role_id)]."""
+    out: list[tuple[str, bytes, int]] = []
+    for role_id, fn_names in role_functions.items():
+        for sig, sel_bytes in _selectors_for_names(method_ids, fn_names):
+            out.append((sig, sel_bytes, role_id))
+    return out
+
+
+def verify_roles(
+    batch_mgr: BatchCallManager,
+    caller: ContractCaller,
+    report: DeployReport,
+    config: ConfigInput,
+    result: VerificationResult,
+) -> None:
+    result.section("Role Configuration")
+
+    am_addr = Web3.to_checksum_address(report.access_manager)
+    am_contract = batch_mgr.w3.eth.contract(
+        address=am_addr, abi=caller.access_manager_abi,
+    )
+
+    hub_mids = load_method_selectors("IHub.sol", "IHub")
+    hub_cfg_mids = load_method_selectors("IHubConfigurator.sol", "IHubConfigurator")
+    spoke_mids = load_method_selectors("ISpoke.sol", "ISpoke")
+    spoke_cfg_mids = load_method_selectors("ISpokeConfigurator.sol", "ISpokeConfigurator")
+
+    hub_sel_roles = _build_selector_role_map(hub_mids, HUB_ROLE_FUNCTIONS)
+    hub_cfg_sel_roles = _build_selector_role_map(hub_cfg_mids, HUB_CONFIGURATOR_ROLE_FUNCTIONS)
+    spoke_sel_roles = _build_selector_role_map(spoke_mids, SPOKE_ROLE_FUNCTIONS)
+    spoke_cfg_sel_roles = _build_selector_role_map(spoke_cfg_mids, SPOKE_CONFIGURATOR_ROLE_FUNCTIONS)
+
+    # --- Part A: Selector-to-Role Mapping ---
+    print(f"\n{BOLD}--- Selector-to-Role Mapping ---{RESET}\n")
+
+    role_calls: list[tuple[str, Any]] = []
+    role_expectations: list[tuple[str, int]] = []  # (key, expected_role)
+
+    # Hub targets
+    for hub_info in report.hubs:
+        target = Web3.to_checksum_address(hub_info.address)
+        for sig, sel_bytes, expected_role in hub_sel_roles:
+            fn_name = sig.split("(")[0]
+            key = f"Hub({hub_info.label})/{fn_name}"
+            role_calls.append((
+                key,
+                am_contract.functions.getTargetFunctionRole(target, sel_bytes),
+            ))
+            role_expectations.append((key, expected_role))
+
+    # HubConfigurator target
+    hc_target = Web3.to_checksum_address(report.hub_configurator)
+    for sig, sel_bytes, expected_role in hub_cfg_sel_roles:
+        fn_name = sig.split("(")[0]
+        key = f"HubConfigurator/{fn_name}"
+        role_calls.append((
+            key,
+            am_contract.functions.getTargetFunctionRole(hc_target, sel_bytes),
+        ))
+        role_expectations.append((key, expected_role))
+
+    # Spoke targets
+    for spoke_info in report.spokes:
+        target = Web3.to_checksum_address(spoke_info.proxy)
+        for sig, sel_bytes, expected_role in spoke_sel_roles:
+            fn_name = sig.split("(")[0]
+            key = f"Spoke({spoke_info.label})/{fn_name}"
+            role_calls.append((
+                key,
+                am_contract.functions.getTargetFunctionRole(target, sel_bytes),
+            ))
+            role_expectations.append((key, expected_role))
+
+    # SpokeConfigurator target
+    sc_target = Web3.to_checksum_address(report.spoke_configurator)
+    for sig, sel_bytes, expected_role in spoke_cfg_sel_roles:
+        fn_name = sig.split("(")[0]
+        key = f"SpokeConfigurator/{fn_name}"
+        role_calls.append((
+            key,
+            am_contract.functions.getTargetFunctionRole(sc_target, sel_bytes),
+        ))
+        role_expectations.append((key, expected_role))
+
+    role_results, role_errors = batch_mgr.execute(role_calls)
+
+    for key, expected_role in role_expectations:
+        if key in role_errors:
+            result.error(key, f"role {expected_role}", f"call failed: {role_errors[key]}")
+        else:
+            actual = role_results.get(key)
+            role_name = ROLE_NAMES.get(expected_role, str(expected_role))
+            if actual == expected_role:
+                result.ok(key, f"{role_name} ({expected_role})")
+            else:
+                actual_name = ROLE_NAMES.get(actual, str(actual)) if actual is not None else "None"
+                result.error(
+                    key,
+                    f"{role_name} ({expected_role})",
+                    f"{actual_name} ({actual})",
+                )
+
+    # --- Part B: Structural Role Grants ---
+    print(f"\n{BOLD}--- Structural Role Grants ---{RESET}\n")
+
+    grant_calls: list[tuple[str, Any]] = []
+    grant_expectations: list[tuple[str, str]] = []
+
+    # HUB_CONFIGURATOR_ROLE (1) -> HubConfigurator should be member
+    grant_calls.append((
+        "HUB_CONFIGURATOR_ROLE/HubConfigurator",
+        am_contract.functions.hasRole(1, hc_target),
+    ))
+    grant_expectations.append(("HUB_CONFIGURATOR_ROLE/HubConfigurator", "HubConfigurator is member"))
+
+    # SPOKE_CONFIGURATOR_ROLE (201) -> SpokeConfigurator should be member
+    grant_calls.append((
+        "SPOKE_CONFIGURATOR_ROLE/SpokeConfigurator",
+        am_contract.functions.hasRole(201, sc_target),
+    ))
+    grant_expectations.append(("SPOKE_CONFIGURATOR_ROLE/SpokeConfigurator", "SpokeConfigurator is member"))
+
+    grant_results, grant_errors = batch_mgr.execute(grant_calls)
+
+    for key, description in grant_expectations:
+        if key in grant_errors:
+            result.error(key, description, f"call failed: {grant_errors[key]}")
+        else:
+            val = grant_results.get(key)
+            # hasRole returns (isMember, executionDelay)
+            is_member = val[0] if isinstance(val, (tuple, list)) else val
+            if is_member:
+                result.ok(key, description)
+            else:
+                result.error(key, description, "not a member")
+
+    # --- Part C: Print All Role Members (informational) ---
+    print(f"\n{BOLD}--- Role Members (informational) ---{RESET}\n")
+
+    # Build address -> label reverse lookup from the deploy report
+    addr_labels: dict[str, str] = {}
+    for label, addr in report.all_report_keys():
+        addr_labels[Web3.to_checksum_address(addr)] = label
+
+    # Get total role count
+    role_count = caller.call_access_manager(am_addr, "getRoleCount")
+    if role_count is None or role_count == 0:
+        print("  Could not retrieve role count.")
+        return
+
+    # Get all role IDs
+    roles = caller.call_access_manager(am_addr, "getRoles", 0, role_count)
+    if roles is None:
+        print("  Could not retrieve roles.")
+        return
+
+    # Batch: get member count for each role
+    member_count_calls: list[tuple[str, Any]] = []
+    for role_id in roles:
+        key = f"role_{role_id}/memberCount"
+        member_count_calls.append((
+            key,
+            am_contract.functions.getRoleMemberCount(role_id),
+        ))
+
+    mc_results, mc_errors = batch_mgr.execute(member_count_calls)
+
+    # Batch: get members for each role
+    member_calls: list[tuple[str, Any]] = []
+    role_member_counts: dict[int, int] = {}
+    for role_id in roles:
+        key = f"role_{role_id}/memberCount"
+        if key in mc_errors:
+            continue
+        count = mc_results.get(key, 0)
+        if count and count > 0:
+            role_member_counts[role_id] = count
+            member_calls.append((
+                f"role_{role_id}/members",
+                am_contract.functions.getRoleMembers(role_id, 0, count),
+            ))
+
+    m_results, m_errors = batch_mgr.execute(member_calls)
+
+    for role_id in roles:
+        role_name = ROLE_NAMES.get(role_id, f"UNKNOWN_ROLE")
+        print(f"  Role {role_id} ({role_name}):")
+        mkey = f"role_{role_id}/members"
+        if mkey in m_errors:
+            print(f"    (error fetching members: {m_errors[mkey]})")
+        elif mkey in m_results:
+            members = m_results[mkey]
+            if members:
+                for addr in members:
+                    label = addr_labels.get(Web3.to_checksum_address(addr), "")
+                    suffix = f" ({label})" if label else ""
+                    print(f"    - {addr}{suffix}")
+            else:
+                print(f"    (no members)")
+        else:
+            print(f"    (no members)")
+
+
+def verify_position_managers_and_gateways(
+    batch_mgr: BatchCallManager,
+    caller: ContractCaller,
+    report: DeployReport,
+    result: VerificationResult,
+) -> None:
+    result.section("Position Manager & Gateway Verification")
+
+    pm_gw_entries: list[tuple[str, str]] = []
+    for name, addr in [
+        ("GiverPositionManager", report.giver_position_manager),
+        ("TakerPositionManager", report.taker_position_manager),
+        ("ConfigPositionManager", report.config_position_manager),
+        ("SignatureGateway", report.signature_gateway),
+        ("NativeTokenGateway", report.native_token_gateway),
+    ]:
+        if addr:
+            pm_gw_entries.append((name, Web3.to_checksum_address(addr)))
+
+    if not pm_gw_entries:
+        print("  No position managers or gateways found in report.")
+        return
+
+    if not report.spokes:
+        print("  No spokes found in report.")
+        return
+
+    # --- Spoke-side: isPositionManagerActive ---
+    print(f"\n{BOLD}--- Spoke-side (isPositionManagerActive) ---{RESET}\n")
+
+    active_calls: list[tuple[str, Any]] = []
+    for spoke_info in report.spokes:
+        spoke_addr = Web3.to_checksum_address(spoke_info.proxy)
+        spoke_contract = batch_mgr.w3.eth.contract(
+            address=spoke_addr, abi=caller.spoke_abi,
+        )
+        for pm_name, pm_addr in pm_gw_entries:
+            key = f"{spoke_info.label}/{pm_name}"
+            active_calls.append((
+                key,
+                spoke_contract.functions.isPositionManagerActive(pm_addr),
+            ))
+
+    active_results, active_errors = batch_mgr.execute(active_calls)
+
+    for spoke_info in report.spokes:
+        for pm_name, _pm_addr in pm_gw_entries:
+            key = f"{spoke_info.label}/{pm_name}"
+            if key in active_errors:
+                result.error(key, "active", f"call failed: {active_errors[key]}")
+            else:
+                val = active_results.get(key)
+                if val is True:
+                    result.ok(key, "active")
+                else:
+                    result.error(key, "active", f"{val}")
+
+    # --- PM/Gateway-side: isSpokeRegistered ---
+    print(f"\n{BOLD}--- PM/Gateway-side (isSpokeRegistered) ---{RESET}\n")
+
+    reg_calls: list[tuple[str, Any]] = []
+    for pm_name, pm_addr in pm_gw_entries:
+        pm_contract = batch_mgr.w3.eth.contract(
+            address=pm_addr, abi=caller.position_manager_base_abi,
+        )
+        for spoke_info in report.spokes:
+            spoke_addr = Web3.to_checksum_address(spoke_info.proxy)
+            key = f"{pm_name}/{spoke_info.label}"
+            reg_calls.append((
+                key,
+                pm_contract.functions.isSpokeRegistered(spoke_addr),
+            ))
+
+    reg_results, reg_errors = batch_mgr.execute(reg_calls)
+
+    for pm_name, _pm_addr in pm_gw_entries:
+        for spoke_info in report.spokes:
+            key = f"{pm_name}/{spoke_info.label}"
+            if key in reg_errors:
+                result.error(key, "registered", f"call failed: {reg_errors[key]}")
+            else:
+                val = reg_results.get(key)
+                if val is True:
+                    result.ok(key, "registered")
+                else:
+                    result.error(key, "registered", f"{val}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Verify an Aave V4 deployment against its configuration."
@@ -1071,6 +1669,9 @@ def main() -> None:
     verify_reserves(batch_mgr, caller, cache, report, config, result)
     verify_liquidation_configs(batch_mgr, caller, report, config, result)
     verify_oracles(batch_mgr, caller, cache, report, config, result)
+    verify_tokenization_spokes(batch_mgr, caller, cache, report, config, result)
+    verify_roles(batch_mgr, caller, report, config, result)
+    verify_position_managers_and_gateways(batch_mgr, caller, report, result)
 
     sys.exit(result.summary())
 
