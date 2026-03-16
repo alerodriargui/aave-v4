@@ -33,7 +33,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_addAsset_fuzz_revertsWith_AccessManagedUnauthorized(address caller) public {
-    vm.assume(caller != HUB_CONFIGURATOR_ADMIN && caller != address(accessManager));
+    _assumeNonHubConfiguratorAdmin(caller);
 
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
@@ -277,7 +277,7 @@ contract HubConfiguratorTest is HubBase {
   function test_updateFeeReceiver_fuzz_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    vm.assume(caller != HUB_CONFIGURATOR_ADMIN && caller != address(accessManager));
+    _assumeNonHubConfiguratorAdmin(caller);
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
@@ -497,7 +497,7 @@ contract HubConfiguratorTest is HubBase {
   }
 
   function test_updateFeeConfig_fuzz_revertsWith_AccessManagedUnauthorized(address caller) public {
-    vm.assume(caller != HUB_CONFIGURATOR_ADMIN && caller != address(accessManager));
+    _assumeNonHubConfiguratorAdmin(caller);
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
@@ -574,7 +574,7 @@ contract HubConfiguratorTest is HubBase {
   function test_updateInterestRateStrategy_fuzz_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    vm.assume(caller != HUB_CONFIGURATOR_ADMIN && caller != address(accessManager));
+    _assumeNonHubConfiguratorAdmin(caller);
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
@@ -636,7 +636,7 @@ contract HubConfiguratorTest is HubBase {
   function test_updateReinvestmentController_fuzz_revertsWith_AccessManagedUnauthorized(
     address caller
   ) public {
-    vm.assume(caller != HUB_CONFIGURATOR_ADMIN && caller != address(accessManager));
+    _assumeNonHubConfiguratorAdmin(caller);
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
     );
@@ -1176,5 +1176,14 @@ contract HubConfiguratorTest is HubBase {
           encodedIrData
         );
     }
+  }
+
+  function _assumeNonHubConfiguratorAdmin(address caller) internal {
+    vm.assume(
+      caller != HUB_CONFIGURATOR_ADMIN &&
+        caller != address(accessManager) &&
+        caller != ADMIN &&
+        caller != HUB_ADMIN
+    );
   }
 }

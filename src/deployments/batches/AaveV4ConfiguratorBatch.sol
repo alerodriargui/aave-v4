@@ -17,8 +17,14 @@ contract AaveV4ConfiguratorBatch is
     address spokeConfiguratorAuthority_,
     bytes32 salt_
   ) {
-    address hubConfigurator = _deployHubConfigurator(hubConfiguratorAuthority_, salt_);
-    address spokeConfigurator = _deploySpokeConfigurator(spokeConfiguratorAuthority_, salt_);
+    address hubConfigurator = _deployHubConfigurator({
+      authority: hubConfiguratorAuthority_,
+      salt: salt_
+    });
+    address spokeConfigurator = _deploySpokeConfigurator({
+      authority: spokeConfiguratorAuthority_,
+      salt: salt_
+    });
 
     _report = BatchReports.ConfiguratorBatchReport({
       hubConfigurator: hubConfigurator,

@@ -30,15 +30,16 @@ coverage :
 	make coverage-report
 	make coverage-badge
 
-# Deploy
-
-# Pre-deploy LiquidationLogic library (required before deploying spokes)
+# Deployment
+# Step 1:Pre-deploy LiquidationLogic library (required before deploying spokes)
+# `make deploy-precompile CHAIN=mainnet`
 deploy-precompile :;
 	FOUNDRY_PROFILE=${CHAIN} forge script scripts/LibraryPreCompile.s.sol \
 	--rpc-url ${CHAIN} --account ${ACCOUNT} --ffi \
 	$(if ${DRY},, --broadcast --verify) \
 
-# Flow 1: Deploy contracts + grant roles
+# Step 2: Deploy contracts + grant roles to deployer
+# `make deploy-contracts CHAIN=mainnet`
 deploy-contracts :;
 	FOUNDRY_PROFILE=${CHAIN} forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
 	--rpc-url ${CHAIN} --account ${ACCOUNT} --slow \

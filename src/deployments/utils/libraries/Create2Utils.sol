@@ -15,7 +15,7 @@ library Create2Utils {
 
   function create2Deploy(bytes32 salt, bytes memory bytecode) internal returns (address) {
     require(isContractDeployed(CREATE2_FACTORY), MissingCreate2Factory());
-    address computed = computeCreate2Address(salt, bytecode);
+    address computed = computeCreate2Address({salt: salt, bytecode: bytecode});
     require(!isContractDeployed(computed), ContractAlreadyDeployed());
     bytes memory creationBytecode = abi.encodePacked(salt, bytecode);
     (bool success, bytes memory returnData) = CREATE2_FACTORY.call(creationBytecode);

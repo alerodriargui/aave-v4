@@ -14,13 +14,13 @@ contract Dummy {
 }
 
 contract Create2UtilsTest is Create2TestHelper {
-  Create2UtilsWrapper internal _harness;
+  Create2UtilsWrapper internal _create2UtilsWrapper;
   function setUp() public {
-    _harness = new Create2UtilsWrapper();
+    _create2UtilsWrapper = new Create2UtilsWrapper();
   }
   function testCreate2Deploy_revertsWith_missingCreate2Factory() public {
     vm.expectRevert(Create2Utils.MissingCreate2Factory.selector);
-    _harness.create2Deploy(bytes32(0), type(Dummy).creationCode);
+    _create2UtilsWrapper.create2Deploy(bytes32(0), type(Dummy).creationCode);
   }
 
   function testCreate2Deploy_revertsWith_create2AddressDerivationFailure(bytes32 salt) public {
@@ -31,7 +31,7 @@ contract Create2UtilsTest is Create2TestHelper {
     );
     bytes memory bytecode = type(Dummy).creationCode;
     vm.expectRevert(Create2Utils.Create2AddressDerivationFailure.selector);
-    _harness.create2Deploy(salt, bytecode);
+    _create2UtilsWrapper.create2Deploy(salt, bytecode);
   }
 
   function testCreate2Deploy_revertsWith_failedCreate2FactoryCall(bytes32 salt) public {
@@ -39,18 +39,18 @@ contract Create2UtilsTest is Create2TestHelper {
     _etchCreate2Factory();
     bytes memory bytecode = hex'fd';
     vm.expectRevert(Create2Utils.FailedCreate2FactoryCall.selector);
-    _harness.create2Deploy(salt, bytecode);
+    _create2UtilsWrapper.create2Deploy(salt, bytecode);
   }
 
   function testCreate2Deploy_revertsWith_contractAlreadyDeployed(bytes32 salt) public {
     vm.assume(salt != bytes32(0));
     _etchCreate2Factory();
     bytes memory bytecode = type(Dummy).creationCode;
-    _harness.create2Deploy(salt, bytecode);
+    _create2UtilsWrapper.create2Deploy(salt, bytecode);
 
     // after already deployed, it should now revert
     vm.expectRevert(Create2Utils.ContractAlreadyDeployed.selector);
-    _harness.create2Deploy(salt, bytecode);
+    _create2UtilsWrapper.create2Deploy(salt, bytecode);
   }
 
   function testCreate2Deploy_fuzz(bytes32 salt) public {
@@ -59,8 +59,8 @@ contract Create2UtilsTest is Create2TestHelper {
     bytes memory bytecode = type(Dummy).creationCode;
 
     assertEq(
-      _harness.create2Deploy(salt, bytecode),
-      _harness.computeCreate2Address(salt, keccak256(bytecode))
+      _create2UtilsWrapper.create2Deploy(salt, bytecode),
+      _create2UtilsWrapper.computeCreate2Address(salt, keccak256(bytecode))
     );
   }
 
@@ -71,8 +71,8 @@ contract Create2UtilsTest is Create2TestHelper {
     address logic = address(new Dummy());
     bytes memory initData = bytes('');
     assertEq(
-      _harness.proxify(salt, logic, initialOwner, initData),
-      _harness.computeCreate2Address(
+      _create2UtilsWrapper.proxify(salt, logic, initialOwner, initData),
+      _create2UtilsWrapper.computeCreate2Address(
         salt,
         keccak256(
           abi.encodePacked(
@@ -87,30 +87,36 @@ contract Create2UtilsTest is Create2TestHelper {
   function testIsContractDeployed_fuzz(address addr) public view {
     vm.assume(addr != address(0));
     assumeUnusedAddress(addr);
-    assertFalse(_harness.isContractDeployed(addr));
+    assertFalse(_create2UtilsWrapper.isContractDeployed(addr));
   }
 
   function testIsContractDeployed() public {
     address deployed = address(new Dummy());
-    assertTrue(_harness.isContractDeployed(deployed));
+    assertTrue(_create2UtilsWrapper.isContractDeployed(deployed));
   }
 
   function testComputeCreate2Address_fuzz(bytes32 salt, bytes32 initcode) public view {
     vm.assume(salt != bytes32(0));
     vm.assume(initcode != bytes32(0));
-    address expected = _harness.computeCreate2Address(salt, initcode);
-    assertEq(_harness.computeCreate2Address(salt, initcode), expected);
+    address expected = _create2UtilsWrapper.computeCreate2Address(salt, initcode);
+    assertEq(_create2UtilsWrapper.computeCreate2Address(salt, initcode), expected);
   }
 
   function testComputeCreate2Address_fuzz(bytes32 salt, bytes memory bytecode) public view {
     vm.assume(salt != bytes32(0));
     vm.assume(bytecode.length > 0);
-    address expected = _harness.computeCreate2Address(salt, keccak256(abi.encodePacked(bytecode)));
-    assertEq(_harness.computeCreate2Address(salt, bytecode), expected);
+    address expected = _create2UtilsWrapper.computeCreate2Address(
+      salt,
+      keccak256(abi.encodePacked(bytecode))
+    );
+    assertEq(_create2UtilsWrapper.computeCreate2Address(salt, bytecode), expected);
   }
 
   function testAddressFromLast20Bytes_fuzz(bytes32 bytesValue) public view {
     vm.assume(bytesValue != bytes32(0));
-    assertEq(_harness.addressFromLast20Bytes(bytesValue), address(uint160(uint256(bytesValue))));
+    assertEq(
+      _create2UtilsWrapper.addressFromLast20Bytes(bytesValue),
+      address(uint160(uint256(bytesValue)))
+    );
   }
 }

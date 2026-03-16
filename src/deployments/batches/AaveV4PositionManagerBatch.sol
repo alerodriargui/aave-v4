@@ -16,9 +16,9 @@ contract AaveV4PositionManagerBatch is
 
   constructor(address owner_, bytes32 salt_) {
     _report = BatchReports.PositionManagerBatchReport({
-      giverPositionManager: _deployGiverPositionManager(owner_, salt_),
-      takerPositionManager: _deployTakerPositionManager(owner_, salt_),
-      configPositionManager: _deployConfigPositionManager(owner_, salt_)
+      giverPositionManager: _deployGiverPositionManager({owner: owner_, salt: salt_}),
+      takerPositionManager: _deployTakerPositionManager({owner: owner_, salt: salt_}),
+      configPositionManager: _deployConfigPositionManager({owner: owner_, salt: salt_})
     });
   }
 

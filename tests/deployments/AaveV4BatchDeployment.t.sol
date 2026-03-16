@@ -231,11 +231,78 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     checkedV4Deployment();
   }
 
-  function testAaveV4BatchDeployment_withMismatchedSpokeMaxReservesLimits_reverts() public {
+  function testAaveV4BatchDeployment_withEmptySpokeMaxReservesLimits_usesDefaults() public {
     _inputs.spokeMaxReservesLimits = new uint16[](0);
+    checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withMismatchedSpokeMaxReservesLimits_reverts() public {
+    _inputs.spokeMaxReservesLimits = new uint16[](1);
+    _inputs.spokeMaxReservesLimits[0] = 128;
 
     vm.expectRevert('spoke labels/limits length mismatch');
     this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_accessManagerAdminTransfer() public {
+    address newAdmin = makeAddr('newAccessManagerAdmin');
+    _inputs.accessManagerAdmin = newAdmin;
+
+    bytes memory hubBytecode = _getHubBytecode();
+    bytes memory spokeBytecode = _getSpokeBytecode();
+
+    vm.startPrank(_deployer);
+    OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
+      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
+    vm.stopPrank();
+
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
+      report.authorityBatchReport.accessManager
+    );
+
+    // newAdmin has DEFAULT_ADMIN_ROLE
+    (bool newAdminHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, newAdmin);
+    assertTrue(newAdminHasRole, 'new admin should have DEFAULT_ADMIN_ROLE');
+
+    // deployer no longer has DEFAULT_ADMIN_ROLE
+    (bool deployerHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, _deployer);
+    assertFalse(deployerHasRole, 'deployer should not have DEFAULT_ADMIN_ROLE after transfer');
+
+    // exactly one admin
+    assertEq(
+      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_DEFAULT_ADMIN),
+      1,
+      'should have exactly one DEFAULT_ADMIN'
+    );
+    assertEq(
+      accessManager.getRoleMember(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, 0),
+      newAdmin,
+      'sole admin should be newAdmin'
+    );
+  }
+
+  function testAaveV4BatchDeployment_accessManagerAdminSameAsDeployer() public {
+    _inputs.accessManagerAdmin = _deployer;
+
+    bytes memory hubBytecode = _getHubBytecode();
+    bytes memory spokeBytecode = _getSpokeBytecode();
+
+    vm.startPrank(_deployer);
+    OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
+      .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
+    vm.stopPrank();
+
+    IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
+      report.authorityBatchReport.accessManager
+    );
+
+    (bool deployerHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, _deployer);
+    assertTrue(deployerHasRole, 'deployer should retain DEFAULT_ADMIN_ROLE');
+    assertEq(
+      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_DEFAULT_ADMIN),
+      1,
+      'should have exactly one DEFAULT_ADMIN'
+    );
   }
 
   function testAaveV4BatchDeployment_withZeroDeployer_reverts() public {

@@ -27,22 +27,23 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   function run() external virtual {
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
-
-    (, address deployer, ) = vm.readCallers();
-
     FullDeployInputs memory inputs = _getDeployInputs();
+
+    vm.startBroadcast();
+    (, address deployer, ) = vm.readCallers();
     inputs = _loadWarningsAndSanitizeInputs(inputs, deployer);
 
     logger.log('CHAIN ID', block.chainid);
-    logger.logHeader1('Starting Aave V4 Batch Deployment');
-    vm.startBroadcast(deployer);
+    logger.log('deployer', deployer);
+    logger.logHeader1('starting Aave V4 batch deployment');
+
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
       .deployAaveV4(logger, deployer, inputs, _getHubBytecode(), _getSpokeBytecode());
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
     _logDeploySummary(logger);
-    logger.logHeader1('Batch Deployment Completed');
-    logger.logHeader1('Saving Logs');
+    logger.logHeader1('batch deployment completed');
+    logger.logHeader1('saving logs');
     logger.save({fileName: _outputFileName, withTimestamp: true});
   }
 
@@ -63,101 +64,55 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     _validateUniqueLabels(inputs.spokeLabels, 'spoke');
 
     _appendSummary('========== DEPLOYMENT SUMMARY ==========');
-    // Hubs
-    if (inputs.hubLabels.length > 0) {
-      _appendSummary(string.concat('Hubs to deploy: ', vm.toString(inputs.hubLabels.length)));
-      for (uint256 i; i < inputs.hubLabels.length; i++) {
-        _appendSummary(string.concat('  - ', inputs.hubLabels[i]));
-      }
-    } else {
-      _logWarning('No hubs will be deployed');
-    }
-
-    // Spokes
-    if (inputs.spokeLabels.length > 0) {
-      _appendSummary(string.concat('Spokes to deploy: ', vm.toString(inputs.spokeLabels.length)));
-      for (uint256 i; i < inputs.spokeLabels.length; i++) {
-        _appendSummary(string.concat('  - ', inputs.spokeLabels[i]));
-      }
-    } else {
-      _logWarning('No spokes will be deployed');
-    }
-
-    // NativeTokenGateway
-    if (inputs.deployNativeTokenGateway) {
-      if (inputs.nativeWrapper == address(0)) {
-        _logWarning('deployNativeTokenGateway is true but nativeWrapper is zero address');
-      } else {
-        _appendSummary('NativeTokenGateway will be deployed');
-      }
-    } else {
-      _appendSummary('NativeTokenGateway: skipped (deployNativeTokenGateway is false)');
-    }
-
-    // SignatureGateway
-    if (inputs.deploySignatureGateway) {
-      _appendSummary('SignatureGateway will be deployed');
-    } else {
-      _appendSummary('SignatureGateway: skipped (deploySignatureGateway is false)');
-    }
-
-    // PositionManagers
-    if (inputs.deployPositionManagers) {
-      _appendSummary('PositionManagers (Giver/Taker) will be deployed');
-    } else {
-      _appendSummary('PositionManagers: skipped (deployPositionManagers is false)');
-    }
-
-    // Roles
-    if (inputs.grantRoles) {
-      _appendSummary('Roles: will be granted during deployment');
-    } else {
-      _appendSummary('Roles: deferred (not granted during deployment)');
-    }
-
+    _logHubs(inputs);
+    _logSpokes(inputs);
+    _logNativeTokenGateway(inputs);
+    _logSignatureGateway(inputs);
+    _logPositionManagers(inputs);
+    _logRoles(inputs);
     _appendSummary('--------------------------------------------------');
 
     // Sanitize zero addresses
     if (inputs.grantRoles) {
       if (inputs.accessManagerAdmin == address(0)) {
-        _logWarning(string.concat('Access Manager Admin', message, outcome));
+        _logWarning(string.concat('access manager admin', message, outcome));
         sanitizedInputs.accessManagerAdmin = deployer;
       }
       if (inputs.hubConfiguratorAdmin == address(0)) {
-        _logWarning(string.concat('Hub Configurator Admin', message, outcome));
+        _logWarning(string.concat('hub configurator admin', message, outcome));
         sanitizedInputs.hubConfiguratorAdmin = deployer;
       }
       if (inputs.spokeConfiguratorAdmin == address(0)) {
-        _logWarning(string.concat('Spoke Configurator Admin', message, outcome));
+        _logWarning(string.concat('spoke configurator admin', message, outcome));
         sanitizedInputs.spokeConfiguratorAdmin = deployer;
       }
       if (inputs.spokeProxyAdminOwner == address(0)) {
-        _logWarning(string.concat('Spoke Proxy Admin Owner', message, outcome));
+        _logWarning(string.concat('spoke proxy admin owner', message, outcome));
         sanitizedInputs.spokeProxyAdminOwner = deployer;
       }
       if (inputs.treasurySpokeOwner == address(0)) {
-        _logWarning(string.concat('Treasury Spoke Owner', message, outcome));
+        _logWarning(string.concat('treasury spoke owner', message, outcome));
         sanitizedInputs.treasurySpokeOwner = deployer;
       }
       if (inputs.spokeAdmin == address(0)) {
-        _logWarning(string.concat('Spoke Admin', message, outcome));
+        _logWarning(string.concat('spoke admin', message, outcome));
         sanitizedInputs.spokeAdmin = deployer;
       }
       if (inputs.hubAdmin == address(0)) {
-        _logWarning(string.concat('Hub Admin', message, outcome));
+        _logWarning(string.concat('hub admin', message, outcome));
         sanitizedInputs.hubAdmin = deployer;
       }
     } else {
-      _logWarning('Roles: deferred (not granted during deployment)');
+      _logWarning('roles: deferred (not granted during deployment)');
       sanitizedInputs.treasurySpokeOwner = deployer;
       sanitizedInputs.spokeProxyAdminOwner = deployer;
     }
     if (inputs.gatewayOwner == address(0)) {
-      _logWarning(string.concat('Gateway owner', message, outcome));
+      _logWarning(string.concat('gateway owner', message, outcome));
       sanitizedInputs.gatewayOwner = deployer;
     }
     if (inputs.positionManagerOwner == address(0)) {
-      _logWarning(string.concat('Position Manager owner', message, outcome));
+      _logWarning(string.concat('position manager owner', message, outcome));
       sanitizedInputs.positionManagerOwner = deployer;
     }
     if (inputs.salt == bytes32(0)) {
@@ -168,13 +123,71 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     return sanitizedInputs;
   }
 
+  function _logHubs(FullDeployInputs memory inputs) internal {
+    if (inputs.hubLabels.length > 0) {
+      _appendSummary(string.concat('hubs to deploy: ', vm.toString(inputs.hubLabels.length)));
+      for (uint256 i; i < inputs.hubLabels.length; i++) {
+        _appendSummary(string.concat('  - ', inputs.hubLabels[i]));
+      }
+    } else {
+      _logWarning('no hubs will be deployed');
+    }
+  }
+
+  function _logSpokes(FullDeployInputs memory inputs) internal {
+    if (inputs.spokeLabels.length > 0) {
+      _appendSummary(string.concat('spokes to deploy: ', vm.toString(inputs.spokeLabels.length)));
+      for (uint256 i; i < inputs.spokeLabels.length; i++) {
+        _appendSummary(string.concat('  - ', inputs.spokeLabels[i]));
+      }
+    } else {
+      _logWarning('no spokes will be deployed');
+    }
+  }
+
+  function _logNativeTokenGateway(FullDeployInputs memory inputs) internal {
+    if (inputs.deployNativeTokenGateway) {
+      if (inputs.nativeWrapper == address(0)) {
+        _logWarning('deployNativeTokenGateway is true but nativeWrapper is zero address');
+      } else {
+        _appendSummary('nativeTokenGateway will be deployed');
+      }
+    } else {
+      _appendSummary('nativeTokenGateway: skipped (deployNativeTokenGateway is false)');
+    }
+  }
+
+  function _logSignatureGateway(FullDeployInputs memory inputs) internal {
+    if (inputs.deploySignatureGateway) {
+      _appendSummary('signatureGateway will be deployed');
+    } else {
+      _appendSummary('signatureGateway: skipped (deploySignatureGateway is false)');
+    }
+  }
+
+  function _logPositionManagers(FullDeployInputs memory inputs) internal {
+    if (inputs.deployPositionManagers) {
+      _appendSummary('positionManagers (giver/taker/config) will be deployed');
+    } else {
+      _appendSummary('positionManagers: skipped (deployPositionManagers is false)');
+    }
+  }
+
+  function _logRoles(FullDeployInputs memory inputs) internal {
+    if (inputs.grantRoles) {
+      _appendSummary('roles: will be granted during deployment');
+    } else {
+      _appendSummary('roles: deferred (not granted during deployment)');
+    }
+  }
+
   function _executeUserPrompt() internal virtual {
     if (_promptLines.s.length > 0) {
       string memory ack = vm.prompt(
-        string.concat(_joinLines(_promptLines), "\nEnter 'y' to continue")
+        string.concat(_joinLines(_promptLines), "\nenter 'y' to continue")
       );
       if (keccak256(bytes(ack)) != keccak256(bytes('y'))) {
-        revert('User did not acknowledge. Please try again.');
+        revert('user did not acknowledge. Please try again.');
       }
     }
   }

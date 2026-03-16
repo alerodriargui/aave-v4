@@ -30,7 +30,7 @@ contract AaveV4GatewayBatch is
       });
     }
     if (deploySignatureGateway_) {
-      signatureGateway = _deploySignatureGateway(owner_, salt_);
+      signatureGateway = _deploySignatureGateway({owner: owner_, salt: salt_});
     }
 
     _report = BatchReports.GatewaysBatchReport({

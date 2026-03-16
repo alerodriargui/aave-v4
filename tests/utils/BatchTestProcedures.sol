@@ -807,6 +807,23 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
         'SignatureGateway owner'
       );
     }
+    if (inputs.deployPositionManagers) {
+      assertEq(
+        Ownable(report.positionManagerBatchReport.giverPositionManager).owner(),
+        inputs.positionManagerOwner,
+        'GiverPositionManager owner'
+      );
+      assertEq(
+        Ownable(report.positionManagerBatchReport.takerPositionManager).owner(),
+        inputs.positionManagerOwner,
+        'TakerPositionManager owner'
+      );
+      assertEq(
+        Ownable(report.positionManagerBatchReport.configPositionManager).owner(),
+        inputs.positionManagerOwner,
+        'ConfigPositionManager owner'
+      );
+    }
   }
 
   function _etchSetup() internal {
