@@ -631,88 +631,24 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     FullDeployInputs memory inputs
   ) internal view {
     address hubConfigurator = report.configuratorBatchReport.hubConfigurator;
+    bytes4[] memory selectors = Roles.getHubConfiguratorDefaultAdminRoleSelectors();
 
-    bytes4[][] memory selectorGroups = new bytes4[][](14);
-    uint64[] memory expectedRoles = new uint64[](14);
-    string[] memory labels = new string[](14);
-
-    selectorGroups[0] = Roles.getHubConfiguratorLiquidityFeeUpdaterRoleSelectors();
-    expectedRoles[0] = Roles.HUB_CONFIGURATOR_LIQUIDITY_FEE_UPDATER_ROLE;
-    labels[0] = 'liquidityFeeUpdater';
-
-    selectorGroups[1] = Roles.getHubConfiguratorFeeConfiguratorRoleSelectors();
-    expectedRoles[1] = Roles.HUB_CONFIGURATOR_FEE_CONFIGURATOR_ROLE;
-    labels[1] = 'feeConfigurator';
-
-    selectorGroups[2] = Roles.getHubConfiguratorReinvestmentUpdaterRoleSelectors();
-    expectedRoles[2] = Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE;
-    labels[2] = 'reinvestment';
-
-    selectorGroups[3] = Roles.getHubConfiguratorHalterRoleSelectors();
-    expectedRoles[3] = Roles.HUB_CONFIGURATOR_HALTER_ROLE;
-    labels[3] = 'halt';
-
-    selectorGroups[4] = Roles.getHubConfiguratorDeactivatorRoleSelectors();
-    expectedRoles[4] = Roles.HUB_CONFIGURATOR_DEACTIVATOR_ROLE;
-    labels[4] = 'deactivate';
-
-    selectorGroups[5] = Roles.getHubConfiguratorCapsResetterRoleSelectors();
-    expectedRoles[5] = Roles.HUB_CONFIGURATOR_CAPS_RESETTER_ROLE;
-    labels[5] = 'capsResetter';
-
-    selectorGroups[6] = Roles.getHubConfiguratorCapsUpdaterRoleSelectors();
-    expectedRoles[6] = Roles.HUB_CONFIGURATOR_CAPS_UPDATER_ROLE;
-    labels[6] = 'capsUpdater';
-
-    selectorGroups[7] = Roles.getHubConfiguratorDrawCapUpdaterRoleSelectors();
-    expectedRoles[7] = Roles.HUB_CONFIGURATOR_DRAW_CAP_UPDATER_ROLE;
-    labels[7] = 'drawCapUpdater';
-
-    selectorGroups[8] = Roles.getHubConfiguratorAddCapUpdaterRoleSelectors();
-    expectedRoles[8] = Roles.HUB_CONFIGURATOR_ADD_CAP_UPDATER_ROLE;
-    labels[8] = 'addCapUpdater';
-
-    selectorGroups[9] = Roles.getHubConfiguratorSpokeRiskAdminRoleSelectors();
-    expectedRoles[9] = Roles.HUB_CONFIGURATOR_SPOKE_RISK_ADMIN_ROLE;
-    labels[9] = 'spokeRiskAdmin';
-
-    selectorGroups[10] = Roles.getHubConfiguratorInterestRateStrategyUpdaterRoleSelectors();
-    expectedRoles[10] = Roles.HUB_CONFIGURATOR_INTEREST_RATE_STRATEGY_UPDATER_ROLE;
-    labels[10] = 'irStrategyUpdater';
-
-    selectorGroups[11] = Roles.getHubConfiguratorInterestRateDataUpdaterRoleSelectors();
-    expectedRoles[11] = Roles.HUB_CONFIGURATOR_INTEREST_RATE_DATA_UPDATER_ROLE;
-    labels[11] = 'irDataUpdater';
-
-    selectorGroups[12] = Roles.getHubConfiguratorAssetListerRoleSelectors();
-    expectedRoles[12] = Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE;
-    labels[12] = 'assetLister';
-
-    selectorGroups[13] = Roles.getHubConfiguratorSpokeAdderRoleSelectors();
-    expectedRoles[13] = Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE;
-    labels[13] = 'spokeAdder';
-
-    for (uint256 group; group < selectorGroups.length; group++) {
-      for (uint256 idx; idx < selectorGroups[group].length; idx++) {
-        assertEq(
-          accessManager.getTargetFunctionRole(hubConfigurator, selectorGroups[group][idx]),
-          expectedRoles[group],
-          string.concat('HubConfigurator ', labels[group], ' selector role mapping')
-        );
-      }
+    for (uint256 i; i < selectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(hubConfigurator, selectors[i]),
+        Roles.HUB_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+        'HubConfigurator default admin selector role mapping'
+      );
     }
 
     if (inputs.grantRoles && inputs.hubLabels.length > 0) {
-      for (uint256 group; group < selectorGroups.length; group++) {
+      for (uint256 i; i < selectors.length; i++) {
         (bool allowed, ) = accessManager.canCall(
           inputs.hubConfiguratorAdmin,
           hubConfigurator,
-          selectorGroups[group][0]
+          selectors[i]
         );
-        assertTrue(
-          allowed,
-          string.concat('HubConfigurator admin canCall ', labels[group], ' selector')
-        );
+        assertTrue(allowed, 'HubConfigurator admin canCall selector');
       }
     }
   }
@@ -723,68 +659,24 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     FullDeployInputs memory inputs
   ) internal view {
     address spokeConfigurator = report.configuratorBatchReport.spokeConfigurator;
+    bytes4[] memory selectors = Roles.getSpokeConfiguratorDefaultAdminRoleSelectors();
 
-    bytes4[][] memory selectorGroups = new bytes4[][](9);
-    uint64[] memory expectedRoles = new uint64[](9);
-    string[] memory labels = new string[](9);
-
-    selectorGroups[0] = Roles.getSpokeConfiguratorPriceAdminRoleSelectors();
-    expectedRoles[0] = Roles.SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE;
-    labels[0] = 'priceAdmin';
-
-    selectorGroups[1] = Roles.getSpokeConfiguratorReserveAdminRoleSelectors();
-    expectedRoles[1] = Roles.SPOKE_CONFIGURATOR_RESERVE_ADMIN_ROLE;
-    labels[1] = 'reserveAdmin';
-
-    selectorGroups[2] = Roles.getSpokeConfiguratorDynamicReserveAdminRoleSelectors();
-    expectedRoles[2] = Roles.SPOKE_CONFIGURATOR_DYNAMIC_RESERVE_ADMIN_ROLE;
-    labels[2] = 'dynamicReserveAdmin';
-
-    selectorGroups[3] = Roles.getSpokeConfiguratorPositionManagerAdminRoleSelectors();
-    expectedRoles[3] = Roles.SPOKE_CONFIGURATOR_POSITION_MANAGER_ADMIN_ROLE;
-    labels[3] = 'positionManagerAdmin';
-
-    selectorGroups[4] = Roles.getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
-    expectedRoles[4] = Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE;
-    labels[4] = 'liquidationUpdater';
-
-    selectorGroups[5] = Roles.getSpokeConfiguratorDynamicLiquidationUpdaterRoleSelectors();
-    expectedRoles[5] = Roles.SPOKE_CONFIGURATOR_DYNAMIC_LIQUIDATION_UPDATER_ROLE;
-    labels[5] = 'dynamicLiquidationUpdater';
-
-    selectorGroups[6] = Roles.getSpokeConfiguratorReserveAdderRoleSelectors();
-    expectedRoles[6] = Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE;
-    labels[6] = 'reserveAdder';
-
-    selectorGroups[7] = Roles.getSpokeConfiguratorFreezerRoleSelectors();
-    expectedRoles[7] = Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE;
-    labels[7] = 'freeze';
-
-    selectorGroups[8] = Roles.getSpokeConfiguratorPauserRoleSelectors();
-    expectedRoles[8] = Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE;
-    labels[8] = 'pause';
-
-    for (uint256 group; group < selectorGroups.length; group++) {
-      for (uint256 idx; idx < selectorGroups[group].length; idx++) {
-        assertEq(
-          accessManager.getTargetFunctionRole(spokeConfigurator, selectorGroups[group][idx]),
-          expectedRoles[group],
-          string.concat('SpokeConfigurator ', labels[group], ' selector role mapping')
-        );
-      }
+    for (uint256 i; i < selectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(spokeConfigurator, selectors[i]),
+        Roles.SPOKE_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+        'SpokeConfigurator default admin selector role mapping'
+      );
     }
 
     if (inputs.grantRoles && inputs.spokeLabels.length > 0) {
-      for (uint256 group; group < selectorGroups.length; group++) {
+      for (uint256 i; i < selectors.length; i++) {
         (bool allowed, ) = accessManager.canCall(
           inputs.spokeConfiguratorAdmin,
           spokeConfigurator,
-          selectorGroups[group][0]
+          selectors[i]
         );
-        assertTrue(
-          allowed,
-          string.concat('SpokeConfigurator admin canCall ', labels[group], ' selector')
-        );
+        assertTrue(allowed, 'SpokeConfigurator admin canCall selector');
       }
     }
   }
@@ -828,20 +720,6 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _etchSetup() internal {
     _etchCreate2Factory();
-    _etchLiquidationLogicLibrary();
-  }
-
-  /// @dev Workaround for Foundry's `dynamic_test_linking` not deploying the LiquidationLogic
-  ///      library at the address it pre-links into consumer bytecodes (SpokeInstance, etc.).
-  ///      Hardcode Foundry's pre-linked deterministic address. If it changes
-  ///      (e.g. after a Foundry upgrade), find the new one by:
-  ///      - Running a failing liquidation test with `forge test -vvvv` and looking for:
-  ///        "delegatecall to <ADDRESS> (unlinked library)"
-  function _etchLiquidationLogicLibrary() internal {
-    address lib = address(0x5e14175873D9038DC68cB2319d00c173Dc09ad03);
-    if (lib.code.length == 0) {
-      vm.etch(lib, vm.getDeployedCode('src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic'));
-    }
   }
 
   function _getHubBytecode() internal view returns (bytes memory) {
