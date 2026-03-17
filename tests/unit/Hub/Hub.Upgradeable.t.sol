@@ -3,8 +3,6 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
-import {MockHubInstance} from 'tests/mocks/MockHubInstance.sol';
-import {IHubInstance} from 'tests/mocks/IHubInstance.sol';
 
 contract HubUpgradeableTest is HubBase {
   address internal proxyAdminOwner = makeAddr('proxyAdminOwner');
@@ -47,7 +45,7 @@ contract HubUpgradeableTest is HubBase {
         new TransparentUpgradeableProxy(
           address(hubImpl),
           proxyAdminOwner,
-          abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
+          _getInitializeCalldata(address(accessManager))
         )
       )
     );
@@ -56,20 +54,26 @@ contract HubUpgradeableTest is HubBase {
     assertEq(_getProxyAdminAddress(address(hubProxy)), proxyAdminAddress);
     assertEq(_getImplementationAddress(address(hubProxy)), address(hubImpl));
     assertEq(_getProxyInitializedVersion(address(hubProxy)), revision);
+    assertEq(IAccessManaged(address(hubProxy)).authority(), address(accessManager));
+    assertEq(hubProxy.getAssetCount(), 0);
   }
 
   function test_proxy_reinitialization_fuzz(uint64 initialRevision) public {
     initialRevision = uint64(bound(initialRevision, 1, type(uint64).max - 1));
     MockHubInstance hubImpl = new MockHubInstance(initialRevision);
-    ITransparentUpgradeableProxy hubProxy = ITransparentUpgradeableProxy(
+    IHub hubProxy = IHub(
       address(
         new TransparentUpgradeableProxy(
           address(hubImpl),
           proxyAdminOwner,
-          abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
+          _getInitializeCalldata(address(accessManager))
         )
       )
     );
+
+    (uint256 assetId, address underlying) = _addAsset(hubProxy);
+    uint256 assetCountBefore = hubProxy.getAssetCount();
+    assertEq(assetCountBefore, 1);
 
     uint64 secondRevision = uint64(vm.randomUint(initialRevision + 1, type(uint64).max));
     MockHubInstance hubImpl2 = new MockHubInstance(secondRevision);
@@ -77,13 +81,15 @@ contract HubUpgradeableTest is HubBase {
     vm.expectEmit(address(hubProxy));
     emit IAccessManaged.AuthorityUpdated(address(accessManager));
     vm.prank(_getProxyAdminAddress(address(hubProxy)));
-    hubProxy.upgradeToAndCall(
+    ITransparentUpgradeableProxy(address(hubProxy)).upgradeToAndCall(
       address(hubImpl2),
-      abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
+      _getInitializeCalldata(address(accessManager))
     );
 
     assertEq(_getProxyInitializedVersion(address(hubProxy)), secondRevision);
     assertEq(_getImplementationAddress(address(hubProxy)), address(hubImpl2));
+    assertEq(hubProxy.getAssetCount(), assetCountBefore);
+    assertEq(hubProxy.getAsset(assetId).underlying, underlying);
   }
 
   function test_proxy_storage_persists_across_upgrade() public {
@@ -93,7 +99,7 @@ contract HubUpgradeableTest is HubBase {
         new TransparentUpgradeableProxy(
           address(hubImpl),
           proxyAdminOwner,
-          abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
+          _getInitializeCalldata(address(accessManager))
         )
       )
     );
@@ -136,7 +142,7 @@ contract HubUpgradeableTest is HubBase {
     vm.prank(_getProxyAdminAddress(address(hubProxy)));
     ITransparentUpgradeableProxy(address(hubProxy)).upgradeToAndCall(
       address(hubImpl2),
-      abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
+      _getInitializeCalldata(address(accessManager))
     );
 
     // Verify storage persists
@@ -152,7 +158,7 @@ contract HubUpgradeableTest is HubBase {
     new TransparentUpgradeableProxy(
       address(hubImpl),
       proxyAdminOwner,
-      abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
+      _getInitializeCalldata(address(accessManager))
     );
   }
 
@@ -167,7 +173,7 @@ contract HubUpgradeableTest is HubBase {
         new TransparentUpgradeableProxy(
           address(hubImpl),
           proxyAdminOwner,
-          abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
+          _getInitializeCalldata(address(accessManager))
         )
       )
     );
@@ -175,20 +181,14 @@ contract HubUpgradeableTest is HubBase {
     // Same revision should revert
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     vm.prank(_getProxyAdminAddress(address(hubProxy)));
-    hubProxy.upgradeToAndCall(
-      address(hubImpl),
-      abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
-    );
+    hubProxy.upgradeToAndCall(address(hubImpl), _getInitializeCalldata(address(accessManager)));
 
     // Lower revision should revert
     uint64 secondRevision = uint64(vm.randomUint(0, initialRevision - 1));
     MockHubInstance hubImpl2 = new MockHubInstance(secondRevision);
     vm.expectRevert(Initializable.InvalidInitialization.selector);
     vm.prank(_getProxyAdminAddress(address(hubProxy)));
-    hubProxy.upgradeToAndCall(
-      address(hubImpl2),
-      abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
-    );
+    hubProxy.upgradeToAndCall(address(hubImpl2), _getInitializeCalldata(address(accessManager)));
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
@@ -197,7 +197,7 @@ contract HubUpgradeableTest is HubBase {
     new TransparentUpgradeableProxy(
       address(hubImpl),
       proxyAdminOwner,
-      abi.encodeCall(IHubInstance.initialize, (address(0)))
+      _getInitializeCalldata(address(0))
     );
   }
 
@@ -208,7 +208,7 @@ contract HubUpgradeableTest is HubBase {
         new TransparentUpgradeableProxy(
           address(hubImpl),
           proxyAdminOwner,
-          abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
+          _getInitializeCalldata(address(accessManager))
         )
       )
     );
@@ -216,10 +216,7 @@ contract HubUpgradeableTest is HubBase {
     MockHubInstance hubImpl2 = new MockHubInstance(2);
     vm.expectRevert(IHub.InvalidAddress.selector);
     vm.prank(_getProxyAdminAddress(address(hubProxy)));
-    hubProxy.upgradeToAndCall(
-      address(hubImpl2),
-      abi.encodeCall(IHubInstance.initialize, (address(0)))
-    );
+    hubProxy.upgradeToAndCall(address(hubImpl2), _getInitializeCalldata(address(0)));
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
@@ -229,7 +226,7 @@ contract HubUpgradeableTest is HubBase {
         new TransparentUpgradeableProxy(
           address(hubImpl),
           proxyAdminOwner,
-          abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
+          _getInitializeCalldata(address(accessManager))
         )
       )
     );
@@ -237,10 +234,7 @@ contract HubUpgradeableTest is HubBase {
     MockHubInstance hubImpl2 = new MockHubInstance(2);
     vm.expectRevert();
     vm.prank(makeUser());
-    hubProxy.upgradeToAndCall(
-      address(hubImpl2),
-      abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
-    );
+    hubProxy.upgradeToAndCall(address(hubImpl2), _getInitializeCalldata(address(accessManager)));
   }
 
   function test_hub_revision_accessible() public {
@@ -250,11 +244,39 @@ contract HubUpgradeableTest is HubBase {
         new TransparentUpgradeableProxy(
           address(hubImpl),
           proxyAdminOwner,
-          abi.encodeCall(IHubInstance.initialize, (address(accessManager)))
+          _getInitializeCalldata(address(accessManager))
         )
       )
     );
 
     assertEq(hubProxy.HUB_REVISION(), 1);
+  }
+
+  function _getInitializeCalldata(address authority) internal pure returns (bytes memory) {
+    return abi.encodeCall(IHubInstance.initialize, (authority));
+  }
+
+  function _addAsset(IHub hub) internal returns (uint256 assetId, address underlying) {
+    underlying = address(new TestnetERC20('Test', 'TST', 18));
+    address feeReceiver = makeAddr('feeReceiver');
+    AssetInterestRateStrategy irStrat = new AssetInterestRateStrategy(address(hub));
+
+    IAssetInterestRateStrategy.InterestRateData memory irDataLocal = IAssetInterestRateStrategy
+      .InterestRateData({
+        optimalUsageRatio: 90_00,
+        baseDrawnRate: 5_00,
+        rateGrowthBeforeOptimal: 5_00,
+        rateGrowthAfterOptimal: 5_00
+      });
+
+    bytes4[] memory hubSelectors = new bytes4[](1);
+    hubSelectors[0] = IHub.addAsset.selector;
+    vm.startPrank(ADMIN);
+    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(this), 0);
+    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
+    vm.stopPrank();
+
+    assetId = hub.addAsset(underlying, 18, feeReceiver, address(irStrat), abi.encode(irDataLocal));
+    return (assetId, underlying);
   }
 }
