@@ -17,7 +17,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     );
 
     vm.expectEmit(address(positionManager));
-    emit IPositionManagerBase.SpokeRegistered(address(spoke1()), true);
+    emit IPositionManagerBase.RegisterSpoke(address(spoke1()), true);
 
     engine.executePositionManagerSpokeRegistrations(
       _toSpokeRegistrationArray(
@@ -45,7 +45,7 @@ contract PositionManagerEngineTest is BaseConfigEngineTest {
     assertTrue(positionManager.isSpokeRegistered(address(spoke1())));
 
     vm.expectEmit(address(positionManager));
-    emit IPositionManagerBase.SpokeRegistered(address(spoke1()), false);
+    emit IPositionManagerBase.RegisterSpoke(address(spoke1()), false);
 
     engine.executePositionManagerSpokeRegistrations(
       _toSpokeRegistrationArray(
