@@ -27,7 +27,7 @@ contract HubConfigTest is HubBase {
     DeployWrapper deployer = new DeployWrapper();
 
     vm.expectRevert();
-    deployer.deployHub(address(0));
+    deployer.deployHub(ADMIN, address(0));
   }
 
   function test_hub_max_riskPremium() public view {

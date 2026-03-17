@@ -6,6 +6,7 @@ import {Vm} from 'forge-std/Vm.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {IHubInstance} from 'tests/mocks/IHubInstance.sol';
 import {ISpokeInstance} from 'tests/mocks/ISpokeInstance.sol';
 import {Create2Utils} from 'tests/Create2Utils.sol';
 
@@ -65,21 +66,47 @@ library DeployUtils {
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
   }
 
-  function deployHub(address authority) internal returns (IHub) {
-    return deployHub(authority, '');
+  function deployHubImplementation() internal returns (IHubInstance) {
+    return deployHubImplementation('');
   }
 
-  function deployHub(address authority, bytes32 salt) internal returns (IHub hub) {
+  function deployHubImplementation(bytes32 salt) internal returns (IHubInstance) {
     Create2Utils.loadCreate2Factory();
-    return IHub(Create2Utils.create2Deploy(salt, _getHubInitCode(authority)));
+    return IHubInstance(Create2Utils.create2Deploy(salt, _getHubInstanceInitCode()));
   }
 
-  function getDeterministicHubAddress(address authority) internal returns (address) {
-    return getDeterministicHubAddress(authority, '');
+  function deployHub(address proxyAdminOwner, address authority) internal returns (IHub) {
+    return
+      IHub(
+        proxify(
+          address(deployHubImplementation()),
+          proxyAdminOwner,
+          abi.encodeCall(IHubInstance.initialize, (authority))
+        )
+      );
   }
 
-  function getDeterministicHubAddress(address authority, bytes32 salt) internal returns (address) {
-    bytes32 initCodeHash = keccak256(_getHubInitCode(authority));
+  function deployHub(
+    address proxyAdminOwner,
+    address authority,
+    bytes32 salt
+  ) internal returns (IHub) {
+    return
+      IHub(
+        proxify(
+          address(deployHubImplementation(salt)),
+          proxyAdminOwner,
+          abi.encodeCall(IHubInstance.initialize, (authority))
+        )
+      );
+  }
+
+  function getDeterministicHubAddress() internal returns (address) {
+    return getDeterministicHubAddress('');
+  }
+
+  function getDeterministicHubAddress(bytes32 salt) internal returns (address) {
+    bytes32 initCodeHash = keccak256(_getHubInstanceInitCode());
 
     Create2Utils.loadCreate2Factory();
     return Create2Utils.computeCreate2Address(salt, initCodeHash);
@@ -109,7 +136,7 @@ library DeployUtils {
       );
   }
 
-  function _getHubInitCode(address authority) internal view returns (bytes memory) {
-    return abi.encodePacked(vm.getCode('src/hub/Hub.sol:Hub'), abi.encode(authority));
+  function _getHubInstanceInitCode() internal view returns (bytes memory) {
+    return vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
   }
 }
