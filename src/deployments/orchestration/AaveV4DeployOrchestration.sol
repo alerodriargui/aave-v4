@@ -6,21 +6,11 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
-import {
-  AaveV4AccessManagerRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
-import {
-  AaveV4HubRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
-import {
-  AaveV4SpokeRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
-import {
-  AaveV4HubConfiguratorRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
-import {
-  AaveV4SpokeConfiguratorRolesProcedure
-} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
+import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
+import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
+import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
