@@ -20,7 +20,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     uint256 dustSharesBufferLowerBound = params.collateralReserveHub.previewRemoveByAssets(
       params.collateralReserveAssetId,
       _convertValueToAmount(
-        LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
+        LiquidationLogic.COLLATERAL_DUST_LIQUIDATION_THRESHOLD,
         params.collateralAssetPrice,
         10 ** params.collateralAssetDecimals
       ) + 1
@@ -382,7 +382,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
       params.collateralReserveHub.previewAddByAssets(
         params.collateralReserveAssetId,
         _convertDecimals(
-          LiquidationLogic.DUST_LIQUIDATION_THRESHOLD,
+          LiquidationLogic.COLLATERAL_DUST_LIQUIDATION_THRESHOLD,
           18,
           params.collateralAssetDecimals,
           false
@@ -396,7 +396,7 @@ contract LiquidationLogicLiquidationAmountsTest is LiquidationLogicBaseTest {
     uint256 dustSharesBufferUpperBound = params.collateralReserveHub.previewAddByAssets(
       params.collateralReserveAssetId,
       _convertValueToAmount(
-        LiquidationLogic.DUST_LIQUIDATION_THRESHOLD - 1,
+        LiquidationLogic.COLLATERAL_DUST_LIQUIDATION_THRESHOLD - 1,
         params.collateralAssetPrice,
         10 ** params.collateralAssetDecimals
       )
