@@ -6,6 +6,7 @@ contract InputUtils {
   /// @dev accessManagerAdmin The default admin of the access manager.
   /// @dev hubAdmin The admin of the hub.
   /// @dev hubConfiguratorAdmin The admin granted all hub configurator roles.
+  /// @dev hubProxyAdminOwner The owner of the hub proxyAdmin.
   /// @dev treasurySpokeOwner The owner of the treasury spoke.
   /// @dev spokeAdmin The spoke admin.
   /// @dev spokeProxyAdminOwner The owner of the spoke proxyAdmin.
@@ -25,6 +26,7 @@ contract InputUtils {
     address accessManagerAdmin;
     address hubAdmin;
     address hubConfiguratorAdmin;
+    address hubProxyAdminOwner;
     address treasurySpokeOwner;
     address spokeAdmin;
     address spokeProxyAdminOwner;

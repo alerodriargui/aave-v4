@@ -12,7 +12,7 @@ library OrchestrationReports {
 
   struct HubDeploymentReport {
     string label;
-    BatchReports.HubBatchReport report;
+    BatchReports.HubInstanceBatchReport report;
   }
 
   struct FullDeploymentReport {
@@ -20,7 +20,7 @@ library OrchestrationReports {
     BatchReports.ConfiguratorBatchReport configuratorBatchReport;
     BatchReports.TreasurySpokeBatchReport treasurySpokeBatchReport;
     SpokeDeploymentReport[] spokeInstanceBatchReports;
-    HubDeploymentReport[] hubBatchReports;
+    HubDeploymentReport[] hubInstanceBatchReports;
     BatchReports.GatewaysBatchReport gatewaysBatchReport;
     BatchReports.PositionManagerBatchReport positionManagerBatchReport;
     bytes32 salt;

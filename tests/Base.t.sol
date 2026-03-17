@@ -107,6 +107,8 @@ import {TestTypes} from 'tests/utils/TestTypes.sol';
 // orchestration
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 // mocks
@@ -126,7 +128,7 @@ import {MockTreasurySpokeInstance} from 'tests/mocks/MockTreasurySpokeInstance.s
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
 import {MockHubInstance} from 'tests/mocks/MockHubInstance.sol';
-import {IHubInstance} from 'tests/mocks/IHubInstance.sol';
+import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
 import {SpokeUtilsWrapper} from 'tests/mocks/SpokeUtilsWrapper.sol';
 
@@ -450,6 +452,26 @@ abstract contract Base is BatchTestProcedures {
     );
 
     IAccessManager(report.accessManager).renounceRole(
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      address(this)
+    );
+  }
+
+  /// @dev Standalone role setup for a hub+spoke pair outside the main orchestration (e.g. upgrade tests).
+  function setUpRoles(IHub targetHub, ISpoke spoke, IAccessManager manager) internal virtual {
+    vm.startPrank(ADMIN);
+    manager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(this), 0);
+    vm.stopPrank();
+
+    AaveV4HubRolesProcedure.grantHubAllRoles(address(manager), ADMIN);
+    AaveV4HubRolesProcedure.grantHubAllRoles(address(manager), HUB_ADMIN);
+    AaveV4HubRolesProcedure.setupHubAllRoles(address(manager), address(targetHub));
+
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles(address(manager), ADMIN);
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles(address(manager), SPOKE_ADMIN);
+    AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(manager), address(spoke));
+
+    IAccessManager(address(manager)).renounceRole(
       Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
       address(this)
     );
@@ -1107,6 +1129,7 @@ abstract contract Base is BatchTestProcedures {
     FixtureAssetList[] memory assetsList
   ) internal returns (TestTypes.TestHubReport memory report) {
     report = AaveV4TestOrchestration.deployTestHub(
+      ADMIN,
       address(accessManager),
       _getHubBytecode(),
       label,

@@ -58,8 +58,9 @@ library AaveV4DeployOrchestration {
     });
 
     // Deploy Hub Batches
-    report.hubBatchReports = _deployHubs({
+    report.hubInstanceBatchReports = _deployHubs({
       logger: logger,
+      hubProxyAdminOwner: deployInputs.hubProxyAdminOwner,
       authority: accessManager,
       hubLabels: deployInputs.hubLabels,
       hubBytecode: hubBytecode,
@@ -130,17 +131,19 @@ library AaveV4DeployOrchestration {
 
   function _deployHubs(
     Logger logger,
+    address hubProxyAdminOwner,
     address authority,
     string[] memory hubLabels,
     bytes memory hubBytecode,
     bytes32 salt
-  ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubBatchReports) {
+  ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubInstanceBatchReports) {
     uint256 hubCount = hubLabels.length;
-    hubBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
+    hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
     for (uint256 i; i < hubCount; ++i) {
       bytes32 childSalt = _deriveChildSalt(salt, 'hub', hubLabels[i]);
-      hubBatchReports[i] = _deployHub({
+      hubInstanceBatchReports[i] = _deployHub({
         logger: logger,
+        hubProxyAdminOwner: hubProxyAdminOwner,
         authority: authority,
         label: hubLabels[i],
         hubBytecode: hubBytecode,
@@ -148,11 +151,12 @@ library AaveV4DeployOrchestration {
       });
     }
     logger.logNewLine();
-    return hubBatchReports;
+    return hubInstanceBatchReports;
   }
 
   function _deployHub(
     Logger logger,
+    address hubProxyAdminOwner,
     address authority,
     string memory label,
     bytes memory hubBytecode,
@@ -160,8 +164,9 @@ library AaveV4DeployOrchestration {
   ) internal returns (OrchestrationReports.HubDeploymentReport memory) {
     OrchestrationReports.HubDeploymentReport memory hubReport;
     hubReport.label = label;
-    hubReport.report = _deployHubBatch({
+    hubReport.report = _deployHubInstanceBatch({
       logger: logger,
+      hubProxyAdminOwner: hubProxyAdminOwner,
       authority: authority,
       hubBytecode: hubBytecode,
       salt: salt
@@ -231,14 +236,16 @@ library AaveV4DeployOrchestration {
     return spokeReport;
   }
 
-  function _deployHubBatch(
+  function _deployHubInstanceBatch(
     Logger logger,
+    address hubProxyAdminOwner,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
-  ) internal returns (BatchReports.HubBatchReport memory report) {
+  ) internal returns (BatchReports.HubInstanceBatchReport memory report) {
     logger.logHeader1('deploying HubBatch');
-    report = AaveV4DeployBase.deployHubBatch({
+    report = AaveV4DeployBase.deployHubInstanceBatch({
+      hubProxyAdminOwner: hubProxyAdminOwner,
       authority: authority,
       hubBytecode: hubBytecode,
       salt: salt
@@ -383,11 +390,11 @@ library AaveV4DeployOrchestration {
 
   function _setupHubRoles(
     Logger logger,
-    BatchReports.HubBatchReport memory report,
+    BatchReports.HubInstanceBatchReport memory report,
     address accessManager
   ) internal {
     logger.logHeader1('setting Hub roles');
-    AaveV4HubRolesProcedure.setupHubAllRoles({accessManager: accessManager, hub: report.hub});
+    AaveV4HubRolesProcedure.setupHubAllRoles({accessManager: accessManager, hub: report.hubProxy});
   }
 
   function _grantHubRoles(
@@ -442,11 +449,11 @@ library AaveV4DeployOrchestration {
 
   function _logHubReport(
     Logger logger,
-    BatchReports.HubBatchReport memory report,
+    BatchReports.HubInstanceBatchReport memory report,
     string memory label
   ) internal pure {
     logger.log(label);
-    logger.logDetail('Hub', report.hub);
+    logger.logDetail('Hub', report.hubProxy);
     logger.logDetail('InterestRateStrategy', report.irStrategy);
   }
 

@@ -7,7 +7,7 @@ import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationRepor
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
-import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
+import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
 import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
@@ -45,17 +45,19 @@ library AaveV4DeployBase {
     return treasurySpokeBatch.getReport();
   }
 
-  function deployHubBatch(
+  function deployHubInstanceBatch(
+    address hubProxyAdminOwner,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
-  ) internal returns (BatchReports.HubBatchReport memory) {
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch({
+  ) internal returns (BatchReports.HubInstanceBatchReport memory) {
+    AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
+      hubProxyAdminOwner_: hubProxyAdminOwner,
       authority_: authority,
       hubBytecode_: hubBytecode,
       salt_: salt
     });
-    return hubBatch.getReport();
+    return hubInstanceBatch.getReport();
   }
 
   function deploySpokeInstanceBatch(

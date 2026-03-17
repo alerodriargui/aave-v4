@@ -17,13 +17,14 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     wrapper = new AaveV4TokenizationSpokeDeployProcedureWrapper();
 
     // TokenizationSpokeInstance constructor requires hub
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch({
+    AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
+      hubProxyAdminOwner_: admin,
       authority_: accessManager,
       hubBytecode_: hubBytecode,
       salt_: salt
     });
-    BatchReports.HubBatchReport memory hubReport = hubBatch.getReport();
-    deployedHub = hubReport.hub;
+    BatchReports.HubInstanceBatchReport memory hubReport = hubInstanceBatch.getReport();
+    deployedHub = hubReport.hubProxy;
 
     // Deploy test ERC20
     TestnetERC20 testToken = new TestnetERC20('Test DAI', 'tDAI', 18);

@@ -111,6 +111,9 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       ? inputs.treasurySpokeOwner
       : _deployer;
     inputs.spokeAdmin = inputs.spokeAdmin != address(0) ? inputs.spokeAdmin : _deployer;
+    inputs.hubProxyAdminOwner = inputs.hubProxyAdminOwner != address(0)
+      ? inputs.hubProxyAdminOwner
+      : _deployer;
     inputs.spokeProxyAdminOwner = inputs.spokeProxyAdminOwner != address(0)
       ? inputs.spokeProxyAdminOwner
       : _deployer;
@@ -195,15 +198,19 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
     assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
     assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
-    for (uint256 i = 0; i < report.hubBatchReports.length; i++) {
-      assertNotEq(report.hubBatchReports[i].report.hub, address(0), 'Hub');
-      assertNotEq(report.hubBatchReports[i].report.irStrategy, address(0), 'IRStrategy');
+    for (uint256 i = 0; i < report.hubInstanceBatchReports.length; i++) {
+      assertNotEq(report.hubInstanceBatchReports[i].report.hubProxy, address(0), 'Hub');
+      assertNotEq(report.hubInstanceBatchReports[i].report.irStrategy, address(0), 'IRStrategy');
     }
     for (uint256 i = 0; i < report.spokeInstanceBatchReports.length; i++) {
       assertNotEq(report.spokeInstanceBatchReports[i].report.spokeProxy, address(0), 'SpokeProxy');
       assertNotEq(report.spokeInstanceBatchReports[i].report.aaveOracle, address(0), 'AaveOracle');
     }
-    assertEq(report.hubBatchReports.length, inputs.hubLabels.length, 'HubBatchReportsLength');
+    assertEq(
+      report.hubInstanceBatchReports.length,
+      inputs.hubLabels.length,
+      'HubBatchReportsLength'
+    );
     assertEq(
       report.spokeInstanceBatchReports.length,
       inputs.spokeLabels.length,
@@ -274,7 +281,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     string memory globalLabel = 'HubDeployment';
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
       string memory label = string.concat(globalLabel, ', ', inputs.hubLabels[i]);
-      OrchestrationReports.HubDeploymentReport memory hubReport = report.hubBatchReports[i];
+      OrchestrationReports.HubDeploymentReport memory hubReport = report.hubInstanceBatchReports[i];
 
       _checkHubDeployment({
         report: hubReport,
@@ -292,7 +299,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     string memory label
   ) internal view {
     assertEq(
-      IAccessManaged(report.report.hub).authority(),
+      IAccessManaged(report.report.hubProxy).authority(),
       accessManager,
       string.concat(label, ' hub authority')
     );
@@ -304,7 +311,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   ) internal view {
     assertEq(
       IAssetInterestRateStrategy(report.report.irStrategy).HUB(),
-      report.report.hub,
+      report.report.hubProxy,
       string.concat(label, ' hub on interest rate strategy')
     );
   }
@@ -513,7 +520,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       for (uint256 j = 0; j < _hubFeeMinterRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
-            report.hubBatchReports[i].report.hub,
+            report.hubInstanceBatchReports[i].report.hubProxy,
             _hubFeeMinterRoleSelectors[j]
           ),
           Roles.HUB_FEE_MINTER_ROLE,
@@ -522,7 +529,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
         (bool allowed, uint32 delay) = accessManager.canCall(
           inputs.hubAdmin,
-          report.hubBatchReports[i].report.hub,
+          report.hubInstanceBatchReports[i].report.hubProxy,
           _hubFeeMinterRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'HubFeeMinterRole allowed');
@@ -570,7 +577,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       for (uint256 j = 0; j < _hubConfiguratorRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
-            report.hubBatchReports[i].report.hub,
+            report.hubInstanceBatchReports[i].report.hubProxy,
             _hubConfiguratorRoleSelectors[j]
           ),
           Roles.HUB_CONFIGURATOR_ROLE,
@@ -581,7 +588,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
         (allowed, delay) = accessManager.canCall(
           report.configuratorBatchReport.hubConfigurator,
-          report.hubBatchReports[i].report.hub,
+          report.hubInstanceBatchReports[i].report.hubProxy,
           _hubConfiguratorRoleSelectors[j]
         );
         assertEq(
@@ -593,7 +600,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
         (allowed, delay) = accessManager.canCall(
           inputs.hubAdmin,
-          report.hubBatchReports[i].report.hub,
+          report.hubInstanceBatchReports[i].report.hubProxy,
           _hubConfiguratorRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'HubConfiguratorRole allowed - admin');
@@ -723,7 +730,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   }
 
   function _getHubBytecode() internal view returns (bytes memory) {
-    return vm.getCode('src/hub/Hub.sol:Hub');
+    return vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
   }
 
   function _getSpokeBytecode() internal view returns (bytes memory) {

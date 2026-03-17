@@ -18,8 +18,9 @@ library BatchReports {
     address aaveOracle;
   }
 
-  struct HubBatchReport {
-    address hub;
+  struct HubInstanceBatchReport {
+    address hubImplementation;
+    address hubProxy;
     address irStrategy;
   }
 

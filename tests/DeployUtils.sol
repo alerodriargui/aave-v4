@@ -6,7 +6,7 @@ import {Vm} from 'forge-std/Vm.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
-import {IHubInstance} from 'tests/mocks/IHubInstance.sol';
+import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 

@@ -19,13 +19,14 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     super.setUp();
 
     // Deploy a Hub with asset
-    AaveV4HubBatch hubBatch = new AaveV4HubBatch({
+    AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
+      hubProxyAdminOwner_: admin,
       authority_: accessManager,
       hubBytecode_: hubBytecode,
       salt_: salt
     });
-    BatchReports.HubBatchReport memory hubReport = hubBatch.getReport();
-    hub = hubReport.hub;
+    BatchReports.HubInstanceBatchReport memory hubReport = hubInstanceBatch.getReport();
+    hub = hubReport.hubProxy;
     irStrategy = hubReport.irStrategy;
 
     // Deploy test token and add asset

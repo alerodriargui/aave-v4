@@ -1,21 +1,10 @@
 {
-<<<<<<< HEAD
-  "borrowWithSig": "215479",
-  "repayWithSig": "186703",
+  "borrowWithSig": "222144",
+  "repayWithSig": "192513",
   "setSelfAsUserPositionManagerWithSig": "75138",
   "setUsingAsCollateralWithSig": "85380",
-  "supplyWithSig": "151970",
+  "supplyWithSig": "155904",
   "updateUserDynamicConfigWithSig": "63113",
   "updateUserRiskPremiumWithSig": "62007",
-  "withdrawWithSig": "130797"
-=======
-  "borrowWithSig": "222132",
-  "repayWithSig": "192513",
-  "setSelfAsUserPositionManagerWithSig": "75126",
-  "setUsingAsCollateralWithSig": "85380",
-  "supplyWithSig": "155914",
-  "updateUserDynamicConfigWithSig": "63113",
-  "updateUserRiskPremiumWithSig": "61995",
   "withdrawWithSig": "135124"
->>>>>>> origin/feat/upgradeable-hub
 }

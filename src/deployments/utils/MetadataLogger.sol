@@ -16,17 +16,17 @@ contract MetadataLogger is Logger {
     _write('treasurySpoke', report.treasurySpokeBatchReport.treasurySpoke);
 
     // Group hubs by property type
-    uint256 hubLen = report.hubBatchReports.length;
+    uint256 hubLen = report.hubInstanceBatchReports.length;
     Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](hubLen);
     Logger.AddressEntry[] memory irEntries = new Logger.AddressEntry[](hubLen);
     for (uint256 i; i < hubLen; i++) {
       hubEntries[i] = Logger.AddressEntry({
-        label: report.hubBatchReports[i].label,
-        value: report.hubBatchReports[i].report.hub
+        label: report.hubInstanceBatchReports[i].label,
+        value: report.hubInstanceBatchReports[i].report.hubProxy
       });
       irEntries[i] = Logger.AddressEntry({
-        label: report.hubBatchReports[i].label,
-        value: report.hubBatchReports[i].report.irStrategy
+        label: report.hubInstanceBatchReports[i].label,
+        value: report.hubInstanceBatchReports[i].report.irStrategy
       });
     }
     _writeGroup('hub', hubEntries);

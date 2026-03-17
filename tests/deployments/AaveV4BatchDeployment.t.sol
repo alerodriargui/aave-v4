@@ -13,6 +13,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       hubConfiguratorAdmin: makeAddr('hubConfiguratorAdmin'),
       hubAdmin: makeAddr('hubAdmin'),
       treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
+      hubProxyAdminOwner: makeAddr('hubProxyAdminOwner'),
       spokeProxyAdminOwner: makeAddr('spokeProxyAdminOwner'),
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       spokeAdmin: makeAddr('spokeAdmin'),
@@ -391,6 +392,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     assertNotEq(deployInputs.accessManagerAdmin, address(0));
     assertNotEq(deployInputs.hubConfiguratorAdmin, address(0));
     assertNotEq(deployInputs.treasurySpokeOwner, address(0));
+    assertNotEq(deployInputs.hubProxyAdminOwner, address(0));
     assertNotEq(deployInputs.spokeProxyAdminOwner, address(0));
     assertNotEq(deployInputs.spokeConfiguratorAdmin, address(0));
     assertNotEq(deployInputs.gatewayOwner, address(0));
@@ -424,7 +426,12 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       return (true, bytes('invalid owner'));
     }
 
-    // 3. spokes require proxy admin owner when deployed
+    // 3. hubs require proxy admin owner when deployed
+    if (_inputs.hubLabels.length > 0 && _inputs.hubProxyAdminOwner == address(0)) {
+      return (true, bytes('invalid hub proxy admin owner'));
+    }
+
+    // 4. spokes require proxy admin owner when deployed
     if (_inputs.spokeLabels.length > 0 && _inputs.spokeProxyAdminOwner == address(0)) {
       return (true, bytes('invalid spoke proxy admin owner'));
     }

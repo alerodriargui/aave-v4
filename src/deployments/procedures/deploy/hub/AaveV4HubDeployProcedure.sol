@@ -4,21 +4,24 @@ pragma solidity ^0.8.0;
 
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
+import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 
 contract AaveV4HubDeployProcedure is AaveV4DeployProcedureBase {
-  function _deployHub(
+  function _deployUpgradeableHubInstance(
+    address hubProxyAdminOwner,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
-  ) internal returns (address) {
+  ) internal returns (address hubProxy, address hubImplementation) {
+    require(hubProxyAdminOwner != address(0), 'invalid hub proxy admin owner');
     require(authority != address(0), 'invalid authority');
-    return Create2Utils.create2Deploy(salt, _getHubInitCode(hubBytecode, authority));
-  }
-
-  function _getHubInitCode(
-    bytes memory hubBytecode,
-    address authority
-  ) internal pure returns (bytes memory) {
-    return abi.encodePacked(hubBytecode, abi.encode(authority));
+    hubImplementation = Create2Utils.create2Deploy({salt: salt, bytecode: hubBytecode});
+    hubProxy = Create2Utils.proxify({
+      salt: salt,
+      logic: hubImplementation,
+      initialOwner: hubProxyAdminOwner,
+      data: abi.encodeCall(IHubInstance.initialize, (authority))
+    });
+    return (hubProxy, hubImplementation);
   }
 }

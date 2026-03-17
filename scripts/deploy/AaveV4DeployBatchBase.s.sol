@@ -86,6 +86,10 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
         _logWarning(string.concat('spoke configurator admin', message, outcome));
         sanitizedInputs.spokeConfiguratorAdmin = deployer;
       }
+      if (inputs.hubProxyAdminOwner == address(0)) {
+        _logWarning(string.concat('hub proxy admin owner', message, outcome));
+        sanitizedInputs.hubProxyAdminOwner = deployer;
+      }
       if (inputs.spokeProxyAdminOwner == address(0)) {
         _logWarning(string.concat('spoke proxy admin owner', message, outcome));
         sanitizedInputs.spokeProxyAdminOwner = deployer;
@@ -105,6 +109,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     } else {
       _logWarning('roles: deferred (not granted during deployment)');
       sanitizedInputs.treasurySpokeOwner = deployer;
+      sanitizedInputs.hubProxyAdminOwner = deployer;
       sanitizedInputs.spokeProxyAdminOwner = deployer;
     }
     if (inputs.gatewayOwner == address(0)) {
@@ -193,7 +198,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   }
 
   function _getHubBytecode() internal view returns (bytes memory) {
-    return vm.getCode('src/hub/Hub.sol:Hub');
+    return vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
   }
 
   function _getSpokeBytecode() internal view returns (bytes memory) {

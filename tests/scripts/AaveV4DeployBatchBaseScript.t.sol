@@ -44,6 +44,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       hubConfiguratorAdmin: makeAddr('hubConfiguratorAdmin'),
       treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
       spokeAdmin: makeAddr('spokeAdmin'),
+      hubProxyAdminOwner: makeAddr('hubProxyAdminOwner'),
       spokeProxyAdminOwner: makeAddr('spokeProxyAdminOwner'),
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),

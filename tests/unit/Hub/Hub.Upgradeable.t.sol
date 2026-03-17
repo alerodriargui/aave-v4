@@ -121,8 +121,12 @@ contract HubUpgradeableTest is HubBase {
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.addAsset.selector;
     vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(this), 0);
-    accessManager.setTargetFunctionRole(address(hubProxy), hubSelectors, Roles.HUB_ADMIN_ROLE);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
+    accessManager.setTargetFunctionRole(
+      address(hubProxy),
+      hubSelectors,
+      Roles.HUB_CONFIGURATOR_ROLE
+    );
     vm.stopPrank();
 
     uint256 assetId = hubProxy.addAsset(
@@ -272,8 +276,8 @@ contract HubUpgradeableTest is HubBase {
     bytes4[] memory hubSelectors = new bytes4[](1);
     hubSelectors[0] = IHub.addAsset.selector;
     vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(this), 0);
-    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_ADMIN_ROLE);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(this), 0);
+    accessManager.setTargetFunctionRole(address(hub), hubSelectors, Roles.HUB_CONFIGURATOR_ROLE);
     vm.stopPrank();
 
     assetId = hub.addAsset(underlying, 18, feeReceiver, address(irStrat), abi.encode(irDataLocal));

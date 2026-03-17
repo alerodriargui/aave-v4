@@ -18,7 +18,7 @@ import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/ro
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
+import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
@@ -76,12 +76,14 @@ library AaveV4TestOrchestration {
 
     // Deploy Hub Batches
     for (uint256 i; i < hubCount; ++i) {
-      BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
-        authority: report.accessManager,
-        hubBytecode: hubBytecode,
-        salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i))))
-      });
-      report.hubReports[i].hub = hubReport.hub;
+      BatchReports.HubInstanceBatchReport memory hubReport = AaveV4DeployBase
+        .deployHubInstanceBatch({
+          hubProxyAdminOwner: admin,
+          authority: report.accessManager,
+          hubBytecode: hubBytecode,
+          salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i))))
+        });
+      report.hubReports[i].hub = hubReport.hubProxy;
       report.hubReports[i].irStrategy = hubReport.irStrategy;
     }
 
@@ -125,18 +127,20 @@ library AaveV4TestOrchestration {
   }
 
   function deployTestHub(
+    address hubProxyAdminOwner,
     address accessManager,
     bytes memory hubBytecode,
     string memory label,
     bytes32 salt
   ) external returns (TestTypes.TestHubReport memory) {
     TestTypes.TestHubReport memory report;
-    BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
+    BatchReports.HubInstanceBatchReport memory hubReport = AaveV4DeployBase.deployHubInstanceBatch({
+      hubProxyAdminOwner: hubProxyAdminOwner,
       authority: accessManager,
       hubBytecode: hubBytecode,
       salt: keccak256(abi.encodePacked(salt, 'hub-', label))
     });
-    report.hub = hubReport.hub;
+    report.hub = hubReport.hubProxy;
     report.irStrategy = hubReport.irStrategy;
 
     return report;
