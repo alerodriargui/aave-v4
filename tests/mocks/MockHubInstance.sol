@@ -5,6 +5,8 @@ pragma solidity ^0.8.0;
 import {Hub} from 'src/hub/Hub.sol';
 
 contract MockHubInstance is Hub {
+  bool public constant IS_TEST = true;
+
   uint64 public immutable HUB_REVISION;
 
   constructor(uint64 hubRevision_) {

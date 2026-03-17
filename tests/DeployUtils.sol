@@ -101,17 +101,6 @@ library DeployUtils {
       );
   }
 
-  function getDeterministicHubAddress() internal returns (address) {
-    return getDeterministicHubAddress('');
-  }
-
-  function getDeterministicHubAddress(bytes32 salt) internal returns (address) {
-    bytes32 initCodeHash = keccak256(_getHubInstanceInitCode());
-
-    Create2Utils.loadCreate2Factory();
-    return Create2Utils.computeCreate2Address(salt, initCodeHash);
-  }
-
   function proxify(
     address impl,
     address proxyAdminOwner,

@@ -2739,7 +2739,7 @@ abstract contract Base is Test {
 
   // @dev Requires no previously added assets
   // @dev Update _assetsSlot below if it changes
-  //   Run: forge inspect Hub storage-layout
+  //   Run: forge inspect HubInstance storage-layout
   // @dev Update _addedSharesOffset below if it changes
   //   Have a look at IHub.Asset struct
   function _mockSupplySharePrice(
