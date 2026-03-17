@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 contract InputUtils {
+  /// @dev Full deploy inputs for deploying the entire Aave V4 protocol.
   /// @dev accessManagerAdmin The default admin of the access manager.
   /// @dev hubAdmin The admin of the hub.
   /// @dev hubConfiguratorAdmin The admin granted all hub configurator roles.
@@ -40,6 +41,37 @@ contract InputUtils {
     string[] spokeLabels;
     uint16[] spokeMaxReservesLimits;
     bytes32 salt;
+  }
+
+  /// @dev Periphery-only inputs for deploying gateways and position managers independently.
+  /// @dev gatewayOwner The owner of the native token and signature gateways.
+  /// @dev positionManagerOwner The owner of the position manager contracts (giver/taker/config).
+  /// @dev nativeWrapper The address of the native wrapper (required when deployNativeTokenGateway is true).
+  /// @dev deployNativeTokenGateway Whether to deploy the NativeTokenGateway.
+  /// @dev deploySignatureGateway Whether to deploy the SignatureGateway.
+  /// @dev deployPositionManagers Whether to deploy the position manager batch (giver/taker/config).
+  struct PeripheryDeployInputs {
+    address gatewayOwner;
+    address positionManagerOwner;
+    address nativeWrapper;
+    bool deployNativeTokenGateway;
+    bool deploySignatureGateway;
+    bool deployPositionManagers;
+  }
+
+  /// @dev Extracts periphery inputs from full deploy inputs.
+  function _extractPeripheryInputs(
+    FullDeployInputs memory inputs
+  ) internal pure returns (PeripheryDeployInputs memory) {
+    return
+      PeripheryDeployInputs({
+        gatewayOwner: inputs.gatewayOwner,
+        positionManagerOwner: inputs.positionManagerOwner,
+        nativeWrapper: inputs.nativeWrapper,
+        deployNativeTokenGateway: inputs.deployNativeTokenGateway,
+        deploySignatureGateway: inputs.deploySignatureGateway,
+        deployPositionManagers: inputs.deployPositionManagers
+      });
   }
 
   function _validateUniqueLabels(string[] memory labels, string memory kind) internal pure {

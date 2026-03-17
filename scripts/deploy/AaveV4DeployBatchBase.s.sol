@@ -5,7 +5,9 @@ pragma solidity ^0.8.0;
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
-import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
+import {
+  AaveV4DeployOrchestration
+} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 
 import {Script} from 'forge-std/Script.sol';
 
@@ -39,6 +41,14 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
 
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
       .deployAaveV4(logger, deployer, inputs, _getHubBytecode(), _getSpokeBytecode());
+    // Deploy periphery posms separately
+    (report.gatewaysBatchReport, report.positionManagerBatchReport) = AaveV4DeployOrchestration
+      .deployAaveV4Periphery({
+        logger: logger,
+        deployer: deployer,
+        peripheryInputs: _extractPeripheryInputs(inputs),
+        salt: inputs.salt
+      });
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
     _logDeploySummary(logger);

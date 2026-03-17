@@ -6,11 +6,21 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
-import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
-import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
-import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
-import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
-import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
+import {
+  AaveV4AccessManagerRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
+import {
+  AaveV4HubRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {
+  AaveV4SpokeRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {
+  AaveV4HubConfiguratorRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
+import {
+  AaveV4SpokeConfiguratorRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
@@ -75,27 +85,6 @@ library AaveV4DeployOrchestration {
       salt: salt
     });
 
-    // Deploy Gateways Batch if either gateway flag is enabled
-    if (deployInputs.deployNativeTokenGateway || deployInputs.deploySignatureGateway) {
-      report.gatewaysBatchReport = _deployGatewayBatch({
-        logger: logger,
-        gatewayOwner: deployInputs.gatewayOwner,
-        nativeWrapper: deployInputs.nativeWrapper,
-        deployNativeTokenGateway: deployInputs.deployNativeTokenGateway,
-        deploySignatureGateway: deployInputs.deploySignatureGateway,
-        salt: salt
-      });
-    }
-
-    // Deploy Position Managers Batch if flag is enabled
-    if (deployInputs.deployPositionManagers) {
-      report.positionManagerBatchReport = _deployPositionManagerBatch({
-        logger: logger,
-        positionManagerOwner: deployInputs.positionManagerOwner,
-        salt: salt
-      });
-    }
-
     // Set Roles if needed
     if (deployInputs.grantRoles) {
       if (deployInputs.hubLabels.length > 0) {
@@ -126,6 +115,41 @@ library AaveV4DeployOrchestration {
     }
 
     return report;
+  }
+
+  /// @dev Deploys periphery contracts (gateways and position managers) independently.
+  function deployAaveV4Periphery(
+    Logger logger,
+    address deployer,
+    InputUtils.PeripheryDeployInputs memory peripheryInputs,
+    bytes32 salt
+  )
+    internal
+    returns (
+      BatchReports.GatewaysBatchReport memory gatewayReport,
+      BatchReports.PositionManagerBatchReport memory posmReport
+    )
+  {
+    bytes32 derivedSalt = _deriveSalt({deployer: deployer, salt: salt});
+
+    if (peripheryInputs.deployNativeTokenGateway || peripheryInputs.deploySignatureGateway) {
+      gatewayReport = _deployGatewayBatch({
+        logger: logger,
+        gatewayOwner: peripheryInputs.gatewayOwner,
+        nativeWrapper: peripheryInputs.nativeWrapper,
+        deployNativeTokenGateway: peripheryInputs.deployNativeTokenGateway,
+        deploySignatureGateway: peripheryInputs.deploySignatureGateway,
+        salt: derivedSalt
+      });
+    }
+
+    if (peripheryInputs.deployPositionManagers) {
+      posmReport = _deployPositionManagerBatch({
+        logger: logger,
+        positionManagerOwner: peripheryInputs.positionManagerOwner,
+        salt: derivedSalt
+      });
+    }
   }
 
   function _deployHubs(

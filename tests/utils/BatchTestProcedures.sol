@@ -10,7 +10,9 @@ import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 
 // orchestration
-import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
+import {
+  AaveV4DeployOrchestration
+} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {WETHDeployProcedure} from 'tests/deployments/procedures/WETHDeployProcedure.sol';
 import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
@@ -68,6 +70,15 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
       .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
+
+    // Deploy periphery (gateways + position managers) separately
+    (report.gatewaysBatchReport, report.positionManagerBatchReport) = AaveV4DeployOrchestration
+      .deployAaveV4Periphery({
+        logger: _logger,
+        deployer: _deployer,
+        peripheryInputs: _extractPeripheryInputs(_inputs),
+        salt: _inputs.salt
+      });
     vm.stopPrank();
     _checkDeployment(report, _inputs);
     _checkRoles(report, _inputs);
