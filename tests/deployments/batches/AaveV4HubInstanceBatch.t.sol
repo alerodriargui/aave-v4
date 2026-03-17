@@ -44,6 +44,16 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
     });
   }
 
+  function test_revert_zeroHubProxyAdminOwner() public {
+    vm.expectRevert('invalid hub proxy admin owner');
+    new AaveV4HubInstanceBatch({
+      hubProxyAdminOwner_: address(0),
+      authority_: accessManager,
+      hubBytecode_: hubBytecode,
+      salt_: salt
+    });
+  }
+
   function test_differentSaltProducesDifferentAddress() public {
     AaveV4HubInstanceBatch newBatch = new AaveV4HubInstanceBatch({
       hubProxyAdminOwner_: admin,
