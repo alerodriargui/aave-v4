@@ -125,6 +125,8 @@ import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 import {MockTreasurySpokeInstance} from 'tests/mocks/MockTreasurySpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
+import {MockHubInstance} from 'tests/mocks/MockHubInstance.sol';
+import {IHubInstance} from 'tests/mocks/IHubInstance.sol';
 import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
 import {SpokeUtilsWrapper} from 'tests/mocks/SpokeUtilsWrapper.sol';
 
@@ -2435,6 +2437,7 @@ abstract contract Base is BatchTestProcedures {
         user != address(spoke1) &&
         user != address(spoke2) &&
         user != address(spoke3) &&
+        user != ProxyHelper.getProxyAdmin(address(hub1)) &&
         user != ProxyHelper.getProxyAdmin(address(spoke1)) &&
         user != ProxyHelper.getProxyAdmin(address(spoke2)) &&
         user != ProxyHelper.getProxyAdmin(address(spoke3))
@@ -2805,7 +2808,7 @@ abstract contract Base is BatchTestProcedures {
 
   // @dev Requires no previously added assets
   // @dev Update _assetsSlot below if it changes
-  //   Run: forge inspect Hub storage-layout
+  //   Run: forge inspect HubInstance storage-layout
   // @dev Update _addedSharesOffset below if it changes
   //   Have a look at IHub.Asset struct
   function _mockSupplySharePrice(
@@ -2837,7 +2840,7 @@ abstract contract Base is BatchTestProcedures {
     });
     assertEq(hub.getAddedAssets(assetId), totalAddedAssets, '_mockSupplySharePrice: addedAssets');
 
-    uint256 _assetsSlot = 2;
+    uint256 _assetsSlot = 1;
     uint256 _addedSharesOffset = 1;
     vm.store(
       address(hub),

@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "add": "86692",
   "add: with transfer": "108028",
   "draw": "104148",
@@ -15,4 +16,22 @@
   "restore: partial": "85262",
   "restore: partial - with transfer": "143281",
   "transferShares": "69619"
+=======
+  "add": "91610",
+  "add: with transfer": "112907",
+  "draw": "109072",
+  "eliminateDeficit: full": "77519",
+  "eliminateDeficit: partial": "87124",
+  "mintFeeShares": "87646",
+  "payFee": "75720",
+  "refreshPremium": "75289",
+  "remove: full": "80564",
+  "remove: partial": "85702",
+  "reportDeficit": "116908",
+  "restore: full": "81488",
+  "restore: full - with transfer": "188892",
+  "restore: partial": "90198",
+  "restore: partial - with transfer": "148178",
+  "transferShares": "74540"
+>>>>>>> origin/feat/upgradeable-hub
 }
