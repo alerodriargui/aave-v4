@@ -2770,7 +2770,7 @@ abstract contract Base is Test {
     });
     assertEq(hub.getAddedAssets(assetId), totalAddedAssets, '_mockSupplySharePrice: addedAssets');
 
-    uint256 _assetsSlot = 2;
+    uint256 _assetsSlot = 1;
     uint256 _addedSharesOffset = 1;
     vm.store(
       address(hub),
