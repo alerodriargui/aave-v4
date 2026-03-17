@@ -156,6 +156,44 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
     _assertCanCall(hub, selectors);
   }
 
+  function test_setupHubDeficitEliminatorRole_reverts() public {
+    vm.expectRevert('zero address');
+    aaveV4HubRolesProcedureWrapper.setupHubDeficitEliminatorRole({
+      accessManager: address(0),
+      hub: hub
+    });
+
+    vm.expectRevert('zero address');
+    aaveV4HubRolesProcedureWrapper.setupHubDeficitEliminatorRole({
+      accessManager: accessManager,
+      hub: address(0)
+    });
+  }
+
+  function test_getHubDeficitEliminatorRoleSelectors() public view {
+    bytes4[] memory selectors = aaveV4HubRolesProcedureWrapper
+      .getHubDeficitEliminatorRoleSelectors();
+    assertEq(selectors.length, 1);
+    assertEq(selectors[0], IHub.eliminateDeficit.selector);
+  }
+
+  function test_canCall_hubDeficitEliminatorRole() public {
+    _grantAdminToWrapper(address(aaveV4HubRolesProcedureWrapper));
+    aaveV4HubRolesProcedureWrapper.grantHubRole({
+      accessManager: accessManager,
+      role: Roles.HUB_DEFICIT_ELIMINATOR_ROLE,
+      admin: admin
+    });
+    aaveV4HubRolesProcedureWrapper.setupHubDeficitEliminatorRole({
+      accessManager: accessManager,
+      hub: hub
+    });
+
+    bytes4[] memory selectors = aaveV4HubRolesProcedureWrapper
+      .getHubDeficitEliminatorRoleSelectors();
+    _assertCanCall(hub, selectors);
+  }
+
   function test_canCall_hubAllRoles() public {
     _grantAdminToWrapper(address(aaveV4HubRolesProcedureWrapper));
     aaveV4HubRolesProcedureWrapper.grantHubAllRoles({accessManager: accessManager, admin: admin});
@@ -163,5 +201,6 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
 
     _assertCanCall(hub, aaveV4HubRolesProcedureWrapper.getHubFeeMinterRoleSelectors());
     _assertCanCall(hub, aaveV4HubRolesProcedureWrapper.getHubConfiguratorRoleSelectors());
+    _assertCanCall(hub, aaveV4HubRolesProcedureWrapper.getHubDeficitEliminatorRoleSelectors());
   }
 }

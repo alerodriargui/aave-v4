@@ -311,7 +311,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkTreasurySpokeDeployment(
     OrchestrationReports.FullDeploymentReport memory report
-  ) internal view {
+  ) internal pure {
     assertNotEq(
       report.treasurySpokeBatchReport.treasurySpoke,
       address(0),
