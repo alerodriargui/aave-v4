@@ -73,24 +73,6 @@ library DeployUtils {
       );
   }
 
-  function getDeterministicSpokeInstanceAddress(
-    address oracle,
-    uint16 maxUserReservesLimit
-  ) internal returns (address) {
-    return getDeterministicSpokeInstanceAddress(oracle, maxUserReservesLimit, '');
-  }
-
-  function getDeterministicSpokeInstanceAddress(
-    address oracle,
-    uint16 maxUserReservesLimit,
-    bytes32 salt
-  ) internal returns (address) {
-    bytes32 initCodeHash = keccak256(_getSpokeInstanceInitCode(oracle, maxUserReservesLimit));
-
-    loadCreate2Factory();
-    return Create2Utils.computeCreate2Address(salt, initCodeHash);
-  }
-
   function deployHubImplementation() internal returns (IHubInstance) {
     return deployHubImplementation('');
   }

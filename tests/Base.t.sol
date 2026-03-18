@@ -2594,28 +2594,17 @@ abstract contract Base is BatchTestProcedures {
 
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
-    address _accessManager,
+    address accessManager_,
     uint16 maxUserReservesLimit
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
-    address deployer = makeAddr('deployer');
-
-    vm.startPrank(deployer);
-    IAaveOracle oracle = new AaveOracle(8);
-
-    ISpoke spoke = DeployUtils.deploySpoke(
-      address(oracle),
-      maxUserReservesLimit,
-      proxyAdminOwner,
-      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
-    );
-
-    oracle.setSpoke(address(spoke));
-    vm.stopPrank();
-
-    assertEq(spoke.ORACLE(), address(oracle));
-    assertEq(oracle.spoke(), address(spoke));
-
-    return (spoke, oracle);
+    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestSpoke({
+      spokeProxyAdminOwner: proxyAdminOwner,
+      accessManager: accessManager_,
+      spokeBytecode: _getSpokeBytecode(),
+      maxUserReservesLimit: maxUserReservesLimit,
+      salt: keccak256(abi.encodePacked('spoke-', vm.randomBytes(32)))
+    });
+    return (ISpoke(report.spoke), IAaveOracle(report.aaveOracle));
   }
 
   function _deployTokenizationSpoke(
@@ -2625,17 +2614,17 @@ abstract contract Base is BatchTestProcedures {
     string memory shareSymbol,
     address proxyAdminOwner
   ) internal pausePrank returns (ITokenizationSpoke) {
-    address tokenizationSpokeImpl = address(
-      new TokenizationSpokeInstance(address(hub), underlying)
-    );
-    ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
-      DeployUtils.proxify(
-        tokenizationSpokeImpl,
-        proxyAdminOwner,
-        abi.encodeCall(TokenizationSpokeInstance.initialize, (shareName, shareSymbol))
-      )
-    );
-    return tokenizationSpoke;
+    return
+      ITokenizationSpoke(
+        AaveV4TestOrchestration.deployTestTokenizationSpoke({
+          hub: address(hub),
+          underlying: underlying,
+          spokeProxyAdminOwner: proxyAdminOwner,
+          shareName: shareName,
+          shareSymbol: shareSymbol,
+          salt: keccak256(abi.encodePacked('tokenization-spoke-', vm.randomBytes(32)))
+        })
+      );
   }
 
   function _registerTokenizationSpoke(

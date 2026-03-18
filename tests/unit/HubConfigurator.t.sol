@@ -13,8 +13,8 @@ contract HubConfiguratorTest is HubBase {
   address[4] public spokeAddresses;
   address spoke;
 
-  mapping(address => uint24) public riskPremiumThresholdsPerSpoke; // spoke address => risk premium threshold
-  mapping(uint256 => uint24) public riskPremiumThresholdsPerAsset; // assetId => risk premium threshold
+  mapping(address spoke => uint24 riskPremiumThreshold) public riskPremiumThresholdsPerSpoke;
+  mapping(uint256 assetId => uint24 riskPremiumThreshold) public riskPremiumThresholdsPerAsset;
 
   function setUp() public virtual override {
     super.setUp();
@@ -351,20 +351,16 @@ contract HubConfiguratorTest is HubBase {
     assertGe(hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke)), 0);
 
     // Change the fee receiver
-    TreasurySpokeInstance newTreasurySpokeImpl = new TreasurySpokeInstance();
-    ITreasurySpoke newTreasurySpoke = ITreasurySpoke(
-      DeployUtils.proxify(
-        address(newTreasurySpokeImpl),
-        ADMIN,
-        abi.encodeCall(TreasurySpokeInstance.initialize, (HUB_ADMIN))
-      )
-    );
+    address newTreasurySpoke = AaveV4TestOrchestration.deployTestTreasurySpoke({
+      owner: HUB_ADMIN,
+      salt: bytes32('newTreasurySpoke1')
+    });
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, address(newTreasurySpoke));
+    hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, newTreasurySpoke);
 
     assertEq(
       hub1.getAssetConfig(daiAssetId).feeReceiver,
-      address(newTreasurySpoke),
+      newTreasurySpoke,
       'new fee receiver updated'
     );
     assertTrue(
@@ -388,7 +384,7 @@ contract HubConfiguratorTest is HubBase {
     Utils.mintFeeShares(hub1, daiAssetId, ADMIN);
 
     assertGt(
-      hub1.getSpokeAddedAssets(daiAssetId, address(newTreasurySpoke)),
+      hub1.getSpokeAddedAssets(daiAssetId, newTreasurySpoke),
       0,
       'new fee receiver should have accrued fees'
     );
@@ -426,21 +422,17 @@ contract HubConfiguratorTest is HubBase {
     uint256 feeShares = hub1.getSpokeAddedShares(daiAssetId, address(treasurySpoke));
 
     // Change the fee receiver
-    TreasurySpokeInstance newTreasurySpokeImpl2 = new TreasurySpokeInstance();
-    ITreasurySpoke newTreasurySpoke = ITreasurySpoke(
-      DeployUtils.proxify(
-        address(newTreasurySpokeImpl2),
-        ADMIN,
-        abi.encodeCall(TreasurySpokeInstance.initialize, (HUB_ADMIN))
-      )
-    );
+    address newTreasurySpoke = AaveV4TestOrchestration.deployTestTreasurySpoke({
+      owner: HUB_ADMIN,
+      salt: bytes32('newTreasurySpoke2')
+    });
     vm.prank(HUB_CONFIGURATOR_ADMIN);
-    hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, address(newTreasurySpoke));
+    hubConfigurator.updateFeeReceiver(address(hub1), daiAssetId, newTreasurySpoke);
 
     // Ensure fee receiver was updated
     assertEq(
       hub1.getAssetConfig(daiAssetId).feeReceiver,
-      address(newTreasurySpoke),
+      newTreasurySpoke,
       'new fee receiver mismatch'
     );
 
@@ -464,7 +456,7 @@ contract HubConfiguratorTest is HubBase {
 
     // Check that new fee receiver is getting the fees, and not old treasury spoke
     assertGt(
-      hub1.getSpokeAddedAssets(daiAssetId, address(newTreasurySpoke)),
+      hub1.getSpokeAddedAssets(daiAssetId, newTreasurySpoke),
       0,
       'new fee receiver should have accrued fees'
     );

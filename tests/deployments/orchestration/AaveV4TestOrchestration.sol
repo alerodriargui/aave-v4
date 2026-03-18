@@ -146,6 +146,55 @@ library AaveV4TestOrchestration {
     return report;
   }
 
+  function deployTestSpoke(
+    address spokeProxyAdminOwner,
+    address accessManager,
+    bytes memory spokeBytecode,
+    uint16 maxUserReservesLimit,
+    bytes32 salt
+  ) external returns (TestTypes.TestSpokeReport memory) {
+    TestTypes.TestSpokeReport memory report;
+    BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
+      .deploySpokeInstanceBatch({
+        spokeProxyAdminOwner: spokeProxyAdminOwner,
+        authority: accessManager,
+        spokeBytecode: spokeBytecode,
+        oracleDecimals: Constants.ORACLE_DECIMALS,
+        maxUserReservesLimit: maxUserReservesLimit,
+        salt: salt
+      });
+    report.spoke = spokeReport.spokeProxy;
+    report.aaveOracle = spokeReport.aaveOracle;
+    return report;
+  }
+
+  function deployTestTokenizationSpoke(
+    address hub,
+    address underlying,
+    address spokeProxyAdminOwner,
+    string memory shareName,
+    string memory shareSymbol,
+    bytes32 salt
+  ) external returns (address tokenizationSpokeProxy) {
+    BatchReports.TokenizationSpokeBatchReport memory report = AaveV4DeployBase
+      .deployTokenizationSpokeBatch({
+        hub: hub,
+        underlying: underlying,
+        spokeProxyAdminOwner: spokeProxyAdminOwner,
+        shareName: shareName,
+        shareSymbol: shareSymbol,
+        salt: salt
+      });
+    return report.tokenizationSpokeProxy;
+  }
+
+  function deployTestTreasurySpoke(
+    address owner,
+    bytes32 salt
+  ) external returns (address treasurySpoke) {
+    return AaveV4DeployBase.deployTreasurySpokeBatch({owner: owner, salt: salt}).treasurySpoke;
+  }
+
   function configureHubsSpokes(ConfigData.AddSpokeParams[] memory paramsList) external {
     for (uint256 i; i < paramsList.length; ++i) {
       IHub(paramsList[i].hub).addSpoke({
