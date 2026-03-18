@@ -34,90 +34,57 @@ contract SpokeMultipleHubBase is SpokeBase {
   }
 
   function _deployFixtures() internal virtual {
-    vm.startPrank(ADMIN);
-    accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
+    _etchSetup();
+
+    TestTypes.TestEnvReport memory report = AaveV4TestOrchestration.deployTestEnv({
+      admin: ADMIN,
+      treasuryAdmin: ADMIN,
+      hubCount: 2,
+      spokeCount: 2,
+      nativeWrapper: makeAddr('nativeWrapper'),
+      hubBytecode: _getHubBytecode(),
+      spokeBytecode: _getSpokeBytecode(),
+      salt: bytes32('multiHubTest')
+    });
+
     // Canonical hub and spoke
-    hub1 = DeployUtils.deployHub(ADMIN, address(accessManager), hex'01');
-    (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
-    TreasurySpokeInstance treasurySpokeImpl = new TreasurySpokeInstance();
-    treasurySpoke = ITreasurySpoke(
-      DeployUtils.proxify(
-        address(treasurySpokeImpl),
-        ADMIN,
-        abi.encodeCall(TreasurySpokeInstance.initialize, (ADMIN))
-      )
-    );
-    irStrategy = new AssetInterestRateStrategy(address(hub1));
+    accessManager = IAccessManager(report.accessManager);
+    hub1 = IHub(report.hubReports[0].hub);
+    irStrategy = AssetInterestRateStrategy(report.hubReports[0].irStrategy);
+    spoke1 = ISpoke(report.spokeReports[0].spoke);
+    oracle1 = IAaveOracle(report.spokeReports[0].aaveOracle);
+    treasurySpoke = ITreasurySpoke(report.treasurySpoke);
 
     // New hub and spoke
-    newHub = DeployUtils.deployHub(ADMIN, address(accessManager), hex'02');
-    (newSpoke, newOracle) = _deploySpokeWithOracle(ADMIN, address(accessManager));
-    newIrStrategy = new AssetInterestRateStrategy(address(newHub));
+    newHub = IHub(report.hubReports[1].hub);
+    newIrStrategy = IAssetInterestRateStrategy(report.hubReports[1].irStrategy);
+    newSpoke = ISpoke(report.spokeReports[1].spoke);
+    newOracle = IAaveOracle(report.spokeReports[1].aaveOracle);
 
+    // Deploy test tokens
+    vm.startPrank(ADMIN);
     assetA = new TestnetERC20('Asset A', 'A', 18);
     assetB = new TestnetERC20('Asset B', 'B', 18);
     vm.stopPrank();
-    setUpRoles();
+
+    _setupMultiHubRoles(report);
   }
 
-  function setUpRoles() internal {
+  function _setupMultiHubRoles(TestTypes.TestEnvReport memory report) internal {
     vm.startPrank(ADMIN);
-    // Grant roles with 0 delay
-    accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, ADMIN, 0);
-    accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, HUB_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, SPOKE_ADMIN, 0);
-    accessManager.grantRole(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, SPOKE_ADMIN, 0);
-
-    // Grant responsibilities to roles
-    // Spoke Configurator functionalities
-    bytes4[] memory configSelectors = new bytes4[](5);
-    configSelectors[0] = ISpoke.updateReservePriceSource.selector;
-    configSelectors[1] = ISpoke.updateLiquidationConfig.selector;
-    configSelectors[2] = ISpoke.addReserve.selector;
-    configSelectors[3] = ISpoke.updateReserveConfig.selector;
-    configSelectors[4] = ISpoke.addDynamicReserveConfig.selector;
-
-    accessManager.setTargetFunctionRole(
-      address(spoke1),
-      configSelectors,
-      Roles.SPOKE_CONFIGURATOR_ROLE
+    IAccessManager(report.accessManager).grantRole(
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      address(this),
+      0
     );
-    accessManager.setTargetFunctionRole(
-      address(newSpoke),
-      configSelectors,
-      Roles.SPOKE_CONFIGURATOR_ROLE
-    );
-
-    // Spoke Position Updater functionalities
-    bytes4[] memory positionSelectors = new bytes4[](1);
-    positionSelectors[0] = ISpoke.updateUserRiskPremium.selector;
-
-    accessManager.setTargetFunctionRole(
-      address(spoke1),
-      positionSelectors,
-      Roles.SPOKE_USER_POSITION_UPDATER_ROLE
-    );
-    accessManager.setTargetFunctionRole(
-      address(newSpoke),
-      positionSelectors,
-      Roles.SPOKE_USER_POSITION_UPDATER_ROLE
-    );
-
-    // Hub Admin functionalities
-    bytes4[] memory hubSelectors = new bytes4[](4);
-    hubSelectors[0] = IHub.addAsset.selector;
-    hubSelectors[1] = IHub.updateAssetConfig.selector;
-    hubSelectors[2] = IHub.addSpoke.selector;
-    hubSelectors[3] = IHub.updateSpokeConfig.selector;
-
-    accessManager.setTargetFunctionRole(address(hub1), hubSelectors, Roles.HUB_CONFIGURATOR_ROLE);
-    accessManager.setTargetFunctionRole(address(newHub), hubSelectors, Roles.HUB_CONFIGURATOR_ROLE);
     vm.stopPrank();
+
+    AaveV4TestOrchestration.setRolesTestEnv(report);
+    AaveV4TestOrchestration.grantRolesTestEnv(report, ADMIN, HUB_ADMIN, SPOKE_ADMIN);
+
+    IAccessManager(report.accessManager).renounceRole(
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      address(this)
+    );
   }
 }
