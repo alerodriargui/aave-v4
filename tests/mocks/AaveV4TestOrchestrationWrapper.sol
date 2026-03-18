@@ -12,19 +12,7 @@ contract AaveV4TestOrchestrationWrapper {
     return address(AaveV4TestOrchestration.deploySpokeImplementation(oracle, maxUserReservesLimit));
   }
 
-  function deploySpoke(
-    address oracle,
-    uint16 maxUserReservesLimit,
-    address proxyAdminOwner,
-    bytes calldata initData
-  ) external returns (address) {
-    return
-      address(
-        AaveV4TestOrchestration.deploySpoke(oracle, maxUserReservesLimit, proxyAdminOwner, initData)
-      );
-  }
-
-  function deployHub(address proxyAdminOwner, address authority) external returns (address) {
-    return address(AaveV4TestOrchestration.deployHub(proxyAdminOwner, authority));
+  function deployHub(address authority, address proxyAdminOwner) external returns (address) {
+    return address(AaveV4TestOrchestration.deployHub(authority, proxyAdminOwner));
   }
 }

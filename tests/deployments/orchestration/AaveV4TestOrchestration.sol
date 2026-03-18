@@ -451,24 +451,7 @@ library AaveV4TestOrchestration {
     bytes memory initCode = vm_.getCode('src/hub/instances/HubInstance.sol:HubInstance');
     return IHubInstance(_create2Deploy(salt, initCode));
   }
-
-  function deploySpoke(
-    address oracle,
-    uint16 maxUserReservesLimit,
-    address proxyAdminOwner,
-    bytes memory initData
-  ) internal returns (ISpoke) {
-    return
-      ISpoke(
-        proxify(
-          address(deploySpokeImplementation(oracle, maxUserReservesLimit, '')),
-          proxyAdminOwner,
-          initData
-        )
-      );
-  }
-
-  function deployHub(address proxyAdminOwner, address authority) internal returns (IHub) {
+  function deployHub(address authority, address proxyAdminOwner) internal returns (IHub) {
     return
       IHub(
         proxify(
