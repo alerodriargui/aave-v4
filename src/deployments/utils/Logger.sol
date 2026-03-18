@@ -83,6 +83,10 @@ contract Logger {
     _logHeader1(value);
   }
 
+  function logHeader1(string memory label, address value) public pure {
+    _logHeader1(label, value);
+  }
+
   function logDetail(string memory label, address value) public pure {
     _logDetail(label, value);
   }
@@ -141,6 +145,10 @@ contract Logger {
 
   function _logHeader1(string memory value) internal pure {
     console.log('...%s...', value);
+  }
+
+  function _logHeader1(string memory label, address value) internal pure {
+    console.log('...%s %s...', label, value);
   }
 
   function _logDetail(string memory label, address value) internal pure {
