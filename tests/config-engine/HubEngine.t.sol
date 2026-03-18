@@ -18,7 +18,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(actual.reinvestmentController, expected.reinvestmentController);
   }
 
-  function test_executeHubAssetListings_decimalsZero() public {
+  function test_executeHubAssetListings() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(newToken);
     uint256 assetCountBefore = hub1().getAssetCount();
@@ -29,20 +29,6 @@ contract HubEngineTest is BaseConfigEngineTest {
     IHub.AssetConfig memory config = hub1().getAssetConfig(newAssetId);
     assertEq(config.feeReceiver, FEE_RECEIVER);
     assertEq(config.irStrategy, address(irStrategy1()));
-    assertEq(hub1().getAssetCount(), assetCountBefore + 1);
-  }
-
-  function test_executeHubAssetListings_decimalsNonZero() public {
-    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
-    listing.decimals = 18;
-    listing.underlying = address(newToken);
-
-    uint256 assetCountBefore = hub1().getAssetCount();
-    engine.executeHubAssetListings(_toAssetListingArray(listing));
-
-    uint256 newAssetId = assetCountBefore;
-    IHub.AssetConfig memory config = hub1().getAssetConfig(newAssetId);
-    assertEq(config.feeReceiver, FEE_RECEIVER);
     assertEq(hub1().getAssetCount(), assetCountBefore + 1);
   }
 

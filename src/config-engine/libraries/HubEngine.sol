@@ -16,37 +16,22 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 library HubEngine {
   using SafeCast for uint256;
 
-  /// @notice Thrown when tokenization is requested but the name or symbol is empty.
-  error InvalidTokenizationSpokeConfig();
-
   /// @notice Lists new assets on Hubs via the HubConfigurator.
-  /// @dev When `tokenization.addCap > 0`, also deploys a TokenizationSpoke (impl + proxy) via
+  /// @dev When `tokenization.name` & `tokenization.symbol` are defined, also deploys a TokenizationSpoke (impl + proxy) via
   ///   CREATE2 and registers it on the Hub for the listed asset.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
     uint256 length = listings.length;
     for (uint256 i; i < length; ++i) {
       bytes memory irData = abi.encode(listings[i].irData);
-      if (listings[i].decimals == 0) {
-        listings[i].hubConfigurator.addAsset(
-          listings[i].hub,
-          listings[i].underlying,
-          listings[i].feeReceiver,
-          listings[i].liquidityFee,
-          listings[i].irStrategy,
-          irData
-        );
-      } else {
-        listings[i].hubConfigurator.addAssetWithDecimals(
-          listings[i].hub,
-          listings[i].underlying,
-          listings[i].decimals.toUint8(),
-          listings[i].feeReceiver,
-          listings[i].liquidityFee,
-          listings[i].irStrategy,
-          irData
-        );
-      }
+      listings[i].hubConfigurator.addAsset(
+        listings[i].hub,
+        listings[i].underlying,
+        listings[i].feeReceiver,
+        listings[i].liquidityFee,
+        listings[i].irStrategy,
+        irData
+      );
 
       _deployAndRegisterTokenizationSpoke(listings[i]);
     }

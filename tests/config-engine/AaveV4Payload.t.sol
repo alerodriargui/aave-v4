@@ -983,19 +983,6 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(0)));
   }
 
-  function test_execute_hubAssetListings_withDecimals() public {
-    IAaveV4ConfigEngine.AssetListing[] memory listings = new IAaveV4ConfigEngine.AssetListing[](1);
-    listings[0] = _defaultAssetListing();
-    listings[0].decimals = 18;
-    listings[0].underlying = address(newToken);
-    payload.setHubAssetListings(listings);
-
-    uint256 assetCountBefore = hub1().getAssetCount();
-    payload.execute();
-
-    assertEq(hub1().getAssetCount(), assetCountBefore + 1);
-  }
-
   function test_execute_positionManagerSpokeRegistrations() public {
     IAaveV4ConfigEngine.SpokeRegistration[]
       memory regs = new IAaveV4ConfigEngine.SpokeRegistration[](1);

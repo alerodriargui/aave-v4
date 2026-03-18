@@ -423,7 +423,6 @@ abstract contract BaseConfigEngineTest is Test {
         hubConfigurator: hubConfigurator,
         hub: address(hub1()),
         underlying: address(weth),
-        decimals: 0,
         feeReceiver: FEE_RECEIVER,
         liquidityFee: LIQUIDITY_FEE,
         irStrategy: address(irStrategy1()),
