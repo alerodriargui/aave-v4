@@ -20,40 +20,46 @@ import {ISpokeConfigurator} from 'src/spoke/interfaces/ISpokeConfigurator.sol';
 ///
 /// ## Role strategy
 ///
+/// A single authority contract will be used to manage the roles for all applicable contracts on a given chain.
+/// Role IDs, selector mappings, and overall configuration should be kept identical
+/// across chains to avoid additional overhead and role divergence.
+///
 /// Hub and Spoke roles remain granular (e.g. HUB_CONFIGURATOR_ROLE,
 /// HUB_FEE_MINTER_ROLE, HUB_DEFICIT_ELIMINATOR_ROLE each control a distinct set
 /// of selectors).
 ///
 /// HubConfigurator and SpokeConfigurator follow a different approach: initially,
-/// a single default admin role per domain (200, 400) holds all target selectors.
-/// As stewards or other roles are introduced, granular roles are added at the next available ID
+/// a single Domain Admin role per domain (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200,
+/// SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) holds all target selectors.
+/// As more granular roles are introduced, they are added at the next available ID
 /// (201, 202, ... / 401, 402, ...) and the corresponding selectors are reassigned
-/// from the default admin role to the new granular role:
+/// from the Domain Admin role to the new granular role:
 ///   - Existing role IDs should never be overwritten or reused for a different purpose.
 ///   - New roles are always appended with an incremented ID.
-///   - The default admin role (200/400) only ever has its selector set shrink over
-///     time as selectors are carved out into dedicated steward roles.
-///   - The existing default admin role should then be granted the new granular role to maintain backwards compatibility.
+///   - The Domain Admin role (200/400) only ever has its selector set shrink over
+///     time as selectors are divided into more granular roles.
+///   - Addresses holding the Domain Admin role should be granted the new
+///     granular role to retain their existing access.
 library Roles {
   // AccessManager roles
   uint64 public constant ACCESS_MANAGER_DEFAULT_ADMIN = 0;
 
   // Hub roles
-  uint64 public constant HUB_DEFAULT_ADMIN_ROLE = 100;
+  uint64 public constant HUB_DOMAIN_ADMIN_ROLE = 100;
   uint64 public constant HUB_CONFIGURATOR_ROLE = 101;
   uint64 public constant HUB_FEE_MINTER_ROLE = 102;
   uint64 public constant HUB_DEFICIT_ELIMINATOR_ROLE = 103;
 
   // HubConfigurator roles — granularize as needed with new roles appended
-  uint64 public constant HUB_CONFIGURATOR_DEFAULT_ADMIN_ROLE = 200;
+  uint64 public constant HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200;
 
   // Spoke roles
-  uint64 public constant SPOKE_DEFAULT_ADMIN_ROLE = 300;
+  uint64 public constant SPOKE_DOMAIN_ADMIN_ROLE = 300;
   uint64 public constant SPOKE_USER_POSITION_UPDATER_ROLE = 301;
   uint64 public constant SPOKE_CONFIGURATOR_ROLE = 302;
 
   // SpokeConfigurator roles — granularize as needed with new roles appended
-  uint64 public constant SPOKE_CONFIGURATOR_DEFAULT_ADMIN_ROLE = 400;
+  uint64 public constant SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400;
 
   // ─── Hub selector getters ───
 
@@ -81,7 +87,7 @@ library Roles {
 
   // ─── HubConfigurator selector getters ───
 
-  function getHubConfiguratorDefaultAdminRoleSelectors() internal pure returns (bytes4[] memory) {
+  function getHubConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](22);
     selectors[0] = IHubConfigurator.addAsset.selector;
     selectors[1] = IHubConfigurator.addAssetWithDecimals.selector;
@@ -131,7 +137,7 @@ library Roles {
 
   // ─── SpokeConfigurator selector getters ───
 
-  function getSpokeConfiguratorDefaultAdminRoleSelectors() internal pure returns (bytes4[] memory) {
+  function getSpokeConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](24);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
     selectors[1] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;

@@ -7,9 +7,9 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
 library AaveV4HubConfiguratorRolesProcedure {
-  /// @notice Grants the HubConfigurator default admin role (200) to `admin`.
+  /// @notice Grants the HubConfigurator domain admin role (200) to `admin`.
   function grantHubConfiguratorAllRoles(address accessManager, address admin) internal {
-    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_DEFAULT_ADMIN_ROLE, admin);
+    grantHubConfiguratorRole(accessManager, Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admin);
   }
 
   function grantHubConfiguratorRole(address accessManager, uint64 role, address admin) internal {
@@ -18,13 +18,13 @@ library AaveV4HubConfiguratorRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Sets up the HubConfigurator default admin role with all target selectors.
+  /// @notice Sets up the HubConfigurator domain admin role with all target selectors.
   function setupHubConfiguratorAllRoles(address accessManager, address hubConfigurator) internal {
     setupHubConfiguratorRole(
       accessManager,
       hubConfigurator,
-      Roles.HUB_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
-      Roles.getHubConfiguratorDefaultAdminRoleSelectors()
+      Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
+      Roles.getHubConfiguratorDomainAdminRoleSelectors()
     );
   }
 

@@ -249,8 +249,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     address newAdmin = makeAddr('newAccessManagerAdmin');
     _inputs.accessManagerAdmin = newAdmin;
 
-    bytes memory hubBytecode = _getHubBytecode();
-    bytes memory spokeBytecode = _getSpokeBytecode();
+    bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
+    bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
@@ -285,8 +285,8 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   function testAaveV4BatchDeployment_accessManagerAdminSameAsDeployer() public {
     _inputs.accessManagerAdmin = _deployer;
 
-    bytes memory hubBytecode = _getHubBytecode();
-    bytes memory spokeBytecode = _getSpokeBytecode();
+    bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
+    bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration

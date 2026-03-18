@@ -19,14 +19,14 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     vm.expectRevert('zero address');
     wrapper.grantHubConfiguratorRole({
       accessManager: address(0),
-      role: Roles.HUB_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+      role: Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       admin: admin
     });
 
     vm.expectRevert('zero address');
     wrapper.grantHubConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.HUB_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+      role: Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       admin: address(0)
     });
   }
@@ -46,13 +46,13 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupHubConfiguratorRole_reverts() public {
-    bytes4[] memory selectors = wrapper.getHubConfiguratorDefaultAdminRoleSelectors();
+    bytes4[] memory selectors = wrapper.getHubConfiguratorDomainAdminRoleSelectors();
 
     vm.expectRevert('zero address');
     wrapper.setupHubConfiguratorRole({
       accessManager: address(0),
       hubConfigurator: hubConfigurator,
-      role: Roles.HUB_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+      role: Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       selectors: selectors
     });
 
@@ -60,7 +60,7 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     wrapper.setupHubConfiguratorRole({
       accessManager: accessManager,
       hubConfigurator: address(0),
-      role: Roles.HUB_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+      role: Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       selectors: selectors
     });
   }
@@ -70,7 +70,7 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     wrapper.grantHubConfiguratorAllRoles({accessManager: accessManager, admin: admin});
 
     (bool hasRole, ) = IAccessManager(accessManager).hasRole(
-      Roles.HUB_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+      Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       admin
     );
     assertTrue(hasRole);
@@ -83,11 +83,11 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
       hubConfigurator: hubConfigurator
     });
 
-    bytes4[] memory selectors = wrapper.getHubConfiguratorDefaultAdminRoleSelectors();
+    bytes4[] memory selectors = wrapper.getHubConfiguratorDomainAdminRoleSelectors();
     for (uint256 i; i < selectors.length; i++) {
       assertEq(
         IAccessManager(accessManager).getTargetFunctionRole(hubConfigurator, selectors[i]),
-        Roles.HUB_CONFIGURATOR_DEFAULT_ADMIN_ROLE
+        Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE
       );
     }
   }
@@ -97,8 +97,8 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
     IAccessManager(accessManager).grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, wrapperAddr, 0);
   }
 
-  function test_getHubConfiguratorDefaultAdminRoleSelectors() public view {
-    bytes4[] memory selectors = wrapper.getHubConfiguratorDefaultAdminRoleSelectors();
+  function test_getHubConfiguratorDomainAdminRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getHubConfiguratorDomainAdminRoleSelectors();
     assertEq(selectors.length, 22);
     assertEq(selectors[0], IHubConfigurator.addAsset.selector);
     assertEq(selectors[1], IHubConfigurator.addAssetWithDecimals.selector);
@@ -132,6 +132,6 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
       hubConfigurator: hubConfigurator
     });
 
-    _assertCanCall(hubConfigurator, wrapper.getHubConfiguratorDefaultAdminRoleSelectors());
+    _assertCanCall(hubConfigurator, wrapper.getHubConfiguratorDomainAdminRoleSelectors());
   }
 }

@@ -6,6 +6,7 @@ import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationRepor
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 
 import {Script} from 'forge-std/Script.sol';
 
@@ -38,7 +39,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     logger.logHeader1('starting Aave V4 batch deployment');
 
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(logger, deployer, inputs, _getHubBytecode(), _getSpokeBytecode());
+      .deployAaveV4(logger, deployer, inputs, BytecodeHelper.getHubBytecode(), BytecodeHelper.getSpokeBytecode());
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
     _logDeploySummary(logger);
@@ -195,14 +196,6 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
         revert('user did not acknowledge. Please try again.');
       }
     }
-  }
-
-  function _getHubBytecode() internal view returns (bytes memory) {
-    return vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
-  }
-
-  function _getSpokeBytecode() internal view returns (bytes memory) {
-    return vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
   }
 
   function _appendSummary(string memory line) internal virtual {

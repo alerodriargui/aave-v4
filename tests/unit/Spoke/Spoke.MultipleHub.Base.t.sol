@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 
 contract SpokeMultipleHubBase is SpokeBase {
   // New hub and spoke
@@ -42,8 +43,8 @@ contract SpokeMultipleHubBase is SpokeBase {
       hubCount: 2,
       spokeCount: 2,
       nativeWrapper: makeAddr('nativeWrapper'),
-      hubBytecode: _getHubBytecode(),
-      spokeBytecode: _getSpokeBytecode(),
+      hubBytecode: BytecodeHelper.getHubBytecode(),
+      spokeBytecode: BytecodeHelper.getSpokeBytecode(),
       salt: bytes32('multiHubTest')
     });
 

@@ -10,7 +10,9 @@ import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 
 // orchestration
-import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
+import {
+  AaveV4DeployOrchestration
+} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {WETHDeployProcedure} from 'tests/deployments/procedures/WETHDeployProcedure.sol';
 import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
@@ -24,6 +26,7 @@ import {Constants} from 'tests/Constants.sol';
 
 // libraries
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 
 // interfaces
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
@@ -62,8 +65,8 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   }
 
   function checkedV4Deployment() public {
-    bytes memory hubBytecode = _getHubBytecode();
-    bytes memory spokeBytecode = _getSpokeBytecode();
+    bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
+    bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
@@ -638,13 +641,13 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     FullDeployInputs memory inputs
   ) internal view {
     address hubConfigurator = report.configuratorBatchReport.hubConfigurator;
-    bytes4[] memory selectors = Roles.getHubConfiguratorDefaultAdminRoleSelectors();
+    bytes4[] memory selectors = Roles.getHubConfiguratorDomainAdminRoleSelectors();
 
     for (uint256 i; i < selectors.length; i++) {
       assertEq(
         accessManager.getTargetFunctionRole(hubConfigurator, selectors[i]),
-        Roles.HUB_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
-        'HubConfigurator default admin selector role mapping'
+        Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
+        'HubConfigurator domain admin selector role mapping'
       );
     }
 
@@ -666,13 +669,13 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     FullDeployInputs memory inputs
   ) internal view {
     address spokeConfigurator = report.configuratorBatchReport.spokeConfigurator;
-    bytes4[] memory selectors = Roles.getSpokeConfiguratorDefaultAdminRoleSelectors();
+    bytes4[] memory selectors = Roles.getSpokeConfiguratorDomainAdminRoleSelectors();
 
     for (uint256 i; i < selectors.length; i++) {
       assertEq(
         accessManager.getTargetFunctionRole(spokeConfigurator, selectors[i]),
-        Roles.SPOKE_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
-        'SpokeConfigurator default admin selector role mapping'
+        Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
+        'SpokeConfigurator domain admin selector role mapping'
       );
     }
 
@@ -729,11 +732,78 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     _etchCreate2Factory();
   }
 
-  function _getHubBytecode() internal view returns (bytes memory) {
-    return vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
+  function _checkAllAddressesHaveCode(
+    OrchestrationReports.FullDeploymentReport memory report,
+    bool skipImplementation
+  ) internal view {
+    _assertHasCode(report.authorityBatchReport.accessManager, 'accessManager');
+    _assertHasCode(report.configuratorBatchReport.hubConfigurator, 'hubConfigurator');
+    _assertHasCode(report.configuratorBatchReport.spokeConfigurator, 'spokeConfigurator');
+    _assertHasCode(report.treasurySpokeBatchReport.treasurySpoke, 'treasurySpoke');
+
+    for (uint256 i; i < report.hubInstanceBatchReports.length; i++) {
+      string memory label = report.hubInstanceBatchReports[i].label;
+      _assertHasCode(
+        report.hubInstanceBatchReports[i].report.hubProxy,
+        string.concat('hub proxy: ', label)
+      );
+      if (!skipImplementation) {
+        _assertHasCode(
+          report.hubInstanceBatchReports[i].report.hubImplementation,
+          string.concat('hub impl: ', label)
+        );
+      }
+      _assertHasCode(
+        report.hubInstanceBatchReports[i].report.irStrategy,
+        string.concat('irStrategy: ', label)
+      );
+    }
+
+    for (uint256 i; i < report.spokeInstanceBatchReports.length; i++) {
+      string memory label = report.spokeInstanceBatchReports[i].label;
+      _assertHasCode(
+        report.spokeInstanceBatchReports[i].report.spokeProxy,
+        string.concat('spoke proxy: ', label)
+      );
+      if (!skipImplementation) {
+        _assertHasCode(
+          report.spokeInstanceBatchReports[i].report.spokeImplementation,
+          string.concat('spoke impl: ', label)
+        );
+      }
+      _assertHasCode(
+        report.spokeInstanceBatchReports[i].report.aaveOracle,
+        string.concat('oracle: ', label)
+      );
+    }
+
+    if (report.gatewaysBatchReport.nativeGateway != address(0)) {
+      _assertHasCode(report.gatewaysBatchReport.nativeGateway, 'nativeTokenGateway');
+    }
+    if (report.gatewaysBatchReport.signatureGateway != address(0)) {
+      _assertHasCode(report.gatewaysBatchReport.signatureGateway, 'signatureGateway');
+    }
+    if (report.positionManagerBatchReport.giverPositionManager != address(0)) {
+      _assertHasCode(
+        report.positionManagerBatchReport.giverPositionManager,
+        'giverPositionManager'
+      );
+    }
+    if (report.positionManagerBatchReport.takerPositionManager != address(0)) {
+      _assertHasCode(
+        report.positionManagerBatchReport.takerPositionManager,
+        'takerPositionManager'
+      );
+    }
+    if (report.positionManagerBatchReport.configPositionManager != address(0)) {
+      _assertHasCode(
+        report.positionManagerBatchReport.configPositionManager,
+        'configPositionManager'
+      );
+    }
   }
 
-  function _getSpokeBytecode() internal view returns (bytes memory) {
-    return vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
+  function _assertHasCode(address addr, string memory label) internal view {
+    assertTrue(addr.code.length > 0, string.concat('no code at ', label, ': ', vm.toString(addr)));
   }
 }

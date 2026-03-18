@@ -37,7 +37,7 @@ contract AaveV4HubConfiguratorRolesProcedureWrapper {
     );
   }
 
-  function getHubConfiguratorDefaultAdminRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getHubConfiguratorDefaultAdminRoleSelectors();
+  function getHubConfiguratorDomainAdminRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubConfiguratorDomainAdminRoleSelectors();
   }
 }

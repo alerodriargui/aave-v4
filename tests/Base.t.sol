@@ -106,10 +106,18 @@ import {TestTypes} from 'tests/utils/TestTypes.sol';
 // orchestration
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
-import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
-import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
-import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
+import {
+  AaveV4HubRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {
+  AaveV4SpokeRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
+import {
+  AaveV4HubConfiguratorRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
+import {
+  AaveV4SpokeConfiguratorRolesProcedure
+} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 // mocks
 import {EIP712Types} from 'tests/mocks/EIP712Types.sol';
 import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
@@ -130,6 +138,7 @@ import {MockHubInstance} from 'tests/mocks/MockHubInstance.sol';
 import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 import {AaveV4TestOrchestrationWrapper} from 'tests/mocks/AaveV4TestOrchestrationWrapper.sol';
 import {SpokeUtilsWrapper} from 'tests/mocks/SpokeUtilsWrapper.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 
 import 'tests/utils/BatchTestProcedures.sol';
 
@@ -394,9 +403,9 @@ abstract contract Base is BatchTestProcedures {
       hubCount: numHubs,
       spokeCount: numSpokes,
       nativeWrapper: address(tokenList.weth),
-      hubBytecode: _getHubBytecode(),
-      spokeBytecode: _getSpokeBytecode(),
-      salt: keccak256(abi.encodePacked(vm.randomBytes(32)))
+      hubBytecode: BytecodeHelper.getHubBytecode(),
+      spokeBytecode: BytecodeHelper.getSpokeBytecode(),
+      salt: bytes32(vm.randomBytes(32))
     });
     for (uint256 i; i < numHubs; ++i) {
       _hubs.push(IHub(report.hubReports[i].hub));
@@ -1130,7 +1139,7 @@ abstract contract Base is BatchTestProcedures {
     report = AaveV4TestOrchestration.deployTestHub(
       ADMIN,
       address(accessManager),
-      _getHubBytecode(),
+      BytecodeHelper.getHubBytecode(),
       label,
       keccak256(abi.encodePacked(label))
     );
@@ -2599,7 +2608,7 @@ abstract contract Base is BatchTestProcedures {
     TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestSpoke({
       spokeProxyAdminOwner: proxyAdminOwner,
       accessManager: accessManager_,
-      spokeBytecode: _getSpokeBytecode(),
+      spokeBytecode: BytecodeHelper.getSpokeBytecode(),
       maxUserReservesLimit: maxUserReservesLimit,
       salt: keccak256(abi.encodePacked('spoke-', vm.randomBytes(32)))
     });

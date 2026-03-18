@@ -19,14 +19,14 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     vm.expectRevert('zero address');
     wrapper.grantSpokeConfiguratorRole({
       accessManager: address(0),
-      role: Roles.SPOKE_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       admin: admin
     });
 
     vm.expectRevert('zero address');
     wrapper.grantSpokeConfiguratorRole({
       accessManager: accessManager,
-      role: Roles.SPOKE_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       admin: address(0)
     });
   }
@@ -46,13 +46,13 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupSpokeConfiguratorRole_reverts() public {
-    bytes4[] memory selectors = wrapper.getSpokeConfiguratorDefaultAdminRoleSelectors();
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorDomainAdminRoleSelectors();
 
     vm.expectRevert('zero address');
     wrapper.setupSpokeConfiguratorRole({
       accessManager: address(0),
       spokeConfigurator: spokeConfigurator,
-      role: Roles.SPOKE_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       selectors: selectors
     });
 
@@ -60,7 +60,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     wrapper.setupSpokeConfiguratorRole({
       accessManager: accessManager,
       spokeConfigurator: address(0),
-      role: Roles.SPOKE_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+      role: Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       selectors: selectors
     });
   }
@@ -70,7 +70,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     wrapper.grantSpokeConfiguratorAllRoles({accessManager: accessManager, admin: admin});
 
     (bool hasRole, ) = IAccessManager(accessManager).hasRole(
-      Roles.SPOKE_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
+      Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       admin
     );
     assertTrue(hasRole);
@@ -83,11 +83,11 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
       spokeConfigurator: spokeConfigurator
     });
 
-    bytes4[] memory selectors = wrapper.getSpokeConfiguratorDefaultAdminRoleSelectors();
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorDomainAdminRoleSelectors();
     for (uint256 i; i < selectors.length; i++) {
       assertEq(
         IAccessManager(accessManager).getTargetFunctionRole(spokeConfigurator, selectors[i]),
-        Roles.SPOKE_CONFIGURATOR_DEFAULT_ADMIN_ROLE
+        Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE
       );
     }
   }
@@ -97,8 +97,8 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
     IAccessManager(accessManager).grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, _wrapper, 0);
   }
 
-  function test_getSpokeConfiguratorDefaultAdminRoleSelectors() public view {
-    bytes4[] memory selectors = wrapper.getSpokeConfiguratorDefaultAdminRoleSelectors();
+  function test_getSpokeConfiguratorDomainAdminRoleSelectors() public view {
+    bytes4[] memory selectors = wrapper.getSpokeConfiguratorDomainAdminRoleSelectors();
     assertEq(selectors.length, 24);
     assertEq(selectors[0], ISpokeConfigurator.updateReservePriceSource.selector);
     assertEq(selectors[1], ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector);
@@ -134,6 +134,6 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
       spokeConfigurator: spokeConfigurator
     });
 
-    _assertCanCall(spokeConfigurator, wrapper.getSpokeConfiguratorDefaultAdminRoleSelectors());
+    _assertCanCall(spokeConfigurator, wrapper.getSpokeConfiguratorDomainAdminRoleSelectors());
   }
 }

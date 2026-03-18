@@ -7,9 +7,9 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
 library AaveV4SpokeConfiguratorRolesProcedure {
-  /// @notice Grants the SpokeConfigurator default admin role (400) to `admin`.
+  /// @notice Grants the SpokeConfigurator domain admin role (400) to `admin`.
   function grantSpokeConfiguratorAllRoles(address accessManager, address admin) internal {
-    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_DEFAULT_ADMIN_ROLE, admin);
+    grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admin);
   }
 
   function grantSpokeConfiguratorRole(address accessManager, uint64 role, address admin) internal {
@@ -18,7 +18,7 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
-  /// @notice Sets up the SpokeConfigurator default admin role with all target selectors.
+  /// @notice Sets up the SpokeConfigurator domain admin role with all target selectors.
   function setupSpokeConfiguratorAllRoles(
     address accessManager,
     address spokeConfigurator
@@ -26,8 +26,8 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     setupSpokeConfiguratorRole(
       accessManager,
       spokeConfigurator,
-      Roles.SPOKE_CONFIGURATOR_DEFAULT_ADMIN_ROLE,
-      Roles.getSpokeConfiguratorDefaultAdminRoleSelectors()
+      Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
+      Roles.getSpokeConfiguratorDomainAdminRoleSelectors()
     );
   }
 
