@@ -32,6 +32,7 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 
 library AaveV4TestOrchestration {
+  bool public constant IS_TEST = true;
   bytes internal constant CREATE2_FACTORY_BYTECODE =
     hex'7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
   Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
