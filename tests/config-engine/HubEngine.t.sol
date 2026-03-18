@@ -805,7 +805,7 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(tsConfig.addCap, 1000);
   }
 
-  function test_executeHubAssetListings_tokenization_revert_emptyName() public {
+  function test_executeHubAssetListings_tokenization_skipsOnEmptyName() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
@@ -814,11 +814,26 @@ contract HubEngineTest is BaseConfigEngineTest {
       symbol: 'tNEW'
     });
 
-    vm.expectRevert(HubEngine.InvalidTokenizationSpokeConfig.selector);
+    uint256 assetCountBefore = hub1().getAssetCount();
+    uint256 expectedAssetId = assetCountBefore;
+
     engine.executeHubAssetListings(_toAssetListingArray(listing));
+
+    assertEq(hub1().getAssetCount(), assetCountBefore + 1);
+    assertEq(hub1().getSpokeCount(expectedAssetId), 1);
+
+    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      address(hub1()),
+      address(newToken),
+      '',
+      'tNEW',
+      address(this)
+    );
+    assertFalse(hub1().isSpokeListed(expectedAssetId, predictedProxy));
+    assertEq(predictedProxy.code.length, 0);
   }
 
-  function test_executeHubAssetListings_tokenization_revert_emptySymbol() public {
+  function test_executeHubAssetListings_tokenization_skipsOnEmptySymbol() public {
     IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
     listing.underlying = address(newToken);
     listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
@@ -827,8 +842,23 @@ contract HubEngineTest is BaseConfigEngineTest {
       symbol: ''
     });
 
-    vm.expectRevert(HubEngine.InvalidTokenizationSpokeConfig.selector);
+    uint256 assetCountBefore = hub1().getAssetCount();
+    uint256 expectedAssetId = assetCountBefore;
+
     engine.executeHubAssetListings(_toAssetListingArray(listing));
+
+    assertEq(hub1().getAssetCount(), assetCountBefore + 1);
+    assertEq(hub1().getSpokeCount(expectedAssetId), 1);
+
+    address predictedProxy = TokenizationSpokeDeployer.computeProxyAddress(
+      address(hub1()),
+      address(newToken),
+      'Tokenized NEW',
+      '',
+      address(this)
+    );
+    assertFalse(hub1().isSpokeListed(expectedAssetId, predictedProxy));
+    assertEq(predictedProxy.code.length, 0);
   }
 
   function test_executeHubAssetListings_multipleHubs() public {

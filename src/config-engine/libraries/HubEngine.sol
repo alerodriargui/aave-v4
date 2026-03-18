@@ -48,9 +48,7 @@ library HubEngine {
         );
       }
 
-      if (listings[i].tokenization.addCap > 0) {
-        _deployAndRegisterTokenizationSpoke(listings[i]);
-      }
+      _deployAndRegisterTokenizationSpoke(listings[i]);
     }
   }
 
@@ -233,10 +231,11 @@ library HubEngine {
   function _deployAndRegisterTokenizationSpoke(
     IAaveV4ConfigEngine.AssetListing calldata listing
   ) private {
+    // if not name and/or symbol given, we assume there is no intention to deploy a TokenizationSpoke, so we skip deployment and registration
     if (
       bytes(listing.tokenization.name).length == 0 || bytes(listing.tokenization.symbol).length == 0
     ) {
-      revert InvalidTokenizationSpokeConfig();
+      return;
     }
 
     address proxy = TokenizationSpokeDeployer.deploy(

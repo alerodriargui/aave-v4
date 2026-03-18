@@ -110,10 +110,10 @@ The `EngineFlags` library defines sentinel values for each width that needs a "s
 
 | Constant               | Type      | Value                        |
 | ---------------------- | --------- | ---------------------------- |
-| `KEEP_CURRENT`         | `uint256` | `type(uint256).max`          |
+| `KEEP_CURRENT`         | `uint256` | `type(uint256).max - 256`    |
 | `KEEP_CURRENT_ADDRESS` | `address` | `address(type(uint160).max)` |
-| `KEEP_CURRENT_UINT64`  | `uint64`  | `type(uint64).max`           |
-| `KEEP_CURRENT_UINT32`  | `uint32`  | `type(uint32).max`           |
+| `KEEP_CURRENT_UINT64`  | `uint64`  | `type(uint64).max - 64`      |
+| `KEEP_CURRENT_UINT32`  | `uint32`  | `type(uint32).max - 32`      |
 
 When a struct field is set to its corresponding sentinel, the engine **skips** updating that field and leaves the on-chain value unchanged. This lets a single struct express partial updates — for example, changing the liquidity fee without touching the fee receiver or IR strategy.
 
@@ -128,7 +128,7 @@ Several engine functions inspect which fields differ from `KEEP_CURRENT` and cho
 - **Reserve config** (`SpokeEngine.executeSpokeReserveConfigUpdates`) — each flag (priceSource, collateralRisk, paused, frozen, borrowable, receiveSharesEnabled) is updated individually only when it differs from `KEEP_CURRENT` / `KEEP_CURRENT_ADDRESS`.
 - **Liquidation config** (`SpokeEngine.executeSpokeLiquidationConfigUpdates`) — calls `updateLiquidationConfig` when all three fields change, otherwise updates each field individually.
 - **Dynamic reserve config** (`SpokeEngine.executeSpokeDynamicReserveConfigUpdates`) — reads the current on-chain config, patches only the non-sentinel fields, and writes back the merged result. If nothing changed, the external call is skipped entirely.
-- **Role update** (`AccessManagerEngine.executeRoleUpdates`) — a single `RoleUpdate` struct can update any combination of admin (`uint64`), guardian (`uint64`), grant delay (`uint32`), and label (`string`). Fields set to their type-max sentinel (`type(uint64).max` / `type(uint32).max`) or empty string are skipped.
+- **Role update** (`AccessManagerEngine.executeRoleUpdates`) — a single `RoleUpdate` struct can update any combination of admin (`uint64`), guardian (`uint64`), grant delay (`uint32`), and label (`string`). Fields set to their type-max sentinel (`KEEP_CURRENT_UINT64` / `KEEP_CURRENT_UINT32`) or empty string are skipped.
 
 ### Delegatecall architecture
 
