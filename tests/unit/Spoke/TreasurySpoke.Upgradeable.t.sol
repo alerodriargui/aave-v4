@@ -45,7 +45,7 @@ contract TreasurySpokeUpgradeableTest is SpokeBase {
     emit IERC1967.AdminChanged(address(0), proxyAdminAddress);
 
     ITreasurySpoke proxy = ITreasurySpoke(
-      DeployUtils.proxify(
+      AaveV4TestOrchestration.proxify(
         address(impl),
         proxyAdminOwner,
         abi.encodeCall(MockTreasurySpokeInstance.initialize, (TREASURY_ADMIN))
@@ -64,7 +64,7 @@ contract TreasurySpokeUpgradeableTest is SpokeBase {
     initialRevision = uint64(bound(initialRevision, 1, type(uint64).max - 1));
     MockTreasurySpokeInstance impl = _deployMockTreasurySpokeInstance(initialRevision);
     ITransparentUpgradeableProxy proxy = ITransparentUpgradeableProxy(
-      DeployUtils.proxify(
+      AaveV4TestOrchestration.proxify(
         address(impl),
         proxyAdminOwner,
         abi.encodeCall(MockTreasurySpokeInstance.initialize, (TREASURY_ADMIN))
@@ -89,7 +89,7 @@ contract TreasurySpokeUpgradeableTest is SpokeBase {
     MockTreasurySpokeInstance impl = _deployMockTreasurySpokeInstance(0);
 
     vm.expectRevert(Initializable.InvalidInitialization.selector);
-    DeployUtils.proxify(
+    AaveV4TestOrchestration.proxify(
       address(impl),
       proxyAdminOwner,
       abi.encodeCall(MockTreasurySpokeInstance.initialize, (TREASURY_ADMIN))
@@ -103,7 +103,7 @@ contract TreasurySpokeUpgradeableTest is SpokeBase {
 
     MockTreasurySpokeInstance impl = _deployMockTreasurySpokeInstance(initialRevision);
     ITransparentUpgradeableProxy proxy = ITransparentUpgradeableProxy(
-      DeployUtils.proxify(
+      AaveV4TestOrchestration.proxify(
         address(impl),
         proxyAdminOwner,
         abi.encodeCall(MockTreasurySpokeInstance.initialize, (TREASURY_ADMIN))
@@ -132,7 +132,7 @@ contract TreasurySpokeUpgradeableTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(OwnableUpgradeable.OwnableInvalidOwner.selector, address(0))
     );
-    DeployUtils.proxify(
+    AaveV4TestOrchestration.proxify(
       address(impl),
       proxyAdminOwner,
       abi.encodeCall(TreasurySpokeInstance.initialize, (address(0)))
@@ -142,7 +142,7 @@ contract TreasurySpokeUpgradeableTest is SpokeBase {
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
     TreasurySpokeInstance impl = new TreasurySpokeInstance();
     ITransparentUpgradeableProxy proxy = ITransparentUpgradeableProxy(
-      DeployUtils.proxify(
+      AaveV4TestOrchestration.proxify(
         address(impl),
         proxyAdminOwner,
         abi.encodeCall(TreasurySpokeInstance.initialize, (TREASURY_ADMIN))

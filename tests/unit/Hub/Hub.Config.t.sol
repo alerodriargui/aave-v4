@@ -24,10 +24,10 @@ contract HubConfigTest is HubBase {
   }
 
   function test_hub_deploy_reverts_on_InvalidConstructorInput() public {
-    DeployWrapper deployer = new DeployWrapper();
+    AaveV4TestOrchestrationWrapper deployer = new AaveV4TestOrchestrationWrapper();
 
-    vm.expectRevert();
-    deployer.deployHub(address(0));
+    vm.expectRevert(IHub.InvalidAddress.selector);
+    deployer.deployHub({authority: address(0), proxyAdminOwner: ADMIN});
   }
 
   function test_hub_max_riskPremium() public view {

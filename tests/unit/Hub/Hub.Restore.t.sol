@@ -10,20 +10,9 @@ contract HubRestoreTest is HubBase {
   using PercentageMath for uint256;
   using SafeCast for *;
 
-  HubConfigurator public hubConfigurator;
-
-  function setUp() public override {
-    super.setUp();
-
-    // Set up a hub configurator to test resetting asset caps and pausing assets
-    hubConfigurator = new HubConfigurator(hub1.authority());
-    setUpHubConfiguratorRoles(address(hubConfigurator), hub1.authority());
-  }
-
   function test_restore_revertsWith_SurplusDrawnRestored() public {
     uint256 daiAmount = 100e18;
     uint256 wethAmount = 10e18;
-
     uint256 drawAmount = daiAmount / 2;
 
     // spoke1 add weth
@@ -119,7 +108,7 @@ contract HubRestoreTest is HubBase {
   }
 
   function test_restore_revertsWith_SpokeNotActive_whenPaused() public {
-    vm.prank(HUB_CONFIGURATOR);
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.deactivateAsset(address(hub1), daiAssetId);
 
     IHubBase.PremiumDelta memory premiumDelta = _getExpectedPremiumDelta(
@@ -207,7 +196,7 @@ contract HubRestoreTest is HubBase {
     });
 
     // Reset asset caps
-    vm.prank(HUB_CONFIGURATOR);
+    vm.prank(HUB_CONFIGURATOR_ADMIN);
     hubConfigurator.resetAssetCaps(address(hub1), daiAssetId);
 
     (uint256 drawn, uint256 premium) = hub1.getSpokeOwed(daiAssetId, address(spoke1));

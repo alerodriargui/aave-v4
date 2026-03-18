@@ -12,8 +12,7 @@ contract PositionManager_Gas_Tests is SpokeBase {
   uint192 internal nonceKey = 0;
 
   function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
 
     positionManager = new PositionManagerBaseWrapper(address(ADMIN));
 
@@ -61,8 +60,7 @@ contract GiverPositionManager_Gas_Tests is SpokeBase {
   GiverPositionManager public positionManager;
 
   function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
 
     positionManager = new GiverPositionManager(address(ADMIN));
     vm.prank(SPOKE_ADMIN);
@@ -110,8 +108,7 @@ contract TakerPositionManager_Gas_Tests is SpokeBase {
   uint192 internal creditNonceKey = 1;
 
   function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
 
     positionManager = new TakerPositionManager(address(ADMIN));
     vm.prank(SPOKE_ADMIN);
@@ -263,8 +260,7 @@ contract ConfigPositionManager_Gas_Tests is SpokeBase {
   ConfigPositionManager public positionManager;
 
   function setUp() public virtual override {
-    deployFixtures();
-    initEnvironment();
+    super.setUp();
 
     positionManager = new ConfigPositionManager(address(ADMIN));
 

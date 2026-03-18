@@ -46,7 +46,7 @@ contract HubAccrueInterestTest is Base {
 
   function setUp() public override {
     super.setUp();
-    initEnvironment();
+    _initEnvironment();
     spokeMintAndApprove();
   }
 
