@@ -100,7 +100,6 @@ import {
 
 // test
 import {Constants} from 'tests/Constants.sol';
-import {DeployUtils} from 'tests/DeployUtils.sol';
 import {Utils} from 'tests/Utils.sol';
 import {TestTypes} from 'tests/utils/TestTypes.sol';
 
@@ -129,7 +128,7 @@ import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
 import {MockHubInstance} from 'tests/mocks/MockHubInstance.sol';
 import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
-import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
+import {AaveV4TestOrchestrationWrapper} from 'tests/mocks/AaveV4TestOrchestrationWrapper.sol';
 import {SpokeUtilsWrapper} from 'tests/mocks/SpokeUtilsWrapper.sol';
 
 import 'tests/utils/BatchTestProcedures.sol';

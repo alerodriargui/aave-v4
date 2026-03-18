@@ -25,11 +25,19 @@ import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.s
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
+import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
+import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
+import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 
 library AaveV4TestOrchestration {
   bool public constant IS_TEST = true;
+  bytes internal constant CREATE2_FACTORY_BYTECODE =
+    hex'7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
   Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
+
+  error Create2DeploymentFailed();
 
   function deployTestTokens(
     TestTypes.TestTokenInput[] memory tokenInputs
@@ -392,5 +400,90 @@ library AaveV4TestOrchestration {
   ) internal returns (TestTypes.TestTokensBatchReport memory) {
     TestTokensBatch tokensBatch = new TestTokensBatch(tokenInputs);
     return tokensBatch.getReport();
+  }
+
+  function loadCreate2Factory() internal {
+    if (Create2Utils.isContractDeployed(Create2Utils.CREATE2_FACTORY)) return;
+    Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code')))))).etch(
+      Create2Utils.CREATE2_FACTORY,
+      CREATE2_FACTORY_BYTECODE
+    );
+  }
+
+  function _create2Deploy(bytes32 salt, bytes memory bytecode) internal returns (address) {
+    loadCreate2Factory();
+    address computed = Create2Utils.computeCreate2Address(salt, bytecode);
+    if (Create2Utils.isContractDeployed(computed)) return computed;
+
+    bytes memory creationBytecode = abi.encodePacked(salt, bytecode);
+    (, bytes memory returnData) = Create2Utils.CREATE2_FACTORY.call(creationBytecode);
+    address deployedAt = address(uint160(bytes20(returnData)));
+    require(deployedAt == computed, Create2DeploymentFailed());
+    return deployedAt;
+  }
+
+  function deploySpokeImplementation(
+    address oracle,
+    uint16 maxUserReservesLimit
+  ) internal returns (ISpokeInstance) {
+    return deploySpokeImplementation(oracle, maxUserReservesLimit, '');
+  }
+
+  function deploySpokeImplementation(
+    address oracle,
+    uint16 maxUserReservesLimit,
+    bytes32 salt
+  ) internal returns (ISpokeInstance) {
+    Vm vm_ = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
+    bytes memory initCode = abi.encodePacked(
+      vm_.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
+      abi.encode(oracle, maxUserReservesLimit)
+    );
+    return ISpokeInstance(_create2Deploy(salt, initCode));
+  }
+
+  function deployHubImplementation() internal returns (IHubInstance) {
+    return deployHubImplementation('');
+  }
+
+  function deployHubImplementation(bytes32 salt) internal returns (IHubInstance) {
+    Vm vm_ = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
+    bytes memory initCode = vm_.getCode('src/hub/instances/HubInstance.sol:HubInstance');
+    return IHubInstance(_create2Deploy(salt, initCode));
+  }
+
+  function deploySpoke(
+    address oracle,
+    uint16 maxUserReservesLimit,
+    address proxyAdminOwner,
+    bytes memory initData
+  ) internal returns (ISpoke) {
+    return
+      ISpoke(
+        proxify(
+          address(deploySpokeImplementation(oracle, maxUserReservesLimit, '')),
+          proxyAdminOwner,
+          initData
+        )
+      );
+  }
+
+  function deployHub(address proxyAdminOwner, address authority) internal returns (IHub) {
+    return
+      IHub(
+        proxify(
+          address(deployHubImplementation()),
+          proxyAdminOwner,
+          abi.encodeCall(IHubInstance.initialize, (authority))
+        )
+      );
+  }
+
+  function proxify(
+    address impl,
+    address proxyAdminOwner,
+    bytes memory initData
+  ) internal returns (address) {
+    return address(new TransparentUpgradeableProxy(impl, proxyAdminOwner, initData));
   }
 }

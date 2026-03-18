@@ -196,7 +196,7 @@ contract HubUpgradeableTest is HubBase {
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    IHubInstance hubImpl = DeployUtils.deployHubImplementation();
+    IHubInstance hubImpl = AaveV4TestOrchestration.deployHubImplementation();
     vm.expectRevert(IHub.InvalidAddress.selector);
     new TransparentUpgradeableProxy(
       address(hubImpl),
@@ -242,7 +242,7 @@ contract HubUpgradeableTest is HubBase {
   }
 
   function test_hub_revision_accessible() public {
-    IHubInstance hubImpl = DeployUtils.deployHubImplementation();
+    IHubInstance hubImpl = AaveV4TestOrchestration.deployHubImplementation();
     IHubInstance hubProxy = IHubInstance(
       address(
         new TransparentUpgradeableProxy(

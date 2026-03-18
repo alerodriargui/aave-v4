@@ -158,7 +158,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_constructor_revertsWith_InvalidAddress() public {
-    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
+    ISpokeInstance spokeImpl = AaveV4TestOrchestration.deploySpokeImplementation(
       oracle,
       Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
     );
@@ -171,7 +171,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_InvalidAddress() public {
-    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
+    ISpokeInstance spokeImpl = AaveV4TestOrchestration.deploySpokeImplementation(
       oracle,
       Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
     );
@@ -192,7 +192,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_proxy_reinitialization_revertsWith_CallerNotProxyAdmin() public {
-    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
+    ISpokeInstance spokeImpl = AaveV4TestOrchestration.deploySpokeImplementation(
       oracle,
       Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
     );
@@ -248,7 +248,7 @@ contract SpokeUpgradeableTest is SpokeBase {
   }
 
   function test_spoke_revision_accessible() public {
-    ISpokeInstance spokeImpl = DeployUtils.deploySpokeImplementation(
+    ISpokeInstance spokeImpl = AaveV4TestOrchestration.deploySpokeImplementation(
       oracle,
       Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
     );

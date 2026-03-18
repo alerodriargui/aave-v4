@@ -1172,7 +1172,10 @@ contract SpokeBase is Base {
   /// @dev Helper to etch spoke's implementation with a new maxUserReservesLimit
   function _updateMaxUserReservesLimit(ISpoke spoke, uint16 newLimit) internal {
     address currentImpl = ProxyHelper.getImplementation(address(spoke));
-    ISpokeInstance newImpl = DeployUtils.deploySpokeImplementation(spoke.ORACLE(), newLimit);
+    ISpokeInstance newImpl = AaveV4TestOrchestration.deploySpokeImplementation(
+      spoke.ORACLE(),
+      newLimit
+    );
     vm.etch(currentImpl, address(newImpl).code);
   }
 }
