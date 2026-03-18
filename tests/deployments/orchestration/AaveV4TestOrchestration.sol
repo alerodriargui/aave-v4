@@ -32,7 +32,6 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 
 library AaveV4TestOrchestration {
-  bool public constant IS_TEST = true;
   bytes internal constant CREATE2_FACTORY_BYTECODE =
     hex'7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
   Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
@@ -404,10 +403,7 @@ library AaveV4TestOrchestration {
 
   function loadCreate2Factory() internal {
     if (Create2Utils.isContractDeployed(Create2Utils.CREATE2_FACTORY)) return;
-    Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code')))))).etch(
-      Create2Utils.CREATE2_FACTORY,
-      CREATE2_FACTORY_BYTECODE
-    );
+    vm.etch(Create2Utils.CREATE2_FACTORY, CREATE2_FACTORY_BYTECODE);
   }
 
   function _create2Deploy(bytes32 salt, bytes memory bytecode) internal returns (address) {
@@ -434,9 +430,8 @@ library AaveV4TestOrchestration {
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (ISpokeInstance) {
-    Vm vm_ = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
     bytes memory initCode = abi.encodePacked(
-      vm_.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
+      vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
       abi.encode(oracle, maxUserReservesLimit)
     );
     return ISpokeInstance(_create2Deploy(salt, initCode));
@@ -447,8 +442,7 @@ library AaveV4TestOrchestration {
   }
 
   function deployHubImplementation(bytes32 salt) internal returns (IHubInstance) {
-    Vm vm_ = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
-    bytes memory initCode = vm_.getCode('src/hub/instances/HubInstance.sol:HubInstance');
+    bytes memory initCode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
     return IHubInstance(_create2Deploy(salt, initCode));
   }
   function deployHub(address authority, address proxyAdminOwner) internal returns (IHub) {
