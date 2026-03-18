@@ -8,7 +8,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /// @title HubStorage
 /// @author Aave Labs
 /// @notice Storage layout for the Hub contract.
-/// @dev This contract defines all storage variables used by Hub.
+/// @dev This contract defines all storage variables used by the Hub.
 abstract contract HubStorage {
   /// @dev Number of assets listed in the Hub.
   uint256 internal _assetCount;

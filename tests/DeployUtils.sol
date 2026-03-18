@@ -75,7 +75,7 @@ library DeployUtils {
     return IHubInstance(Create2Utils.create2Deploy(salt, _getHubInstanceInitCode()));
   }
 
-  function deployHub(address proxyAdminOwner, address authority) internal returns (IHub) {
+  function deployHub(address authority, address proxyAdminOwner) internal returns (IHub) {
     return
       IHub(
         proxify(
@@ -87,8 +87,8 @@ library DeployUtils {
   }
 
   function deployHub(
-    address proxyAdminOwner,
     address authority,
+    address proxyAdminOwner,
     bytes32 salt
   ) internal returns (IHub) {
     return

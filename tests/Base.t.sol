@@ -339,7 +339,7 @@ abstract contract Base is Test {
   function deployFixtures() internal virtual {
     vm.startPrank(ADMIN);
     accessManager = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    hub1 = DeployUtils.deployHub(ADMIN, address(accessManager));
+    hub1 = DeployUtils.deployHub({authority: address(accessManager), proxyAdminOwner: ADMIN});
     irStrategy = new AssetInterestRateStrategy(address(hub1));
     (spoke1, oracle1) = _deploySpokeWithOracle(ADMIN, address(accessManager));
     (spoke2, oracle2) = _deploySpokeWithOracle(ADMIN, address(accessManager));
@@ -983,7 +983,7 @@ abstract contract Base is Test {
    */
   function hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager2 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub2 = DeployUtils.deployHub(ADMIN, address(accessManager2));
+    IHub hub2 = DeployUtils.deployHub({authority: address(accessManager2), proxyAdminOwner: ADMIN});
     vm.label(address(hub2), 'Hub2');
     AssetInterestRateStrategy hub2IrStrategy = new AssetInterestRateStrategy(address(hub2));
 
@@ -1050,7 +1050,7 @@ abstract contract Base is Test {
    */
   function hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
     IAccessManager accessManager3 = IAccessManager(address(new AccessManagerEnumerable(ADMIN)));
-    IHub hub3 = DeployUtils.deployHub(ADMIN, address(accessManager3));
+    IHub hub3 = DeployUtils.deployHub({authority: address(accessManager3), proxyAdminOwner: ADMIN});
     AssetInterestRateStrategy hub3IrStrategy = new AssetInterestRateStrategy(address(hub3));
 
     // Configure IR Strategy for hub 3
