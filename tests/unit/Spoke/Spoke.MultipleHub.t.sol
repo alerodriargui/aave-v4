@@ -7,8 +7,8 @@ import 'tests/unit/Spoke/SpokeBase.t.sol';
 contract SpokeMultipleHubTest is SpokeBase {
   IHub internal hub2;
   IHub internal hub3;
-  AssetInterestRateStrategy internal hub2IrStrategy;
-  AssetInterestRateStrategy internal hub3IrStrategy;
+  IAssetInterestRateStrategy internal hub2IrStrategy;
+  IAssetInterestRateStrategy internal hub3IrStrategy;
 
   uint256 internal daiHub2ReserveId;
   uint256 internal daiHub3ReserveId;

@@ -179,7 +179,7 @@ abstract contract Base is BatchTestProcedures {
   IHub[] internal _hubs;
   ISpoke[] internal _spokes;
   IAaveOracle[] internal _oracles;
-  AssetInterestRateStrategy[] internal _irStrategies;
+  IAssetInterestRateStrategy[] internal _irStrategies;
   IAccessManager[] internal _accessManagers;
 
   IAaveOracle internal oracle1;
@@ -190,7 +190,7 @@ abstract contract Base is BatchTestProcedures {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
-  AssetInterestRateStrategy internal irStrategy;
+  IAssetInterestRateStrategy internal irStrategy;
   IAccessManager internal accessManager;
   IHubConfigurator internal hubConfigurator;
   ISpokeConfigurator internal spokeConfigurator;
@@ -372,7 +372,7 @@ abstract contract Base is BatchTestProcedures {
 
     // todo rm when tests adapted to multiple hubs and spokes
     hub1 = IHub(report.hubReports[0].hub);
-    irStrategy = AssetInterestRateStrategy(report.hubReports[0].irStrategy);
+    irStrategy = IAssetInterestRateStrategy(report.hubReports[0].irStrategy);
     treasurySpoke = ITreasurySpoke(report.treasurySpoke);
     spoke1 = ISpoke(report.spokeReports[0].spoke);
     spoke2 = ISpoke(report.spokeReports[1].spoke);
@@ -401,7 +401,7 @@ abstract contract Base is BatchTestProcedures {
     });
     for (uint256 i; i < numHubs; ++i) {
       _hubs.push(IHub(report.hubReports[i].hub));
-      _irStrategies.push(AssetInterestRateStrategy(report.hubReports[i].irStrategy));
+      _irStrategies.push(IAssetInterestRateStrategy(report.hubReports[i].irStrategy));
 
       vm.label(report.hubReports[i].hub, string.concat('hub', string(abi.encode(i))));
       vm.label(report.hubReports[i].irStrategy, string.concat('irStrategy', string(abi.encode(i))));
@@ -1056,7 +1056,7 @@ abstract contract Base is BatchTestProcedures {
    * 2: DAI
    * 3: WBTC
    */
-  function _hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
+  function _hub2Fixture() internal returns (IHub, IAssetInterestRateStrategy) {
     FixtureAssetList[] memory assetsList = new FixtureAssetList[](4);
     assetsList[0] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.weth)),
@@ -1084,7 +1084,7 @@ abstract contract Base is BatchTestProcedures {
     });
 
     TestTypes.TestHubReport memory report = _addHubFixture('2', assetsList);
-    return (IHub(report.hub), AssetInterestRateStrategy(report.irStrategy));
+    return (IHub(report.hub), IAssetInterestRateStrategy(report.irStrategy));
   }
 
   /* @dev Configures Hub 3 with the following assetIds:
@@ -1093,7 +1093,7 @@ abstract contract Base is BatchTestProcedures {
    * 2: WBTC
    * 3: WETH
    */
-  function _hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
+  function _hub3Fixture() internal returns (IHub, IAssetInterestRateStrategy) {
     FixtureAssetList[] memory assetsList = new FixtureAssetList[](4);
     assetsList[0] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.dai)),
@@ -1121,7 +1121,7 @@ abstract contract Base is BatchTestProcedures {
     });
 
     TestTypes.TestHubReport memory report = _addHubFixture('3', assetsList);
-    return (IHub(report.hub), AssetInterestRateStrategy(report.irStrategy));
+    return (IHub(report.hub), IAssetInterestRateStrategy(report.irStrategy));
   }
 
   function _addHubFixture(
@@ -1136,7 +1136,7 @@ abstract contract Base is BatchTestProcedures {
       keccak256(abi.encodePacked(label))
     );
     _hubs.push(IHub(report.hub));
-    _irStrategies.push(AssetInterestRateStrategy(report.irStrategy));
+    _irStrategies.push(IAssetInterestRateStrategy(report.irStrategy));
 
     vm.label(report.hub, string.concat('Hub', label));
     vm.label(report.irStrategy, string.concat('IrStrategy', label));

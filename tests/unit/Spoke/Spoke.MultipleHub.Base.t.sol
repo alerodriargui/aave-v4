@@ -50,7 +50,7 @@ contract SpokeMultipleHubBase is SpokeBase {
     // Canonical hub and spoke
     accessManager = IAccessManager(report.accessManager);
     hub1 = IHub(report.hubReports[0].hub);
-    irStrategy = AssetInterestRateStrategy(report.hubReports[0].irStrategy);
+    irStrategy = IAssetInterestRateStrategy(report.hubReports[0].irStrategy);
     spoke1 = ISpoke(report.spokeReports[0].spoke);
     oracle1 = IAaveOracle(report.spokeReports[0].aaveOracle);
     treasurySpoke = ITreasurySpoke(report.treasurySpoke);

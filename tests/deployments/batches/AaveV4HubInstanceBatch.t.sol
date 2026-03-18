@@ -31,7 +31,7 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
   }
 
   function test_irStrategyHub() public view {
-    assertEq(AssetInterestRateStrategy(report.irStrategy).HUB(), report.hubProxy);
+    assertEq(IAssetInterestRateStrategy(report.irStrategy).HUB(), report.hubProxy);
   }
 
   function test_revert_zeroAuthority() public {
