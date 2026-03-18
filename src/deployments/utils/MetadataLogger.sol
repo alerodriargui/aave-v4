@@ -15,45 +15,39 @@ contract MetadataLogger is Logger {
     _write('spokeConfigurator', report.configuratorBatchReport.spokeConfigurator);
     _write('treasurySpoke', report.treasurySpokeBatchReport.treasurySpoke);
 
-    // Group hubs: { hub: { label: { proxy: ..., implementation: ... } }, irStrategy: { label: ... } }
-    {
-      uint256 hubLen = report.hubInstanceBatchReports.length;
-      string[] memory hubLabels = new string[](hubLen);
-      address[] memory hubProxies = new address[](hubLen);
-      address[] memory hubImpls = new address[](hubLen);
-      Logger.AddressEntry[] memory irEntries = new Logger.AddressEntry[](hubLen);
-      for (uint256 i; i < hubLen; i++) {
-        hubLabels[i] = report.hubInstanceBatchReports[i].label;
-        hubProxies[i] = report.hubInstanceBatchReports[i].report.hubProxy;
-        hubImpls[i] = report.hubInstanceBatchReports[i].report.hubImplementation;
-        irEntries[i] = Logger.AddressEntry({
-          label: report.hubInstanceBatchReports[i].label,
-          value: report.hubInstanceBatchReports[i].report.irStrategy
-        });
-      }
-      _writeNestedProxyGroup('hub', hubLabels, hubProxies, hubImpls);
-      _writeGroup('irStrategy', irEntries);
+    // Group hubs by property type
+    uint256 hubLen = report.hubInstanceBatchReports.length;
+    Logger.AddressEntry[] memory hubEntries = new Logger.AddressEntry[](hubLen);
+    Logger.AddressEntry[] memory irEntries = new Logger.AddressEntry[](hubLen);
+    for (uint256 i; i < hubLen; i++) {
+      hubEntries[i] = Logger.AddressEntry({
+        label: report.hubInstanceBatchReports[i].label,
+        value: report.hubInstanceBatchReports[i].report.hubProxy
+      });
+      irEntries[i] = Logger.AddressEntry({
+        label: report.hubInstanceBatchReports[i].label,
+        value: report.hubInstanceBatchReports[i].report.irStrategy
+      });
     }
+    _writeGroup('hub', hubEntries);
+    _writeGroup('irStrategy', irEntries);
 
-    // Group spokes: { spoke: { label: { proxy: ..., implementation: ... } }, oracle: { label: ... } }
-    {
-      uint256 spokeLen = report.spokeInstanceBatchReports.length;
-      string[] memory spokeLabels = new string[](spokeLen);
-      address[] memory spokeProxies = new address[](spokeLen);
-      address[] memory spokeImpls = new address[](spokeLen);
-      Logger.AddressEntry[] memory oracleEntries = new Logger.AddressEntry[](spokeLen);
-      for (uint256 i; i < spokeLen; i++) {
-        spokeLabels[i] = report.spokeInstanceBatchReports[i].label;
-        spokeProxies[i] = report.spokeInstanceBatchReports[i].report.spokeProxy;
-        spokeImpls[i] = report.spokeInstanceBatchReports[i].report.spokeImplementation;
-        oracleEntries[i] = Logger.AddressEntry({
-          label: report.spokeInstanceBatchReports[i].label,
-          value: report.spokeInstanceBatchReports[i].report.aaveOracle
-        });
-      }
-      _writeNestedProxyGroup('spoke', spokeLabels, spokeProxies, spokeImpls);
-      _writeGroup('oracle', oracleEntries);
+    // Group spokes by property type
+    uint256 spokeLen = report.spokeInstanceBatchReports.length;
+    Logger.AddressEntry[] memory spokeEntries = new Logger.AddressEntry[](spokeLen);
+    Logger.AddressEntry[] memory oracleEntries = new Logger.AddressEntry[](spokeLen);
+    for (uint256 i; i < spokeLen; i++) {
+      spokeEntries[i] = Logger.AddressEntry({
+        label: report.spokeInstanceBatchReports[i].label,
+        value: report.spokeInstanceBatchReports[i].report.spokeProxy
+      });
+      oracleEntries[i] = Logger.AddressEntry({
+        label: report.spokeInstanceBatchReports[i].label,
+        value: report.spokeInstanceBatchReports[i].report.aaveOracle
+      });
     }
+    _writeGroup('spoke', spokeEntries);
+    _writeGroup('oracle', oracleEntries);
 
     if (report.gatewaysBatchReport.signatureGateway != address(0)) {
       _write('signatureGateway', report.gatewaysBatchReport.signatureGateway);
