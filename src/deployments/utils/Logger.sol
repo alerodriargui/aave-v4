@@ -119,6 +119,23 @@ contract Logger {
     _json = vm.serializeString(_jsonKey, groupLabel, group);
   }
 
+  /// @dev Writes a nested group: { groupLabel: { entryLabel: { proxy: ..., implementation: ... }, ... } }
+  function _writeNestedProxyGroup(
+    string memory groupLabel,
+    string[] memory labels,
+    address[] memory proxies,
+    address[] memory implementations
+  ) internal {
+    string memory group;
+    for (uint256 i = 0; i < labels.length; i++) {
+      string memory inner;
+      inner = vm.serializeAddress(labels[i], 'proxy', proxies[i]);
+      inner = vm.serializeAddress(labels[i], 'implementation', implementations[i]);
+      group = vm.serializeString(groupLabel, labels[i], inner);
+    }
+    _json = vm.serializeString(_jsonKey, groupLabel, group);
+  }
+
   function _writeGroup(string memory groupLabel, ValueEntry[] memory entries) internal {
     string memory group;
     for (uint256 i = 0; i < entries.length; i++) {
