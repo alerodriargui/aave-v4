@@ -148,12 +148,14 @@ abstract contract Spoke is
       assetId: assetId.toUint16(),
       decimals: decimals,
       collateralRisk: config.collateralRisk,
-      flags: ReserveFlagsMap.create({
-        initPaused: config.paused,
-        initFrozen: config.frozen,
-        initBorrowable: config.borrowable,
-        initReceiveSharesEnabled: config.receiveSharesEnabled
-      }),
+      flags: ReserveFlags.unwrap(
+        ReserveFlagsMap.create({
+          initPaused: config.paused,
+          initFrozen: config.frozen,
+          initBorrowable: config.borrowable,
+          initReceiveSharesEnabled: config.receiveSharesEnabled
+        })
+      ),
       dynamicConfigKey: dynamicConfigKey
     });
     _dynamicConfig[reserveId][dynamicConfigKey] = dynamicConfig;
@@ -173,12 +175,14 @@ abstract contract Spoke is
     Reserve storage reserve = _reserves.get(reserveId);
     _validateReserveConfig(config);
     reserve.collateralRisk = config.collateralRisk;
-    reserve.flags = ReserveFlagsMap.create({
-      initPaused: config.paused,
-      initFrozen: config.frozen,
-      initBorrowable: config.borrowable,
-      initReceiveSharesEnabled: config.receiveSharesEnabled
-    });
+    reserve.flags = ReserveFlags.unwrap(
+      ReserveFlagsMap.create({
+        initPaused: config.paused,
+        initFrozen: config.frozen,
+        initBorrowable: config.borrowable,
+        initReceiveSharesEnabled: config.receiveSharesEnabled
+      })
+    );
     emit UpdateReserveConfig(reserveId, config);
   }
 
@@ -230,7 +234,7 @@ abstract contract Spoke is
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    _validateSupply(reserve.flags);
+    _validateSupply(ReserveFlags.wrap(reserve.flags));
 
     IERC20(reserve.underlying).safeTransferFrom(msg.sender, address(reserve.hub), amount);
     uint256 suppliedShares = reserve.hub.add(reserve.assetId, amount);
@@ -249,7 +253,7 @@ abstract contract Spoke is
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    _validateWithdraw(reserve.flags);
+    _validateWithdraw(ReserveFlags.wrap(reserve.flags));
     IHubBase hub = reserve.hub;
     uint256 assetId = reserve.assetId;
 
@@ -280,7 +284,7 @@ abstract contract Spoke is
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
     PositionStatus storage positionStatus = _positionStatus[onBehalfOf];
-    _validateBorrow(reserve.flags);
+    _validateBorrow(ReserveFlags.wrap(reserve.flags));
     IHubBase hub = reserve.hub;
 
     uint256 drawnShares = hub.draw(reserve.assetId, amount, msg.sender);
@@ -310,7 +314,7 @@ abstract contract Spoke is
   ) external nonReentrant onlyPositionManager(onBehalfOf) returns (uint256, uint256) {
     Reserve storage reserve = _reserves.get(reserveId);
     UserPosition storage userPosition = _userPositions[onBehalfOf][reserveId];
-    _validateRepay(reserve.flags);
+    _validateRepay(ReserveFlags.wrap(reserve.flags));
 
     uint256 drawnIndex = reserve.hub.getAssetDrawnIndex(reserve.assetId);
     (uint256 drawnDebtRestored, uint256 premiumDebtRayRestored) = userPosition
@@ -399,7 +403,11 @@ abstract contract Spoke is
     if (positionStatus.isUsingAsCollateral(reserveId) == usingAsCollateral) {
       return;
     }
-    _validateSetUsingAsCollateral(positionStatus, reserve.flags, usingAsCollateral);
+    _validateSetUsingAsCollateral(
+      positionStatus,
+      ReserveFlags.wrap(reserve.flags),
+      usingAsCollateral
+    );
     positionStatus.setUsingAsCollateral(reserveId, usingAsCollateral);
 
     if (usingAsCollateral) {
@@ -544,10 +552,10 @@ abstract contract Spoke is
     return
       ReserveConfig({
         collateralRisk: reserve.collateralRisk,
-        paused: reserve.flags.paused(),
-        frozen: reserve.flags.frozen(),
-        borrowable: reserve.flags.borrowable(),
-        receiveSharesEnabled: reserve.flags.receiveSharesEnabled()
+        paused: ReserveFlags.wrap(reserve.flags).paused(),
+        frozen: ReserveFlags.wrap(reserve.flags).frozen(),
+        borrowable: ReserveFlags.wrap(reserve.flags).borrowable(),
+        receiveSharesEnabled: ReserveFlags.wrap(reserve.flags).receiveSharesEnabled()
       });
   }
 

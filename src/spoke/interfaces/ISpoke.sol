@@ -49,7 +49,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
     uint16 assetId;
     uint8 decimals;
     uint24 collateralRisk;
-    ReserveFlags flags;
+    uint8 flags;
     uint32 dynamicConfigKey;
   }
 
