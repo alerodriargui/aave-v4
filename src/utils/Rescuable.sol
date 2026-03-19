@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.20;
 
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';

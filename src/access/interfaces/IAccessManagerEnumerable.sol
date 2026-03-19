@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';

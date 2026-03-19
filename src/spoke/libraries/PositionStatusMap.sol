@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.20;
 
 import {LibBit} from 'src/dependencies/solady/LibBit.sol';

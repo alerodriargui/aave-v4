@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
@@ -335,7 +335,8 @@ contract Hub is IHub, AccessManaged {
     spoke.drawnShares -= drawnShares;
     _applyPremiumDelta(asset, spoke, premiumDelta);
 
-    uint256 deficitAmountRay = uint256(drawnShares) * asset.drawnIndex +
+    uint256 deficitAmountRay = uint256(drawnShares) *
+      asset.drawnIndex +
       premiumDelta.restoredPremiumRay;
     asset.deficitRay += deficitAmountRay.toUint200();
     spoke.deficitRay += deficitAmountRay.toUint200();
@@ -841,7 +842,7 @@ contract Hub is IHub, AccessManaged {
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-          asset.toAddedAssetsUp(spoke.addedShares) + amount,
+        asset.toAddedAssetsUp(spoke.addedShares) + amount,
       AddCapExceeded(addCap)
     );
   }
@@ -870,7 +871,7 @@ contract Hub is IHub, AccessManaged {
     require(
       drawCap == MAX_ALLOWED_SPOKE_CAP ||
         drawCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-          owed + amount + uint256(spoke.deficitRay).fromRayUp(),
+        owed + amount + uint256(spoke.deficitRay).fromRayUp(),
       DrawCapExceeded(drawCap)
     );
   }
@@ -930,7 +931,7 @@ contract Hub is IHub, AccessManaged {
     require(
       addCap == MAX_ALLOWED_SPOKE_CAP ||
         addCap * MathUtils.uncheckedExp(10, asset.decimals) >=
-          asset.toAddedAssetsUp(receiverSpoke.addedShares + shares),
+        asset.toAddedAssetsUp(receiverSpoke.addedShares + shares),
       AddCapExceeded(addCap)
     );
   }

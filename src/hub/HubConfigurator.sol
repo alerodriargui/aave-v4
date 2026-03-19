@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';

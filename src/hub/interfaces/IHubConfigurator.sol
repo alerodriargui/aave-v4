@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
 import {IHub} from 'src/hub/interfaces/IHub.sol';

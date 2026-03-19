@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {EIP712} from 'src/dependencies/solady/EIP712.sol';

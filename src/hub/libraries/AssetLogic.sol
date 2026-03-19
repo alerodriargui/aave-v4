@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.20;
 
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
