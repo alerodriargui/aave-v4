@@ -1293,7 +1293,6 @@ def verify_tokenization_spokes(
                 ))
 
     config_results, config_errors = batch_mgr.execute(config_calls)
-    print("tokenized", tokenize_entries)
 
     # Match discovered TokenizationSpokes against config expectations
     for label, tok, hub_addr, asset_id in tokenize_entries:

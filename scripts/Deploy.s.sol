@@ -15,9 +15,47 @@ import {ConfigPayload_3b_SpokeReserveListings} from './payload/ConfigPayload_3b_
 import {ConfigPayload_4_SpokePositionManagerUpdates} from './payload/ConfigPayload_4_SpokePositionManagerUpdates.sol';
 import {ConfigPayload_5_PositionManagerSpokeRegistrations} from './payload/ConfigPayload_5_PositionManagerSpokeRegistrations.sol';
 import {PermissionsPayload} from './payload/PermissionsPayload.sol';
+import {NativeTokenGateway} from 'src/position-manager/NativeTokenGateway.sol';
+import 'forge-std/console.sol';
+
+import {TokenizationSpokePayload} from './payload/TokenizationSpokePayload.sol';
 
 contract Deploy is Script {
-  IExecutor public constant EXECUTOR = IExecutor(0xA972CCe333e8FC64CF10118DB2f98757617A9bC9);
+  // IExecutor public constant EXECUTOR = IExecutor(0xA972CCe333e8FC64CF10118DB2f98757617A9bC9);
+  IExecutor public constant EXECUTOR = IExecutor(0x19eed38fdB33B11b24184C6a2aef5ba95E490c2E);
+  address public constant NATIVE_WRAPPER = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+
+  function tokenize() public {
+    vm.startBroadcast();
+    address payload = address(new TokenizationSpokePayload(new AaveV4ConfigEngine()));
+    _exec(payload);
+  }
+
+  function native() public {
+    vm.startBroadcast();
+    (, address caller, ) = vm.readCallers();
+    NativeTokenGateway nativeGateway = new NativeTokenGateway(NATIVE_WRAPPER, caller);
+    // nativeGateway.acceptOwnership();
+
+    address[10] memory spokes = [
+      Spokes.BLUECHIP_SPOKE,
+      Spokes.ETHENA_CORRELATED_SPOKE,
+      Spokes.ETHENA_ECOSYSTEM_SPOKE,
+      Spokes.ETHERFI_ESPOKE,
+      Spokes.FOREX_SPOKE,
+      Spokes.GOLD_SPOKE,
+      Spokes.KELP_ESPOKE,
+      Spokes.LIDO_ESPOKE,
+      Spokes.LOMBARD_BTC_SPOKE,
+      Spokes.MAIN_SPOKE
+    ];
+
+    for (uint i; i < spokes.length; ++i) {
+      address spoke = spokes[i];
+      nativeGateway.registerSpoke(spoke, true);
+      ISpoke(spoke).updatePositionManager(address(nativeGateway), true);
+    }
+  }
 
   function run() public {
     vm.startBroadcast();
