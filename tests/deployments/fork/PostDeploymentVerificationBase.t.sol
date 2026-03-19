@@ -21,6 +21,7 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     _hubFeeMinterRoleSelectors = Roles.getHubFeeMinterRoleSelectors();
     _hubConfiguratorRoleSelectors = Roles.getHubConfiguratorRoleSelectors();
     _inputs = _getSanitizedDeployInputs();
+    _postDeploymentCheck = true;
   }
 
   /// @dev Subclasses provide the expected deploy inputs (post-sanitization).
@@ -105,9 +106,9 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
 
   function testPostDeploymentCheck() public view {
     OrchestrationReports.FullDeploymentReport memory report = _parseReport();
-    // Implementation addresses not included in output json report, therefore skip addr check
-    _checkAllAddressesHaveCode({report: report, skipImplementation: true});
-    _checkDeployment(report, _inputs);
-    _checkRoles(report, _inputs);
+    // Implementation addresses not included in output json report, therefore skip its checks
+    _checkAllAddressesHaveCode({report: report});
+    _checkDeployment({report: report, inputs: _inputs});
+    _checkRoles({report: report, inputs: _inputs});
   }
 }

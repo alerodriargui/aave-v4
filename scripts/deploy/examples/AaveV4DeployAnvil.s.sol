@@ -16,11 +16,13 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 ///      Step 3:
 ///         Run: forge script scripts/deploy/examples/AaveV4DeployAnvil.s.sol --broadcast --rpc-url http://127.0.0.1:8545 --sender 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 --unlocked
 contract AaveV4DeployAnvil is AaveV4DeployBatchBaseScript {
-  constructor() AaveV4DeployBatchBaseScript('anvil-deploy') {}
+  address public weth;
 
-  function _getDeployInputs() internal override returns (FullDeployInputs memory inputs) {
-    address weth = address(new WETH9());
+  constructor() AaveV4DeployBatchBaseScript('anvil-deploy') {
+    weth = address(new WETH9());
+  }
 
+  function _getDeployInputs() internal view override returns (FullDeployInputs memory inputs) {
     string[] memory hubLabels = new string[](1);
     hubLabels[0] = 'core';
 

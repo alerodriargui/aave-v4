@@ -35,6 +35,7 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
 
 contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployProcedure {
   Logger internal _logger;
@@ -48,6 +49,8 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   bytes4[] internal _hubFeeMinterRoleSelectors;
   bytes4[] internal _hubConfiguratorRoleSelectors;
   address internal _deployer = makeAddr('deployer');
+  // if post-deployment, skip impl checks, native wrapper, as they aren't included in the report
+  bool internal _postDeploymentCheck;
 
   function setUp() public virtual {
     _spokePositionUpdaterRoleSelectors = Roles.getSpokePositionUpdaterRoleSelectors();
@@ -72,17 +75,54 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
       .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
     vm.stopPrank();
-    _checkDeployment(report, _inputs);
-    _checkRoles(report, _inputs);
+    _checkDeployment({report: report, inputs: _inputs});
   }
 
   function _checkDeployment(
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal view {
-    _checkFullReport(report, inputs);
-    _checkSpokeBatchDeployments(report, inputs);
-    _checkHubBatchDeployments(report, inputs);
+    _checkFullReport({report: report, inputs: inputs});
+    _checkBatchDeployments({report: report, inputs: inputs});
+    _checkRoles(report, _inputs);
+  }
+
+  function _checkBatchDeployments(
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    _checkSpokeBatchDeployments({report: report, inputs: inputs});
+    _checkHubBatchDeployments({report: report, inputs: inputs});
+    _checkConfiguratorBatchDeployments({report: report});
+    _checkGatewayBatchDeployments({report: report, inputs: inputs});
+  }
+
+  function _checkConfiguratorBatchDeployments(
+    OrchestrationReports.FullDeploymentReport memory report
+  ) internal view {
+    assertEq(
+      IAccessManaged(report.configuratorBatchReport.hubConfigurator).authority(),
+      report.authorityBatchReport.accessManager,
+      'HubConfigurator authority'
+    );
+    assertEq(
+      IAccessManaged(report.configuratorBatchReport.spokeConfigurator).authority(),
+      report.authorityBatchReport.accessManager,
+      'SpokeConfigurator authority'
+    );
+  }
+
+  function _checkGatewayBatchDeployments(
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    if (inputs.deployNativeTokenGateway && !_postDeploymentCheck) {
+      assertEq(
+        INativeTokenGateway(report.gatewaysBatchReport.nativeGateway).NATIVE_TOKEN_WRAPPER(),
+        inputs.nativeWrapper,
+        'NativeGateway NATIVE_TOKEN_WRAPPER'
+      );
+    }
   }
 
   function _checkRoles(
@@ -152,7 +192,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkFullReport(
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
-  ) internal pure {
+  ) internal view {
     if (inputs.deployNativeTokenGateway) {
       assertNotEq(report.gatewaysBatchReport.nativeGateway, address(0), 'NativeGateway');
     } else {
@@ -203,10 +243,24 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
     for (uint256 i = 0; i < report.hubInstanceBatchReports.length; i++) {
       assertNotEq(report.hubInstanceBatchReports[i].report.hubProxy, address(0), 'Hub');
+      if (!_postDeploymentCheck) {
+        assertNotEq(
+          report.hubInstanceBatchReports[i].report.hubImplementation,
+          address(0),
+          'HubImplementation'
+        );
+      }
       assertNotEq(report.hubInstanceBatchReports[i].report.irStrategy, address(0), 'IRStrategy');
     }
     for (uint256 i = 0; i < report.spokeInstanceBatchReports.length; i++) {
       assertNotEq(report.spokeInstanceBatchReports[i].report.spokeProxy, address(0), 'SpokeProxy');
+      if (!_postDeploymentCheck) {
+        assertNotEq(
+          report.spokeInstanceBatchReports[i].report.spokeImplementation,
+          address(0),
+          'SpokeImplementation'
+        );
+      }
       assertNotEq(report.spokeInstanceBatchReports[i].report.aaveOracle, address(0), 'AaveOracle');
     }
     assertEq(
@@ -233,6 +287,9 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       _checkSpokeDeployment({
         report: spokeReport,
         accessManager: report.authorityBatchReport.accessManager,
+        expectedMaxReservesLimit: inputs.spokeMaxReservesLimits.length > i
+          ? inputs.spokeMaxReservesLimits[i]
+          : Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
         label: label
       });
       _checkOracleDeployment({report: spokeReport, label: label});
@@ -242,13 +299,16 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkSpokeDeployment(
     OrchestrationReports.SpokeDeploymentReport memory report,
     address accessManager,
+    uint16 expectedMaxReservesLimit,
     string memory label
   ) internal view {
-    assertEq(
-      ProxyHelper.getImplementation(report.report.spokeProxy),
-      report.report.spokeImplementation,
-      string.concat(label, ' implementation')
-    );
+    if (!_postDeploymentCheck) {
+      assertEq(
+        ProxyHelper.getImplementation(report.report.spokeProxy),
+        report.report.spokeImplementation,
+        string.concat(label, ' implementation')
+      );
+    }
     assertEq(
       ISpoke(report.report.spokeProxy).ORACLE(),
       report.report.aaveOracle,
@@ -258,6 +318,18 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       IAccessManaged(report.report.spokeProxy).authority(),
       accessManager,
       string.concat(label, ' spoke authority')
+    );
+    assertEq(
+      ISpoke(report.report.spokeProxy).MAX_USER_RESERVES_LIMIT(),
+      expectedMaxReservesLimit,
+      string.concat(label, ' max user reserves limit')
+    );
+    assertEq(
+      ProxyHelper.getProxyInitializedVersion(
+        ProxyHelper.getImplementation(report.report.spokeProxy)
+      ),
+      type(uint64).max,
+      string.concat(label, ' implementation initializers disabled')
     );
   }
 
@@ -301,10 +373,22 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     address accessManager,
     string memory label
   ) internal view {
+    if (!_postDeploymentCheck) {
+      assertEq(
+        ProxyHelper.getImplementation(report.report.hubProxy),
+        report.report.hubImplementation,
+        string.concat(label, ' implementation')
+      );
+    }
     assertEq(
       IAccessManaged(report.report.hubProxy).authority(),
       accessManager,
       string.concat(label, ' hub authority')
+    );
+    assertEq(
+      ProxyHelper.getProxyInitializedVersion(ProxyHelper.getImplementation(report.report.hubProxy)),
+      type(uint64).max,
+      string.concat(label, ' implementation initializers disabled')
     );
   }
 
@@ -733,8 +817,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   }
 
   function _checkAllAddressesHaveCode(
-    OrchestrationReports.FullDeploymentReport memory report,
-    bool skipImplementation
+    OrchestrationReports.FullDeploymentReport memory report
   ) internal view {
     _assertHasCode(report.authorityBatchReport.accessManager, 'accessManager');
     _assertHasCode(report.configuratorBatchReport.hubConfigurator, 'hubConfigurator');
@@ -747,7 +830,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
         report.hubInstanceBatchReports[i].report.hubProxy,
         string.concat('hub proxy: ', label)
       );
-      if (!skipImplementation) {
+      if (!_postDeploymentCheck) {
         _assertHasCode(
           report.hubInstanceBatchReports[i].report.hubImplementation,
           string.concat('hub impl: ', label)
@@ -765,7 +848,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
         report.spokeInstanceBatchReports[i].report.spokeProxy,
         string.concat('spoke proxy: ', label)
       );
-      if (!skipImplementation) {
+      if (!_postDeploymentCheck) {
         _assertHasCode(
           report.spokeInstanceBatchReports[i].report.spokeImplementation,
           string.concat('spoke impl: ', label)
