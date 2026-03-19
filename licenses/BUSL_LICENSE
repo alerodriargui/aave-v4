@@ -1,6 +1,6 @@
 Business Source License
 
-Licensor: [Licensor]
+Licensor: Aave Labs
 
 ---
 
@@ -26,11 +26,11 @@ All copies of the original or modified Licensed Work, and any Derivative works o
 
 2. **Grant of Rights**
 
-[Licensor] hereby grants you a non-exclusive, non-transferable, non-sublicensable right to copy, modify, create Derivative works, redistribute, and use the Licensed Work solely in a Test Environment, subject to the conditions set forth in this License.
+Licensor hereby grants you a non-exclusive, non-transferable, non-sublicensable right to copy, modify, create Derivative works, redistribute, and use the Licensed Work solely in a Test Environment, subject to the conditions set forth in this License.
 
 3. **No Competitive Production Deployment**
 
-Any use of the Licensed Work, or any Derivative thereof, in a Production Environment is strictly prohibited. [Licensor] may grant waivers or commercial licenses for specific parties or use cases, at the direction of Aave Protocol governance. If you are uncertain whether your intended use complies with this License, you must obtain a separate commercial license from [Licensor] before proceeding.
+Any use of the Licensed Work, or any Derivative thereof, in a Production Environment is strictly prohibited. Licensor may grant waivers or commercial licenses for specific parties or use cases, at the direction of Aave Protocol governance. If you are uncertain whether your intended use complies with this License, you must obtain a separate commercial license from Licensor before proceeding.
 
 4. **No Prior Competitive Fork Operators**
 
@@ -55,7 +55,7 @@ The Change License shall be the MIT License.
 
 8. **General**
 
-If your use of the Licensed Work does not comply with the requirements of this License, your rights under this License automatically terminate and you must either refrain from using the Licensed Work or obtain a separate commercial license from [Licensor] or its authorized delegates.
+If your use of the Licensed Work does not comply with the requirements of this License, your rights under this License automatically terminate and you must either refrain from using the Licensed Work or obtain a separate commercial license from Licensor or its authorized delegates.
 
 If any condition of this License is held unenforceable as applied, such condition shall be severed to the minimum extent necessary, and the remaining conditions shall remain in full force and effect.
 
