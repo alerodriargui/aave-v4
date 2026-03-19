@@ -11,6 +11,7 @@ import argparse
 import json
 import re
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -336,6 +337,8 @@ class ConfigInput:
         self.assets: list[dict] = data.get("assets", [])
         self.spoke_registrations: list[dict] = data.get("spokeRegistrations", [])
         self.reserves: list[dict] = data.get("reserves", [])
+        periphery = data.get("periphery", {})
+        self.periphery_native_token_key: Optional[str] = periphery.get("nativeTokenKey")
 
     def resolve_default(
         self, entry: dict, field_name: str, defaults_section: str
@@ -359,6 +362,9 @@ class ContractCaller:
         )
         self.position_manager_base_abi = load_abi(
             "IPositionManagerBase.sol", "IPositionManagerBase"
+        )
+        self.native_token_gateway_abi = load_abi(
+            "INativeTokenGateway.sol", "INativeTokenGateway"
         )
 
     ERC1967_IMPL_SLOT = int(
@@ -1181,7 +1187,6 @@ def verify_tokenization_spokes(
     config: ConfigInput,
     result: VerificationResult,
 ) -> None:
-    return
     result.section("TokenizationSpoke Verification")
 
     # Collect assets that have a tokenize section
@@ -1237,12 +1242,16 @@ def verify_tokenization_spokes(
 
     addr_results, addr_errors = batch_mgr.execute(addr_calls)
 
-    # Round 3: Probe each spoke with sequential name()/symbol() calls.
-    # Batching these is unsafe because name() reverts on non-TokenizationSpoke
-    # contracts, which poisons the entire batch chunk.
+    # Round 3: Probe each spoke for name/symbol. Batching is unsafe because
+    # name() reverts on non-TokenizationSpoke contracts, which poisons the
+    # entire batch chunk. Instead, fan out with threads.
     label_spokes: dict[str, list[str]] = {}
     spoke_names: dict[str, str] = {}   # spoke_addr -> name
     spoke_symbols: dict[str, str] = {} # spoke_addr -> symbol
+
+    # Collect unique spoke addresses first (no IO).
+    seen: set[str] = set()
+    unique_spokes: list[str] = []
     for label, tok, hub_addr, asset_id, idx in addr_meta:
         key = f"{label}/spoke/{idx}"
         if key in addr_errors:
@@ -1252,13 +1261,23 @@ def verify_tokenization_spokes(
             continue
         spoke_addr = Web3.to_checksum_address(spoke_addr)
         label_spokes.setdefault(label, []).append(spoke_addr)
+        if spoke_addr not in seen:
+            seen.add(spoke_addr)
+            unique_spokes.append(spoke_addr)
 
-        if spoke_addr not in spoke_names:
-            name_val = caller.call_tokenization_spoke(spoke_addr, "name", silent=True)
-            if name_val and isinstance(name_val, str):
-                spoke_names[spoke_addr] = name_val
-                symbol_val = caller.call_tokenization_spoke(spoke_addr, "symbol", silent=True)
-                spoke_symbols[spoke_addr] = symbol_val if isinstance(symbol_val, str) else ""
+    # Fetch name + symbol for each unique spoke in parallel.
+    def _fetch_name_symbol(addr: str) -> tuple[str, str, str]:
+        name_val = caller.call_tokenization_spoke(addr, "name", silent=True)
+        if name_val and isinstance(name_val, str):
+            symbol_val = caller.call_tokenization_spoke(addr, "symbol", silent=True)
+            return addr, name_val, symbol_val if isinstance(symbol_val, str) else ""
+        return addr, "", ""
+
+    with ThreadPoolExecutor() as executor:
+        for addr, name_val, symbol_val in executor.map(_fetch_name_symbol, unique_spokes):
+            if name_val:
+                spoke_names[addr] = name_val
+                spoke_symbols[addr] = symbol_val
 
     # Round 4: Batch getSpokeConfig only for confirmed TokenizationSpoke candidates
     config_calls: list[tuple[str, Any]] = []
@@ -1274,6 +1293,7 @@ def verify_tokenization_spokes(
                 ))
 
     config_results, config_errors = batch_mgr.execute(config_calls)
+    print("tokenized", tokenize_entries)
 
     # Match discovered TokenizationSpokes against config expectations
     for label, tok, hub_addr, asset_id in tokenize_entries:
@@ -1527,6 +1547,7 @@ def verify_position_managers_and_gateways(
     batch_mgr: BatchCallManager,
     caller: ContractCaller,
     report: DeployReport,
+    config: ConfigInput,
     result: VerificationResult,
 ) -> None:
     result.section("Position Manager & Gateway Verification")
@@ -1610,6 +1631,32 @@ def verify_position_managers_and_gateways(
                 else:
                     result.error(key, "registered", f"{val}")
 
+    # --- NativeTokenGateway: NATIVE_TOKEN_WRAPPER ---
+    if report.native_token_gateway and config.periphery_native_token_key:
+        print(f"\n{BOLD}--- NativeTokenGateway (NATIVE_TOKEN_WRAPPER) ---{RESET}\n")
+        ntg_addr = Web3.to_checksum_address(report.native_token_gateway)
+        ntg_contract = batch_mgr.w3.eth.contract(
+            address=ntg_addr, abi=caller.native_token_gateway_abi,
+        )
+        wrapper_calls = [("NativeTokenGateway", ntg_contract.functions.NATIVE_TOKEN_WRAPPER())]
+        wrapper_results, wrapper_errors = batch_mgr.execute(wrapper_calls)
+
+        token_key = config.periphery_native_token_key
+        token_info = config.tokens_by_key.get(token_key, {})
+        expected_raw = token_info.get("address", "")
+        expected = Web3.to_checksum_address(expected_raw) if expected_raw else None
+
+        if "NativeTokenGateway" in wrapper_errors:
+            result.error("NativeTokenGateway/NATIVE_TOKEN_WRAPPER", "callable", f"call failed: {wrapper_errors['NativeTokenGateway']}")
+        elif expected is None:
+            result.error("NativeTokenGateway/NATIVE_TOKEN_WRAPPER", f"token key '{token_key}' in config", "not found")
+        else:
+            actual = wrapper_results.get("NativeTokenGateway")
+            if actual and Web3.to_checksum_address(actual) == expected:
+                result.ok("NativeTokenGateway/NATIVE_TOKEN_WRAPPER")
+            else:
+                result.error("NativeTokenGateway/NATIVE_TOKEN_WRAPPER", expected, actual)
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -1652,7 +1699,7 @@ def main() -> None:
     verify_oracles(batch_mgr, caller, cache, report, config, result)
     verify_tokenization_spokes(batch_mgr, caller, cache, report, config, result)
     verify_roles(batch_mgr, caller, report, config, result)
-    verify_position_managers_and_gateways(batch_mgr, caller, report, result)
+    verify_position_managers_and_gateways(batch_mgr, caller, report, config, result)
 
     sys.exit(result.summary())
 
