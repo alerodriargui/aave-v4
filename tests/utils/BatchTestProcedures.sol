@@ -331,6 +331,12 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       type(uint64).max,
       string.concat(label, ' implementation initializers disabled')
     );
+    // verify the non-immutable portions match
+    _assertBytecodeMatchExcludingImmutables(
+      ProxyHelper.getImplementation(report.report.spokeProxy).code,
+      vm.getDeployedCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
+      string.concat(label, ' spoke implementation bytecode')
+    );
   }
 
   function _checkOracleDeployment(
@@ -389,6 +395,11 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       ProxyHelper.getProxyInitializedVersion(ProxyHelper.getImplementation(report.report.hubProxy)),
       type(uint64).max,
       string.concat(label, ' implementation initializers disabled')
+    );
+    assertEq(
+      ProxyHelper.getImplementation(report.report.hubProxy).codehash,
+      keccak256(vm.getDeployedCode('src/hub/instances/HubInstance.sol:HubInstance')),
+      string.concat(label, ' hub implementation bytecode')
     );
   }
 
@@ -888,5 +899,22 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _assertHasCode(address addr, string memory label) internal view {
     assertTrue(addr.code.length > 0, string.concat('no code at ', label, ': ', vm.toString(addr)));
+  }
+
+  /// @dev Assert that actual bytecode matches artifact bytecode, ignoring immutable slots
+  function _assertBytecodeMatchExcludingImmutables(
+    bytes memory actual,
+    bytes memory artifact,
+    string memory label
+  ) internal pure {
+    assertEq(actual.length, artifact.length, string.concat(label, ': code size mismatch'));
+
+    // Copy on-chain bytecode; zero out positions where artifact has zeros but on-chain doesn't.
+    // These are immutable slots (values are validated separately)
+    bytes memory masked = new bytes(actual.length);
+    for (uint256 i; i < actual.length; i++) {
+      masked[i] = (artifact[i] == 0x00) ? bytes1(0x00) : actual[i];
+    }
+    assertEq(keccak256(masked), keccak256(artifact), string.concat(label, ': bytecode mismatch'));
   }
 }
