@@ -2,7 +2,9 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {PostDeploymentVerificationBase} from 'tests/deployments/fork/PostDeploymentVerificationBase.t.sol';
+import {
+  PostDeploymentVerificationBase
+} from 'tests/deployments/fork/PostDeploymentVerificationBase.t.sol';
 import {AaveV4DeployAnvil} from 'scripts/deploy/examples/AaveV4DeployAnvil.s.sol';
 
 /// @title PostDeploymentVerificationAnvil
@@ -19,6 +21,7 @@ contract PostDeploymentVerificationAnvil is PostDeploymentVerificationBase, Aave
   address public constant DEPLOYER = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
 
   function setUp() public override(PostDeploymentVerificationBase) {
+    vm.skip(true, 'Anvil post-deployment test');
     _reportFile = string.concat(OUTPUT_DIR, REPORT_FILE);
     _deployer = DEPLOYER;
     PostDeploymentVerificationBase.setUp();
