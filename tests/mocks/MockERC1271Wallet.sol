@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {IERC1271} from 'src/dependencies/openzeppelin/IERC1271.sol';

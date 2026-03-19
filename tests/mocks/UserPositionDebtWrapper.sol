@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: BUSL
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
