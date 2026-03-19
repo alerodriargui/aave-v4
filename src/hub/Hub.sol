@@ -6,6 +6,7 @@ import {EnumerableSet} from 'src/dependencies/openzeppelin/EnumerableSet.sol';
 import {AccessManaged} from 'src/dependencies/openzeppelin/AccessManaged.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
+import {IERC6909} from 'src/dependencies/openzeppelin/IERC6909.sol';
 import {MathUtils} from 'src/libraries/math/MathUtils.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
@@ -54,6 +55,9 @@ contract Hub is IHub, AccessManaged {
 
   /// @dev Set of underlying addresses listed as assets in the Hub.
   EnumerableSet.AddressSet internal _underlyingAssets;
+
+  /// @dev ERC6909: Mapping of owner to operator to approval status
+  mapping(address owner => mapping(address operator => bool)) internal _operators;
 
   /// @dev Constructor.
   /// @dev The authority contract must implement the `AccessManaged` interface for access control.
@@ -407,16 +411,47 @@ contract Hub is IHub, AccessManaged {
 
   /// @inheritdoc IHub
   function transferShares(uint256 assetId, uint256 shares, address toSpoke) external {
-    Asset storage asset = _assets[assetId];
-    SpokeData storage sender = _spokes[assetId][msg.sender];
-    SpokeData storage receiver = _spokes[assetId][toSpoke];
-
-    asset.accrue();
-    _validateTransferShares(asset, sender, receiver, shares);
-    _transferShares(sender, receiver, shares);
-    asset.updateDrawnRate(assetId);
-
+    _transferShares(msg.sender, toSpoke, assetId, shares);
     emit TransferShares(assetId, msg.sender, toSpoke, shares);
+  }
+
+  /// @inheritdoc IERC6909
+  function transfer(address to, uint256 id, uint256 amount) external returns (bool) {
+    _transferShares(msg.sender, to, id, amount);
+    emit Transfer(msg.sender, msg.sender, to, id, amount);
+    return true;
+  }
+
+  /// @inheritdoc IERC6909
+  function transferFrom(
+    address from,
+    address to,
+    uint256 id,
+    uint256 amount
+  ) external returns (bool) {
+    require(id < _assetCount, AssetNotListed());
+    // Only operator approval is supported. Allowances are disabled.
+    // The receiver spoke should expect the caller spoke to update it through a callback separately if needed.
+    require(msg.sender == from || _operators[from][msg.sender], InsufficientAllowance());
+
+    _transferShares(from, to, id, amount);
+    emit Transfer(msg.sender, from, to, id, amount);
+
+    return true;
+  }
+
+  /// @inheritdoc IERC6909
+  /// @dev Approve functionality is disabled. Only operator approval via setOperator is supported.
+  function approve(address, uint256, uint256) external pure returns (bool) {
+    return false;
+  }
+
+  /// @inheritdoc IERC6909
+  function setOperator(address operator, bool approved) external returns (bool) {
+    require(msg.sender != operator, InvalidAddress());
+    _operators[msg.sender][operator] = approved;
+    emit OperatorSet(msg.sender, operator, approved);
+    return true;
   }
 
   /// @inheritdoc IHub
@@ -960,5 +995,54 @@ contract Hub is IHub, AccessManaged {
       InvalidPremiumChange()
     );
     return (newPremiumShares.toUint120(), newPremiumOffsetRay.toInt200());
+  }
+
+  /// @inheritdoc IERC6909
+  function balanceOf(address owner, uint256 id) external view returns (uint256) {
+    return _spokes[id][owner].addedShares;
+  }
+
+  /// @inheritdoc IERC6909
+  /// @dev Allowances are disabled. Always returns 0.
+  function allowance(address, address, uint256) external pure returns (uint256) {
+    return 0;
+  }
+
+  /// @inheritdoc IERC6909
+  function isOperator(address owner, address operator) external view returns (bool) {
+    return _operators[owner][operator];
+  }
+
+  /// @inheritdoc IERC6909
+  function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+    return
+      interfaceId == 0x0f632fb3 || // ERC6909 interface ID
+      interfaceId == 0x01ffc9a7; // ERC165 interface ID
+  }
+
+  /// @dev Internal function to handle share transfers with all validations
+  /// @param from The address to transfer shares from
+  /// @param to The address to transfer shares to
+  /// @param assetId The asset identifier
+  /// @param amount The amount of shares to transfer
+  function _transferShares(
+    address from,
+    address to,
+    uint256 assetId,
+    uint256 amount
+  ) internal {
+    require(to != address(0), InvalidAddress());
+    require(amount > 0, InvalidShares());
+
+    Asset storage asset = _assets[assetId];
+    SpokeData storage sender = _spokes[assetId][from];
+    SpokeData storage receiver = _spokes[assetId][to];
+
+    asset.accrue();
+    _validateTransferShares(asset, sender, receiver, amount);
+    _transferShares(sender, receiver, amount);
+    asset.updateDrawnRate(assetId);
+
+    emit TransferShares(assetId, from, to, amount);
   }
 }

@@ -2,13 +2,14 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
+import {IERC6909} from 'src/dependencies/openzeppelin/IERC6909.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 import {IHubBase} from 'src/hub/interfaces/IHubBase.sol';
 
 /// @title IHub
 /// @author Aave Labs
 /// @notice Full interface for the Hub.
-interface IHub is IHubBase, IAccessManaged {
+interface IHub is IHubBase, IAccessManaged, IERC6909 {
   /// @notice Asset position and configuration data.
   /// @dev liquidity The liquidity available to be accessed, expressed in asset units.
   /// @dev realizedFees The amount of fees realized but not yet minted, expressed in asset units.
@@ -249,6 +250,9 @@ interface IHub is IHubBase, IAccessManaged {
   /// @notice Thrown if the interest rate strategy or data are invalid when updating an asset configuration.
   /// @dev The `irData` must be empty if the interest rate strategy is not updated.
   error InvalidInterestRateStrategy();
+
+  /// @notice Thrown when allowance is insufficient for ERC6909 transferFrom.
+  error InsufficientAllowance();
 
   /// @notice Adds a new asset to the Hub.
   /// @dev The same underlying asset address cannot be added as an asset multiple times.
