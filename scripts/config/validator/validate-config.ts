@@ -64,7 +64,19 @@ export function validate(raw: unknown): ValidationResult {
   const hubKeys = new Set(config.hubs.map((h) => h.key));
   const spokeKeys = new Set(config.spokes.map((s) => s.key));
 
+  // ── E30: Ethereum address format ──
+  const ETH_ADDR_RE = /^0x[0-9a-fA-F]{40}$/;
+  for (const [key, token] of Object.entries(config.tokens)) {
+    if (!ETH_ADDR_RE.test(token.address)) {
+      error('E30', `tokens["${key}"].address "${token.address}" is not a valid Ethereum address (expected 0x + 40 hex chars)`);
+    }
+    if (!ETH_ADDR_RE.test(token.priceFeed)) {
+      error('E30', `tokens["${key}"].priceFeed "${token.priceFeed}" is not a valid Ethereum address (expected 0x + 40 hex chars)`);
+    }
+  }
+
   const assetSet = new Set<string>();
+  const assetIrMap = new Map<string, DeployConfig['assets'][number]['irData']>();
   const spokeRegSet = new Set<string>();
   const spokeRegMap = new Map<string, DeployConfig['spokeRegistrations'][number]>();
   const reserveSet = new Set<string>();
@@ -82,6 +94,7 @@ export function validate(raw: unknown): ValidationResult {
     if (assetSet.has(key))
       error('E4', `${label}: duplicate asset (same tokenKey+hubKey already exists)`);
     assetSet.add(key);
+    assetIrMap.set(key, a.irData);
 
     if (a.liquidityFee !== undefined && a.liquidityFee > 10000) {
       error('E14', `${label}: liquidityFee ${a.liquidityFee} > 10000 BPS`);
@@ -199,6 +212,24 @@ export function validate(raw: unknown): ValidationResult {
         `spokes[${i}] (${s.key}).liquidationConfig`,
       );
     }
+  });
+
+  // ── Liquidation Config Completeness (E28) ──
+  // Spoke.updateLiquidationConfig requires all three fields. Validate that
+  // each spoke has all three resolved (per-spoke or via defaults).
+
+  config.spokes.forEach((s, i) => {
+    const defaults = config.defaults?.spoke?.liquidationConfig;
+    const thf = s.liquidationConfig?.targetHealthFactor ?? defaults?.targetHealthFactor;
+    const hfmb = s.liquidationConfig?.healthFactorForMaxBonus ?? defaults?.healthFactorForMaxBonus;
+    const lbf = s.liquidationConfig?.liquidationBonusFactor ?? defaults?.liquidationBonusFactor;
+    const label = `spokes[${i}] (${s.key}).liquidationConfig`;
+    if (thf === undefined)
+      error('E28', `${label}: targetHealthFactor is not set (must be defined on spoke or in defaults.spoke.liquidationConfig)`);
+    if (hfmb === undefined)
+      error('E28', `${label}: healthFactorForMaxBonus is not set (must be defined on spoke or in defaults.spoke.liquidationConfig)`);
+    if (lbf === undefined)
+      error('E28', `${label}: liquidationBonusFactor is not set (must be defined on spoke or in defaults.spoke.liquidationConfig)`);
   });
 
   // ── maxUserReservesLimit (E25, E26) ──
@@ -365,15 +396,15 @@ export function validate(raw: unknown): ValidationResult {
     }
   });
 
-  // W3: drawCap > 0 but nothing borrowable
+  // E29: drawCap > 0 but reserve is not borrowable (promoted from W3)
   config.spokeRegistrations.forEach((sr, i) => {
     if (sr.drawCap === 0) return;
     const rKey = `${sr.spokeKey}|${sr.hubKey}|${sr.assetKey}`;
     const reserve = reserveMap.get(rKey);
     if (reserve && !reserve.borrowable) {
-      warn(
-        'W3',
-        `spokeRegistrations[${i}] (${sr.assetKey}/${sr.hubKey}/${sr.spokeKey}): drawCap=${sr.drawCap} but reserve is not borrowable`,
+      error(
+        'E29',
+        `spokeRegistrations[${i}] (${sr.assetKey}/${sr.hubKey}/${sr.spokeKey}): drawCap=${sr.drawCap} but reserve is not borrowable — drawCap can never be used`,
       );
     }
   });
@@ -410,6 +441,55 @@ export function validate(raw: unknown): ValidationResult {
       );
     }
   }
+
+  // W8, W9 are defined above (defaults.reserve checks).
+
+  // W10: borrowable reserve has all-zero IR data
+  config.reserves.forEach((r, i) => {
+    if (!r.borrowable) return;
+    const irData = assetIrMap.get(`${r.assetKey}|${r.hubKey}`);
+    if (
+      irData &&
+      irData.baseDrawnRate === 0 &&
+      irData.rateGrowthBeforeOptimal === 0 &&
+      irData.rateGrowthAfterOptimal === 0
+    ) {
+      warn(
+        'W10',
+        `reserves[${i}] (${r.spokeKey}/${r.hubKey}/${r.assetKey}): borrowable=true but asset has all-zero IR rates — 0% interest at any utilisation`,
+      );
+    }
+  });
+
+  // W11: spoke declared but has no spoke registrations
+  const registeredSpokeKeys = new Set(config.spokeRegistrations.map((sr) => sr.spokeKey));
+  config.spokes.forEach((s, i) => {
+    if (!registeredSpokeKeys.has(s.key)) {
+      warn('W11', `spokes[${i}] (${s.key}): no spoke registrations reference this spoke — it serves no purpose`);
+    }
+  });
+
+  // ── Liquidation Config Ordering (E31) ──
+  // healthFactorForMaxBonus must be < targetHealthFactor: if hfmb >= thf the
+  // bonus curve is inverted (max bonus at healthy positions).
+  config.spokes.forEach((s, i) => {
+    const defaults = config.defaults?.spoke?.liquidationConfig;
+    const thf = s.liquidationConfig?.targetHealthFactor ?? defaults?.targetHealthFactor;
+    const hfmb = s.liquidationConfig?.healthFactorForMaxBonus ?? defaults?.healthFactorForMaxBonus;
+    if (thf === undefined || hfmb === undefined) return; // already caught by E28
+    try {
+      if (BigInt(hfmb) >= BigInt(thf)) {
+        error(
+          'E31',
+          `spokes[${i}] (${s.key}).liquidationConfig: healthFactorForMaxBonus ${hfmb} >= targetHealthFactor ${thf} — bonus curve is inverted`,
+        );
+      }
+    } catch {
+      // invalid BigInt strings already caught by E24
+    }
+  });
+
+  // NOTE: W1, W5 codes are intentionally unassigned (reserved for future use).
 
   return {errors, warnings};
 }

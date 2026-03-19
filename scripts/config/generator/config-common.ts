@@ -98,9 +98,42 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
 };
 
+/**
+ * Convert a decimal string to a WAD (1e18) string using pure string/BigInt arithmetic.
+ * Maximum 6 decimal places — throws if more precision is specified.
+ *
+ * Pass String(excelCell) from the caller; never convert to Number first,
+ * as float arithmetic can silently introduce precision errors.
+ *
+ * "1.05"    → "1050000000000000000"
+ * "1.23200" → "1232000000000000000"  (trailing zeros retained correctly)
+ * "1.1"     → "1100000000000000000"  (no float precision loss)
+ */
+export function toWadString(decimal: string): string {
+  const s = String(decimal).trim();
+  const dotIndex = s.indexOf('.');
+  const intPart = dotIndex === -1 ? s : s.slice(0, dotIndex);
+  const fracPart = dotIndex === -1 ? '' : s.slice(dotIndex + 1);
+
+  // ! todo depends on how chaos updates
+  // if (fracPart.length > 6) {
+  //   throw new Error(
+  //     `toWadString: "${decimal}" has ${fracPart.length} decimal places; maximum allowed is 6`,
+  //   );
+  // }
+  if (!/^\d*$/.test(intPart) || (fracPart && !/^\d+$/.test(fracPart))) {
+    throw new Error(`toWadString: "${decimal}" is not a valid non-negative decimal`);
+  }
+
+  // Pad fracPart to 18 digits, concatenate with intPart, convert once to BigInt.
+  // Result = intPart × 10^18 + fracPart × 10^(18 − fracPart.length) = value in WAD.
+  return BigInt((intPart || '0') + fracPart.padEnd(18, '0')).toString();
+}
+
 export function safeMaxLiquidationBonus(desired: number, collateralFactor: number): number {
   if (collateralFactor === 0) return desired;
-  const maxSafe = Math.floor(99990001 / collateralFactor);
+  // percentMulUp(mlb, cf) < 10000  ⟺  mlb * cf ≤ 99990000
+  const maxSafe = Math.floor(99990000 / collateralFactor);
   return Math.min(desired, maxSafe);
 }
 

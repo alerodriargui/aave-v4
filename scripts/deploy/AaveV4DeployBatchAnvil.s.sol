@@ -14,7 +14,7 @@ import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.s
 ///   3. make deploy-precompile chain=anvil account=anvil
 ///   4. make deploy-contracts chain=anvil account=anvil
 contract AaveV4DeployBatchAnvilScript is AaveV4DeployBatchBaseScript {
-  constructor() AaveV4DeployBatchBaseScript('anvil') {}
+  constructor() AaveV4DeployBatchBaseScript('mainnet') {}
 
   function _getDeployInputs() internal pure override returns (FullDeployInputs memory inputs) {
     // All admin addresses left as address(0) — the base script defaults them to the deployer.
@@ -47,9 +47,9 @@ contract AaveV4DeployBatchAnvilScript is AaveV4DeployBatchBaseScript {
       inputs.spokeMaxReservesLimits[i] = DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT;
     }
 
-    inputs.salt = keccak256('anvil2');
+    inputs.salt = keccak256('mainnet1');
   }
 
   /// @dev Skip the interactive prompt on Anvil.
-  function _executeUserPrompt() internal override {}
+  // function _executeUserPrompt() internal override {}
 }

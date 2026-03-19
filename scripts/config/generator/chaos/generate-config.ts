@@ -3,7 +3,12 @@ import fs from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
 import {validate} from '../../validator/validate-config.ts';
-import {TOKEN_REGISTRY, safeMaxLiquidationBonus, type IrProfile} from '../config-common.ts';
+import {
+  TOKEN_REGISTRY,
+  safeMaxLiquidationBonus,
+  toWadString,
+  type IrProfile,
+} from '../config-common.ts';
 
 // ══════════════════════════════════════════════════════════════════════════════
 // Key Normalization Maps
@@ -19,6 +24,10 @@ const TOKEN_KEY_MAP: Record<string, string> = {
 function normalizeTokenKey(raw: string): string {
   const trimmed = raw.trim();
   return TOKEN_KEY_MAP[trimmed] ?? trimmed;
+}
+
+function toTitleCase(raw: string): string {
+  return String(raw).charAt(0).toUpperCase() + String(raw).slice(1).toLowerCase();
 }
 
 const HUB_KEY_MAP: Record<string, string> = {
@@ -75,14 +84,18 @@ function toBps(decimal: number, warnings?: string[], context?: string): number {
   return rounded;
 }
 
-function toWadString(decimal: number): string {
-  // Use BigInt arithmetic to avoid floating point issues
-  // Multiply by 1e15 first (safe for float), then multiply BigInt by 1000
-  const scaled = Math.round(decimal * 1e15);
-  return (BigInt(scaled) * 1000n).toString();
-}
-
-/** Parse IR Base field: "0", "2%", "0.25%", or a number */
+/**
+ * Parse IR Base field into BPS.
+ *
+ * Accepted input formats (all producing the same BPS result):
+ *   "0" or ""     → 0
+ *   "2%"          → 200 BPS   (string × 100)
+ *   "0.25%"       → 25 BPS    (string × 100)
+ *   0.02          → 200 BPS   (decimal × 10000 via toBps)
+ *
+ * WARNING: do NOT pass a raw BPS integer like "200" — it would be treated
+ * as a decimal and produce 2,000,000 BPS.
+ */
 function parseIrBase(raw: string): number {
   const s = String(raw).trim();
   if (s === '0' || s === '') return 0;
@@ -109,10 +122,7 @@ const TBD_ADD_CAP = 6000000;
 // Tokenization spoke overrides for assets missing from the Excel.
 // Remove entries as Chaos Labs provides the real values.
 const TOKENIZE_EXCEPTIONS: Record<string, {addCap: number; name: string; symbol: string}> = {
-  'WBTC|CORE_HUB': {addCap: 5, name: 'CORE WBTC', symbol: 'tWBTC-CORE'},
-  'cbBTC|CORE_HUB': {addCap: 5, name: 'CORE cbBTC', symbol: 'tcbBTC-CORE'},
-  'EURC|CORE_HUB': {addCap: 312500, name: 'CORE EURC', symbol: 'tEURC-CORE'},
-  'USDe|PLUS_HUB': {addCap: 325000, name: 'PLUS USDe', symbol: 'tUSDe-PLUS'},
+  'EURC|CORE_HUB': {addCap: 312500, name: 'Core Tokenized EURC', symbol: 'aCore-EURC'},
 };
 
 const ZERO_IR: IrProfile = {
@@ -146,8 +156,8 @@ function parseSpokeParams(sheet: XLSX.WorkSheet): {results: SpokeParams[]; warni
     const spokeKey = normalizeSpokeKey(String(row[2]));
     const ctx = `spoke ${spokeKey} at ${hubKey}`;
     const lbf = toBps(Number(row[3]), warnings, `${ctx} liquidationBonusFactor`); // 1 → 10000
-    const thf = toWadString(Number(row[4])); // 1.24 → "1240000000000000000"
-    const hfmb = toWadString(Number(row[5])); // 0.99 → "990000000000000000"
+    const thf = toWadString(String(row[4])); // 1.24 → "1240000000000000000"
+    const hfmb = toWadString(String(row[5])); // 0.99 → "990000000000000000"
     results.push({
       hubKey,
       spokeKey,
@@ -463,15 +473,24 @@ function buildConfig(
     tokenizeCapMap.set(`${ts.tokenKey}|${ts.hubKey}`, ts.addCap);
   }
 
+  // Warn if any TOKENIZE_EXCEPTIONS entry is now covered by the Excel (stale override).
+  for (const key of Object.keys(TOKENIZE_EXCEPTIONS)) {
+    if (tokenizeCapMap.has(key)) {
+      console.error(
+        `  WARN: TOKENIZE_EXCEPTIONS["${key}"] is now covered by the Excel — remove the hardcoded entry`,
+      );
+    }
+  }
+
   // For each asset, set tokenize.addCap from Excel or infer 0 for supply-only assets
   for (const asset of assets) {
+    const hubPrefix = toTitleCase(String(asset.hubKey).replace(/_HUB$/, ''));
     const key = `${asset.tokenKey}|${asset.hubKey}`;
     const explicitCap = tokenizeCapMap.get(key);
     if (explicitCap !== undefined) {
-      const hubPrefix = String(asset.hubKey).replace(/_HUB$/, '');
       asset.tokenize = {
-        name: `${hubPrefix} ${asset.tokenKey}`,
-        symbol: `t${asset.tokenKey}-${hubPrefix}`,
+        name: `Tokenized Aave ${hubPrefix} ${asset.tokenKey}`,
+        symbol: `a${hubPrefix}-${asset.tokenKey}`,
         addCap: explicitCap,
       };
     } else {
@@ -497,18 +516,32 @@ function buildConfig(
         }
       } else {
         // All drawCaps are 0 — deploy with addCap 0 for consistency
-        asset.tokenize = {addCap: 0};
+        asset.tokenize = {
+          name: `Tokenized Aave ${hubPrefix} ${asset.tokenKey}`,
+          symbol: `a${hubPrefix}-${asset.tokenKey}`,
+          addCap: 0,
+        };
       }
     }
   }
 
   // ── Spoke Registrations ──
-  const srSeen = new Set<string>();
+  const srSeen = new Map<string, {addCap: number; drawCap: number}>();
   const spokeRegistrations: Array<Record<string, unknown>> = [];
   for (const r of reserveParams) {
     const key = `${r.tokenKey}|${r.hubKey}|${r.spokeKey}`;
-    if (srSeen.has(key)) continue;
-    srSeen.add(key);
+    const existing = srSeen.get(key);
+    if (existing) {
+      if (existing.addCap !== r.addCap || existing.drawCap !== r.drawCap) {
+        throw new Error(
+          `Duplicate spoke registration ${key} with conflicting values: ` +
+            `first={addCap:${existing.addCap},drawCap:${existing.drawCap}} ` +
+            `vs new={addCap:${r.addCap},drawCap:${r.drawCap}}`,
+        );
+      }
+      continue;
+    }
+    srSeen.set(key, {addCap: r.addCap, drawCap: r.drawCap});
     spokeRegistrations.push({
       assetKey: r.tokenKey,
       hubKey: r.hubKey,
@@ -518,13 +551,49 @@ function buildConfig(
     });
   }
 
+  // Warn on spokes declared in the spokes array that have no registrations.
+  const registeredSpokeKeys = new Set(spokeRegistrations.map((sr) => sr.spokeKey as string));
+  for (const spoke of spokes) {
+    if (!registeredSpokeKeys.has(spoke.key as string)) {
+      console.error(
+        `  WARN: spoke "${spoke.key}" has no spoke registrations — it serves no purpose`,
+      );
+    }
+  }
+
   // ── Reserves ──
-  const resSeen = new Set<string>();
+  type StoredReserve = Pick<
+    ReserveParams,
+    'collateralFactor' | 'maxLiquidationBonus' | 'borrowable' | 'collateralRisk' | 'liquidationFee'
+  >;
+  const resSeen = new Map<string, StoredReserve>();
   const reserves: Array<Record<string, unknown>> = [];
   for (const r of reserveParams) {
     const key = `${r.spokeKey}|${r.hubKey}|${r.tokenKey}`;
-    if (resSeen.has(key)) continue;
-    resSeen.add(key);
+    const existing = resSeen.get(key);
+    if (existing) {
+      if (
+        existing.collateralFactor !== r.collateralFactor ||
+        existing.maxLiquidationBonus !== r.maxLiquidationBonus ||
+        existing.borrowable !== r.borrowable ||
+        existing.collateralRisk !== r.collateralRisk ||
+        existing.liquidationFee !== r.liquidationFee
+      ) {
+        throw new Error(
+          `Duplicate reserve ${key} with conflicting values: ` +
+            `first={cf:${existing.collateralFactor},mlb:${existing.maxLiquidationBonus},borrowable:${existing.borrowable},cr:${existing.collateralRisk},lf:${existing.liquidationFee}} ` +
+            `vs new={cf:${r.collateralFactor},mlb:${r.maxLiquidationBonus},borrowable:${r.borrowable},cr:${r.collateralRisk},lf:${r.liquidationFee}}`,
+        );
+      }
+      continue;
+    }
+    resSeen.set(key, {
+      collateralFactor: r.collateralFactor,
+      maxLiquidationBonus: r.maxLiquidationBonus,
+      borrowable: r.borrowable,
+      collateralRisk: r.collateralRisk,
+      liquidationFee: r.liquidationFee,
+    });
 
     const reserve: Record<string, unknown> = {
       spokeKey: r.spokeKey,

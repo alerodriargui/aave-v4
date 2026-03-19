@@ -368,12 +368,35 @@ async function writeFormatted(outDir, filename, source) {
       wrapContract("InitialConfigPayload", body),
     );
   } else {
-    // Payload 1 — hub asset listings
-    await writeFormatted(
-      outDir,
-      "ConfigPayload_1_HubAssetListings.sol",
-      wrapContract("ConfigPayload_1_HubAssetListings", genHubAssetListings()),
-    );
+    // Payload 1 — hub asset listings (split if > threshold)
+    const totalAssets = config.assets.length;
+    if (totalAssets > ASSET_SPLIT_THRESHOLD) {
+      const suffixes = "abcdefghijklmnopqrstuvwxyz";
+      let chunkIdx = 0;
+      for (
+        let start = 0;
+        start < totalAssets;
+        start += ASSET_SPLIT_THRESHOLD, chunkIdx++
+      ) {
+        const end = Math.min(start + ASSET_SPLIT_THRESHOLD, totalAssets);
+        const suffix = suffixes[chunkIdx];
+        const name = `ConfigPayload_1${suffix}_HubAssetListings`;
+        await writeFormatted(
+          outDir,
+          `${name}.sol`,
+          wrapContract(name, genHubAssetListings(start, end)),
+        );
+      }
+    } else {
+      await writeFormatted(
+        outDir,
+        "ConfigPayload_1_HubAssetListings.sol",
+        wrapContract(
+          "ConfigPayload_1_HubAssetListings",
+          genHubAssetListings(),
+        ),
+      );
+    }
 
     // Payload 2 — hub spoke registrations + liquidation config
     await writeFormatted(

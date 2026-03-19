@@ -233,7 +233,9 @@ library HubEngine {
   ) private {
     // if not name and/or symbol given, we assume there is no intention to deploy a TokenizationSpoke, so we skip deployment and registration
     if (
-      bytes(listing.tokenization.name).length == 0 || bytes(listing.tokenization.symbol).length == 0
+      bytes(listing.tokenization.name).length == 0 ||
+      bytes(listing.tokenization.symbol).length == 0 ||
+      true // ! todo disabling tokenization deployments for now
     ) {
       return;
     }
