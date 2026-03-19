@@ -23,13 +23,12 @@ Please read the full [CLA_LICENSE](./licenses/CLA_LICENSE) before contributing.
 - Open PRs against the `main` branch.
 - Reference any related issue.
 - Follow the [Solidity style guide](https://docs.soliditylang.org/en/latest/style-guide.html), using `_prependUnderscore` for internal functions, internal top-level parameters, and parameters with naming collisions.
-- Run `forge fmt` before submitting.
 - Document new functions, structs, and interfaces with [NatSpec](https://docs.soliditylang.org/en/latest/natspec-format.html).
 - Add tests: unit + fuzz for small changes; integration + invariant for larger ones.
 - Run the full test suite and update gas snapshots:
 
 ```bash
-forge test --isolate
+forge test
 make gas-report
 ```
 
