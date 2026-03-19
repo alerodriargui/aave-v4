@@ -7,6 +7,4 @@ import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionMan
 /// @title IPositionManagerIntentBase
 /// @author Aave Labs
 /// @notice Interface to extend PositionManagerBase with intent consuming capabilities.
-interface IPositionManagerIntentBase is IIntentConsumer, IPositionManagerBase {
-
-}
+interface IPositionManagerIntentBase is IIntentConsumer, IPositionManagerBase {}
