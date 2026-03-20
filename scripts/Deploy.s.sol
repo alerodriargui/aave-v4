@@ -16,11 +16,15 @@ import {ConfigPayload_4_SpokePositionManagerUpdates} from 'src/config-engine/pay
 import {ConfigPayload_5_PositionManagerSpokeRegistrations} from 'src/config-engine/payloads/ConfigPayload_5_PositionManagerSpokeRegistrations.sol';
 import {PermissionsPayload} from 'src/config-engine/payloads/PermissionsPayload.sol';
 
-// import {TokenizationSpokePayload} from './payload/TokenizationSpokePayload.sol';
-// import {Payload} from 'src/Payload.sol';
+import {TokenizationSpokePayload} from 'scripts/TokenizationSpokePayload.sol';
 
 contract Deploy is Script {
   address public constant NATIVE_WRAPPER = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+
+  function tokenize() public {
+    vm.startBroadcast();
+    _exec(address(new TokenizationSpokePayload(new AaveV4ConfigEngine())));
+  }
 
   function payload() public {
     vm.startBroadcast();

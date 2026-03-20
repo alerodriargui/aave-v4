@@ -8,6 +8,7 @@ fs_permissions = [
   { access = "read", path = "./config" },
   { access = "read", path = "./out" },
   { access = "read-write", path = "./output" },
+  { access = "read-write", path = "scripts/config/tokenization-deploy.json" },
 ]
 skip = ["tests/mocks/JsonBindings.sol"]
 solc_version = "0.8.28"
