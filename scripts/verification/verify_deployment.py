@@ -61,6 +61,7 @@ ARTIFACT_MAP: dict[str, ArtifactInfo] = {
     "GiverPositionManager": ArtifactInfo("GiverPositionManager.sol", "GiverPositionManager"),
     "TakerPositionManager": ArtifactInfo("TakerPositionManager.sol", "TakerPositionManager"),
     "ConfigPositionManager": ArtifactInfo("ConfigPositionManager.sol", "ConfigPositionManager"),
+    "LiquidationLogic": ArtifactInfo("LiquidationLogic.sol", "LiquidationLogic"),
 }
 
 
@@ -624,6 +625,38 @@ def _verify_single_bytecode(
         )
 
 
+def verify_liquidation_logic_libraries(
+    caller: ContractCaller, report: DeployReport, result: VerificationResult
+) -> None:
+    """Verify LiquidationLogic library address and bytecode for each Spoke."""
+    artifact = ARTIFACT_MAP["LiquidationLogic"]
+    addresses: dict[str, str] = {}  # spoke_label -> lib address
+
+    for spoke in report.spokes:
+        spoke_addr = Web3.to_checksum_address(spoke.proxy)
+        lib_addr = caller.call_spoke(spoke_addr, "getLiquidationLogic")
+        label = f"{spoke.label}/LiquidationLogic"
+
+        if lib_addr is None or lib_addr == "0x" + "0" * 40:
+            result.error(label, "non-zero library address", str(lib_addr))
+            continue
+
+        lib_addr = Web3.to_checksum_address(lib_addr)
+        addresses[spoke.label] = lib_addr
+
+        _verify_single_bytecode(
+            caller, result, label, lib_addr,
+            artifact.sol_file, artifact.contract_name,
+        )
+
+    unique_addrs = set(addresses.values())
+    if len(unique_addrs) == 1:
+        result.ok("LiquidationLogic/consistency", f"all spokes use {unique_addrs.pop()}")
+    elif len(unique_addrs) > 1:
+        details = ", ".join(f"{lbl}={addr}" for lbl, addr in addresses.items())
+        result.error("LiquidationLogic/consistency", "same address across all spokes", details)
+
+
 def verify_bytecode(
     caller: ContractCaller, report: DeployReport, result: VerificationResult
 ) -> None:
@@ -646,6 +679,8 @@ def verify_bytecode(
                 caller, result, f"{name}/Implementation", impl_addr,
                 artifact.impl_sol_file, artifact.impl_contract_name,
             )
+
+    verify_liquidation_logic_libraries(caller, report, result)
 
 
 def verify_hub_assets(
