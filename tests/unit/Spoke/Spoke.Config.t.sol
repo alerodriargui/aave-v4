@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -14,7 +13,10 @@ contract SpokeConfigTest is SpokeBase {
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));
     ISpoke instance = ISpoke(
       address(
-        DeployUtils.deploySpokeImplementation(oracle, Constants.MAX_ALLOWED_USER_RESERVES_LIMIT)
+        AaveV4TestOrchestration.deploySpokeImplementation(
+          oracle,
+          Constants.MAX_ALLOWED_USER_RESERVES_LIMIT
+        )
       )
     );
     assertEq(instance.ORACLE(), oracle);
@@ -23,14 +25,14 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
-    DeployWrapper deployer = new DeployWrapper();
+    AaveV4TestOrchestrationWrapper deployer = new AaveV4TestOrchestrationWrapper();
 
     vm.expectRevert();
     deployer.deploySpokeImplementation(address(0), Constants.MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
   function test_spoke_deploy_reverts_on_InvalidOracleDecimals() public {
-    DeployWrapper deployer = new DeployWrapper();
+    AaveV4TestOrchestrationWrapper deployer = new AaveV4TestOrchestrationWrapper();
     address oracle = makeAddr('AaveOracle');
 
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(7));
@@ -39,7 +41,7 @@ contract SpokeConfigTest is SpokeBase {
   }
 
   function test_spoke_deploy_reverts_on_InvalidMaxUserReservesLimit() public {
-    DeployWrapper deployer = new DeployWrapper();
+    AaveV4TestOrchestrationWrapper deployer = new AaveV4TestOrchestrationWrapper();
     address oracle = makeAddr('AaveOracle');
 
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));

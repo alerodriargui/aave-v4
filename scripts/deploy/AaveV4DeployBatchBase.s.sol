@@ -6,6 +6,7 @@ import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationRepor
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 
 import {Script} from 'forge-std/Script.sol';
 
@@ -38,7 +39,13 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     logger.logHeader1('starting Aave V4 batch deployment');
 
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
-      .deployAaveV4(logger, deployer, inputs, _getHubBytecode(), _getSpokeBytecode());
+      .deployAaveV4(
+        logger,
+        deployer,
+        inputs,
+        BytecodeHelper.getHubBytecode(),
+        BytecodeHelper.getSpokeBytecode()
+      );
     vm.stopBroadcast();
     logger.writeJsonReportMarket(report);
     _logDeploySummary(logger);
@@ -86,6 +93,10 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
         _logWarning(string.concat('spoke configurator admin', message, outcome));
         sanitizedInputs.spokeConfiguratorAdmin = deployer;
       }
+      if (inputs.hubProxyAdminOwner == address(0)) {
+        _logWarning(string.concat('hub proxy admin owner', message, outcome));
+        sanitizedInputs.hubProxyAdminOwner = deployer;
+      }
       if (inputs.spokeProxyAdminOwner == address(0)) {
         _logWarning(string.concat('spoke proxy admin owner', message, outcome));
         sanitizedInputs.spokeProxyAdminOwner = deployer;
@@ -105,6 +116,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     } else {
       _logWarning('roles: deferred (not granted during deployment)');
       sanitizedInputs.treasurySpokeOwner = deployer;
+      sanitizedInputs.hubProxyAdminOwner = deployer;
       sanitizedInputs.spokeProxyAdminOwner = deployer;
     }
     if (inputs.gatewayOwner == address(0)) {
@@ -190,14 +202,6 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
         revert('user did not acknowledge. Please try again.');
       }
     }
-  }
-
-  function _getHubBytecode() internal view returns (bytes memory) {
-    return vm.getCode('src/hub/Hub.sol:Hub');
-  }
-
-  function _getSpokeBytecode() internal view returns (bytes memory) {
-    return vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
   }
 
   function _appendSummary(string memory line) internal virtual {

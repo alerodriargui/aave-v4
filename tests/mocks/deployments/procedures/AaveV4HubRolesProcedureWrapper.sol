@@ -42,7 +42,20 @@ contract AaveV4HubRolesProcedureWrapper {
     return Roles.getHubFeeMinterRoleSelectors();
   }
 
+  function setupHubDeficitEliminatorRole(address accessManager, address hub) external {
+    AaveV4HubRolesProcedure.setupHubRole(
+      accessManager,
+      hub,
+      Roles.HUB_DEFICIT_ELIMINATOR_ROLE,
+      Roles.getHubDeficitEliminatorRoleSelectors()
+    );
+  }
+
   function getHubConfiguratorRoleSelectors() external pure returns (bytes4[] memory) {
     return Roles.getHubConfiguratorRoleSelectors();
+  }
+
+  function getHubDeficitEliminatorRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getHubDeficitEliminatorRoleSelectors();
   }
 }

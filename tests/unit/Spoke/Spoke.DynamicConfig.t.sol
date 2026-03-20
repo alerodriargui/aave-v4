@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -116,6 +115,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
       caller != SPOKE_ADMIN &&
         caller != ADMIN &&
         caller != SPOKE_CONFIGURATOR_ADMIN &&
+        caller != address(spokeConfigurator) &&
         caller != ProxyHelper.getProxyAdmin(address(spoke1))
     );
     uint256 reserveId = _randomReserveId(spoke1);
@@ -227,6 +227,7 @@ contract SpokeDynamicConfigTest is SpokeBase {
       caller != SPOKE_ADMIN &&
         caller != ADMIN &&
         caller != SPOKE_CONFIGURATOR_ADMIN &&
+        caller != address(spokeConfigurator) &&
         caller != ProxyHelper.getProxyAdmin(address(spoke1))
     );
     uint256 reserveId = _randomReserveId(spoke1);

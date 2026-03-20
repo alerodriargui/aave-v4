@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
@@ -100,13 +99,14 @@ import {
 
 // test
 import {Constants} from 'tests/Constants.sol';
-import {DeployUtils} from 'tests/DeployUtils.sol';
 import {Utils} from 'tests/Utils.sol';
 import {TestTypes} from 'tests/utils/TestTypes.sol';
 
 // orchestration
 import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
+import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 // mocks
@@ -125,8 +125,11 @@ import {MockSpokeInstance} from 'tests/mocks/MockSpokeInstance.sol';
 import {MockTreasurySpokeInstance} from 'tests/mocks/MockTreasurySpokeInstance.sol';
 import {MockSkimSpoke} from 'tests/mocks/MockSkimSpoke.sol';
 import {MockReentrantCaller} from 'tests/mocks/MockReentrantCaller.sol';
-import {DeployWrapper} from 'tests/mocks/DeployWrapper.sol';
+import {MockHubInstance} from 'tests/mocks/MockHubInstance.sol';
+import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
+import {AaveV4TestOrchestrationWrapper} from 'tests/mocks/AaveV4TestOrchestrationWrapper.sol';
 import {SpokeUtilsWrapper} from 'tests/mocks/SpokeUtilsWrapper.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 
 import 'tests/utils/BatchTestProcedures.sol';
 
@@ -175,7 +178,7 @@ abstract contract Base is BatchTestProcedures {
   IHub[] internal _hubs;
   ISpoke[] internal _spokes;
   IAaveOracle[] internal _oracles;
-  AssetInterestRateStrategy[] internal _irStrategies;
+  IAssetInterestRateStrategy[] internal _irStrategies;
   IAccessManager[] internal _accessManagers;
 
   IAaveOracle internal oracle1;
@@ -186,7 +189,7 @@ abstract contract Base is BatchTestProcedures {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
-  AssetInterestRateStrategy internal irStrategy;
+  IAssetInterestRateStrategy internal irStrategy;
   IAccessManager internal accessManager;
   IHubConfigurator internal hubConfigurator;
   ISpokeConfigurator internal spokeConfigurator;
@@ -368,7 +371,7 @@ abstract contract Base is BatchTestProcedures {
 
     // todo rm when tests adapted to multiple hubs and spokes
     hub1 = IHub(report.hubReports[0].hub);
-    irStrategy = AssetInterestRateStrategy(report.hubReports[0].irStrategy);
+    irStrategy = IAssetInterestRateStrategy(report.hubReports[0].irStrategy);
     treasurySpoke = ITreasurySpoke(report.treasurySpoke);
     spoke1 = ISpoke(report.spokeReports[0].spoke);
     spoke2 = ISpoke(report.spokeReports[1].spoke);
@@ -391,13 +394,13 @@ abstract contract Base is BatchTestProcedures {
       hubCount: numHubs,
       spokeCount: numSpokes,
       nativeWrapper: address(tokenList.weth),
-      hubBytecode: _getHubBytecode(),
-      spokeBytecode: _getSpokeBytecode(),
-      salt: keccak256(abi.encodePacked(vm.randomBytes(32)))
+      hubBytecode: BytecodeHelper.getHubBytecode(),
+      spokeBytecode: BytecodeHelper.getSpokeBytecode(),
+      salt: bytes32(vm.randomBytes(32))
     });
     for (uint256 i; i < numHubs; ++i) {
       _hubs.push(IHub(report.hubReports[i].hub));
-      _irStrategies.push(AssetInterestRateStrategy(report.hubReports[i].irStrategy));
+      _irStrategies.push(IAssetInterestRateStrategy(report.hubReports[i].irStrategy));
 
       vm.label(report.hubReports[i].hub, string.concat('hub', string(abi.encode(i))));
       vm.label(report.hubReports[i].irStrategy, string.concat('irStrategy', string(abi.encode(i))));
@@ -448,6 +451,26 @@ abstract contract Base is BatchTestProcedures {
     );
 
     IAccessManager(report.accessManager).renounceRole(
+      Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      address(this)
+    );
+  }
+
+  /// @dev Standalone role setup for a hub+spoke pair outside the main orchestration (e.g. upgrade tests).
+  function setUpRoles(IHub targetHub, ISpoke spoke, IAccessManager manager) internal virtual {
+    vm.startPrank(ADMIN);
+    manager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(this), 0);
+    vm.stopPrank();
+
+    AaveV4HubRolesProcedure.grantHubAllRoles(address(manager), ADMIN);
+    AaveV4HubRolesProcedure.grantHubAllRoles(address(manager), HUB_ADMIN);
+    AaveV4HubRolesProcedure.setupHubAllRoles(address(manager), address(targetHub));
+
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles(address(manager), ADMIN);
+    AaveV4SpokeRolesProcedure.grantSpokeAllRoles(address(manager), SPOKE_ADMIN);
+    AaveV4SpokeRolesProcedure.setupSpokeAllRoles(address(manager), address(spoke));
+
+    IAccessManager(address(manager)).renounceRole(
       Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
       address(this)
     );
@@ -1032,7 +1055,7 @@ abstract contract Base is BatchTestProcedures {
    * 2: DAI
    * 3: WBTC
    */
-  function _hub2Fixture() internal returns (IHub, AssetInterestRateStrategy) {
+  function _hub2Fixture() internal returns (IHub, IAssetInterestRateStrategy) {
     FixtureAssetList[] memory assetsList = new FixtureAssetList[](4);
     assetsList[0] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.weth)),
@@ -1060,7 +1083,7 @@ abstract contract Base is BatchTestProcedures {
     });
 
     TestTypes.TestHubReport memory report = _addHubFixture('2', assetsList);
-    return (IHub(report.hub), AssetInterestRateStrategy(report.irStrategy));
+    return (IHub(report.hub), IAssetInterestRateStrategy(report.irStrategy));
   }
 
   /* @dev Configures Hub 3 with the following assetIds:
@@ -1069,7 +1092,7 @@ abstract contract Base is BatchTestProcedures {
    * 2: WBTC
    * 3: WETH
    */
-  function _hub3Fixture() internal returns (IHub, AssetInterestRateStrategy) {
+  function _hub3Fixture() internal returns (IHub, IAssetInterestRateStrategy) {
     FixtureAssetList[] memory assetsList = new FixtureAssetList[](4);
     assetsList[0] = FixtureAssetList({
       underlying: IERC20Metadata(address(tokenList.dai)),
@@ -1097,7 +1120,7 @@ abstract contract Base is BatchTestProcedures {
     });
 
     TestTypes.TestHubReport memory report = _addHubFixture('3', assetsList);
-    return (IHub(report.hub), AssetInterestRateStrategy(report.irStrategy));
+    return (IHub(report.hub), IAssetInterestRateStrategy(report.irStrategy));
   }
 
   function _addHubFixture(
@@ -1105,13 +1128,14 @@ abstract contract Base is BatchTestProcedures {
     FixtureAssetList[] memory assetsList
   ) internal returns (TestTypes.TestHubReport memory report) {
     report = AaveV4TestOrchestration.deployTestHub(
+      ADMIN,
       address(accessManager),
-      _getHubBytecode(),
+      BytecodeHelper.getHubBytecode(),
       label,
       keccak256(abi.encodePacked(label))
     );
     _hubs.push(IHub(report.hub));
-    _irStrategies.push(AssetInterestRateStrategy(report.irStrategy));
+    _irStrategies.push(IAssetInterestRateStrategy(report.irStrategy));
 
     vm.label(report.hub, string.concat('Hub', label));
     vm.label(report.irStrategy, string.concat('IrStrategy', label));
@@ -2435,6 +2459,7 @@ abstract contract Base is BatchTestProcedures {
         user != address(spoke1) &&
         user != address(spoke2) &&
         user != address(spoke3) &&
+        user != ProxyHelper.getProxyAdmin(address(hub1)) &&
         user != ProxyHelper.getProxyAdmin(address(spoke1)) &&
         user != ProxyHelper.getProxyAdmin(address(spoke2)) &&
         user != ProxyHelper.getProxyAdmin(address(spoke3))
@@ -2568,28 +2593,17 @@ abstract contract Base is BatchTestProcedures {
 
   function _deploySpokeWithOracle(
     address proxyAdminOwner,
-    address _accessManager,
+    address accessManager_,
     uint16 maxUserReservesLimit
   ) internal pausePrank returns (ISpoke, IAaveOracle) {
-    address deployer = makeAddr('deployer');
-
-    vm.startPrank(deployer);
-    IAaveOracle oracle = new AaveOracle(8);
-
-    ISpoke spoke = DeployUtils.deploySpoke(
-      address(oracle),
-      maxUserReservesLimit,
-      proxyAdminOwner,
-      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
-    );
-
-    oracle.setSpoke(address(spoke));
-    vm.stopPrank();
-
-    assertEq(spoke.ORACLE(), address(oracle));
-    assertEq(oracle.spoke(), address(spoke));
-
-    return (spoke, oracle);
+    TestTypes.TestSpokeReport memory report = AaveV4TestOrchestration.deployTestSpoke({
+      spokeProxyAdminOwner: proxyAdminOwner,
+      accessManager: accessManager_,
+      spokeBytecode: BytecodeHelper.getSpokeBytecode(),
+      maxUserReservesLimit: maxUserReservesLimit,
+      salt: keccak256(abi.encodePacked('spoke-', vm.randomBytes(32)))
+    });
+    return (ISpoke(report.spoke), IAaveOracle(report.aaveOracle));
   }
 
   function _deployTokenizationSpoke(
@@ -2599,17 +2613,17 @@ abstract contract Base is BatchTestProcedures {
     string memory shareSymbol,
     address proxyAdminOwner
   ) internal pausePrank returns (ITokenizationSpoke) {
-    address tokenizationSpokeImpl = address(
-      new TokenizationSpokeInstance(address(hub), underlying)
-    );
-    ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
-      DeployUtils.proxify(
-        tokenizationSpokeImpl,
-        proxyAdminOwner,
-        abi.encodeCall(TokenizationSpokeInstance.initialize, (shareName, shareSymbol))
-      )
-    );
-    return tokenizationSpoke;
+    return
+      ITokenizationSpoke(
+        AaveV4TestOrchestration.deployTestTokenizationSpoke({
+          hub: address(hub),
+          underlying: underlying,
+          spokeProxyAdminOwner: proxyAdminOwner,
+          shareName: shareName,
+          shareSymbol: shareSymbol,
+          salt: keccak256(abi.encodePacked('tokenization-spoke-', vm.randomBytes(32)))
+        })
+      );
   }
 
   function _registerTokenizationSpoke(
@@ -2805,7 +2819,7 @@ abstract contract Base is BatchTestProcedures {
 
   // @dev Requires no previously added assets
   // @dev Update _assetsSlot below if it changes
-  //   Run: forge inspect Hub storage-layout
+  //   Run: forge inspect HubInstance storage-layout
   // @dev Update _addedSharesOffset below if it changes
   //   Have a look at IHub.Asset struct
   function _mockSupplySharePrice(
@@ -2837,7 +2851,7 @@ abstract contract Base is BatchTestProcedures {
     });
     assertEq(hub.getAddedAssets(assetId), totalAddedAssets, '_mockSupplySharePrice: addedAssets');
 
-    uint256 _assetsSlot = 2;
+    uint256 _assetsSlot = 1;
     uint256 _addedSharesOffset = 1;
     vm.store(
       address(hub),

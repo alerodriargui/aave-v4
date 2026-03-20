@@ -18,18 +18,26 @@ import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/ro
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
+import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
 import {TestTokensBatch} from 'tests/deployments/batches/TestTokensBatch.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
+import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
+import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
+import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 
 library AaveV4TestOrchestration {
   bool public constant IS_TEST = true;
+  bytes internal constant CREATE2_FACTORY_BYTECODE =
+    hex'7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf3';
   Vm private constant vm = Vm(address(bytes20(uint160(uint256(keccak256('hevm cheat code'))))));
+
+  error Create2DeploymentFailed();
 
   function deployTestTokens(
     TestTypes.TestTokenInput[] memory tokenInputs
@@ -76,12 +84,14 @@ library AaveV4TestOrchestration {
 
     // Deploy Hub Batches
     for (uint256 i; i < hubCount; ++i) {
-      BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
-        authority: report.accessManager,
-        hubBytecode: hubBytecode,
-        salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i))))
-      });
-      report.hubReports[i].hub = hubReport.hub;
+      BatchReports.HubInstanceBatchReport memory hubReport = AaveV4DeployBase
+        .deployHubInstanceBatch({
+          hubProxyAdminOwner: admin,
+          authority: report.accessManager,
+          hubBytecode: hubBytecode,
+          salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i))))
+        });
+      report.hubReports[i].hub = hubReport.hubProxy;
       report.hubReports[i].irStrategy = hubReport.irStrategy;
     }
 
@@ -125,21 +135,72 @@ library AaveV4TestOrchestration {
   }
 
   function deployTestHub(
+    address hubProxyAdminOwner,
     address accessManager,
     bytes memory hubBytecode,
     string memory label,
     bytes32 salt
   ) external returns (TestTypes.TestHubReport memory) {
     TestTypes.TestHubReport memory report;
-    BatchReports.HubBatchReport memory hubReport = AaveV4DeployBase.deployHubBatch({
+    BatchReports.HubInstanceBatchReport memory hubReport = AaveV4DeployBase.deployHubInstanceBatch({
+      hubProxyAdminOwner: hubProxyAdminOwner,
       authority: accessManager,
       hubBytecode: hubBytecode,
       salt: keccak256(abi.encodePacked(salt, 'hub-', label))
     });
-    report.hub = hubReport.hub;
+    report.hub = hubReport.hubProxy;
     report.irStrategy = hubReport.irStrategy;
 
     return report;
+  }
+
+  function deployTestSpoke(
+    address spokeProxyAdminOwner,
+    address accessManager,
+    bytes memory spokeBytecode,
+    uint16 maxUserReservesLimit,
+    bytes32 salt
+  ) external returns (TestTypes.TestSpokeReport memory) {
+    TestTypes.TestSpokeReport memory report;
+    BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
+      .deploySpokeInstanceBatch({
+        spokeProxyAdminOwner: spokeProxyAdminOwner,
+        authority: accessManager,
+        spokeBytecode: spokeBytecode,
+        oracleDecimals: Constants.ORACLE_DECIMALS,
+        maxUserReservesLimit: maxUserReservesLimit,
+        salt: salt
+      });
+    report.spoke = spokeReport.spokeProxy;
+    report.aaveOracle = spokeReport.aaveOracle;
+    return report;
+  }
+
+  function deployTestTokenizationSpoke(
+    address hub,
+    address underlying,
+    address spokeProxyAdminOwner,
+    string memory shareName,
+    string memory shareSymbol,
+    bytes32 salt
+  ) external returns (address tokenizationSpokeProxy) {
+    BatchReports.TokenizationSpokeBatchReport memory report = AaveV4DeployBase
+      .deployTokenizationSpokeBatch({
+        hub: hub,
+        underlying: underlying,
+        spokeProxyAdminOwner: spokeProxyAdminOwner,
+        shareName: shareName,
+        shareSymbol: shareSymbol,
+        salt: salt
+      });
+    return report.tokenizationSpokeProxy;
+  }
+
+  function deployTestTreasurySpoke(
+    address owner,
+    bytes32 salt
+  ) external returns (address treasurySpoke) {
+    return AaveV4DeployBase.deployTreasurySpokeBatch({owner: owner, salt: salt}).treasurySpoke;
   }
 
   function configureHubsSpokes(ConfigData.AddSpokeParams[] memory paramsList) external {
@@ -339,5 +400,68 @@ library AaveV4TestOrchestration {
   ) internal returns (TestTypes.TestTokensBatchReport memory) {
     TestTokensBatch tokensBatch = new TestTokensBatch(tokenInputs);
     return tokensBatch.getReport();
+  }
+
+  function loadCreate2Factory() internal {
+    if (Create2Utils.isContractDeployed(Create2Utils.CREATE2_FACTORY)) return;
+    vm.etch(Create2Utils.CREATE2_FACTORY, CREATE2_FACTORY_BYTECODE);
+  }
+
+  function _create2Deploy(bytes32 salt, bytes memory bytecode) internal returns (address) {
+    loadCreate2Factory();
+    address computed = Create2Utils.computeCreate2Address(salt, bytecode);
+    if (Create2Utils.isContractDeployed(computed)) return computed;
+
+    bytes memory creationBytecode = abi.encodePacked(salt, bytecode);
+    (, bytes memory returnData) = Create2Utils.CREATE2_FACTORY.call(creationBytecode);
+    address deployedAt = address(uint160(bytes20(returnData)));
+    require(deployedAt == computed, Create2DeploymentFailed());
+    return deployedAt;
+  }
+
+  function deploySpokeImplementation(
+    address oracle,
+    uint16 maxUserReservesLimit
+  ) internal returns (ISpokeInstance) {
+    return deploySpokeImplementation(oracle, maxUserReservesLimit, '');
+  }
+
+  function deploySpokeImplementation(
+    address oracle,
+    uint16 maxUserReservesLimit,
+    bytes32 salt
+  ) internal returns (ISpokeInstance) {
+    bytes memory initCode = abi.encodePacked(
+      vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
+      abi.encode(oracle, maxUserReservesLimit)
+    );
+    return ISpokeInstance(_create2Deploy(salt, initCode));
+  }
+
+  function deployHubImplementation() internal returns (IHubInstance) {
+    return deployHubImplementation('');
+  }
+
+  function deployHubImplementation(bytes32 salt) internal returns (IHubInstance) {
+    bytes memory initCode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
+    return IHubInstance(_create2Deploy(salt, initCode));
+  }
+  function deployHub(address authority, address proxyAdminOwner) internal returns (IHub) {
+    return
+      IHub(
+        proxify(
+          address(deployHubImplementation()),
+          proxyAdminOwner,
+          abi.encodeCall(IHubInstance.initialize, (authority))
+        )
+      );
+  }
+
+  function proxify(
+    address impl,
+    address proxyAdminOwner,
+    bytes memory initData
+  ) internal returns (address) {
+    return address(new TransparentUpgradeableProxy(impl, proxyAdminOwner, initData));
   }
 }

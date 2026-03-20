@@ -14,7 +14,7 @@ import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
 import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
-import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
+import {AaveV4HubInstanceBatch} from 'src/deployments/batches/AaveV4HubInstanceBatch.sol';
 import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
@@ -46,7 +46,7 @@ contract BatchBaseTest is Create2TestHelper {
     salt = keccak256('testSalt');
     _etchCreate2Factory();
 
-    hubBytecode = vm.getCode('src/hub/Hub.sol:Hub');
+    hubBytecode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
     spokeBytecode = vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
 
     // used Hub, Spoke, Configurator batches

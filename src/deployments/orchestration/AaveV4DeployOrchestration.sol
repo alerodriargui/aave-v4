@@ -5,12 +5,6 @@ pragma solidity ^0.8.0;
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {AaveV4DeployBase} from 'src/deployments/orchestration/AaveV4DeployBase.sol';
-import {AaveV4AuthorityBatch} from 'src/deployments/batches/AaveV4AuthorityBatch.sol';
-import {AaveV4ConfiguratorBatch} from 'src/deployments/batches/AaveV4ConfiguratorBatch.sol';
-import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInstanceBatch.sol';
-import {AaveV4GatewayBatch} from 'src/deployments/batches/AaveV4GatewayBatch.sol';
-import {AaveV4HubBatch} from 'src/deployments/batches/AaveV4HubBatch.sol';
-import {AaveV4PositionManagerBatch} from 'src/deployments/batches/AaveV4PositionManagerBatch.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
@@ -19,7 +13,7 @@ import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/ro
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
-import {Constants} from 'tests/Constants.sol';
+import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 
 library AaveV4DeployOrchestration {
   bytes32 public constant SALT = keccak256('AAVE_V4');
@@ -64,8 +58,9 @@ library AaveV4DeployOrchestration {
     });
 
     // Deploy Hub Batches
-    report.hubBatchReports = _deployHubs({
+    report.hubInstanceBatchReports = _deployHubs({
       logger: logger,
+      hubProxyAdminOwner: deployInputs.hubProxyAdminOwner,
       authority: accessManager,
       hubLabels: deployInputs.hubLabels,
       hubBytecode: hubBytecode,
@@ -122,7 +117,10 @@ library AaveV4DeployOrchestration {
       }
 
       if (deployInputs.accessManagerAdmin != initialAdmin) {
-        logger.logHeader1('granting AccessManager Root Admin role');
+        logger.logHeader1(
+          'granting AccessManager Root Admin role to',
+          deployInputs.accessManagerAdmin
+        );
         AaveV4AccessManagerRolesProcedure.replaceDefaultAdminRole({
           accessManager: accessManager,
           adminToAdd: deployInputs.accessManagerAdmin,
@@ -136,17 +134,19 @@ library AaveV4DeployOrchestration {
 
   function _deployHubs(
     Logger logger,
+    address hubProxyAdminOwner,
     address authority,
     string[] memory hubLabels,
     bytes memory hubBytecode,
     bytes32 salt
-  ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubBatchReports) {
+  ) internal returns (OrchestrationReports.HubDeploymentReport[] memory hubInstanceBatchReports) {
     uint256 hubCount = hubLabels.length;
-    hubBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
+    hubInstanceBatchReports = new OrchestrationReports.HubDeploymentReport[](hubCount);
     for (uint256 i; i < hubCount; ++i) {
       bytes32 childSalt = _deriveChildSalt(salt, 'hub', hubLabels[i]);
-      hubBatchReports[i] = _deployHub({
+      hubInstanceBatchReports[i] = _deployHub({
         logger: logger,
+        hubProxyAdminOwner: hubProxyAdminOwner,
         authority: authority,
         label: hubLabels[i],
         hubBytecode: hubBytecode,
@@ -154,11 +154,12 @@ library AaveV4DeployOrchestration {
       });
     }
     logger.logNewLine();
-    return hubBatchReports;
+    return hubInstanceBatchReports;
   }
 
   function _deployHub(
     Logger logger,
+    address hubProxyAdminOwner,
     address authority,
     string memory label,
     bytes memory hubBytecode,
@@ -166,8 +167,9 @@ library AaveV4DeployOrchestration {
   ) internal returns (OrchestrationReports.HubDeploymentReport memory) {
     OrchestrationReports.HubDeploymentReport memory hubReport;
     hubReport.label = label;
-    hubReport.report = _deployHubBatch({
+    hubReport.report = _deployHubInstanceBatch({
       logger: logger,
+      hubProxyAdminOwner: hubProxyAdminOwner,
       authority: authority,
       hubBytecode: hubBytecode,
       salt: salt
@@ -200,8 +202,8 @@ library AaveV4DeployOrchestration {
         spokeBytecode: spokeBytecode,
         maxUserReservesLimit: limitsLen > 0
           ? inputs.spokeMaxReservesLimits[i]
-          : Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
-        oracleDecimals: Constants.ORACLE_DECIMALS,
+          : DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+        oracleDecimals: DeployConstants.ORACLE_DECIMALS,
         salt: childSalt
       });
     }
@@ -237,14 +239,16 @@ library AaveV4DeployOrchestration {
     return spokeReport;
   }
 
-  function _deployHubBatch(
+  function _deployHubInstanceBatch(
     Logger logger,
+    address hubProxyAdminOwner,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
-  ) internal returns (BatchReports.HubBatchReport memory report) {
+  ) internal returns (BatchReports.HubInstanceBatchReport memory report) {
     logger.logHeader1('deploying HubBatch');
-    report = AaveV4DeployBase.deployHubBatch({
+    report = AaveV4DeployBase.deployHubInstanceBatch({
+      hubProxyAdminOwner: hubProxyAdminOwner,
       authority: authority,
       hubBytecode: hubBytecode,
       salt: salt
@@ -389,11 +393,11 @@ library AaveV4DeployOrchestration {
 
   function _setupHubRoles(
     Logger logger,
-    BatchReports.HubBatchReport memory report,
+    BatchReports.HubInstanceBatchReport memory report,
     address accessManager
   ) internal {
     logger.logHeader1('setting Hub roles');
-    AaveV4HubRolesProcedure.setupHubAllRoles({accessManager: accessManager, hub: report.hub});
+    AaveV4HubRolesProcedure.setupHubAllRoles({accessManager: accessManager, hub: report.hubProxy});
   }
 
   function _grantHubRoles(
@@ -404,17 +408,20 @@ library AaveV4DeployOrchestration {
   ) internal {
     address accessManager = report.authorityBatchReport.accessManager;
 
-    logger.logHeader1('granting Hub Admin role');
+    logger.logHeader1('granting Hub Admin role to', hubAdmin);
     AaveV4HubRolesProcedure.grantHubAllRoles({accessManager: accessManager, admin: hubAdmin});
 
-    logger.logHeader1('granting Hub Configurator roles');
+    logger.logHeader1(
+      'granting Hub Configurator roles to',
+      report.configuratorBatchReport.hubConfigurator
+    );
     AaveV4HubRolesProcedure.grantHubRole({
       accessManager: accessManager,
       role: Roles.HUB_CONFIGURATOR_ROLE,
       admin: report.configuratorBatchReport.hubConfigurator
     });
 
-    logger.logHeader1('granting HubConfigurator Admin roles');
+    logger.logHeader1('granting HubConfigurator Admin roles to', hubConfiguratorAdmin);
     AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles({
       accessManager: accessManager,
       admin: hubConfiguratorAdmin
@@ -429,17 +436,20 @@ library AaveV4DeployOrchestration {
   ) internal {
     address accessManager = report.authorityBatchReport.accessManager;
 
-    logger.logHeader1('granting Spoke Admin role');
+    logger.logHeader1('granting Spoke Admin role to', spokeAdmin);
     AaveV4SpokeRolesProcedure.grantSpokeAllRoles({accessManager: accessManager, admin: spokeAdmin});
 
-    logger.logHeader1('granting Spoke Configurator roles');
+    logger.logHeader1(
+      'granting Spoke Configurator roles to',
+      report.configuratorBatchReport.spokeConfigurator
+    );
     AaveV4SpokeRolesProcedure.grantSpokeRole({
       accessManager: accessManager,
       role: Roles.SPOKE_CONFIGURATOR_ROLE,
       admin: report.configuratorBatchReport.spokeConfigurator
     });
 
-    logger.logHeader1('granting SpokeConfigurator Admin roles');
+    logger.logHeader1('granting SpokeConfigurator Admin roles to', spokeConfiguratorAdmin);
     AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles({
       accessManager: accessManager,
       admin: spokeConfiguratorAdmin
@@ -448,11 +458,11 @@ library AaveV4DeployOrchestration {
 
   function _logHubReport(
     Logger logger,
-    BatchReports.HubBatchReport memory report,
+    BatchReports.HubInstanceBatchReport memory report,
     string memory label
   ) internal pure {
     logger.log(label);
-    logger.logDetail('Hub', report.hub);
+    logger.logDetail('Hub', report.hubProxy);
     logger.logDetail('InterestRateStrategy', report.irStrategy);
   }
 

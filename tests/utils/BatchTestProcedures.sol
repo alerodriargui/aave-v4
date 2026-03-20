@@ -24,6 +24,7 @@ import {Constants} from 'tests/Constants.sol';
 
 // libraries
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 
 // interfaces
 import {IAccessManagerEnumerable} from 'src/access/interfaces/IAccessManagerEnumerable.sol';
@@ -32,6 +33,7 @@ import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
+import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
 
 contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployProcedure {
   Logger internal _logger;
@@ -45,6 +47,8 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   bytes4[] internal _hubFeeMinterRoleSelectors;
   bytes4[] internal _hubConfiguratorRoleSelectors;
   address internal _deployer = makeAddr('deployer');
+  // if post-deployment, skip impl checks, native wrapper, as they aren't included in the report
+  bool internal _postDeploymentCheck;
 
   function setUp() public virtual {
     _spokePositionUpdaterRoleSelectors = Roles.getSpokePositionUpdaterRoleSelectors();
@@ -62,24 +66,61 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   }
 
   function checkedV4Deployment() public {
-    bytes memory hubBytecode = _getHubBytecode();
-    bytes memory spokeBytecode = _getSpokeBytecode();
+    bytes memory hubBytecode = BytecodeHelper.getHubBytecode();
+    bytes memory spokeBytecode = BytecodeHelper.getSpokeBytecode();
 
     vm.startPrank(_deployer);
     OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
       .deployAaveV4(_logger, _deployer, _inputs, hubBytecode, spokeBytecode);
     vm.stopPrank();
-    _checkDeployment(report, _inputs);
-    _checkRoles(report, _inputs);
+    _checkDeployment({report: report, inputs: _inputs});
   }
 
   function _checkDeployment(
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
   ) internal view {
-    _checkFullReport(report, inputs);
-    _checkSpokeBatchDeployments(report, inputs);
-    _checkHubBatchDeployments(report, inputs);
+    _checkFullReport({report: report, inputs: inputs});
+    _checkBatchDeployments({report: report, inputs: inputs});
+    _checkRoles(report, _inputs);
+  }
+
+  function _checkBatchDeployments(
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    _checkSpokeBatchDeployments({report: report, inputs: inputs});
+    _checkHubBatchDeployments({report: report, inputs: inputs});
+    _checkConfiguratorBatchDeployments({report: report});
+    _checkGatewayBatchDeployments({report: report, inputs: inputs});
+  }
+
+  function _checkConfiguratorBatchDeployments(
+    OrchestrationReports.FullDeploymentReport memory report
+  ) internal view {
+    assertEq(
+      IAccessManaged(report.configuratorBatchReport.hubConfigurator).authority(),
+      report.authorityBatchReport.accessManager,
+      'HubConfigurator authority'
+    );
+    assertEq(
+      IAccessManaged(report.configuratorBatchReport.spokeConfigurator).authority(),
+      report.authorityBatchReport.accessManager,
+      'SpokeConfigurator authority'
+    );
+  }
+
+  function _checkGatewayBatchDeployments(
+    OrchestrationReports.FullDeploymentReport memory report,
+    FullDeployInputs memory inputs
+  ) internal view {
+    if (inputs.deployNativeTokenGateway && !_postDeploymentCheck) {
+      assertEq(
+        INativeTokenGateway(report.gatewaysBatchReport.nativeGateway).NATIVE_TOKEN_WRAPPER(),
+        inputs.nativeWrapper,
+        'NativeGateway NATIVE_TOKEN_WRAPPER'
+      );
+    }
   }
 
   function _checkRoles(
@@ -111,6 +152,9 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       ? inputs.treasurySpokeOwner
       : _deployer;
     inputs.spokeAdmin = inputs.spokeAdmin != address(0) ? inputs.spokeAdmin : _deployer;
+    inputs.hubProxyAdminOwner = inputs.hubProxyAdminOwner != address(0)
+      ? inputs.hubProxyAdminOwner
+      : _deployer;
     inputs.spokeProxyAdminOwner = inputs.spokeProxyAdminOwner != address(0)
       ? inputs.spokeProxyAdminOwner
       : _deployer;
@@ -146,7 +190,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkFullReport(
     OrchestrationReports.FullDeploymentReport memory report,
     FullDeployInputs memory inputs
-  ) internal pure {
+  ) internal view {
     if (inputs.deployNativeTokenGateway) {
       assertNotEq(report.gatewaysBatchReport.nativeGateway, address(0), 'NativeGateway');
     } else {
@@ -195,15 +239,33 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
     assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
     assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
-    for (uint256 i = 0; i < report.hubBatchReports.length; i++) {
-      assertNotEq(report.hubBatchReports[i].report.hub, address(0), 'Hub');
-      assertNotEq(report.hubBatchReports[i].report.irStrategy, address(0), 'IRStrategy');
+    for (uint256 i = 0; i < report.hubInstanceBatchReports.length; i++) {
+      assertNotEq(report.hubInstanceBatchReports[i].report.hubProxy, address(0), 'Hub');
+      if (!_postDeploymentCheck) {
+        assertNotEq(
+          report.hubInstanceBatchReports[i].report.hubImplementation,
+          address(0),
+          'HubImplementation'
+        );
+      }
+      assertNotEq(report.hubInstanceBatchReports[i].report.irStrategy, address(0), 'IRStrategy');
     }
     for (uint256 i = 0; i < report.spokeInstanceBatchReports.length; i++) {
       assertNotEq(report.spokeInstanceBatchReports[i].report.spokeProxy, address(0), 'SpokeProxy');
+      if (!_postDeploymentCheck) {
+        assertNotEq(
+          report.spokeInstanceBatchReports[i].report.spokeImplementation,
+          address(0),
+          'SpokeImplementation'
+        );
+      }
       assertNotEq(report.spokeInstanceBatchReports[i].report.aaveOracle, address(0), 'AaveOracle');
     }
-    assertEq(report.hubBatchReports.length, inputs.hubLabels.length, 'HubBatchReportsLength');
+    assertEq(
+      report.hubInstanceBatchReports.length,
+      inputs.hubLabels.length,
+      'HubBatchReportsLength'
+    );
     assertEq(
       report.spokeInstanceBatchReports.length,
       inputs.spokeLabels.length,
@@ -223,6 +285,9 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       _checkSpokeDeployment({
         report: spokeReport,
         accessManager: report.authorityBatchReport.accessManager,
+        expectedMaxReservesLimit: inputs.spokeMaxReservesLimits.length > i
+          ? inputs.spokeMaxReservesLimits[i]
+          : Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
         label: label
       });
       _checkOracleDeployment({report: spokeReport, label: label});
@@ -232,13 +297,16 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkSpokeDeployment(
     OrchestrationReports.SpokeDeploymentReport memory report,
     address accessManager,
+    uint16 expectedMaxReservesLimit,
     string memory label
   ) internal view {
-    assertEq(
-      ProxyHelper.getImplementation(report.report.spokeProxy),
-      report.report.spokeImplementation,
-      string.concat(label, ' implementation')
-    );
+    if (!_postDeploymentCheck) {
+      assertEq(
+        ProxyHelper.getImplementation(report.report.spokeProxy),
+        report.report.spokeImplementation,
+        string.concat(label, ' implementation')
+      );
+    }
     assertEq(
       ISpoke(report.report.spokeProxy).ORACLE(),
       report.report.aaveOracle,
@@ -248,6 +316,24 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       IAccessManaged(report.report.spokeProxy).authority(),
       accessManager,
       string.concat(label, ' spoke authority')
+    );
+    assertEq(
+      ISpoke(report.report.spokeProxy).MAX_USER_RESERVES_LIMIT(),
+      expectedMaxReservesLimit,
+      string.concat(label, ' max user reserves limit')
+    );
+    assertEq(
+      ProxyHelper.getProxyInitializedVersion(
+        ProxyHelper.getImplementation(report.report.spokeProxy)
+      ),
+      type(uint64).max,
+      string.concat(label, ' implementation initializers disabled')
+    );
+    // verify the non-immutable portions match
+    _assertBytecodeMatchExcludingImmutables(
+      ProxyHelper.getImplementation(report.report.spokeProxy).code,
+      vm.getDeployedCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance'),
+      string.concat(label, ' spoke implementation bytecode')
     );
   }
 
@@ -274,11 +360,12 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     string memory globalLabel = 'HubDeployment';
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
       string memory label = string.concat(globalLabel, ', ', inputs.hubLabels[i]);
-      OrchestrationReports.HubDeploymentReport memory hubReport = report.hubBatchReports[i];
+      OrchestrationReports.HubDeploymentReport memory hubReport = report.hubInstanceBatchReports[i];
 
       _checkHubDeployment({
         report: hubReport,
         accessManager: report.authorityBatchReport.accessManager,
+        expectedHubProxyAdminOwner: inputs.hubProxyAdminOwner,
         label: label
       });
       _checkInterestRateStrategyDeployment({report: hubReport, label: label});
@@ -289,12 +376,36 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkHubDeployment(
     OrchestrationReports.HubDeploymentReport memory report,
     address accessManager,
+    address expectedHubProxyAdminOwner,
     string memory label
   ) internal view {
+    if (!_postDeploymentCheck) {
+      assertEq(
+        ProxyHelper.getImplementation(report.report.hubProxy),
+        report.report.hubImplementation,
+        string.concat(label, ' implementation')
+      );
+      address proxyAdminOwner = Ownable(ProxyHelper.getProxyAdmin(report.report.hubProxy)).owner();
+      assertEq(
+        proxyAdminOwner,
+        expectedHubProxyAdminOwner,
+        string.concat(label, ' hub proxy admin owner')
+      );
+    }
     assertEq(
-      IAccessManaged(report.report.hub).authority(),
+      IAccessManaged(report.report.hubProxy).authority(),
       accessManager,
       string.concat(label, ' hub authority')
+    );
+    assertEq(
+      ProxyHelper.getProxyInitializedVersion(ProxyHelper.getImplementation(report.report.hubProxy)),
+      type(uint64).max,
+      string.concat(label, ' implementation initializers disabled')
+    );
+    assertEq(
+      ProxyHelper.getImplementation(report.report.hubProxy).codehash,
+      keccak256(vm.getDeployedCode('src/hub/instances/HubInstance.sol:HubInstance')),
+      string.concat(label, ' hub implementation bytecode')
     );
   }
 
@@ -304,14 +415,14 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   ) internal view {
     assertEq(
       IAssetInterestRateStrategy(report.report.irStrategy).HUB(),
-      report.report.hub,
+      report.report.hubProxy,
       string.concat(label, ' hub on interest rate strategy')
     );
   }
 
   function _checkTreasurySpokeDeployment(
     OrchestrationReports.FullDeploymentReport memory report
-  ) internal view {
+  ) internal pure {
     assertNotEq(
       report.treasurySpokeBatchReport.treasurySpoke,
       address(0),
@@ -513,7 +624,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       for (uint256 j = 0; j < _hubFeeMinterRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
-            report.hubBatchReports[i].report.hub,
+            report.hubInstanceBatchReports[i].report.hubProxy,
             _hubFeeMinterRoleSelectors[j]
           ),
           Roles.HUB_FEE_MINTER_ROLE,
@@ -522,7 +633,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
         (bool allowed, uint32 delay) = accessManager.canCall(
           inputs.hubAdmin,
-          report.hubBatchReports[i].report.hub,
+          report.hubInstanceBatchReports[i].report.hubProxy,
           _hubFeeMinterRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'HubFeeMinterRole allowed');
@@ -570,7 +681,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       for (uint256 j = 0; j < _hubConfiguratorRoleSelectors.length; j++) {
         assertEq(
           accessManager.getTargetFunctionRole(
-            report.hubBatchReports[i].report.hub,
+            report.hubInstanceBatchReports[i].report.hubProxy,
             _hubConfiguratorRoleSelectors[j]
           ),
           Roles.HUB_CONFIGURATOR_ROLE,
@@ -581,7 +692,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
         (allowed, delay) = accessManager.canCall(
           report.configuratorBatchReport.hubConfigurator,
-          report.hubBatchReports[i].report.hub,
+          report.hubInstanceBatchReports[i].report.hubProxy,
           _hubConfiguratorRoleSelectors[j]
         );
         assertEq(
@@ -593,7 +704,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
         (allowed, delay) = accessManager.canCall(
           inputs.hubAdmin,
-          report.hubBatchReports[i].report.hub,
+          report.hubInstanceBatchReports[i].report.hubProxy,
           _hubConfiguratorRoleSelectors[j]
         );
         assertEq(allowed, inputs.grantRoles ? true : false, 'HubConfiguratorRole allowed - admin');
@@ -631,88 +742,24 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     FullDeployInputs memory inputs
   ) internal view {
     address hubConfigurator = report.configuratorBatchReport.hubConfigurator;
+    bytes4[] memory selectors = Roles.getHubConfiguratorDomainAdminRoleSelectors();
 
-    bytes4[][] memory selectorGroups = new bytes4[][](14);
-    uint64[] memory expectedRoles = new uint64[](14);
-    string[] memory labels = new string[](14);
-
-    selectorGroups[0] = Roles.getHubConfiguratorLiquidityFeeUpdaterRoleSelectors();
-    expectedRoles[0] = Roles.HUB_CONFIGURATOR_LIQUIDITY_FEE_UPDATER_ROLE;
-    labels[0] = 'liquidityFeeUpdater';
-
-    selectorGroups[1] = Roles.getHubConfiguratorFeeConfiguratorRoleSelectors();
-    expectedRoles[1] = Roles.HUB_CONFIGURATOR_FEE_CONFIGURATOR_ROLE;
-    labels[1] = 'feeConfigurator';
-
-    selectorGroups[2] = Roles.getHubConfiguratorReinvestmentUpdaterRoleSelectors();
-    expectedRoles[2] = Roles.HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE;
-    labels[2] = 'reinvestment';
-
-    selectorGroups[3] = Roles.getHubConfiguratorHalterRoleSelectors();
-    expectedRoles[3] = Roles.HUB_CONFIGURATOR_HALTER_ROLE;
-    labels[3] = 'halt';
-
-    selectorGroups[4] = Roles.getHubConfiguratorDeactivatorRoleSelectors();
-    expectedRoles[4] = Roles.HUB_CONFIGURATOR_DEACTIVATOR_ROLE;
-    labels[4] = 'deactivate';
-
-    selectorGroups[5] = Roles.getHubConfiguratorCapsResetterRoleSelectors();
-    expectedRoles[5] = Roles.HUB_CONFIGURATOR_CAPS_RESETTER_ROLE;
-    labels[5] = 'capsResetter';
-
-    selectorGroups[6] = Roles.getHubConfiguratorCapsUpdaterRoleSelectors();
-    expectedRoles[6] = Roles.HUB_CONFIGURATOR_CAPS_UPDATER_ROLE;
-    labels[6] = 'capsUpdater';
-
-    selectorGroups[7] = Roles.getHubConfiguratorDrawCapUpdaterRoleSelectors();
-    expectedRoles[7] = Roles.HUB_CONFIGURATOR_DRAW_CAP_UPDATER_ROLE;
-    labels[7] = 'drawCapUpdater';
-
-    selectorGroups[8] = Roles.getHubConfiguratorAddCapUpdaterRoleSelectors();
-    expectedRoles[8] = Roles.HUB_CONFIGURATOR_ADD_CAP_UPDATER_ROLE;
-    labels[8] = 'addCapUpdater';
-
-    selectorGroups[9] = Roles.getHubConfiguratorSpokeRiskAdminRoleSelectors();
-    expectedRoles[9] = Roles.HUB_CONFIGURATOR_SPOKE_RISK_ADMIN_ROLE;
-    labels[9] = 'spokeRiskAdmin';
-
-    selectorGroups[10] = Roles.getHubConfiguratorInterestRateStrategyUpdaterRoleSelectors();
-    expectedRoles[10] = Roles.HUB_CONFIGURATOR_INTEREST_RATE_STRATEGY_UPDATER_ROLE;
-    labels[10] = 'irStrategyUpdater';
-
-    selectorGroups[11] = Roles.getHubConfiguratorInterestRateDataUpdaterRoleSelectors();
-    expectedRoles[11] = Roles.HUB_CONFIGURATOR_INTEREST_RATE_DATA_UPDATER_ROLE;
-    labels[11] = 'irDataUpdater';
-
-    selectorGroups[12] = Roles.getHubConfiguratorAssetListerRoleSelectors();
-    expectedRoles[12] = Roles.HUB_CONFIGURATOR_ASSET_LISTER_ROLE;
-    labels[12] = 'assetLister';
-
-    selectorGroups[13] = Roles.getHubConfiguratorSpokeAdderRoleSelectors();
-    expectedRoles[13] = Roles.HUB_CONFIGURATOR_SPOKE_ADDER_ROLE;
-    labels[13] = 'spokeAdder';
-
-    for (uint256 group; group < selectorGroups.length; group++) {
-      for (uint256 idx; idx < selectorGroups[group].length; idx++) {
-        assertEq(
-          accessManager.getTargetFunctionRole(hubConfigurator, selectorGroups[group][idx]),
-          expectedRoles[group],
-          string.concat('HubConfigurator ', labels[group], ' selector role mapping')
-        );
-      }
+    for (uint256 i; i < selectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(hubConfigurator, selectors[i]),
+        Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
+        'HubConfigurator domain admin selector role mapping'
+      );
     }
 
     if (inputs.grantRoles && inputs.hubLabels.length > 0) {
-      for (uint256 group; group < selectorGroups.length; group++) {
+      for (uint256 i; i < selectors.length; i++) {
         (bool allowed, ) = accessManager.canCall(
           inputs.hubConfiguratorAdmin,
           hubConfigurator,
-          selectorGroups[group][0]
+          selectors[i]
         );
-        assertTrue(
-          allowed,
-          string.concat('HubConfigurator admin canCall ', labels[group], ' selector')
-        );
+        assertTrue(allowed, 'HubConfigurator admin canCall selector');
       }
     }
   }
@@ -723,68 +770,24 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     FullDeployInputs memory inputs
   ) internal view {
     address spokeConfigurator = report.configuratorBatchReport.spokeConfigurator;
+    bytes4[] memory selectors = Roles.getSpokeConfiguratorDomainAdminRoleSelectors();
 
-    bytes4[][] memory selectorGroups = new bytes4[][](9);
-    uint64[] memory expectedRoles = new uint64[](9);
-    string[] memory labels = new string[](9);
-
-    selectorGroups[0] = Roles.getSpokeConfiguratorPriceAdminRoleSelectors();
-    expectedRoles[0] = Roles.SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE;
-    labels[0] = 'priceAdmin';
-
-    selectorGroups[1] = Roles.getSpokeConfiguratorReserveAdminRoleSelectors();
-    expectedRoles[1] = Roles.SPOKE_CONFIGURATOR_RESERVE_ADMIN_ROLE;
-    labels[1] = 'reserveAdmin';
-
-    selectorGroups[2] = Roles.getSpokeConfiguratorDynamicReserveAdminRoleSelectors();
-    expectedRoles[2] = Roles.SPOKE_CONFIGURATOR_DYNAMIC_RESERVE_ADMIN_ROLE;
-    labels[2] = 'dynamicReserveAdmin';
-
-    selectorGroups[3] = Roles.getSpokeConfiguratorPositionManagerAdminRoleSelectors();
-    expectedRoles[3] = Roles.SPOKE_CONFIGURATOR_POSITION_MANAGER_ADMIN_ROLE;
-    labels[3] = 'positionManagerAdmin';
-
-    selectorGroups[4] = Roles.getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
-    expectedRoles[4] = Roles.SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE;
-    labels[4] = 'liquidationUpdater';
-
-    selectorGroups[5] = Roles.getSpokeConfiguratorDynamicLiquidationUpdaterRoleSelectors();
-    expectedRoles[5] = Roles.SPOKE_CONFIGURATOR_DYNAMIC_LIQUIDATION_UPDATER_ROLE;
-    labels[5] = 'dynamicLiquidationUpdater';
-
-    selectorGroups[6] = Roles.getSpokeConfiguratorReserveAdderRoleSelectors();
-    expectedRoles[6] = Roles.SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE;
-    labels[6] = 'reserveAdder';
-
-    selectorGroups[7] = Roles.getSpokeConfiguratorFreezerRoleSelectors();
-    expectedRoles[7] = Roles.SPOKE_CONFIGURATOR_FREEZER_ROLE;
-    labels[7] = 'freeze';
-
-    selectorGroups[8] = Roles.getSpokeConfiguratorPauserRoleSelectors();
-    expectedRoles[8] = Roles.SPOKE_CONFIGURATOR_PAUSER_ROLE;
-    labels[8] = 'pause';
-
-    for (uint256 group; group < selectorGroups.length; group++) {
-      for (uint256 idx; idx < selectorGroups[group].length; idx++) {
-        assertEq(
-          accessManager.getTargetFunctionRole(spokeConfigurator, selectorGroups[group][idx]),
-          expectedRoles[group],
-          string.concat('SpokeConfigurator ', labels[group], ' selector role mapping')
-        );
-      }
+    for (uint256 i; i < selectors.length; i++) {
+      assertEq(
+        accessManager.getTargetFunctionRole(spokeConfigurator, selectors[i]),
+        Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
+        'SpokeConfigurator domain admin selector role mapping'
+      );
     }
 
     if (inputs.grantRoles && inputs.spokeLabels.length > 0) {
-      for (uint256 group; group < selectorGroups.length; group++) {
+      for (uint256 i; i < selectors.length; i++) {
         (bool allowed, ) = accessManager.canCall(
           inputs.spokeConfiguratorAdmin,
           spokeConfigurator,
-          selectorGroups[group][0]
+          selectors[i]
         );
-        assertTrue(
-          allowed,
-          string.concat('SpokeConfigurator admin canCall ', labels[group], ' selector')
-        );
+        assertTrue(allowed, 'SpokeConfigurator admin canCall selector');
       }
     }
   }
@@ -828,27 +831,96 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _etchSetup() internal {
     _etchCreate2Factory();
-    _etchLiquidationLogicLibrary();
   }
 
-  /// @dev Workaround for Foundry's `dynamic_test_linking` not deploying the LiquidationLogic
-  ///      library at the address it pre-links into consumer bytecodes (SpokeInstance, etc.).
-  ///      Hardcode Foundry's pre-linked deterministic address. If it changes
-  ///      (e.g. after a Foundry upgrade), find the new one by:
-  ///      - Running a failing liquidation test with `forge test -vvvv` and looking for:
-  ///        "delegatecall to <ADDRESS> (unlinked library)"
-  function _etchLiquidationLogicLibrary() internal {
-    address lib = address(0x5e14175873D9038DC68cB2319d00c173Dc09ad03);
-    if (lib.code.length == 0) {
-      vm.etch(lib, vm.getDeployedCode('src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic'));
+  function _checkAllAddressesHaveCode(
+    OrchestrationReports.FullDeploymentReport memory report
+  ) internal view {
+    _assertHasCode(report.authorityBatchReport.accessManager, 'accessManager');
+    _assertHasCode(report.configuratorBatchReport.hubConfigurator, 'hubConfigurator');
+    _assertHasCode(report.configuratorBatchReport.spokeConfigurator, 'spokeConfigurator');
+    _assertHasCode(report.treasurySpokeBatchReport.treasurySpoke, 'treasurySpoke');
+
+    for (uint256 i; i < report.hubInstanceBatchReports.length; i++) {
+      string memory label = report.hubInstanceBatchReports[i].label;
+      _assertHasCode(
+        report.hubInstanceBatchReports[i].report.hubProxy,
+        string.concat('hub proxy: ', label)
+      );
+      if (!_postDeploymentCheck) {
+        _assertHasCode(
+          report.hubInstanceBatchReports[i].report.hubImplementation,
+          string.concat('hub impl: ', label)
+        );
+      }
+      _assertHasCode(
+        report.hubInstanceBatchReports[i].report.irStrategy,
+        string.concat('irStrategy: ', label)
+      );
+    }
+
+    for (uint256 i; i < report.spokeInstanceBatchReports.length; i++) {
+      string memory label = report.spokeInstanceBatchReports[i].label;
+      _assertHasCode(
+        report.spokeInstanceBatchReports[i].report.spokeProxy,
+        string.concat('spoke proxy: ', label)
+      );
+      if (!_postDeploymentCheck) {
+        _assertHasCode(
+          report.spokeInstanceBatchReports[i].report.spokeImplementation,
+          string.concat('spoke impl: ', label)
+        );
+      }
+      _assertHasCode(
+        report.spokeInstanceBatchReports[i].report.aaveOracle,
+        string.concat('oracle: ', label)
+      );
+    }
+
+    if (report.gatewaysBatchReport.nativeGateway != address(0)) {
+      _assertHasCode(report.gatewaysBatchReport.nativeGateway, 'nativeTokenGateway');
+    }
+    if (report.gatewaysBatchReport.signatureGateway != address(0)) {
+      _assertHasCode(report.gatewaysBatchReport.signatureGateway, 'signatureGateway');
+    }
+    if (report.positionManagerBatchReport.giverPositionManager != address(0)) {
+      _assertHasCode(
+        report.positionManagerBatchReport.giverPositionManager,
+        'giverPositionManager'
+      );
+    }
+    if (report.positionManagerBatchReport.takerPositionManager != address(0)) {
+      _assertHasCode(
+        report.positionManagerBatchReport.takerPositionManager,
+        'takerPositionManager'
+      );
+    }
+    if (report.positionManagerBatchReport.configPositionManager != address(0)) {
+      _assertHasCode(
+        report.positionManagerBatchReport.configPositionManager,
+        'configPositionManager'
+      );
     }
   }
 
-  function _getHubBytecode() internal view returns (bytes memory) {
-    return vm.getCode('src/hub/Hub.sol:Hub');
+  function _assertHasCode(address addr, string memory label) internal view {
+    assertTrue(addr.code.length > 0, string.concat('no code at ', label, ': ', vm.toString(addr)));
   }
 
-  function _getSpokeBytecode() internal view returns (bytes memory) {
-    return vm.getCode('src/spoke/instances/SpokeInstance.sol:SpokeInstance');
+  /// @dev Assert that actual bytecode matches artifact bytecode, ignoring immutable slots
+  function _assertBytecodeMatchExcludingImmutables(
+    bytes memory actual,
+    bytes memory artifact,
+    string memory label
+  ) internal pure {
+    assertEq(actual.length, artifact.length, string.concat(label, ': code size mismatch'));
+
+    // Copy on-chain bytecode; zero out positions where artifact has zeros but on-chain doesn't.
+    // These are immutable slots (values are validated separately)
+    bytes memory masked = new bytes(actual.length);
+    for (uint256 i; i < actual.length; i++) {
+      masked[i] = (artifact[i] == 0x00) ? bytes1(0x00) : actual[i];
+    }
+    assertEq(keccak256(masked), keccak256(artifact), string.concat(label, ': bytecode mismatch'));
   }
 }

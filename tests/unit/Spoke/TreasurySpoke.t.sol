@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Spoke/SpokeBase.t.sol';
@@ -53,7 +52,7 @@ contract TreasurySpokeTest is SpokeBase {
     vm.expectRevert(
       abi.encodeWithSelector(OwnableUpgradeable.OwnableInvalidOwner.selector, address(0))
     );
-    DeployUtils.proxify(
+    AaveV4TestOrchestration.proxify(
       address(impl),
       ADMIN,
       abi.encodeCall(TreasurySpokeInstance.initialize, (address(0)))

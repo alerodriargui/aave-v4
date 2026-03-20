@@ -37,55 +37,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureWrapper {
     );
   }
 
-  function getSpokeConfiguratorPriceAdminRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getSpokeConfiguratorPriceAdminRoleSelectors();
-  }
-
-  function getSpokeConfiguratorReserveAdminRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getSpokeConfiguratorReserveAdminRoleSelectors();
-  }
-
-  function getSpokeConfiguratorDynamicReserveAdminRoleSelectors()
-    external
-    pure
-    returns (bytes4[] memory)
-  {
-    return Roles.getSpokeConfiguratorDynamicReserveAdminRoleSelectors();
-  }
-
-  function getSpokeConfiguratorPositionManagerAdminRoleSelectors()
-    external
-    pure
-    returns (bytes4[] memory)
-  {
-    return Roles.getSpokeConfiguratorPositionManagerAdminRoleSelectors();
-  }
-
-  function getSpokeConfiguratorLiquidationUpdaterRoleSelectors()
-    external
-    pure
-    returns (bytes4[] memory)
-  {
-    return Roles.getSpokeConfiguratorLiquidationUpdaterRoleSelectors();
-  }
-
-  function getSpokeConfiguratorDynamicLiquidationUpdaterRoleSelectors()
-    external
-    pure
-    returns (bytes4[] memory)
-  {
-    return Roles.getSpokeConfiguratorDynamicLiquidationUpdaterRoleSelectors();
-  }
-
-  function getSpokeConfiguratorReserveAdderRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getSpokeConfiguratorReserveAdderRoleSelectors();
-  }
-
-  function getSpokeConfiguratorFreezerRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getSpokeConfiguratorFreezerRoleSelectors();
-  }
-
-  function getSpokeConfiguratorPauserRoleSelectors() external pure returns (bytes4[] memory) {
-    return Roles.getSpokeConfiguratorPauserRoleSelectors();
+  function getSpokeConfiguratorDomainAdminRoleSelectors() external pure returns (bytes4[] memory) {
+    return Roles.getSpokeConfiguratorDomainAdminRoleSelectors();
   }
 }
