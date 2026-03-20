@@ -44,3 +44,6 @@ deploy-contracts :;
 	forge script scripts/deploy/AaveV4Deploy.s.sol \
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast) \
+
+generate-config :;
+	bun run scripts/config/generator/chaos/generate-config.ts
