@@ -2,9 +2,7 @@
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
-import {
-  PostDeploymentVerificationBase
-} from 'tests/deployments/fork/PostDeploymentVerificationBase.t.sol';
+import {PostDeploymentVerificationBase} from 'tests/deployments/fork/PostDeploymentVerificationBase.t.sol';
 import {AaveV4DeployAnvil} from 'scripts/deploy/examples/AaveV4DeployAnvil.s.sol';
 
 /// @title PostDeploymentVerificationAnvil

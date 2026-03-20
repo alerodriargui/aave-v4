@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import 'tests/unit/Hub/HubBase.t.sol';
@@ -69,6 +68,8 @@ contract HubEliminateDeficitTest is HubBase {
   }
 
   function test_eliminateDeficit_fuzz_revertsWith_AccessManagedUnauthorized(address caller) public {
+    vm.assume(caller != _getProxyAdminAddress(address(hub1)));
+
     (bool immediate, uint32 delay) = IAccessManager(hub1.authority()).canCall(
       caller,
       address(hub1),
