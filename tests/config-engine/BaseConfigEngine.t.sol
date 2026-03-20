@@ -115,8 +115,8 @@ abstract contract BaseConfigEngineTest is Test {
     vm.stopPrank();
 
     vm.startPrank(ADMIN);
-    hubs[0] = DeployUtils.deployHub(address(accessManager));
-    hubs[1] = DeployUtils.deployHub(address(accessManager), bytes32(uint256(1)));
+    hubs[0] = DeployUtils.deployHub(address(accessManager), ADMIN);
+    hubs[1] = DeployUtils.deployHub(address(accessManager), ADMIN, bytes32(uint256(1)));
     irStrategies[0] = new AssetInterestRateStrategy(address(hubs[0]));
     irStrategies[1] = new AssetInterestRateStrategy(address(hubs[1]));
     vm.stopPrank();
