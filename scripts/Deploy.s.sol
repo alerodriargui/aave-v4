@@ -21,8 +21,8 @@ import 'forge-std/console.sol';
 import {TokenizationSpokePayload} from './payload/TokenizationSpokePayload.sol';
 
 contract Deploy is Script {
-  // IExecutor public constant EXECUTOR = IExecutor(0xA972CCe333e8FC64CF10118DB2f98757617A9bC9);
-  IExecutor public constant EXECUTOR = IExecutor(0x19eed38fdB33B11b24184C6a2aef5ba95E490c2E);
+  IExecutor public constant EXECUTOR = IExecutor(0xA972CCe333e8FC64CF10118DB2f98757617A9bC9);
+  // IExecutor public constant EXECUTOR = IExecutor(0x19eed38fdB33B11b24184C6a2aef5ba95E490c2E);
   address public constant NATIVE_WRAPPER = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
   function tokenize() public {

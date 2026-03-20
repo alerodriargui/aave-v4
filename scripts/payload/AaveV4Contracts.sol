@@ -3,41 +3,41 @@
 pragma solidity ^0.8.0;
 
 library Hubs {
-  address internal constant CORE_HUB = 0x630c2cFF89cb11E62dE047EaeD8C4B396906bD7D;
-  address internal constant PLUS_HUB = 0x903395aEF788bD0A3a4c7a08651a9115add7c36b;
-  address internal constant PRIME_HUB = 0xf64d97bd0454DF721d0edB468265f204D3A3421D;
+  address internal constant CORE_HUB = 0xDA21DF2D9297f3E1CB564A54190a2984DF42B934;
+  address internal constant PLUS_HUB = 0x85F9b1d60f9F6fbD51006EA2E20Cde1A670A8eB4;
+  address internal constant PRIME_HUB = 0x502B96A1A31572264e27474C2f1439E7FB69b6E8;
 }
 
 library Spokes {
-  address internal constant BLUECHIP_SPOKE = 0xF1Fa1042474dC8bd4Ef830Fe70aE22C85A326729;
-  address internal constant ETHENA_CORRELATED_SPOKE = 0xa1A984B65b661599a61680f56a6c864ECED96CA6;
-  address internal constant ETHENA_ECOSYSTEM_SPOKE = 0x417Fae379865b8E298332e2F6fdcc2526D55a090;
-  address internal constant ETHERFI_ESPOKE = 0x7ED7431793eCbe5d42D64CA9b2593d026beB051B;
-  address internal constant FOREX_SPOKE = 0x37b36B7dfaBB69B12519B7Faaf019a6C0B261264;
-  address internal constant GOLD_SPOKE = 0x332EFa0E2121091Ae94f44F8c2C383B061ae2Ea7;
-  address internal constant KELP_ESPOKE = 0xC8FA3983843E7a978244e34c0e2562159A3D0783;
-  address internal constant LIDO_ESPOKE = 0xa9Dd188591A6F0C92bD1dC3A461a64c188694FB3;
-  address internal constant LOMBARD_BTC_SPOKE = 0xc78F5e5566C9Bde0C531fC8c7F5dC5954daFcA9e;
-  address internal constant MAIN_SPOKE = 0x6488A415e9eA693EC7Ef32579507e1907c0AC798;
+  address internal constant BLUECHIP_SPOKE = 0x20f09138d51a85B075659ec325c66Da4Ca663Dea;
+  address internal constant ETHENA_CORRELATED_SPOKE = 0xA76fdE0bFF53ffcd5f3FbE84133C22F37C9E6Cf3;
+  address internal constant ETHENA_ECOSYSTEM_SPOKE = 0x7c7C23bEe25ba4B12Bf1e11d12257A42030C6E04;
+  address internal constant ETHERFI_ESPOKE = 0xDfdf5272E13F01Fa3D7590aB059589f0Ec1D4B02;
+  address internal constant FOREX_SPOKE = 0x71e9339F9E8F0d1EFaf73C2823B7Bf7c0202D2aF;
+  address internal constant GOLD_SPOKE = 0x84aFeef66c1456244659e7F98705cA904aE5ebef;
+  address internal constant KELP_ESPOKE = 0xF3D54610227480Fc94D5C4677C2cf906901dac81;
+  address internal constant LIDO_ESPOKE = 0x39299bc53cff6EA0bf9183EfCC4074e4b57504b1;
+  address internal constant LOMBARD_BTC_SPOKE = 0x9A93D44e38c8505f24cCDFaEb2FbdfC1eba25c1C;
+  address internal constant MAIN_SPOKE = 0x47b880030329821412d614EAe2da68856E87C3fb;
 }
 
 library IrStrategies {
-  address internal constant CORE_HUB = 0x4520172Ac74F62a7e07a9d1E8D1Ec29431F978B4;
-  address internal constant PLUS_HUB = 0xC9E8988C595e8754Fa245aAF3D2b3Ee10D9067bD;
-  address internal constant PRIME_HUB = 0xdD771f02c61d87289c3e80092Cf49fF66b5060f3;
+  address internal constant CORE_HUB = 0x7E1FF7c41590bd6da9B3533CaC5c3CEbB9EDB125;
+  address internal constant PLUS_HUB = 0x09ee0b03F7643c09533913848dd5e1A3cA5Cf38c;
+  address internal constant PRIME_HUB = 0xAf15a24B34606F029839d398f1c4a26671E29Bb3;
 }
 
 library Oracles {
-  address internal constant BLUECHIP_SPOKE = 0xb113DD155B036d402Ab146866EaCBD8ec57e0CB4;
-  address internal constant ETHENA_CORRELATED_SPOKE = 0x779F5c43981FF994E745088e43cf1Be3EfE7277A;
-  address internal constant ETHENA_ECOSYSTEM_SPOKE = 0x3554a2a711D3b4aA91592BE484ef5Eb93DA06B6A;
-  address internal constant ETHERFI_ESPOKE = 0xcd8969028aEf5A787378198bDb3aD1afae44Ba0f;
-  address internal constant FOREX_SPOKE = 0x99DDd6F3012CF551689Df85A090a14d4f190fd66;
-  address internal constant GOLD_SPOKE = 0x9bE2cE60a1C2223C208cE06Bbd1617C9eA5a54f2;
-  address internal constant KELP_ESPOKE = 0xDEE757AEC0096399B1de3f56E2D689d7Df12168d;
-  address internal constant LIDO_ESPOKE = 0xeC3D47016536De544bc3b53C49175549Dc6b52C0;
-  address internal constant LOMBARD_BTC_SPOKE = 0x35156282022DfEB5b164ea2cbf6EF521CB8A0b5f;
-  address internal constant MAIN_SPOKE = 0x801A01dBF24eD0F2b48AD6aaB8613b45711D21f0;
+  address internal constant BLUECHIP_SPOKE = 0xc9d3721dbe8521d897b2bB1507CBAd4D2332B8Fa;
+  address internal constant ETHENA_CORRELATED_SPOKE = 0x4fe69aC37FEA7f084E367Dea3129EC5577E295E6;
+  address internal constant ETHENA_ECOSYSTEM_SPOKE = 0x28014ee8a9B7606B7ad23E2318f6901cF44ce137;
+  address internal constant ETHERFI_ESPOKE = 0x127A56eB5FCCb4242dAC35186f4e488194b2b692;
+  address internal constant FOREX_SPOKE = 0x4e23b4041d4BB45f2703BD4C319886163D082ae1;
+  address internal constant GOLD_SPOKE = 0x2039AA935fB2E93694d5108003F8CE65305b8DDe;
+  address internal constant KELP_ESPOKE = 0x3d4E05Cf6348a6D9575DE739eAcf2F4B327120EC;
+  address internal constant LIDO_ESPOKE = 0x06b5Ed7D3A277b64b69F8694fC2073aE3b59ea3D;
+  address internal constant LOMBARD_BTC_SPOKE = 0x4596a9CF34412e583660b28838bcEeE5Ff4Fc6dC;
+  address internal constant MAIN_SPOKE = 0xE0A6f410BC26f80825332b9D95Fa8c2D01393e0c;
 }
 
 library Tokens {
@@ -65,13 +65,13 @@ library Tokens {
 }
 
 library Infra {
-  address internal constant HUB_CONFIGURATOR = 0xE63b9229Dcea75f2D5193eC876E59C00F339c134;
-  address internal constant SPOKE_CONFIGURATOR = 0x9F690Cf64b87Dce2e9CE60650d1f570cd15dEB11;
-  address internal constant ACCESS_MANAGER = 0x70e05E3Bc4F37B7d096B14D51D610D098B96262d;
-  address internal constant CONFIG_POSITION_MANAGER = 0x081454BA40dB1a7CBd42F763AdE36d8ffAEB8913;
-  address internal constant GIVER_POSITION_MANAGER = 0x96795f26b1B70c7908f959862e7cBBbBd72B96cd;
-  address internal constant TAKER_POSITION_MANAGER = 0x1A2cc52338ab89231d0FF7D9530759F6C3fdB7eA;
-  address internal constant NATIVE_TOKEN_GATEWAY = 0xB79Cf8E8ec9cbf8D93eeD85a4Eea06fA2D78Dae0;
-  address internal constant SIGNATURE_GATEWAY = 0xa57b66798942c85c81DCf4FC83E8732a92729330;
-  address internal constant TREASURY_SPOKE = 0x795Faf19DE8be50575623d5c732408a4669B0096;
+  address internal constant HUB_CONFIGURATOR = 0x022B3f60a58efaef200fF0B5D599B9b18223EE1F;
+  address internal constant SPOKE_CONFIGURATOR = 0x5B45da42DF121aD69502f3E6BC32F129F7549782;
+  address internal constant ACCESS_MANAGER = 0x4940dB23bD0f02de91ffC620508a44F46fDead37;
+  address internal constant CONFIG_POSITION_MANAGER = 0x9D1C7d6f920f8915677B276b6AB6bD63e3E4baC8;
+  address internal constant GIVER_POSITION_MANAGER = 0x8C774A8C22e66aC06E71a28d75dc265EC2509756;
+  address internal constant TAKER_POSITION_MANAGER = 0x786BA4BD4D5aDDda85E1F44A397D60b9D6B0e778;
+  address internal constant NATIVE_TOKEN_GATEWAY = 0xDb99165DB5Fff01694ec90f79948a3DE75E29bDE;
+  address internal constant SIGNATURE_GATEWAY = 0x4769F7c79b23d111a5e55b248867F25e6Edae51e;
+  address internal constant TREASURY_SPOKE = 0x4f3647C9675723822BC618ad9b15802f6c893f06;
 }
