@@ -14,9 +14,9 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     // Grant same roles to payload (since delegatecall makes msg.sender = payload)
     vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(payload), 0);
-    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(payload), 0);
-    accessManager.grantRole(Roles.DEFAULT_ADMIN_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(payload), 0);
     vm.stopPrank();
 
     payloadPositionManager = new PositionManagerBaseWrapper(address(payload));
@@ -384,19 +384,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
   }
 
   function test_execute_hubSpokeToAssetsAdditions() public {
-    (ISpoke newSpoke, ) = _deploySpokeWithOracle(ADMIN, address(accessManager));
-
-    vm.startPrank(ADMIN);
-    bytes4[] memory spokeSelectors = new bytes4[](7);
-    spokeSelectors[0] = ISpoke.updateLiquidationConfig.selector;
-    spokeSelectors[1] = ISpoke.addReserve.selector;
-    spokeSelectors[2] = ISpoke.updateReserveConfig.selector;
-    spokeSelectors[3] = ISpoke.updateDynamicReserveConfig.selector;
-    spokeSelectors[4] = ISpoke.addDynamicReserveConfig.selector;
-    spokeSelectors[5] = ISpoke.updatePositionManager.selector;
-    spokeSelectors[6] = ISpoke.updateReservePriceSource.selector;
-    accessManager.setTargetFunctionRole(address(newSpoke), spokeSelectors, Roles.SPOKE_ADMIN_ROLE);
-    vm.stopPrank();
+    (ISpoke newSpoke, ) = _deployNewSpoke();
 
     IAaveV4ConfigEngine.SpokeToAssetsAddition[]
       memory additions = new IAaveV4ConfigEngine.SpokeToAssetsAddition[](1);
@@ -613,7 +601,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engine)));
     vm.prank(ADMIN);
-    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
 
     IAaveV4ConfigEngine.AssetDeactivation[]
       memory deactivations = new IAaveV4ConfigEngine.AssetDeactivation[](1);
@@ -859,9 +847,9 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
 
     payload = new AaveV4PayloadWrapper(IAaveV4ConfigEngine(address(engine)));
     vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.HUB_CONFIGURATOR_ROLE, address(payload), 0);
-    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(payload), 0);
-    accessManager.grantRole(Roles.DEFAULT_ADMIN_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
+    accessManager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(payload), 0);
     vm.stopPrank();
 
     IAaveV4ConfigEngine.RoleMembership[]
@@ -886,7 +874,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
       authority: address(accessManager),
       roleId: Roles.HUB_CONFIGURATOR_ROLE,
       admin: Roles.HUB_CONFIGURATOR_ROLE,
-      guardian: Roles.DEFICIT_ELIMINATOR_ROLE,
+      guardian: Roles.HUB_DEFICIT_ELIMINATOR_ROLE,
       grantDelay: 3600,
       label: 'FEE_UPDATER'
     });
@@ -897,7 +885,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     assertEq(accessManager.getRoleAdmin(Roles.HUB_CONFIGURATOR_ROLE), Roles.HUB_CONFIGURATOR_ROLE);
     assertEq(
       accessManager.getRoleGuardian(Roles.HUB_CONFIGURATOR_ROLE),
-      Roles.DEFICIT_ELIMINATOR_ROLE
+      Roles.HUB_DEFICIT_ELIMINATOR_ROLE
     );
   }
 
