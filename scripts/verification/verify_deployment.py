@@ -46,7 +46,11 @@ ARTIFACT_MAP: dict[str, ArtifactInfo] = {
         impl_sol_file="TreasurySpokeInstance.sol",
         impl_contract_name="TreasurySpokeInstance",
     ),
-    "Hub": ArtifactInfo("Hub.sol", "Hub"),
+    "Hub": ArtifactInfo(
+        "TransparentUpgradeableProxy.sol", "TransparentUpgradeableProxy",
+        impl_sol_file="HubInstance.sol",
+        impl_contract_name="HubInstance",
+    ),
     "InterestRateStrategy": ArtifactInfo(
         "AssetInterestRateStrategy.sol", "AssetInterestRateStrategy",
     ),
@@ -61,6 +65,11 @@ ARTIFACT_MAP: dict[str, ArtifactInfo] = {
     "GiverPositionManager": ArtifactInfo("GiverPositionManager.sol", "GiverPositionManager"),
     "TakerPositionManager": ArtifactInfo("TakerPositionManager.sol", "TakerPositionManager"),
     "ConfigPositionManager": ArtifactInfo("ConfigPositionManager.sol", "ConfigPositionManager"),
+    "TokenizationSpoke": ArtifactInfo(
+        "TransparentUpgradeableProxy.sol", "TransparentUpgradeableProxy",
+        impl_sol_file="TokenizationSpokeInstance.sol",
+        impl_contract_name="TokenizationSpokeInstance",
+    ),
 }
 
 
@@ -94,7 +103,7 @@ def load_deployed_bytecode(
 
     link_refs: list[dict] = []
     for file_refs in deployed.get("linkReferences", {}).values():
-        for _lib_name, ranges in file_refs.items():
+        for _, ranges in file_refs.items():
             link_refs.extend(ranges)
 
     return bytes.fromhex(bytecode_hex), immutable_refs, link_refs
@@ -404,10 +413,7 @@ class ContractCaller:
 # Batch RPC infrastructure
 # ---------------------------------------------------------------------------
 
-_SENTINEL = object()
-
 MAX_BATCH_SIZE = 100
-
 
 class BatchCallManager:
     """Wraps web3.py batch_requests() to execute many eth_call requests in one
@@ -439,7 +445,7 @@ class BatchCallManager:
             chunk_keys = [k for k, _ in chunk]
 
             batch = self.w3.batch_requests()
-            for _key, fn_call in chunk:
+            for _, fn_call in chunk:
                 batch.add(fn_call)
 
             try:
@@ -1112,63 +1118,38 @@ def _selectors_for_names(
 
 ROLE_NAMES: dict[int, str] = {
     0: "ACCESS_MANAGER_DEFAULT_ADMIN",
-    1: "HUB_CONFIGURATOR_ROLE",
-    2: "HUB_FEE_MINTER_ROLE",
-    3: "HUB_DEFICIT_ELIMINATOR_ROLE",
-    100: "HUB_CONFIGURATOR_LIQUIDITY_FEE_UPDATER_ROLE",
-    101: "HUB_CONFIGURATOR_FEE_CONFIGURATOR_ROLE",
-    102: "HUB_CONFIGURATOR_REINVESTMENT_UPDATER_ROLE",
-    103: "HUB_CONFIGURATOR_HALTER_ROLE",
-    104: "HUB_CONFIGURATOR_DEACTIVATOR_ROLE",
-    105: "HUB_CONFIGURATOR_CAPS_RESETTER_ROLE",
-    106: "HUB_CONFIGURATOR_CAPS_UPDATER_ROLE",
-    107: "HUB_CONFIGURATOR_DRAW_CAP_UPDATER_ROLE",
-    108: "HUB_CONFIGURATOR_ADD_CAP_UPDATER_ROLE",
-    109: "HUB_CONFIGURATOR_SPOKE_RISK_ADMIN_ROLE",
-    110: "HUB_CONFIGURATOR_INTEREST_RATE_STRATEGY_UPDATER_ROLE",
-    111: "HUB_CONFIGURATOR_INTEREST_RATE_DATA_UPDATER_ROLE",
-    112: "HUB_CONFIGURATOR_ASSET_LISTER_ROLE",
-    113: "HUB_CONFIGURATOR_SPOKE_ADDER_ROLE",
-    200: "SPOKE_USER_POSITION_UPDATER_ROLE",
-    201: "SPOKE_CONFIGURATOR_ROLE",
-    301: "SPOKE_CONFIGURATOR_PRICE_ADMIN_ROLE",
-    302: "SPOKE_CONFIGURATOR_RESERVE_ADMIN_ROLE",
-    303: "SPOKE_CONFIGURATOR_DYNAMIC_RESERVE_ADMIN_ROLE",
-    304: "SPOKE_CONFIGURATOR_POSITION_MANAGER_ADMIN_ROLE",
-    305: "SPOKE_CONFIGURATOR_LIQUIDATION_UPDATER_ROLE",
-    306: "SPOKE_CONFIGURATOR_DYNAMIC_LIQUIDATION_UPDATER_ROLE",
-    307: "SPOKE_CONFIGURATOR_RESERVE_ADDER_ROLE",
-    308: "SPOKE_CONFIGURATOR_FREEZER_ROLE",
-    309: "SPOKE_CONFIGURATOR_PAUSER_ROLE",
+    100: "HUB_DOMAIN_ADMIN_ROLE",
+    101: "HUB_CONFIGURATOR_ROLE",
+    102: "HUB_FEE_MINTER_ROLE",
+    103: "HUB_DEFICIT_ELIMINATOR_ROLE",
+    200: "HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE",
+    300: "SPOKE_DOMAIN_ADMIN_ROLE",
+    301: "SPOKE_CONFIGURATOR_ROLE",
+    302: "SPOKE_USER_POSITION_UPDATER_ROLE",
+    400: "SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE",
 }
 
 # role_id -> list of function name prefixes (matched against methodIdentifiers)
 HUB_ROLE_FUNCTIONS: dict[int, list[str]] = {
-    1: ["addAsset", "updateAssetConfig", "addSpoke", "updateSpokeConfig", "setInterestRateData"],
-    2: ["mintFeeShares"],
-    3: ["eliminateDeficit"],
+    101: ["addAsset", "updateAssetConfig", "addSpoke", "updateSpokeConfig", "setInterestRateData"],
+    102: ["mintFeeShares"],
+    103: ["eliminateDeficit"],
 }
 
 HUB_CONFIGURATOR_ROLE_FUNCTIONS: dict[int, list[str]] = {
-    100: ["updateLiquidityFee"],
-    101: ["updateFeeReceiver", "updateFeeConfig"],
-    102: ["updateReinvestmentController"],
-    103: ["haltAsset", "haltSpoke", "updateSpokeHalted"],
-    104: ["deactivateAsset", "deactivateSpoke", "updateSpokeActive"],
-    105: ["resetAssetCaps", "resetSpokeCaps"],
-    106: ["updateSpokeCaps"],
-    107: ["updateSpokeDrawCap"],
-    108: ["updateSpokeAddCap"],
-    109: ["updateSpokeRiskPremiumThreshold"],
-    110: ["updateInterestRateStrategy"],
-    111: ["updateInterestRateData"],
-    112: ["addAsset", "addAssetWithDecimals"],
-    113: ["addSpoke", "addSpokeToAssets"],
+    200: [
+        "addAsset", "addAssetWithDecimals", "updateLiquidityFee", "updateFeeReceiver",
+        "updateFeeConfig", "updateInterestRateStrategy", "updateReinvestmentController",
+        "resetAssetCaps", "deactivateAsset", "haltAsset", "addSpoke", "addSpokeToAssets",
+        "updateSpokeActive", "updateSpokeHalted", "updateSpokeAddCap", "updateSpokeDrawCap",
+        "updateSpokeRiskPremiumThreshold", "updateSpokeCaps", "deactivateSpoke", "haltSpoke",
+        "resetSpokeCaps", "updateInterestRateData",
+    ],
 }
 
 SPOKE_ROLE_FUNCTIONS: dict[int, list[str]] = {
-    200: ["updateUserDynamicConfig", "updateUserRiskPremium"],
-    201: [
+    302: ["updateUserDynamicConfig", "updateUserRiskPremium"],
+    301: [
         "updateLiquidationConfig", "addReserve", "updateReserveConfig",
         "updateDynamicReserveConfig", "addDynamicReserveConfig",
         "updatePositionManager", "updateReservePriceSource",
@@ -1176,15 +1157,16 @@ SPOKE_ROLE_FUNCTIONS: dict[int, list[str]] = {
 }
 
 SPOKE_CONFIGURATOR_ROLE_FUNCTIONS: dict[int, list[str]] = {
-    301: ["updateReservePriceSource"],
-    302: ["updateCollateralRisk", "updateReceiveSharesEnabled", "updateBorrowable"],
-    303: ["addCollateralFactor", "updateCollateralFactor", "addDynamicReserveConfig", "updateDynamicReserveConfig"],
-    304: ["updatePositionManager"],
-    305: ["updateLiquidationTargetHealthFactor", "updateHealthFactorForMaxBonus", "updateLiquidationBonusFactor", "updateLiquidationConfig"],
-    306: ["addMaxLiquidationBonus", "updateMaxLiquidationBonus", "addLiquidationFee", "updateLiquidationFee"],
-    307: ["addReserve"],
-    308: ["updateFrozen", "freezeAllReserves", "freezeReserve"],
-    309: ["updatePaused", "pauseAllReserves", "pauseReserve"],
+    400: [
+        "updateReservePriceSource", "updateLiquidationTargetHealthFactor",
+        "updateHealthFactorForMaxBonus", "updateLiquidationBonusFactor",
+        "updateLiquidationConfig", "addReserve", "updatePaused", "updateFrozen",
+        "updateBorrowable", "updateReceiveSharesEnabled", "updateCollateralRisk",
+        "addCollateralFactor", "updateCollateralFactor", "addMaxLiquidationBonus",
+        "updateMaxLiquidationBonus", "addLiquidationFee", "updateLiquidationFee",
+        "addDynamicReserveConfig", "updateDynamicReserveConfig", "pauseAllReserves",
+        "freezeAllReserves", "pauseReserve", "freezeReserve", "updatePositionManager",
+    ],
 }
 
 
@@ -1200,11 +1182,12 @@ def verify_tokenization_spokes(
     report: DeployReport,
     config: ConfigInput,
     result: VerificationResult,
+    tokenization_report: dict | None = None,
 ) -> None:
     result.section("TokenizationSpoke Verification")
 
     # Collect assets that have a tokenize section
-    tokenize_entries: list[tuple[str, dict, str, int]] = []  # (label, tokenize_cfg, hub_addr, asset_id)
+    tokenize_entries: list[tuple[str, dict, str, int, str]] = []  # (label, tokenize_cfg, hub_addr, asset_id, hub_key)
     for entry in config.assets:
         tok = entry.get("tokenize")
         if not tok or not tok.get("name"):
@@ -1219,15 +1202,132 @@ def verify_tokenization_spokes(
             result.error(f"{hub_key}/{token_key}/tokenize", "valid assetId", "call failed")
             continue
         label = f"{hub_key}/{token_key}"
-        tokenize_entries.append((label, tok, hub_addr, asset_id))
+        tokenize_entries.append((label, tok, hub_addr, asset_id, hub_key))
 
     if not tokenize_entries:
         print("  No tokenization entries found in config.")
         return
 
+    if tokenization_report is not None:
+        _verify_tokenization_from_report(
+            batch_mgr, caller, result, tokenize_entries, tokenization_report,
+        )
+    else:
+        _verify_tokenization_by_discovery(
+            batch_mgr, caller, result, tokenize_entries,
+        )
+
+
+def _verify_tokenization_from_report(
+    batch_mgr: BatchCallManager,
+    caller: ContractCaller,
+    result: VerificationResult,
+    tokenize_entries: list[tuple[str, dict, str, int, str]],
+    tokenization_report: dict,
+) -> None:
+    """Verify TokenizationSpokes using known addresses from tokenization deploy report."""
+    artifact = ARTIFACT_MAP["TokenizationSpoke"]
+
+    # Resolve addresses and verify bytecode
+    entry_addrs: list[tuple[str, dict, str, int, str]] = []  # (label, tok, hub_addr, asset_id, spoke_addr)
+    for label, tok, hub_addr, asset_id, hub_key in tokenize_entries:
+        token_key = label.split("/", 1)[1]
+        hub_report = tokenization_report.get(hub_key)
+        if hub_report is None:
+            result.error(f"{label}/tokenize", "address in tokenization report", f"hub '{hub_key}' not found")
+            continue
+        spoke_addr_raw = hub_report.get(token_key)
+        if spoke_addr_raw is None:
+            result.error(f"{label}/tokenize", "address in tokenization report", f"token '{token_key}' not found")
+            continue
+        spoke_addr = Web3.to_checksum_address(spoke_addr_raw)
+
+        # Bytecode: proxy
+        _verify_single_bytecode(
+            caller, result, f"{label}/tokenize/proxy",
+            spoke_addr, artifact.sol_file, artifact.contract_name,
+        )
+        # Bytecode: implementation
+        impl_addr = caller.get_implementation(spoke_addr)
+        if impl_addr and int(impl_addr, 16) != 0:
+            _verify_single_bytecode(
+                caller, result, f"{label}/tokenize/impl",
+                impl_addr, artifact.impl_sol_file, artifact.impl_contract_name,
+            )
+        else:
+            result.error(f"{label}/tokenize/impl", "implementation address", "could not read proxy impl slot")
+
+        entry_addrs.append((label, tok, hub_addr, asset_id, spoke_addr))
+
+    if not entry_addrs:
+        return
+
+    # Batch name() and symbol() calls
+    ns_calls: list[tuple[str, Any]] = []
+    for label, _, _, _, spoke_addr in entry_addrs:
+        tok_contract = batch_mgr.w3.eth.contract(
+            address=spoke_addr, abi=caller.tokenization_spoke_abi,
+        )
+        ns_calls.append((f"{label}/name", tok_contract.functions.name()))
+        ns_calls.append((f"{label}/symbol", tok_contract.functions.symbol()))
+
+    ns_results, ns_errors = batch_mgr.execute(ns_calls)
+
+    # Batch getSpokeConfig calls
+    cfg_calls: list[tuple[str, Any]] = []
+    for label, _, hub_addr, asset_id, spoke_addr in entry_addrs:
+        hub_contract = batch_mgr.w3.eth.contract(
+            address=hub_addr, abi=caller.hub_abi,
+        )
+        cfg_calls.append((
+            f"{label}/spokeConfig",
+            hub_contract.functions.getSpokeConfig(asset_id, spoke_addr),
+        ))
+
+    cfg_results, cfg_errors = batch_mgr.execute(cfg_calls)
+
+    # Check results
+    for label, tok, hub_addr, asset_id, spoke_addr in entry_addrs:
+        expected_name = tok["name"]
+        expected_symbol = tok["symbol"]
+        expected_add_cap = tok["addCap"]
+
+        # Name
+        name_key = f"{label}/name"
+        if name_key in ns_errors:
+            result.error(f"{label}/tokenize/name", expected_name, f"call failed: {ns_errors[name_key]}")
+        else:
+            _check(result, f"{label}/tokenize/name", expected_name, ns_results.get(name_key))
+
+        # Symbol
+        symbol_key = f"{label}/symbol"
+        if symbol_key in ns_errors:
+            result.error(f"{label}/tokenize/symbol", expected_symbol, f"call failed: {ns_errors[symbol_key]}")
+        else:
+            _check(result, f"{label}/tokenize/symbol", expected_symbol, ns_results.get(symbol_key))
+
+        # addCap from getSpokeConfig
+        cfg_key = f"{label}/spokeConfig"
+        if cfg_key in cfg_errors:
+            result.error(f"{label}/tokenize/addCap", expected_add_cap, f"call failed: {cfg_errors[cfg_key]}")
+        else:
+            spoke_cfg = cfg_results.get(cfg_key)
+            if spoke_cfg is not None:
+                _check(result, f"{label}/tokenize/addCap", expected_add_cap, spoke_cfg[0])
+            else:
+                result.error(f"{label}/tokenize/addCap", expected_add_cap, "config call failed")
+
+
+def _verify_tokenization_by_discovery(
+    batch_mgr: BatchCallManager,
+    caller: ContractCaller,
+    result: VerificationResult,
+    tokenize_entries: list[tuple[str, dict, str, int, str]],
+) -> None:
+    """Discover TokenizationSpokes by probing all spokes registered on Hub."""
     # Round 1: batch getSpokeCount for each (hub, assetId)
     count_calls: list[tuple[str, Any]] = []
-    for label, _tok, hub_addr, asset_id in tokenize_entries:
+    for label, _, hub_addr, asset_id, _ in tokenize_entries:
         hub_contract = batch_mgr.w3.eth.contract(
             address=hub_addr, abi=caller.hub_abi,
         )
@@ -1238,7 +1338,7 @@ def verify_tokenization_spokes(
     # Round 2: batch getSpokeAddress for each index
     addr_calls: list[tuple[str, Any]] = []
     addr_meta: list[tuple[str, dict, str, int, int]] = []  # label, tok, hub_addr, asset_id, index
-    for label, tok, hub_addr, asset_id in tokenize_entries:
+    for label, tok, hub_addr, asset_id, _ in tokenize_entries:
         if label in count_errors:
             result.error(f"{label}/spokeCount", "spoke count", f"call failed: {count_errors[label]}")
             continue
@@ -1281,7 +1381,7 @@ def verify_tokenization_spokes(
 
     # Round 4: Batch getSpokeConfig only for confirmed TokenizationSpoke candidates
     config_calls: list[tuple[str, Any]] = []
-    for label, tok, hub_addr, asset_id in tokenize_entries:
+    for label, tok, hub_addr, asset_id, _ in tokenize_entries:
         for spoke_addr in label_spokes.get(label, []):
             if spoke_addr in spoke_names:
                 hub_contract = batch_mgr.w3.eth.contract(
@@ -1295,7 +1395,7 @@ def verify_tokenization_spokes(
     config_results, config_errors = batch_mgr.execute(config_calls)
 
     # Match discovered TokenizationSpokes against config expectations
-    for label, tok, hub_addr, asset_id in tokenize_entries:
+    for label, tok, hub_addr, asset_id, _ in tokenize_entries:
         expected_name = tok["name"]
         expected_symbol = tok["symbol"]
         expected_add_cap = tok["addCap"]
@@ -1447,17 +1547,17 @@ def verify_roles(
     grant_calls: list[tuple[str, Any]] = []
     grant_expectations: list[tuple[str, str]] = []
 
-    # HUB_CONFIGURATOR_ROLE (1) -> HubConfigurator should be member
+    # HUB_CONFIGURATOR_ROLE (101) -> HubConfigurator should be member
     grant_calls.append((
         "HUB_CONFIGURATOR_ROLE/HubConfigurator",
-        am_contract.functions.hasRole(1, hc_target),
+        am_contract.functions.hasRole(101, hc_target),
     ))
     grant_expectations.append(("HUB_CONFIGURATOR_ROLE/HubConfigurator", "HubConfigurator is member"))
 
-    # SPOKE_CONFIGURATOR_ROLE (201) -> SpokeConfigurator should be member
+    # SPOKE_CONFIGURATOR_ROLE (301) -> SpokeConfigurator should be member
     grant_calls.append((
         "SPOKE_CONFIGURATOR_ROLE/SpokeConfigurator",
-        am_contract.functions.hasRole(201, sc_target),
+        am_contract.functions.hasRole(301, sc_target),
     ))
     grant_expectations.append(("SPOKE_CONFIGURATOR_ROLE/SpokeConfigurator", "SpokeConfigurator is member"))
 
@@ -1588,7 +1688,7 @@ def verify_position_managers_and_gateways(
     active_results, active_errors = batch_mgr.execute(active_calls)
 
     for spoke_info in report.spokes:
-        for pm_name, _pm_addr in pm_gw_entries:
+        for pm_name, _ in pm_gw_entries:
             key = f"{spoke_info.label}/{pm_name}"
             if key in active_errors:
                 result.error(key, "active", f"call failed: {active_errors[key]}")
@@ -1617,7 +1717,7 @@ def verify_position_managers_and_gateways(
 
     reg_results, reg_errors = batch_mgr.execute(reg_calls)
 
-    for pm_name, _pm_addr in pm_gw_entries:
+    for pm_name, _ in pm_gw_entries:
         for spoke_info in report.spokes:
             key = f"{pm_name}/{spoke_info.label}"
             if key in reg_errors:
@@ -1639,6 +1739,10 @@ def main() -> None:
         "--report", required=True, help="Path to deployment report JSON"
     )
     parser.add_argument("--config", required=True, help="Path to config input JSON")
+    parser.add_argument(
+        "--tokenization-report", default=None,
+        help="Path to tokenization deployment report JSON",
+    )
     args = parser.parse_args()
 
     with open(args.report) as f:
@@ -1646,6 +1750,11 @@ def main() -> None:
 
     with open(args.config) as f:
         config = ConfigInput(json.load(f))
+
+    tokenization_report = None
+    if args.tokenization_report:
+        with open(args.tokenization_report) as f:
+            tokenization_report = json.load(f)
 
     w3 = Web3(Web3.HTTPProvider(args.rpc_url))
     if not w3.is_connected():
@@ -1669,7 +1778,7 @@ def main() -> None:
     verify_reserves(batch_mgr, caller, cache, report, config, result)
     verify_liquidation_configs(batch_mgr, caller, report, config, result)
     verify_oracles(batch_mgr, caller, cache, report, config, result)
-    verify_tokenization_spokes(batch_mgr, caller, cache, report, config, result)
+    verify_tokenization_spokes(batch_mgr, caller, cache, report, config, result, tokenization_report)
     verify_roles(batch_mgr, caller, report, config, result)
     verify_position_managers_and_gateways(batch_mgr, caller, report, result)
 

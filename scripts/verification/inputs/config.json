@@ -49,11 +49,11 @@
       "address": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
       "priceFeed": "0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c"
     },
-    "PT_USDe": {
+    "PT_USDE_7MAY2026": {
       "address": "0xAeBf0Bb9f57E89260d57f31AF34eB58657d96Ce0",
       "priceFeed": "0x0a72df02CE3E4185b6CEDf561f0AE651E9BeE235"
     },
-    "PT_sUSDe": {
+    "PT_sUSDE_7MAY2026": {
       "address": "0x3de0ff76E8b528C092d47b9DaC775931cef80F49",
       "priceFeed": "0xa0dc0249c32fa79e8B9b17c735908a60b1141B40"
     },
@@ -137,7 +137,7 @@
     {
       "key": "LIDO_ESPOKE",
       "liquidationConfig": {
-        "targetHealthFactor": "1013650000000000000",
+        "targetHealthFactor": "1013700000000000000",
         "healthFactorForMaxBonus": "990000000000000000",
         "liquidationBonusFactor": 10000
       }
@@ -145,7 +145,7 @@
     {
       "key": "ETHERFI_ESPOKE",
       "liquidationConfig": {
-        "targetHealthFactor": "1019088461538462000",
+        "targetHealthFactor": "1019100000000000000",
         "healthFactorForMaxBonus": "990000000000000000",
         "liquidationBonusFactor": 10000
       }
@@ -153,7 +153,7 @@
     {
       "key": "KELP_ESPOKE",
       "liquidationConfig": {
-        "targetHealthFactor": "1021807692307692000",
+        "targetHealthFactor": "1021800000000000000",
         "healthFactorForMaxBonus": "990000000000000000",
         "liquidationBonusFactor": 10000
       }
@@ -161,7 +161,7 @@
     {
       "key": "LOMBARD_BTC_SPOKE",
       "liquidationConfig": {
-        "targetHealthFactor": "1061492307692308000",
+        "targetHealthFactor": "1061500000000000000",
         "healthFactorForMaxBonus": "990000000000000000",
         "liquidationBonusFactor": 10000
       }
@@ -169,7 +169,7 @@
     {
       "key": "GOLD_SPOKE",
       "liquidationConfig": {
-        "targetHealthFactor": "1307500000000000000",
+        "targetHealthFactor": "1307499999999999900",
         "healthFactorForMaxBonus": "900000000000000000",
         "liquidationBonusFactor": 9000
       }
@@ -177,7 +177,7 @@
     {
       "key": "FOREX_SPOKE",
       "liquidationConfig": {
-        "targetHealthFactor": "1044153846153846000",
+        "targetHealthFactor": "1044200000000000000",
         "healthFactorForMaxBonus": "990000000000000000",
         "liquidationBonusFactor": 10000
       }
@@ -193,7 +193,7 @@
     {
       "key": "ETHENA_ECOSYSTEM_SPOKE",
       "liquidationConfig": {
-        "targetHealthFactor": "1033169230769231000",
+        "targetHealthFactor": "1033200000000000000",
         "healthFactorForMaxBonus": "990000000000000000",
         "liquidationBonusFactor": 10000
       }
@@ -201,7 +201,7 @@
     {
       "key": "ETHENA_CORRELATED_SPOKE",
       "liquidationConfig": {
-        "targetHealthFactor": "1027676923076923000",
+        "targetHealthFactor": "1027700000000000000",
         "healthFactorForMaxBonus": "990000000000000000",
         "liquidationBonusFactor": 10000
       }
@@ -219,8 +219,8 @@
       },
       "liquidityFee": 1500,
       "tokenize": {
-        "name": "CORE WETH",
-        "symbol": "tWETH-CORE",
+        "name": "Tokenized Aave Core WETH",
+        "symbol": "aCore-WETH",
         "addCap": 250
       }
     },
@@ -234,8 +234,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "CORE wstETH",
-        "symbol": "twstETH-CORE",
+        "name": "Tokenized Aave Core wstETH",
+        "symbol": "aCore-wstETH",
         "addCap": 0
       }
     },
@@ -249,8 +249,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "CORE weETH",
-        "symbol": "tweETH-CORE",
+        "name": "Tokenized Aave Core weETH",
+        "symbol": "aCore-weETH",
         "addCap": 0
       }
     },
@@ -264,8 +264,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "CORE rsETH",
-        "symbol": "trsETH-CORE",
+        "name": "Tokenized Aave Core rsETH",
+        "symbol": "aCore-rsETH",
         "addCap": 0
       }
     },
@@ -279,8 +279,8 @@
         "optimalUsageRatio": 9200
       },
       "tokenize": {
-        "name": "CORE USDT",
-        "symbol": "tUSDT-CORE",
+        "name": "Tokenized Aave Core USDT",
+        "symbol": "aCore-USDT",
         "addCap": 312500
       }
     },
@@ -294,8 +294,8 @@
         "optimalUsageRatio": 9200
       },
       "tokenize": {
-        "name": "CORE USDC",
-        "symbol": "tUSDC-CORE",
+        "name": "Tokenized Aave Core USDC",
+        "symbol": "aCore-USDC",
         "addCap": 312500
       }
     },
@@ -309,8 +309,8 @@
         "optimalUsageRatio": 9000
       },
       "tokenize": {
-        "name": "CORE GHO",
-        "symbol": "tGHO-CORE",
+        "name": "Tokenized Aave Core GHO",
+        "symbol": "aCore-GHO",
         "addCap": 125000
       }
     },
@@ -325,8 +325,8 @@
       },
       "liquidityFee": 2000,
       "tokenize": {
-        "name": "CORE RLUSD",
-        "symbol": "tRLUSD-CORE",
+        "name": "Tokenized Aave Core RLUSD",
+        "symbol": "aCore-RLUSD",
         "addCap": 125000
       }
     },
@@ -341,8 +341,8 @@
       },
       "liquidityFee": 2000,
       "tokenize": {
-        "name": "CORE USDG",
-        "symbol": "tUSDG-CORE",
+        "name": "Tokenized Aave Core USDG",
+        "symbol": "aCore-USDG",
         "addCap": 125000
       }
     },
@@ -357,8 +357,8 @@
       },
       "liquidityFee": 2000,
       "tokenize": {
-        "name": "CORE frxUSD",
-        "symbol": "tfrxUSD-CORE",
+        "name": "Tokenized Aave Core frxUSD",
+        "symbol": "aCore-frxUSD",
         "addCap": 125000
       }
     },
@@ -372,9 +372,9 @@
         "optimalUsageRatio": 9000
       },
       "tokenize": {
-        "name": "CORE EURC",
-        "symbol": "tEURC-CORE",
-        "addCap": 312500
+        "name": "Tokenized Aave Core EURC",
+        "symbol": "aCore-EURC",
+        "addCap": 112500
       }
     },
     {
@@ -388,8 +388,8 @@
       },
       "liquidityFee": 2000,
       "tokenize": {
-        "name": "CORE WBTC",
-        "symbol": "tWBTC-CORE",
+        "name": "Tokenized Aave Core WBTC",
+        "symbol": "aCore-WBTC",
         "addCap": 0
       }
     },
@@ -404,8 +404,8 @@
       },
       "liquidityFee": 2000,
       "tokenize": {
-        "name": "CORE cbBTC",
-        "symbol": "tcbBTC-CORE",
+        "name": "Tokenized Aave Core cbBTC",
+        "symbol": "aCore-cbBTC",
         "addCap": 0
       }
     },
@@ -419,8 +419,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "CORE LBTC",
-        "symbol": "tLBTC-CORE",
+        "name": "Tokenized Aave Core LBTC",
+        "symbol": "aCore-LBTC",
         "addCap": 0
       }
     },
@@ -434,8 +434,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "CORE XAUt",
-        "symbol": "tXAUt-CORE",
+        "name": "Tokenized Aave Core XAUt",
+        "symbol": "aCore-XAUt",
         "addCap": 0
       }
     },
@@ -449,8 +449,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "CORE AAVE",
-        "symbol": "tAAVE-CORE",
+        "name": "Tokenized Aave Core AAVE",
+        "symbol": "aCore-AAVE",
         "addCap": 0
       }
     },
@@ -464,8 +464,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "CORE LINK",
-        "symbol": "tLINK-CORE",
+        "name": "Tokenized Aave Core LINK",
+        "symbol": "aCore-LINK",
         "addCap": 0
       }
     },
@@ -479,8 +479,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "PRIME WETH",
-        "symbol": "tWETH-PRIME",
+        "name": "Tokenized Aave Prime WETH",
+        "symbol": "aPrime-WETH",
         "addCap": 0
       }
     },
@@ -494,8 +494,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "PRIME WBTC",
-        "symbol": "tWBTC-PRIME",
+        "name": "Tokenized Aave Prime WBTC",
+        "symbol": "aPrime-WBTC",
         "addCap": 0
       }
     },
@@ -509,8 +509,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "PRIME cbBTC",
-        "symbol": "tcbBTC-PRIME",
+        "name": "Tokenized Aave Prime cbBTC",
+        "symbol": "aPrime-cbBTC",
         "addCap": 0
       }
     },
@@ -524,8 +524,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "PRIME wstETH",
-        "symbol": "twstETH-PRIME",
+        "name": "Tokenized Aave Prime wstETH",
+        "symbol": "aPrime-wstETH",
         "addCap": 0
       }
     },
@@ -539,8 +539,8 @@
         "optimalUsageRatio": 9200
       },
       "tokenize": {
-        "name": "PRIME USDC",
-        "symbol": "tUSDC-PRIME",
+        "name": "Tokenized Aave Prime USDC",
+        "symbol": "aPrime-USDC",
         "addCap": 37500
       }
     },
@@ -554,8 +554,8 @@
         "optimalUsageRatio": 9200
       },
       "tokenize": {
-        "name": "PRIME USDT",
-        "symbol": "tUSDT-PRIME",
+        "name": "Tokenized Aave Prime USDT",
+        "symbol": "aPrime-USDT",
         "addCap": 37500
       }
     },
@@ -569,13 +569,13 @@
         "optimalUsageRatio": 9000
       },
       "tokenize": {
-        "name": "PRIME GHO",
-        "symbol": "tGHO-PRIME",
+        "name": "Tokenized Aave Prime GHO",
+        "symbol": "aPrime-GHO",
         "addCap": 125000
       }
     },
     {
-      "tokenKey": "PT_sUSDe",
+      "tokenKey": "PT_sUSDE_7MAY2026",
       "hubKey": "PLUS_HUB",
       "irData": {
         "optimalUsageRatio": 9900,
@@ -584,11 +584,13 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
+        "name": "Tokenized Aave Plus PT_sUSDE_7MAY2026",
+        "symbol": "aPlus-PT_sUSDE_7MAY2026",
         "addCap": 0
       }
     },
     {
-      "tokenKey": "PT_USDe",
+      "tokenKey": "PT_USDE_7MAY2026",
       "hubKey": "PLUS_HUB",
       "irData": {
         "optimalUsageRatio": 9900,
@@ -597,6 +599,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
+        "name": "Tokenized Aave Plus PT_USDE_7MAY2026",
+        "symbol": "aPlus-PT_USDE_7MAY2026",
         "addCap": 0
       }
     },
@@ -610,8 +614,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "PLUS sUSDe",
-        "symbol": "tsUSDe-PLUS",
+        "name": "Tokenized Aave Plus sUSDe",
+        "symbol": "aPlus-sUSDe",
         "addCap": 0
       }
     },
@@ -626,8 +630,8 @@
       },
       "liquidityFee": 2500,
       "tokenize": {
-        "name": "PLUS USDe",
-        "symbol": "tUSDe-PLUS",
+        "name": "Tokenized Aave Plus USDe",
+        "symbol": "aPlus-USDe",
         "addCap": 78000
       }
     },
@@ -642,8 +646,8 @@
       },
       "liquidityFee": 1500,
       "tokenize": {
-        "name": "PLUS USDC",
-        "symbol": "tUSDC-PLUS",
+        "name": "Tokenized Aave Plus USDC",
+        "symbol": "aPlus-USDC",
         "addCap": 37500
       }
     },
@@ -657,8 +661,8 @@
         "optimalUsageRatio": 9000
       },
       "tokenize": {
-        "name": "PLUS GHO",
-        "symbol": "tGHO-PLUS",
+        "name": "Tokenized Aave Plus GHO",
+        "symbol": "aPlus-GHO",
         "addCap": 125000
       }
     },
@@ -673,8 +677,8 @@
       },
       "liquidityFee": 1500,
       "tokenize": {
-        "name": "PLUS USDT",
-        "symbol": "tUSDT-PLUS",
+        "name": "Tokenized Aave Plus USDT",
+        "symbol": "aPlus-USDT",
         "addCap": 37500
       }
     }
@@ -1024,17 +1028,17 @@
       "drawCap": 125000
     },
     {
-      "assetKey": "PT_USDe",
+      "assetKey": "PT_USDE_7MAY2026",
       "hubKey": "PLUS_HUB",
       "spokeKey": "ETHENA_ECOSYSTEM_SPOKE",
-      "addCap": 6000000,
+      "addCap": 250000,
       "drawCap": 0
     },
     {
-      "assetKey": "PT_sUSDe",
+      "assetKey": "PT_sUSDE_7MAY2026",
       "hubKey": "PLUS_HUB",
       "spokeKey": "ETHENA_ECOSYSTEM_SPOKE",
-      "addCap": 6000000,
+      "addCap": 1400000,
       "drawCap": 0
     },
     {
@@ -1094,17 +1098,17 @@
       "drawCap": 125000
     },
     {
-      "assetKey": "PT_USDe",
+      "assetKey": "PT_USDE_7MAY2026",
       "hubKey": "PLUS_HUB",
       "spokeKey": "ETHENA_CORRELATED_SPOKE",
-      "addCap": 6000000,
+      "addCap": 50000,
       "drawCap": 0
     },
     {
-      "assetKey": "PT_sUSDe",
+      "assetKey": "PT_sUSDE_7MAY2026",
       "hubKey": "PLUS_HUB",
       "spokeKey": "ETHENA_CORRELATED_SPOKE",
-      "addCap": 6000000,
+      "addCap": 400000,
       "drawCap": 0
     },
     {
@@ -1593,20 +1597,20 @@
     {
       "spokeKey": "ETHENA_ECOSYSTEM_SPOKE",
       "hubKey": "PLUS_HUB",
-      "assetKey": "PT_USDe",
+      "assetKey": "PT_USDE_7MAY2026",
       "borrowable": false,
-      "collateralFactor": 7800,
+      "collateralFactor": 9300,
       "collateralRisk": 0,
-      "maxLiquidationBonus": 10600
+      "maxLiquidationBonus": 10300
     },
     {
       "spokeKey": "ETHENA_ECOSYSTEM_SPOKE",
       "hubKey": "PLUS_HUB",
-      "assetKey": "PT_sUSDe",
+      "assetKey": "PT_sUSDE_7MAY2026",
       "borrowable": false,
-      "collateralFactor": 7800,
+      "collateralFactor": 9200,
       "collateralRisk": 0,
-      "maxLiquidationBonus": 10600
+      "maxLiquidationBonus": 10400
     },
     {
       "spokeKey": "ETHENA_ECOSYSTEM_SPOKE",
@@ -1689,20 +1693,20 @@
     {
       "spokeKey": "ETHENA_CORRELATED_SPOKE",
       "hubKey": "PLUS_HUB",
-      "assetKey": "PT_USDe",
+      "assetKey": "PT_USDE_7MAY2026",
       "borrowable": false,
-      "collateralFactor": 7800,
+      "collateralFactor": 9580,
       "collateralRisk": 0,
-      "maxLiquidationBonus": 10600
+      "maxLiquidationBonus": 10200
     },
     {
       "spokeKey": "ETHENA_CORRELATED_SPOKE",
       "hubKey": "PLUS_HUB",
-      "assetKey": "PT_sUSDe",
+      "assetKey": "PT_sUSDE_7MAY2026",
       "borrowable": false,
-      "collateralFactor": 7800,
+      "collateralFactor": 9400,
       "collateralRisk": 0,
-      "maxLiquidationBonus": 10600
+      "maxLiquidationBonus": 10300
     },
     {
       "spokeKey": "ETHENA_CORRELATED_SPOKE",
@@ -1726,6 +1730,9 @@
   "periphery": {
     "nativeTokenKey": "WETH",
     "deploySignatureGateway": true,
-    "deployNativeTokenGateway": true
+    "deployNativeTokenGateway": true,
+    "deployGiverPositionManager": true,
+    "deployTakerPositionManager": true,
+    "deployConfigPositionManager": true
   }
 }
