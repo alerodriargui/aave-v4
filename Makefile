@@ -51,4 +51,13 @@ config :;
 address-lib :;
 	bun run scripts/payload/generator/generateContracts.ts ${chain}
 
+payloads :;
+	bun run scripts/payload/generator/generatePayload.ts
+
+exec-payloads :;
+	RUST_LOG=debug forge script scripts/Deploy.s.sol --rpc-url ${chain} --account ${account} --tc Deploy --sig "payload()" --slow \
+	$(if ${dry},, --broadcast) \
+	--priority-gas-price 1.5gwei --with-gas-price 2.5gwei \
+
+
 

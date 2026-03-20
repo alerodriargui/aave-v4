@@ -18,6 +18,7 @@ bytecode_hash = "none"
 gas_snapshot_check = false
 gas_limit = 1099511627776
 dynamic_test_linking = true
+offline = true
 
 additional_compiler_profiles = [
   { name = "hub", optimizer = true, via_ir = true, optimizer_runs = 22_300 },
