@@ -25,6 +25,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     _outputFileName = outputFileName_;
   }
 
+  // todo add chain id validation
   function run() external virtual {
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
@@ -62,7 +63,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     address deployer
   ) internal virtual returns (FullDeployInputs memory) {
     string memory message = ' is zero address';
-    string memory outcome = '; defaulting to deployer';
+    string memory outcome = string.concat('; defaulting to deployer [', vm.toString(deployer), ']');
 
     FullDeployInputs memory sanitizedInputs = inputs;
 

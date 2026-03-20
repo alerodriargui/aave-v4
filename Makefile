@@ -32,15 +32,15 @@ coverage :
 
 # Deployment
 # Step 1:Pre-deploy LiquidationLogic library (required before deploying spokes)
-# `make deploy-precompile CHAIN=mainnet`
+# `make deploy-precompile chain=mainnet`
 deploy-precompile :;
-	FOUNDRY_PROFILE=${CHAIN} forge clean && forge script scripts/LibraryPreCompile.s.sol \
-	--rpc-url ${CHAIN} --account ${ACCOUNT} --ffi \
-	$(if ${DRY},, --broadcast --verify) \
+	forge script scripts/LibraryPreCompile.s.sol \
+	--rpc-url ${chain} --account ${account} --ffi \
+	$(if ${dry},, --broadcast) \
 
 # Step 2: Deploy contracts + grant roles to deployer
-# `make deploy-contracts CHAIN=mainnet`
+# `make deploy-contracts chain=mainnet`
 deploy-contracts :;
-	FOUNDRY_PROFILE=${CHAIN} forge clean && forge script scripts/deploy/AaveV4DeployBatch.s.sol:AaveV4DeployBatchScript \
-	--rpc-url ${CHAIN} --account ${ACCOUNT} --slow \
-	$(if ${DRY},, --broadcast --verify) \
+	forge script scripts/deploy/AaveV4Deploy.s.sol \
+	--rpc-url ${chain} --account ${account} --slow \
+	$(if ${dry},, --broadcast) \
