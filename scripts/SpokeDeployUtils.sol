@@ -21,7 +21,8 @@ library SpokeDeployUtils {
   ///      For Anvil, etch it beforehand (see scripts/deploy/AaveV4DeployBatchAnvil.s.sol).
   /// @return The deployed library address.
   function deployLiquidationLogic() internal returns (address) {
-    bytes memory bytecode = vm.getCode('out/LiquidationLogic.sol/LiquidationLogic.spoke.json');
+    // bytes memory bytecode = vm.getCode('src/spoke/libraries/LiquidationLogic.sol:LiquidationLogic'); // default profile
+    bytes memory bytecode = vm.getCode('out/LiquidationLogic.sol/LiquidationLogic.spoke.json'); // corrected via ir
     return Create2Utils.create2Deploy(bytes32(uint(11231)), bytecode); // todo: expose this seed such that we can deploy new liq logics
   }
 
