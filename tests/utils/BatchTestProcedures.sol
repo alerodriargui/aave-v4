@@ -365,6 +365,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
       _checkHubDeployment({
         report: hubReport,
         accessManager: report.authorityBatchReport.accessManager,
+        expectedHubProxyAdminOwner: inputs.hubProxyAdminOwner,
         label: label
       });
       _checkInterestRateStrategyDeployment({report: hubReport, label: label});
@@ -375,6 +376,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkHubDeployment(
     OrchestrationReports.HubDeploymentReport memory report,
     address accessManager,
+    address expectedHubProxyAdminOwner,
     string memory label
   ) internal view {
     if (!_postDeploymentCheck) {
@@ -382,6 +384,12 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
         ProxyHelper.getImplementation(report.report.hubProxy),
         report.report.hubImplementation,
         string.concat(label, ' implementation')
+      );
+      address proxyAdminOwner = Ownable(ProxyHelper.getProxyAdmin(report.report.hubProxy)).owner();
+      assertEq(
+        proxyAdminOwner,
+        expectedHubProxyAdminOwner,
+        string.concat(label, ' hub proxy admin owner')
       );
     }
     assertEq(

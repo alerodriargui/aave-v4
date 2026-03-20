@@ -55,8 +55,8 @@ library Roles {
 
   // Spoke roles
   uint64 public constant SPOKE_DOMAIN_ADMIN_ROLE = 300;
-  uint64 public constant SPOKE_USER_POSITION_UPDATER_ROLE = 301;
-  uint64 public constant SPOKE_CONFIGURATOR_ROLE = 302;
+  uint64 public constant SPOKE_CONFIGURATOR_ROLE = 301;
+  uint64 public constant SPOKE_USER_POSITION_UPDATER_ROLE = 302;
 
   // SpokeConfigurator roles — granularize as needed with new roles appended
   uint64 public constant SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400;

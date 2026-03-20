@@ -17,8 +17,8 @@ import {AaveV4DeployAnvil} from 'scripts/deploy/examples/AaveV4DeployAnvil.s.sol
 ///   3. Run: forge test --mc PostDeploymentVerificationAnvil
 contract PostDeploymentVerificationAnvil is PostDeploymentVerificationBase, AaveV4DeployAnvil {
   // TODO: Update these constants to the test deployment params
-  string public constant REPORT_FILE = '1773874882-31337-anvil-deploy.json';
-  address public constant DEPLOYER = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
+  string public constant REPORT_FILE = '1773975754-31337-anvil-deploy.json';
+  address public constant DEPLOYER = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8; // anvil account
 
   function setUp() public override(PostDeploymentVerificationBase) {
     vm.skip(true, 'Anvil post-deployment test');
