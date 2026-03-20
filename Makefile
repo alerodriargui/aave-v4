@@ -45,10 +45,10 @@ deploy-contracts :;
 	--rpc-url ${chain} --account ${account} --slow \
 	$(if ${dry},, --broadcast) \
 
-generate-config :;
+config :;
 	bun run scripts/config/generator/chaos/generate-config.ts
 
-generate-contracts :;
+address-lib :;
 	bun run scripts/payload/generator/generateContracts.ts ${chain}
 
 

@@ -13,88 +13,88 @@ export const ZERO = '0x0000000000000000000000000000000000000000';
 
 export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}> = {
   WETH: {
-    address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // "Wrapped Ether"
-    priceFeed: '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419', // "ETH / USD" ~$1,964
+    address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // name: "Wrapped Ether", symbol: "WETH"
+    priceFeed: '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419', // "ETH / USD", latestAnswer: 213475000000
   },
   WBTC: {
-    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', // "Wrapped BTC"
-    priceFeed: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c', // "BTC / USD" ~$67,449
+    address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599', // name: "Wrapped BTC", symbol: "WBTC"
+    priceFeed: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c', // "BTC / USD", latestAnswer: 7016528830938
   },
   cbBTC: {
-    address: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf', // "Coinbase Wrapped BTC"
-    priceFeed: '0x2665701293fCbEB223D11A08D826563EDcCE423A', // "cbBTC / USD" ~$67,240
+    address: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf', // name: "Coinbase Wrapped BTC", symbol: "cbBTC"
+    priceFeed: '0x2665701293fCbEB223D11A08D826563EDcCE423A', // "cbBTC / USD", latestAnswer: 7047392557506
   },
   wstETH: {
-    address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0', // "Wrapped liquid staked Ether 2.0"
-    priceFeed: '0x8B6851156023f4f5A66F68BEa80851c3D905Ac93', // "wstETH/ETH/USD" ~$2,409
+    address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0', // name: "Wrapped liquid staked Ether 2.0", symbol: "wstETH"
+    priceFeed: '0x8B6851156023f4f5A66F68BEa80851c3D905Ac93', // "wstETH/ETH/USD", latestAnswer: 264065694721
   },
   weETH: {
-    address: '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee', // "Wrapped eETH"
-    priceFeed: '0x87625393534d5C102cADB66D37201dF24cc26d4C', // "Capped weETH / eETH(ETH) / USD" ~$2,127
+    address: '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee', // name: "Wrapped eETH", symbol: "weETH"
+    priceFeed: '0x87625393534d5C102cADB66D37201dF24cc26d4C', // "Capped weETH / eETH(ETH) / USD", latestAnswer: 233208272231
   },
   rsETH: {
-    address: '0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7', // "rsETH"
-    priceFeed: '0x7292C95A5f6A501a9c4B34f6393e221F2A0139c3', // "rsETH / ETH / USD"
+    address: '0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7', // name: "rsETH", symbol: "rsETH"
+    priceFeed: '0x7292C95A5f6A501a9c4B34f6393e221F2A0139c3', // "Capped rsETH / ETH / USD", latestAnswer: 228277416664
   },
   USDC: {
-    address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // "USD Coin"
-    priceFeed: '0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6', // "USDC / USD" ~$1.00
+    address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // name: "USD Coin", symbol: "USDC"
+    priceFeed: '0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6', // "USDC / USD", latestAnswer: 99994497
   },
   USDT: {
-    address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // "Tether USD"
-    priceFeed: '0x3E7d1eAB13ad0104d2750B8863b489D65364e32D', // "USDT / USD" ~$1.00
+    address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // name: "Tether USD", symbol: "USDT"
+    priceFeed: '0x3E7d1eAB13ad0104d2750B8863b489D65364e32D', // "USDT / USD", latestAnswer: 99995746
   },
   GHO: {
-    address: '0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f', // "Gho Token"
-    priceFeed: '0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC', // "GHO / USD" ~$1.00
+    address: '0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f', // name: "Gho Token", symbol: "GHO"
+    priceFeed: '0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC', // "GHO / USD", latestAnswer: 99981837
   },
   AAVE: {
-    address: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', // "Aave Token"
-    priceFeed: '0xbd7F896e60B650C01caf2d7279a1148189A68884', // "AAVE / USD" ~$109
+    address: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', // name: "Aave Token", symbol: "AAVE"
+    priceFeed: '0xbd7F896e60B650C01caf2d7279a1148189A68884', // "AAVE / USD", latestAnswer: 11038631328
   },
   LINK: {
-    address: '0x514910771AF9Ca656af840dff83E8264EcF986CA', // "ChainLink Token"
-    priceFeed: '0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c', // "LINK / USD" ~$8.40
+    address: '0x514910771AF9Ca656af840dff83E8264EcF986CA', // name: "ChainLink Token", symbol: "LINK"
+    priceFeed: '0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c', // "LINK / USD", latestAnswer: 906213889
   },
   sUSDe: {
-    address: '0x9D39A5DE30e57443BfF2A8307A4256c8797A3497', // "Staked USDe"
-    priceFeed: '0xFF3BC18cCBd5999CE63E788A1c250a88626aD099', // "sUSDe / USD" ~$1.22
+    address: '0x9D39A5DE30e57443BfF2A8307A4256c8797A3497', // name: "Staked USDe", symbol: "sUSDe"
+    priceFeed: '0xFF3BC18cCBd5999CE63E788A1c250a88626aD099', // "sUSDe / USD", latestAnswer: 122383253
   },
   PT_sUSDE_7MAY2026: {
-    address: '0x3de0ff76E8b528C092d47b9DaC775931cef80F49', // "PT Ethena sUSDE 7MAY2026"
-    priceFeed: '0xa0dc0249c32fa79e8B9b17c735908a60b1141B40', // "PT Capped sUSDe USDT/USD linear discount 07MAY2026" ~$0.988
+    address: '0x3de0ff76E8b528C092d47b9DaC775931cef80F49', // name: "PT Ethena sUSDE 7MAY2026", symbol: "PT-sUSDE-7MAY2026"
+    priceFeed: '0xa0dc0249c32fa79e8B9b17c735908a60b1141B40', // "PT Capped sUSDe USDT/USD linear discount 07MAY2026", latestAnswer: 99473812
   },
   USDe: {
-    address: '0x4c9EDD5852cd905f086C759E8383e09bff1E68B3', // "USDe"
-    priceFeed: '0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961', // "USDe / USD" ~$1.00
+    address: '0x4c9EDD5852cd905f086C759E8383e09bff1E68B3', // name: "USDe", symbol: "USDe"
+    priceFeed: '0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961', // "USDe / USD", latestAnswer: 99956422
   },
   LBTC: {
-    address: '0x8236a87084f8B84306f72007F36F2618A5634494', // "Lombard Staked Bitcoin"
-    priceFeed: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c', // "BTC / USD" ~$67,449 (using BTC/USD directly)
+    address: '0x8236a87084f8B84306f72007F36F2618A5634494', // name: "Lombard Staked Bitcoin", symbol: "LBTC"
+    priceFeed: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c', // "BTC / USD", latestAnswer: 7016528830938 (using BTC/USD directly)
   },
   EURC: {
-    address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c', // "Euro Coin"
-    priceFeed: '0x04F84020Fdf10d9ee64D1dcC2986EDF2F556DA11', // "EURC / USD" ~$1.19
+    address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c', // name: "Euro Coin", symbol: "EURC"
+    priceFeed: '0x04F84020Fdf10d9ee64D1dcC2986EDF2F556DA11', // "EURC / USD", latestAnswer: 115630690
   },
   XAUt: {
-    address: '0x68749665FF8D2d112Fa859AA293F07A622782F38', // "Tether Gold"
-    priceFeed: '0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6', // "XAU / USD" ~$5,065
+    address: '0x68749665FF8D2d112Fa859AA293F07A622782F38', // name: "Tether Gold", symbol: "XAUt"
+    priceFeed: '0x214eD9Da11D2fbe465a6fc601a91E62EbEc1a0D6', // "XAU / USD", latestAnswer: 457825000000
   },
   USDG: {
-    address: '0xe343167631d89B6Ffc58B88d6b7fB0228795491D', // "Global Dollar"
-    priceFeed: '0x14f0737d6b705259e521EA6E9E3506AC78dBd311', // "USDG / USD" ~$1.00
+    address: '0xe343167631d89B6Ffc58B88d6b7fB0228795491D', // name: "Global Dollar", symbol: "USDG"
+    priceFeed: '0x14f0737d6b705259e521EA6E9E3506AC78dBd311', // "USDG / USD", latestAnswer: 99995593
   },
   RLUSD: {
-    address: '0x8292Bb45bf1Ee4d140127049757c2E0fF06317eD', // "RLUSD"
-    priceFeed: '0x26C46B7aD0012cA71F2298ada567dC9Af14E7f2A', // "RLUSD / USD" ~$1.00
+    address: '0x8292Bb45bf1Ee4d140127049757c2E0fF06317eD', // name: "RLUSD", symbol: "RLUSD"
+    priceFeed: '0x26C46B7aD0012cA71F2298ada567dC9Af14E7f2A', // "RLUSD / USD", latestAnswer: 100005582
   },
   frxUSD: {
-    address: '0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29', // "Frax USD"
-    priceFeed: '0x9B4a96210bc8D9D55b1908B465D8B0de68B7fF83', // "frxUSD / USD" ~$1.00
+    address: '0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29', // name: "Frax USD", symbol: "frxUSD"
+    priceFeed: '0x9B4a96210bc8D9D55b1908B465D8B0de68B7fF83', // "frxUSD / USD", latestAnswer: 99988313
   },
   PT_USDE_7MAY2026: {
-    address: '0xAeBf0Bb9f57E89260d57f31AF34eB58657d96Ce0', // "PT Ethena USDe 7MAY2026"
-    priceFeed: '0x0a72df02CE3E4185b6CEDf561f0AE651E9BeE235', // "PT Capped USDe USDT/USD linear discount 07MAY2026" ~$0.990
+    address: '0xAeBf0Bb9f57E89260d57f31AF34eB58657d96Ce0', // name: "PT Ethena USDe 7MAY2026", symbol: "PT-USDe-7MAY2026"
+    priceFeed: '0x0a72df02CE3E4185b6CEDf561f0AE651E9BeE235', // "PT Capped USDe USDT/USD linear discount 07MAY2026", latestAnswer: 99482901
   },
 };
 
