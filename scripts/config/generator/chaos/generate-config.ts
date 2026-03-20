@@ -17,6 +17,7 @@ import {
 const TOKEN_KEY_MAP: Record<string, string> = {
   Aave: 'AAVE',
   ETH: 'WETH',
+  EUR: 'EURC',
   ['PT-USDE-7MAY2026']: 'PT_USDE_7MAY2026',
   ['PT-sUSDE-7MAY2026']: 'PT_sUSDE_7MAY2026',
 };
@@ -115,15 +116,6 @@ function isNA(val: unknown): boolean {
 // ══════════════════════════════════════════════════════════════════════════════
 // Defaults
 // ══════════════════════════════════════════════════════════════════════════════
-
-const RISK_ORACLE_DEFAULT_CF = 7800;
-const TBD_ADD_CAP = 6000000;
-
-// Tokenization spoke overrides for assets missing from the Excel.
-// Remove entries as Chaos Labs provides the real values.
-const TOKENIZE_EXCEPTIONS: Record<string, {addCap: number; name: string; symbol: string}> = {
-  'EURC|CORE_HUB': {addCap: 312500, name: 'Core Tokenized EURC', symbol: 'aCore-EURC'},
-};
 
 const ZERO_IR: IrProfile = {
   optimalUsageRatio: 99_00,
@@ -279,13 +271,10 @@ function parseReserveSheet(sheet: XLSX.WorkSheet): {
     const tokenKey = normalizeTokenKey(String(row[3]));
     const ctx = `reserve ${tokenKey} of ${spokeKey} at ${hubKey}`;
 
-    // Add Cap: number or "TBD"
     const rawAddCap = row[4];
-    let addCap = String(rawAddCap) === 'TBD' ? TBD_ADD_CAP : Number(rawAddCap);
-    if (!Number.isInteger(addCap)) {
-      const rounded = Math.round(addCap);
-      warnings.push(`${ctx}: rounding addCap from ${addCap} to ${rounded}`);
-      addCap = rounded;
+    const addCap = Math.round(Number(rawAddCap));
+    if (!Number.isFinite(addCap)) {
+      throw new Error(`${ctx}: addCap "${rawAddCap}" is not a valid number`);
     }
 
     let drawCap = Number(row[5]) || 0;
@@ -295,13 +284,10 @@ function parseReserveSheet(sheet: XLSX.WorkSheet): {
       drawCap = rounded;
     }
 
-    // Collateral Factor: number or "Risk oracle"
     const rawCF = row[6];
-    let collateralFactor: number;
-    if (String(rawCF).toLowerCase().includes('risk oracle')) {
-      collateralFactor = RISK_ORACLE_DEFAULT_CF;
-    } else {
-      collateralFactor = toBps(Number(rawCF), warnings, `${ctx} collateralFactor`);
+    const collateralFactor = toBps(Number(rawCF), warnings, `${ctx} collateralFactor`);
+    if (!Number.isFinite(collateralFactor)) {
+      throw new Error(`${ctx}: collateralFactor "${rawCF}" is not a valid number`);
     }
 
     // Max Liquidation Bonus: number (bonus portion, e.g. 0.05 → 10500) or "N/A" or "Risk oracle"
@@ -473,15 +459,6 @@ function buildConfig(
     tokenizeCapMap.set(`${ts.tokenKey}|${ts.hubKey}`, ts.addCap);
   }
 
-  // Warn if any TOKENIZE_EXCEPTIONS entry is now covered by the Excel (stale override).
-  for (const key of Object.keys(TOKENIZE_EXCEPTIONS)) {
-    if (tokenizeCapMap.has(key)) {
-      console.error(
-        `  WARN: TOKENIZE_EXCEPTIONS["${key}"] is now covered by the Excel — remove the hardcoded entry`,
-      );
-    }
-  }
-
   // For each asset, set tokenize.addCap from Excel or infer 0 for supply-only assets
   for (const asset of assets) {
     const hubPrefix = toTitleCase(String(asset.hubKey).replace(/_HUB$/, ''));
@@ -499,21 +476,12 @@ function buildConfig(
         .filter((r) => r.tokenKey === asset.tokenKey && r.hubKey === asset.hubKey)
         .reduce((max, r) => Math.max(max, r.drawCap), 0);
       if (maxDrawCap > 0) {
-        const exception = TOKENIZE_EXCEPTIONS[key];
-        if (exception) {
-          asset.tokenize = {
-            name: exception.name,
-            symbol: exception.symbol,
-            addCap: exception.addCap,
-          };
-        } else {
-          const spokeWithDraw = reserveParams.find(
-            (r) => r.tokenKey === asset.tokenKey && r.hubKey === asset.hubKey && r.drawCap > 0,
-          )!;
-          throw new Error(
-            `Asset ${asset.tokenKey} on ${asset.hubKey} has no tokenization spoke addCap but has drawCap=${spokeWithDraw.drawCap} on spoke ${spokeWithDraw.spokeKey} — tokenization cap is required for yield-generating assets`,
-          );
-        }
+        const spokeWithDraw = reserveParams.find(
+          (r) => r.tokenKey === asset.tokenKey && r.hubKey === asset.hubKey && r.drawCap > 0,
+        )!;
+        throw new Error(
+          `Asset ${asset.tokenKey} on ${asset.hubKey} has no tokenization spoke addCap but has drawCap=${spokeWithDraw.drawCap} on spoke ${spokeWithDraw.spokeKey} — tokenization cap is required for yield-generating assets`,
+        );
       } else {
         // All drawCaps are 0 — deploy with addCap 0 for consistency
         asset.tokenize = {

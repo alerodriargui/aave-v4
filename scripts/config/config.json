@@ -372,9 +372,9 @@
         "optimalUsageRatio": 9000
       },
       "tokenize": {
-        "name": "Core Tokenized EURC",
+        "name": "Tokenized Aave Core EURC",
         "symbol": "aCore-EURC",
-        "addCap": 312500
+        "addCap": 112500
       }
     },
     {
