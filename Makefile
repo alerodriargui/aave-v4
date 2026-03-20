@@ -47,3 +47,8 @@ deploy-contracts :;
 
 generate-config :;
 	bun run scripts/config/generator/chaos/generate-config.ts
+
+generate-contracts :;
+	bun run scripts/payload/generator/generateContracts.ts ${chain}
+
+

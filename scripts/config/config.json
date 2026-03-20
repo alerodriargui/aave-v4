@@ -25,7 +25,7 @@
       "liquidityFee": 1000
     },
     "tokenize": {
-      "enabled": false
+      "enabled": true
     }
   },
   "tokens": {
