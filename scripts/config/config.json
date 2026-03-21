@@ -22,7 +22,7 @@
   "tokens": {
     "AAVE": {
       "address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
-      "priceFeed": "0xbd7F896e60B650C01caf2d7279a1148189A68884"
+      "priceFeed": "0x547a514d5e3769680Ce22B2361c10Ea13619e8a9"
     },
     "EURC": {
       "address": "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
@@ -102,7 +102,7 @@
     },
     "wstETH": {
       "address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
-      "priceFeed": "0x8B6851156023f4f5A66F68BEa80851c3D905Ac93"
+      "priceFeed": "0xe1D97bF61901B075E9626c8A2340a7De385861Ef"
     }
   },
   "hubs": [

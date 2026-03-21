@@ -26,7 +26,7 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
   wstETH: {
     address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0', // name: "Wrapped liquid staked Ether 2.0", symbol: "wstETH"
-    priceFeed: '0x8B6851156023f4f5A66F68BEa80851c3D905Ac93', // "wstETH/ETH/USD", latestAnswer: 264065694721
+    priceFeed: '0xe1D97bF61901B075E9626c8A2340a7De385861Ef', // "Capped wstETH / stETH(ETH) / USD", latestAnswer: 264065694721
   },
   weETH: {
     address: '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee', // name: "Wrapped eETH", symbol: "weETH"
@@ -50,7 +50,7 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
   AAVE: {
     address: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', // name: "Aave Token", symbol: "AAVE"
-    priceFeed: '0xbd7F896e60B650C01caf2d7279a1148189A68884', // "AAVE / USD", latestAnswer: 11038631328
+    priceFeed: '0x547a514d5e3769680Ce22B2361c10Ea13619e8a9', // "AAVE / USD", latestAnswer: 11038631328
   },
   LINK: {
     address: '0x514910771AF9Ca656af840dff83E8264EcF986CA', // name: "ChainLink Token", symbol: "LINK"

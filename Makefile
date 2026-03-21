@@ -75,4 +75,5 @@ exec-tokenization-2 :;
 	$(if ${dry},, --broadcast) \
 	--priority-gas-price 1.5gwei --with-gas-price 2.5gwei \
 
-
+diff :;
+	bun run scripts/payload/generator/generateDiffPayload.ts ${chain}
