@@ -663,6 +663,76 @@ def verify_bytecode(
             )
 
 
+def verify_immutables(
+    batch_mgr: BatchCallManager,
+    caller: ContractCaller,
+    report: DeployReport,
+    result: VerificationResult,
+) -> None:
+    result.section("Immutable Verification")
+
+    calls: list[tuple[str, Any]] = []
+
+    # Spoke.ORACLE() and AaveOracle.spoke() for each spoke
+    for spoke_info in report.spokes:
+        spoke_addr = Web3.to_checksum_address(spoke_info.proxy)
+        oracle_addr = Web3.to_checksum_address(spoke_info.oracle)
+        spoke_contract = batch_mgr.w3.eth.contract(address=spoke_addr, abi=caller.spoke_abi)
+        oracle_contract = batch_mgr.w3.eth.contract(address=oracle_addr, abi=caller.oracle_abi)
+        calls.append((f"{spoke_info.label}/Spoke.ORACLE()", spoke_contract.functions.ORACLE()))
+        calls.append((f"{spoke_info.label}/AaveOracle.spoke()", oracle_contract.functions.spoke()))
+
+    # InterestRateStrategy.HUB() for each hub
+    for hub_info in report.hubs:
+        ir_addr = Web3.to_checksum_address(hub_info.ir_strategy)
+        ir_contract = batch_mgr.w3.eth.contract(address=ir_addr, abi=caller.ir_strategy_abi)
+        calls.append((f"{hub_info.label}/IRStrategy.HUB()", ir_contract.functions.HUB()))
+
+    results, errors = batch_mgr.execute(calls)
+
+    # Check Spoke.ORACLE() == expected oracle from report
+    for spoke_info in report.spokes:
+        key = f"{spoke_info.label}/Spoke.ORACLE()"
+        expected = Web3.to_checksum_address(spoke_info.oracle)
+        if key in errors:
+            result.error(key, expected, f"call failed: {errors[key]}")
+        else:
+            actual = results.get(key)
+            actual_cs = Web3.to_checksum_address(actual) if actual else None
+            if actual_cs == expected:
+                result.ok(key, actual_cs)
+            else:
+                result.error(key, expected, actual_cs)
+
+    # Check AaveOracle.spoke() == expected spoke proxy from report
+    for spoke_info in report.spokes:
+        key = f"{spoke_info.label}/AaveOracle.spoke()"
+        expected = Web3.to_checksum_address(spoke_info.proxy)
+        if key in errors:
+            result.error(key, expected, f"call failed: {errors[key]}")
+        else:
+            actual = results.get(key)
+            actual_cs = Web3.to_checksum_address(actual) if actual else None
+            if actual_cs == expected:
+                result.ok(key, actual_cs)
+            else:
+                result.error(key, expected, actual_cs)
+
+    # Check IRStrategy.HUB() == expected hub from report
+    for hub_info in report.hubs:
+        key = f"{hub_info.label}/IRStrategy.HUB()"
+        expected = Web3.to_checksum_address(hub_info.address)
+        if key in errors:
+            result.error(key, expected, f"call failed: {errors[key]}")
+        else:
+            actual = results.get(key)
+            actual_cs = Web3.to_checksum_address(actual) if actual else None
+            if actual_cs == expected:
+                result.ok(key, actual_cs)
+            else:
+                result.error(key, expected, actual_cs)
+
+
 def verify_hub_assets(
     batch_mgr: BatchCallManager,
     caller: ContractCaller,
@@ -1293,7 +1363,7 @@ def verify_tokenization_spokes(
     result.section("TokenizationSpoke Verification")
 
     # Collect assets that have a tokenize section
-    tokenize_entries: list[tuple[str, dict, str, int]] = []  # (label, tokenize_cfg, hub_addr, asset_id)
+    tokenize_entries: list[tuple[str, dict, str, int, str]] = []  # (label, tokenize_cfg, hub_addr, asset_id, token_addr)
     for entry in config.assets:
         tok = entry.get("tokenize")
         if not tok or not tok.get("name"):
@@ -1308,7 +1378,7 @@ def verify_tokenization_spokes(
             result.error(f"{hub_key}/{token_key}/tokenize", "valid assetId", "call failed")
             continue
         label = f"{hub_key}/{token_key}"
-        tokenize_entries.append((label, tok, hub_addr, asset_id))
+        tokenize_entries.append((label, tok, hub_addr, asset_id, token_addr))
 
     if not tokenize_entries:
         print("  No tokenization entries found in config.")
@@ -1316,7 +1386,7 @@ def verify_tokenization_spokes(
 
     # Round 1: batch getSpokeCount for each (hub, assetId)
     count_calls: list[tuple[str, Any]] = []
-    for label, _tok, hub_addr, asset_id in tokenize_entries:
+    for label, _tok, hub_addr, asset_id, _token_addr in tokenize_entries:
         hub_contract = batch_mgr.w3.eth.contract(
             address=hub_addr, abi=caller.hub_abi,
         )
@@ -1327,7 +1397,7 @@ def verify_tokenization_spokes(
     # Round 2: batch getSpokeAddress for each index
     addr_calls: list[tuple[str, Any]] = []
     addr_meta: list[tuple[str, dict, str, int, int]] = []  # label, tok, hub_addr, asset_id, index
-    for label, tok, hub_addr, asset_id in tokenize_entries:
+    for label, tok, hub_addr, asset_id, token_addr in tokenize_entries:
         if label in count_errors:
             result.error(f"{label}/spokeCount", "spoke count", f"call failed: {count_errors[label]}")
             continue
@@ -1382,9 +1452,9 @@ def verify_tokenization_spokes(
                 spoke_names[addr] = name_val
                 spoke_symbols[addr] = symbol_val
 
-    # Round 4: Batch getSpokeConfig only for confirmed TokenizationSpoke candidates
+    # Round 4: Batch getSpokeConfig + immutable getters for confirmed TokenizationSpoke candidates
     config_calls: list[tuple[str, Any]] = []
-    for label, tok, hub_addr, asset_id in tokenize_entries:
+    for label, tok, hub_addr, asset_id, token_addr in tokenize_entries:
         for spoke_addr in label_spokes.get(label, []):
             if spoke_addr in spoke_names:
                 hub_contract = batch_mgr.w3.eth.contract(
@@ -1394,11 +1464,17 @@ def verify_tokenization_spokes(
                     f"{label}/{spoke_addr}/config",
                     hub_contract.functions.getSpokeConfig(asset_id, spoke_addr),
                 ))
+                ts_contract = batch_mgr.w3.eth.contract(
+                    address=spoke_addr, abi=caller.tokenization_spoke_abi,
+                )
+                config_calls.append((f"{label}/{spoke_addr}/hub", ts_contract.functions.hub()))
+                config_calls.append((f"{label}/{spoke_addr}/assetId", ts_contract.functions.assetId()))
+                config_calls.append((f"{label}/{spoke_addr}/asset", ts_contract.functions.asset()))
 
     config_results, config_errors = batch_mgr.execute(config_calls)
 
     # Match discovered TokenizationSpokes against config expectations
-    for label, tok, hub_addr, asset_id in tokenize_entries:
+    for label, tok, hub_addr, asset_id, token_addr in tokenize_entries:
         expected_name = tok["name"]
         expected_symbol = tok["symbol"]
         expected_add_cap = tok["addCap"]
@@ -1423,6 +1499,38 @@ def verify_tokenization_spokes(
                         _check(result, f"{label}/tokenize/addCap", expected_add_cap, spoke_cfg[0])
                     else:
                         result.error(f"{label}/tokenize/addCap", expected_add_cap, "config call failed")
+
+                # Verify immutables: hub(), assetId(), asset()
+                hub_key = f"{label}/{spoke_addr}/hub"
+                if hub_key in config_errors:
+                    result.error(f"{label}/tokenize/hub", hub_addr, f"call failed: {config_errors[hub_key]}")
+                else:
+                    actual_hub = config_results.get(hub_key)
+                    if actual_hub:
+                        actual_hub = Web3.to_checksum_address(actual_hub)
+                    if actual_hub == hub_addr:
+                        result.ok(f"{label}/tokenize/hub", actual_hub)
+                    else:
+                        result.error(f"{label}/tokenize/hub", hub_addr, actual_hub)
+
+                aid_key = f"{label}/{spoke_addr}/assetId"
+                if aid_key in config_errors:
+                    result.error(f"{label}/tokenize/assetId", asset_id, f"call failed: {config_errors[aid_key]}")
+                else:
+                    _check(result, f"{label}/tokenize/assetId", asset_id, config_results.get(aid_key))
+
+                asset_key = f"{label}/{spoke_addr}/asset"
+                if asset_key in config_errors:
+                    result.error(f"{label}/tokenize/asset", token_addr, f"call failed: {config_errors[asset_key]}")
+                else:
+                    actual_asset = config_results.get(asset_key)
+                    if actual_asset:
+                        actual_asset = Web3.to_checksum_address(actual_asset)
+                    if actual_asset == token_addr:
+                        result.ok(f"{label}/tokenize/asset", actual_asset)
+                    else:
+                        result.error(f"{label}/tokenize/asset", token_addr, actual_asset)
+
                 break
 
         if not found:
@@ -1790,6 +1898,9 @@ def main() -> None:
 
     # Bytecode verification stays sequential (uses get_code/get_storage_at)
     verify_bytecode(caller, report, result)
+
+    # Immutable checks (no cache needed)
+    verify_immutables(batch_mgr, caller, report, result)
 
     # Pre-fetch shared lookups (asset_ids, reserve_ids) in 2 batch round-trips
     cache = prefetch_shared_data(batch_mgr, caller, report, config)
