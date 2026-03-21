@@ -169,7 +169,7 @@
     {
       "key": "GOLD_SPOKE",
       "liquidationConfig": {
-        "targetHealthFactor": "1307499999999999900",
+        "targetHealthFactor": "1307500000000000000",
         "healthFactorForMaxBonus": "900000000000000000",
         "liquidationBonusFactor": 9000
       }

@@ -9,6 +9,7 @@ describe('toWadString', () => {
     expect(toWadString('1')).toBe('1000000000000000000');
     expect(toWadString('2')).toBe('2000000000000000000');
     expect(toWadString('100')).toBe('100000000000000000000');
+    expect(toWadString('1.3075')).toBe('1307500000000000000');
   });
 
   it('converts health-factor-style decimals', () => {

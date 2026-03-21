@@ -115,12 +115,11 @@ export function toWadString(decimal: string): string {
   const intPart = dotIndex === -1 ? s : s.slice(0, dotIndex);
   const fracPart = dotIndex === -1 ? '' : s.slice(dotIndex + 1);
 
-  // ! todo depends on how chaos updates
-  // if (fracPart.length > 6) {
-  //   throw new Error(
-  //     `toWadString: "${decimal}" has ${fracPart.length} decimal places; maximum allowed is 6`,
-  //   );
-  // }
+  if (fracPart.length > 6) {
+    throw new Error(
+      `toWadString: "${decimal}" has ${fracPart.length} decimal places; maximum allowed is 6`,
+    );
+  }
   if (!/^\d*$/.test(intPart) || (fracPart && !/^\d+$/.test(fracPart))) {
     throw new Error(`toWadString: "${decimal}" is not a valid non-negative decimal`);
   }

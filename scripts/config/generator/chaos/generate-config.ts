@@ -148,8 +148,8 @@ function parseSpokeParams(sheet: XLSX.WorkSheet): {results: SpokeParams[]; warni
     const spokeKey = normalizeSpokeKey(String(row[2]));
     const ctx = `spoke ${spokeKey} at ${hubKey}`;
     const lbf = toBps(Number(row[3]), warnings, `${ctx} liquidationBonusFactor`); // 1 → 10000
-    const thf = toWadString(String(row[4])); // 1.24 → "1240000000000000000"
-    const hfmb = toWadString(String(row[5])); // 0.99 → "990000000000000000"
+    const thf = toWadString(Number(row[4]).toFixed(6)); // 1.24 → "1240000000000000000"
+    const hfmb = toWadString(Number(row[5]).toFixed(6)); // 0.99 → "990000000000000000"
     results.push({
       hubKey,
       spokeKey,
