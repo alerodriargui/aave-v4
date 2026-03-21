@@ -47,7 +47,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.CORE_HUB,
       underlying: Tokens.wstETH,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.CORE_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -67,7 +67,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.CORE_HUB,
       underlying: Tokens.weETH,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.CORE_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -87,7 +87,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.CORE_HUB,
       underlying: Tokens.rsETH,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.CORE_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -287,7 +287,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.CORE_HUB,
       underlying: Tokens.LBTC,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.CORE_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -307,7 +307,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.CORE_HUB,
       underlying: Tokens.XAUt,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.CORE_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -327,7 +327,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.CORE_HUB,
       underlying: Tokens.AAVE,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.CORE_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -347,7 +347,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.CORE_HUB,
       underlying: Tokens.LINK,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.CORE_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -367,7 +367,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.PRIME_HUB,
       underlying: Tokens.WETH,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.PRIME_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -387,7 +387,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.PRIME_HUB,
       underlying: Tokens.WBTC,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.PRIME_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -407,7 +407,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.PRIME_HUB,
       underlying: Tokens.cbBTC,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.PRIME_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -427,7 +427,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.PRIME_HUB,
       underlying: Tokens.wstETH,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.PRIME_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -507,7 +507,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.PLUS_HUB,
       underlying: Tokens.PT_sUSDE_7MAY2026,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.PLUS_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -527,7 +527,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.PLUS_HUB,
       underlying: Tokens.PT_USDE_7MAY2026,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.PLUS_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,
@@ -547,7 +547,7 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       hub: Hubs.PLUS_HUB,
       underlying: Tokens.sUSDe,
       feeReceiver: Infra.TREASURY_SPOKE,
-      liquidityFee: 1000,
+      liquidityFee: 0,
       irStrategy: IrStrategies.PLUS_HUB,
       irData: IAssetInterestRateStrategy.InterestRateData({
         optimalUsageRatio: 9900,

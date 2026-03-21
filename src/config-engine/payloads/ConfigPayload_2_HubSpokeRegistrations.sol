@@ -30,7 +30,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 1500,
           drawCap: 130,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -40,7 +40,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 229,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -50,7 +50,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 58,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -60,7 +60,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 16,
           drawCap: 1,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -70,7 +70,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 13,
           drawCap: 1,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -80,7 +80,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 5000,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -90,7 +90,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 31250,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -100,7 +100,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 1250000,
           drawCap: 1250000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -110,7 +110,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 1250000,
           drawCap: 1250000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -120,7 +120,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 225000,
           drawCap: 150000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -130,7 +130,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 500000,
           drawCap: 340000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -140,7 +140,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 500000,
           drawCap: 340000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -150,7 +150,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 500000,
           drawCap: 312500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -160,7 +160,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 500000,
           drawCap: 500000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -180,7 +180,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 406,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -190,7 +190,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 441,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -210,7 +210,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 500,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -220,7 +220,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 530,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -240,7 +240,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 563,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -250,7 +250,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 588,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -270,7 +270,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 9,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -280,7 +280,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 5,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -290,7 +290,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 3,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -310,7 +310,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 125,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -320,7 +320,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 125000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -330,7 +330,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 62500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -340,7 +340,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 62500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -350,7 +350,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 62500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -360,7 +360,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 50000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -370,7 +370,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 62500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -380,7 +380,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 125000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -400,7 +400,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 300000,
           drawCap: 312500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -410,7 +410,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 187500,
           drawCap: 50000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -420,7 +420,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 200000,
           drawCap: 50000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -430,7 +430,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 90000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -440,7 +440,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 90000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -450,7 +450,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 62500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -460,7 +460,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 12500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -480,7 +480,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 130,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -490,7 +490,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 6,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -500,7 +500,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 5,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -510,7 +510,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 114,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -520,7 +520,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 150000,
           drawCap: 175000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -530,7 +530,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 150000,
           drawCap: 187500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -540,7 +540,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 500000,
           drawCap: 562500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -560,7 +560,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 125000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -570,7 +570,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 62500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -580,7 +580,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 50000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -590,7 +590,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 125000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -610,7 +610,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 250000,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -620,7 +620,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 1400000,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -630,7 +630,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 375000,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -640,7 +640,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 312500,
           drawCap: 300000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -650,7 +650,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 150000,
           drawCap: 187500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -660,7 +660,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 150000,
           drawCap: 187500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -670,7 +670,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 500000,
           drawCap: 562500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -690,7 +690,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 125000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -700,7 +700,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 62500,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -710,7 +710,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 0,
           drawCap: 125000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -730,7 +730,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 50000,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -740,7 +740,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 400000,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -750,7 +750,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 250000,
           drawCap: 0,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -760,7 +760,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
         config: IHub.SpokeConfig({
           addCap: 312500,
           drawCap: 325000,
-          riskPremiumThreshold: 100000,
+          riskPremiumThreshold: 0,
           active: true,
           halted: false
         })
@@ -820,7 +820,7 @@ contract ConfigPayload_2_HubSpokeRegistrations is AaveV4Payload {
     updates[5] = IAaveV4ConfigEngine.LiquidationConfigUpdate({
       spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
       spoke: Spokes.GOLD_SPOKE,
-      targetHealthFactor: 1307499999999999900,
+      targetHealthFactor: 1307500000000000000,
       healthFactorForMaxBonus: 900000000000000000,
       liquidationBonusFactor: 9000
     });

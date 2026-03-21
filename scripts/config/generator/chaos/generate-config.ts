@@ -343,17 +343,8 @@ function buildConfig(
 ): Record<string, unknown> {
   // ── Defaults ──
   const defaults = {
-    spoke: {
-      oracleDecimals: 8,
-      maxUserReservesLimit: 128,
-      liquidationConfig: {
-        targetHealthFactor: '1050000000000000000',
-        healthFactorForMaxBonus: '700000000000000000',
-        liquidationBonusFactor: 2000,
-      },
-    },
     spokeRegistration: {
-      riskPremiumThreshold: 100000,
+      riskPremiumThreshold: 0,
       active: true,
       halted: false,
     },
@@ -361,11 +352,11 @@ function buildConfig(
       receiveSharesEnabled: true,
       frozen: false,
       paused: false,
-      liquidationFee: 1000,
-      maxLiquidationBonus: 10500,
+      liquidationFee: 0,
+      maxLiquidationBonus: 10000,
     },
     asset: {
-      liquidityFee: 1000,
+      liquidityFee: 0,
     },
     tokenize: {
       enabled: true,
