@@ -158,6 +158,7 @@ def _first_diff_offset(a: bytes | bytearray, b: bytes | bytearray) -> int:
 
 GREEN = "\033[92m"
 RED = "\033[91m"
+YELLOW = "\033[93m"
 BOLD = "\033[1m"
 RESET = "\033[0m"
 
@@ -177,6 +178,9 @@ class VerificationResult:
         print(f"  {RED}ERROR{RESET}  {label}")
         print(f"         expected: {expected}")
         print(f"         actual:   {actual}")
+
+    def warn(self, label: str, message: str) -> None:
+        print(f"  {YELLOW}WARN{RESET}  {label}: {message}")
 
     def section(self, title: str) -> None:
         print(f"\n{BOLD}=== {title} ==={RESET}\n")
@@ -366,6 +370,7 @@ class ContractCaller:
         self.native_token_gateway_abi = load_abi(
             "INativeTokenGateway.sol", "INativeTokenGateway"
         )
+        self.price_feed_abi = load_abi("IPriceFeed.sol", "IPriceFeed")
 
     ERC1967_IMPL_SLOT = int(
         "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc", 16
@@ -1064,6 +1069,104 @@ def verify_oracles(
                 _check(result, f"{res_label}/oracle/source", expected_feed, source)
 
 
+PRICE_FEED_ALIASES: dict[str, list[str]] = {
+    "WETH": ["ETH"],
+    "WBTC": ["BTC"],
+    "LBTC": ["BTC"],
+    "cbBTC": ["BTC", "cbBTC"],
+    "wstETH": ["wstETH", "stETH"],
+    "weETH": ["weETH", "eETH"],
+    "rsETH": ["rsETH"],
+    "sUSDe": ["sUSDe", "USDe"],
+    "PT_USDE_7MAY2026": ["USDe", "PT"],
+    "PT_sUSDE_7MAY2026": ["sUSDe", "USDe", "PT"],
+    "frxUSD": ["frxUSD", "FRAX"],
+    "XAUt": ["XAU"],
+}
+
+
+def verify_price_feeds(
+    batch_mgr: BatchCallManager,
+    caller: ContractCaller,
+    config: ConfigInput,
+    result: VerificationResult,
+) -> None:
+    result.section("Price Feed Verification")
+
+    # Collect unique feeds and their associated token keys from reserves
+    feed_to_tokens: dict[str, set[str]] = {}
+    for entry in config.reserves:
+        asset_key = entry["assetKey"]
+        token_info = config.tokens_by_key.get(asset_key)
+        if not token_info or "priceFeed" not in token_info:
+            continue
+        feed_addr = Web3.to_checksum_address(token_info["priceFeed"])
+        feed_to_tokens.setdefault(feed_addr, set()).add(asset_key)
+
+    # Batch all RPC calls (3 per unique feed)
+    calls: list[tuple[str, Any]] = []
+    for feed_addr in feed_to_tokens:
+        feed_contract = batch_mgr.w3.eth.contract(
+            address=feed_addr, abi=caller.price_feed_abi,
+        )
+        calls.append((f"{feed_addr}/decimals", feed_contract.functions.decimals()))
+        calls.append((f"{feed_addr}/description", feed_contract.functions.description()))
+        calls.append((f"{feed_addr}/latestAnswer", feed_contract.functions.latestAnswer()))
+
+    results, errors = batch_mgr.execute(calls)
+
+    for feed_addr, token_keys in feed_to_tokens.items():
+        dec_key = f"{feed_addr}/decimals"
+        desc_key = f"{feed_addr}/description"
+        ans_key = f"{feed_addr}/latestAnswer"
+
+        decimals_val = results.get(dec_key)
+        description = results.get(desc_key)
+        latest_answer = results.get(ans_key)
+
+        tokens_label = ",".join(sorted(token_keys))
+        feed_label = f"priceFeed({tokens_label})"
+
+        # Check decimals == 8
+        if dec_key in errors:
+            result.error(f"{feed_label}/decimals", 8, f"call failed: {errors[dec_key]}")
+        elif decimals_val is not None:
+            _check(result, f"{feed_label}/decimals", 8, decimals_val)
+
+        # Log description
+        if desc_key in errors:
+            result.error(f"{feed_label}/description", "description", f"call failed: {errors[desc_key]}")
+        elif description is not None:
+            result.ok(f"{feed_label}/description", description)
+
+        # Check latestAnswer != 0, log formatted at 8 decimals
+        if ans_key in errors:
+            result.error(f"{feed_label}/latestAnswer", "non-zero", f"call failed: {errors[ans_key]}")
+        elif latest_answer is not None:
+            formatted = f"{latest_answer / 1e8:.8f}"
+            if latest_answer == 0:
+                result.error(f"{feed_label}/latestAnswer", "non-zero", f"0 ({formatted})")
+            else:
+                result.ok(f"{feed_label}/latestAnswer", formatted)
+
+        # Per token: check description contains token key or alias
+        if description is not None:
+            desc_upper = description.upper()
+            for token_key in sorted(token_keys):
+                if token_key.upper() in desc_upper:
+                    result.ok(f"{feed_label}/descriptionMatch({token_key})", f"'{token_key}' found in '{description}'")
+                    continue
+                aliases = PRICE_FEED_ALIASES.get(token_key, [])
+                matched = False
+                for alias in aliases:
+                    if alias.upper() in desc_upper:
+                        result.ok(f"{feed_label}/descriptionMatch({token_key})", f"alias '{alias}' found in '{description}'")
+                        matched = True
+                        break
+                if not matched:
+                    result.warn(f"{feed_label}/descriptionMatch({token_key})", f"'{token_key}' not found in '{description}'")
+
+
 def _check(
     result: VerificationResult, label: str, expected: Any, actual: Any
 ) -> None:
@@ -1696,6 +1799,7 @@ def main() -> None:
     verify_reserves(batch_mgr, caller, cache, report, config, result)
     verify_liquidation_configs(batch_mgr, caller, report, config, result)
     verify_oracles(batch_mgr, caller, cache, report, config, result)
+    verify_price_feeds(batch_mgr, caller, config, result)
     verify_tokenization_spokes(batch_mgr, caller, cache, report, config, result)
     verify_roles(batch_mgr, caller, report, config, result)
     verify_position_managers_and_gateways(batch_mgr, caller, report, config, result)
