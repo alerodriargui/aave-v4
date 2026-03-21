@@ -22,13 +22,13 @@ contract DiffPayload is AaveV4Payload {
     override
     returns (IAaveV4ConfigEngine.ReserveConfigUpdate[] memory updates)
   {
-    updates = new IAaveV4ConfigEngine.ReserveConfigUpdate[](4);
+    updates = new IAaveV4ConfigEngine.ReserveConfigUpdate[](5);
     updates[0] = IAaveV4ConfigEngine.ReserveConfigUpdate({
       spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
       spoke: Spokes.MAIN_SPOKE,
       hub: Hubs.CORE_HUB,
-      underlying: Tokens.wstETH,
-      priceSource: 0xe1D97bF61901B075E9626c8A2340a7De385861Ef,
+      underlying: Tokens.GHO,
+      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
       collateralRisk: EngineFlags.KEEP_CURRENT,
       paused: EngineFlags.KEEP_CURRENT,
       frozen: EngineFlags.KEEP_CURRENT,
@@ -37,10 +37,10 @@ contract DiffPayload is AaveV4Payload {
     });
     updates[1] = IAaveV4ConfigEngine.ReserveConfigUpdate({
       spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
-      spoke: Spokes.MAIN_SPOKE,
+      spoke: Spokes.GOLD_SPOKE,
       hub: Hubs.CORE_HUB,
-      underlying: Tokens.AAVE,
-      priceSource: 0x547a514d5e3769680Ce22B2361c10Ea13619e8a9,
+      underlying: Tokens.GHO,
+      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
       collateralRisk: EngineFlags.KEEP_CURRENT,
       paused: EngineFlags.KEEP_CURRENT,
       frozen: EngineFlags.KEEP_CURRENT,
@@ -49,10 +49,10 @@ contract DiffPayload is AaveV4Payload {
     });
     updates[2] = IAaveV4ConfigEngine.ReserveConfigUpdate({
       spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
-      spoke: Spokes.LIDO_ESPOKE,
+      spoke: Spokes.FOREX_SPOKE,
       hub: Hubs.CORE_HUB,
-      underlying: Tokens.wstETH,
-      priceSource: 0xe1D97bF61901B075E9626c8A2340a7De385861Ef,
+      underlying: Tokens.GHO,
+      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
       collateralRisk: EngineFlags.KEEP_CURRENT,
       paused: EngineFlags.KEEP_CURRENT,
       frozen: EngineFlags.KEEP_CURRENT,
@@ -63,8 +63,20 @@ contract DiffPayload is AaveV4Payload {
       spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
       spoke: Spokes.BLUECHIP_SPOKE,
       hub: Hubs.PRIME_HUB,
-      underlying: Tokens.wstETH,
-      priceSource: 0xe1D97bF61901B075E9626c8A2340a7De385861Ef,
+      underlying: Tokens.GHO,
+      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
+      collateralRisk: EngineFlags.KEEP_CURRENT,
+      paused: EngineFlags.KEEP_CURRENT,
+      frozen: EngineFlags.KEEP_CURRENT,
+      borrowable: EngineFlags.KEEP_CURRENT,
+      receiveSharesEnabled: EngineFlags.KEEP_CURRENT
+    });
+    updates[4] = IAaveV4ConfigEngine.ReserveConfigUpdate({
+      spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
+      spoke: Spokes.ETHENA_ECOSYSTEM_SPOKE,
+      hub: Hubs.PLUS_HUB,
+      underlying: Tokens.GHO,
+      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
       collateralRisk: EngineFlags.KEEP_CURRENT,
       paused: EngineFlags.KEEP_CURRENT,
       frozen: EngineFlags.KEEP_CURRENT,

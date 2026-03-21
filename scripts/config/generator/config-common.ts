@@ -46,7 +46,7 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
   GHO: {
     address: '0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f', // name: "Gho Token", symbol: "GHO"
-    priceFeed: '0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC', // "GHO / USD", latestAnswer: 99981837
+    priceFeed: '0xD110cac5d8682A3b045D5524a9903E031d70FCCd', // "GHO / USD", latestAnswer: 99981837
   },
   AAVE: {
     address: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9', // name: "Aave Token", symbol: "AAVE"
