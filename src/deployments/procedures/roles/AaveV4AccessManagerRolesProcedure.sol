@@ -21,7 +21,7 @@ library AaveV4AccessManagerRolesProcedure {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(adminToAdd);
     IAccessManager(accessManager).grantRole({
-      roleId: Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      roleId: Roles.ACCESS_MANAGER_ADMIN_ROLE,
       account: adminToAdd,
       executionDelay: 0
     });
@@ -31,7 +31,7 @@ library AaveV4AccessManagerRolesProcedure {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(adminToRemove);
     IAccessManager(accessManager).revokeRole({
-      roleId: Roles.ACCESS_MANAGER_DEFAULT_ADMIN,
+      roleId: Roles.ACCESS_MANAGER_ADMIN_ROLE,
       account: adminToRemove
     });
   }

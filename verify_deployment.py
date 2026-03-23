@@ -1294,7 +1294,7 @@ def _selectors_for_names(
 # ---------------------------------------------------------------------------
 
 ROLE_NAMES: dict[int, str] = {
-    0: "ACCESS_MANAGER_DEFAULT_ADMIN",
+    0: "ACCESS_MANAGER_ADMIN_ROLE",
     100: "HUB_DOMAIN_ADMIN_ROLE",
     101: "HUB_CONFIGURATOR_ROLE",
     102: "HUB_FEE_MINTER_ROLE",
