@@ -1852,6 +1852,64 @@ def verify_roles(
         else:
             print(f"    (no members)")
 
+    # --- Part D: Role Labels ---
+    print(f"\n{BOLD}--- Role Labels ---{RESET}\n")
+
+    # Role 0 (ADMIN_ROLE) cannot be labeled by the AccessManager contract
+    labelable_roles = {rid: name for rid, name in ROLE_NAMES.items() if rid != 0}
+
+    # Batch 1: check which roles are labeled
+    labeled_calls: list[tuple[str, Any]] = []
+    for role_id in labelable_roles:
+        key = f"role_{role_id}/isLabeled"
+        labeled_calls.append((
+            key,
+            am_contract.functions.isRoleLabeled(role_id),
+        ))
+
+    labeled_results, labeled_errors = batch_mgr.execute(labeled_calls)
+
+    # Batch 2: get labels for roles that are labeled
+    label_calls: list[tuple[str, Any]] = []
+    for role_id in labelable_roles:
+        key = f"role_{role_id}/isLabeled"
+        if key in labeled_errors:
+            continue
+        if labeled_results.get(key) is True:
+            label_key = f"role_{role_id}/label"
+            label_calls.append((
+                label_key,
+                am_contract.functions.getLabelOfRole(role_id),
+            ))
+
+    label_results, label_errors = batch_mgr.execute(label_calls)
+
+    # Verify
+    for role_id, expected_label in labelable_roles.items():
+        is_labeled_key = f"role_{role_id}/isLabeled"
+        if is_labeled_key in labeled_errors:
+            result.error(
+                f"role {role_id}/label",
+                expected_label,
+                f"call failed: {labeled_errors[is_labeled_key]}",
+            )
+            continue
+
+        if labeled_results.get(is_labeled_key) is not True:
+            result.error(f"role {role_id}/label", expected_label, "role not labeled")
+            continue
+
+        label_key = f"role_{role_id}/label"
+        if label_key in label_errors:
+            result.error(
+                f"role {role_id}/label",
+                expected_label,
+                f"call failed: {label_errors[label_key]}",
+            )
+        else:
+            actual_label = label_results.get(label_key)
+            _check(result, f"role {role_id}/label", expected_label, actual_label)
+
 
 def verify_position_managers_and_gateways(
     batch_mgr: BatchCallManager,
