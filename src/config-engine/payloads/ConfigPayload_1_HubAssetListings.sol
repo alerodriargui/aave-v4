@@ -38,8 +38,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 250
-        name: '', // actual: "Tokenized Aave Core WETH"
-        symbol: '' // actual: "aCore-WETH"
+        name: '', // actual: "Wrapped Aave Core WETH"
+        symbol: '' // actual: "waCoreWETH"
       })
     });
     listings[1] = IAaveV4ConfigEngine.AssetListing({
@@ -58,8 +58,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Core wstETH"
-        symbol: '' // actual: "aCore-wstETH"
+        name: '', // actual: "Wrapped Aave Core wstETH"
+        symbol: '' // actual: "waCorewstETH"
       })
     });
     listings[2] = IAaveV4ConfigEngine.AssetListing({
@@ -78,8 +78,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Core weETH"
-        symbol: '' // actual: "aCore-weETH"
+        name: '', // actual: "Wrapped Aave Core weETH"
+        symbol: '' // actual: "waCoreweETH"
       })
     });
     listings[3] = IAaveV4ConfigEngine.AssetListing({
@@ -98,8 +98,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Core rsETH"
-        symbol: '' // actual: "aCore-rsETH"
+        name: '', // actual: "Wrapped Aave Core rsETH"
+        symbol: '' // actual: "waCorersETH"
       })
     });
     listings[4] = IAaveV4ConfigEngine.AssetListing({
@@ -118,8 +118,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 312500
-        name: '', // actual: "Tokenized Aave Core USDT"
-        symbol: '' // actual: "aCore-USDT"
+        name: '', // actual: "Wrapped Aave Core USDT"
+        symbol: '' // actual: "waCoreUSDT"
       })
     });
     listings[5] = IAaveV4ConfigEngine.AssetListing({
@@ -138,8 +138,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 312500
-        name: '', // actual: "Tokenized Aave Core USDC"
-        symbol: '' // actual: "aCore-USDC"
+        name: '', // actual: "Wrapped Aave Core USDC"
+        symbol: '' // actual: "waCoreUSDC"
       })
     });
     listings[6] = IAaveV4ConfigEngine.AssetListing({
@@ -158,8 +158,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 125000
-        name: '', // actual: "Tokenized Aave Core GHO"
-        symbol: '' // actual: "aCore-GHO"
+        name: '', // actual: "Wrapped Aave Core GHO"
+        symbol: '' // actual: "waCoreGHO"
       })
     });
     listings[7] = IAaveV4ConfigEngine.AssetListing({
@@ -178,8 +178,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 125000
-        name: '', // actual: "Tokenized Aave Core RLUSD"
-        symbol: '' // actual: "aCore-RLUSD"
+        name: '', // actual: "Wrapped Aave Core RLUSD"
+        symbol: '' // actual: "waCoreRLUSD"
       })
     });
     listings[8] = IAaveV4ConfigEngine.AssetListing({
@@ -198,8 +198,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 125000
-        name: '', // actual: "Tokenized Aave Core USDG"
-        symbol: '' // actual: "aCore-USDG"
+        name: '', // actual: "Wrapped Aave Core USDG"
+        symbol: '' // actual: "waCoreUSDG"
       })
     });
     listings[9] = IAaveV4ConfigEngine.AssetListing({
@@ -218,8 +218,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 125000
-        name: '', // actual: "Tokenized Aave Core frxUSD"
-        symbol: '' // actual: "aCore-frxUSD"
+        name: '', // actual: "Wrapped Aave Core frxUSD"
+        symbol: '' // actual: "waCorefrxUSD"
       })
     });
     listings[10] = IAaveV4ConfigEngine.AssetListing({
@@ -238,8 +238,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 112500
-        name: '', // actual: "Tokenized Aave Core EURC"
-        symbol: '' // actual: "aCore-EURC"
+        name: '', // actual: "Wrapped Aave Core EURC"
+        symbol: '' // actual: "waCoreEURC"
       })
     });
     listings[11] = IAaveV4ConfigEngine.AssetListing({
@@ -258,8 +258,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Core WBTC"
-        symbol: '' // actual: "aCore-WBTC"
+        name: '', // actual: "Wrapped Aave Core WBTC"
+        symbol: '' // actual: "waCoreWBTC"
       })
     });
     listings[12] = IAaveV4ConfigEngine.AssetListing({
@@ -278,8 +278,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Core cbBTC"
-        symbol: '' // actual: "aCore-cbBTC"
+        name: '', // actual: "Wrapped Aave Core cbBTC"
+        symbol: '' // actual: "waCorecbBTC"
       })
     });
     listings[13] = IAaveV4ConfigEngine.AssetListing({
@@ -298,8 +298,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Core LBTC"
-        symbol: '' // actual: "aCore-LBTC"
+        name: '', // actual: "Wrapped Aave Core LBTC"
+        symbol: '' // actual: "waCoreLBTC"
       })
     });
     listings[14] = IAaveV4ConfigEngine.AssetListing({
@@ -318,8 +318,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Core XAUt"
-        symbol: '' // actual: "aCore-XAUt"
+        name: '', // actual: "Wrapped Aave Core XAUt"
+        symbol: '' // actual: "waCoreXAUt"
       })
     });
     listings[15] = IAaveV4ConfigEngine.AssetListing({
@@ -338,8 +338,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Core AAVE"
-        symbol: '' // actual: "aCore-AAVE"
+        name: '', // actual: "Wrapped Aave Core AAVE"
+        symbol: '' // actual: "waCoreAAVE"
       })
     });
     listings[16] = IAaveV4ConfigEngine.AssetListing({
@@ -358,8 +358,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Core LINK"
-        symbol: '' // actual: "aCore-LINK"
+        name: '', // actual: "Wrapped Aave Core LINK"
+        symbol: '' // actual: "waCoreLINK"
       })
     });
     listings[17] = IAaveV4ConfigEngine.AssetListing({
@@ -378,8 +378,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Prime WETH"
-        symbol: '' // actual: "aPrime-WETH"
+        name: '', // actual: "Wrapped Aave Prime WETH"
+        symbol: '' // actual: "waPrimeWETH"
       })
     });
     listings[18] = IAaveV4ConfigEngine.AssetListing({
@@ -398,8 +398,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Prime WBTC"
-        symbol: '' // actual: "aPrime-WBTC"
+        name: '', // actual: "Wrapped Aave Prime WBTC"
+        symbol: '' // actual: "waPrimeWBTC"
       })
     });
     listings[19] = IAaveV4ConfigEngine.AssetListing({
@@ -418,8 +418,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Prime cbBTC"
-        symbol: '' // actual: "aPrime-cbBTC"
+        name: '', // actual: "Wrapped Aave Prime cbBTC"
+        symbol: '' // actual: "waPrimecbBTC"
       })
     });
     listings[20] = IAaveV4ConfigEngine.AssetListing({
@@ -438,8 +438,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Prime wstETH"
-        symbol: '' // actual: "aPrime-wstETH"
+        name: '', // actual: "Wrapped Aave Prime wstETH"
+        symbol: '' // actual: "waPrimewstETH"
       })
     });
     listings[21] = IAaveV4ConfigEngine.AssetListing({
@@ -458,8 +458,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 37500
-        name: '', // actual: "Tokenized Aave Prime USDC"
-        symbol: '' // actual: "aPrime-USDC"
+        name: '', // actual: "Wrapped Aave Prime USDC"
+        symbol: '' // actual: "waPrimeUSDC"
       })
     });
     listings[22] = IAaveV4ConfigEngine.AssetListing({
@@ -478,8 +478,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 37500
-        name: '', // actual: "Tokenized Aave Prime USDT"
-        symbol: '' // actual: "aPrime-USDT"
+        name: '', // actual: "Wrapped Aave Prime USDT"
+        symbol: '' // actual: "waPrimeUSDT"
       })
     });
     listings[23] = IAaveV4ConfigEngine.AssetListing({
@@ -498,8 +498,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 125000
-        name: '', // actual: "Tokenized Aave Prime GHO"
-        symbol: '' // actual: "aPrime-GHO"
+        name: '', // actual: "Wrapped Aave Prime GHO"
+        symbol: '' // actual: "waPrimeGHO"
       })
     });
     listings[24] = IAaveV4ConfigEngine.AssetListing({
@@ -558,8 +558,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 0
-        name: '', // actual: "Tokenized Aave Plus sUSDe"
-        symbol: '' // actual: "aPlus-sUSDe"
+        name: '', // actual: "Wrapped Aave Plus sUSDe"
+        symbol: '' // actual: "waPlussUSDe"
       })
     });
     listings[27] = IAaveV4ConfigEngine.AssetListing({
@@ -578,8 +578,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 78000
-        name: '', // actual: "Tokenized Aave Plus USDe"
-        symbol: '' // actual: "aPlus-USDe"
+        name: '', // actual: "Wrapped Aave Plus USDe"
+        symbol: '' // actual: "waPlusUSDe"
       })
     });
     listings[28] = IAaveV4ConfigEngine.AssetListing({
@@ -598,8 +598,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 37500
-        name: '', // actual: "Tokenized Aave Plus USDC"
-        symbol: '' // actual: "aPlus-USDC"
+        name: '', // actual: "Wrapped Aave Plus USDC"
+        symbol: '' // actual: "waPlusUSDC"
       })
     });
     listings[29] = IAaveV4ConfigEngine.AssetListing({
@@ -618,8 +618,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 125000
-        name: '', // actual: "Tokenized Aave Plus GHO"
-        symbol: '' // actual: "aPlus-GHO"
+        name: '', // actual: "Wrapped Aave Plus GHO"
+        symbol: '' // actual: "waPlusGHO"
       })
     });
     listings[30] = IAaveV4ConfigEngine.AssetListing({
@@ -638,8 +638,8 @@ contract ConfigPayload_1_HubAssetListings is AaveV4Payload {
       // Tokenization is being skipped
       tokenization: IAaveV4ConfigEngine.TokenizationSpokeConfig({
         addCap: 0, // actual: 37500
-        name: '', // actual: "Tokenized Aave Plus USDT"
-        symbol: '' // actual: "aPlus-USDT"
+        name: '', // actual: "Wrapped Aave Plus USDT"
+        symbol: '' // actual: "waPlusUSDT"
       })
     });
     return listings;

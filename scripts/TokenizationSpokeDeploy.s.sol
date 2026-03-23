@@ -38,136 +38,130 @@ contract TokenizationSpokeDeploy is Script {
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.WETH,
-      'Tokenized Aave Core WETH',
-      'aCore-WETH',
+      'Wrapped Aave Core WETH',
+      'waCoreWETH',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'WETH', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.wstETH,
-      'Tokenized Aave Core wstETH',
-      'aCore-wstETH',
+      'Wrapped Aave Core wstETH',
+      'waCorewstETH',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'wstETH', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.weETH,
-      'Tokenized Aave Core weETH',
-      'aCore-weETH',
+      'Wrapped Aave Core weETH',
+      'waCoreweETH',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'weETH', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.rsETH,
-      'Tokenized Aave Core rsETH',
-      'aCore-rsETH',
+      'Wrapped Aave Core rsETH',
+      'waCorersETH',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'rsETH', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.USDT,
-      'Tokenized Aave Core USDT',
-      'aCore-USDT',
+      'Wrapped Aave Core USDT',
+      'waCoreUSDT',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'USDT', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.USDC,
-      'Tokenized Aave Core USDC',
-      'aCore-USDC',
+      'Wrapped Aave Core USDC',
+      'waCoreUSDC',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'USDC', proxy);
-    proxy = factory.create(
-      Hubs.CORE_HUB,
-      Tokens.GHO,
-      'Tokenized Aave Core GHO',
-      'aCore-GHO',
-      caller
-    );
+    proxy = factory.create(Hubs.CORE_HUB, Tokens.GHO, 'Wrapped Aave Core GHO', 'waCoreGHO', caller);
     vm.serializeAddress('CORE_HUB', 'GHO', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.RLUSD,
-      'Tokenized Aave Core RLUSD',
-      'aCore-RLUSD',
+      'Wrapped Aave Core RLUSD',
+      'waCoreRLUSD',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'RLUSD', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.USDG,
-      'Tokenized Aave Core USDG',
-      'aCore-USDG',
+      'Wrapped Aave Core USDG',
+      'waCoreUSDG',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'USDG', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.frxUSD,
-      'Tokenized Aave Core frxUSD',
-      'aCore-frxUSD',
+      'Wrapped Aave Core frxUSD',
+      'waCorefrxUSD',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'frxUSD', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.EURC,
-      'Tokenized Aave Core EURC',
-      'aCore-EURC',
+      'Wrapped Aave Core EURC',
+      'waCoreEURC',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'EURC', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.WBTC,
-      'Tokenized Aave Core WBTC',
-      'aCore-WBTC',
+      'Wrapped Aave Core WBTC',
+      'waCoreWBTC',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'WBTC', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.cbBTC,
-      'Tokenized Aave Core cbBTC',
-      'aCore-cbBTC',
+      'Wrapped Aave Core cbBTC',
+      'waCorecbBTC',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'cbBTC', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.LBTC,
-      'Tokenized Aave Core LBTC',
-      'aCore-LBTC',
+      'Wrapped Aave Core LBTC',
+      'waCoreLBTC',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'LBTC', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.XAUt,
-      'Tokenized Aave Core XAUt',
-      'aCore-XAUt',
+      'Wrapped Aave Core XAUt',
+      'waCoreXAUt',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'XAUt', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.AAVE,
-      'Tokenized Aave Core AAVE',
-      'aCore-AAVE',
+      'Wrapped Aave Core AAVE',
+      'waCoreAAVE',
       caller
     );
     vm.serializeAddress('CORE_HUB', 'AAVE', proxy);
     proxy = factory.create(
       Hubs.CORE_HUB,
       Tokens.LINK,
-      'Tokenized Aave Core LINK',
-      'aCore-LINK',
+      'Wrapped Aave Core LINK',
+      'waCoreLINK',
       caller
     );
     string memory core_hubJson = vm.serializeAddress('CORE_HUB', 'LINK', proxy);
@@ -176,56 +170,56 @@ contract TokenizationSpokeDeploy is Script {
     proxy = factory.create(
       Hubs.PRIME_HUB,
       Tokens.WETH,
-      'Tokenized Aave Prime WETH',
-      'aPrime-WETH',
+      'Wrapped Aave Prime WETH',
+      'waPrimeWETH',
       caller
     );
     vm.serializeAddress('PRIME_HUB', 'WETH', proxy);
     proxy = factory.create(
       Hubs.PRIME_HUB,
       Tokens.WBTC,
-      'Tokenized Aave Prime WBTC',
-      'aPrime-WBTC',
+      'Wrapped Aave Prime WBTC',
+      'waPrimeWBTC',
       caller
     );
     vm.serializeAddress('PRIME_HUB', 'WBTC', proxy);
     proxy = factory.create(
       Hubs.PRIME_HUB,
       Tokens.cbBTC,
-      'Tokenized Aave Prime cbBTC',
-      'aPrime-cbBTC',
+      'Wrapped Aave Prime cbBTC',
+      'waPrimecbBTC',
       caller
     );
     vm.serializeAddress('PRIME_HUB', 'cbBTC', proxy);
     proxy = factory.create(
       Hubs.PRIME_HUB,
       Tokens.wstETH,
-      'Tokenized Aave Prime wstETH',
-      'aPrime-wstETH',
+      'Wrapped Aave Prime wstETH',
+      'waPrimewstETH',
       caller
     );
     vm.serializeAddress('PRIME_HUB', 'wstETH', proxy);
     proxy = factory.create(
       Hubs.PRIME_HUB,
       Tokens.USDC,
-      'Tokenized Aave Prime USDC',
-      'aPrime-USDC',
+      'Wrapped Aave Prime USDC',
+      'waPrimeUSDC',
       caller
     );
     vm.serializeAddress('PRIME_HUB', 'USDC', proxy);
     proxy = factory.create(
       Hubs.PRIME_HUB,
       Tokens.USDT,
-      'Tokenized Aave Prime USDT',
-      'aPrime-USDT',
+      'Wrapped Aave Prime USDT',
+      'waPrimeUSDT',
       caller
     );
     vm.serializeAddress('PRIME_HUB', 'USDT', proxy);
     proxy = factory.create(
       Hubs.PRIME_HUB,
       Tokens.GHO,
-      'Tokenized Aave Prime GHO',
-      'aPrime-GHO',
+      'Wrapped Aave Prime GHO',
+      'waPrimeGHO',
       caller
     );
     string memory prime_hubJson = vm.serializeAddress('PRIME_HUB', 'GHO', proxy);
@@ -250,40 +244,34 @@ contract TokenizationSpokeDeploy is Script {
     proxy = factory.create(
       Hubs.PLUS_HUB,
       Tokens.sUSDe,
-      'Tokenized Aave Plus sUSDe',
-      'aPlus-sUSDe',
+      'Wrapped Aave Plus sUSDe',
+      'waPlussUSDe',
       caller
     );
     vm.serializeAddress('PLUS_HUB', 'sUSDe', proxy);
     proxy = factory.create(
       Hubs.PLUS_HUB,
       Tokens.USDe,
-      'Tokenized Aave Plus USDe',
-      'aPlus-USDe',
+      'Wrapped Aave Plus USDe',
+      'waPlusUSDe',
       caller
     );
     vm.serializeAddress('PLUS_HUB', 'USDe', proxy);
     proxy = factory.create(
       Hubs.PLUS_HUB,
       Tokens.USDC,
-      'Tokenized Aave Plus USDC',
-      'aPlus-USDC',
+      'Wrapped Aave Plus USDC',
+      'waPlusUSDC',
       caller
     );
     vm.serializeAddress('PLUS_HUB', 'USDC', proxy);
-    proxy = factory.create(
-      Hubs.PLUS_HUB,
-      Tokens.GHO,
-      'Tokenized Aave Plus GHO',
-      'aPlus-GHO',
-      caller
-    );
+    proxy = factory.create(Hubs.PLUS_HUB, Tokens.GHO, 'Wrapped Aave Plus GHO', 'waPlusGHO', caller);
     vm.serializeAddress('PLUS_HUB', 'GHO', proxy);
     proxy = factory.create(
       Hubs.PLUS_HUB,
       Tokens.USDT,
-      'Tokenized Aave Plus USDT',
-      'aPlus-USDT',
+      'Wrapped Aave Plus USDT',
+      'waPlusUSDT',
       caller
     );
     string memory plus_hubJson = vm.serializeAddress('PLUS_HUB', 'USDT', proxy);

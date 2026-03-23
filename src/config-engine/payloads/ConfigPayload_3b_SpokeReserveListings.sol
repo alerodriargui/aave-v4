@@ -27,7 +27,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.GOLD_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.USDT,
-      priceSource: 0x3E7d1eAB13ad0104d2750B8863b489D65364e32D,
+      priceSource: 0x260326c220E469358846b187eE53328303Efe19C,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -65,7 +65,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.FOREX_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.USDC,
-      priceSource: 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6,
+      priceSource: 0x581b8Bc9d6104F71ad6da1f483B67500968C5994,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -84,7 +84,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.FOREX_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.USDT,
-      priceSource: 0x3E7d1eAB13ad0104d2750B8863b489D65364e32D,
+      priceSource: 0x260326c220E469358846b187eE53328303Efe19C,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -103,7 +103,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.FOREX_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.RLUSD,
-      priceSource: 0x26C46B7aD0012cA71F2298ada567dC9Af14E7f2A,
+      priceSource: 0xf0eaC18E908B34770FDEe46d069c846bDa866759,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -160,7 +160,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.FOREX_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.GHO,
-      priceSource: 0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC,
+      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -236,7 +236,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.BLUECHIP_SPOKE,
       hub: Hubs.PRIME_HUB,
       underlying: Tokens.wstETH,
-      priceSource: 0x8B6851156023f4f5A66F68BEA80851c3D905Ac93,
+      priceSource: 0xe1D97bF61901B075E9626c8A2340a7De385861Ef,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -255,7 +255,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.BLUECHIP_SPOKE,
       hub: Hubs.PRIME_HUB,
       underlying: Tokens.USDC,
-      priceSource: 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6,
+      priceSource: 0x581b8Bc9d6104F71ad6da1f483B67500968C5994,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -274,7 +274,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.BLUECHIP_SPOKE,
       hub: Hubs.PRIME_HUB,
       underlying: Tokens.USDT,
-      priceSource: 0x3E7d1eAB13ad0104d2750B8863b489D65364e32D,
+      priceSource: 0x260326c220E469358846b187eE53328303Efe19C,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -293,7 +293,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.BLUECHIP_SPOKE,
       hub: Hubs.PRIME_HUB,
       underlying: Tokens.GHO,
-      priceSource: 0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC,
+      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -312,7 +312,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.BLUECHIP_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.USDC,
-      priceSource: 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6,
+      priceSource: 0x581b8Bc9d6104F71ad6da1f483B67500968C5994,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -369,7 +369,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.BLUECHIP_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.USDT,
-      priceSource: 0x3E7d1eAB13ad0104d2750B8863b489D65364e32D,
+      priceSource: 0x260326c220E469358846b187eE53328303Efe19C,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -426,7 +426,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.ETHENA_ECOSYSTEM_SPOKE,
       hub: Hubs.PLUS_HUB,
       underlying: Tokens.sUSDe,
-      priceSource: 0xFF3BC18cCBd5999CE63E788A1c250a88626aD099,
+      priceSource: 0x42bc86f2f08419280a99d8fbEa4672e7c30a86ec,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -445,7 +445,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.ETHENA_ECOSYSTEM_SPOKE,
       hub: Hubs.PLUS_HUB,
       underlying: Tokens.USDe,
-      priceSource: 0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961,
+      priceSource: 0xC26D4a1c46d884cfF6dE9800B6aE7A8Cf48B4Ff8,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -464,7 +464,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.ETHENA_ECOSYSTEM_SPOKE,
       hub: Hubs.PLUS_HUB,
       underlying: Tokens.USDC,
-      priceSource: 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6,
+      priceSource: 0x581b8Bc9d6104F71ad6da1f483B67500968C5994,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -483,7 +483,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.ETHENA_ECOSYSTEM_SPOKE,
       hub: Hubs.PLUS_HUB,
       underlying: Tokens.USDT,
-      priceSource: 0x3E7d1eAB13ad0104d2750B8863b489D65364e32D,
+      priceSource: 0x260326c220E469358846b187eE53328303Efe19C,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -502,7 +502,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.ETHENA_ECOSYSTEM_SPOKE,
       hub: Hubs.PLUS_HUB,
       underlying: Tokens.GHO,
-      priceSource: 0x3f12643D3f6f874d39C2a4c9f2Cd6f2DbAC877FC,
+      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -521,7 +521,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.ETHENA_ECOSYSTEM_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.USDC,
-      priceSource: 0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6,
+      priceSource: 0x581b8Bc9d6104F71ad6da1f483B67500968C5994,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -559,7 +559,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.ETHENA_ECOSYSTEM_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.USDT,
-      priceSource: 0x3E7d1eAB13ad0104d2750B8863b489D65364e32D,
+      priceSource: 0x260326c220E469358846b187eE53328303Efe19C,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -616,7 +616,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.ETHENA_CORRELATED_SPOKE,
       hub: Hubs.PLUS_HUB,
       underlying: Tokens.sUSDe,
-      priceSource: 0xFF3BC18cCBd5999CE63E788A1c250a88626aD099,
+      priceSource: 0x42bc86f2f08419280a99d8fbEa4672e7c30a86ec,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -635,7 +635,7 @@ contract ConfigPayload_3b_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.ETHENA_CORRELATED_SPOKE,
       hub: Hubs.PLUS_HUB,
       underlying: Tokens.USDe,
-      priceSource: 0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961,
+      priceSource: 0xC26D4a1c46d884cfF6dE9800B6aE7A8Cf48B4Ff8,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
