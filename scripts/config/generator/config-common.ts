@@ -30,19 +30,19 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
   weETH: {
     address: '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee', // name: "Wrapped eETH", symbol: "weETH"
-    priceFeed: '0x87625393534d5C102cADB66D37201dF24cc26d4C', // "Capped weETH / eETH(ETH) / USD", latestAnswer: 233208272231
+    priceFeed: '0xf112af6f0a332b815fbef3ff932c057e570b62d3', // "Capped weETH / eETH(ETH) / USD", latestAnswer: 233208272231
   },
   rsETH: {
     address: '0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7', // name: "rsETH", symbol: "rsETH"
-    priceFeed: '0x7292C95A5f6A501a9c4B34f6393e221F2A0139c3', // "Capped rsETH / ETH / USD", latestAnswer: 228277416664
+    priceFeed: '0x47f52b2e43d0386cf161e001835b03ad49889e3b', // "Capped rsETH / ETH / USD", latestAnswer: 228277416664
   },
   USDC: {
     address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // name: "USD Coin", symbol: "USDC"
-    priceFeed: '0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6', // "USDC / USD", latestAnswer: 99994497
+    priceFeed: '0x581b8Bc9d6104F71ad6da1f483B67500968C5994', // "Capped USDC / USD", latestAnswer: 99994497
   },
   USDT: {
     address: '0xdAC17F958D2ee523a2206206994597C13D831ec7', // name: "Tether USD", symbol: "USDT"
-    priceFeed: '0x3E7d1eAB13ad0104d2750B8863b489D65364e32D', // "USDT / USD", latestAnswer: 99995746
+    priceFeed: '0x260326c220E469358846b187eE53328303Efe19C', // "Capped USDT / USD", latestAnswer: 99995746
   },
   GHO: {
     address: '0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f', // name: "Gho Token", symbol: "GHO"
@@ -58,7 +58,7 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
   sUSDe: {
     address: '0x9D39A5DE30e57443BfF2A8307A4256c8797A3497', // name: "Staked USDe", symbol: "sUSDe"
-    priceFeed: '0xFF3BC18cCBd5999CE63E788A1c250a88626aD099', // "sUSDe / USD", latestAnswer: 122383253
+    priceFeed: '0x42bc86f2f08419280a99d8fbEa4672e7c30a86ec', // "Capped sUSDe / USDT / USD", latestAnswer: 122442865
   },
   PT_sUSDE_7MAY2026: {
     address: '0x3de0ff76E8b528C092d47b9DaC775931cef80F49', // name: "PT Ethena sUSDE 7MAY2026", symbol: "PT-sUSDE-7MAY2026"
@@ -66,11 +66,11 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
   USDe: {
     address: '0x4c9EDD5852cd905f086C759E8383e09bff1E68B3', // name: "USDe", symbol: "USDe"
-    priceFeed: '0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961', // "USDe / USD", latestAnswer: 99956422
+    priceFeed: '0xC26D4a1c46d884cfF6dE9800B6aE7A8Cf48B4Ff8', // "Capped USDT / USD", latestAnswer: 99956422
   },
   LBTC: {
     address: '0x8236a87084f8B84306f72007F36F2618A5634494', // name: "Lombard Staked Bitcoin", symbol: "LBTC"
-    priceFeed: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c', // "BTC / USD", latestAnswer: 7016528830938 (using BTC/USD directly)
+    priceFeed: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c', // "BTC / USD", latestAnswer: 7016528830938 (using BTC/USD directly) // ! todo use capo when params available
   },
   EURC: {
     address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c', // name: "Euro Coin", symbol: "EURC"
@@ -86,7 +86,7 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
   RLUSD: {
     address: '0x8292Bb45bf1Ee4d140127049757c2E0fF06317eD', // name: "RLUSD", symbol: "RLUSD"
-    priceFeed: '0x26C46B7aD0012cA71F2298ada567dC9Af14E7f2A', // "RLUSD / USD", latestAnswer: 100005582
+    priceFeed: '0xf0eaC18E908B34770FDEe46d069c846bDa866759', // "Capped RLUSD / USD", latestAnswer: 100005582
   },
   frxUSD: {
     address: '0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29', // name: "Frax USD", symbol: "frxUSD"

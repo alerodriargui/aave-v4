@@ -50,11 +50,11 @@
     },
     "RLUSD": {
       "address": "0x8292Bb45bf1Ee4d140127049757c2E0fF06317eD",
-      "priceFeed": "0x26C46B7aD0012cA71F2298ada567dC9Af14E7f2A"
+      "priceFeed": "0xf0eaC18E908B34770FDEe46d069c846bDa866759"
     },
     "USDC": {
       "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-      "priceFeed": "0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6"
+      "priceFeed": "0x581b8Bc9d6104F71ad6da1f483B67500968C5994"
     },
     "USDG": {
       "address": "0xe343167631d89B6Ffc58B88d6b7fB0228795491D",
@@ -62,11 +62,11 @@
     },
     "USDT": {
       "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-      "priceFeed": "0x3E7d1eAB13ad0104d2750B8863b489D65364e32D"
+      "priceFeed": "0x260326c220E469358846b187eE53328303Efe19C"
     },
     "USDe": {
       "address": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
-      "priceFeed": "0xa569d910839Ae8865Da8F8e70FfFb0cBA869F961"
+      "priceFeed": "0xC26D4a1c46d884cfF6dE9800B6aE7A8Cf48B4Ff8"
     },
     "WBTC": {
       "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
@@ -90,15 +90,15 @@
     },
     "rsETH": {
       "address": "0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7",
-      "priceFeed": "0x7292C95A5f6A501a9c4B34f6393e221F2A0139c3"
+      "priceFeed": "0x47f52b2e43d0386cf161e001835b03ad49889e3b"
     },
     "sUSDe": {
       "address": "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497",
-      "priceFeed": "0xFF3BC18cCBd5999CE63E788A1c250a88626aD099"
+      "priceFeed": "0x42bc86f2f08419280a99d8fbEa4672e7c30a86ec"
     },
     "weETH": {
       "address": "0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee",
-      "priceFeed": "0x87625393534d5C102cADB66D37201dF24cc26d4C"
+      "priceFeed": "0xf112af6f0a332b815fbef3ff932c057e570b62d3"
     },
     "wstETH": {
       "address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
@@ -210,8 +210,8 @@
       },
       "liquidityFee": 1500,
       "tokenize": {
-        "name": "Tokenized Aave Core WETH",
-        "symbol": "aCore-WETH",
+        "name": "Wrapped Aave Core WETH",
+        "symbol": "waCoreWETH",
         "addCap": 250
       }
     },
@@ -225,8 +225,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Core wstETH",
-        "symbol": "aCore-wstETH",
+        "name": "Wrapped Aave Core wstETH",
+        "symbol": "waCorewstETH",
         "addCap": 0
       }
     },
@@ -240,8 +240,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Core weETH",
-        "symbol": "aCore-weETH",
+        "name": "Wrapped Aave Core weETH",
+        "symbol": "waCoreweETH",
         "addCap": 0
       }
     },
@@ -255,8 +255,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Core rsETH",
-        "symbol": "aCore-rsETH",
+        "name": "Wrapped Aave Core rsETH",
+        "symbol": "waCorersETH",
         "addCap": 0
       }
     },
@@ -271,8 +271,8 @@
       },
       "liquidityFee": 1000,
       "tokenize": {
-        "name": "Tokenized Aave Core USDT",
-        "symbol": "aCore-USDT",
+        "name": "Wrapped Aave Core USDT",
+        "symbol": "waCoreUSDT",
         "addCap": 312500
       }
     },
@@ -287,8 +287,8 @@
       },
       "liquidityFee": 1000,
       "tokenize": {
-        "name": "Tokenized Aave Core USDC",
-        "symbol": "aCore-USDC",
+        "name": "Wrapped Aave Core USDC",
+        "symbol": "waCoreUSDC",
         "addCap": 312500
       }
     },
@@ -303,8 +303,8 @@
       },
       "liquidityFee": 1000,
       "tokenize": {
-        "name": "Tokenized Aave Core GHO",
-        "symbol": "aCore-GHO",
+        "name": "Wrapped Aave Core GHO",
+        "symbol": "waCoreGHO",
         "addCap": 125000
       }
     },
@@ -319,8 +319,8 @@
       },
       "liquidityFee": 2000,
       "tokenize": {
-        "name": "Tokenized Aave Core RLUSD",
-        "symbol": "aCore-RLUSD",
+        "name": "Wrapped Aave Core RLUSD",
+        "symbol": "waCoreRLUSD",
         "addCap": 125000
       }
     },
@@ -335,8 +335,8 @@
       },
       "liquidityFee": 2000,
       "tokenize": {
-        "name": "Tokenized Aave Core USDG",
-        "symbol": "aCore-USDG",
+        "name": "Wrapped Aave Core USDG",
+        "symbol": "waCoreUSDG",
         "addCap": 125000
       }
     },
@@ -351,8 +351,8 @@
       },
       "liquidityFee": 2000,
       "tokenize": {
-        "name": "Tokenized Aave Core frxUSD",
-        "symbol": "aCore-frxUSD",
+        "name": "Wrapped Aave Core frxUSD",
+        "symbol": "waCorefrxUSD",
         "addCap": 125000
       }
     },
@@ -367,8 +367,8 @@
       },
       "liquidityFee": 1000,
       "tokenize": {
-        "name": "Tokenized Aave Core EURC",
-        "symbol": "aCore-EURC",
+        "name": "Wrapped Aave Core EURC",
+        "symbol": "waCoreEURC",
         "addCap": 112500
       }
     },
@@ -383,8 +383,8 @@
       },
       "liquidityFee": 2000,
       "tokenize": {
-        "name": "Tokenized Aave Core WBTC",
-        "symbol": "aCore-WBTC",
+        "name": "Wrapped Aave Core WBTC",
+        "symbol": "waCoreWBTC",
         "addCap": 0
       }
     },
@@ -399,8 +399,8 @@
       },
       "liquidityFee": 2000,
       "tokenize": {
-        "name": "Tokenized Aave Core cbBTC",
-        "symbol": "aCore-cbBTC",
+        "name": "Wrapped Aave Core cbBTC",
+        "symbol": "waCorecbBTC",
         "addCap": 0
       }
     },
@@ -414,8 +414,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Core LBTC",
-        "symbol": "aCore-LBTC",
+        "name": "Wrapped Aave Core LBTC",
+        "symbol": "waCoreLBTC",
         "addCap": 0
       }
     },
@@ -429,8 +429,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Core XAUt",
-        "symbol": "aCore-XAUt",
+        "name": "Wrapped Aave Core XAUt",
+        "symbol": "waCoreXAUt",
         "addCap": 0
       }
     },
@@ -444,8 +444,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Core AAVE",
-        "symbol": "aCore-AAVE",
+        "name": "Wrapped Aave Core AAVE",
+        "symbol": "waCoreAAVE",
         "addCap": 0
       }
     },
@@ -459,8 +459,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Core LINK",
-        "symbol": "aCore-LINK",
+        "name": "Wrapped Aave Core LINK",
+        "symbol": "waCoreLINK",
         "addCap": 0
       }
     },
@@ -474,8 +474,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Prime WETH",
-        "symbol": "aPrime-WETH",
+        "name": "Wrapped Aave Prime WETH",
+        "symbol": "waPrimeWETH",
         "addCap": 0
       }
     },
@@ -489,8 +489,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Prime WBTC",
-        "symbol": "aPrime-WBTC",
+        "name": "Wrapped Aave Prime WBTC",
+        "symbol": "waPrimeWBTC",
         "addCap": 0
       }
     },
@@ -504,8 +504,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Prime cbBTC",
-        "symbol": "aPrime-cbBTC",
+        "name": "Wrapped Aave Prime cbBTC",
+        "symbol": "waPrimecbBTC",
         "addCap": 0
       }
     },
@@ -519,8 +519,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Prime wstETH",
-        "symbol": "aPrime-wstETH",
+        "name": "Wrapped Aave Prime wstETH",
+        "symbol": "waPrimewstETH",
         "addCap": 0
       }
     },
@@ -535,8 +535,8 @@
       },
       "liquidityFee": 1000,
       "tokenize": {
-        "name": "Tokenized Aave Prime USDC",
-        "symbol": "aPrime-USDC",
+        "name": "Wrapped Aave Prime USDC",
+        "symbol": "waPrimeUSDC",
         "addCap": 37500
       }
     },
@@ -551,8 +551,8 @@
       },
       "liquidityFee": 1000,
       "tokenize": {
-        "name": "Tokenized Aave Prime USDT",
-        "symbol": "aPrime-USDT",
+        "name": "Wrapped Aave Prime USDT",
+        "symbol": "waPrimeUSDT",
         "addCap": 37500
       }
     },
@@ -567,8 +567,8 @@
       },
       "liquidityFee": 1000,
       "tokenize": {
-        "name": "Tokenized Aave Prime GHO",
-        "symbol": "aPrime-GHO",
+        "name": "Wrapped Aave Prime GHO",
+        "symbol": "waPrimeGHO",
         "addCap": 125000
       }
     },
@@ -612,8 +612,8 @@
         "rateGrowthAfterOptimal": 0
       },
       "tokenize": {
-        "name": "Tokenized Aave Plus sUSDe",
-        "symbol": "aPlus-sUSDe",
+        "name": "Wrapped Aave Plus sUSDe",
+        "symbol": "waPlussUSDe",
         "addCap": 0
       }
     },
@@ -628,8 +628,8 @@
       },
       "liquidityFee": 2500,
       "tokenize": {
-        "name": "Tokenized Aave Plus USDe",
-        "symbol": "aPlus-USDe",
+        "name": "Wrapped Aave Plus USDe",
+        "symbol": "waPlusUSDe",
         "addCap": 78000
       }
     },
@@ -644,8 +644,8 @@
       },
       "liquidityFee": 1500,
       "tokenize": {
-        "name": "Tokenized Aave Plus USDC",
-        "symbol": "aPlus-USDC",
+        "name": "Wrapped Aave Plus USDC",
+        "symbol": "waPlusUSDC",
         "addCap": 37500
       }
     },
@@ -660,8 +660,8 @@
       },
       "liquidityFee": 1000,
       "tokenize": {
-        "name": "Tokenized Aave Plus GHO",
-        "symbol": "aPlus-GHO",
+        "name": "Wrapped Aave Plus GHO",
+        "symbol": "waPlusGHO",
         "addCap": 125000
       }
     },
@@ -676,8 +676,8 @@
       },
       "liquidityFee": 1500,
       "tokenize": {
-        "name": "Tokenized Aave Plus USDT",
-        "symbol": "aPlus-USDT",
+        "name": "Wrapped Aave Plus USDT",
+        "symbol": "waPlusUSDT",
         "addCap": 37500
       }
     }

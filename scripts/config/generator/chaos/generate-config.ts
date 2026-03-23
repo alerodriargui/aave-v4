@@ -457,8 +457,8 @@ function buildConfig(
     const explicitCap = tokenizeCapMap.get(key);
     if (explicitCap !== undefined) {
       asset.tokenize = {
-        name: `Tokenized Aave ${hubPrefix} ${asset.tokenKey}`,
-        symbol: `a${hubPrefix}-${asset.tokenKey}`,
+        name: `Wrapped Aave ${hubPrefix} ${asset.tokenKey}`,
+        symbol: `wa${hubPrefix}${asset.tokenKey}`,
         addCap: explicitCap,
       };
     } else {
