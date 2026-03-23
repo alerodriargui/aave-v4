@@ -35,7 +35,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[0] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0xd1dBB3275374ad63167Df9Dab75510B21F28aCDb,
+        spoke: 0x7320CF22Ac095bA2a2e0a652F77efB836c2E751b,
         assets: assets
       });
     }
@@ -55,7 +55,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[1] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0x96758bFe31c15CB82957F3326a50fAc8fad56084,
+        spoke: 0xcb0E7dA9c635628f6d4827355AeCa75aB8d3560f,
         assets: assets
       });
     }
@@ -75,7 +75,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[2] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0x4F8F51Da1A497C362eAd31c11bA826BC2CbA868E,
+        spoke: 0x559cEc2C840D9DBB18936Afc5E5341D78bfC7Cbe,
         assets: assets
       });
     }
@@ -95,7 +95,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[3] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0x1a153Ed992cb3f87314bC79BE86159bBD5Ac46bb,
+        spoke: 0x45a04Ca1A5cbEeA4B44356c75EDd29b33eB2527a,
         assets: assets
       });
     }
@@ -115,7 +115,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[4] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0xaB5D8Ad884355F0D227Ef90DC953E6B0A4F5B789,
+        spoke: 0x5eC44a70F309854fe04d495cFE1B5dA63DD1cc73,
         assets: assets
       });
     }
@@ -135,7 +135,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[5] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0x73Fb187D6b4253B07eB1089173B01d9e84724bfA,
+        spoke: 0x531E90a2376902DE8915789Fcc1075e3B0c153E7,
         assets: assets
       });
     }
@@ -155,7 +155,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[6] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0x504bcD783b9F53E3bd49D56643E56fd842e7e7d8,
+        spoke: 0x58C14a5E061c9bC6926c5b853445290F296C2F7B,
         assets: assets
       });
     }
@@ -175,7 +175,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[7] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0x902915db5c2aB8bCaa76e72c2D0eF5D6c74CC70F,
+        spoke: 0xC8a125AE4275a78AADc53B46Ca10566Bc9B249E0,
         assets: assets
       });
     }
@@ -195,7 +195,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[8] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0xe6a389Da16ec8Db313391f804A992e05d600F050,
+        spoke: 0xAC2435E3C25e8246870D33ce0a26988A46d5DB68,
         assets: assets
       });
     }
@@ -215,7 +215,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[9] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0x3f52d398D1779d7801d19eEDdF56E463528B3434,
+        spoke: 0x2226749630775ee20230Ad65214fB339087eF30D,
         assets: assets
       });
     }
@@ -235,7 +235,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[10] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0xf0808539F533269f3c7e84ef351412fe2143F32e,
+        spoke: 0x6D9e2Cdd61CaF69af99b275704B6e272C41c6718,
         assets: assets
       });
     }
@@ -255,7 +255,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[11] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0x77061a5D5cFfF2C59b11C34b1fC12b97Df7aDCC0,
+        spoke: 0x82A9CC4656784E55Ef2E78F704028B5E1Bfc1732,
         assets: assets
       });
     }
@@ -275,7 +275,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[12] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0xE6DbefECDD2246a87a7218Dd7AcCa7c297530808,
+        spoke: 0x33B41B74366F55327d959FfF6D6b6fBc2853dbB1,
         assets: assets
       });
     }
@@ -295,7 +295,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[13] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0x8e16005bc97B6a0febd9B89dd81b1f63AF936B50,
+        spoke: 0x7961F140B570490849DB878AE222570ea838799d,
         assets: assets
       });
     }
@@ -315,7 +315,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[14] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0xCDc2A2C11a18cbBc9B4aE10b7A598ce509F5dDDc,
+        spoke: 0x4E712562fcb5337011398B6C630f55b60641cd5e,
         assets: assets
       });
     }
@@ -335,7 +335,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[15] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0x00D7cD29A14B3f67bD4C865aDDDDfC94cA1b570C,
+        spoke: 0x0A65197b16C5969F92672051c9C9C0C75B369135,
         assets: assets
       });
     }
@@ -355,7 +355,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[16] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.CORE_HUB,
-        spoke: 0x4305066589259E191286f829807608bcf2425Ef9,
+        spoke: 0xE69C2045095C8Ab3E2a7d77de2328faE5baF797c,
         assets: assets
       });
     }
@@ -375,7 +375,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[17] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PRIME_HUB,
-        spoke: 0xB8DeA4dd8fE2FA5547148BC76E9A9C575D1E6c5D,
+        spoke: 0x2087513383330B961A3753B47627Bbf149F31c70,
         assets: assets
       });
     }
@@ -395,7 +395,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[18] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PRIME_HUB,
-        spoke: 0x0ED2E8d02cb592A3e81132E12B91b23C3f6109De,
+        spoke: 0x5AE3d87De89CA6Ce501e8317887F71EABED69E18,
         assets: assets
       });
     }
@@ -415,7 +415,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[19] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PRIME_HUB,
-        spoke: 0x859149eD6463E444d9E492c0AcbEc957943DA83c,
+        spoke: 0xD38098faf52D8E915EdED84fBF30F81C17906938,
         assets: assets
       });
     }
@@ -435,7 +435,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[20] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PRIME_HUB,
-        spoke: 0xf2e654f1968843446CC2b4Fc05D70BF71F857e2F,
+        spoke: 0xFCD3D3C69cd032DE0cc78fE529B7447D2fe7F666,
         assets: assets
       });
     }
@@ -455,7 +455,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[21] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PRIME_HUB,
-        spoke: 0x984578F7470fF5F71526D26BD3607BbAB95C4fE4,
+        spoke: 0x486415fb1F8b062c89ED548f871cf64304AACb31,
         assets: assets
       });
     }
@@ -475,7 +475,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[22] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PRIME_HUB,
-        spoke: 0xf85528eD310a2B1F2b98DA743740f6A3f1038605,
+        spoke: 0x46c588DD8453aC259c1f6a54b4C9A93C2aC3762D,
         assets: assets
       });
     }
@@ -495,7 +495,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[23] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PRIME_HUB,
-        spoke: 0x8ce41975BcA8bcE7F8F9aa7258b0aA2Bb89FE298,
+        spoke: 0x900fD46d565d1ac8995928c0179052ec02a6D0E1,
         assets: assets
       });
     }
@@ -515,7 +515,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[24] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PLUS_HUB,
-        spoke: 0x9488964968Bba4bd28bf255E58aBD0588BfE2086,
+        spoke: 0x90774889c22D2F2Adf44da1f04C7c95542590df4,
         assets: assets
       });
     }
@@ -535,7 +535,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[25] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PLUS_HUB,
-        spoke: 0xA770dfE60eE0813F3F76ac323AFe948E1193e3Ae,
+        spoke: 0xdd2Eb78BF9e6aC5068B95aD2d451e8c9Af10ac81,
         assets: assets
       });
     }
@@ -555,7 +555,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[26] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PLUS_HUB,
-        spoke: 0xB444B0a97Ecc67592Baf63c3Ebe46FB778e01eBd,
+        spoke: 0x24f8c062e1E0451736C1D6E023510DA262a41df4,
         assets: assets
       });
     }
@@ -575,7 +575,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[27] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PLUS_HUB,
-        spoke: 0x985e1aA0E0bDe8bf538e5695E2eeDf1D11c7CeD1,
+        spoke: 0x502Cd81da6a8F1785eb2eEE72713B7388E16A854,
         assets: assets
       });
     }
@@ -595,7 +595,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[28] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PLUS_HUB,
-        spoke: 0xef9ed8c801b1DBd68cb334ED32926C152AA660F7,
+        spoke: 0xc94bdd83D2c7655C280655D60954e79E88D4F949,
         assets: assets
       });
     }
@@ -615,7 +615,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[29] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PLUS_HUB,
-        spoke: 0x57F897A56b807763683EAae3d82E19f8C755Df2D,
+        spoke: 0xA54382db40EC602c0a173A08f9E86Ed40F9D4D10,
         assets: assets
       });
     }
@@ -635,7 +635,7 @@ contract TokenizationSpokePayload is AaveV4Payload {
       additions[30] = IAaveV4ConfigEngine.SpokeToAssetsAddition({
         hubConfigurator: IHubConfigurator(Infra.HUB_CONFIGURATOR),
         hub: Hubs.PLUS_HUB,
-        spoke: 0x109308A4602E3f45177F649CBa4a7e0d2984CA38,
+        spoke: 0x80835EB50694EE0e519743f67e5401e6FD300006,
         assets: assets
       });
     }
