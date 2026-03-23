@@ -82,11 +82,11 @@
     },
     "cbBTC": {
       "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
-      "priceFeed": "0x2665701293fCbEB223D11A08D826563EDcCE423A"
+      "priceFeed": "0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c"
     },
     "frxUSD": {
       "address": "0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29",
-      "priceFeed": "0x9B4a96210bc8D9D55b1908B465D8B0de68B7fF83"
+      "priceFeed": "0x25ded2f9ae6ae9416693ab63abe3ab25493861fd"
     },
     "rsETH": {
       "address": "0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7",
@@ -102,7 +102,7 @@
     },
     "wstETH": {
       "address": "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
-      "priceFeed": "0xe1D97bF61901B075E9626c8A2340a7De385861Ef"
+      "priceFeed": "0x869C9Ae2C8fbe82a8b0F768b9F791f89E083222C"
     }
   },
   "hubs": [

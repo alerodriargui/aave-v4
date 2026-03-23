@@ -22,11 +22,11 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
   cbBTC: {
     address: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf', // name: "Coinbase Wrapped BTC", symbol: "cbBTC"
-    priceFeed: '0x2665701293fCbEB223D11A08D826563EDcCE423A', // "cbBTC / USD", latestAnswer: 7047392557506
+    priceFeed: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c', // "BTC / USD", latestAnswer: 7047392557506 // using BTC/USD feed
   },
   wstETH: {
     address: '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0', // name: "Wrapped liquid staked Ether 2.0", symbol: "wstETH"
-    priceFeed: '0xe1D97bF61901B075E9626c8A2340a7De385861Ef', // "Capped wstETH / stETH(ETH) / USD", latestAnswer: 264065694721
+    priceFeed: '0x869C9Ae2C8fbe82a8b0F768b9F791f89E083222C', // "Capped wstETH / stETH(ETH) / USD", latestAnswer: 264065694721
   },
   weETH: {
     address: '0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee', // name: "Wrapped eETH", symbol: "weETH"
@@ -90,7 +90,7 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
   frxUSD: {
     address: '0xCAcd6fd266aF91b8AeD52aCCc382b4e165586E29', // name: "Frax USD", symbol: "frxUSD"
-    priceFeed: '0x9B4a96210bc8D9D55b1908B465D8B0de68B7fF83', // "frxUSD / USD", latestAnswer: 99988313
+    priceFeed: '0x25ded2f9ae6ae9416693ab63abe3ab25493861fd', // "Capped frxUSD / USD", latestAnswer: 99988313
   },
   PT_USDE_7MAY2026: {
     address: '0xAeBf0Bb9f57E89260d57f31AF34eB58657d96Ce0', // name: "PT Ethena USDe 7MAY2026", symbol: "PT-USDe-7MAY2026"

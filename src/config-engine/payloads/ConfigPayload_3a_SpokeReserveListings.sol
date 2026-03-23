@@ -46,7 +46,7 @@ contract ConfigPayload_3a_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.MAIN_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.wstETH,
-      priceSource: 0xe1D97bF61901B075E9626c8A2340a7De385861Ef,
+      priceSource: 0x869C9Ae2C8fbe82a8b0F768b9F791f89E083222C,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -103,7 +103,7 @@ contract ConfigPayload_3a_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.MAIN_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.cbBTC,
-      priceSource: 0x2665701293fCbEB223D11A08D826563EDcCE423A,
+      priceSource: 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -255,7 +255,7 @@ contract ConfigPayload_3a_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.MAIN_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.frxUSD,
-      priceSource: 0x9B4a96210bc8D9D55b1908B465D8B0de68B7fF83,
+      priceSource: 0x25DEd2f9aE6ae9416693AB63Abe3aB25493861FD,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -293,7 +293,7 @@ contract ConfigPayload_3a_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.LIDO_ESPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.wstETH,
-      priceSource: 0xe1D97bF61901B075E9626c8A2340a7De385861Ef,
+      priceSource: 0x869C9Ae2C8fbe82a8b0F768b9F791f89E083222C,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -445,7 +445,7 @@ contract ConfigPayload_3a_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.LOMBARD_BTC_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.cbBTC,
-      priceSource: 0x2665701293fCbEB223D11A08D826563EDcCE423A,
+      priceSource: 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
@@ -540,7 +540,7 @@ contract ConfigPayload_3a_SpokeReserveListings is AaveV4Payload {
       spoke: Spokes.GOLD_SPOKE,
       hub: Hubs.CORE_HUB,
       underlying: Tokens.frxUSD,
-      priceSource: 0x9B4a96210bc8D9D55b1908B465D8B0de68B7fF83,
+      priceSource: 0x25DEd2f9aE6ae9416693AB63Abe3aB25493861FD,
       config: ISpoke.ReserveConfig({
         collateralRisk: 0,
         paused: false,
