@@ -11,10 +11,13 @@ import argparse
 import json
 import re
 import sys
+import time
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
 
 from web3 import Web3
 
@@ -71,6 +74,75 @@ ARTIFACT_MAP: dict[str, ArtifactInfo] = {
         impl_contract_name="TokenizationSpokeInstance",
     ),
 }
+
+
+@dataclass(frozen=True)
+class ExpectedCompilerSettings:
+    solc: str
+    optimizer_runs: int
+    via_ir: bool
+    evm_version: str
+
+
+DEFAULT_COMPILER_SETTINGS = ExpectedCompilerSettings(
+    solc="0.8.28",
+    optimizer_runs=444_444_444_444,
+    via_ir=False,
+    evm_version="cancun",
+)
+
+COMPILER_OVERRIDES: dict[str, ExpectedCompilerSettings] = {
+    "HubInstance": ExpectedCompilerSettings(
+        solc="0.8.28", optimizer_runs=22_300, via_ir=True, evm_version="cancun",
+    ),
+    "SpokeInstance": ExpectedCompilerSettings(
+        solc="0.8.28", optimizer_runs=750, via_ir=True, evm_version="cancun",
+    ),
+}
+
+
+def _expected_compiler(contract_name: str) -> ExpectedCompilerSettings:
+    return COMPILER_OVERRIDES.get(contract_name, DEFAULT_COMPILER_SETTINGS)
+
+
+# ---------------------------------------------------------------------------
+# Etherscan API helpers
+# ---------------------------------------------------------------------------
+
+_last_etherscan_ts: float = 0.0
+
+
+def _etherscan_get_source(address: str, api_key: str) -> dict | None:
+    """Query Etherscan ``getsourcecode`` for *address*.
+
+    Applies 220 ms rate-limiting between calls to stay under the free-tier
+    5 req/s limit.  Returns the first result dict or ``None`` on failure.
+    """
+    global _last_etherscan_ts
+    elapsed = time.monotonic() - _last_etherscan_ts
+    if elapsed < 0.22:
+        time.sleep(0.22 - elapsed)
+
+    params = urlencode({
+        "module": "contract",
+        "action": "getsourcecode",
+        "address": address,
+        "apikey": api_key,
+    })
+    url = f"https://api.etherscan.io/api?{params}"
+    try:
+        req = Request(url, headers={"User-Agent": "aave-v4-verify/1.0"})
+        with urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+    except Exception as e:
+        print(f"  {RED}WARNING{RESET} Etherscan request failed for {address}: {e}")
+        return None
+    finally:
+        _last_etherscan_ts = time.monotonic()
+
+    if data.get("status") != "1" or not data.get("result"):
+        return None
+    return data["result"][0]
 
 
 @lru_cache(maxsize=None)
@@ -365,6 +437,8 @@ class ContractCaller:
         self.position_manager_base_abi = load_abi(
             "IPositionManagerBase.sol", "IPositionManagerBase"
         )
+        self.price_oracle_abi = load_abi("IPriceOracle.sol", "IPriceOracle")
+        self.price_feed_abi = load_abi("IPriceFeed.sol", "IPriceFeed")
 
     ERC1967_IMPL_SLOT = int(
         "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc", 16
@@ -407,6 +481,9 @@ class ContractCaller:
 
     def call_access_manager(self, addr: str, fn_name: str, *args: Any) -> Any:
         return self._call(addr, self.access_manager_abi, fn_name, *args)
+
+    def call_price_feed(self, addr: str, fn_name: str, *args: Any) -> Any:
+        return self._call(addr, self.price_feed_abi, fn_name, *args)
 
 
 # ---------------------------------------------------------------------------
@@ -1058,6 +1135,105 @@ def verify_oracles(
                     config.tokens_by_key[asset_key]["priceFeed"]
                 )
                 _check(result, f"{res_label}/oracle/source", expected_feed, source)
+
+
+def verify_oracle_wiring(
+    batch_mgr: BatchCallManager,
+    caller: ContractCaller,
+    report: DeployReport,
+    result: VerificationResult,
+) -> None:
+    result.section("Oracle Wiring Verification")
+
+    calls: list[tuple[str, Any]] = []
+    expectations: list[tuple[str, str, str]] = []  # (key, direction, expected_addr)
+
+    for spoke_info in report.spokes:
+        spoke_addr = Web3.to_checksum_address(spoke_info.proxy)
+        oracle_addr = Web3.to_checksum_address(spoke_info.oracle)
+
+        # Spoke -> Oracle link
+        spoke_contract = batch_mgr.w3.eth.contract(
+            address=spoke_addr, abi=caller.spoke_abi,
+        )
+        fwd_key = f"{spoke_info.label}/spoke->oracle"
+        calls.append((fwd_key, spoke_contract.functions.ORACLE()))
+        expectations.append((fwd_key, "ORACLE()", oracle_addr))
+
+        # Oracle -> Spoke link
+        oracle_contract = batch_mgr.w3.eth.contract(
+            address=oracle_addr, abi=caller.price_oracle_abi,
+        )
+        rev_key = f"{spoke_info.label}/oracle->spoke"
+        calls.append((rev_key, oracle_contract.functions.spoke()))
+        expectations.append((rev_key, "spoke()", spoke_addr))
+
+    results, errors = batch_mgr.execute(calls)
+
+    for key, fn_name, expected_addr in expectations:
+        if key in errors:
+            result.error(key, expected_addr, f"call failed: {errors[key]}")
+        else:
+            actual = results.get(key)
+            if actual is not None:
+                actual = Web3.to_checksum_address(actual)
+            _check(result, key, expected_addr, actual)
+
+
+def verify_price_feeds(
+    batch_mgr: BatchCallManager,
+    caller: ContractCaller,
+    report: DeployReport,
+    config: ConfigInput,
+    result: VerificationResult,
+) -> None:
+    result.section("Price Feed Verification")
+    expected_decimals = config.defaults.get("spoke", {}).get("oracleDecimals", 8)
+
+    # Collect unique price feed addresses across all reserves
+    feed_addresses: dict[str, list[str]] = {}  # feed_addr -> [asset_keys that use it]
+    for entry in config.reserves:
+        asset_key = entry["assetKey"]
+        token_info = config.tokens_by_key.get(asset_key, {})
+        feed_addr_raw = token_info.get("priceFeed")
+        if not feed_addr_raw:
+            continue
+        feed_addr = Web3.to_checksum_address(feed_addr_raw)
+        feed_addresses.setdefault(feed_addr, []).append(asset_key)
+
+    if not feed_addresses:
+        print("  No price feeds found in config.")
+        return
+
+    calls: list[tuple[str, Any]] = []
+    for feed_addr in feed_addresses:
+        feed_contract = batch_mgr.w3.eth.contract(
+            address=feed_addr, abi=caller.price_feed_abi,
+        )
+        calls.append((f"{feed_addr}/decimals", feed_contract.functions.decimals()))
+        calls.append((f"{feed_addr}/latestAnswer", feed_contract.functions.latestAnswer()))
+
+    results, errors = batch_mgr.execute(calls)
+
+    for feed_addr, asset_keys in feed_addresses.items():
+        assets_str = ", ".join(asset_keys)
+
+        dec_key = f"{feed_addr}/decimals"
+        if dec_key in errors:
+            result.error(f"priceFeed({assets_str})/decimals", expected_decimals, f"call failed: {errors[dec_key]}")
+        else:
+            decimals = results.get(dec_key)
+            _check(result, f"priceFeed({assets_str})/decimals", expected_decimals, decimals)
+
+        ans_key = f"{feed_addr}/latestAnswer"
+        if ans_key in errors:
+            result.error(f"priceFeed({assets_str})/latestAnswer", "> 0", f"call failed: {errors[ans_key]}")
+        else:
+            answer = results.get(ans_key)
+            if answer is not None and answer > 0:
+                result.ok(f"priceFeed({assets_str})/latestAnswer", str(answer))
+            else:
+                result.error(f"priceFeed({assets_str})/latestAnswer", "> 0", str(answer))
 
 
 def _check(
@@ -1730,6 +1906,132 @@ def verify_position_managers_and_gateways(
                     result.error(key, "registered", f"{val}")
 
 
+def verify_etherscan_source(
+    caller: ContractCaller,
+    report: DeployReport,
+    result: VerificationResult,
+    api_key: str,
+) -> dict[str, dict]:
+    """Check that every deployed address is source-verified on Etherscan.
+
+    For proxy contracts the implementation is also checked.  Returns a cache
+    mapping ``address -> etherscan result dict`` for reuse by compiler checks.
+    """
+    result.section("Etherscan Source Verification")
+
+    cache: dict[str, dict] = {}
+
+    def _check_addr(label: str, addr: str) -> None:
+        addr = Web3.to_checksum_address(addr)
+        if addr in cache:
+            src = cache[addr]
+        else:
+            src = _etherscan_get_source(addr, api_key)
+            if src is not None:
+                cache[addr] = src
+        if src is None:
+            result.error(label, "Etherscan response", f"no data for {addr}")
+        elif not src.get("SourceCode"):
+            result.error(label, "source verified", f"not verified at {addr}")
+        else:
+            result.ok(label, addr)
+
+    for name, addr in report.all_addresses():
+        _check_addr(name, addr)
+
+        suffix = name.rsplit("/", 1)[-1]
+        artifact = ARTIFACT_MAP.get(suffix)
+        if artifact and artifact.impl_sol_file:
+            impl_addr = caller.get_implementation(addr)
+            _check_addr(f"{name}/Implementation", impl_addr)
+
+    return cache
+
+
+def verify_etherscan_compiler(
+    caller: ContractCaller,
+    report: DeployReport,
+    result: VerificationResult,
+    etherscan_cache: dict[str, dict],
+) -> None:
+    """Compare Etherscan-reported compiler settings against expected values."""
+    result.section("Compiler Settings Verification (Etherscan)")
+
+    checked: set[str] = set()
+
+    def _check_compiler(label: str, addr: str, contract_name: str) -> None:
+        addr = Web3.to_checksum_address(addr)
+        if addr in checked:
+            return
+        checked.add(addr)
+
+        src = etherscan_cache.get(addr)
+        if src is None or not src.get("SourceCode"):
+            result.error(label, "compiler data", f"no verified source for {addr}")
+            return
+
+        expected = _expected_compiler(contract_name)
+
+        compiler_ver = src.get("CompilerVersion", "")
+        if f"v{expected.solc}" in compiler_ver:
+            result.ok(f"{label}/solc", compiler_ver)
+        else:
+            result.error(f"{label}/solc", f"v{expected.solc}", compiler_ver)
+
+        opt_used = src.get("OptimizationUsed", "0")
+        if opt_used == "1":
+            result.ok(f"{label}/optimizer", "enabled")
+        else:
+            result.error(f"{label}/optimizer", "1 (enabled)", opt_used)
+
+        runs = int(src.get("Runs", "0"))
+        # Etherscan may truncate very large optimizer_runs to 32-bit
+        expected_runs = expected.optimizer_runs
+        expected_runs_truncated = expected_runs & 0xFFFFFFFF
+        if runs == expected_runs or runs == expected_runs_truncated:
+            result.ok(f"{label}/runs", str(runs))
+        else:
+            result.error(f"{label}/runs", str(expected_runs), str(runs))
+
+        evm = src.get("EVMVersion", "").lower()
+        if evm == "default":
+            # Etherscan reports "default" when the EVM version matches the
+            # compiler default; for solc 0.8.28 that is "cancun".
+            evm = "cancun"
+        if evm == expected.evm_version:
+            result.ok(f"{label}/evmVersion", evm)
+        else:
+            result.error(f"{label}/evmVersion", expected.evm_version, evm)
+
+        # Extract viaIR from Standard JSON input when available
+        actual_via_ir = False
+        source_code = src.get("SourceCode", "")
+        if source_code.startswith("{{"):
+            try:
+                inner = json.loads(source_code[1:-1])
+                actual_via_ir = inner.get("settings", {}).get("viaIR", False)
+            except (json.JSONDecodeError, KeyError):
+                pass
+        if actual_via_ir == expected.via_ir:
+            result.ok(f"{label}/viaIR", str(actual_via_ir))
+        else:
+            result.error(f"{label}/viaIR", str(expected.via_ir), str(actual_via_ir))
+
+    for name, addr in report.all_addresses():
+        suffix = name.rsplit("/", 1)[-1]
+        artifact = ARTIFACT_MAP.get(suffix)
+        if artifact is None:
+            continue
+
+        _check_compiler(name, addr, artifact.contract_name)
+
+        if artifact.impl_sol_file:
+            impl_addr = caller.get_implementation(addr)
+            _check_compiler(
+                f"{name}/Implementation", impl_addr, artifact.impl_contract_name,
+            )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Verify an Aave V4 deployment against its configuration."
@@ -1742,6 +2044,10 @@ def main() -> None:
     parser.add_argument(
         "--tokenization-report", default=None,
         help="Path to tokenization deployment report JSON",
+    )
+    parser.add_argument(
+        "--etherscan-api-key", default=None,
+        help="Etherscan API key for source & compiler verification (mainnet only)",
     )
     args = parser.parse_args()
 
@@ -1770,6 +2076,20 @@ def main() -> None:
     # Bytecode verification stays sequential (uses get_code/get_storage_at)
     verify_bytecode(caller, report, result)
 
+    chain_id = w3.eth.chain_id
+    if chain_id == 1:
+        if args.etherscan_api_key:
+            etherscan_cache = verify_etherscan_source(
+                caller, report, result, args.etherscan_api_key,
+            )
+            verify_etherscan_compiler(caller, report, result, etherscan_cache)
+        else:
+            print(
+                f"\n{BOLD}=== Etherscan Verification ==={RESET}\n"
+                f"  {RED}WARNING{RESET} --etherscan-api-key not provided; "
+                "skipping source & compiler verification."
+            )
+
     # Pre-fetch shared lookups (asset_ids, reserve_ids) in 2 batch round-trips
     cache = prefetch_shared_data(batch_mgr, caller, report, config)
 
@@ -1778,6 +2098,8 @@ def main() -> None:
     verify_reserves(batch_mgr, caller, cache, report, config, result)
     verify_liquidation_configs(batch_mgr, caller, report, config, result)
     verify_oracles(batch_mgr, caller, cache, report, config, result)
+    verify_oracle_wiring(batch_mgr, caller, report, result)
+    verify_price_feeds(batch_mgr, caller, report, config, result)
     verify_tokenization_spokes(batch_mgr, caller, cache, report, config, result, tokenization_report)
     verify_roles(batch_mgr, caller, report, config, result)
     verify_position_managers_and_gateways(batch_mgr, caller, report, result)
