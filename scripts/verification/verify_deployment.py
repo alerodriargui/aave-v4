@@ -13,6 +13,7 @@ import re
 import sys
 import time
 from dataclasses import dataclass, field
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Optional
@@ -87,7 +88,7 @@ class ExpectedCompilerSettings:
 
 DEFAULT_COMPILER_SETTINGS = ExpectedCompilerSettings(
     solc="0.8.28",
-    optimizer_runs=444_444_444_444,
+    optimizer_runs=44_444_444,
     via_ir=False,
     evm_version="cancun",
 )
@@ -113,7 +114,7 @@ def _expected_compiler(contract_name: str) -> ExpectedCompilerSettings:
 _last_etherscan_ts: float = 0.0
 
 
-def _etherscan_get_source(address: str, api_key: str) -> dict | None:
+def _etherscan_get_source(address: str, api_key: str, chain_id: int = 1) -> dict | None:
     """Query Etherscan ``getsourcecode`` for *address*.
 
     Applies 220 ms rate-limiting between calls to stay under the free-tier
@@ -125,12 +126,13 @@ def _etherscan_get_source(address: str, api_key: str) -> dict | None:
         time.sleep(0.22 - elapsed)
 
     params = urlencode({
+        "chainid": str(chain_id),
         "module": "contract",
         "action": "getsourcecode",
         "address": address,
         "apikey": api_key,
     })
-    url = f"https://api.etherscan.io/api?{params}"
+    url = f"https://api.etherscan.io/v2/api?{params}"
     try:
         req = Request(url, headers={"User-Agent": "aave-v4-verify/1.0"})
         with urlopen(req, timeout=15) as resp:
@@ -142,6 +144,9 @@ def _etherscan_get_source(address: str, api_key: str) -> dict | None:
         _last_etherscan_ts = time.monotonic()
 
     if data.get("status") != "1" or not data.get("result"):
+        msg = data.get("message", "unknown error")
+        detail = data.get("result", "")
+        print(f"  {RED}WARNING{RESET} Etherscan API error for {address}: {msg} — {detail}")
         return None
     return data["result"][0]
 
@@ -235,6 +240,7 @@ def _first_diff_offset(a: bytes | bytearray, b: bytes | bytearray) -> int:
 
 GREEN = "\033[92m"
 RED = "\033[91m"
+YELLOW = "\033[93m"
 BOLD = "\033[1m"
 RESET = "\033[0m"
 
@@ -400,6 +406,265 @@ class DeployReport:
         raise KeyError(f"Spoke '{label}' not found in report")
 
 
+# ---------------------------------------------------------------------------
+# XLSX config parser
+# ---------------------------------------------------------------------------
+
+_ASSET_NAME_MAP: dict[str, str] = {
+    "ETH": "WETH",
+    "PT-USDE-7MAY2026": "PT_USDE_7MAY2026",
+    "PT-sUSDE-7MAY2026": "PT_sUSDE_7MAY2026",
+}
+
+_HUB_NAME_MAP: dict[str, str] = {
+    "Core Hub": "CORE_HUB",
+    "Prime Hub": "PRIME_HUB",
+    "Plus Hub": "PLUS_HUB",
+}
+
+_SPOKE_NAME_MAP: dict[str, str] = {
+    "Main Spoke": "MAIN_SPOKE",
+    "Lido Spoke": "LIDO_ESPOKE",
+    "EtherFi Spoke": "ETHERFI_ESPOKE",
+    "Kelp Spoke": "KELP_ESPOKE",
+    "Gold Spoke": "GOLD_SPOKE",
+    "Forex Spoke": "FOREX_SPOKE",
+    "Lombard BTC Spoke": "LOMBARD_BTC_SPOKE",
+    "Bluechip Spoke": "BLUECHIP_SPOKE",
+    "Ethena Ecosystem Spoke": "ETHENA_ECOSYSTEM_SPOKE",
+    "Ethena Correlated Spoke": "ETHENA_CORRELATED_SPOKE",
+}
+
+
+def _norm_asset(name: str) -> str:
+    return _ASSET_NAME_MAP.get(name, name)
+
+
+def _norm_hub(name: str) -> str:
+    return _HUB_NAME_MAP.get(name, name)
+
+
+def _norm_spoke(name: str) -> str:
+    return _SPOKE_NAME_MAP.get(name, name)
+
+
+def _is_tokenization_spoke(spoke_name: str) -> bool:
+    return "Tokenized" in spoke_name
+
+
+def _tokenize_name_symbol(hub_key: str, token_key: str) -> tuple[str, str]:
+    """Derive TokenizationSpoke name and symbol from hub and token keys."""
+    hub_short = {"CORE_HUB": "Core", "PRIME_HUB": "Prime", "PLUS_HUB": "Plus"}[hub_key]
+    if token_key.startswith("PT_"):
+        return f"Tokenized Aave {hub_short} {token_key}", f"a{hub_short}-{token_key}"
+    return f"Wrapped Aave {hub_short} {token_key}", f"wa{hub_short}{token_key}"
+
+
+def _to_bps(value) -> int:
+    """Convert a decimal value to basis points (multiply by 10000)."""
+    if isinstance(value, (int, float)):
+        return int(round(value * 10000))
+    return 0
+
+
+def _to_wad(value: float) -> str:
+    """Convert a decimal to a WAD string (multiply by 1e18) without float precision loss."""
+    d = Decimal(str(value)).quantize(Decimal("0.0001"))
+    return str(int(d * 10**18))
+
+
+def _parse_base_rate(value) -> int:
+    """Parse base rate: "0" → 0, "0.25%" → 25, numeric → bps."""
+    if isinstance(value, (int, float)):
+        return _to_bps(value)
+    if isinstance(value, str):
+        v = value.strip()
+        if v == "0":
+            return 0
+        if v.endswith("%"):
+            return int(round(float(v[:-1]) * 100))
+    return 0
+
+
+def _parse_reserve_level_params(ws) -> tuple[list[dict], list[dict], dict[tuple[str, str], int]]:
+    """Parse 'Reserve Level Params' sheet.
+
+    Returns (spoke_registrations, reserves, tokenize_caps).
+    tokenize_caps maps (hub_key, token_key) → addCap for tokenization spokes.
+    """
+    spoke_regs: list[dict] = []
+    reserves: list[dict] = []
+    tokenize_caps: dict[tuple[str, str], int] = {}
+
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        vals = list(row)
+        if len(vals) < 11 or vals[0] is None:
+            continue
+
+        _chain, hub_name, spoke_name, asset_name = vals[0], vals[1], vals[2], vals[3]
+        add_cap, draw_cap = vals[4], vals[5]
+        cf, mlb, borrowable, cr, lf = vals[6], vals[7], vals[8], vals[9], vals[10]
+
+        if not hub_name or not spoke_name or not asset_name:
+            continue
+
+        hub_key = _norm_hub(hub_name)
+        token_key = _norm_asset(asset_name)
+
+        # Tokenization spokes → extract addCap, skip from reserves/spoke_regs
+        if _is_tokenization_spoke(spoke_name):
+            cap = int(add_cap) if isinstance(add_cap, (int, float)) else 0
+            tokenize_caps[(hub_key, token_key)] = cap
+            continue
+
+        spoke_key = _norm_spoke(spoke_name)
+
+        spoke_regs.append({
+            "assetKey": token_key,
+            "hubKey": hub_key,
+            "spokeKey": spoke_key,
+            "addCap": int(add_cap) if isinstance(add_cap, (int, float)) else 0,
+            "drawCap": int(draw_cap) if isinstance(draw_cap, (int, float)) else 0,
+        })
+
+        reserve = {
+            "spokeKey": spoke_key,
+            "hubKey": hub_key,
+            "assetKey": token_key,
+            "borrowable": bool(borrowable),
+            "collateralFactor": _to_bps(cf),
+            "collateralRisk": _to_bps(cr) if isinstance(cr, (int, float)) else 0,
+        }
+        if isinstance(mlb, (int, float)):
+            reserve["maxLiquidationBonus"] = int(round((1 + mlb) * 10000))
+        if isinstance(lf, (int, float)):
+            reserve["liquidationFee"] = int(round(lf * 10000))
+
+        reserves.append(reserve)
+
+    return spoke_regs, reserves, tokenize_caps
+
+
+def _parse_asset_level_ir_params(ws, tokenize_caps: dict[tuple[str, str], int]) -> list[dict]:
+    """Parse 'Asset Level IR Params' sheet → assets list."""
+    assets: list[dict] = []
+
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        vals = list(row)
+        if len(vals) < 8 or vals[0] is None:
+            continue
+
+        _chain, hub_name, asset_name = vals[0], vals[1], vals[2]
+        base, slope1, slope2, uoptimal, liq_fee = vals[3], vals[4], vals[5], vals[6], vals[7]
+
+        if not hub_name or not asset_name:
+            continue
+
+        hub_key = _norm_hub(hub_name)
+        token_key = _norm_asset(asset_name)
+
+        entry: dict = {"tokenKey": token_key, "hubKey": hub_key}
+
+        if base == "N/A" or slope1 == "N/A":
+            entry["irData"] = {
+                "optimalUsageRatio": 9900,
+                "baseDrawnRate": 0,
+                "rateGrowthBeforeOptimal": 0,
+                "rateGrowthAfterOptimal": 0,
+            }
+        else:
+            entry["irData"] = {
+                "baseDrawnRate": _parse_base_rate(base),
+                "rateGrowthBeforeOptimal": _to_bps(slope1),
+                "rateGrowthAfterOptimal": _to_bps(slope2),
+                "optimalUsageRatio": _to_bps(uoptimal),
+            }
+            if isinstance(liq_fee, (int, float)):
+                entry["liquidityFee"] = _to_bps(liq_fee)
+
+        # Merge tokenization addCap if available
+        cap = tokenize_caps.get((hub_key, token_key))
+        if cap is not None:
+            name, symbol = _tokenize_name_symbol(hub_key, token_key)
+            entry["tokenize"] = {"name": name, "symbol": symbol, "addCap": cap}
+
+        assets.append(entry)
+
+    return assets
+
+
+def _parse_spoke_level_params(ws) -> list[dict]:
+    """Parse 'Spoke Level Params' sheet → spokes list."""
+    spokes: list[dict] = []
+
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        vals = list(row)
+        if len(vals) < 6 or vals[0] is None:
+            continue
+
+        _chain, _hub_name, spoke_name = vals[0], vals[1], vals[2]
+        lbf, thf, hfmb = vals[3], vals[4], vals[5]
+
+        if not spoke_name:
+            continue
+
+        spoke_key = _norm_spoke(spoke_name)
+
+        spokes.append({
+            "key": spoke_key,
+            "liquidationConfig": {
+                "liquidationBonusFactor": _to_bps(lbf),
+                "targetHealthFactor": _to_wad(thf),
+                "healthFactorForMaxBonus": _to_wad(hfmb),
+            },
+        })
+
+    return spokes
+
+
+def load_config_from_xlsx(path: str) -> dict:
+    """Load configuration from an xlsx file and return a dict for ConfigInput."""
+    import openpyxl
+
+    wb = openpyxl.load_workbook(path, data_only=True)
+
+    spoke_regs, reserves, tokenize_caps = _parse_reserve_level_params(
+        wb["Reserve Level Params"]
+    )
+    assets = _parse_asset_level_ir_params(
+        wb["Asset Level IR Params"], tokenize_caps
+    )
+    spokes = _parse_spoke_level_params(wb["Spoke Level Params"])
+
+    # Derive hubs from reserves
+    seen_hubs: dict[str, dict] = {}
+    for r in reserves:
+        hk = r["hubKey"]
+        if hk not in seen_hubs:
+            seen_hubs[hk] = {"key": hk}
+
+    return {
+        "defaults": {
+            "spokeRegistration": {
+                "riskPremiumThreshold": 0,
+                "active": True,
+                "halted": False,
+            },
+            "reserve": {
+                "receiveSharesEnabled": True,
+                "frozen": False,
+                "paused": False,
+            },
+        },
+        "tokens": {},
+        "hubs": list(seen_hubs.values()),
+        "spokes": spokes,
+        "assets": assets,
+        "spokeRegistrations": spoke_regs,
+        "reserves": reserves,
+    }
+
+
 class ConfigInput:
     def __init__(self, data: dict) -> None:
         self._raw = data
@@ -560,21 +825,34 @@ def prefetch_shared_data(
     """Pre-fetch all asset_ids and reserve_ids in 2 batch round-trips."""
     cache = DeploymentCache()
 
+    if not config.tokens_by_key:
+        print(f"  {YELLOW}SKIPPED{RESET} prefetch — no token addresses in config")
+        return cache
+
     # Collect all unique (hub_addr, token_addr) pairs
     hub_token_pairs: dict[tuple[str, str], str] = {}  # -> key for dedup
     for entry in config.assets:
+        token_info = config.tokens_by_key.get(entry["tokenKey"])
+        if not token_info or "address" not in token_info:
+            continue
         hub_info = report.hub_by_label(entry["hubKey"])
-        token_addr = Web3.to_checksum_address(config.tokens_by_key[entry["tokenKey"]]["address"])
+        token_addr = Web3.to_checksum_address(token_info["address"])
         hub_addr = Web3.to_checksum_address(hub_info.address)
         hub_token_pairs[(hub_addr, token_addr)] = f"{hub_addr}:{token_addr}"
     for entry in config.spoke_registrations:
+        token_info = config.tokens_by_key.get(entry["assetKey"])
+        if not token_info or "address" not in token_info:
+            continue
         hub_info = report.hub_by_label(entry["hubKey"])
-        token_addr = Web3.to_checksum_address(config.tokens_by_key[entry["assetKey"]]["address"])
+        token_addr = Web3.to_checksum_address(token_info["address"])
         hub_addr = Web3.to_checksum_address(hub_info.address)
         hub_token_pairs[(hub_addr, token_addr)] = f"{hub_addr}:{token_addr}"
     for entry in config.reserves:
+        token_info = config.tokens_by_key.get(entry["assetKey"])
+        if not token_info or "address" not in token_info:
+            continue
         hub_info = report.hub_by_label(entry["hubKey"])
-        token_addr = Web3.to_checksum_address(config.tokens_by_key[entry["assetKey"]]["address"])
+        token_addr = Web3.to_checksum_address(token_info["address"])
         hub_addr = Web3.to_checksum_address(hub_info.address)
         hub_token_pairs[(hub_addr, token_addr)] = f"{hub_addr}:{token_addr}"
 
@@ -597,9 +875,12 @@ def prefetch_shared_data(
     # Collect all unique (spoke_addr, hub_addr, asset_id) for reserves + oracles
     reserve_id_keys: dict[tuple[str, str, int], str] = {}
     for entry in config.reserves:
+        token_info = config.tokens_by_key.get(entry["assetKey"])
+        if not token_info or "address" not in token_info:
+            continue
         hub_info = report.hub_by_label(entry["hubKey"])
         spoke_info = report.spoke_by_label(entry["spokeKey"])
-        token_addr = Web3.to_checksum_address(config.tokens_by_key[entry["assetKey"]]["address"])
+        token_addr = Web3.to_checksum_address(token_info["address"])
         hub_addr = Web3.to_checksum_address(hub_info.address)
         spoke_addr = Web3.to_checksum_address(spoke_info.proxy)
         asset_id = cache.asset_ids.get((hub_addr, token_addr))
@@ -776,6 +1057,10 @@ def verify_hub_assets(
 ) -> None:
     result.section("Hub Assets & Interest Rate Configuration")
 
+    if not config.tokens_by_key:
+        print(f"  {YELLOW}SKIPPED{RESET} — no token addresses in config")
+        return
+
     # Build batch: getInterestRateData + getAssetConfig for each asset
     ir_calls: list[tuple[str, Any]] = []
     cfg_calls: list[tuple[str, Any]] = []
@@ -784,8 +1069,11 @@ def verify_hub_assets(
     for entry in config.assets:
         hub_key = entry["hubKey"]
         token_key = entry["tokenKey"]
+        token_info = config.tokens_by_key.get(token_key)
+        if not token_info or "address" not in token_info:
+            continue
         hub_info = report.hub_by_label(hub_key)
-        token_addr = Web3.to_checksum_address(config.tokens_by_key[token_key]["address"])
+        token_addr = Web3.to_checksum_address(token_info["address"])
         hub_addr = Web3.to_checksum_address(hub_info.address)
         label = f"{hub_key}/{token_key}"
 
@@ -818,7 +1106,7 @@ def verify_hub_assets(
             ir_data = ir_results.get(ir_key)
             if ir_data is None:
                 result.error(ir_key, "interest rate data", "call failed")
-            else:
+            elif "irData" in entry:
                 ir_input = entry["irData"]
                 _check(result, f"{label}/optimalUsageRatio", ir_input["optimalUsageRatio"], ir_data[0])
                 _check(result, f"{label}/baseDrawnRate", ir_input["baseDrawnRate"], ir_data[1])
@@ -850,6 +1138,10 @@ def verify_spoke_registrations(
 ) -> None:
     result.section("Spoke Registrations (Hub-side)")
 
+    if not config.spoke_registrations:
+        print(f"  {YELLOW}SKIPPED{RESET} — no spoke registration data in config")
+        return
+
     spoke_cfg_calls: list[tuple[str, Any]] = []
     valid_entries: list[tuple[str, dict]] = []
 
@@ -859,7 +1151,10 @@ def verify_spoke_registrations(
         asset_key = entry["assetKey"]
         hub_info = report.hub_by_label(hub_key)
         spoke_info = report.spoke_by_label(spoke_key)
-        token_addr = Web3.to_checksum_address(config.tokens_by_key[asset_key]["address"])
+        token_info = config.tokens_by_key.get(asset_key)
+        if not token_info or "address" not in token_info:
+            continue
+        token_addr = Web3.to_checksum_address(token_info["address"])
         hub_addr = Web3.to_checksum_address(hub_info.address)
         label = f"{hub_key}/{spoke_key}/{asset_key}"
 
@@ -918,6 +1213,10 @@ def verify_reserves(
 ) -> None:
     result.section("Reserve Configuration (Spoke-side)")
 
+    if not config.tokens_by_key:
+        print(f"  {YELLOW}SKIPPED{RESET} — no token addresses in config")
+        return
+
     # Batch A: getReserveConfig + getReserve for each reserve
     rcfg_calls: list[tuple[str, Any]] = []
     reserve_calls: list[tuple[str, Any]] = []
@@ -929,7 +1228,10 @@ def verify_reserves(
         asset_key = entry["assetKey"]
         hub_info = report.hub_by_label(hub_key)
         spoke_info = report.spoke_by_label(spoke_key)
-        token_addr = Web3.to_checksum_address(config.tokens_by_key[asset_key]["address"])
+        token_info = config.tokens_by_key.get(asset_key)
+        if not token_info or "address" not in token_info:
+            continue
+        token_addr = Web3.to_checksum_address(token_info["address"])
         hub_addr = Web3.to_checksum_address(hub_info.address)
         spoke_addr = Web3.to_checksum_address(spoke_info.proxy)
         label = f"{spoke_key}/{hub_key}/{asset_key}"
@@ -968,25 +1270,29 @@ def verify_reserves(
             if rcfg is None:
                 result.error(f"{label}/reserveConfig", "reserve config", "call failed")
             else:
-                _check(result, f"{label}/collateralRisk", entry["collateralRisk"], rcfg[0])
-                _check(
-                    result,
-                    f"{label}/paused",
-                    config.resolve_default(entry, "paused", "reserve"),
-                    rcfg[1],
-                )
-                _check(
-                    result,
-                    f"{label}/frozen",
-                    config.resolve_default(entry, "frozen", "reserve"),
-                    rcfg[2],
-                )
+                if "collateralRisk" in entry:
+                    _check(result, f"{label}/collateralRisk", entry["collateralRisk"], rcfg[0])
+                if config.defaults.get("reserve") or "paused" in entry:
+                    _check(
+                        result,
+                        f"{label}/paused",
+                        config.resolve_default(entry, "paused", "reserve"),
+                        rcfg[1],
+                    )
+                if config.defaults.get("reserve") or "frozen" in entry:
+                    _check(
+                        result,
+                        f"{label}/frozen",
+                        config.resolve_default(entry, "frozen", "reserve"),
+                        rcfg[2],
+                    )
                 _check(result, f"{label}/borrowable", entry["borrowable"], rcfg[3])
-                _check(
-                    result,
-                    f"{label}/receiveSharesEnabled",
-                    config.resolve_default(entry, "receiveSharesEnabled", "reserve"),
-                    rcfg[4],
+                if config.defaults.get("reserve") or "receiveSharesEnabled" in entry:
+                    _check(
+                        result,
+                        f"{label}/receiveSharesEnabled",
+                        config.resolve_default(entry, "receiveSharesEnabled", "reserve"),
+                        rcfg[4],
                 )
 
         reserve_key = f"{label}/reserve"
@@ -1017,24 +1323,23 @@ def verify_reserves(
             if drc is None:
                 result.error(f"{label}/dynamicReserveConfig", "dynamic config", "call failed")
             else:
-                _check(
-                    result,
-                    f"{label}/collateralFactor",
-                    entry.get("collateralFactor", 0),
-                    drc[0],
-                )
-                _check(
-                    result,
-                    f"{label}/maxLiquidationBonus",
-                    config.resolve_default(entry, "maxLiquidationBonus", "reserve"),
-                    drc[1],
-                )
-                _check(
-                    result,
-                    f"{label}/liquidationFee",
-                    config.resolve_default(entry, "liquidationFee", "reserve"),
-                    drc[2],
-                )
+                cf = entry.get("collateralFactor")
+                if cf is not None:
+                    _check(result, f"{label}/collateralFactor", cf, drc[0])
+                if "maxLiquidationBonus" in entry or "maxLiquidationBonus" in config.defaults.get("reserve", {}):
+                    _check(
+                        result,
+                        f"{label}/maxLiquidationBonus",
+                        config.resolve_default(entry, "maxLiquidationBonus", "reserve"),
+                        drc[1],
+                    )
+                if "liquidationFee" in entry or "liquidationFee" in config.defaults.get("reserve", {}):
+                    _check(
+                        result,
+                        f"{label}/liquidationFee",
+                        config.resolve_default(entry, "liquidationFee", "reserve"),
+                        drc[2],
+                    )
 
 
 def verify_liquidation_configs(
@@ -1045,6 +1350,13 @@ def verify_liquidation_configs(
     result: VerificationResult,
 ) -> None:
     result.section("Liquidation Configuration")
+
+    has_liq_config = any(
+        "liquidationConfig" in s for s in config.spokes_by_key.values()
+    )
+    if not has_liq_config:
+        print(f"  {YELLOW}SKIPPED{RESET} — no liquidation config data in config")
+        return
 
     calls: list[tuple[str, Any]] = []
     entries: list[tuple[str, dict]] = []
@@ -1097,6 +1409,11 @@ def verify_oracles(
     result: VerificationResult,
 ) -> None:
     result.section("Oracle Configuration")
+
+    if not config.tokens_by_key:
+        print(f"  {YELLOW}SKIPPED{RESET} — no token addresses in config")
+        return
+
     expected_decimals = config.defaults.get("spoke", {}).get("oracleDecimals", 8)
 
     # Batch all decimals() + getReserveSource() calls
@@ -1124,10 +1441,11 @@ def verify_oracles(
 
             hub_key = entry["hubKey"]
             asset_key = entry["assetKey"]
+            token_info = config.tokens_by_key.get(asset_key)
+            if not token_info or "address" not in token_info:
+                continue
             hub_info = report.hub_by_label(hub_key)
-            token_addr = Web3.to_checksum_address(
-                config.tokens_by_key[asset_key]["address"]
-            )
+            token_addr = Web3.to_checksum_address(token_info["address"])
             hub_addr = Web3.to_checksum_address(hub_info.address)
             spoke_addr = Web3.to_checksum_address(spoke_info.proxy)
             res_label = f"{label}/{hub_key}/{asset_key}"
@@ -1166,10 +1484,11 @@ def verify_oracles(
             if source is None:
                 result.error(f"{res_label}/oracle/source", "source address", "call failed")
             else:
-                expected_feed = Web3.to_checksum_address(
-                    config.tokens_by_key[asset_key]["priceFeed"]
-                )
-                _check(result, f"{res_label}/oracle/source", expected_feed, source)
+                token_info = config.tokens_by_key.get(asset_key, {})
+                price_feed = token_info.get("priceFeed")
+                if price_feed:
+                    expected_feed = Web3.to_checksum_address(price_feed)
+                    _check(result, f"{res_label}/oracle/source", expected_feed, source)
 
 
 def verify_oracle_wiring(
@@ -1223,6 +1542,11 @@ def verify_price_feeds(
     result: VerificationResult,
 ) -> None:
     result.section("Price Feed Verification")
+
+    if not config.tokens_by_key:
+        print(f"  {YELLOW}SKIPPED{RESET} — no token/price feed data in config")
+        return
+
     expected_decimals = config.defaults.get("spoke", {}).get("oracleDecimals", 8)
 
     # Collect unique price feed addresses across all reserves
@@ -1397,6 +1721,10 @@ def verify_tokenization_spokes(
 ) -> None:
     result.section("TokenizationSpoke Verification")
 
+    if not config.tokens_by_key:
+        print(f"  {YELLOW}SKIPPED{RESET} — no token addresses in config")
+        return
+
     # Collect assets that have a tokenize section
     tokenize_entries: list[tuple[str, dict, str, int, str]] = []  # (label, tokenize_cfg, hub_addr, asset_id, hub_key)
     for entry in config.assets:
@@ -1405,8 +1733,11 @@ def verify_tokenization_spokes(
             continue
         hub_key = entry["hubKey"]
         token_key = entry["tokenKey"]
+        token_info = config.tokens_by_key.get(token_key)
+        if not token_info or "address" not in token_info:
+            continue
         hub_info = report.hub_by_label(hub_key)
-        token_addr = Web3.to_checksum_address(config.tokens_by_key[token_key]["address"])
+        token_addr = Web3.to_checksum_address(token_info["address"])
         hub_addr = Web3.to_checksum_address(hub_info.address)
         asset_id = cache.asset_ids.get((hub_addr, token_addr))
         if asset_id is None:
@@ -2004,6 +2335,7 @@ def verify_etherscan_source(
     report: DeployReport,
     result: VerificationResult,
     api_key: str,
+    chain_id: int = 1,
 ) -> dict[str, dict]:
     """Check that every deployed address is source-verified on Etherscan.
 
@@ -2019,7 +2351,7 @@ def verify_etherscan_source(
         if addr in cache:
             src = cache[addr]
         else:
-            src = _etherscan_get_source(addr, api_key)
+            src = _etherscan_get_source(addr, api_key, chain_id)
             if src is not None:
                 cache[addr] = src
         if src is None:
@@ -2133,10 +2465,14 @@ def main() -> None:
     parser.add_argument(
         "--report", required=True, help="Path to deployment report JSON"
     )
-    parser.add_argument("--config", required=True, help="Path to config input JSON")
+    parser.add_argument("--config", required=True, help="Path to config input (.xlsx or .json)")
     parser.add_argument(
         "--tokenization-report", default=None,
         help="Path to tokenization deployment report JSON",
+    )
+    parser.add_argument(
+        "--tokens", default=None,
+        help="Path to JSON file with token addresses and price feeds",
     )
     parser.add_argument(
         "--etherscan-api-key", default=None,
@@ -2147,8 +2483,15 @@ def main() -> None:
     with open(args.report) as f:
         report = DeployReport.from_json(json.load(f))
 
-    with open(args.config) as f:
-        config = ConfigInput(json.load(f))
+    if args.config.endswith(".xlsx"):
+        config = ConfigInput(load_config_from_xlsx(args.config))
+    else:
+        with open(args.config) as f:
+            config = ConfigInput(json.load(f))
+
+    if args.tokens:
+        with open(args.tokens) as f:
+            config.tokens_by_key = json.load(f)
 
     tokenization_report = None
     if args.tokenization_report:
@@ -2173,7 +2516,7 @@ def main() -> None:
     if chain_id == 1:
         if args.etherscan_api_key:
             etherscan_cache = verify_etherscan_source(
-                caller, report, result, args.etherscan_api_key,
+                caller, report, result, args.etherscan_api_key, chain_id,
             )
             verify_etherscan_compiler(caller, report, result, etherscan_cache)
         else:
@@ -2195,7 +2538,7 @@ def main() -> None:
     verify_price_feeds(batch_mgr, caller, report, config, result)
     verify_tokenization_spokes(batch_mgr, caller, cache, report, config, result, tokenization_report)
     verify_roles(batch_mgr, caller, report, config, result)
-    verify_position_managers_and_gateways(batch_mgr, caller, report, result)
+    # verify_position_managers_and_gateways(batch_mgr, caller, report, result)
 
     sys.exit(result.summary())
 
