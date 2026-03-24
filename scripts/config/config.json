@@ -26,7 +26,7 @@
     },
     "EURC": {
       "address": "0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
-      "priceFeed": "0x04F84020Fdf10d9ee64D1dcC2986EDF2F556DA11"
+      "priceFeed": "0xa6aB031A4d189B24628EC9Eb155F0a0f1A0E55a3"
     },
     "GHO": {
       "address": "0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
@@ -34,7 +34,7 @@
     },
     "LBTC": {
       "address": "0x8236a87084f8B84306f72007F36F2618A5634494",
-      "priceFeed": "0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c"
+      "priceFeed": "0x5C1771583dbbAE5AFEd71ACD2BfC0eA4029EBB04"
     },
     "LINK": {
       "address": "0x514910771AF9Ca656af840dff83E8264EcF986CA",
@@ -58,7 +58,7 @@
     },
     "USDG": {
       "address": "0xe343167631d89B6Ffc58B88d6b7fB0228795491D",
-      "priceFeed": "0x14f0737d6b705259e521EA6E9E3506AC78dBd311"
+      "priceFeed": "0xF29b1e3b68Fd59DD0a413811fD5d0AbaE653216d"
     },
     "USDT": {
       "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",

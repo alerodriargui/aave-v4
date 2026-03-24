@@ -70,11 +70,11 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
   LBTC: {
     address: '0x8236a87084f8B84306f72007F36F2618A5634494', // name: "Lombard Staked Bitcoin", symbol: "LBTC"
-    priceFeed: '0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c', // "BTC / USD", latestAnswer: 7016528830938 (using BTC/USD directly) // ! todo use capo when params available
+    priceFeed: '0x5C1771583dbbAE5AFEd71ACD2BfC0eA4029EBB04', // "Capped LBTC / BTC / USD", latestAnswer: 7016528830938
   },
   EURC: {
     address: '0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c', // name: "Euro Coin", symbol: "EURC"
-    priceFeed: '0x04F84020Fdf10d9ee64D1dcC2986EDF2F556DA11', // "EURC / USD", latestAnswer: 115630690
+    priceFeed: '0xa6aB031A4d189B24628EC9Eb155F0a0f1A0E55a3', // "Capped EURC / USD", latestAnswer: 115630690
   },
   XAUt: {
     address: '0x68749665FF8D2d112Fa859AA293F07A622782F38', // name: "Tether Gold", symbol: "XAUt"
@@ -82,7 +82,7 @@ export const TOKEN_REGISTRY: Record<string, {address: string; priceFeed: string}
   },
   USDG: {
     address: '0xe343167631d89B6Ffc58B88d6b7fB0228795491D', // name: "Global Dollar", symbol: "USDG"
-    priceFeed: '0x14f0737d6b705259e521EA6E9E3506AC78dBd311', // "USDG / USD", latestAnswer: 99995593
+    priceFeed: '0xF29b1e3b68Fd59DD0a413811fD5d0AbaE653216d', // "FixedPriceAdapter", latestAnswer: 100000000
   },
   RLUSD: {
     address: '0x8292Bb45bf1Ee4d140127049757c2E0fF06317eD', // name: "RLUSD", symbol: "RLUSD"

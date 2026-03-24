@@ -22,13 +22,13 @@ contract DiffPayload is AaveV4Payload {
     override
     returns (IAaveV4ConfigEngine.ReserveConfigUpdate[] memory updates)
   {
-    updates = new IAaveV4ConfigEngine.ReserveConfigUpdate[](5);
+    updates = new IAaveV4ConfigEngine.ReserveConfigUpdate[](8);
     updates[0] = IAaveV4ConfigEngine.ReserveConfigUpdate({
       spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
       spoke: Spokes.MAIN_SPOKE,
       hub: Hubs.CORE_HUB,
-      underlying: Tokens.GHO,
-      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
+      underlying: Tokens.EURC,
+      priceSource: 0xa6aB031A4d189B24628EC9Eb155F0a0f1A0E55a3,
       collateralRisk: EngineFlags.KEEP_CURRENT,
       paused: EngineFlags.KEEP_CURRENT,
       frozen: EngineFlags.KEEP_CURRENT,
@@ -37,10 +37,10 @@ contract DiffPayload is AaveV4Payload {
     });
     updates[1] = IAaveV4ConfigEngine.ReserveConfigUpdate({
       spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
-      spoke: Spokes.GOLD_SPOKE,
+      spoke: Spokes.MAIN_SPOKE,
       hub: Hubs.CORE_HUB,
-      underlying: Tokens.GHO,
-      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
+      underlying: Tokens.USDG,
+      priceSource: 0xF29b1e3b68Fd59DD0a413811fD5d0AbaE653216d,
       collateralRisk: EngineFlags.KEEP_CURRENT,
       paused: EngineFlags.KEEP_CURRENT,
       frozen: EngineFlags.KEEP_CURRENT,
@@ -49,10 +49,10 @@ contract DiffPayload is AaveV4Payload {
     });
     updates[2] = IAaveV4ConfigEngine.ReserveConfigUpdate({
       spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
-      spoke: Spokes.FOREX_SPOKE,
+      spoke: Spokes.LOMBARD_BTC_SPOKE,
       hub: Hubs.CORE_HUB,
-      underlying: Tokens.GHO,
-      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
+      underlying: Tokens.LBTC,
+      priceSource: 0x5C1771583dbbAE5AFEd71ACD2BfC0eA4029EBB04,
       collateralRisk: EngineFlags.KEEP_CURRENT,
       paused: EngineFlags.KEEP_CURRENT,
       frozen: EngineFlags.KEEP_CURRENT,
@@ -61,10 +61,10 @@ contract DiffPayload is AaveV4Payload {
     });
     updates[3] = IAaveV4ConfigEngine.ReserveConfigUpdate({
       spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
-      spoke: Spokes.BLUECHIP_SPOKE,
-      hub: Hubs.PRIME_HUB,
-      underlying: Tokens.GHO,
-      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
+      spoke: Spokes.GOLD_SPOKE,
+      hub: Hubs.CORE_HUB,
+      underlying: Tokens.USDG,
+      priceSource: 0xF29b1e3b68Fd59DD0a413811fD5d0AbaE653216d,
       collateralRisk: EngineFlags.KEEP_CURRENT,
       paused: EngineFlags.KEEP_CURRENT,
       frozen: EngineFlags.KEEP_CURRENT,
@@ -73,10 +73,46 @@ contract DiffPayload is AaveV4Payload {
     });
     updates[4] = IAaveV4ConfigEngine.ReserveConfigUpdate({
       spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
-      spoke: Spokes.ETHENA_ECOSYSTEM_SPOKE,
-      hub: Hubs.PLUS_HUB,
-      underlying: Tokens.GHO,
-      priceSource: 0xD110cac5d8682A3b045D5524a9903E031d70FCCd,
+      spoke: Spokes.GOLD_SPOKE,
+      hub: Hubs.CORE_HUB,
+      underlying: Tokens.EURC,
+      priceSource: 0xa6aB031A4d189B24628EC9Eb155F0a0f1A0E55a3,
+      collateralRisk: EngineFlags.KEEP_CURRENT,
+      paused: EngineFlags.KEEP_CURRENT,
+      frozen: EngineFlags.KEEP_CURRENT,
+      borrowable: EngineFlags.KEEP_CURRENT,
+      receiveSharesEnabled: EngineFlags.KEEP_CURRENT
+    });
+    updates[5] = IAaveV4ConfigEngine.ReserveConfigUpdate({
+      spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
+      spoke: Spokes.FOREX_SPOKE,
+      hub: Hubs.CORE_HUB,
+      underlying: Tokens.EURC,
+      priceSource: 0xa6aB031A4d189B24628EC9Eb155F0a0f1A0E55a3,
+      collateralRisk: EngineFlags.KEEP_CURRENT,
+      paused: EngineFlags.KEEP_CURRENT,
+      frozen: EngineFlags.KEEP_CURRENT,
+      borrowable: EngineFlags.KEEP_CURRENT,
+      receiveSharesEnabled: EngineFlags.KEEP_CURRENT
+    });
+    updates[6] = IAaveV4ConfigEngine.ReserveConfigUpdate({
+      spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
+      spoke: Spokes.FOREX_SPOKE,
+      hub: Hubs.CORE_HUB,
+      underlying: Tokens.USDG,
+      priceSource: 0xF29b1e3b68Fd59DD0a413811fD5d0AbaE653216d,
+      collateralRisk: EngineFlags.KEEP_CURRENT,
+      paused: EngineFlags.KEEP_CURRENT,
+      frozen: EngineFlags.KEEP_CURRENT,
+      borrowable: EngineFlags.KEEP_CURRENT,
+      receiveSharesEnabled: EngineFlags.KEEP_CURRENT
+    });
+    updates[7] = IAaveV4ConfigEngine.ReserveConfigUpdate({
+      spokeConfigurator: ISpokeConfigurator(Infra.SPOKE_CONFIGURATOR),
+      spoke: Spokes.BLUECHIP_SPOKE,
+      hub: Hubs.CORE_HUB,
+      underlying: Tokens.EURC,
+      priceSource: 0xa6aB031A4d189B24628EC9Eb155F0a0f1A0E55a3,
       collateralRisk: EngineFlags.KEEP_CURRENT,
       paused: EngineFlags.KEEP_CURRENT,
       frozen: EngineFlags.KEEP_CURRENT,
