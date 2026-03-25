@@ -1,13 +1,12 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
-import {IPositionManagerBase} from 'src/position-manager/interfaces/IPositionManagerBase.sol';
+import {IPositionManagerIntentBase} from 'src/position-manager/interfaces/IPositionManagerIntentBase.sol';
 
 /// @title ITakerPositionManager
 /// @author Aave Labs
 /// @notice Interface for position manager handling withdraw permit and borrow permit actions on behalf of users.
-interface ITakerPositionManager is IPositionManagerBase {
+interface ITakerPositionManager is IPositionManagerIntentBase {
   /// @notice Structured parameters for withdraw permit intent.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
@@ -44,7 +43,7 @@ interface ITakerPositionManager is IPositionManagerBase {
     uint256 deadline;
   }
 
-  /// @notice Emitted when owner approves spender to withdraw amount for reserveId on their behalf.
+  /// @notice Emitted when an owner grants an allowance to withdraw on their behalf.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
@@ -58,7 +57,7 @@ interface ITakerPositionManager is IPositionManagerBase {
     uint256 amount
   );
 
-  /// @notice Emitted when owner approves spender to borrow amount from reserveId on their behalf.
+  /// @notice Emitted when an owner grants an allowance to borrow on their behalf.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
@@ -70,6 +69,38 @@ interface ITakerPositionManager is IPositionManagerBase {
     address indexed owner,
     address spender,
     uint256 amount
+  );
+
+  /// @notice Emitted when withdrawing on behalf of a user.
+  /// @param spoke The address of the Spoke.
+  /// @param caller The transaction initiator, and recipient of the underlying asset being withdrawn.
+  /// @param onBehalfOf The owner of the modified position.
+  /// @param reserveId The identifier of the reserve.
+  /// @param withdrawnShares The amount of supply shares burned.
+  /// @param withdrawnAmount The amount of underlying asset withdrawn.
+  event WithdrawOnBehalfOf(
+    address indexed spoke,
+    address indexed caller,
+    address indexed onBehalfOf,
+    uint256 reserveId,
+    uint256 withdrawnShares,
+    uint256 withdrawnAmount
+  );
+
+  /// @notice Emitted when borrowing on behalf of a user.
+  /// @param spoke The address of the Spoke.
+  /// @param caller The transaction initiator, and recipient of the underlying asset being borrowed.
+  /// @param onBehalfOf The owner of the position on which debt is generated.
+  /// @param reserveId The identifier of the reserve.
+  /// @param drawnShares The amount of debt shares minted.
+  /// @param drawnAmount The amount of underlying asset borrowed.
+  event BorrowOnBehalfOf(
+    address indexed spoke,
+    address indexed caller,
+    address indexed onBehalfOf,
+    uint256 reserveId,
+    uint256 drawnShares,
+    uint256 drawnAmount
   );
 
   /// @notice Thrown when the withdraw allowance is insufficient.
@@ -180,12 +211,12 @@ interface ITakerPositionManager is IPositionManagerBase {
     address spender
   ) external view returns (uint256);
 
-  /// @notice Returns the credit delegation allowance for a spender on behalf of an owner.
+  /// @notice Returns the borrow allowance for a spender on behalf of an owner.
   /// @param spoke The address of the Spoke.
   /// @param reserveId The identifier of the reserve.
   /// @param owner The address of the owner.
   /// @param spender The address of the spender.
-  /// @return The amount of credit delegation allowance.
+  /// @return The amount of borrow allowance.
   function borrowAllowance(
     address spoke,
     uint256 reserveId,
