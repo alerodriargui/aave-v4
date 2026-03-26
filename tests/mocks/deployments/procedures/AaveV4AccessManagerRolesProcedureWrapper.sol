@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
@@ -21,5 +21,9 @@ contract AaveV4AccessManagerRolesProcedureWrapper {
 
   function grantAccessManagerAdminRole(address accessManager, address admin) external {
     AaveV4AccessManagerRolesProcedure.grantAccessManagerAdminRole(accessManager, admin);
+  }
+
+  function labelAllRoles(address accessManager) external {
+    AaveV4AccessManagerRolesProcedure.labelAllRoles(accessManager);
   }
 }

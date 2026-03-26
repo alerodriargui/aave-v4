@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
@@ -94,7 +94,7 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
 
   function _grantAdminToWrapper(address wrapperAddr) internal {
     vm.prank(accessManagerAdmin);
-    IAccessManager(accessManager).grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, wrapperAddr, 0);
+    IAccessManager(accessManager).grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, wrapperAddr, 0);
   }
 
   function test_getHubConfiguratorDomainAdminRoleSelectors() public view {

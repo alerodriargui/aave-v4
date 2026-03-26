@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
@@ -25,6 +25,18 @@ contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
 
   function _getDeployInputs() internal pure override returns (InputUtils.FullDeployInputs memory) {
     revert('not implemented');
+  }
+
+  function _expectedChainId() internal pure override returns (uint256) {
+    return 31337;
+  }
+
+  function expectedChainId() public pure returns (uint256) {
+    return _expectedChainId();
+  }
+
+  function validateChainId() public view {
+    _validateChainId();
   }
 
   function _executeUserPrompt() internal override {}
@@ -61,6 +73,14 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     });
 
     _deployer = makeAddr('deployer');
+  }
+
+  function test_validateChainId_revertsOnMismatch(uint64 chainId) public {
+    vm.assume(chainId != _harness.expectedChainId());
+
+    vm.chainId(chainId);
+    vm.expectRevert('chain id mismatch');
+    _harness.validateChainId();
   }
 
   function test_loadWarningsAndSanitizeInputs() public {

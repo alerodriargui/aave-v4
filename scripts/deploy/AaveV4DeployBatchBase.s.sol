@@ -26,6 +26,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   }
 
   function run() external virtual {
+    _validateChainId();
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
     FullDeployInputs memory inputs = _getDeployInputs();
@@ -57,12 +58,20 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   /// @dev Override to provide deployment inputs from any source.
   function _getDeployInputs() internal virtual returns (FullDeployInputs memory);
 
+  /// @dev Override to return the expected chain ID for this script. Return 0 to skip validation.
+  function _expectedChainId() internal view virtual returns (uint256);
+
+  function _validateChainId() internal view virtual {
+    uint256 expected = _expectedChainId();
+    require(block.chainid == expected, 'chain id mismatch');
+  }
+
   function _loadWarningsAndSanitizeInputs(
     FullDeployInputs memory inputs,
     address deployer
   ) internal virtual returns (FullDeployInputs memory) {
     string memory message = ' is zero address';
-    string memory outcome = '; defaulting to deployer';
+    string memory outcome = string.concat('; defaulting to deployer [', vm.toString(deployer), ']');
 
     FullDeployInputs memory sanitizedInputs = inputs;
 

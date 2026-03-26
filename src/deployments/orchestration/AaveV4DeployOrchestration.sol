@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: LicenseRef-BUSL
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
@@ -39,6 +39,10 @@ library AaveV4DeployOrchestration {
 
     address accessManager = report.authorityBatchReport.accessManager;
 
+    // Label all protocol roles
+    logger.logHeader1('labeling roles');
+    AaveV4AccessManagerRolesProcedure.labelAllRoles(accessManager);
+
     // Deploy Configurator Batch with AccessManager as authority
     report.configuratorBatchReport = _deployConfiguratorBatch({
       logger: logger,
@@ -56,6 +60,10 @@ library AaveV4DeployOrchestration {
       treasurySpokeOwner: deployInputs.treasurySpokeOwner,
       salt: salt
     });
+
+    // Validate label uniqueness (duplicate labels produce identical CREATE2 salts)
+    _validateUniqueLabels(deployInputs.hubLabels, 'hub');
+    _validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
 
     // Deploy Hub Batches
     report.hubInstanceBatchReports = _deployHubs({
@@ -475,6 +483,17 @@ library AaveV4DeployOrchestration {
     logger.logDetail('SpokeInstance Proxy', report.spokeProxy);
     logger.logDetail('SpokeInstance Implementation', report.spokeImplementation);
     logger.logDetail('AaveOracle', report.aaveOracle);
+  }
+
+  function _validateUniqueLabels(string[] memory labels, string memory kind) private pure {
+    for (uint256 i; i < labels.length; i++) {
+      for (uint256 j = i + 1; j < labels.length; j++) {
+        require(
+          keccak256(bytes(labels[i])) != keccak256(bytes(labels[j])),
+          string.concat('duplicate ', kind, ' label: ', labels[i])
+        );
+      }
+    }
   }
 
   /// @dev Derives the root salt with deployer address in the first 160 bits

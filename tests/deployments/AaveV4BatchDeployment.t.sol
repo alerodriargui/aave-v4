@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 // Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
@@ -232,6 +232,46 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     checkedV4Deployment();
   }
 
+  function testAaveV4BatchDeployment_withDuplicateHubLabels_reverts() public {
+    _inputs.hubLabels = new string[](3);
+    _inputs.hubLabels[0] = 'core';
+    _inputs.hubLabels[1] = 'prime';
+    _inputs.hubLabels[2] = 'core';
+
+    vm.expectRevert('duplicate hub label: core');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withDuplicateHubLabels_adjacentPair_reverts() public {
+    _inputs.hubLabels = new string[](2);
+    _inputs.hubLabels[0] = 'core';
+    _inputs.hubLabels[1] = 'core';
+
+    vm.expectRevert('duplicate hub label: core');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withDuplicateSpokeLabels_reverts() public {
+    _inputs.spokeLabels = new string[](3);
+    _inputs.spokeLabels[0] = 'main';
+    _inputs.spokeLabels[1] = 'lrt';
+    _inputs.spokeLabels[2] = 'main';
+    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(3);
+
+    vm.expectRevert('duplicate spoke label: main');
+    this.checkedV4Deployment();
+  }
+
+  function testAaveV4BatchDeployment_withDuplicateSpokeLabels_adjacentPair_reverts() public {
+    _inputs.spokeLabels = new string[](2);
+    _inputs.spokeLabels[0] = 'main';
+    _inputs.spokeLabels[1] = 'main';
+    _inputs.spokeMaxReservesLimits = _defaultSpokeMaxReservesLimits(2);
+
+    vm.expectRevert('duplicate spoke label: main');
+    this.checkedV4Deployment();
+  }
+
   function testAaveV4BatchDeployment_withEmptySpokeMaxReservesLimits_usesDefaults() public {
     _inputs.spokeMaxReservesLimits = new uint16[](0);
     checkedV4Deployment();
@@ -262,21 +302,21 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
     );
 
     // newAdmin has DEFAULT_ADMIN_ROLE
-    (bool newAdminHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, newAdmin);
+    (bool newAdminHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, newAdmin);
     assertTrue(newAdminHasRole, 'new admin should have DEFAULT_ADMIN_ROLE');
 
     // deployer no longer has DEFAULT_ADMIN_ROLE
-    (bool deployerHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, _deployer);
+    (bool deployerHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _deployer);
     assertFalse(deployerHasRole, 'deployer should not have DEFAULT_ADMIN_ROLE after transfer');
 
     // exactly one admin
     assertEq(
-      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_DEFAULT_ADMIN),
+      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_ADMIN_ROLE),
       1,
       'should have exactly one DEFAULT_ADMIN'
     );
     assertEq(
-      accessManager.getRoleMember(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, 0),
+      accessManager.getRoleMember(Roles.ACCESS_MANAGER_ADMIN_ROLE, 0),
       newAdmin,
       'sole admin should be newAdmin'
     );
@@ -297,10 +337,10 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
       report.authorityBatchReport.accessManager
     );
 
-    (bool deployerHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, _deployer);
+    (bool deployerHasRole, ) = accessManager.hasRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, _deployer);
     assertTrue(deployerHasRole, 'deployer should retain DEFAULT_ADMIN_ROLE');
     assertEq(
-      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_DEFAULT_ADMIN),
+      accessManager.getRoleMemberCount(Roles.ACCESS_MANAGER_ADMIN_ROLE),
       1,
       'should have exactly one DEFAULT_ADMIN'
     );
