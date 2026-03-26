@@ -11,7 +11,7 @@ import "./symbolicRepresentation/ERC20s_CVL.spec";
 import "./symbolicRepresentation/Math_CVL.spec";
 import "./HubBase.spec";
 
-using Hub as hub;
+using HubInstance as hub;
 
 ////////////////////////////////////////////////////////////////////////////
 //                                METHODS                                 //

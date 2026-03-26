@@ -15,63 +15,63 @@ import "./HubValidState.spec";
 ////////////////////////////////////////////////////////////////////////////
 
 methods {
-    function _validateAdd(
+    function Hub._validateAdd(
         IHub.Asset storage asset,
         IHub.SpokeData storage spoke,
         uint256 amount
     ) internal => NONDET;
 
-    function _validateRemove(
+    function Hub._validateRemove(
         IHub.SpokeData storage spoke,
         uint256 amount,
         address to
     ) internal => NONDET;
 
-    function _validateDraw(
+    function Hub._validateDraw(
         IHub.Asset storage asset,
         IHub.SpokeData storage spoke,
         uint256 amount,
         address to
     ) internal => NONDET;
 
-    function _validateRestore(
+    function Hub._validateRestore(
         IHub.Asset storage asset,
         IHub.SpokeData storage spoke,
         uint256 drawnAmount,
         uint256 premiumAmountRay
     ) internal => NONDET;
 
-    function _validateReportDeficit(
+    function Hub._validateReportDeficit(
         IHub.Asset storage asset,
         IHub.SpokeData storage spoke,
         uint256 drawnAmount,
         uint256 premiumAmountRay
     ) internal => NONDET;
 
-    function _validateEliminateDeficit(
+    function Hub._validateEliminateDeficit(
         IHub.SpokeData storage spoke,
         uint256 amount
     ) internal => NONDET;
 
-    function _validatePayFeeShares(
+    function Hub._validatePayFeeShares(
         IHub.SpokeData storage senderSpoke,
         uint256 feeShares
     ) internal => NONDET;
 
-    function _validateTransferShares(
+    function Hub._validateTransferShares(
         IHub.Asset storage asset,
         IHub.SpokeData storage sender,
         IHub.SpokeData storage receiver,
         uint256 shares
     ) internal => NONDET;
 
-    function _validateSweep(
+    function Hub._validateSweep(
         IHub.Asset storage asset,
         address caller,
         uint256 amount
     ) internal => NONDET;
 
-    function _validateReclaim(
+    function Hub._validateReclaim(
         IHub.Asset storage asset,
         address caller,
         uint256 amount

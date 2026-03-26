@@ -1,10 +1,10 @@
-import '../../src/hub/Hub.sol';
+import {HubInstance} from 'src/hub/instances/HubInstance.sol';
 import {AssetLogic} from 'src/hub/libraries/AssetLogic.sol';
 import {SharesMath} from 'src/hub/libraries/SharesMath.sol';
 
 pragma solidity ^0.8.0;
 
-contract HubHarness is Hub {
+contract HubHarness is HubInstance {
   using AssetLogic for Asset;
 
   constructor(address authority_) Hub(authority_) {
