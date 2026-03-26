@@ -180,6 +180,7 @@ rule viewFunctionsIntegrity(uint256 assetId, method f) filtered { f-> f.isView &
                                 f.selector != sig:MAX_ALLOWED_UNDERLYING_DECIMALS().selector &&
                                 f.selector != sig:MAX_ALLOWED_SPOKE_CAP().selector &&
                                 f.selector != sig:MAX_RISK_PREMIUM_THRESHOLD().selector &&
+                                f.selector != sig:HUB_REVISION().selector &&
                                 f.selector != sig:getAssetUnderlyingAndDecimals(uint256).selector 
                                 }
 {
