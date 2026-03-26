@@ -207,7 +207,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
 
   function _setupRoles(TestTypes.TestEnvReport memory report) internal {
     vm.startPrank(ADMIN);
-    accessManager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(this), 0);
+    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this), 0);
     vm.stopPrank();
 
     AaveV4TestOrchestration.setRolesTestEnv(report);
@@ -222,8 +222,8 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
       address(engine)
     );
 
-    accessManager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(engine), 0);
-    accessManager.renounceRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(this));
+    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(engine), 0);
+    accessManager.renounceRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(this));
   }
 
   function _seedAsset(

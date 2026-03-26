@@ -16,7 +16,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
-    accessManager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(payload), 0);
+    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(payload), 0);
     vm.stopPrank();
 
     payloadPositionManager = new PositionManagerBaseWrapper(address(payload));
@@ -849,7 +849,7 @@ contract AaveV4PayloadTest is BaseConfigEngineTest {
     vm.startPrank(ADMIN);
     accessManager.grantRole(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
     accessManager.grantRole(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, address(payload), 0);
-    accessManager.grantRole(Roles.ACCESS_MANAGER_DEFAULT_ADMIN, address(payload), 0);
+    accessManager.grantRole(Roles.ACCESS_MANAGER_ADMIN_ROLE, address(payload), 0);
     vm.stopPrank();
 
     IAaveV4ConfigEngine.RoleMembership[]
