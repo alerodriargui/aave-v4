@@ -1,0 +1,93 @@
+name: Certora Prover Fast Rules only
+
+env:
+  CONFIGS: |
+    certora/conf/libs/LibBit.conf
+    certora/conf/libs/LiquidationLogic_Bonus.conf
+    certora/conf/libs/LiquidationLogic_debtToLiquidate.conf
+    certora/conf/libs/LiquidationLogic.conf --exclude_rule collateralToLiquidateValueLessThanDebtToLiquidate collateralToLiquidateValueLessThanDebtToLiquidate_general
+    certora/conf/libs/Math.conf
+    certora/conf/libs/Premium.conf
+    certora/conf/libs/SharesMath.conf
+    certora/conf/libs/SpokeUtils_toValue.conf
+    certora/conf/libs/VerifySymbolicPositionStatus.conf
+    certora/conf/libs/PositionStatus.conf
+    certora/conf/Hub.conf --exclude_rule noChangeToOtherSpoke supplyExchangeRateIsMonotonic supplyExchangeRateIsMonotonic_eliminateDeficit_simplified totalAssetsCompareToSuppliedAmount_noVirtual
+    certora/conf/Hub.conf --rule noChangeToOtherSpoke
+    certora/conf/HubAccrueIntegrity.conf 
+    certora/conf/HubAccrueUnrealizedFee.conf
+    certora/conf/HubAccrueSupplyRate.conf --exclude_rule previewRemoveByShares_withoutAccrue_time_monotonic  previewRemoveByAssets_withoutAccrue_time_monotonic
+    certora/conf/HubIntegrity.conf
+    certora/conf/HubValidState.conf --exclude_rule totalAssetsVsShares_eliminateDeficit totalAssetsVsShares
+    certora/conf/Liquidation.conf
+    certora/conf/LiquidationIntegrity.conf
+    certora/conf/LiquidationUserIntegrity.conf
+    certora/conf/Spoke.conf --rule drawnSharesZero 
+    certora/conf/Spoke.conf --exclude_rule drawnSharesZero noCollateralNoDebt increaseCollateralOrReduceDebtFunctions    
+    certora/conf/Spoke.conf --rule increaseCollateralOrReduceDebtFunctions
+    certora/conf/SpokeHealthCheck.conf 
+    certora/conf/SpokeHealthFactor.conf --exclude_rule userHealthAboveThreshold userHealthBelowThresholdCanOnlyIncreaseHealthFactor
+    certora/conf/SpokeIntegrity.conf
+    certora/conf/SpokeUserIntegrity.conf
+    certora/conf/SpokeWithHub.conf --rule userDrawnShareConsistency 
+    certora/conf/SpokeWithHub.conf --rule userPremiumShareConsistency 
+    certora/conf/SpokeWithHub.conf --rule userPremiumOffsetConsistency 
+    certora/conf/SpokeWithHub.conf --rule userSuppliedShareConsistency
+    certora/conf/SpokeWithHub.conf --exclude_rule userDrawnShareConsistency userPremiumShareConsistency userPremiumOffsetConsistency  userSuppliedShareConsistency
+    #########                                                           #########
+    ######### rules that are too long/flaky to run in ci, run manually  #########
+    #########                                                           #########
+    # certora/conf/HubValidState_totalAssets.conf
+    # certora/conf/Spoke_noCollateralNoDebt.conf
+    # certora/conf/Hub.conf --rule supplyExchangeRateIsMonotonic
+    # certora/conf/Hub.conf --rule supplyExchangeRateIsMonotonic_eliminateDeficit_simplified
+    # certora/conf/Hub.conf --rule totalAssetsCompareToSuppliedAmount_noVirtual
+    # certora/conf/HubAdditivity.conf --rule drawAdditivity
+    # certora/conf/HubAdditivity.conf --rule restoreAdditivity
+    # certora/conf/HubAdditivity.conf --rule reportDeficitAdditivity
+    # certora/conf/HubAdditivity.conf --exclude_rule drawAdditivity restoreAdditivity reportDeficitAdditivity
+    # certora/conf/SpokeHealthFactor.conf --rule userHealthAboveThreshold 
+    # certora/conf/SpokeHealthFactor.conf --rule userHealthBelowThresholdCanOnlyIncreaseHealthFactor
+    # certora/conf/HubAccrueSupplyRate.conf --rule previewRemoveByShares_withoutAccrue_time_monotonic previewRemoveByAssets_withoutAccrue_time_monotonic
+    # certora/conf/libs/LiquidationLogic.conf --rule collateralToLiquidateValueLessThanDebtToLiquidate 
+    # certora/conf/HubValidState.conf --rule totalAssetsVsShares_eliminateDeficit
+    # certora/conf/LiquidationReportDeficit.conf
+
+on:
+  pull_request:
+    branches:
+      - main
+      - certora
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      statuses: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # (Optional) Add installation steps for your project
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+      - name: Install dependencies
+        run: npm install
+
+      # Run Certora Prover
+      - uses: Certora/certora-run-action@v2
+        with:
+          # Add your configurations as lines, each line is separated.
+          # Specify additional options for each configuration by adding them after the configuration.
+          configurations: ${{ env.CONFIGS }}
+          solc-versions: 0.8.28
+          job-name: "Verified Rules"
+          certora-key: ${{ secrets.CERTORAKEY }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
