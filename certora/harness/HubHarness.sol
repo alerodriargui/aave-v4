@@ -7,10 +7,6 @@ pragma solidity ^0.8.0;
 contract HubHarness is HubInstance {
   using AssetLogic for Asset;
 
-  constructor(address authority_) Hub(authority_) {
-    // Intentionally left blank
-  }
-
   function accrueInterest(uint256 assetId) external {
     Asset storage asset = _assets[assetId];
 
