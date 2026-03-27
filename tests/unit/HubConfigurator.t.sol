@@ -1169,7 +1169,7 @@ contract HubConfiguratorTest is HubBase {
     }
   }
 
-  function _assumeNonHubConfiguratorAdmin(address caller) internal {
+  function _assumeNonHubConfiguratorAdmin(address caller) internal view {
     vm.assume(
       caller != HUB_CONFIGURATOR_ADMIN &&
         caller != address(accessManager) &&
