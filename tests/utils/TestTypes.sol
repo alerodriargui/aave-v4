@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
-import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
+import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 
 library TestTypes {
   struct TokenList {

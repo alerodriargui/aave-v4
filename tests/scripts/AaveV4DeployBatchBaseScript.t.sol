@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {Test} from 'forge-std/Test.sol';
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
 import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
-import {Constants} from 'tests/Constants.sol';
+import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 contract AaveV4DeployBatchBaseScriptHarness is AaveV4DeployBatchBaseScript {
@@ -356,7 +356,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
   ) internal pure returns (uint16[] memory limits) {
     limits = new uint16[](count);
     for (uint256 i; i < count; i++) {
-      limits[i] = Constants.MAX_ALLOWED_USER_RESERVES_LIMIT;
+      limits[i] = DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT;
     }
   }
 

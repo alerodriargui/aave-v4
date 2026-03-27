@@ -36,10 +36,10 @@ import {PositionManagerEngine} from 'src/config-engine/libraries/PositionManager
 import {TokenizationSpokeDeployer} from 'src/config-engine/libraries/TokenizationSpokeDeployer.sol';
 
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
-import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
-import {AaveV4PayloadWrapper} from 'tests/mocks/config-engine/AaveV4PayloadWrapper.sol';
-import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
-import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
+import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
+import {AaveV4PayloadWrapper} from 'tests/helpers/mocks/config-engine/AaveV4PayloadWrapper.sol';
+import {MockPriceFeed} from 'tests/helpers/mocks/MockPriceFeed.sol';
+import {PositionManagerBaseWrapper} from 'tests/helpers/mocks/PositionManagerBaseWrapper.sol';
 
 abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   uint256 internal constant NUM_HUBS = 2;

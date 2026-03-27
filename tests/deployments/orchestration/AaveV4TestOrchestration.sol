@@ -4,8 +4,8 @@ pragma solidity ^0.8.0;
 import 'forge-std/Vm.sol';
 
 import {TestTypes} from 'tests/utils/TestTypes.sol';
-import {Constants} from 'tests/Constants.sol';
-import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
+import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
+import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
@@ -101,8 +101,8 @@ library AaveV4TestOrchestration {
           spokeProxyAdminOwner: admin,
           authority: report.accessManager,
           spokeBytecode: spokeBytecode,
-          oracleDecimals: Constants.ORACLE_DECIMALS,
-          maxUserReservesLimit: Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+          oracleDecimals: DeployConstants.ORACLE_DECIMALS,
+          maxUserReservesLimit: DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
           salt: keccak256(abi.encodePacked(salt, 'spoke-', string(abi.encode(i))))
         });
       report.spokeReports[i].spoke = spokeReport.spokeProxy;
@@ -166,7 +166,7 @@ library AaveV4TestOrchestration {
         spokeProxyAdminOwner: spokeProxyAdminOwner,
         authority: accessManager,
         spokeBytecode: spokeBytecode,
-        oracleDecimals: Constants.ORACLE_DECIMALS,
+        oracleDecimals: DeployConstants.ORACLE_DECIMALS,
         maxUserReservesLimit: maxUserReservesLimit,
         salt: salt
       });

@@ -19,7 +19,7 @@ import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-import {Constants} from 'tests/Constants.sol';
+import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 
 // libraries
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
@@ -183,7 +183,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   ) internal pure returns (uint16[] memory limits) {
     limits = new uint16[](count);
     for (uint256 i; i < count; i++) {
-      limits[i] = Constants.MAX_ALLOWED_USER_RESERVES_LIMIT;
+      limits[i] = DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT;
     }
   }
 
@@ -287,7 +287,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
         accessManager: report.authorityBatchReport.accessManager,
         expectedMaxReservesLimit: inputs.spokeMaxReservesLimits.length > i
           ? inputs.spokeMaxReservesLimits[i]
-          : Constants.MAX_ALLOWED_USER_RESERVES_LIMIT,
+          : DeployConstants.MAX_ALLOWED_USER_RESERVES_LIMIT,
         label: label
       });
       _checkOracleDeployment({report: spokeReport, label: label});
@@ -348,7 +348,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
     );
     assertEq(
       IAaveOracle(report.report.aaveOracle).decimals(),
-      Constants.ORACLE_DECIMALS,
+      DeployConstants.ORACLE_DECIMALS,
       string.concat(label, ' oracle decimals')
     );
   }

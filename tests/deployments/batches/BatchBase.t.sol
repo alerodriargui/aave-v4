@@ -5,7 +5,7 @@ import {Ownable} from 'src/dependencies/openzeppelin/Ownable.sol';
 import {IAccessManaged} from 'src/dependencies/openzeppelin/IAccessManaged.sol';
 
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
-import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
+import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';

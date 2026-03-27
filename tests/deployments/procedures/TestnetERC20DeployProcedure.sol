@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {TestnetERC20} from 'tests/mocks/TestnetERC20.sol';
+import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 
 contract TestnetERC20DeployProcedure {
   function _deployTestnetERC20(

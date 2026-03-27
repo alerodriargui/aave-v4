@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {
   Create2Utils,
   Create2UtilsWrapper
-} from 'tests/mocks/deployments/libraries/Create2UtilsWrapper.sol';
+} from 'tests/helpers/mocks/deployments/libraries/Create2UtilsWrapper.sol';
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 
