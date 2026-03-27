@@ -42,14 +42,14 @@ import {MockPriceFeed} from 'tests/mocks/MockPriceFeed.sol';
 import {PositionManagerBaseWrapper} from 'tests/mocks/PositionManagerBaseWrapper.sol';
 
 abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
-  uint256 constant NUM_HUBS = 2;
-  uint256 constant NUM_SPOKES = 3;
-  uint256 constant NUM_TOKENS = 4;
+  uint256 internal constant NUM_HUBS = 2;
+  uint256 internal constant NUM_SPOKES = 3;
+  uint256 internal constant NUM_TOKENS = 4;
 
-  uint256 constant TOKEN_WETH = 0;
-  uint256 constant TOKEN_USDX = 1;
-  uint256 constant TOKEN_DAI = 2;
-  uint256 constant TOKEN_WBTC = 3;
+  uint256 internal constant TOKEN_WETH = 0;
+  uint256 internal constant TOKEN_USDX = 1;
+  uint256 internal constant TOKEN_DAI = 2;
+  uint256 internal constant TOKEN_WBTC = 3;
 
   struct TokenInfo {
     address token;
@@ -57,8 +57,8 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
     uint8 decimals;
   }
 
-  uint256 constant LIQUIDITY_FEE = 5_00;
-  uint256 constant DYNAMIC_CONFIG_KEY = 0;
+  uint256 internal constant LIQUIDITY_FEE = 5_00;
+  uint256 internal constant DYNAMIC_CONFIG_KEY = 0;
 
   IAssetInterestRateStrategy.InterestRateData internal IR_DATA =
     IAssetInterestRateStrategy.InterestRateData({
@@ -75,35 +75,35 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
   address internal TARGET = makeAddr('TARGET');
   address internal USER = makeAddr('USER');
 
-  AaveV4ConfigEngine public engine;
-  IAccessManager public accessManager;
-  IHubConfigurator public hubConfigurator;
-  ISpokeConfigurator public spokeConfigurator;
-  PositionManagerBaseWrapper public positionManager;
+  AaveV4ConfigEngine internal engine;
+  IAccessManager internal accessManager;
+  IHubConfigurator internal hubConfigurator;
+  ISpokeConfigurator internal spokeConfigurator;
+  PositionManagerBaseWrapper internal positionManager;
 
-  IHub[NUM_HUBS] public hubs;
-  AssetInterestRateStrategy[NUM_HUBS] public irStrategies;
+  IHub[NUM_HUBS] internal hubs;
+  AssetInterestRateStrategy[NUM_HUBS] internal irStrategies;
 
-  ISpoke[NUM_SPOKES] public spokes;
-  IAaveOracle[NUM_SPOKES] public oracles;
+  ISpoke[NUM_SPOKES] internal spokes;
+  IAaveOracle[NUM_SPOKES] internal oracles;
 
-  WETH9 public weth;
-  TestnetERC20 public usdx;
-  TestnetERC20 public dai;
-  TestnetERC20 public wbtc;
-  TestnetERC20 public newToken;
+  WETH9 internal weth;
+  TestnetERC20 internal usdx;
+  TestnetERC20 internal dai;
+  TestnetERC20 internal wbtc;
+  TestnetERC20 internal newToken;
 
-  MockPriceFeed public priceFeedWeth;
-  MockPriceFeed public priceFeedUsdx;
-  MockPriceFeed public priceFeedDai;
-  MockPriceFeed public priceFeedWbtc;
-  MockPriceFeed public priceFeedNew;
+  MockPriceFeed internal priceFeedWeth;
+  MockPriceFeed internal priceFeedUsdx;
+  MockPriceFeed internal priceFeedDai;
+  MockPriceFeed internal priceFeedWbtc;
+  MockPriceFeed internal priceFeedNew;
 
   TokenInfo[NUM_TOKENS] internal tokenList;
 
-  uint256[NUM_TOKENS][NUM_HUBS] public assetIds;
+  uint256[NUM_TOKENS][NUM_HUBS] internal assetIds;
 
-  uint256[NUM_TOKENS][NUM_SPOKES] public reserveIds;
+  uint256[NUM_TOKENS][NUM_SPOKES] internal reserveIds;
 
   function setUp() public virtual {
     _etchCreate2Factory();
@@ -426,6 +426,30 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
       });
   }
 
+  function _defaultReserveConfig() internal pure returns (ISpoke.ReserveConfig memory) {
+    return
+      ISpoke.ReserveConfig({
+        collateralRisk: 50_00,
+        paused: false,
+        frozen: false,
+        borrowable: true,
+        receiveSharesEnabled: true
+      });
+  }
+
+  function _defaultDynamicReserveConfig()
+    internal
+    pure
+    returns (ISpoke.DynamicReserveConfig memory)
+  {
+    return
+      ISpoke.DynamicReserveConfig({
+        collateralFactor: 80_00,
+        maxLiquidationBonus: 105_00,
+        liquidationFee: 10_00
+      });
+  }
+
   function _defaultReserveListing()
     internal
     view
@@ -438,18 +462,8 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
         hub: address(hub1()),
         underlying: address(weth),
         priceSource: address(priceFeedWeth),
-        config: ISpoke.ReserveConfig({
-          collateralRisk: 50_00,
-          paused: false,
-          frozen: false,
-          borrowable: true,
-          receiveSharesEnabled: true
-        }),
-        dynamicConfig: ISpoke.DynamicReserveConfig({
-          collateralFactor: 80_00,
-          maxLiquidationBonus: 105_00,
-          liquidationFee: 2_00
-        })
+        config: _defaultReserveConfig(),
+        dynamicConfig: _defaultDynamicReserveConfig()
       });
   }
 
@@ -464,11 +478,7 @@ abstract contract BaseConfigEngineTest is Test, Create2TestHelper {
         spoke: address(spoke1()),
         hub: address(hub1()),
         underlying: address(weth),
-        dynamicConfig: ISpoke.DynamicReserveConfig({
-          collateralFactor: 80_00,
-          maxLiquidationBonus: 105_00,
-          liquidationFee: 2_00
-        })
+        dynamicConfig: _defaultDynamicReserveConfig()
       });
   }
 

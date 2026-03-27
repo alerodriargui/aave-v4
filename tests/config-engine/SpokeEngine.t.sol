@@ -596,7 +596,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     addition.dynamicConfig = ISpoke.DynamicReserveConfig({
       collateralFactor: 99_00,
       maxLiquidationBonus: 105_00,
-      liquidationFee: 2_00
+      liquidationFee: 10_00
     });
 
     vm.expectRevert(
@@ -660,7 +660,7 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     );
     assertEq(dynConfig.collateralFactor, 80_00);
     assertEq(dynConfig.maxLiquidationBonus, 105_00);
-    assertEq(dynConfig.liquidationFee, 2_00);
+    assertEq(dynConfig.liquidationFee, 10_00);
   }
 
   function test_executeSpokePositionManagerUpdates() public {
