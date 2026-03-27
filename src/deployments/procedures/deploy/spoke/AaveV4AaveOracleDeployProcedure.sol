@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
-// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
-// Copyright (c) 2025 Aave Labs
 pragma solidity ^0.8.0;
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
