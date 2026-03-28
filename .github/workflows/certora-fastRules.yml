@@ -89,29 +89,6 @@ jobs:
           solc-versions: 0.8.28
           job-name: "Verified Rules"
           certora-key: ${{ secrets.CERTORAKEY }}
-          comment-fail-only: "true"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Minimize the certora-run bot comment to reduce PR noise
-      - name: Minimize Certora bot comment
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            for (const comment of comments.data) {
-              if (comment.user.login === 'certora-run[bot]' || (comment.user.type === 'Bot' && comment.body.includes('Verified Rules'))) {
-                await github.graphql(`
-                  mutation($id: ID!) {
-                    minimizeComment(input: {subjectId: $id, classifier: OUTDATED}) {
-                      minimizedComment { isMinimized }
-                    }
-                  }
-                `, { id: comment.node_id });
-              }
-            }

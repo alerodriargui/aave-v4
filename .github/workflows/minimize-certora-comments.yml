@@ -1,0 +1,31 @@
+name: Minimize Certora Comments
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  minimize:
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event.comment.user.login == 'certora-run[bot]' ||
+       (github.event.comment.user.type == 'Bot' && contains(github.event.comment.body, 'Verified Rules')))
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.graphql(`
+                mutation($id: ID!) {
+                  minimizeComment(input: {subjectId: $id, classifier: OUTDATED}) {
+                    minimizedComment { isMinimized }
+                  }
+                }
+              `, { id: context.payload.comment.node_id });
+              console.log(`Minimized comment ${context.payload.comment.id}`);
+            } catch (e) {
+              console.log(`Failed to minimize comment: ${e.message}`);
+            }
