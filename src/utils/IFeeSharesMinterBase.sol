@@ -10,10 +10,10 @@ import {AutomationCompatibleInterface} from 'src/dependencies/chainlink/Automati
 interface IFeeSharesMinterBase is AutomationCompatibleInterface {
   /// @notice Configuration for automated fee share minting on a specific asset.
   /// @param minTimeInterval Minimum number of seconds that must elapse between mint executions.
-  /// @param minUnrealizedFeePercent Minimum ratio of accrued fees to total assets, in bps.
+  /// @param minAccruedFeesPercent Minimum ratio of accrued fees to total assets, in bps.
   struct MintConfig {
     uint48 minTimeInterval;
-    uint16 minUnrealizedFeePercent;
+    uint16 minAccruedFeesPercent;
   }
 
   /// @notice Emitted when the mint configuration for an asset is updated.

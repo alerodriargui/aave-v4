@@ -23,7 +23,7 @@ contract FeeSharesMinterBaseTest is Base {
   function test_setConfig_revertsWith_OwnableUnauthorized() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 1 days,
-      minUnrealizedFeePercent: 100 // 1%
+      minAccruedFeesPercent: 100 // 1%
     });
 
     vm.prank(bob);
@@ -37,7 +37,7 @@ contract FeeSharesMinterBaseTest is Base {
       drawAmount: 900e18,
       skipTime: 365 days,
       minTimeInterval: 1 days,
-      minUnrealizedFeePercent: 10
+      minAccruedFeesPercent: 10
     });
   }
 
@@ -46,18 +46,18 @@ contract FeeSharesMinterBaseTest is Base {
     uint256 drawAmount,
     uint256 skipTime,
     uint32 minTimeInterval,
-    uint16 minUnrealizedFeePercent
+    uint16 minAccruedFeesPercent
   ) public {
     addAmount = bound(addAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, addAmount / 2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     minTimeInterval = bound(minTimeInterval, 0, minter.MAX_TIME_INTERVAL()).toUint32();
-    minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 0, PercentageMath.PERCENTAGE_FACTOR)
+    minAccruedFeesPercent = bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
 
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: minTimeInterval,
-      minUnrealizedFeePercent: minUnrealizedFeePercent
+      minAccruedFeesPercent: minAccruedFeesPercent
     });
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
@@ -91,7 +91,7 @@ contract FeeSharesMinterBaseTest is Base {
   function test_execute_revertsWith_ConditionsNotMet_TimeIntervalNotMet() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 7 days,
-      minUnrealizedFeePercent: 0
+      minAccruedFeesPercent: 0
     });
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
@@ -123,7 +123,7 @@ contract FeeSharesMinterBaseTest is Base {
   function test_execute_revertsWith_ConditionsNotMet_zeroFees() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
-      minUnrealizedFeePercent: 0
+      minAccruedFeesPercent: 0
     });
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
@@ -151,7 +151,7 @@ contract FeeSharesMinterBaseTest is Base {
   function test_execute_revertsWith_ConditionsNotMet_PercentThresholdNotMet() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
-      minUnrealizedFeePercent: 5000 // 50% threshold
+      minAccruedFeesPercent: 5000 // 50% threshold
     });
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
@@ -184,7 +184,7 @@ contract FeeSharesMinterBaseTest is Base {
   function test_execute_revertsWith_ConditionsNotMet_MinShareNotMet_nonzeroFees() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
-      minUnrealizedFeePercent: 0
+      minAccruedFeesPercent: 0
     });
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
@@ -220,15 +220,15 @@ contract FeeSharesMinterBaseTest is Base {
 
   function test_fuzz_setConfig_success(
     uint32 minTimeInterval,
-    uint16 minUnrealizedFeePercent
+    uint16 minAccruedFeesPercent
   ) public {
     minTimeInterval = bound(minTimeInterval, 0, minter.MAX_TIME_INTERVAL()).toUint32();
-    minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 0, PercentageMath.PERCENTAGE_FACTOR)
+    minAccruedFeesPercent = bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
 
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: minTimeInterval,
-      minUnrealizedFeePercent: minUnrealizedFeePercent
+      minAccruedFeesPercent: minAccruedFeesPercent
     });
 
     vm.prank(ADMIN);
@@ -239,7 +239,7 @@ contract FeeSharesMinterBaseTest is Base {
       daiAssetId
     );
     assertEq(savedConfig.minTimeInterval, minTimeInterval);
-    assertEq(savedConfig.minUnrealizedFeePercent, minUnrealizedFeePercent);
+    assertEq(savedConfig.minAccruedFeesPercent, minAccruedFeesPercent);
   }
 
   function test_fuzz_setConfig_revertsWith_InvalidConfig_TimeInterval(
@@ -250,7 +250,7 @@ contract FeeSharesMinterBaseTest is Base {
 
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: minTimeInterval,
-      minUnrealizedFeePercent: 0
+      minAccruedFeesPercent: 0
     });
 
     vm.prank(ADMIN);
@@ -259,17 +259,17 @@ contract FeeSharesMinterBaseTest is Base {
   }
 
   function test_fuzz_setConfig_revertsWith_InvalidConfig_FeePercent(
-    uint16 minUnrealizedFeePercent
+    uint16 minAccruedFeesPercent
   ) public {
-    minUnrealizedFeePercent = bound(
-      minUnrealizedFeePercent,
+    minAccruedFeesPercent = bound(
+      minAccruedFeesPercent,
       PercentageMath.PERCENTAGE_FACTOR + 1,
       type(uint16).max
     ).toUint16();
 
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
-      minUnrealizedFeePercent: minUnrealizedFeePercent
+      minAccruedFeesPercent: minAccruedFeesPercent
     });
 
     vm.prank(ADMIN);
@@ -324,7 +324,7 @@ contract FeeSharesMinterBaseTest is Base {
       drawAmount: 900e18,
       skipTime: 365 days,
       minTimeInterval: 1 days,
-      minUnrealizedFeePercent: 10
+      minAccruedFeesPercent: 10
     });
   }
 
@@ -333,18 +333,18 @@ contract FeeSharesMinterBaseTest is Base {
     uint256 drawAmount,
     uint256 skipTime,
     uint32 minTimeInterval,
-    uint16 minUnrealizedFeePercent
+    uint16 minAccruedFeesPercent
   ) public {
     addAmount = bound(addAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, addAmount / 2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
     minTimeInterval = bound(minTimeInterval, 0, minter.MAX_TIME_INTERVAL()).toUint32();
-    minUnrealizedFeePercent = bound(minUnrealizedFeePercent, 0, PercentageMath.PERCENTAGE_FACTOR)
+    minAccruedFeesPercent = bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
 
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: minTimeInterval,
-      minUnrealizedFeePercent: minUnrealizedFeePercent
+      minAccruedFeesPercent: minAccruedFeesPercent
     });
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
@@ -390,7 +390,7 @@ contract FeeSharesMinterBaseTest is Base {
   function test_performUpkeep_revertsWith_ConditionsNotMet_timeIntervalNotMet() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 7 days,
-      minUnrealizedFeePercent: 0
+      minAccruedFeesPercent: 0
     });
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
@@ -432,7 +432,7 @@ contract FeeSharesMinterBaseTest is Base {
   function test_performUpkeep_revertsWith_ConditionsNotMet_noFees() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
-      minUnrealizedFeePercent: 0
+      minAccruedFeesPercent: 0
     });
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
@@ -462,7 +462,7 @@ contract FeeSharesMinterBaseTest is Base {
   {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
-      minUnrealizedFeePercent: 5000
+      minAccruedFeesPercent: 5000
     });
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
@@ -497,7 +497,7 @@ contract FeeSharesMinterBaseTest is Base {
   function test_performUpkeep_revertsWith_ConditionsNotMet_MinShareNotMet_nonzeroFees() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
-      minUnrealizedFeePercent: 0
+      minAccruedFeesPercent: 0
     });
     vm.prank(ADMIN);
     minter.setConfig(address(hub1), daiAssetId, config);
