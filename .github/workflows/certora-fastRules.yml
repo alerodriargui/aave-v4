@@ -89,6 +89,7 @@ jobs:
           solc-versions: 0.8.28
           job-name: "Verified Rules"
           certora-key: ${{ secrets.CERTORAKEY }}
+          comment-fail-only: "true"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
