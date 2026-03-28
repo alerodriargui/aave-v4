@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
 import {AutomationCompatibleInterface} from 'src/dependencies/chainlink/AutomationCompatibleInterface.sol';
@@ -46,7 +45,7 @@ interface IFeeSharesMinterBase is AutomationCompatibleInterface {
 
   /// @notice Chainlink Automation off-chain simulation check.
   /// @dev checkData must be abi.encoded as (address hub, uint256 assetId).
-  /// @dev Returns upkeepNeeded=true and the same bytes as performData when conditions are met.
+  /// @dev Returns whether upkeep is needed and the performData in bytes when conditions are met.
   /// @inheritdoc AutomationCompatibleInterface
   function checkUpkeep(
     bytes calldata checkData
