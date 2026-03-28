@@ -1,8 +1,8 @@
 name: Minimize Certora Comments
 
 on:
-  issue_comment:
-    types: [created, edited]
+  pull_request_review:
+    types: [submitted, edited]
 
 permissions:
   pull-requests: write
@@ -11,8 +11,8 @@ jobs:
   minimize:
     runs-on: ubuntu-latest
     if: >-
-      (github.event.comment.user.login == 'certora-run[bot]' ||
-       (github.event.comment.user.type == 'Bot' && contains(github.event.comment.body, 'Verified Rules')))
+      github.event.review.user.login == 'certora-run[bot]' ||
+      (github.event.review.user.type == 'Bot' && contains(github.event.review.body, 'Verified Rules'))
     steps:
       - uses: actions/github-script@v7
         with:
@@ -24,8 +24,8 @@ jobs:
                     minimizedComment { isMinimized }
                   }
                 }
-              `, { id: context.payload.comment.node_id });
-              console.log(`Minimized comment ${context.payload.comment.id}`);
+              `, { id: context.payload.review.node_id });
+              console.log('Minimized certora review comment');
             } catch (e) {
               console.log(`Failed to minimize comment: ${e.message}`);
             }
