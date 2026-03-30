@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
 import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
 import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
@@ -10,7 +10,7 @@ import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol
 import {Script} from 'forge-std/Script.sol';
 
 // solhint-disable quotes
-abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
+abstract contract AaveV4DeployBatchBaseScript is Script {
   struct Lines {
     string[] s;
   }
@@ -28,7 +28,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     _validateChainId();
     vm.createDir(OUTPUT_DIR, true);
     MetadataLogger logger = new MetadataLogger(OUTPUT_DIR);
-    FullDeployInputs memory inputs = _getDeployInputs();
+    InputUtils.FullDeployInputs memory inputs = _getDeployInputs();
 
     vm.startBroadcast();
     (, address deployer, ) = vm.readCallers();
@@ -55,7 +55,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   }
 
   /// @dev Override to provide deployment inputs from any source.
-  function _getDeployInputs() internal virtual returns (FullDeployInputs memory);
+  function _getDeployInputs() internal virtual returns (InputUtils.FullDeployInputs memory);
 
   /// @dev Override to return the expected chain ID for this script. Return 0 to skip validation.
   function _expectedChainId() internal view virtual returns (uint256);
@@ -66,17 +66,17 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
   }
 
   function _loadWarningsAndSanitizeInputs(
-    FullDeployInputs memory inputs,
+    InputUtils.FullDeployInputs memory inputs,
     address deployer
-  ) internal virtual returns (FullDeployInputs memory) {
+  ) internal virtual returns (InputUtils.FullDeployInputs memory) {
     string memory message = ' is zero address';
     string memory outcome = string.concat('; defaulting to deployer [', vm.toString(deployer), ']');
 
-    FullDeployInputs memory sanitizedInputs = inputs;
+    InputUtils.FullDeployInputs memory sanitizedInputs = inputs;
 
     // Validate label uniqueness (duplicate labels produce identical CREATE2 salts)
-    _validateUniqueLabels(inputs.hubLabels, 'hub');
-    _validateUniqueLabels(inputs.spokeLabels, 'spoke');
+    InputUtils.validateUniqueLabels(inputs.hubLabels, 'hub');
+    InputUtils.validateUniqueLabels(inputs.spokeLabels, 'spoke');
 
     _appendSummary('========== DEPLOYMENT SUMMARY ==========');
     _logHubs(inputs);
@@ -143,7 +143,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     return sanitizedInputs;
   }
 
-  function _logHubs(FullDeployInputs memory inputs) internal {
+  function _logHubs(InputUtils.FullDeployInputs memory inputs) internal {
     if (inputs.hubLabels.length > 0) {
       _appendSummary(string.concat('hubs to deploy: ', vm.toString(inputs.hubLabels.length)));
       for (uint256 i; i < inputs.hubLabels.length; i++) {
@@ -154,7 +154,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     }
   }
 
-  function _logSpokes(FullDeployInputs memory inputs) internal {
+  function _logSpokes(InputUtils.FullDeployInputs memory inputs) internal {
     if (inputs.spokeLabels.length > 0) {
       _appendSummary(string.concat('spokes to deploy: ', vm.toString(inputs.spokeLabels.length)));
       for (uint256 i; i < inputs.spokeLabels.length; i++) {
@@ -165,7 +165,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     }
   }
 
-  function _logNativeTokenGateway(FullDeployInputs memory inputs) internal {
+  function _logNativeTokenGateway(InputUtils.FullDeployInputs memory inputs) internal {
     if (inputs.deployNativeTokenGateway) {
       if (inputs.nativeWrapper == address(0)) {
         _logWarning('deployNativeTokenGateway is true but nativeWrapper is zero address');
@@ -177,7 +177,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     }
   }
 
-  function _logSignatureGateway(FullDeployInputs memory inputs) internal {
+  function _logSignatureGateway(InputUtils.FullDeployInputs memory inputs) internal {
     if (inputs.deploySignatureGateway) {
       _appendSummary('signatureGateway will be deployed');
     } else {
@@ -185,7 +185,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     }
   }
 
-  function _logPositionManagers(FullDeployInputs memory inputs) internal {
+  function _logPositionManagers(InputUtils.FullDeployInputs memory inputs) internal {
     if (inputs.deployPositionManagers) {
       _appendSummary('positionManagers (giver/taker/config) will be deployed');
     } else {
@@ -193,7 +193,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script, InputUtils {
     }
   }
 
-  function _logRoles(FullDeployInputs memory inputs) internal {
+  function _logRoles(InputUtils.FullDeployInputs memory inputs) internal {
     if (inputs.grantRoles) {
       _appendSummary('roles: will be granted during deployment');
     } else {

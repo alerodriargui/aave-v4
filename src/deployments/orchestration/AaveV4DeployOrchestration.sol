@@ -10,7 +10,7 @@ import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4Hu
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';
 import {AaveV4HubConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubConfiguratorRolesProcedure.sol';
 import {AaveV4SpokeConfiguratorRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeConfiguratorRolesProcedure.sol';
-import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 
@@ -61,8 +61,8 @@ library AaveV4DeployOrchestration {
     });
 
     // Validate label uniqueness (duplicate labels produce identical CREATE2 salts)
-    _validateUniqueLabels(deployInputs.hubLabels, 'hub');
-    _validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
+    InputUtils.validateUniqueLabels(deployInputs.hubLabels, 'hub');
+    InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
 
     // Deploy Hub Batches
     report.hubInstanceBatchReports = _deployHubs({
@@ -483,17 +483,6 @@ library AaveV4DeployOrchestration {
     logger.logDetail('Spoke', report.spokeProxy);
     logger.logDetail('Spoke Impl', report.spokeImplementation);
     logger.logDetail('AaveOracle', report.aaveOracle);
-  }
-
-  function _validateUniqueLabels(string[] memory labels, string memory kind) private pure {
-    for (uint256 i; i < labels.length; i++) {
-      for (uint256 j = i + 1; j < labels.length; j++) {
-        require(
-          keccak256(bytes(labels[i])) != keccak256(bytes(labels[j])),
-          string.concat('duplicate ', kind, ' label: ', labels[i])
-        );
-      }
-    }
   }
 
   /// @dev Derives the root salt with deployer address in the first 160 bits

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
-contract InputUtils {
+library InputUtils {
   /// @dev accessManagerAdmin The default admin of the access manager.
   /// @dev hubAdmin The admin of the hub.
   /// @dev hubConfiguratorAdmin The admin granted all hub configurator roles.
@@ -43,7 +43,7 @@ contract InputUtils {
     bytes32 salt;
   }
 
-  function _validateUniqueLabels(string[] memory labels, string memory kind) internal pure {
+  function validateUniqueLabels(string[] memory labels, string memory kind) internal pure {
     for (uint256 i; i < labels.length; i++) {
       for (uint256 j = i + 1; j < labels.length; j++) {
         require(

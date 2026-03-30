@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
+import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
 /// @notice Anvil-only demo deploy script with hardcoded inputs for local testing.
@@ -20,14 +21,19 @@ contract AaveV4DeployAnvil is AaveV4DeployBatchBaseScript {
     weth = address(new WETH9());
   }
 
-  function _getDeployInputs() internal view override returns (FullDeployInputs memory inputs) {
+  function _getDeployInputs()
+    internal
+    view
+    override
+    returns (InputUtils.FullDeployInputs memory inputs)
+  {
     string[] memory hubLabels = new string[](1);
     hubLabels[0] = 'core';
 
     string[] memory spokeLabels = new string[](1);
     spokeLabels[0] = 'mainnet';
 
-    inputs = FullDeployInputs({
+    inputs = InputUtils.FullDeployInputs({
       accessManagerAdmin: address(0),
       hubAdmin: address(0),
       hubProxyAdminOwner: address(0),

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {Test} from 'forge-std/Test.sol';
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
-import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 

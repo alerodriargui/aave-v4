@@ -15,7 +15,7 @@ import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4Tes
 import {AaveV4DeployProcedureBase} from 'src/deployments/procedures/AaveV4DeployProcedureBase.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
-import {InputUtils} from 'src/deployments/utils/InputUtils.sol';
+import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 import {Create2TestHelper} from 'tests/utils/Create2TestHelper.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
@@ -34,9 +34,9 @@ import {ITreasurySpoke} from 'src/spoke/interfaces/ITreasurySpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {INativeTokenGateway} from 'src/position-manager/interfaces/INativeTokenGateway.sol';
 
-contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployProcedure {
+contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   Logger internal _logger;
-  FullDeployInputs internal _inputs;
+  InputUtils.FullDeployInputs internal _inputs;
   address internal _weth9;
 
   string[] internal _hubLabels;
@@ -77,7 +77,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkDeployment(
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     _checkFullReport({report: report, inputs: inputs});
     _checkBatchDeployments({report: report, inputs: inputs});
@@ -86,7 +86,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkBatchDeployments(
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     _checkSpokeBatchDeployments({report: report, inputs: inputs});
     _checkHubBatchDeployments({report: report, inputs: inputs});
@@ -111,7 +111,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkGatewayBatchDeployments(
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     if (inputs.deployNativeTokenGateway && !_postDeploymentCheck) {
       assertEq(
@@ -124,7 +124,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkRoles(
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     IAccessManagerEnumerable accessManager = IAccessManagerEnumerable(
       report.authorityBatchReport.accessManager
@@ -139,8 +139,8 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   /// @dev Sanitizes the inputs by defaulting to the deployer if the address is zero.
   function _sanitizeInputs(
-    FullDeployInputs memory inputs
-  ) internal view returns (FullDeployInputs memory) {
+    InputUtils.FullDeployInputs memory inputs
+  ) internal view returns (InputUtils.FullDeployInputs memory) {
     inputs.accessManagerAdmin = inputs.accessManagerAdmin != address(0)
       ? inputs.accessManagerAdmin
       : _deployer;
@@ -189,7 +189,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkFullReport(
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     if (inputs.deployNativeTokenGateway) {
       assertNotEq(report.gatewaysBatchReport.nativeGateway, address(0), 'NativeGateway');
@@ -275,7 +275,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkSpokeBatchDeployments(
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     string memory globalLabel = 'SpokeDeployment';
     for (uint256 i = 0; i < inputs.spokeLabels.length; i++) {
@@ -355,7 +355,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkHubBatchDeployments(
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     string memory globalLabel = 'HubDeployment';
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
@@ -432,7 +432,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkAccessManagerRoles(
     IAccessManagerEnumerable accessManager,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     address expectedAdmin = (inputs.grantRoles && inputs.accessManagerAdmin != address(0))
       ? inputs.accessManagerAdmin
@@ -498,7 +498,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkSpokeRoles(
     IAccessManagerEnumerable accessManager,
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     _checkSpokeAdminRoles(accessManager, report, inputs);
     _checkSpokeConfiguratorRoles(accessManager, report, inputs);
@@ -507,7 +507,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkSpokeConfiguratorRoles(
     IAccessManagerEnumerable accessManager,
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     if (inputs.spokeLabels.length > 0 && inputs.grantRoles) {
       assertEq(
@@ -575,7 +575,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkSpokeAdminRoles(
     IAccessManagerEnumerable accessManager,
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     if (inputs.spokeLabels.length > 0 && inputs.grantRoles) {
       assertEq(
@@ -630,7 +630,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkHubRoles(
     IAccessManagerEnumerable accessManager,
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     _checkHubBatchRoles(accessManager, report, inputs);
     _checkHubSelectorRoles(accessManager, report, inputs);
@@ -639,7 +639,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkHubBatchRoles(
     IAccessManagerEnumerable accessManager,
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     if (inputs.hubLabels.length > 0 && inputs.grantRoles) {
       assertEq(
@@ -684,7 +684,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkTreasurySpokeRoles(
     address treasurySpoke,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     assertEq(Ownable(treasurySpoke).owner(), inputs.treasurySpokeOwner, 'treasury spoke owner');
   }
@@ -692,7 +692,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkHubSelectorRoles(
     IAccessManagerEnumerable accessManager,
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     if (inputs.hubLabels.length > 0 && inputs.grantRoles) {
       assertEq(
@@ -755,7 +755,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkConfiguratorBatchRoles(
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     assertEq(
       IAccessManaged(report.configuratorBatchReport.hubConfigurator).authority(),
@@ -779,7 +779,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkHubConfiguratorBatchRoles(
     IAccessManagerEnumerable accessManager,
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     address hubConfigurator = report.configuratorBatchReport.hubConfigurator;
     bytes4[] memory selectors = Roles.getHubConfiguratorDomainAdminRoleSelectors();
@@ -807,7 +807,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
   function _checkSpokeConfiguratorBatchRoles(
     IAccessManagerEnumerable accessManager,
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     address spokeConfigurator = report.configuratorBatchReport.spokeConfigurator;
     bytes4[] memory selectors = Roles.getSpokeConfiguratorDomainAdminRoleSelectors();
@@ -834,7 +834,7 @@ contract BatchTestProcedures is Test, InputUtils, Create2TestHelper, WETHDeployP
 
   function _checkGatewayRoles(
     OrchestrationReports.FullDeploymentReport memory report,
-    FullDeployInputs memory inputs
+    InputUtils.FullDeployInputs memory inputs
   ) internal view {
     if (inputs.deployNativeTokenGateway) {
       assertEq(

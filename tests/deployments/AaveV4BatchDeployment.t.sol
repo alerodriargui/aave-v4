@@ -7,7 +7,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   function setUp() public override {
     super.setUp();
 
-    _inputs = FullDeployInputs({
+    _inputs = InputUtils.FullDeployInputs({
       accessManagerAdmin: makeAddr('accessManagerAdmin'),
       hubConfiguratorAdmin: makeAddr('hubConfiguratorAdmin'),
       hubAdmin: makeAddr('hubAdmin'),
@@ -353,7 +353,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   }
 
   function testAaveV4BatchDeployment_fuzz_withoutRoles(
-    FullDeployInputs memory deployInputs,
+    InputUtils.FullDeployInputs memory deployInputs,
     address deployer,
     bool withoutHubs,
     bool withoutSpokes,
@@ -388,7 +388,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
   }
 
   function testAaveV4BatchDeployment_fuzz_withRoles(
-    FullDeployInputs memory deployInputs,
+    InputUtils.FullDeployInputs memory deployInputs,
     address deployer,
     bool withoutHubs,
     bool withoutSpokes,
@@ -424,7 +424,7 @@ contract AaveV4BatchDeploymentTest is BatchTestProcedures {
 
   /// @dev Sanitized inputs should never fail when deploying
   function testAaveV4BatchDeployment_fuzz_sanitizedInputs(
-    FullDeployInputs memory deployInputs
+    InputUtils.FullDeployInputs memory deployInputs
   ) public {
     deployInputs = _sanitizeInputs(deployInputs);
 

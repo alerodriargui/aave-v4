@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import {PostDeploymentVerificationBase} from 'tests/deployments/fork/PostDeploymentVerificationBase.t.sol';
 import {AaveV4DeployAnvil} from 'scripts/deploy/examples/AaveV4DeployAnvil.s.sol';
+import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 
 /// @title PostDeploymentVerificationAnvil
 /// @notice Anvil-specific post-deployment verification test.
@@ -25,8 +26,12 @@ contract PostDeploymentVerificationAnvil is PostDeploymentVerificationBase, Aave
     vm.createSelectFork('anvil');
   }
 
-  function _getSanitizedDeployInputs() internal override returns (FullDeployInputs memory) {
-    FullDeployInputs memory rawInputs = _getDeployInputs();
+  function _getSanitizedDeployInputs()
+    internal
+    override
+    returns (InputUtils.FullDeployInputs memory)
+  {
+    InputUtils.FullDeployInputs memory rawInputs = _getDeployInputs();
     return _loadWarningsAndSanitizeInputs(rawInputs, _deployer);
   }
 }

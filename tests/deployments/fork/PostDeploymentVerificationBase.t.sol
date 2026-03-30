@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {BatchTestProcedures} from 'tests/utils/BatchTestProcedures.sol';
+import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
@@ -24,7 +25,10 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
   }
 
   /// @dev Subclasses provide the expected deploy inputs (post-sanitization).
-  function _getSanitizedDeployInputs() internal virtual returns (FullDeployInputs memory);
+  function _getSanitizedDeployInputs()
+    internal
+    virtual
+    returns (InputUtils.FullDeployInputs memory);
 
   function _parseReport()
     internal
