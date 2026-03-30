@@ -10,6 +10,8 @@ env:
     certora/conf/libs/Premium.conf
     certora/conf/libs/SharesMath.conf
     certora/conf/libs/SpokeUtils_toValue.conf
+    certora/conf/libs/PositionStatus.conf
+    certora/conf/libs/VerifySymbolicPositionStatus.conf
     certora/conf/Hub.conf --exclude_rule noChangeToOtherSpoke supplyExchangeRateIsMonotonic supplyExchangeRateIsMonotonic_eliminateDeficit_simplified totalAssetsCompareToSuppliedAmount_noVirtual
     certora/conf/Hub.conf --rule noChangeToOtherSpoke
     certora/conf/HubAccrueIntegrity.conf 
@@ -50,8 +52,6 @@ env:
     # certora/conf/HubValidState.conf --rule totalAssetsVsShares_eliminateDeficit
     # certora/conf/LiquidationReportDeficit.conf
     # certora/conf/Liquidation.conf
-    # certora/conf/libs/PositionStatus.conf
-    # certora/conf/libs/VerifySymbolicPositionStatus.conf
 
 on:
   pull_request:
