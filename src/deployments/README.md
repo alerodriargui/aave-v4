@@ -16,7 +16,7 @@ Copy `.env.example` and set:
 | `dry`     | Leave blank to broadcast; set to a value to simulate |
 | `chain`   | String describing the chain, e.g. "mainnet"          |
 
-The deploy script constructs a `FullDeployInputs` struct (see `src/deployments/utils/InputUtils.sol`) with admin addresses, hub/spoke labels, CREATE2 salt, and gateway flags. Override `_getDeployInputs()` in your chain-specific script (extends `AaveV4DeployBatchBase.s.sol`) to provide these values. Any zero-address admin fields default to the deployer.
+The deploy script constructs a `FullDeployInputs` struct (see `src/deployments/utils/libraries/InputUtils.sol`) with admin addresses, hub/spoke labels, CREATE2 salt, and gateway flags. Override `_getDeployInputs()` in your chain-specific script (extends `AaveV4DeployBatchBase.s.sol`) to provide these values. Any zero-address admin fields default to the deployer.
 
 ### 2. Pre-deploy LiquidationLogic (required for spokes)
 
@@ -85,11 +85,26 @@ src/deployments/
     ConfigData                Parameter structs for config operations
 
   utils/
-    InputUtils                FullDeployInputs struct
     interfaces/               Required interfaces for full deployment
-    libraries/                Includes Roles definitions
+    libraries/
+      InputUtils              FullDeployInputs struct and label validation
+      Roles                   Role ID constants and selector getters
+      Create2Utils            Deterministic deployment helpers
+      BytecodeHelper          Hub/Spoke bytecode retrieval
+      DeployConstants         Shared deploy constants
+      RolesValidation         Role setup validation helpers
     Logger & MetadataLogger    Deployment logging and JSON output
 ```
+
+### Labels and Deterministic Deployment
+
+Hub and spoke labels (provided via `FullDeployInputs.hubLabels` / `spokeLabels`) drive deterministic addressing and identify instances in deployment reports.
+
+**Salt derivation** — Deployed addresses are deterministic, derived from three inputs: the deployer address, the user-provided salt, and the instance label. First, `_deriveSalt` combines the deployer address and user salt into a root salt. Then, for each hub or spoke, `_deriveChildSalt` hashes the root salt with the contract type (`"hub"` or `"spoke"`) and the label to produce a unique child salt. This child salt is passed to `Create2Utils.create2Deploy()`. Because the deployer address is embedded in the root salt, different deployers produce valid, unique deployed contract addresses even with identical labels and user salt.
+
+**Duplicate label protection** — Before deploying any hubs or spokes, the orchestration validates unique labels for each array. Duplicate hub labels or duplicate spoke labels will revert. Hub and spoke labels are validated independently. A hub and a spoke can share the same label since they use different `contractType` strings in salt derivation.
+
+**CREATE2 collision protection** — `Create2Utils.create2Deploy()` computes the deterministic address from the salt and bytecode before deploying. If a contract already exists at that address (e.g. same salt and bytecode were used in a previous deployment), it reverts with `ContractAlreadyDeployed()`. This prevents silent no-ops or collisions when re-running a deploy script.
 
 ### Roles (`Roles.sol`)
 
@@ -187,7 +202,7 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |       new AaveV4TreasurySpokeBatch(owner, salt)
     |     |         Create2Utils.create2Deploy() --> TreasurySpoke
     |     |
-    |     +-- _validateUniqueLabels()               revert on duplicate hub or spoke labels
+    |     +-- InputUtils.validateUniqueLabels()      revert on duplicate hub or spoke labels
     |     |
     |     +-- _deployHubs(hubLabels)                for each hub label:
     |     |     _deployHub()
@@ -213,7 +228,7 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |
     |     +-- _deployGatewayBatch()                 (if deployNativeTokenGateway || deploySignatureGateway)
     |     |     AaveV4DeployBase.deployGatewaysBatch()
-    |     |       new AaveV4GatewayBatch(owner, nativeWrapper, flags, salt)
+    |     |       new AaveV4GatewayBatch(owner, nativeWrapper, deployNativeTokenGateway, deploySignatureGateway, salt)
     |     |         Create2Utils.create2Deploy() --> NativeTokenGateway, SignatureGateway
     |     |
     |     +-- _deployPositionManagerBatch()         (if deployPositionManagers)

@@ -481,7 +481,7 @@ library AaveV4DeployOrchestration {
   ) internal pure {
     logger.log(label);
     logger.logDetail('Spoke', report.spokeProxy);
-    logger.logDetail('Spoke Impl', report.spokeImplementation);
+    logger.logDetail('SpokeImpl', report.spokeImplementation);
     logger.logDetail('AaveOracle', report.aaveOracle);
   }
 
