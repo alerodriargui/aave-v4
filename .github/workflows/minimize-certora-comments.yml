@@ -20,7 +20,7 @@ jobs:
             try {
               await github.graphql(`
                 mutation($id: ID!) {
-                  minimizeComment(input: {subjectId: $id, classifier: OUTDATED}) {
+                  minimizeComment(input: {subjectId: $id, classifier: RESOLVED}) {
                     minimizedComment { isMinimized }
                   }
                 }
