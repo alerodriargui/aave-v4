@@ -44,7 +44,7 @@ A Hub can have an unspecified number of Spokes, each one contributing to the tot
 
 ## Hub
 
-The Hub is immutable and serves as the central coordinator for liquidity management in Aave V4. The design allows for multiple Hubs to exist, with each Hub maintaining oversight of its own set of Spokes. Each Hub sets the add/draw caps for its Spokes and enforces crucial accounting invariants. The design objective was to make the Hub as simple as possible.
+The Hub serves as the central liquidity coordinator between Spokes in Aave V4, architected for simplicity and operational clarity. The design supports multiple Hubs operating independently, each maintaining oversight of its own set of Spokes. Hubs facilitate liquidity pooling and flow between Spokes—when one Spoke draws liquidity for borrowers, it comes from the Hub's shared liquidity pool, which is replenished by suppliers across all connected Spokes. Each Hub establishes clear operational boundaries through add/draw caps and enforces crucial accounting invariants to maintain protocol integrity. The design objective was to make the Hub as simple as possible.
 
 The key aspects of the Hub include:
 
@@ -66,9 +66,9 @@ The key aspects of the Hub include:
 
 ## Spokes
 
-The Spokes are upgradeable and the primary components responsible for facilitating supplying and borrowing functionalities for specific assets within the Aave V4 ecosystem. They can register into Hubs and are allowed to draw (borrow) liquidity from them. The nature of the Spoke is not specific and can be anything: crypto-based, RWA-based, DEX-LPs-based, and so on.
+The Spokes are the primary entry-point for all core user actions (supply, borrow, repay, withdraw) within the Aave V4 ecosystem, with implementations tailored to distinct asset classes and risk models. They can register into Hubs and are allowed to draw (borrow) liquidity from them. The modular design of Spokes accommodates diverse asset types: crypto-based, RWA-based, DEX-LP-based, and any other class of collateral.
 
-Users interact with the Spokes, which then interact directly with the Hubs. The Spokes manage the following aspects:
+All user interactions flow through Spokes, which route these actions to the appropriate Hub for liquidity coordination. The Spokes manage the following aspects:
 
 - Triggering transfers into the Hubs for user `supply` calls.
 - Handling supplying and borrowing functionality.
