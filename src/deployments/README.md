@@ -1,10 +1,10 @@
 # Aave V4 Deployment Infrastructure
 
-Infrastructure for deploying and configuring the Aave V4 hub-and-spoke protocol.
+Infrastructure for deploying and configuring Aave V4.
 
 ## Quickstart
 
-Deploys all contracts and grants roles basic roles. No assets are listed, no spokes are registered, no reserves are configured.
+Deploys all contracts and grants basic roles. No assets are listed, no spokes are registered, no reserves are configured.
 
 ### 1. Configure `.env`
 
@@ -12,8 +12,9 @@ Copy `.env.example` and set:
 
 | Variable  | Description                                          |
 | --------- | ---------------------------------------------------- |
-| `ACCOUNT` | Foundry keystore account name for the deployer       |
-| `DRY`     | Leave blank to broadcast; set to a value to simulate |
+| `account` | Foundry keystore account name for the deployer       |
+| `dry`     | Leave blank to broadcast; set to a value to simulate |
+| `chain`   | String describing the chain, e.g. "mainnet"          |
 
 The deploy script constructs a `FullDeployInputs` struct (see `src/deployments/utils/InputUtils.sol`) with admin addresses, hub/spoke labels, CREATE2 salt, and gateway flags. Override `_getDeployInputs()` in your chain-specific script (extends `AaveV4DeployBatchBase.s.sol`) to provide these values. Any zero-address admin fields default to the deployer.
 
@@ -85,16 +86,23 @@ src/deployments/
 
   utils/
     InputUtils                FullDeployInputs struct
-    Roles                     Role ID constants (0, 100-103, 200, 300-302, 400)
-    Create2Utils              Deterministic deployment helpers
-    Logger / MetadataLogger   Deployment logging and JSON output
+    interfaces/               Required interfaces for full deployment
+    libraries/                Includes Roles definitions
+    Logger & MetadataLogger    Deployment logging and JSON output
 ```
 
-### Roles (Roles.sol)
+### Roles (`Roles.sol`)
 
-Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499). See `Roles.sol` NatSpec for the full role strategy and evolution guidelines.
+Roles are namespaced by contract domain: Hub (100-199), HubConfigurator (200-299), Spoke (300-399), SpokeConfigurator (400-499).
 
-All roles are labeled on the `AccessManagerEnumerable` during deployment via `AaveV4AccessManagerRolesProcedure.labelAllRoles()`. Each role is labeled with its `Roles.sol` constant name (e.g., role 101 is labeled `"HUB_CONFIGURATOR_ROLE"`). Labels are queryable on-chain via `getLabelOfRole()` and `getRoleOfLabel()`.
+For configurators, initially a single Domain Admin role (HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 200, SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE = 400) holds all target selectors. As more granular roles are introduced, they should be added at the next available ID (201, 202, ... / 401, 402, ...) and the corresponding selectors reassigned from the Domain Admin role to the new granular role:
+
+- Existing role IDs should never be overwritten or reused for a different purpose.
+- New roles are always appended with an incremented ID.
+- The Domain Admin role (200/400) only ever has its selector set shrink over time as selectors are divided into more granular roles.
+- Addresses holding the Domain Admin role should be granted the new granular role being added to retain their existing access.
+
+See `Roles.sol` NatSpec for the full role strategy and evolution guidelines. All roles are labeled on the `AccessManagerEnumerable` during deployment via `AaveV4AccessManagerRolesProcedure.labelAllRoles()`. Each role is labeled with its `Roles.sol` constant name (e.g., role 101 is labeled `"HUB_CONFIGURATOR_ROLE"`). Labels are queryable on-chain via `getLabelOfRole()` and `getRoleOfLabel()`.
 
 #### `AccessManager` Role
 
@@ -124,8 +132,8 @@ Domain admin role holds all selectors initially. Granular roles (201+) are carve
 | ID  | Name                             | Granted To                             | Functions                                                                                                                                                      |
 | --- | -------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 300 | SPOKE_DOMAIN_ADMIN_ROLE          | spokeAdmin                             | (reserved for future use)                                                                                                                                      |
-| 301 | SPOKE_USER_POSITION_UPDATER_ROLE | spokeAdmin                             | updateUserDynamicConfig, updateUserRiskPremium                                                                                                                 |
-| 302 | SPOKE_CONFIGURATOR_ROLE          | spokeAdmin, SpokeConfigurator contract | updateLiquidationConfig, addReserve, updateReserveConfig, updateDynamicReserveConfig, addDynamicReserveConfig, updatePositionManager, updateReservePriceSource |
+| 301 | SPOKE_CONFIGURATOR_ROLE          | spokeAdmin, SpokeConfigurator contract | updateLiquidationConfig, addReserve, updateReserveConfig, updateDynamicReserveConfig, addDynamicReserveConfig, updatePositionManager, updateReservePriceSource |
+| 302 | SPOKE_USER_POSITION_UPDATER_ROLE | spokeAdmin                             | updateUserDynamicConfig, updateUserRiskPremium                                                                                                                 |
 
 #### `SpokeConfigurator` Roles (on SpokeConfigurator contract)
 
@@ -140,13 +148,15 @@ Domain admin role holds all selectors initially. Granular roles (401+) are carve
 ```
 AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
   run()
+    _validateChainId()                              revert if block.chainid != expected
     _getDeployInputs()                              override per chain in extended script
     vm.startBroadcast()
-    _loadWarningsAndSanitizeInputs()                validate labels, default zero addrs to deployer
+    _loadWarningsAndSanitizeInputs()                validate labels, default zero addresses to deployer
     |
-    +-- AaveV4DeployOrchestration.deployAaveV4()    (library — all calls execute as deployer)
+    +-- AaveV4DeployOrchestration.deployAaveV4     (library — all calls execute as deployer)
     |     |
-    |     +-- _deriveSalt(deployer, salt)            [deployer(160b) | hash(SALT,salt)(96b)]
+    |     +-- _deriveSalt(deployer, salt)           Combines deployer address (upper 160 bits) with hash of the BASE SALT (keccak256('AAVE_V4')) and
+    |     |                                         the user-provided salt (lower 96 bits) into a single deterministic salt
     |     |
     |     +-- _deployAuthorityBatch()
     |     |     AaveV4DeployBase.deployAuthorityBatch()
@@ -176,6 +186,8 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |     AaveV4DeployBase.deployTreasurySpokeBatch()
     |     |       new AaveV4TreasurySpokeBatch(owner, salt)
     |     |         Create2Utils.create2Deploy() --> TreasurySpoke
+    |     |
+    |     +-- _validateUniqueLabels()               revert on duplicate hub or spoke labels
     |     |
     |     +-- _deployHubs(hubLabels)                for each hub label:
     |     |     _deployHub()
@@ -212,23 +224,25 @@ AaveV4DeployBatchBase.s.sol                         (Foundry script entry point)
     |     |         Create2Utils.create2Deploy() --> ConfigPositionManager
     |     |
     |     +-- grantRoles (if grantRoles == true)
-    |     |     _grantHubRoles()
+    |     |     _grantHubRoles()                    (if hubLabels.length > 0)
     |     |       AaveV4HubRolesProcedure.grantHubAllRoles()         hubAdmin gets roles 101-103
     |     |       AaveV4HubRolesProcedure.grantHubRole()             HubConfigurator gets role 101
     |     |       AaveV4HubConfiguratorRolesProcedure.grantHubConfiguratorAllRoles()
     |     |                                                          hubConfiguratorAdmin gets role 200
-    |     |     _grantSpokeRoles()
+    |     |     _grantSpokeRoles()                  (if spokeLabels.length > 0)
     |     |       AaveV4SpokeRolesProcedure.grantSpokeAllRoles()     spokeAdmin gets roles 301-302
-    |     |       AaveV4SpokeRolesProcedure.grantSpokeRole()         SpokeConfigurator gets role 302
+    |     |       AaveV4SpokeRolesProcedure.grantSpokeRole()         SpokeConfigurator gets role 301
     |     |       AaveV4SpokeConfiguratorRolesProcedure.grantSpokeConfiguratorAllRoles()
     |     |                                                          spokeConfiguratorAdmin gets role 400
     |     |     AaveV4AccessManagerRolesProcedure.replaceDefaultAdminRole()
+    |     |       (if accessManagerAdmin != deployer)
     |     |       grant role 0 to accessManagerAdmin, revoke from deployer
     |     |
     |     v
     |   FullDeploymentReport                        (all deployed addresses + salt)
     |
     vm.stopBroadcast()
-    MetadataLogger.writeJsonReportMarket()          write JSON report
+    logger.writeJsonReportMarket()                  write JSON report
+    _logDeploySummary(logger)                       write deployment summary to logger
     logger.save()                                   save logs to output/reports/deployments/
 ```

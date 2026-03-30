@@ -26,21 +26,30 @@ The Aave V4 architecture follows a modular **hub-and-spoke design** that separat
 aave-v4/
 ├── src/                          # Main source code
 │   ├── access/                   # Access control contracts
+│   ├── config-engine/            # Config engine for governance payload generation
 │   ├── dependencies/             # Dependencies (Chainlink, OpenZeppelin, etc.)
+│   ├── deployments/              # Deployment framework
 │   ├── hub/                      # Hub contracts and interfaces
 │   ├── interfaces/               # Shared interfaces
 │   ├── libraries/                # Shared libraries (math, types)
-│   ├── misc/                     # Miscellaneous contracts
 │   ├── position-manager/         # Position Managers, including gateway contracts
 │   ├── spoke/                    # Spoke contracts and interfaces
 │   └── utils/                    # Utility contracts (Multicall, etc.)
 ├── tests/                        # Test suite
+│   ├── config-engine/            # Config engine tests
 │   ├── contracts/                # Contract tests (hub, spoke, tokenization, etc.)
+│   ├── deployments/              # Deployment tests
 │   ├── gas/                      # Gas snapshot tests
 │   ├── helpers/                  # Test helpers and mocks
 │   ├── misc/                     # Symbolic tests, prototype development
-│   └── setup/                    # Base test setup and fixtures
+│   ├── scripts/                  # Script tests
+│   ├── setup/                    # Base test setup and fixtures
+│   └── utils/                    # Test utilities
 ├── scripts/                      # Deployment scripts
+│   ├── deploy/                   # Deploy scripts (batch base, chain-specific, examples)
+│   └── utils/                    # Script utilities
+├── output/                       # Deployment output and reports
+├── resources/                    # Static resources (diagrams, etc.)
 ├── snapshots/                    # Gas snapshots
 └── lib/                          # Foundry dependencies
 ```

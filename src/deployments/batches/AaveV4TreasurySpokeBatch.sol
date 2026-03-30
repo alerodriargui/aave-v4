@@ -9,7 +9,7 @@ contract AaveV4TreasurySpokeBatch is AaveV4TreasurySpokeDeployProcedure {
 
   constructor(address owner_, bytes32 salt_) {
     address treasurySpoke = _deployTreasurySpoke({owner: owner_, salt: salt_});
-    _report = BatchReports.TreasurySpokeBatchReport(treasurySpoke);
+    _report = BatchReports.TreasurySpokeBatchReport({treasurySpoke: treasurySpoke});
   }
 
   function getReport() external view returns (BatchReports.TreasurySpokeBatchReport memory) {

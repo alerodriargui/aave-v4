@@ -470,6 +470,7 @@ library AaveV4DeployOrchestration {
   ) internal pure {
     logger.log(label);
     logger.logDetail('Hub', report.hubProxy);
+    logger.logDetail('HubImpl', report.hubImplementation);
     logger.logDetail('InterestRateStrategy', report.irStrategy);
   }
 
@@ -479,8 +480,8 @@ library AaveV4DeployOrchestration {
     string memory label
   ) internal pure {
     logger.log(label);
-    logger.logDetail('SpokeInstance Proxy', report.spokeProxy);
-    logger.logDetail('SpokeInstance Implementation', report.spokeImplementation);
+    logger.logDetail('Spoke', report.spokeProxy);
+    logger.logDetail('Spoke Impl', report.spokeImplementation);
     logger.logDetail('AaveOracle', report.aaveOracle);
   }
 
