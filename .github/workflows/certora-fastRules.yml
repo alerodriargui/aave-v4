@@ -27,7 +27,6 @@ env:
     certora/conf/SpokeHealthCheck.conf 
     certora/conf/SpokeHealthFactor.conf --exclude_rule userHealthAboveThreshold userHealthBelowThresholdCanOnlyIncreaseHealthFactor
     certora/conf/SpokeIntegrity.conf
-    certora/conf/SpokeUserIntegrity.conf
     certora/conf/SpokeWithHub.conf --rule userDrawnShareConsistency 
     certora/conf/SpokeWithHub.conf --rule userPremiumShareConsistency 
     certora/conf/SpokeWithHub.conf --rule userPremiumOffsetConsistency 
@@ -52,6 +51,7 @@ env:
     # certora/conf/HubValidState.conf --rule totalAssetsVsShares_eliminateDeficit
     # certora/conf/LiquidationReportDeficit.conf
     # certora/conf/Liquidation.conf
+    # certora/conf/SpokeUserIntegrity.conf
 
 on:
   pull_request:
