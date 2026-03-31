@@ -6,6 +6,9 @@ import {AaveV4GiverPositionManagerDeployProcedure} from 'src/deployments/procedu
 import {AaveV4TakerPositionManagerDeployProcedure} from 'src/deployments/procedures/deploy/position-manager/AaveV4TakerPositionManagerDeployProcedure.sol';
 import {AaveV4ConfigPositionManagerDeployProcedure} from 'src/deployments/procedures/deploy/position-manager/AaveV4ConfigPositionManagerDeployProcedure.sol';
 
+/// @title AaveV4PositionManagerBatch
+/// @author Aave Labs
+/// @notice Deploys the GiverPositionManager, TakerPositionManager, and ConfigPositionManager contracts, producing a batch report.
 contract AaveV4PositionManagerBatch is
   AaveV4GiverPositionManagerDeployProcedure,
   AaveV4TakerPositionManagerDeployProcedure,
@@ -21,6 +24,7 @@ contract AaveV4PositionManagerBatch is
     });
   }
 
+  /// @notice Returns the batch deployment report.
   function getReport() external view returns (BatchReports.PositionManagerBatchReport memory) {
     return _report;
   }

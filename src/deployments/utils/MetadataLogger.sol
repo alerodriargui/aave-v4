@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 
+/// @title MetadataLogger
+/// @author Aave Labs
+/// @notice Extends Logger with structured custom JSON report formatting for full deployment outputs.
 contract MetadataLogger is Logger {
   constructor(string memory outputPath_) Logger(outputPath_) {}
 

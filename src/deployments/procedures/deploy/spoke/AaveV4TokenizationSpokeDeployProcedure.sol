@@ -7,7 +7,19 @@ import {ITokenizationSpokeInstance} from 'src/deployments/utils/interfaces/IToke
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
+/// @title AaveV4TokenizationSpokeDeployProcedure
+/// @author Aave Labs
+/// @notice Deploys an upgradeable TokenizationSpoke instance behind a transparent proxy.
 contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
+  /// @notice Deploys a TokenizationSpoke implementation via CREATE2 and sets up a transparent proxy.
+  /// @param hub The address of the Hub that the tokenization spoke connects to.
+  /// @param underlying The address of the underlying asset to tokenize.
+  /// @param spokeProxyAdminOwner The owner of the proxy admin contract.
+  /// @param shareName The name of the share token.
+  /// @param shareSymbol The symbol of the share token.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return tokenizationSpokeProxy The address of the deployed transparent proxy.
+  /// @return tokenizationSpokeImplementation The address of the deployed TokenizationSpoke implementation.
   function _deployUpgradeableTokenizationSpokeInstance(
     address hub,
     address underlying,

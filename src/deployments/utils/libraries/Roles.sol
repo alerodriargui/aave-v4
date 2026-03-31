@@ -62,6 +62,7 @@ library Roles {
 
   // ─── Hub selector getters ───
 
+  /// @notice Returns the function selectors associated with the Hub Configurator role.
   function getHubConfiguratorRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](5);
     selectors[0] = IHub.addAsset.selector;
@@ -72,12 +73,14 @@ library Roles {
     return selectors;
   }
 
+  /// @notice Returns the function selectors associated with the Hub Fee Minter role.
   function getHubFeeMinterRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = IHub.mintFeeShares.selector;
     return selectors;
   }
 
+  /// @notice Returns the function selectors associated with the Hub Deficit Eliminator role.
   function getHubDeficitEliminatorRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](1);
     selectors[0] = IHub.eliminateDeficit.selector;
@@ -86,6 +89,7 @@ library Roles {
 
   // ─── HubConfigurator selector getters ───
 
+  /// @notice Returns the function selectors associated with the HubConfigurator Domain Admin role.
   function getHubConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](22);
     selectors[0] = IHubConfigurator.addAsset.selector;
@@ -115,6 +119,7 @@ library Roles {
 
   // ─── Spoke selector getters ───
 
+  /// @notice Returns the function selectors associated with the Spoke Position Updater role.
   function getSpokePositionUpdaterRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](2);
     selectors[0] = ISpoke.updateUserDynamicConfig.selector;
@@ -122,6 +127,7 @@ library Roles {
     return selectors;
   }
 
+  /// @notice Returns the function selectors associated with the Spoke Configurator role.
   function getSpokeConfiguratorRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](7);
     selectors[0] = ISpoke.updateLiquidationConfig.selector;
@@ -136,6 +142,7 @@ library Roles {
 
   // ─── SpokeConfigurator selector getters ───
 
+  /// @notice Returns the function selectors associated with the SpokeConfigurator Domain Admin role.
   function getSpokeConfiguratorDomainAdminRoleSelectors() internal pure returns (bytes4[] memory) {
     bytes4[] memory selectors = new bytes4[](24);
     selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;

@@ -5,6 +5,9 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4HubConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubConfiguratorDeployProcedure.sol';
 import {AaveV4SpokeConfiguratorDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4SpokeConfiguratorDeployProcedure.sol';
 
+/// @title AaveV4ConfiguratorBatch
+/// @author Aave Labs
+/// @notice Deploys the HubConfigurator and SpokeConfigurator contracts, producing a batch report.
 contract AaveV4ConfiguratorBatch is
   AaveV4HubConfiguratorDeployProcedure,
   AaveV4SpokeConfiguratorDeployProcedure
@@ -31,6 +34,7 @@ contract AaveV4ConfiguratorBatch is
     });
   }
 
+  /// @notice Returns the batch deployment report.
   function getReport() external view returns (BatchReports.ConfiguratorBatchReport memory) {
     return _report;
   }

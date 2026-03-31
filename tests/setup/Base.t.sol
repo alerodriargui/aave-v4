@@ -99,7 +99,7 @@ import {
 } from 'src/position-manager/libraries/ConfigPermissionsMap.sol';
 
 // orchestration
-import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
+import {ConfigData} from 'tests/utils/ConfigData.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';

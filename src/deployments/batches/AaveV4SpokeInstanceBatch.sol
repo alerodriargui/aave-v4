@@ -7,6 +7,9 @@ import {AaveV4SpokeDeployProcedure} from 'src/deployments/procedures/deploy/spok
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
+/// @title AaveV4SpokeInstanceBatch
+/// @author Aave Labs
+/// @notice Deploys a Spoke instance (proxy + implementation) and its AaveOracle, producing a batch report.
 contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracleDeployProcedure {
   BatchReports.SpokeInstanceBatchReport internal _report;
 
@@ -39,6 +42,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
     });
   }
 
+  /// @notice Returns the batch deployment report.
   function getReport() external view returns (BatchReports.SpokeInstanceBatchReport memory) {
     return _report;
   }

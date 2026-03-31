@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
+/// @title InputUtils Library
+/// @author Aave Labs
+/// @notice Deployment input struct and validation helpers.
 library InputUtils {
   /// @dev accessManagerAdmin The default admin of the access manager.
   /// @dev hubAdmin The admin of the hub.
@@ -8,7 +11,7 @@ library InputUtils {
   /// @dev hubProxyAdminOwner The owner of the hub proxyAdmin.
   /// @dev treasurySpokeOwner The owner of the treasury spoke.
   /// @dev spokeAdmin The spoke admin.
-  /// @dev spokeProxyAdminOwner The owner of the spoke proxyAdmin.
+  /// @dev spokeProxyAdminOwner The owner of the Spoke proxyAdmin.
   /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
   /// @dev positionManagerOwner The owner of the position manager contracts (giver/taker).
@@ -43,6 +46,9 @@ library InputUtils {
     bytes32 salt;
   }
 
+  /// @notice Reverts if any two labels in the array are identical.
+  /// @param labels The array of labels to validate.
+  /// @param kind A descriptor used in the revert message (e.g. "hub", "spoke").
   function validateUniqueLabels(string[] memory labels, string memory kind) internal pure {
     for (uint256 i; i < labels.length; i++) {
       for (uint256 j = i + 1; j < labels.length; j++) {

@@ -9,7 +9,7 @@ import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
-import {ConfigData} from 'src/deployments/libraries/ConfigData.sol';
+import {ConfigData} from 'tests/utils/ConfigData.sol';
 import {AaveV4AccessManagerRolesProcedure} from 'src/deployments/procedures/roles/AaveV4AccessManagerRolesProcedure.sol';
 import {AaveV4HubRolesProcedure} from 'src/deployments/procedures/roles/AaveV4HubRolesProcedure.sol';
 import {AaveV4SpokeRolesProcedure} from 'src/deployments/procedures/roles/AaveV4SpokeRolesProcedure.sol';

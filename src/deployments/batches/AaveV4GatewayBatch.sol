@@ -5,6 +5,9 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4NativeTokenGatewayDeployProcedure} from 'src/deployments/procedures/deploy/position-manager/AaveV4NativeTokenGatewayDeployProcedure.sol';
 import {AaveV4SignatureGatewayDeployProcedure} from 'src/deployments/procedures/deploy/position-manager/AaveV4SignatureGatewayDeployProcedure.sol';
 
+/// @title AaveV4GatewayBatch
+/// @author Aave Labs
+/// @notice Deploys the NativeTokenGateway and SignatureGateway contracts, producing a batch report.
 contract AaveV4GatewayBatch is
   AaveV4NativeTokenGatewayDeployProcedure,
   AaveV4SignatureGatewayDeployProcedure
@@ -38,6 +41,7 @@ contract AaveV4GatewayBatch is
     });
   }
 
+  /// @notice Returns the batch deployment report.
   function getReport() external view returns (BatchReports.GatewaysBatchReport memory) {
     return _report;
   }

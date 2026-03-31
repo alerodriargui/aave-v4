@@ -14,9 +14,19 @@ import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {Logger} from 'src/deployments/utils/Logger.sol';
 import {DeployConstants} from 'src/deployments/utils/libraries/DeployConstants.sol';
 
+/// @title AaveV4DeployOrchestration Library
+/// @author Aave Labs
+/// @notice Main orchestrator that deploys all Aave V4 contracts in order and configures roles.
 library AaveV4DeployOrchestration {
   bytes32 public constant SALT = keccak256('AAVE_V4');
 
+  /// @notice Deploys all Aave V4 contracts, configures roles, and returns the full deployment report.
+  /// @param logger The logger instance used for console and JSON output.
+  /// @param deployer The address executing the deployment.
+  /// @param deployInputs The full set of deployment configuration inputs.
+  /// @param hubBytecode The creation bytecode of the HubInstance contract.
+  /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
+  /// @return report The full deployment report containing all batch sub-reports.
   function deployAaveV4(
     Logger logger,
     address deployer,
@@ -368,7 +378,7 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  /// @dev Setup roles for the hub and spoke configurators
+  /// @dev Setup roles for the hub and spoke configurators.
   function _setupConfiguratorRoles(
     Logger logger,
     OrchestrationReports.FullDeploymentReport memory report
@@ -487,7 +497,7 @@ library AaveV4DeployOrchestration {
 
   /// @dev Derives the root salt with deployer address in the first 160 bits
   ///      and the remaining 96 bits from the user-provided salt.
-  ///      Layout: [deployer (160 bits) | truncated_hash (96 bits)]
+  ///      Layout: [deployer (160 bits) | truncated_hash (96 bits)].
   function _deriveSalt(address deployer, bytes32 salt) internal pure returns (bytes32) {
     return bytes32(bytes20(deployer)) | (keccak256(abi.encode(SALT, salt)) >> 160);
   }

@@ -5,6 +5,8 @@ import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 
+/// @title AaveV4DeployAnvil
+/// @author Aave Labs
 /// @notice Anvil-only demo deploy script with hardcoded inputs for local testing.
 /// @dev Requires LiquidationLogic library pre-deployed (SpokeInstance depends on it).
 ///      Step 1: anvil (in separate terminal)

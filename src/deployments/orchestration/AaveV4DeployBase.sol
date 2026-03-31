@@ -12,7 +12,14 @@ import {AaveV4SpokeInstanceBatch} from 'src/deployments/batches/AaveV4SpokeInsta
 import {AaveV4TokenizationSpokeBatch} from 'src/deployments/batches/AaveV4TokenizationSpokeBatch.sol';
 import {AaveV4TreasurySpokeBatch} from 'src/deployments/batches/AaveV4TreasurySpokeBatch.sol';
 
+/// @title AaveV4DeployBase Library
+/// @author Aave Labs
+/// @notice Static deploy helpers that instantiate each deployment batch.
 library AaveV4DeployBase {
+  /// @notice Deploys the authority batch containing the AccessManagerEnumerable.
+  /// @param admin The initial admin of the access manager.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The authority batch report.
   function deployAuthorityBatch(
     address admin,
     bytes32 salt
@@ -21,6 +28,11 @@ library AaveV4DeployBase {
     return authorityBatch.getReport();
   }
 
+  /// @notice Deploys the configurator batch containing HubConfigurator and SpokeConfigurator.
+  /// @param hubConfiguratorAuthority The authority for the HubConfigurator.
+  /// @param spokeConfiguratorAuthority The authority for the SpokeConfigurator.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The configurator batch report.
   function deployConfiguratorBatch(
     address hubConfiguratorAuthority,
     address spokeConfiguratorAuthority,
@@ -34,6 +46,10 @@ library AaveV4DeployBase {
     return configuratorBatch.getReport();
   }
 
+  /// @notice Deploys the Treasury Spoke batch containing the TreasurySpoke proxy.
+  /// @param owner The owner of the TreasurySpoke.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The Treasury Spoke batch report.
   function deployTreasurySpokeBatch(
     address owner,
     bytes32 salt
@@ -45,6 +61,12 @@ library AaveV4DeployBase {
     return treasurySpokeBatch.getReport();
   }
 
+  /// @notice Deploys the Hub instance batch containing the Hub proxy, implementation, and IR strategy.
+  /// @param hubProxyAdminOwner The owner of the Hub proxy admin.
+  /// @param authority The access-control authority for the Hub.
+  /// @param hubBytecode The creation bytecode of the HubInstance contract.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The Hub instance batch report.
   function deployHubInstanceBatch(
     address hubProxyAdminOwner,
     address authority,
@@ -60,6 +82,14 @@ library AaveV4DeployBase {
     return hubInstanceBatch.getReport();
   }
 
+  /// @notice Deploys the Spoke instance batch containing the Spoke proxy, implementation, and AaveOracle.
+  /// @param spokeProxyAdminOwner The owner of the Spoke proxy admin.
+  /// @param authority The access-control authority for the Spoke.
+  /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
+  /// @param oracleDecimals The decimal precision for the AaveOracle.
+  /// @param maxUserReservesLimit The maximum number of reserves a user can interact with.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The Spoke instance batch report.
   function deploySpokeInstanceBatch(
     address spokeProxyAdminOwner,
     address authority,
@@ -79,6 +109,10 @@ library AaveV4DeployBase {
     return spokeInstanceBatch.getReport();
   }
 
+  /// @notice Deploys the position manager batch containing all three position manager contracts.
+  /// @param owner The owner of the position managers.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The position manager batch report.
   function deployPositionManagerBatch(
     address owner,
     bytes32 salt
@@ -90,6 +124,13 @@ library AaveV4DeployBase {
     return positionManagerBatch.getReport();
   }
 
+  /// @notice Deploys the gateways batch containing NativeTokenGateway and SignatureGateway.
+  /// @param owner The owner of the gateway contracts.
+  /// @param nativeWrapper The address of the native token wrapper.
+  /// @param deployNativeTokenGateway Whether to deploy the NativeTokenGateway.
+  /// @param deploySignatureGateway Whether to deploy the SignatureGateway.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The gateways batch report.
   function deployGatewaysBatch(
     address owner,
     address nativeWrapper,
@@ -107,6 +148,14 @@ library AaveV4DeployBase {
     return gatewayBatch.getReport();
   }
 
+  /// @notice Deploys the Tokenization Spoke batch containing the TokenizationSpoke proxy and implementation.
+  /// @param hub The address of the Hub the tokenization spoke connects to.
+  /// @param underlying The address of the underlying asset to tokenize.
+  /// @param spokeProxyAdminOwner The owner of the proxy admin.
+  /// @param shareName The name of the share token.
+  /// @param shareSymbol The symbol of the share token.
+  /// @param salt The CREATE2 salt for deterministic deployment.
+  /// @return The Tokenization Spoke batch report.
   function deployTokenizationSpokeBatch(
     address hub,
     address underlying,

@@ -5,6 +5,9 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4HubDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4HubDeployProcedure.sol';
 import {AaveV4InterestRateStrategyDeployProcedure} from 'src/deployments/procedures/deploy/hub/AaveV4InterestRateStrategyDeployProcedure.sol';
 
+/// @title AaveV4HubInstanceBatch
+/// @author Aave Labs
+/// @notice Deploys a Hub instance (proxy + implementation) and its InterestRateStrategy, producing a batch report.
 contract AaveV4HubInstanceBatch is
   AaveV4HubDeployProcedure,
   AaveV4InterestRateStrategyDeployProcedure
@@ -32,6 +35,7 @@ contract AaveV4HubInstanceBatch is
     });
   }
 
+  /// @notice Returns the batch deployment report.
   function getReport() external view returns (BatchReports.HubInstanceBatchReport memory) {
     return _report;
   }

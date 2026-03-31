@@ -5,6 +5,9 @@ import 'forge-std/StdJson.sol';
 import 'forge-std/Vm.sol';
 import {console2 as console} from 'forge-std/console2.sol';
 
+/// @title Logger
+/// @author Aave Labs
+/// @notice JSON output report and console logging for deployment scripts.
 contract Logger {
   using stdJson for string;
 
@@ -114,23 +117,6 @@ contract Logger {
     string memory group;
     for (uint256 i = 0; i < entries.length; i++) {
       group = vm.serializeAddress(groupLabel, entries[i].label, entries[i].value);
-    }
-    _json = vm.serializeString(_jsonKey, groupLabel, group);
-  }
-
-  /// @dev Writes a nested group: { groupLabel: { entryLabel: { proxy: ..., implementation: ... }, ... } }
-  function _writeNestedProxyGroup(
-    string memory groupLabel,
-    string[] memory labels,
-    address[] memory proxies,
-    address[] memory implementations
-  ) internal {
-    string memory group;
-    for (uint256 i = 0; i < labels.length; i++) {
-      string memory inner;
-      inner = vm.serializeAddress(labels[i], 'proxy', proxies[i]);
-      inner = vm.serializeAddress(labels[i], 'implementation', implementations[i]);
-      group = vm.serializeString(groupLabel, labels[i], inner);
     }
     _json = vm.serializeString(_jsonKey, groupLabel, group);
   }

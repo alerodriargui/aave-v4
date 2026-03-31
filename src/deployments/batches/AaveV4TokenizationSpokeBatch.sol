@@ -5,6 +5,9 @@ import {BatchReports} from 'src/deployments/libraries/BatchReports.sol';
 import {AaveV4TokenizationSpokeDeployProcedure} from 'src/deployments/procedures/deploy/spoke/AaveV4TokenizationSpokeDeployProcedure.sol';
 import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 
+/// @title AaveV4TokenizationSpokeBatch
+/// @author Aave Labs
+/// @notice Deploys a TokenizationSpoke instance (proxy + implementation), producing a batch report.
 contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure {
   BatchReports.TokenizationSpokeBatchReport internal _report;
 
@@ -34,6 +37,7 @@ contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure 
     });
   }
 
+  /// @notice Returns the batch deployment report.
   function getReport() external view returns (BatchReports.TokenizationSpokeBatchReport memory) {
     return _report;
   }

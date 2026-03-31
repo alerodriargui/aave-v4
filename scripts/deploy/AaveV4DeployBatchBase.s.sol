@@ -9,6 +9,9 @@ import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol
 
 import {Script} from 'forge-std/Script.sol';
 
+/// @title AaveV4DeployBatchBaseScript
+/// @author Aave Labs
+/// @notice Base script for deploying Aave V4.
 // solhint-disable quotes
 abstract contract AaveV4DeployBatchBaseScript is Script {
   struct Lines {
