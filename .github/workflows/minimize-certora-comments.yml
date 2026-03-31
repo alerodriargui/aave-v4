@@ -18,20 +18,23 @@ jobs:
         with:
           script: |
             const body = context.payload.review.body || '';
-            if (body.trimStart().startsWith('<details>')) {
-              console.log('Already wrapped in spoiler, skipping');
+            if (body.includes('<details>')) {
+              console.log('Already has spoiler, skipping');
               return;
             }
-            const wrapped = `<details><summary>Certora Verification Results</summary>\n\n${body}\n\n</details>`;
+            const updated = body.replace(
+              /## Verified Rules/,
+              '<details><summary><h2>Verified Rules</h2></summary>'
+            ) + '\n\n</details>';
             try {
               await github.rest.pulls.updateReview({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 pull_number: context.payload.pull_request.number,
                 review_id: context.payload.review.id,
-                body: wrapped
+                body: updated
               });
-              console.log('Wrapped certora review in spoiler');
+              console.log('Wrapped Verified Rules in spoiler');
             } catch (e) {
               console.log(`Failed to wrap comment: ${e.message}`);
             }
