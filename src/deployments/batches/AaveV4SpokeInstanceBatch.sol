@@ -9,10 +9,17 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 
 /// @title AaveV4SpokeInstanceBatch
 /// @author Aave Labs
-/// @notice Deploys a Spoke instance (proxy + implementation) and its AaveOracle, producing a batch report.
+/// @notice Deploys a Spoke (proxy + implementation) and its AaveOracle, producing a batch report.
 contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracleDeployProcedure {
   BatchReports.SpokeInstanceBatchReport internal _report;
 
+  /// @dev Constructor.
+  /// @param spokeProxyAdminOwner_ The owner of the Spoke proxy admin.
+  /// @param authority_ The access-control authority for the Spoke.
+  /// @param spokeBytecode_ The creation bytecode of the Spoke implementation.
+  /// @param oracleDecimals_ The decimal precision for the AaveOracle.
+  /// @param maxUserReservesLimit_ The maximum number of reserves a user can interact with.
+  /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address spokeProxyAdminOwner_,
     address authority_,

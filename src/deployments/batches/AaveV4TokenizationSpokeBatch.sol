@@ -11,6 +11,13 @@ import {ITokenizationSpoke} from 'src/spoke/interfaces/ITokenizationSpoke.sol';
 contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure {
   BatchReports.TokenizationSpokeBatchReport internal _report;
 
+  /// @dev Constructor.
+  /// @param hub_ The address of the Hub the TokenizationSpoke connects to.
+  /// @param underlying_ The address of the underlying asset to tokenize.
+  /// @param spokeProxyAdminOwner_ The owner of the proxy admin.
+  /// @param shareName_ The name of the share token.
+  /// @param shareSymbol_ The symbol of the share token.
+  /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address hub_,
     address underlying_,

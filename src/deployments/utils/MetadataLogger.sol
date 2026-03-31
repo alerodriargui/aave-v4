@@ -8,8 +8,12 @@ import {Logger} from 'src/deployments/utils/Logger.sol';
 /// @author Aave Labs
 /// @notice Extends Logger with structured custom JSON report formatting for full deployment outputs.
 contract MetadataLogger is Logger {
+  /// @dev Constructor.
+  /// @param outputPath_ The directory path for JSON output files.
   constructor(string memory outputPath_) Logger(outputPath_) {}
 
+  /// @notice Writes a structured JSON report for a full market deployment.
+  /// @param report The full deployment report containing all batch sub-reports.
   function writeJsonReportMarket(OrchestrationReports.FullDeploymentReport memory report) public {
     _write('salt', report.salt);
     _write('accessManager', report.authorityBatchReport.accessManager);

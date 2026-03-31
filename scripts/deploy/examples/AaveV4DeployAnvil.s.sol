@@ -19,6 +19,7 @@ import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 contract AaveV4DeployAnvil is AaveV4DeployBatchBaseScript {
   address public weth;
 
+  /// @dev Constructor. Deploys a WETH9 instance for use as the native wrapper.
   constructor() AaveV4DeployBatchBaseScript('anvil-deploy') {
     weth = address(new WETH9());
   }

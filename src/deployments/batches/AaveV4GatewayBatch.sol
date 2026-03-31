@@ -14,6 +14,12 @@ contract AaveV4GatewayBatch is
 {
   BatchReports.GatewaysBatchReport internal _report;
 
+  /// @dev Constructor.
+  /// @param owner_ The owner of the gateway contracts.
+  /// @param nativeWrapper_ The address of the native wrapper token (e.g. WETH).
+  /// @param deployNativeTokenGateway_ Whether to deploy the NativeTokenGateway.
+  /// @param deploySignatureGateway_ Whether to deploy the SignatureGateway.
+  /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address owner_,
     address nativeWrapper_,

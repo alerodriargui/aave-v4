@@ -19,7 +19,7 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
   /// @param shareSymbol The symbol of the share token.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return tokenizationSpokeProxy The address of the deployed transparent proxy.
-  /// @return tokenizationSpokeImplementation The address of the deployed TokenizationSpoke implementation.
+  /// @return tokenizationSpokeImplementation The address of the deployed TokenizationSpoke implementation contract.
   function _deployUpgradeableTokenizationSpokeInstance(
     address hub,
     address underlying,
@@ -56,6 +56,11 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
 
     return (tokenizationSpokeProxy, tokenizationSpokeImplementation);
   }
+
+  /// @notice Returns the creation bytecode for a TokenizationSpokeInstance with constructor arguments appended.
+  /// @param hub The address of the Hub contract.
+  /// @param underlying The address of the underlying asset.
+  /// @return The ABI-encoded creation bytecode.
   function _getTokenizationSpokeInstanceInitCode(
     address hub,
     address underlying

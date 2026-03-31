@@ -7,13 +7,18 @@ import {AaveV4InterestRateStrategyDeployProcedure} from 'src/deployments/procedu
 
 /// @title AaveV4HubInstanceBatch
 /// @author Aave Labs
-/// @notice Deploys a Hub instance (proxy + implementation) and its InterestRateStrategy, producing a batch report.
+/// @notice Deploys a Hub (proxy + implementation) and its InterestRateStrategy, producing a batch report.
 contract AaveV4HubInstanceBatch is
   AaveV4HubDeployProcedure,
   AaveV4InterestRateStrategyDeployProcedure
 {
   BatchReports.HubInstanceBatchReport internal _report;
 
+  /// @dev Constructor.
+  /// @param hubProxyAdminOwner_ The owner of the Hub proxy admin.
+  /// @param authority_ The access-control authority for the Hub.
+  /// @param hubBytecode_ The creation bytecode of the Hub implementation.
+  /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address hubProxyAdminOwner_,
     address authority_,

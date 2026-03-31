@@ -13,7 +13,7 @@ contract AaveV4NativeTokenGatewayDeployProcedure is AaveV4DeployProcedureBase {
   /// @param nativeWrapper The address of the native wrapper token (e.g. WETH).
   /// @param owner The owner of the NativeTokenGateway.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The address of the deployed NativeTokenGateway.
+  /// @return The address of the deployed NativeTokenGateway contract.
   function _deployNativeTokenGateway(
     address nativeWrapper,
     address owner,

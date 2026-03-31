@@ -5,12 +5,21 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
+/// @title AaveV4SpokeConfiguratorRolesProcedure Library
+/// @author Aave Labs
+/// @notice Procedures for granting and setting up SpokeConfigurator roles on the AccessManager.
 library AaveV4SpokeConfiguratorRolesProcedure {
   /// @notice Grants the SpokeConfigurator domain admin role (400) to `admin`.
+  /// @param accessManager The address of the AccessManager contract.
+  /// @param admin The address to receive the SpokeConfigurator domain admin role.
   function grantSpokeConfiguratorAllRoles(address accessManager, address admin) internal {
     grantSpokeConfiguratorRole(accessManager, Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, admin);
   }
 
+  /// @notice Grants a specific SpokeConfigurator role to the given address.
+  /// @param accessManager The address of the AccessManager contract.
+  /// @param role The role identifier to grant.
+  /// @param admin The address to receive the role.
   function grantSpokeConfiguratorRole(address accessManager, uint64 role, address admin) internal {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(admin);
@@ -30,6 +39,11 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     );
   }
 
+  /// @notice Sets up a specific SpokeConfigurator role by assigning function selectors to the target.
+  /// @param accessManager The address of the AccessManager contract.
+  /// @param spokeConfigurator The address of the SpokeConfigurator contract.
+  /// @param role The role identifier to associate with the selectors.
+  /// @param selectors The function selectors to assign to the role.
   function setupSpokeConfiguratorRole(
     address accessManager,
     address spokeConfigurator,

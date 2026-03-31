@@ -7,6 +7,7 @@ import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.
 /// @author Aave Labs
 /// @notice Ethereum-specific deploy script from which custom deployment scripts can extend.
 abstract contract AaveV4DeployEthereum is AaveV4DeployBatchBaseScript {
+  /// @dev Constructor.
   constructor() AaveV4DeployBatchBaseScript('ethereum') {}
 
   function _expectedChainId() internal pure virtual override returns (uint256) {

@@ -26,32 +26,51 @@ contract Logger {
   string internal _jsonKey;
   string internal _json;
 
+  /// @dev Constructor.
+  /// @param outputPath_ The directory path for JSON output files.
   constructor(string memory outputPath_) {
     _jsonKey = 'root';
     _outputPath = outputPath_;
     _json = _jsonKey;
   }
 
+  /// @notice Writes a labelled address entry to the JSON report.
+  /// @param label The key for the JSON entry.
+  /// @param value The address value to record.
   function write(string memory label, address value) public {
     _write(label, value);
   }
 
+  /// @notice Writes a labelled uint256 entry to the JSON report.
+  /// @param label The key for the JSON entry.
+  /// @param value The uint256 value to record.
   function write(string memory label, uint256 value) public {
     _write(label, value);
   }
 
+  /// @notice Writes a plain string message to the JSON report.
+  /// @param value The string message to record.
   function write(string memory value) public {
     _write(value);
   }
 
+  /// @notice Writes a group of labelled address entries to the JSON report under a shared key.
+  /// @param groupLabel The key for the JSON group.
+  /// @param entries The array of address entries to record.
   function writeGroup(string memory groupLabel, AddressEntry[] memory entries) public {
     _writeGroup(groupLabel, entries);
   }
 
+  /// @notice Writes a group of labelled uint256 entries to the JSON report under a shared key.
+  /// @param groupLabel The key for the JSON group.
+  /// @param entries The array of value entries to record.
   function writeGroup(string memory groupLabel, ValueEntry[] memory entries) public {
     _writeGroup(groupLabel, entries);
   }
 
+  /// @notice Persists the accumulated JSON report to a file on disk.
+  /// @param fileName The base file name without extension.
+  /// @param withTimestamp Whether to prepend a Unix timestamp to the file name.
   function save(string memory fileName, bool withTimestamp) public {
     console.log();
     console.log('Saving log to %s', _outputPath);
@@ -69,30 +88,47 @@ contract Logger {
     );
   }
 
+  /// @notice Logs a labelled address to the console.
+  /// @param label The label to display.
+  /// @param value The address value to display.
   function log(string memory label, address value) public pure {
     _log(label, value);
   }
 
+  /// @notice Logs a labelled uint256 to the console.
+  /// @param label The label to display.
+  /// @param value The uint256 value to display.
   function log(string memory label, uint256 value) public pure {
     _log(label, value);
   }
 
+  /// @notice Logs a plain string message to the console.
+  /// @param value The string message to display.
   function log(string memory value) public pure {
     _log(value);
   }
 
+  /// @notice Logs a level-one header string to the console.
+  /// @param value The header text to display.
   function logHeader1(string memory value) public pure {
     _logHeader1(value);
   }
 
+  /// @notice Logs a level-one header with a labelled address to the console.
+  /// @param label The header label to display.
+  /// @param value The address value to display.
   function logHeader1(string memory label, address value) public pure {
     _logHeader1(label, value);
   }
 
+  /// @notice Logs an indented detail line with a labelled address to the console.
+  /// @param label The detail label to display.
+  /// @param value The address value to display.
   function logDetail(string memory label, address value) public pure {
     _logDetail(label, value);
   }
 
+  /// @notice Logs a blank line to the console.
   function logNewLine() public pure {
     _logNewLine();
   }

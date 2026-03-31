@@ -12,7 +12,7 @@ contract AaveV4AccessManagerEnumerableDeployProcedure is AaveV4DeployProcedureBa
   /// @notice Deploys a new AccessManagerEnumerable instance via CREATE2.
   /// @param admin The initial admin address for the access manager.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The address of the deployed AccessManagerEnumerable.
+  /// @return The address of the deployed AccessManagerEnumerable contract.
   function _deployAccessManagerEnumerable(address admin, bytes32 salt) internal returns (address) {
     require(admin != address(0), 'invalid admin');
     return

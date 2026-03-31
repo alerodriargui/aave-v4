@@ -15,7 +15,7 @@ contract AaveV4HubDeployProcedure is AaveV4DeployProcedureBase {
   /// @param hubBytecode The creation bytecode of the Hub implementation.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return hubProxy The address of the deployed transparent proxy.
-  /// @return hubImplementation The address of the deployed Hub implementation.
+  /// @return hubImplementation The address of the deployed Hub implementation contract.
   function _deployUpgradeableHubInstance(
     address hubProxyAdminOwner,
     address authority,

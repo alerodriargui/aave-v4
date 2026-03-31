@@ -23,6 +23,8 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
   Lines internal _promptLines;
   Lines internal _summaryLines;
 
+  /// @dev Constructor.
+  /// @param outputFileName_ The base file name for deployment output logs.
   constructor(string memory outputFileName_) {
     _outputFileName = outputFileName_;
   }

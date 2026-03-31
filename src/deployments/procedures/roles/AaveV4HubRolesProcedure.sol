@@ -5,23 +5,35 @@ import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
+/// @title AaveV4HubRolesProcedure Library
+/// @author Aave Labs
+/// @notice Procedures for granting and setting up Hub roles on the AccessManager.
 library AaveV4HubRolesProcedure {
   /// @notice Grants all Hub granular roles to `admin`:
   ///   - HUB_CONFIGURATOR_ROLE
   ///   - HUB_FEE_MINTER_ROLE
   ///   - HUB_DEFICIT_ELIMINATOR_ROLE
+  /// @param accessManager The address of the AccessManager contract.
+  /// @param admin The address to receive all Hub roles.
   function grantHubAllRoles(address accessManager, address admin) internal {
     grantHubRole(accessManager, Roles.HUB_CONFIGURATOR_ROLE, admin);
     grantHubRole(accessManager, Roles.HUB_FEE_MINTER_ROLE, admin);
     grantHubRole(accessManager, Roles.HUB_DEFICIT_ELIMINATOR_ROLE, admin);
   }
 
+  /// @notice Grants a specific Hub role to the given address.
+  /// @param accessManager The address of the AccessManager contract.
+  /// @param role The role identifier to grant.
+  /// @param admin The address to receive the role.
   function grantHubRole(address accessManager, uint64 role, address admin) internal {
     RolesValidation.validateNonZeroAddress(accessManager);
     RolesValidation.validateNonZeroAddress(admin);
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
+  /// @notice Sets up all Hub roles by assigning their target function selectors.
+  /// @param accessManager The address of the AccessManager contract.
+  /// @param hub The address of the Hub contract.
   function setupHubAllRoles(address accessManager, address hub) internal {
     setupHubRole(
       accessManager,
@@ -43,6 +55,11 @@ library AaveV4HubRolesProcedure {
     );
   }
 
+  /// @notice Sets up a specific Hub role by assigning function selectors to the target.
+  /// @param accessManager The address of the AccessManager contract.
+  /// @param hub The address of the Hub contract.
+  /// @param roleId The role identifier to associate with the selectors.
+  /// @param selectors The function selectors to assign to the role.
   function setupHubRole(
     address accessManager,
     address hub,

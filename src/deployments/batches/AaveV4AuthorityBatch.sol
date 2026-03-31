@@ -10,6 +10,9 @@ import {AaveV4AccessManagerEnumerableDeployProcedure} from 'src/deployments/proc
 contract AaveV4AuthorityBatch is AaveV4AccessManagerEnumerableDeployProcedure {
   BatchReports.AuthorityBatchReport internal _report;
 
+  /// @dev Constructor.
+  /// @param admin_ The initial admin of the AccessManager.
+  /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(address admin_, bytes32 salt_) {
     address accessManager = _deployAccessManagerEnumerable(admin_, salt_);
     _report = BatchReports.AuthorityBatchReport({accessManager: accessManager});

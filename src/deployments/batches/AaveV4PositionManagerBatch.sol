@@ -16,6 +16,9 @@ contract AaveV4PositionManagerBatch is
 {
   BatchReports.PositionManagerBatchReport internal _report;
 
+  /// @dev Constructor.
+  /// @param owner_ The owner of the position manager contracts.
+  /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(address owner_, bytes32 salt_) {
     _report = BatchReports.PositionManagerBatchReport({
       giverPositionManager: _deployGiverPositionManager({owner: owner_, salt: salt_}),

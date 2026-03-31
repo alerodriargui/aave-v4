@@ -10,6 +10,9 @@ import {AaveV4TreasurySpokeDeployProcedure} from 'src/deployments/procedures/dep
 contract AaveV4TreasurySpokeBatch is AaveV4TreasurySpokeDeployProcedure {
   BatchReports.TreasurySpokeBatchReport internal _report;
 
+  /// @dev Constructor.
+  /// @param owner_ The owner of the TreasurySpoke proxy admin and initializer.
+  /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(address owner_, bytes32 salt_) {
     address treasurySpoke = _deployTreasurySpoke({owner: owner_, salt: salt_});
     _report = BatchReports.TreasurySpokeBatchReport({treasurySpoke: treasurySpoke});

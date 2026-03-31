@@ -17,7 +17,7 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
   /// @param maxUserReservesLimit The maximum number of reserves a single user can interact with.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return spokeProxy The address of the deployed transparent proxy.
-  /// @return spokeImplementation The address of the deployed Spoke implementation.
+  /// @return spokeImplementation The address of the deployed Spoke implementation contract.
   function _deployUpgradeableSpokeInstance(
     address spokeProxyAdminOwner,
     address authority,

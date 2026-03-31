@@ -14,6 +14,10 @@ contract AaveV4ConfiguratorBatch is
 {
   BatchReports.ConfiguratorBatchReport internal _report;
 
+  /// @dev Constructor.
+  /// @param hubConfiguratorAuthority_ The authority for the HubConfigurator.
+  /// @param spokeConfiguratorAuthority_ The authority for the SpokeConfigurator.
+  /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address hubConfiguratorAuthority_,
     address spokeConfiguratorAuthority_,

@@ -7,7 +7,10 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /// @author Aave Labs
 /// @notice Hub instance interface exposing the initializer and revision.
 interface IHubInstance is IHub {
+  /// @notice Initializes the Hub instance with the given authority.
+  /// @param authority The address of the access-control authority contract.
   function initialize(address authority) external;
 
+  /// @notice Returns the revision number of this Hub implementation.
   function HUB_REVISION() external view returns (uint64);
 }

@@ -12,7 +12,7 @@ contract AaveV4HubConfiguratorDeployProcedure is AaveV4DeployProcedureBase {
   /// @notice Deploys a new HubConfigurator instance via CREATE2.
   /// @param authority The access control authority address.
   /// @param salt The CREATE2 salt for deterministic deployment.
-  /// @return The address of the deployed HubConfigurator.
+  /// @return The address of the deployed HubConfigurator contract.
   function _deployHubConfigurator(address authority, bytes32 salt) internal returns (address) {
     require(authority != address(0), 'invalid authority');
     return
