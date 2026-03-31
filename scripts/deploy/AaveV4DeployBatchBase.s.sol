@@ -29,6 +29,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
     _outputFileName = outputFileName_;
   }
 
+  /// @notice Main entry point. Deploys all Aave V4 contracts and writes the deployment report.
   function run() external virtual {
     _validateChainId();
     vm.createDir(OUTPUT_DIR, true);

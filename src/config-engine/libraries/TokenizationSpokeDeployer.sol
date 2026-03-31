@@ -3,18 +3,13 @@ pragma solidity ^0.8.0;
 
 import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 /// @title TokenizationSpokeDeployer
 /// @author Aave Labs
 /// @notice Library for deterministic CREATE2 deployment and address pre-computation of TokenizationSpoke proxies
 ///   using the Safe Singleton Factory.
 library TokenizationSpokeDeployer {
-  /// @notice Thrown when a CREATE2 deployment via the factory fails.
-  error Create2DeploymentFailed();
-
-  /// @dev Safe Singleton Factory address (https://github.com/safe-global/safe-singleton-factory).
-  address internal constant CREATE2_FACTORY = 0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7;
-
   /// @notice Deploys a TokenizationSpokeInstance implementation and TransparentUpgradeableProxy via CREATE2
   ///   through the Safe Singleton Factory.
   /// @param hub The address of the Hub.
@@ -33,7 +28,7 @@ library TokenizationSpokeDeployer {
       type(TokenizationSpokeInstance).creationCode,
       abi.encode(hub, underlying)
     );
-    address impl = _create2Deploy(implSalt, implCreationCode);
+    address impl = Create2Utils.create2Deploy(implSalt, implCreationCode);
 
     bytes32 proxySalt = _computeProxySalt(hub, underlying, name, symbol);
     bytes memory initData = abi.encodeCall(TokenizationSpokeInstance.initialize, (name, symbol));
@@ -41,7 +36,7 @@ library TokenizationSpokeDeployer {
       type(TransparentUpgradeableProxy).creationCode,
       abi.encode(impl, msg.sender, initData)
     );
-    proxy = _create2Deploy(proxySalt, proxyCreationCode);
+    proxy = Create2Utils.create2Deploy(proxySalt, proxyCreationCode);
   }
 
   /// @notice Pre-computes the CREATE2 address of the TokenizationSpokeInstance implementation.
@@ -81,18 +76,7 @@ library TokenizationSpokeDeployer {
       type(TransparentUpgradeableProxy).creationCode,
       abi.encode(impl, proxyAdminOwner, initData)
     );
-    return _computeCreate2Address(proxySalt, creationCode);
-  }
-
-  function _create2Deploy(
-    bytes32 salt,
-    bytes memory creationCode
-  ) private returns (address deployed) {
-    (bool success, bytes memory returnData) = CREATE2_FACTORY.call(
-      abi.encodePacked(salt, creationCode)
-    );
-    if (!success || returnData.length < 20) revert Create2DeploymentFailed();
-    deployed = address(uint160(bytes20(returnData)));
+    return Create2Utils.computeCreate2Address(proxySalt, creationCode);
   }
 
   function _computeImplementationAddress(
@@ -106,23 +90,7 @@ library TokenizationSpokeDeployer {
       type(TokenizationSpokeInstance).creationCode,
       abi.encode(hub, underlying)
     );
-    return _computeCreate2Address(implSalt, creationCode);
-  }
-
-  function _computeCreate2Address(
-    bytes32 salt,
-    bytes memory creationCode
-  ) private pure returns (address) {
-    return
-      address(
-        uint160(
-          uint256(
-            keccak256(
-              abi.encodePacked(bytes1(0xff), CREATE2_FACTORY, salt, keccak256(creationCode))
-            )
-          )
-        )
-      );
+    return Create2Utils.computeCreate2Address(implSalt, creationCode);
   }
 
   function _computeImplementationSalt(
