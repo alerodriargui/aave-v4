@@ -2,9 +2,8 @@
 pragma solidity ^0.8.0;
 
 import {AaveV4DeployBatchBaseScript} from 'scripts/deploy/AaveV4DeployBatchBase.s.sol';
-import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
-/// @notice Ethereum deploy script with hardcoded inputs for local testing.
+/// @notice Ethereum deploy script upon which custom deployment scripts can extend.
 abstract contract AaveV4DeployEthereum is AaveV4DeployBatchBaseScript {
   constructor() AaveV4DeployBatchBaseScript('ethereum') {}
 
