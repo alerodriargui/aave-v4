@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
-import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 import {TransparentUpgradeableProxy} from 'src/dependencies/openzeppelin/TransparentUpgradeableProxy.sol';
 import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
+import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeInstance.sol';
 
 /// @title TokenizationSpokeDeployer
 /// @author Aave Labs
