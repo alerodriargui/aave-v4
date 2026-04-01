@@ -25,14 +25,9 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     _skipNativeWrapperCheck = true;
   }
 
-  function _parseReport()
-    internal
-    view
-    returns (OrchestrationReports.FullDeploymentReport memory report)
-  {
-    require(bytes(_reportFile).length > 0, 'PostDeploymentVerificationBase: _reportFile not set');
-    string memory json = vm.readFile(_reportFile);
-
+  function _parseReportFromJson(
+    string memory json
+  ) internal view returns (OrchestrationReports.FullDeploymentReport memory report) {
     report.authorityBatchReport.accessManager = vm.parseJsonAddress(json, '$.accessManager');
     report.configuratorBatchReport.hubConfigurator = vm.parseJsonAddress(json, '$.hubConfigurator');
     report.configuratorBatchReport.spokeConfigurator = vm.parseJsonAddress(
@@ -109,6 +104,32 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     }
   }
 
+  /// @notice Deploys all contracts, serializes the JSON report in memory, parses it back, and verifies.
+  function _deployWriteReportAndVerify(
+    InputUtils.FullDeployInputs memory sanitizedInputs
+  ) internal {
+    MetadataLogger logger = new MetadataLogger('');
+
+    vm.startPrank(_deployer);
+    OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
+      .deployAaveV4({
+        logger: logger,
+        deployer: _deployer,
+        deployInputs: sanitizedInputs,
+        hubBytecode: BytecodeHelper.getHubBytecode(),
+        spokeBytecode: BytecodeHelper.getSpokeBytecode()
+      });
+    vm.stopPrank();
+
+    logger.writeJsonReportMarket(report);
+
+    _inputs = sanitizedInputs;
+    _verifyPostDeployment({
+      report: _parseReportFromJson(logger.getJson()),
+      inputs: sanitizedInputs
+    });
+  }
+
   /// @notice Deploys all contracts, writes the JSON report, reads it back, and runs verification.
   /// @param sanitizedInputs Deploy inputs after sanitization (zero-address defaulting, etc.).
   /// @param outputDir Directory for the JSON report file.
@@ -137,11 +158,15 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     _reportFile = string.concat(outputDir, vm.toString(block.chainid), '-', fileName, '.json');
     logger.save({fileName: fileName, withTimestamp: false});
 
-    _verifyPostDeployment(sanitizedInputs);
+    _inputs = sanitizedInputs;
+    _verifyPostDeployment({
+      report: _parseReportFromJson(vm.readFile(_reportFile)),
+      inputs: sanitizedInputs
+    });
   }
 
-  /// deploys all contracts and verifies the in-memory report directly
-  /// @param sanitizedInputs Deploy inputs after sanitization
+  /// @notice Deploys all contracts and verifies the in-memory report directly.
+  /// @param sanitizedInputs Deploy inputs after sanitization.
   function _deployAndVerify(InputUtils.FullDeployInputs memory sanitizedInputs) internal {
     _inputs = sanitizedInputs;
 
@@ -155,19 +180,15 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
         spokeBytecode: BytecodeHelper.getSpokeBytecode()
       });
     vm.stopPrank();
-
-    _checkAllAddressesHaveCode({report: report});
-    _checkDeployment({report: report, inputs: sanitizedInputs});
-    _checkRoles({report: report, inputs: sanitizedInputs});
+    _verifyPostDeployment({report: report, inputs: sanitizedInputs});
   }
 
   /// @dev Verifies the deployment report against the provided inputs.
-  /// Sets _inputs so that inherited check helpers can reference it.
-  function _verifyPostDeployment(InputUtils.FullDeployInputs memory inputs) internal {
-    _inputs = inputs;
-    OrchestrationReports.FullDeploymentReport memory report = _parseReport();
-    // Implementation addresses not included in output json report, therefore skip its checks
-    _checkAllAddressesHaveCode({report: report});
+  function _verifyPostDeployment(
+    OrchestrationReports.FullDeploymentReport memory report,
+    InputUtils.FullDeployInputs memory inputs
+  ) internal view {
+    _checkAddressesHaveCode({report: report});
     _checkDeployment({report: report, inputs: inputs});
     _checkRoles({report: report, inputs: inputs});
   }

@@ -68,6 +68,11 @@ contract Logger {
     _writeGroup(groupLabel, entries);
   }
 
+  /// @notice Returns the accumulated JSON report string.
+  function getJson() public view returns (string memory) {
+    return _json;
+  }
+
   /// @notice Persists the accumulated JSON report to a file on disk.
   /// @param fileName The base file name without extension.
   /// @param withTimestamp Whether to prepend a Unix timestamp to the file name.

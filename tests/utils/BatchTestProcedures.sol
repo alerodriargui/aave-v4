@@ -865,7 +865,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     _etchCreate2Factory();
   }
 
-  function _checkAllAddressesHaveCode(
+  function _checkAddressesHaveCode(
     OrchestrationReports.FullDeploymentReport memory report
   ) internal view {
     _assertHasCode(report.authorityBatchReport.accessManager, 'accessManager');
