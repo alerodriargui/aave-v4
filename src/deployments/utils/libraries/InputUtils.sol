@@ -5,21 +5,27 @@ pragma solidity ^0.8.0;
 /// @author Aave Labs
 /// @notice Deployment input struct and validation helpers.
 library InputUtils {
-  /// @dev accessManagerAdmin The default admin of the access manager.
-  /// @dev hubAdmin The admin of the hub.
-  /// @dev hubConfiguratorAdmin The admin granted all hub configurator roles.
-  /// @dev hubProxyAdminOwner The owner of the hub proxyAdmin.
-  /// @dev treasurySpokeOwner The owner of the treasury spoke.
-  /// @dev spokeAdmin The spoke admin.
-  /// @dev spokeProxyAdminOwner The owner of the Spoke proxyAdmin.
-  /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles.
+  /// @dev accessManagerAdmin The default admin of the access manager. Only used when grantRoles is true.
+  /// @dev hubAdmin The admin of the hub. Only used when grantRoles is true.
+  /// @dev hubConfiguratorAdmin The admin granted all hub configurator roles. Only used when grantRoles is true.
+  /// @dev hubProxyAdminOwner The owner of the hub ProxyAdmin. Required at deploy time (constructor arg).
+  ///      When grantRoles is `false`, defaults to the deployer; ownership can be transferred post-deployment.
+  /// @dev treasurySpokeOwner The owner of the TreasurySpoke (Ownable). Required at deploy time (constructor arg).
+  ///      When grantRoles is `false`, defaults to the deployer; ownership can be transferred post-deployment.
+  /// @dev spokeAdmin The spoke admin. Only used when grantRoles is true.
+  /// @dev spokeProxyAdminOwner The owner of the Spoke ProxyAdmin. Required at deploy time (constructor arg).
+  ///      When grantRoles is `false`, defaults to the deployer; ownership can be transferred post-deployment.
+  /// @dev spokeConfiguratorAdmin The admin granted all spoke configurator roles. Only used when grantRoles is true.
   /// @dev gatewayOwner The owner of the native token and signature gateways.
-  /// @dev positionManagerOwner The owner of the position manager contracts (giver/taker).
+  /// @dev positionManagerOwner The owner of the position manager contracts (giver/taker/config).
   /// @dev nativeWrapper The address of the native wrapper (required when deployNativeTokenGateway is true).
-  /// @dev deployNativeTokenGateway Whether to deploy the NativeTokenGateway (from periphery config).
-  /// @dev deploySignatureGateway Whether to deploy the SignatureGateway (from periphery config).
-  /// @dev deployPositionManagers Whether to deploy the position manager batch (giver/taker).
-  /// @dev grantRoles A boolean indicating if roles should be granted.
+  /// @dev deployNativeTokenGateway Whether to deploy the NativeTokenGateway.
+  /// @dev deploySignatureGateway Whether to deploy the SignatureGateway.
+  /// @dev deployPositionManagers Whether to deploy the position manager batch (giver/taker/config).
+  /// @dev grantRoles Whether to grant roles during deployment. When `false`, only deploy-time ownership
+  ///      addresses (hubProxyAdminOwner, spokeProxyAdminOwner, treasurySpokeOwner) are set, defaulting
+  ///      to the deployer. The deployer also retains the AccessManager ACCESS_MANAGER_ADMIN_ROLE.
+  ///      All role grants and admin transfers are deferred to a later action.
   /// @dev hubLabels An array of hub labels; the number of hub labels defines the number of hubs to deploy.
   /// @dev spokeLabels An array of spoke labels; the number of spoke labels defines the number of spokes to deploy.
   /// @dev spokeMaxReservesLimits Per-spoke max user reserves limit (parallel to spokeLabels).

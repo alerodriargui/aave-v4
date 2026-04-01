@@ -297,13 +297,13 @@ interface IAaveV4ConfigEngine {
   }
 
   /// @notice Parameters for updating role configuration via AccessManager.
-  /// @dev Uses type-specific sentinels to skip fields: type(uint64).max for admin/guardian,
-  /// type(uint32).max for grantDelay, empty string for label.
+  /// @dev Uses type-specific sentinels to skip fields: type(uint64).max - 64 for admin/guardian,
+  /// type(uint32).max - 32 for grantDelay, empty string for label.
   /// @dev authority The AccessManager address.
   /// @dev roleId The role identifier.
-  /// @dev admin The new admin role identifier (type(uint64).max to skip).
-  /// @dev guardian The new guardian role identifier (type(uint64).max to skip).
-  /// @dev grantDelay The new grant delay (type(uint32).max to skip).
+  /// @dev admin The new admin role identifier (type(uint64).max - 64 to skip).
+  /// @dev guardian The new guardian role identifier (type(uint64).max - 64 to skip).
+  /// @dev grantDelay The new grant delay (type(uint32).max - 32 to skip).
   /// @dev label The label string (empty string to skip).
   struct RoleUpdate {
     address authority;
