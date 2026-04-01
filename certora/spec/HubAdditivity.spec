@@ -11,7 +11,7 @@
 
 import "./symbolicRepresentation/ERC20s_CVL.spec";
 import "./symbolicRepresentation/Math_CVL.spec";
-import "./hub.spec";
+import "./Hub.spec";
 
 
 
