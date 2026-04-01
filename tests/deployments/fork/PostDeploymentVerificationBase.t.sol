@@ -4,13 +4,15 @@ pragma solidity ^0.8.0;
 import {BatchTestProcedures} from 'tests/utils/BatchTestProcedures.sol';
 import {InputUtils} from 'src/deployments/utils/libraries/InputUtils.sol';
 import {OrchestrationReports} from 'src/deployments/libraries/OrchestrationReports.sol';
+import {AaveV4DeployOrchestration} from 'src/deployments/orchestration/AaveV4DeployOrchestration.sol';
+import {MetadataLogger} from 'src/deployments/utils/MetadataLogger.sol';
+import {BytecodeHelper} from 'src/deployments/utils/libraries/BytecodeHelper.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {ProxyHelper} from 'tests/utils/ProxyHelper.sol';
 
 /// @title PostDeploymentVerificationBase
 /// @notice Abstract base for post-deployment verification tests.
 ///         Reads a JSON deployment report and verifies deployed contracts on a live fork.
-/// @dev Run with: forge test --match-contract <Subclass> --fork-url <RPC_URL>
 abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
   /// @dev Full path to the deployment report JSON
   string internal _reportFile;
@@ -20,15 +22,8 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     _spokeConfiguratorRoleSelectors = Roles.getSpokeConfiguratorRoleSelectors();
     _hubFeeMinterRoleSelectors = Roles.getHubFeeMinterRoleSelectors();
     _hubConfiguratorRoleSelectors = Roles.getHubConfiguratorRoleSelectors();
-    _inputs = _getSanitizedDeployInputs();
-    _postDeploymentCheck = true;
+    _skipNativeWrapperCheck = true;
   }
-
-  /// @dev Subclasses provide the expected deploy inputs (post-sanitization).
-  function _getSanitizedDeployInputs()
-    internal
-    virtual
-    returns (InputUtils.FullDeployInputs memory);
 
   function _parseReport()
     internal
@@ -38,7 +33,6 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     require(bytes(_reportFile).length > 0, 'PostDeploymentVerificationBase: _reportFile not set');
     string memory json = vm.readFile(_reportFile);
 
-    // Flat fields
     report.authorityBatchReport.accessManager = vm.parseJsonAddress(json, '$.accessManager');
     report.configuratorBatchReport.hubConfigurator = vm.parseJsonAddress(json, '$.hubConfigurator');
     report.configuratorBatchReport.spokeConfigurator = vm.parseJsonAddress(
@@ -84,6 +78,10 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
         json,
         string.concat('$.hub.', label)
       );
+      report.hubInstanceBatchReports[i].report.hubImplementation = vm.parseJsonAddress(
+        json,
+        string.concat('$.hubImplementation.', label)
+      );
       report.hubInstanceBatchReports[i].report.irStrategy = vm.parseJsonAddress(
         json,
         string.concat('$.irStrategy.', label)
@@ -100,6 +98,10 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
         json,
         string.concat('$.spoke.', label)
       );
+      report.spokeInstanceBatchReports[i].report.spokeImplementation = vm.parseJsonAddress(
+        json,
+        string.concat('$.spokeImplementation.', label)
+      );
       report.spokeInstanceBatchReports[i].report.aaveOracle = vm.parseJsonAddress(
         json,
         string.concat('$.oracle.', label)
@@ -107,11 +109,66 @@ abstract contract PostDeploymentVerificationBase is BatchTestProcedures {
     }
   }
 
-  function testPostDeploymentCheck() public view {
+  /// @notice Deploys all contracts, writes the JSON report, reads it back, and runs verification.
+  /// @param sanitizedInputs Deploy inputs after sanitization (zero-address defaulting, etc.).
+  /// @param outputDir Directory for the JSON report file.
+  /// @param fileName Base file name for the JSON report (no extension).
+  function _deployWriteReportAndVerify(
+    InputUtils.FullDeployInputs memory sanitizedInputs,
+    string memory outputDir,
+    string memory fileName
+  ) internal {
+    MetadataLogger logger = new MetadataLogger(outputDir);
+
+    vm.startPrank(_deployer);
+    OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
+      .deployAaveV4({
+        logger: logger,
+        deployer: _deployer,
+        deployInputs: sanitizedInputs,
+        hubBytecode: BytecodeHelper.getHubBytecode(),
+        spokeBytecode: BytecodeHelper.getSpokeBytecode()
+      });
+    vm.stopPrank();
+
+    logger.writeJsonReportMarket(report);
+    vm.createDir(outputDir, true);
+
+    _reportFile = string.concat(outputDir, vm.toString(block.chainid), '-', fileName, '.json');
+    logger.save({fileName: fileName, withTimestamp: false});
+
+    _verifyPostDeployment(sanitizedInputs);
+  }
+
+  /// deploys all contracts and verifies the in-memory report directly
+  /// @param sanitizedInputs Deploy inputs after sanitization
+  function _deployAndVerify(InputUtils.FullDeployInputs memory sanitizedInputs) internal {
+    _inputs = sanitizedInputs;
+
+    vm.startPrank(_deployer);
+    OrchestrationReports.FullDeploymentReport memory report = AaveV4DeployOrchestration
+      .deployAaveV4({
+        logger: new MetadataLogger(''),
+        deployer: _deployer,
+        deployInputs: sanitizedInputs,
+        hubBytecode: BytecodeHelper.getHubBytecode(),
+        spokeBytecode: BytecodeHelper.getSpokeBytecode()
+      });
+    vm.stopPrank();
+
+    _checkAllAddressesHaveCode({report: report});
+    _checkDeployment({report: report, inputs: sanitizedInputs});
+    _checkRoles({report: report, inputs: sanitizedInputs});
+  }
+
+  /// @dev Verifies the deployment report against the provided inputs.
+  /// Sets _inputs so that inherited check helpers can reference it.
+  function _verifyPostDeployment(InputUtils.FullDeployInputs memory inputs) internal {
+    _inputs = inputs;
     OrchestrationReports.FullDeploymentReport memory report = _parseReport();
     // Implementation addresses not included in output json report, therefore skip its checks
     _checkAllAddressesHaveCode({report: report});
-    _checkDeployment({report: report, inputs: _inputs});
-    _checkRoles({report: report, inputs: _inputs});
+    _checkDeployment({report: report, inputs: inputs});
+    _checkRoles({report: report, inputs: inputs});
   }
 }

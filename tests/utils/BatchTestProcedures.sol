@@ -46,8 +46,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   bytes4[] internal _hubFeeMinterRoleSelectors;
   bytes4[] internal _hubConfiguratorRoleSelectors;
   address internal _deployer = makeAddr('deployer');
-  // if post-deployment, skip impl checks, native wrapper, as they aren't included in the report
-  bool internal _postDeploymentCheck;
+  // Skip native wrapper check when nativeWrapper address is not available (e.g. post-deployment JSON report)
+  bool internal _skipNativeWrapperCheck;
 
   function setUp() public virtual {
     _spokePositionUpdaterRoleSelectors = Roles.getSpokePositionUpdaterRoleSelectors();
@@ -113,7 +113,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
-    if (inputs.deployNativeTokenGateway && !_postDeploymentCheck) {
+    if (inputs.deployNativeTokenGateway && !_skipNativeWrapperCheck) {
       assertEq(
         INativeTokenGateway(report.gatewaysBatchReport.nativeGateway).NATIVE_TOKEN_WRAPPER(),
         inputs.nativeWrapper,
@@ -190,7 +190,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   function _checkFullReport(
     OrchestrationReports.FullDeploymentReport memory report,
     InputUtils.FullDeployInputs memory inputs
-  ) internal view {
+  ) internal pure {
     if (inputs.deployNativeTokenGateway) {
       assertNotEq(report.gatewaysBatchReport.nativeGateway, address(0), 'NativeGateway');
     } else {
@@ -241,24 +241,20 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
     for (uint256 i = 0; i < report.hubInstanceBatchReports.length; i++) {
       assertNotEq(report.hubInstanceBatchReports[i].report.hubProxy, address(0), 'Hub');
-      if (!_postDeploymentCheck) {
-        assertNotEq(
-          report.hubInstanceBatchReports[i].report.hubImplementation,
-          address(0),
-          'HubImplementation'
-        );
-      }
+      assertNotEq(
+        report.hubInstanceBatchReports[i].report.hubImplementation,
+        address(0),
+        'HubImplementation'
+      );
       assertNotEq(report.hubInstanceBatchReports[i].report.irStrategy, address(0), 'IRStrategy');
     }
     for (uint256 i = 0; i < report.spokeInstanceBatchReports.length; i++) {
       assertNotEq(report.spokeInstanceBatchReports[i].report.spokeProxy, address(0), 'SpokeProxy');
-      if (!_postDeploymentCheck) {
-        assertNotEq(
-          report.spokeInstanceBatchReports[i].report.spokeImplementation,
-          address(0),
-          'SpokeImplementation'
-        );
-      }
+      assertNotEq(
+        report.spokeInstanceBatchReports[i].report.spokeImplementation,
+        address(0),
+        'SpokeImplementation'
+      );
       assertNotEq(report.spokeInstanceBatchReports[i].report.aaveOracle, address(0), 'AaveOracle');
     }
     assertEq(
@@ -300,13 +296,11 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     uint16 expectedMaxReservesLimit,
     string memory label
   ) internal view {
-    if (!_postDeploymentCheck) {
-      assertEq(
-        ProxyHelper.getImplementation(report.report.spokeProxy),
-        report.report.spokeImplementation,
-        string.concat(label, ' implementation')
-      );
-    }
+    assertEq(
+      ProxyHelper.getImplementation(report.report.spokeProxy),
+      report.report.spokeImplementation,
+      string.concat(label, ' implementation')
+    );
     assertEq(
       ISpoke(report.report.spokeProxy).ORACLE(),
       report.report.aaveOracle,
@@ -379,19 +373,17 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     address expectedHubProxyAdminOwner,
     string memory label
   ) internal view {
-    if (!_postDeploymentCheck) {
-      assertEq(
-        ProxyHelper.getImplementation(report.report.hubProxy),
-        report.report.hubImplementation,
-        string.concat(label, ' implementation')
-      );
-      address proxyAdminOwner = Ownable(ProxyHelper.getProxyAdmin(report.report.hubProxy)).owner();
-      assertEq(
-        proxyAdminOwner,
-        expectedHubProxyAdminOwner,
-        string.concat(label, ' hub proxy admin owner')
-      );
-    }
+    assertEq(
+      ProxyHelper.getImplementation(report.report.hubProxy),
+      report.report.hubImplementation,
+      string.concat(label, ' implementation')
+    );
+    address proxyAdminOwner = Ownable(ProxyHelper.getProxyAdmin(report.report.hubProxy)).owner();
+    assertEq(
+      proxyAdminOwner,
+      expectedHubProxyAdminOwner,
+      string.concat(label, ' hub proxy admin owner')
+    );
     assertEq(
       IAccessManaged(report.report.hubProxy).authority(),
       accessManager,
@@ -887,12 +879,10 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         report.hubInstanceBatchReports[i].report.hubProxy,
         string.concat('hub proxy: ', label)
       );
-      if (!_postDeploymentCheck) {
-        _assertHasCode(
-          report.hubInstanceBatchReports[i].report.hubImplementation,
-          string.concat('hub impl: ', label)
-        );
-      }
+      _assertHasCode(
+        report.hubInstanceBatchReports[i].report.hubImplementation,
+        string.concat('hub impl: ', label)
+      );
       _assertHasCode(
         report.hubInstanceBatchReports[i].report.irStrategy,
         string.concat('irStrategy: ', label)
@@ -905,12 +895,10 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
         report.spokeInstanceBatchReports[i].report.spokeProxy,
         string.concat('spoke proxy: ', label)
       );
-      if (!_postDeploymentCheck) {
-        _assertHasCode(
-          report.spokeInstanceBatchReports[i].report.spokeImplementation,
-          string.concat('spoke impl: ', label)
-        );
-      }
+      _assertHasCode(
+        report.spokeInstanceBatchReports[i].report.spokeImplementation,
+        string.concat('spoke impl: ', label)
+      );
       _assertHasCode(
         report.spokeInstanceBatchReports[i].report.aaveOracle,
         string.concat('oracle: ', label)

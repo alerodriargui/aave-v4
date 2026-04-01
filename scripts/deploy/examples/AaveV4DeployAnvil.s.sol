@@ -30,11 +30,14 @@ contract AaveV4DeployAnvil is AaveV4DeployBatchBaseScript {
     override
     returns (InputUtils.FullDeployInputs memory inputs)
   {
-    string[] memory hubLabels = new string[](1);
+    string[] memory hubLabels = new string[](2);
     hubLabels[0] = 'core';
+    hubLabels[1] = 'test';
 
-    string[] memory spokeLabels = new string[](1);
+    string[] memory spokeLabels = new string[](3);
     spokeLabels[0] = 'mainnet';
+    spokeLabels[1] = 'test';
+    spokeLabels[2] = 'prime';
 
     inputs = InputUtils.FullDeployInputs({
       accessManagerAdmin: address(0),
