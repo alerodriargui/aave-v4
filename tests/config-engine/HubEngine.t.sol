@@ -173,6 +173,43 @@ contract HubEngineTest is BaseConfigEngineTest {
     assertEq(configAfter.irStrategy, address(newStrategy));
   }
 
+  /// @dev These tests verify that the engine reverts when trying to update a new IR strategy with
+  ///   sentinel irData fields.
+  function test_executeHubAssetConfigUpdates_revertsWith_sentinelIrDataOnStrategyChange() public {
+    AssetInterestRateStrategy newStrategy = new AssetInterestRateStrategy(address(hub1()));
+
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
+    update.irStrategy = address(newStrategy);
+    update.irData = _keepCurrentIrData();
+    update.liquidityFee = EngineFlags.KEEP_CURRENT;
+    update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
+
+    vm.expectRevert(HubEngine.InvalidIrDataWithNewStrategy.selector);
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
+  }
+
+  function test_executeHubAssetConfigUpdates_revertsWith_partialSentinelIrDataOnStrategyChange()
+    public
+  {
+    AssetInterestRateStrategy newStrategy = new AssetInterestRateStrategy(address(hub1()));
+
+    IAaveV4ConfigEngine.AssetConfigUpdate memory update = _defaultAssetConfigUpdate();
+    update.irStrategy = address(newStrategy);
+    update.irData = IAssetInterestRateStrategy.InterestRateData({
+      optimalUsageRatio: 80_00,
+      baseDrawnRate: 1_00,
+      rateGrowthBeforeOptimal: EngineFlags.KEEP_CURRENT_UINT32,
+      rateGrowthAfterOptimal: 60_00
+    });
+    update.liquidityFee = EngineFlags.KEEP_CURRENT;
+    update.feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    update.reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
+
+    vm.expectRevert(HubEngine.InvalidIrDataWithNewStrategy.selector);
+    engine.executeHubAssetConfigUpdates(_toAssetConfigUpdateArray(update));
+  }
+
   function test_executeHubAssetConfigUpdates_irDataOnly() public {
     uint256 assetId = _getAssetId(0, 0);
 

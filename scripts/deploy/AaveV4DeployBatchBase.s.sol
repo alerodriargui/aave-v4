@@ -14,6 +14,9 @@ import {Script} from 'forge-std/Script.sol';
 /// @notice Base script for deploying Aave V4.
 // solhint-disable quotes
 abstract contract AaveV4DeployBatchBaseScript is Script {
+  /// @dev Thrown when deployNativeTokenGateway is true but nativeWrapper is address(0), causing deployment to revert.
+  error NativeWrapperRequired();
+
   struct Lines {
     string[] s;
   }
@@ -176,11 +179,8 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
 
   function _logNativeTokenGateway(InputUtils.FullDeployInputs memory inputs) internal {
     if (inputs.deployNativeTokenGateway) {
-      if (inputs.nativeWrapper == address(0)) {
-        _logWarning('deployNativeTokenGateway is true but nativeWrapper is zero address');
-      } else {
-        _appendSummary('nativeTokenGateway will be deployed');
-      }
+      require(inputs.nativeWrapper != address(0), NativeWrapperRequired());
+      _appendSummary('nativeTokenGateway will be deployed');
     } else {
       _appendSummary('nativeTokenGateway: skipped (deployNativeTokenGateway is false)');
     }

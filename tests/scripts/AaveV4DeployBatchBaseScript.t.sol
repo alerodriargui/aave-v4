@@ -285,8 +285,25 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(sanitized, expected);
   }
 
-  function test_loadWarningsAndSanitizeInputs_withZeroNativeWrapper_fuzz(bool grantRoles) public {
+  /// @dev These tests verify that the deployer reverts when trying to deploy a native token gateway
+  ///   with a zero native wrapper input.
+  function test_loadWarningsAndSanitizeInputs_revertsWith_zeroNativeWrapperWhenGatewayEnabled()
+    public
+  {
     _inputs.nativeWrapper = address(0);
+    _inputs.deployNativeTokenGateway = true;
+    vm.expectRevert(AaveV4DeployBatchBaseScript.NativeWrapperRequired.selector);
+    _harness.loadWarningsAndSanitizeInputs(_inputs, _deployer);
+  }
+
+  /// @dev These tests verify that the deployer does not revert when trying to deploy a native token gateway
+  ///   with a zero native wrapper input but the deployNativeTokenGateway is disabled.
+  function test_loadWarningsAndSanitizeInputs_withZeroNativeWrapper_gatewayDisabled_fuzz(
+    bool grantRoles
+  ) public {
+    _inputs.nativeWrapper = address(0);
+    // set deployNativeTokenGateway to false, so nativeWrapper input can be 0 address
+    _inputs.deployNativeTokenGateway = false;
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,

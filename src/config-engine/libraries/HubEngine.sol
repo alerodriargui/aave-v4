@@ -15,6 +15,10 @@ import {IAaveV4ConfigEngine} from 'src/config-engine/interfaces/IAaveV4ConfigEng
 library HubEngine {
   using SafeCast for uint256;
 
+  /// @dev Thrown when replacing an IR strategy but one or more irData fields still carry a
+  ///   KEEP_CURRENT sentinel. All fields must be explicitly set when the strategy changes.
+  error InvalidIrDataWithNewStrategy();
+
   /// @notice Lists new assets on Hubs via the HubConfigurator.
   /// @dev When `tokenization.name` & `tokenization.symbol` are defined, also deploys a TokenizationSpoke (impl + proxy) via
   ///   CREATE2 and registers it on the Hub for the listed asset.
@@ -291,6 +295,13 @@ library HubEngine {
     IAaveV4ConfigEngine.AssetConfigUpdate calldata update
   ) private {
     if (update.irStrategy != EngineFlags.KEEP_CURRENT_ADDRESS) {
+      require(
+        update.irData.optimalUsageRatio != EngineFlags.KEEP_CURRENT_UINT16 &&
+          update.irData.baseDrawnRate != EngineFlags.KEEP_CURRENT_UINT32 &&
+          update.irData.rateGrowthBeforeOptimal != EngineFlags.KEEP_CURRENT_UINT32 &&
+          update.irData.rateGrowthAfterOptimal != EngineFlags.KEEP_CURRENT_UINT32,
+        InvalidIrDataWithNewStrategy()
+      );
       update.hubConfigurator.updateInterestRateStrategy(
         update.hub,
         assetId,
