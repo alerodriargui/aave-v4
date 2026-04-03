@@ -46,9 +46,9 @@ function setup() {
     //requireInvariant validReserveId();
     require forall uint256 reserveId. forall address user.
     // exists
-    (reserveId < spoke._reserveCount =>
+    ((reserveId < spoke._reserveCount =>
     // has underlying and hub
-    (spoke._reserves[reserveId].underlying != 0 && spoke._reserves[reserveId].hub != 0 && spoke._hubAssetIdToReserveId[spoke._reserves[reserveId].hub][spoke._reserves[reserveId].assetId] != 0)
+    (spoke._reserves[reserveId].underlying != 0 && spoke._reserves[reserveId].hub != 0 && spoke._hubAssetIdToReserveId[spoke._reserves[reserveId].hub][spoke._reserves[reserveId].assetId] != 0))
     &&
     // not exists
     (reserveId >= spoke._reserveCount => (
