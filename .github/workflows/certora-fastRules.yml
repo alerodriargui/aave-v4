@@ -22,8 +22,10 @@ env:
     certora/conf/LiquidationIntegrity.conf
     certora/conf/LiquidationUserIntegrity.conf
     certora/conf/Spoke.conf --rule drawnSharesZero 
-    certora/conf/Spoke.conf --exclude_rule drawnSharesZero noCollateralNoDebt increaseCollateralOrReduceDebtFunctions    
+    certora/conf/Spoke.conf --exclude_rule drawnSharesZero noCollateralNoDebt increaseCollateralOrReduceDebtFunctions collateralFactorNotZero realizedPremiumRayConsistency   
     certora/conf/Spoke.conf --rule increaseCollateralOrReduceDebtFunctions
+    certora/conf/Spoke.conf --rule collateralFactorNotZero
+    certora/conf/Spoke.conf --rule realizedPremiumRayConsistency
     certora/conf/SpokeHealthCheck.conf 
     certora/conf/SpokeHealthFactor.conf --exclude_rule userHealthAboveThreshold userHealthBelowThresholdCanOnlyIncreaseHealthFactor
     certora/conf/SpokeIntegrity.conf
