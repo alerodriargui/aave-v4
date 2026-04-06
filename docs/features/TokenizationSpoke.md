@@ -6,7 +6,7 @@ The TokenizationSpoke is a minimal ERC-4626–compliant contract that registers 
 
 ## Relationship to the Hub/Spoke Architecture
 
-Standard Spokes in Aave V4 manage both supply and borrow flows, enforce collateralization constraints, manage reserve-level risk configuration, and support the full `ISpoke` interface including PositionManager delegation. The TokenizationSpoke operates at a narrower scope. It connects exclusively to the supply side of the Hub, calling `Hub.add` on supply and `Hub.remove` on withdrawal, and exposes no debt surface.
+Standard Spokes in Aave V4 manage both supply and borrow flows, enforce collateralization constraints, manage reserve-level risk configuration, and support the full `ISpoke` interface including Position Manager delegation. The TokenizationSpoke operates at a narrower scope. It connects exclusively to the supply side of the Hub, calling `Hub.add` on supply and `Hub.remove` on withdrawal, and exposes no debt surface.
 
 A TokenizationSpoke instance wraps exactly one underlying ERC-20 asset. Where a standard Spoke manages multiple Reserves, each TokenizationSpoke deployment is scoped to a single token. The Hub registers the TokenizationSpoke as a distinct Spoke address for that underlying, alongside any other Spokes for the same asset. Hub exposure is partitioned **per Spoke** via each Spoke’s own `addCap`, the same model used when several standard Spokes share an asset.
 
@@ -16,7 +16,7 @@ Because the TokenizationSpoke sits on the Hub's supply side without drawing debt
 
 The TokenizationSpoke implements the ERC-4626 standard. User entry points include `deposit`, `mint`, `withdraw`, and `redeem` alongside the standard view functions: `totalAssets`, `convertToShares`, `convertToAssets`, `maxDeposit`, `maxMint`, `maxWithdraw`, and `maxRedeem`.
 
-Unlike `Spoke.supply`, which restricts `onBehalfOf` to approved Position Managers, the ERC-4626 interface permits callers to specify any `receiver` on deposit and any `owner` on withdrawal, following standard allowance semantics. `withSig` and EIP-2612 permit operations are natively supported within the TokenizationSpoke, covering the majority of meta-transaction use cases without requiring external PositionManager approval flows.
+Unlike `Spoke.supply`, which restricts `onBehalfOf` to approved Position Managers, the ERC-4626 interface permits callers to specify any `receiver` on deposit and any `owner` on withdrawal, following standard allowance semantics. `withSig` and EIP-2612 permit operations are natively supported within the TokenizationSpoke, covering the majority of meta-transaction use cases without requiring external Position Manager approval flows.
 
 **Deposit flow**
 
@@ -69,7 +69,7 @@ The TokenizationSpoke is governed by the same Hub-level emergency control states
 The following are explicitly excluded from the TokenizationSpoke:
 
 - **Borrowing**: No draw, repay, or collateralization logic. Positions through the TokenizationSpoke are supply-only.
-- **PositionManagers**: External Position Managers cannot be plugged in. `withSig` and permit cover the key meta-transaction use cases natively.
+- **Position Managers**: External Position Managers cannot be plugged in. `withSig` and permit cover the key meta-transaction use cases natively.
 - **Fees**: No performance or management fees at the vault layer.
 - **Multi-asset**: Each deployment handles exactly one underlying ERC-20.
 - **Factory deployment**: Unlike standard Spokes, the TokenizationSpoke is not deployed through a Spoke factory. Each instance must be deployed and registered manually with `addCap` governance setup.
@@ -80,6 +80,6 @@ The following are explicitly excluded from the TokenizationSpoke:
 
 **No debt surface**: Standard Spokes expose both `supply` and `borrow` paths. The TokenizationSpoke exposes only the supply side via ERC-4626. There is no `draw`, no `repay`, and no risk premium calculation.
 
-**No PositionManager integration**: Standard Spokes restrict `onBehalfOf` operations to approved Position Managers. The TokenizationSpoke instead uses ERC-4626 `receiver`/`owner` semantics and natively supports `withSig` flows, reducing friction for integrators who do not need PositionManager delegation.
+**No Position Manager integration**: Standard Spokes restrict `onBehalfOf` operations to approved Position Managers. The TokenizationSpoke instead uses ERC-4626 `receiver`/`owner` semantics and natively supports `withSig` flows, reducing friction for integrators who do not need Position Manager delegation.
 
 **Single asset per deployment**: A standard Spoke manages multiple Reserves across multiple assets. Each TokenizationSpoke instance corresponds to exactly one underlying ERC-20, making it a per-asset tokenization contract rather than a market-level entry point.
