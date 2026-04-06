@@ -125,6 +125,8 @@ Dust prevention and rounding direction are enforced independently within the liq
 
 This asymmetry means very small positions (a few cents in value) may become unprofitable to liquidate even at zero gas cost. A cleanup liquidator mechanism should be considered for such positions.
 
+**Zero-collateral liquidations**: Because collateral is computed from debt-to-liquidate using floor division, it is possible for a liquidation to repay a non-zero amount of debt yet yield zero collateral shares. This does not cause a revert regardless of whether `receiveShares` is `true` or `false`: the `Hub.remove` path transfers zero underlying, and the share-credit path adds zero shares to the liquidator's position. The liquidator pays for debt repayment and receives nothing in return. This can occur with very small debt amounts where the debt-to-collateral conversion rounds down to zero.
+
 **Two-wei premium effect and rounding asymmetry**: Premium accounting updates during `Hub.restore` can leave up to two wei of instantaneous premium debt due to premium-share/premium-offset rounding. Additionally, the systematic rounding asymmetry (collateral rounds down against liquidator, debt rounds up against liquidator) causes post-liquidation HF to typically exceed `targetHealthFactor` slightly rather than equaling it. HF remains below target when the computed debt-to-target cannot be fully achieved due to liquidation bounds (for example insufficient `debtToCover`, collateral exhaustion, or target debt-reserve exhaustion). Dust-prevention overrides can move post-liquidation HF further away from the exact target and may worsen it when `lb * cf > HF_before`.
 
 ## Premium Debt in Liquidations
