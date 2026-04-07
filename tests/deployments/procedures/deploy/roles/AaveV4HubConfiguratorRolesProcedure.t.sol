@@ -15,14 +15,14 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_grantHubConfiguratorRole_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     wrapper.grantHubConfiguratorRole({
       accessManager: address(0),
       role: Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       admin: admin
     });
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid admin');
     wrapper.grantHubConfiguratorRole({
       accessManager: accessManager,
       role: Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
@@ -31,13 +31,13 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupHubConfiguratorAllRoles_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     wrapper.setupHubConfiguratorAllRoles({
       accessManager: address(0),
       hubConfigurator: hubConfigurator
     });
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid hub configurator');
     wrapper.setupHubConfiguratorAllRoles({
       accessManager: accessManager,
       hubConfigurator: address(0)
@@ -47,7 +47,7 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
   function test_setupHubConfiguratorRole_reverts() public {
     bytes4[] memory selectors = wrapper.getHubConfiguratorDomainAdminRoleSelectors();
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     wrapper.setupHubConfiguratorRole({
       accessManager: address(0),
       hubConfigurator: hubConfigurator,
@@ -55,7 +55,7 @@ contract AaveV4HubConfiguratorRolesProcedureTest is ProceduresBase {
       selectors: selectors
     });
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid hub configurator');
     wrapper.setupHubConfiguratorRole({
       accessManager: accessManager,
       hubConfigurator: address(0),

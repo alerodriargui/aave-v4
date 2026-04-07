@@ -14,7 +14,7 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
   /// @notice Deploys a TokenizationSpoke implementation via CREATE2 and sets up a transparent proxy.
   /// @param hub The address of the Hub that the tokenization spoke connects to.
   /// @param underlying The address of the underlying asset to tokenize.
-  /// @param spokeProxyAdminOwner The owner of the proxy admin contract.
+  /// @param proxyAdminOwner The owner of the proxy admin contract.
   /// @param shareName The name of the share token.
   /// @param shareSymbol The symbol of the share token.
   /// @param salt The CREATE2 salt for deterministic deployment.
@@ -23,13 +23,13 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
   function _deployUpgradeableTokenizationSpokeInstance(
     address hub,
     address underlying,
-    address spokeProxyAdminOwner,
+    address proxyAdminOwner,
     string memory shareName,
     string memory shareSymbol,
     bytes32 salt
   ) internal returns (address tokenizationSpokeProxy, address tokenizationSpokeImplementation) {
     require(hub != address(0), 'invalid hub');
-    require(spokeProxyAdminOwner != address(0), 'invalid spoke proxy admin owner');
+    require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
     require(bytes(shareName).length > 0, 'invalid share name');
     require(bytes(shareSymbol).length > 0, 'invalid share symbol');
 
@@ -41,7 +41,7 @@ contract AaveV4TokenizationSpokeDeployProcedure is AaveV4DeployProcedureBase {
     tokenizationSpokeProxy = Create2Utils.proxify({
       salt: salt,
       logic: tokenizationSpokeImplementation,
-      initialOwner: spokeProxyAdminOwner,
+      initialOwner: proxyAdminOwner,
       data: abi.encodeCall(ITokenizationSpokeInstance.initialize, (shareName, shareSymbol))
     });
 

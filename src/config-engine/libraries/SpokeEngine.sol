@@ -158,7 +158,7 @@ library SpokeEngine {
 
   /// @notice Updates dynamic reserve configs on Spokes.
   /// @dev Reads the current config, applies only the fields that differ from KEEP_CURRENT,
-  ///   and writes back. If no field is modified the external call is skipped entirely.
+  /// and writes back. If no field is modified the external call is skipped entirely.
   /// @param updates The dynamic reserve config updates to execute.
   function executeSpokeDynamicReserveConfigUpdates(
     IAaveV4ConfigEngine.DynamicReserveConfigUpdate[] calldata updates

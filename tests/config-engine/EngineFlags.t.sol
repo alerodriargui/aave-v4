@@ -78,11 +78,11 @@ contract EngineFlagsTest is Test {
   }
 
   function test_constants() public pure {
-    assertEq(EngineFlags.KEEP_CURRENT, type(uint256).max - 256);
+    assertEq(EngineFlags.KEEP_CURRENT, type(uint256).max - 652);
     assertEq(EngineFlags.KEEP_CURRENT_ADDRESS, address(type(uint160).max));
-    assertEq(EngineFlags.KEEP_CURRENT_UINT64, type(uint64).max - 64);
-    assertEq(EngineFlags.KEEP_CURRENT_UINT32, type(uint32).max - 32);
-    assertEq(EngineFlags.KEEP_CURRENT_UINT16, type(uint16).max - 16);
+    assertEq(EngineFlags.KEEP_CURRENT_UINT64, type(uint64).max - 46);
+    assertEq(EngineFlags.KEEP_CURRENT_UINT32, type(uint32).max - 23);
+    assertEq(EngineFlags.KEEP_CURRENT_UINT16, type(uint16).max - 61);
     assertEq(EngineFlags.ENABLED, 1);
     assertEq(EngineFlags.DISABLED, 0);
   }

@@ -19,7 +19,7 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
 
     // Deploy a Hub with asset
     AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
-      hubProxyAdminOwner_: admin,
+      proxyAdminOwner_: admin,
       authority_: accessManager,
       hubBytecode_: hubBytecode,
       salt_: salt
@@ -89,8 +89,8 @@ contract AaveV4TokenizationSpokeBatchTest is BatchBaseTest {
     new AaveV4TokenizationSpokeBatch(address(0), underlying, admin, shareName, shareSymbol, salt);
   }
 
-  function test_revert_zeroSpokeProxyAdminOwner() public {
-    vm.expectRevert('invalid spoke proxy admin owner');
+  function test_revert_zeroProxyAdminOwner() public {
+    vm.expectRevert('invalid proxy admin owner');
     new AaveV4TokenizationSpokeBatch(
       hub,
       underlying,

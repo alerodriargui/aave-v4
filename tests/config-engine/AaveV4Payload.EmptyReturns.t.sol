@@ -7,7 +7,18 @@ import 'tests/config-engine/BaseConfigEngine.t.sol';
 ///   Calling execute() on this exercises every base virtual method returning empty arrays,
 ///   plus the no-op _preExecute / _postExecute hooks.
 contract MinimalAaveV4Payload is AaveV4Payload {
+  event PreExecuteCalled();
+  event PostExecuteCalled();
+
   constructor(IAaveV4ConfigEngine configEngine) AaveV4Payload(configEngine) {}
+
+  function _preExecute() internal override {
+    emit PreExecuteCalled();
+  }
+
+  function _postExecute() internal override {
+    emit PostExecuteCalled();
+  }
 }
 
 contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
@@ -22,6 +33,10 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
   ///   _executeAccessManagerActions, _executeHubActions, _executeSpokeActions, and every
   ///   base virtual getter (all returning empty arrays, so no delegatecalls are made).
   function test_minimalPayload_execute_noReverts() public {
+    vm.expectEmit(address(minimal));
+    emit MinimalAaveV4Payload.PreExecuteCalled();
+    vm.expectEmit(address(minimal));
+    emit MinimalAaveV4Payload.PostExecuteCalled();
     minimal.execute();
   }
 

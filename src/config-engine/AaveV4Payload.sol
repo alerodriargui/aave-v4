@@ -423,6 +423,7 @@ abstract contract AaveV4Payload {
 
   /// @notice Delegatecalls the config engine with the given calldata.
   /// @param data The ABI-encoded function call to forward to CONFIG_ENGINE.
+  /// @dev Bubbles up any revert reason from the engine call. Assumes the engine functions return no data.
   function _delegateCallEngine(bytes memory data) internal {
     address(CONFIG_ENGINE).functionDelegateCall(data);
   }

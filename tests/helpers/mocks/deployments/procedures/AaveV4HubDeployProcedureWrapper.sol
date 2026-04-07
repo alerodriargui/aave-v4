@@ -7,11 +7,11 @@ contract AaveV4HubDeployProcedureWrapper is AaveV4HubDeployProcedure {
   bool public IS_TEST = true;
 
   function deployHub(
-    address hubProxyAdminOwner,
+    address proxyAdminOwner,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
   ) external returns (address hubProxy, address hubImplementation) {
-    return _deployUpgradeableHubInstance(hubProxyAdminOwner, authority, hubBytecode, salt);
+    return _deployUpgradeableHubInstance(proxyAdminOwner, authority, hubBytecode, salt);
   }
 }

@@ -10,7 +10,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
   function setUp() public override {
     super.setUp();
     spokeBatch = new AaveV4SpokeInstanceBatch({
-      spokeProxyAdminOwner_: admin,
+      proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
@@ -46,7 +46,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
   function test_revert_zeroAuthority() public {
     vm.expectRevert('invalid authority');
     new AaveV4SpokeInstanceBatch({
-      spokeProxyAdminOwner_: admin,
+      proxyAdminOwner_: admin,
       authority_: address(0),
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
@@ -55,10 +55,10 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
     });
   }
 
-  function test_revert_zeroSpokeProxyAdminOwner() public {
-    vm.expectRevert('invalid spoke proxy admin owner');
+  function test_revert_zeroProxyAdminOwner() public {
+    vm.expectRevert('invalid proxy admin owner');
     new AaveV4SpokeInstanceBatch({
-      spokeProxyAdminOwner_: address(0),
+      proxyAdminOwner_: address(0),
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
@@ -70,7 +70,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
   function test_revert_zeroOracleDecimals() public {
     vm.expectRevert('invalid oracle decimals');
     new AaveV4SpokeInstanceBatch({
-      spokeProxyAdminOwner_: admin,
+      proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 0,
@@ -82,7 +82,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
   function test_revert_zeroMaxUserReservesLimit() public {
     vm.expectRevert('invalid max user reserves limit');
     new AaveV4SpokeInstanceBatch({
-      spokeProxyAdminOwner_: admin,
+      proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,
@@ -93,7 +93,7 @@ contract AaveV4SpokeInstanceBatchTest is BatchBaseTest {
 
   function test_differentSaltProducesDifferentAddress() public {
     AaveV4SpokeInstanceBatch newBatch = new AaveV4SpokeInstanceBatch({
-      spokeProxyAdminOwner_: admin,
+      proxyAdminOwner_: admin,
       authority_: accessManager,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: 8,

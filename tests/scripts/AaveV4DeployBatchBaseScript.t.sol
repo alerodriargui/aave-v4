@@ -52,12 +52,11 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
 
     _inputs = InputUtils.FullDeployInputs({
       accessManagerAdmin: makeAddr('accessManagerAdmin'),
+      proxyAdminOwner: makeAddr('proxyAdminOwner'),
       hubAdmin: makeAddr('hubAdmin'),
       hubConfiguratorAdmin: makeAddr('hubConfiguratorAdmin'),
       treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
       spokeAdmin: makeAddr('spokeAdmin'),
-      hubProxyAdminOwner: makeAddr('hubProxyAdminOwner'),
-      spokeProxyAdminOwner: makeAddr('spokeProxyAdminOwner'),
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
       positionManagerOwner: makeAddr('positionManagerOwner'),
@@ -106,8 +105,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       expected.accessManagerAdmin = _deployer;
     } else {
       expected.treasurySpokeOwner = _deployer;
-      expected.hubProxyAdminOwner = _deployer;
-      expected.spokeProxyAdminOwner = _deployer;
+      expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -123,10 +121,9 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     if (grantRoles) {
       expected.hubAdmin = _deployer;
     } else {
-      // when grantRoles=false, treasurySpokeOwner and spokeProxyAdminOwner always default to deployer
+      // when grantRoles=false, treasurySpokeOwner and proxyAdminOwner always default to deployer
       expected.treasurySpokeOwner = _deployer;
-      expected.hubProxyAdminOwner = _deployer;
-      expected.spokeProxyAdminOwner = _deployer;
+      expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -143,8 +140,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       expected.spokeAdmin = _deployer;
     } else {
       expected.treasurySpokeOwner = _deployer;
-      expected.hubProxyAdminOwner = _deployer;
-      expected.spokeProxyAdminOwner = _deployer;
+      expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -163,8 +159,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       expected.hubConfiguratorAdmin = _deployer;
     } else {
       expected.treasurySpokeOwner = _deployer;
-      expected.hubProxyAdminOwner = _deployer;
-      expected.spokeProxyAdminOwner = _deployer;
+      expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -183,16 +178,13 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
       expected.spokeConfiguratorAdmin = _deployer;
     } else {
       expected.treasurySpokeOwner = _deployer;
-      expected.hubProxyAdminOwner = _deployer;
-      expected.spokeProxyAdminOwner = _deployer;
+      expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
 
-  function test_loadWarningsAndSanitizeInputs_withZeroHubProxyAdminOwner_fuzz(
-    bool grantRoles
-  ) public {
-    _inputs.hubProxyAdminOwner = address(0);
+  function test_loadWarningsAndSanitizeInputs_withZeroProxyAdminOwner_fuzz(bool grantRoles) public {
+    _inputs.proxyAdminOwner = address(0);
     _inputs.grantRoles = grantRoles;
     InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
       _inputs,
@@ -200,32 +192,10 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     );
 
     InputUtils.FullDeployInputs memory expected = _inputs;
-    // hubProxyAdminOwner always defaults to deployer (in both grantRoles branches)
-    expected.hubProxyAdminOwner = _deployer;
+    // proxyAdminOwner always defaults to deployer (in both grantRoles branches)
+    expected.proxyAdminOwner = _deployer;
     if (!grantRoles) {
       expected.treasurySpokeOwner = _deployer;
-      expected.hubProxyAdminOwner = _deployer;
-      expected.spokeProxyAdminOwner = _deployer;
-    }
-    assertEq(sanitized, expected);
-  }
-
-  function test_loadWarningsAndSanitizeInputs_withZeroSpokeProxyAdminOwner_fuzz(
-    bool grantRoles
-  ) public {
-    _inputs.spokeProxyAdminOwner = address(0);
-    _inputs.grantRoles = grantRoles;
-    InputUtils.FullDeployInputs memory sanitized = _harness.loadWarningsAndSanitizeInputs(
-      _inputs,
-      _deployer
-    );
-
-    InputUtils.FullDeployInputs memory expected = _inputs;
-    // spokeProxyAdminOwner always defaults to deployer (in both grantRoles branches)
-    expected.spokeProxyAdminOwner = _deployer;
-    if (!grantRoles) {
-      expected.treasurySpokeOwner = _deployer;
-      expected.hubProxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -243,8 +213,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     // treasurySpokeOwner always defaults to deployer (in both grantRoles branches)
     expected.treasurySpokeOwner = _deployer;
     if (!grantRoles) {
-      expected.hubProxyAdminOwner = _deployer;
-      expected.spokeProxyAdminOwner = _deployer;
+      expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -260,8 +229,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     expected.gatewayOwner = _deployer;
     if (!grantRoles) {
       expected.treasurySpokeOwner = _deployer;
-      expected.hubProxyAdminOwner = _deployer;
-      expected.spokeProxyAdminOwner = _deployer;
+      expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -279,8 +247,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     expected.positionManagerOwner = _deployer;
     if (!grantRoles) {
       expected.treasurySpokeOwner = _deployer;
-      expected.hubProxyAdminOwner = _deployer;
-      expected.spokeProxyAdminOwner = _deployer;
+      expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -313,8 +280,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     expected.nativeWrapper = address(0);
     if (!grantRoles) {
       expected.treasurySpokeOwner = _deployer;
-      expected.hubProxyAdminOwner = _deployer;
-      expected.spokeProxyAdminOwner = _deployer;
+      expected.proxyAdminOwner = _deployer;
     }
     assertEq(sanitized, expected);
   }
@@ -351,8 +317,7 @@ contract AaveV4DeployBatchBaseScriptTest is Test {
     assertEq(a.hubAdmin, b.hubAdmin, 'hub admin');
     assertEq(a.hubConfiguratorAdmin, b.hubConfiguratorAdmin, 'hub configurator admin');
     assertEq(a.treasurySpokeOwner, b.treasurySpokeOwner, 'treasury spoke owner');
-    assertEq(a.hubProxyAdminOwner, b.hubProxyAdminOwner, 'hub proxy admin owner');
-    assertEq(a.spokeProxyAdminOwner, b.spokeProxyAdminOwner, 'spoke proxy admin owner');
+    assertEq(a.proxyAdminOwner, b.proxyAdminOwner, 'proxy admin owner');
     assertEq(a.spokeConfiguratorAdmin, b.spokeConfiguratorAdmin, 'spoke configurator admin');
     assertEq(a.spokeAdmin, b.spokeAdmin, 'spoke admin');
     assertEq(a.gatewayOwner, b.gatewayOwner, 'gateway owner');

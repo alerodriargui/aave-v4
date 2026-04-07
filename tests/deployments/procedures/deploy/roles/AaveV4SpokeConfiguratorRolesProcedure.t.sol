@@ -15,14 +15,14 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_grantSpokeConfiguratorRole_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     wrapper.grantSpokeConfiguratorRole({
       accessManager: address(0),
       role: Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
       admin: admin
     });
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid admin');
     wrapper.grantSpokeConfiguratorRole({
       accessManager: accessManager,
       role: Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE,
@@ -31,13 +31,13 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupSpokeConfiguratorRoles_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     wrapper.setupSpokeConfiguratorRoles({
       accessManager: address(0),
       spokeConfigurator: spokeConfigurator
     });
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid spoke configurator');
     wrapper.setupSpokeConfiguratorRoles({
       accessManager: accessManager,
       spokeConfigurator: address(0)
@@ -47,7 +47,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
   function test_setupSpokeConfiguratorRole_reverts() public {
     bytes4[] memory selectors = wrapper.getSpokeConfiguratorDomainAdminRoleSelectors();
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     wrapper.setupSpokeConfiguratorRole({
       accessManager: address(0),
       spokeConfigurator: spokeConfigurator,
@@ -55,7 +55,7 @@ contract AaveV4SpokeConfiguratorRolesProcedureTest is ProceduresBase {
       selectors: selectors
     });
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid spoke configurator');
     wrapper.setupSpokeConfiguratorRole({
       accessManager: accessManager,
       spokeConfigurator: address(0),

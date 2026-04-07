@@ -10,7 +10,7 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
   function setUp() public override {
     super.setUp();
     hubInstanceBatch = new AaveV4HubInstanceBatch({
-      hubProxyAdminOwner_: admin,
+      proxyAdminOwner_: admin,
       authority_: accessManager,
       hubBytecode_: hubBytecode,
       salt_: salt
@@ -36,17 +36,17 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
   function test_revert_zeroAuthority() public {
     vm.expectRevert('invalid authority');
     new AaveV4HubInstanceBatch({
-      hubProxyAdminOwner_: admin,
+      proxyAdminOwner_: admin,
       authority_: address(0),
       hubBytecode_: hubBytecode,
       salt_: salt
     });
   }
 
-  function test_revert_zeroHubProxyAdminOwner() public {
-    vm.expectRevert('invalid hub proxy admin owner');
+  function test_revert_zeroProxyAdminOwner() public {
+    vm.expectRevert('invalid proxy admin owner');
     new AaveV4HubInstanceBatch({
-      hubProxyAdminOwner_: address(0),
+      proxyAdminOwner_: address(0),
       authority_: accessManager,
       hubBytecode_: hubBytecode,
       salt_: salt
@@ -55,7 +55,7 @@ contract AaveV4HubInstanceBatchTest is BatchBaseTest {
 
   function test_differentSaltProducesDifferentAddress() public {
     AaveV4HubInstanceBatch newBatch = new AaveV4HubInstanceBatch({
-      hubProxyAdminOwner_: admin,
+      proxyAdminOwner_: admin,
       authority_: accessManager,
       hubBytecode_: hubBytecode,
       salt_: keccak256('differentSalt')

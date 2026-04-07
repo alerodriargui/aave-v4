@@ -12,7 +12,6 @@ import {Script} from 'forge-std/Script.sol';
 /// @title AaveV4DeployBatchBaseScript
 /// @author Aave Labs
 /// @notice Base script for deploying Aave V4.
-// solhint-disable quotes
 abstract contract AaveV4DeployBatchBaseScript is Script {
   /// @dev Thrown when deployNativeTokenGateway is true but nativeWrapper is address(0), causing deployment to revert.
   error NativeWrapperRequired();
@@ -110,13 +109,9 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
         _logWarning(string.concat('spoke configurator admin', message, outcome));
         sanitizedInputs.spokeConfiguratorAdmin = deployer;
       }
-      if (inputs.hubProxyAdminOwner == address(0)) {
-        _logWarning(string.concat('hub proxy admin owner', message, outcome));
-        sanitizedInputs.hubProxyAdminOwner = deployer;
-      }
-      if (inputs.spokeProxyAdminOwner == address(0)) {
-        _logWarning(string.concat('spoke proxy admin owner', message, outcome));
-        sanitizedInputs.spokeProxyAdminOwner = deployer;
+      if (inputs.proxyAdminOwner == address(0)) {
+        _logWarning(string.concat('proxy admin owner', message, outcome));
+        sanitizedInputs.proxyAdminOwner = deployer;
       }
       if (inputs.treasurySpokeOwner == address(0)) {
         _logWarning(string.concat('treasury spoke owner', message, outcome));
@@ -136,8 +131,7 @@ abstract contract AaveV4DeployBatchBaseScript is Script {
       // ACCESS_MANAGER_ADMIN_ROLE is also retained by the deployer
       _logWarning('roles: deferred (not granted during deployment)');
       sanitizedInputs.treasurySpokeOwner = deployer;
-      sanitizedInputs.hubProxyAdminOwner = deployer;
-      sanitizedInputs.spokeProxyAdminOwner = deployer;
+      sanitizedInputs.proxyAdminOwner = deployer;
     }
     if (inputs.gatewayOwner == address(0)) {
       _logWarning(string.concat('gateway owner', message, outcome));

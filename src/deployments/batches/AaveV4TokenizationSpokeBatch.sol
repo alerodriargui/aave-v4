@@ -14,14 +14,14 @@ contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure 
   /// @dev Constructor.
   /// @param hub_ The address of the Hub the TokenizationSpoke connects to.
   /// @param underlying_ The address of the underlying asset to tokenize.
-  /// @param spokeProxyAdminOwner_ The owner of the proxy admin.
+  /// @param proxyAdminOwner_ The owner of the proxy admin.
   /// @param shareName_ The name of the share token.
   /// @param shareSymbol_ The symbol of the share token.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
     address hub_,
     address underlying_,
-    address spokeProxyAdminOwner_,
+    address proxyAdminOwner_,
     string memory shareName_,
     string memory shareSymbol_,
     bytes32 salt_
@@ -32,7 +32,7 @@ contract AaveV4TokenizationSpokeBatch is AaveV4TokenizationSpokeDeployProcedure 
     ) = _deployUpgradeableTokenizationSpokeInstance({
         hub: hub_,
         underlying: underlying_,
-        spokeProxyAdminOwner: spokeProxyAdminOwner_,
+        proxyAdminOwner: proxyAdminOwner_,
         shareName: shareName_,
         shareSymbol: shareSymbol_,
         salt: salt_

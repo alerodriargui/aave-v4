@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
-import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
 /// @title AaveV4HubConfiguratorRolesProcedure Library
 /// @author Aave Labs
@@ -21,8 +20,8 @@ library AaveV4HubConfiguratorRolesProcedure {
   /// @param role The role identifier to grant.
   /// @param admin The address to receive the role.
   function grantHubConfiguratorRole(address accessManager, uint64 role, address admin) internal {
-    RolesValidation.validateNonZeroAddress(accessManager);
-    RolesValidation.validateNonZeroAddress(admin);
+    require(accessManager != address(0), 'invalid access manager');
+    require(admin != address(0), 'invalid admin');
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
@@ -49,8 +48,8 @@ library AaveV4HubConfiguratorRolesProcedure {
     uint64 role,
     bytes4[] memory selectors
   ) internal {
-    RolesValidation.validateNonZeroAddress(accessManager);
-    RolesValidation.validateNonZeroAddress(hubConfigurator);
+    require(accessManager != address(0), 'invalid access manager');
+    require(hubConfigurator != address(0), 'invalid hub configurator');
     IAccessManager(accessManager).setTargetFunctionRole(hubConfigurator, selectors, role);
   }
 }

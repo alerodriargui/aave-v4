@@ -26,7 +26,7 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
   function test_deployHub_reverts_invalidAuthority() public {
     vm.expectRevert('invalid authority');
     aaveV4HubDeployProcedureWrapper.deployHub({
-      hubProxyAdminOwner: admin,
+      proxyAdminOwner: admin,
       authority: address(0),
       hubBytecode: hubBytecode,
       salt: salt
@@ -34,9 +34,9 @@ contract AaveV4HubDeployProcedureTest is ProceduresBase {
   }
 
   function test_deployHub_reverts_invalidProxyAdminOwner() public {
-    vm.expectRevert('invalid hub proxy admin owner');
+    vm.expectRevert('invalid proxy admin owner');
     aaveV4HubDeployProcedureWrapper.deployHub({
-      hubProxyAdminOwner: address(0),
+      proxyAdminOwner: address(0),
       authority: accessManager,
       hubBytecode: hubBytecode,
       salt: salt

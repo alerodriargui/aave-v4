@@ -17,7 +17,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
 
     // TokenizationSpokeInstance constructor requires hub
     AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
-      hubProxyAdminOwner_: admin,
+      proxyAdminOwner_: admin,
       authority_: accessManager,
       hubBytecode_: hubBytecode,
       salt_: salt
@@ -81,17 +81,17 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     wrapper.deployUpgradeableTokenizationSpokeInstance({
       hub: address(0),
       underlying: underlying,
-      spokeProxyAdminOwner: owner,
+      proxyAdminOwner: owner,
       shareName: shareName,
       shareSymbol: shareSymbol,
       salt: salt
     });
 
-    vm.expectRevert('invalid spoke proxy admin owner');
+    vm.expectRevert('invalid proxy admin owner');
     wrapper.deployUpgradeableTokenizationSpokeInstance({
       hub: deployedHub,
       underlying: underlying,
-      spokeProxyAdminOwner: address(0),
+      proxyAdminOwner: address(0),
       shareName: shareName,
       shareSymbol: shareSymbol,
       salt: keccak256('zeroAdminSalt')
@@ -101,7 +101,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     wrapper.deployUpgradeableTokenizationSpokeInstance({
       hub: deployedHub,
       underlying: underlying,
-      spokeProxyAdminOwner: owner,
+      proxyAdminOwner: owner,
       shareName: '',
       shareSymbol: shareSymbol,
       salt: keccak256('emptyNameSalt')
@@ -111,7 +111,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     wrapper.deployUpgradeableTokenizationSpokeInstance({
       hub: deployedHub,
       underlying: underlying,
-      spokeProxyAdminOwner: owner,
+      proxyAdminOwner: owner,
       shareName: shareName,
       shareSymbol: '',
       salt: keccak256('emptySymbolSalt')
@@ -125,7 +125,7 @@ contract AaveV4TokenizationSpokeDeployProcedureTest is ProceduresBase {
     wrapper.deployUpgradeableTokenizationSpokeInstance({
       hub: deployedHub,
       underlying: makeAddr('nonExistentUnderlying'),
-      spokeProxyAdminOwner: owner,
+      proxyAdminOwner: owner,
       shareName: shareName,
       shareSymbol: shareSymbol,
       salt: keccak256('salt')

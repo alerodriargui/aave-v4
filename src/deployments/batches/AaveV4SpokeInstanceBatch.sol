@@ -14,14 +14,14 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
   BatchReports.SpokeInstanceBatchReport internal _report;
 
   /// @dev Constructor.
-  /// @param spokeProxyAdminOwner_ The owner of the Spoke proxy admin.
+  /// @param proxyAdminOwner_ The owner of the proxy admin.
   /// @param authority_ The access-control authority for the Spoke.
   /// @param spokeBytecode_ The creation bytecode of the Spoke implementation.
   /// @param oracleDecimals_ The decimal precision for the AaveOracle.
   /// @param maxUserReservesLimit_ The maximum number of reserves a user can interact with.
   /// @param salt_ The CREATE2 salt for deterministic deployment.
   constructor(
-    address spokeProxyAdminOwner_,
+    address proxyAdminOwner_,
     address authority_,
     bytes memory spokeBytecode_,
     uint8 oracleDecimals_,
@@ -30,7 +30,7 @@ contract AaveV4SpokeInstanceBatch is AaveV4SpokeDeployProcedure, AaveV4AaveOracl
   ) {
     address aaveOracle = _deployAaveOracle(oracleDecimals_);
     (address spokeProxy, address spokeImplementation) = _deployUpgradeableSpokeInstance({
-      spokeProxyAdminOwner: spokeProxyAdminOwner_,
+      proxyAdminOwner: proxyAdminOwner_,
       authority: authority_,
       oracle: aaveOracle,
       spokeBytecode: spokeBytecode_,

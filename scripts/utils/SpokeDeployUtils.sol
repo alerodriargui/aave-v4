@@ -13,8 +13,6 @@ import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 library SpokeDeployUtils {
   Vm internal constant vm = Vm(address(uint160(uint256(keccak256('hevm cheat code')))));
 
-  // ==================== Library Deployment ====================
-
   /// @notice Deploys LiquidationLogic via CREATE2.
   /// @dev The CREATE2 factory must already be deployed on the target chain.
   /// @param salt The CREATE2 salt for deterministic deployment.
@@ -52,8 +50,6 @@ library SpokeDeployUtils {
     command[2] = string(abi.encodePacked('response="$(', sedCommand, ')"; $response;'));
     vm.ffi(command);
   }
-
-  // ==================== .env Management (FFI) ====================
 
   /// @notice Checks if .env contains a FOUNDRY_LIBRARIES entry.
   function _librariesPathExists() internal returns (bool) {

@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
-import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
 /// @title AaveV4SpokeConfiguratorRolesProcedure Library
 /// @author Aave Labs
@@ -21,8 +20,8 @@ library AaveV4SpokeConfiguratorRolesProcedure {
   /// @param role The role identifier to grant.
   /// @param admin The address to receive the role.
   function grantSpokeConfiguratorRole(address accessManager, uint64 role, address admin) internal {
-    RolesValidation.validateNonZeroAddress(accessManager);
-    RolesValidation.validateNonZeroAddress(admin);
+    require(accessManager != address(0), 'invalid access manager');
+    require(admin != address(0), 'invalid admin');
     IAccessManager(accessManager).grantRole({roleId: role, account: admin, executionDelay: 0});
   }
 
@@ -50,8 +49,8 @@ library AaveV4SpokeConfiguratorRolesProcedure {
     uint64 role,
     bytes4[] memory selectors
   ) internal {
-    RolesValidation.validateNonZeroAddress(accessManager);
-    RolesValidation.validateNonZeroAddress(spokeConfigurator);
+    require(accessManager != address(0), 'invalid access manager');
+    require(spokeConfigurator != address(0), 'invalid spoke configurator');
     IAccessManager(accessManager).setTargetFunctionRole(spokeConfigurator, selectors, role);
   }
 }

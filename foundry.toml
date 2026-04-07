@@ -54,8 +54,6 @@ gas_snapshot_check = true
 test = 'tests/gas'
 isolate = true
 
-[profile.anvil]
-
 [profile.coverage]
 optimizer = true
 optimizer_runs = 44444444

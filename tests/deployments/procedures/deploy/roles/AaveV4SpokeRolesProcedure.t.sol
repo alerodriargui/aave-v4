@@ -11,10 +11,10 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
   }
 
   function test_grantSpokeAllRoles_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     aaveV4SpokeRolesProcedureWrapper.grantSpokeAllRoles({accessManager: address(0), admin: admin});
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid admin');
     aaveV4SpokeRolesProcedureWrapper.grantSpokeAllRoles({
       accessManager: accessManager,
       admin: address(0)
@@ -22,14 +22,14 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
   }
 
   function test_grantSpokeRole_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     aaveV4SpokeRolesProcedureWrapper.grantSpokeRole({
       accessManager: address(0),
       role: Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
       admin: admin
     });
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid admin');
     aaveV4SpokeRolesProcedureWrapper.grantSpokeRole({
       accessManager: accessManager,
       role: Roles.SPOKE_USER_POSITION_UPDATER_ROLE,
@@ -38,10 +38,10 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupSpokeRoles_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     aaveV4SpokeRolesProcedureWrapper.setupSpokeRoles({accessManager: address(0), spoke: spoke});
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid spoke');
     aaveV4SpokeRolesProcedureWrapper.setupSpokeRoles({
       accessManager: accessManager,
       spoke: address(0)
@@ -49,13 +49,13 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupSpokePositionUpdaterRole_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     aaveV4SpokeRolesProcedureWrapper.setupSpokePositionUpdaterRole({
       accessManager: address(0),
       spoke: spoke
     });
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid spoke');
     aaveV4SpokeRolesProcedureWrapper.setupSpokePositionUpdaterRole({
       accessManager: accessManager,
       spoke: address(0)
@@ -63,13 +63,13 @@ contract AaveV4SpokeRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupSpokeConfiguratorRole_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     aaveV4SpokeRolesProcedureWrapper.setupSpokeConfiguratorRole({
       accessManager: address(0),
       spoke: spoke
     });
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid spoke');
     aaveV4SpokeRolesProcedureWrapper.setupSpokeConfiguratorRole({
       accessManager: accessManager,
       spoke: address(0)

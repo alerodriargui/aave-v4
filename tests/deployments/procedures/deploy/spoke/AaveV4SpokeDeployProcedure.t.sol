@@ -28,9 +28,9 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
   }
 
   function test_deployUpgradeableSpokeInstance_reverts() public {
-    vm.expectRevert('invalid spoke proxy admin owner');
+    vm.expectRevert('invalid proxy admin owner');
     aaveV4SpokeDeployProcedureWrapper.deployUpgradeableSpokeInstance({
-      spokeProxyAdminOwner: address(0),
+      proxyAdminOwner: address(0),
       authority: accessManager,
       oracle: aaveOracle,
       spokeBytecode: spokeBytecode,
@@ -40,7 +40,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
 
     vm.expectRevert('invalid authority');
     aaveV4SpokeDeployProcedureWrapper.deployUpgradeableSpokeInstance({
-      spokeProxyAdminOwner: owner,
+      proxyAdminOwner: owner,
       authority: address(0),
       oracle: aaveOracle,
       spokeBytecode: spokeBytecode,
@@ -50,7 +50,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
 
     vm.expectRevert('invalid oracle');
     aaveV4SpokeDeployProcedureWrapper.deployUpgradeableSpokeInstance({
-      spokeProxyAdminOwner: owner,
+      proxyAdminOwner: owner,
       authority: accessManager,
       oracle: address(0),
       spokeBytecode: spokeBytecode,
@@ -60,7 +60,7 @@ contract AaveV4SpokeDeployProcedureTest is ProceduresBase {
 
     vm.expectRevert('invalid max user reserves limit');
     aaveV4SpokeDeployProcedureWrapper.deployUpgradeableSpokeInstance({
-      spokeProxyAdminOwner: owner,
+      proxyAdminOwner: owner,
       authority: accessManager,
       oracle: aaveOracle,
       spokeBytecode: spokeBytecode,

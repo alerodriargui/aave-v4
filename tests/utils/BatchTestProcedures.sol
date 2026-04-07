@@ -152,11 +152,8 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       ? inputs.treasurySpokeOwner
       : _deployer;
     inputs.spokeAdmin = inputs.spokeAdmin != address(0) ? inputs.spokeAdmin : _deployer;
-    inputs.hubProxyAdminOwner = inputs.hubProxyAdminOwner != address(0)
-      ? inputs.hubProxyAdminOwner
-      : _deployer;
-    inputs.spokeProxyAdminOwner = inputs.spokeProxyAdminOwner != address(0)
-      ? inputs.spokeProxyAdminOwner
+    inputs.proxyAdminOwner = inputs.proxyAdminOwner != address(0)
+      ? inputs.proxyAdminOwner
       : _deployer;
     inputs.spokeConfiguratorAdmin = inputs.spokeConfiguratorAdmin != address(0)
       ? inputs.spokeConfiguratorAdmin
@@ -359,7 +356,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       _checkHubDeployment({
         report: hubReport,
         accessManager: report.authorityBatchReport.accessManager,
-        expectedHubProxyAdminOwner: inputs.hubProxyAdminOwner,
+        expectedProxyAdminOwner: inputs.proxyAdminOwner,
         label: label
       });
       _checkInterestRateStrategyDeployment({report: hubReport, label: label});
@@ -370,7 +367,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
   function _checkHubDeployment(
     OrchestrationReports.HubDeploymentReport memory report,
     address accessManager,
-    address expectedHubProxyAdminOwner,
+    address expectedProxyAdminOwner,
     string memory label
   ) internal view {
     assertEq(
@@ -379,11 +376,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       string.concat(label, ' implementation')
     );
     address proxyAdminOwner = Ownable(ProxyHelper.getProxyAdmin(report.report.hubProxy)).owner();
-    assertEq(
-      proxyAdminOwner,
-      expectedHubProxyAdminOwner,
-      string.concat(label, ' hub proxy admin owner')
-    );
+    assertEq(proxyAdminOwner, expectedProxyAdminOwner, string.concat(label, ' proxy admin owner'));
     assertEq(
       IAccessManaged(report.report.hubProxy).authority(),
       accessManager,
@@ -594,7 +587,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       ).owner();
       assertEq(
         proxyAdminOwner,
-        inputs.spokeProxyAdminOwner,
+        inputs.proxyAdminOwner,
         string.concat(inputs.spokeLabels[i], ' proxy admin owner')
       );
 

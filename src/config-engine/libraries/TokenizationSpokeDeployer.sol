@@ -11,7 +11,7 @@ import {TokenizationSpokeInstance} from 'src/spoke/instances/TokenizationSpokeIn
 ///   using the Safe Singleton Factory.
 library TokenizationSpokeDeployer {
   /// @notice Deploys a TokenizationSpokeInstance implementation and TransparentUpgradeableProxy via CREATE2
-  ///   through the Safe Singleton Factory.
+  /// through the Safe Singleton Factory.
   /// @dev The proxy admin owner is set to `msg.sender`.
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.

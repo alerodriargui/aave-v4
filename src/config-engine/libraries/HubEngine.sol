@@ -21,7 +21,7 @@ library HubEngine {
 
   /// @notice Lists new assets on Hubs via the HubConfigurator.
   /// @dev When `tokenization.name` & `tokenization.symbol` are defined, also deploys a TokenizationSpoke (impl + proxy) via
-  ///   CREATE2 and registers it on the Hub for the listed asset.
+  /// CREATE2 and registers it on the Hub for the listed asset.
   /// @param listings The asset listings to execute.
   function executeHubAssetListings(IAaveV4ConfigEngine.AssetListing[] calldata listings) external {
     uint256 length = listings.length;
@@ -42,10 +42,10 @@ library HubEngine {
 
   /// @notice Updates asset config (fee, interest rate, reinvestment) for assets on Hubs.
   /// @dev Dispatches to the appropriate HubConfigurator methods based on sentinel values:
-  ///   Fee: both set → updateFeeConfig; only fee → updateLiquidityFee; only receiver → updateFeeReceiver.
-  ///   IR: strategy set → updateInterestRateStrategy; strategy kept + non-sentinel irData fields →
-  ///   read-modify-write via updateInterestRateData.
-  ///   Reinvestment: address set → updateReinvestmentController.
+  /// Fee: both set → updateFeeConfig; only fee → updateLiquidityFee; only receiver → updateFeeReceiver.
+  /// IR: strategy set → updateInterestRateStrategy; strategy kept + non-sentinel irData fields →
+  /// read-modify-write via updateInterestRateData.
+  /// Reinvestment: address set → updateReinvestmentController.
   /// @param updates The asset config updates to execute.
   function executeHubAssetConfigUpdates(
     IAaveV4ConfigEngine.AssetConfigUpdate[] calldata updates
@@ -115,9 +115,9 @@ library HubEngine {
 
   /// @notice Updates Spoke config (caps, risk premium threshold, status) on Hubs.
   /// @dev Dispatches to the appropriate HubConfigurator methods based on sentinel values:
-  ///   Caps: both set → updateSpokeCaps; only add → updateSpokeAddCap; only draw → updateSpokeDrawCap.
-  ///   Risk premium threshold: set → updateSpokeRiskPremiumThreshold.
-  ///   Status: active set → updateSpokeActive; halted set → updateSpokeHalted.
+  /// Caps: both set → updateSpokeCaps; only add → updateSpokeAddCap; only draw → updateSpokeDrawCap.
+  /// Risk premium threshold: set → updateSpokeRiskPremiumThreshold.
+  /// Status: active set → updateSpokeActive; halted set → updateSpokeHalted.
   /// @param updates The Spoke config updates to execute.
   function executeHubSpokeConfigUpdates(
     IAaveV4ConfigEngine.SpokeConfigUpdate[] calldata updates
@@ -288,8 +288,8 @@ library HubEngine {
   }
 
   /// @dev Updates the interest rate strategy or data for the given asset.
-  ///   If a new strategy address is provided, replaces the strategy entirely;
-  ///   otherwise merges individual rate parameters into the existing data.
+  /// If a new strategy address is provided, replaces the strategy entirely;
+  /// otherwise merges individual rate parameters into the existing data.
   function _updateInterestRateStrategy(
     uint256 assetId,
     IAaveV4ConfigEngine.AssetConfigUpdate calldata update
@@ -317,7 +317,7 @@ library HubEngine {
   }
 
   /// @dev Updates spoke add/draw caps, calling the most specific configurator method
-  ///   depending on which caps changed (both, add-only, or draw-only).
+  /// depending on which caps changed (both, add-only, or draw-only).
   function _updateSpokeCaps(
     uint256 assetId,
     IAaveV4ConfigEngine.SpokeConfigUpdate calldata update

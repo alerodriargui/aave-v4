@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
-import {RolesValidation} from 'src/deployments/utils/libraries/RolesValidation.sol';
 
 /// @title AaveV4AccessManagerRolesProcedure Library
 /// @author Aave Labs
@@ -12,7 +11,7 @@ library AaveV4AccessManagerRolesProcedure {
   /// @notice Labels all protocol roles on the AccessManager.
   /// @param accessManager The address of the AccessManager contract.
   function labelAllRoles(address accessManager) internal {
-    RolesValidation.validateNonZeroAddress(accessManager);
+    require(accessManager != address(0), 'invalid access manager');
     IAccessManager am = IAccessManager(accessManager);
 
     // Hub roles
@@ -54,8 +53,8 @@ library AaveV4AccessManagerRolesProcedure {
   /// @param accessManager The address of the AccessManager contract.
   /// @param adminToAdd The address to grant the admin role to.
   function grantAccessManagerAdminRole(address accessManager, address adminToAdd) internal {
-    RolesValidation.validateNonZeroAddress(accessManager);
-    RolesValidation.validateNonZeroAddress(adminToAdd);
+    require(accessManager != address(0), 'invalid access manager');
+    require(adminToAdd != address(0), 'invalid admin');
     IAccessManager(accessManager).grantRole({
       roleId: Roles.ACCESS_MANAGER_ADMIN_ROLE,
       account: adminToAdd,
@@ -67,8 +66,8 @@ library AaveV4AccessManagerRolesProcedure {
   /// @param accessManager The address of the AccessManager contract.
   /// @param adminToRemove The address to revoke the admin role from.
   function revokeAccessManagerAdminRole(address accessManager, address adminToRemove) internal {
-    RolesValidation.validateNonZeroAddress(accessManager);
-    RolesValidation.validateNonZeroAddress(adminToRemove);
+    require(accessManager != address(0), 'invalid access manager');
+    require(adminToRemove != address(0), 'invalid admin');
     IAccessManager(accessManager).revokeRole({
       roleId: Roles.ACCESS_MANAGER_ADMIN_ROLE,
       account: adminToRemove

@@ -85,7 +85,7 @@ library AaveV4TestOrchestration {
     for (uint256 i; i < hubCount; ++i) {
       BatchReports.HubInstanceBatchReport memory hubReport = AaveV4DeployBase
         .deployHubInstanceBatch({
-          hubProxyAdminOwner: admin,
+          proxyAdminOwner: admin,
           authority: report.accessManager,
           hubBytecode: hubBytecode,
           salt: keccak256(abi.encodePacked(salt, 'hub-', string(abi.encode(i))))
@@ -98,7 +98,7 @@ library AaveV4TestOrchestration {
     for (uint256 i; i < spokeCount; ++i) {
       BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
         .deploySpokeInstanceBatch({
-          spokeProxyAdminOwner: admin,
+          proxyAdminOwner: admin,
           authority: report.accessManager,
           spokeBytecode: spokeBytecode,
           oracleDecimals: DeployConstants.ORACLE_DECIMALS,
@@ -134,7 +134,7 @@ library AaveV4TestOrchestration {
   }
 
   function deployTestHub(
-    address hubProxyAdminOwner,
+    address proxyAdminOwner,
     address accessManager,
     bytes memory hubBytecode,
     string memory label,
@@ -142,7 +142,7 @@ library AaveV4TestOrchestration {
   ) external returns (TestTypes.TestHubReport memory) {
     TestTypes.TestHubReport memory report;
     BatchReports.HubInstanceBatchReport memory hubReport = AaveV4DeployBase.deployHubInstanceBatch({
-      hubProxyAdminOwner: hubProxyAdminOwner,
+      proxyAdminOwner: proxyAdminOwner,
       authority: accessManager,
       hubBytecode: hubBytecode,
       salt: keccak256(abi.encodePacked(salt, 'hub-', label))
@@ -154,7 +154,7 @@ library AaveV4TestOrchestration {
   }
 
   function deployTestSpoke(
-    address spokeProxyAdminOwner,
+    address proxyAdminOwner,
     address accessManager,
     bytes memory spokeBytecode,
     uint16 maxUserReservesLimit,
@@ -163,7 +163,7 @@ library AaveV4TestOrchestration {
     TestTypes.TestSpokeReport memory report;
     BatchReports.SpokeInstanceBatchReport memory spokeReport = AaveV4DeployBase
       .deploySpokeInstanceBatch({
-        spokeProxyAdminOwner: spokeProxyAdminOwner,
+        proxyAdminOwner: proxyAdminOwner,
         authority: accessManager,
         spokeBytecode: spokeBytecode,
         oracleDecimals: DeployConstants.ORACLE_DECIMALS,
@@ -178,7 +178,7 @@ library AaveV4TestOrchestration {
   function deployTestTokenizationSpoke(
     address hub,
     address underlying,
-    address spokeProxyAdminOwner,
+    address proxyAdminOwner,
     string memory shareName,
     string memory shareSymbol,
     bytes32 salt
@@ -187,7 +187,7 @@ library AaveV4TestOrchestration {
       .deployTokenizationSpokeBatch({
         hub: hub,
         underlying: underlying,
-        spokeProxyAdminOwner: spokeProxyAdminOwner,
+        proxyAdminOwner: proxyAdminOwner,
         shareName: shareName,
         shareSymbol: shareSymbol,
         salt: salt

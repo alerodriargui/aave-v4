@@ -41,12 +41,11 @@ contract AaveV4DeployAnvil is AaveV4DeployBatchBaseScript {
 
     inputs = InputUtils.FullDeployInputs({
       accessManagerAdmin: address(0),
+      proxyAdminOwner: address(0),
       hubAdmin: address(0),
-      hubProxyAdminOwner: address(0),
       hubConfiguratorAdmin: address(0),
       treasurySpokeOwner: address(0),
       spokeAdmin: address(0),
-      spokeProxyAdminOwner: address(0),
       spokeConfiguratorAdmin: address(1),
       gatewayOwner: address(2),
       positionManagerOwner: address(3),

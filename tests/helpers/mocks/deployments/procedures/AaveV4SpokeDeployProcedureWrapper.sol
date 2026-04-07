@@ -7,7 +7,7 @@ contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
   bool public IS_TEST = true;
 
   function deployUpgradeableSpokeInstance(
-    address spokeProxyAdminOwner,
+    address proxyAdminOwner,
     address authority,
     address oracle,
     bytes memory spokeBytecode,
@@ -16,7 +16,7 @@ contract AaveV4SpokeDeployProcedureWrapper is AaveV4SpokeDeployProcedure {
   ) external returns (address spokeProxy, address spokeImplementation) {
     return
       _deployUpgradeableSpokeInstance(
-        spokeProxyAdminOwner,
+        proxyAdminOwner,
         authority,
         oracle,
         spokeBytecode,

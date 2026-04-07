@@ -10,7 +10,7 @@ import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.so
 /// @notice Deploys an upgradeable Spoke instance behind a transparent proxy.
 contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
   /// @notice Deploys a Spoke implementation via CREATE2 and sets up a transparent proxy.
-  /// @param spokeProxyAdminOwner The owner of the proxy admin contract.
+  /// @param proxyAdminOwner The owner of the proxy admin contract.
   /// @param authority The access control authority address used to initialize the Spoke.
   /// @param oracle The oracle address used by the Spoke instance.
   /// @param spokeBytecode The creation bytecode of the Spoke implementation.
@@ -19,14 +19,14 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
   /// @return spokeProxy The address of the deployed transparent proxy.
   /// @return spokeImplementation The address of the deployed Spoke implementation contract.
   function _deployUpgradeableSpokeInstance(
-    address spokeProxyAdminOwner,
+    address proxyAdminOwner,
     address authority,
     address oracle,
     bytes memory spokeBytecode,
     uint16 maxUserReservesLimit,
     bytes32 salt
   ) internal returns (address spokeProxy, address spokeImplementation) {
-    require(spokeProxyAdminOwner != address(0), 'invalid spoke proxy admin owner');
+    require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
     require(authority != address(0), 'invalid authority');
     require(oracle != address(0), 'invalid oracle');
     require(maxUserReservesLimit > 0, 'invalid max user reserves limit');
@@ -37,7 +37,7 @@ contract AaveV4SpokeDeployProcedure is AaveV4DeployProcedureBase {
     spokeProxy = Create2Utils.proxify({
       salt: salt,
       logic: spokeImplementation,
-      initialOwner: spokeProxyAdminOwner,
+      initialOwner: proxyAdminOwner,
       data: abi.encodeCall(ISpokeInstance.initialize, (authority))
     });
     return (spokeProxy, spokeImplementation);

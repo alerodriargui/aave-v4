@@ -92,7 +92,6 @@ src/deployments/
       Create2Utils            Deterministic deployment helpers
       BytecodeHelper          Hub/Spoke bytecode retrieval
       DeployConstants         Shared deploy constants
-      RolesValidation         Role setup validation helpers
     Logger & MetadataLogger    Deployment logging and JSON output
 ```
 

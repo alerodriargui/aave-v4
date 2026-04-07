@@ -11,10 +11,10 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
   }
 
   function test_grantHubAllRoles_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     aaveV4HubRolesProcedureWrapper.grantHubAllRoles({accessManager: address(0), admin: admin});
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid admin');
     aaveV4HubRolesProcedureWrapper.grantHubAllRoles({
       accessManager: accessManager,
       admin: address(0)
@@ -22,14 +22,14 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
   }
 
   function test_grantHubRole_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     aaveV4HubRolesProcedureWrapper.grantHubRole({
       accessManager: address(0),
       role: Roles.HUB_FEE_MINTER_ROLE,
       admin: admin
     });
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid admin');
     aaveV4HubRolesProcedureWrapper.grantHubRole({
       accessManager: accessManager,
       role: Roles.HUB_FEE_MINTER_ROLE,
@@ -38,18 +38,18 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupHubRoles_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     aaveV4HubRolesProcedureWrapper.setupHubRoles({accessManager: address(0), hub: hub});
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid hub');
     aaveV4HubRolesProcedureWrapper.setupHubRoles({accessManager: accessManager, hub: address(0)});
   }
 
   function test_setupHubFeeMinterRole_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     aaveV4HubRolesProcedureWrapper.setupHubFeeMinterRole({accessManager: address(0), hub: hub});
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid hub');
     aaveV4HubRolesProcedureWrapper.setupHubFeeMinterRole({
       accessManager: accessManager,
       hub: address(0)
@@ -57,10 +57,10 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupHubConfiguratorRole_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     aaveV4HubRolesProcedureWrapper.setupHubConfiguratorRole({accessManager: address(0), hub: hub});
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid hub');
     aaveV4HubRolesProcedureWrapper.setupHubConfiguratorRole({
       accessManager: accessManager,
       hub: address(0)
@@ -156,13 +156,13 @@ contract AaveV4HubRolesProcedureTest is ProceduresBase {
   }
 
   function test_setupHubDeficitEliminatorRole_reverts() public {
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid access manager');
     aaveV4HubRolesProcedureWrapper.setupHubDeficitEliminatorRole({
       accessManager: address(0),
       hub: hub
     });
 
-    vm.expectRevert('zero address');
+    vm.expectRevert('invalid hub');
     aaveV4HubRolesProcedureWrapper.setupHubDeficitEliminatorRole({
       accessManager: accessManager,
       hub: address(0)

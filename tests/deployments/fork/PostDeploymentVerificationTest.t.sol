@@ -15,12 +15,11 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
   /// @dev Fuzz input struct
   struct FuzzParams {
     address accessManagerAdmin;
+    address proxyAdminOwner;
     address hubAdmin;
-    address hubProxyAdminOwner;
     address hubConfiguratorAdmin;
     address treasurySpokeOwner;
     address spokeAdmin;
-    address spokeProxyAdminOwner;
     address spokeConfiguratorAdmin;
     address gatewayOwner;
     address positionManagerOwner;
@@ -200,12 +199,11 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
 
     InputUtils.FullDeployInputs memory inputs = InputUtils.FullDeployInputs({
       accessManagerAdmin: params.accessManagerAdmin,
+      proxyAdminOwner: params.proxyAdminOwner,
       hubAdmin: params.hubAdmin,
-      hubProxyAdminOwner: params.hubProxyAdminOwner,
       hubConfiguratorAdmin: params.hubConfiguratorAdmin,
       treasurySpokeOwner: params.treasurySpokeOwner,
       spokeAdmin: params.spokeAdmin,
-      spokeProxyAdminOwner: params.spokeProxyAdminOwner,
       spokeConfiguratorAdmin: params.spokeConfiguratorAdmin,
       gatewayOwner: params.gatewayOwner,
       positionManagerOwner: params.positionManagerOwner,
@@ -255,12 +253,11 @@ contract PostDeploymentVerificationTest is PostDeploymentVerificationBase, AaveV
 
     inputs = InputUtils.FullDeployInputs({
       accessManagerAdmin: makeAddr('accessManagerAdmin'),
+      proxyAdminOwner: makeAddr('proxyAdminOwner'),
       hubAdmin: makeAddr('hubAdmin'),
-      hubProxyAdminOwner: makeAddr('hubProxyAdminOwner'),
       hubConfiguratorAdmin: makeAddr('hubConfiguratorAdmin'),
       treasurySpokeOwner: makeAddr('treasurySpokeOwner'),
       spokeAdmin: makeAddr('spokeAdmin'),
-      spokeProxyAdminOwner: makeAddr('spokeProxyAdminOwner'),
       spokeConfiguratorAdmin: makeAddr('spokeConfiguratorAdmin'),
       gatewayOwner: makeAddr('gatewayOwner'),
       positionManagerOwner: makeAddr('positionManagerOwner'),

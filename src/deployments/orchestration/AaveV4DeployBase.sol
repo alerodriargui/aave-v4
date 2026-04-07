@@ -62,19 +62,19 @@ library AaveV4DeployBase {
   }
 
   /// @notice Deploys the Hub instance batch containing the Hub proxy, implementation, and IR strategy.
-  /// @param hubProxyAdminOwner The owner of the Hub proxy admin.
+  /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the Hub.
   /// @param hubBytecode The creation bytecode of the HubInstance contract.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The Hub instance batch report.
   function deployHubInstanceBatch(
-    address hubProxyAdminOwner,
+    address proxyAdminOwner,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (BatchReports.HubInstanceBatchReport memory) {
     AaveV4HubInstanceBatch hubInstanceBatch = new AaveV4HubInstanceBatch({
-      hubProxyAdminOwner_: hubProxyAdminOwner,
+      proxyAdminOwner_: proxyAdminOwner,
       authority_: authority,
       hubBytecode_: hubBytecode,
       salt_: salt
@@ -83,7 +83,7 @@ library AaveV4DeployBase {
   }
 
   /// @notice Deploys the Spoke instance batch containing the Spoke proxy, implementation, and AaveOracle.
-  /// @param spokeProxyAdminOwner The owner of the Spoke proxy admin.
+  /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param authority The access-control authority for the Spoke.
   /// @param spokeBytecode The creation bytecode of the SpokeInstance contract.
   /// @param oracleDecimals The decimal precision for the AaveOracle.
@@ -91,7 +91,7 @@ library AaveV4DeployBase {
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return The Spoke instance batch report.
   function deploySpokeInstanceBatch(
-    address spokeProxyAdminOwner,
+    address proxyAdminOwner,
     address authority,
     bytes memory spokeBytecode,
     uint8 oracleDecimals,
@@ -99,7 +99,7 @@ library AaveV4DeployBase {
     bytes32 salt
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory) {
     AaveV4SpokeInstanceBatch spokeInstanceBatch = new AaveV4SpokeInstanceBatch({
-      spokeProxyAdminOwner_: spokeProxyAdminOwner,
+      proxyAdminOwner_: proxyAdminOwner,
       authority_: authority,
       spokeBytecode_: spokeBytecode,
       oracleDecimals_: oracleDecimals,
@@ -151,7 +151,7 @@ library AaveV4DeployBase {
   /// @notice Deploys the Tokenization Spoke batch containing the TokenizationSpoke proxy and implementation.
   /// @param hub The address of the Hub the tokenization spoke connects to.
   /// @param underlying The address of the underlying asset to tokenize.
-  /// @param spokeProxyAdminOwner The owner of the proxy admin.
+  /// @param proxyAdminOwner The owner of the proxy admin.
   /// @param shareName The name of the share token.
   /// @param shareSymbol The symbol of the share token.
   /// @param salt The CREATE2 salt for deterministic deployment.
@@ -159,7 +159,7 @@ library AaveV4DeployBase {
   function deployTokenizationSpokeBatch(
     address hub,
     address underlying,
-    address spokeProxyAdminOwner,
+    address proxyAdminOwner,
     string memory shareName,
     string memory shareSymbol,
     bytes32 salt
@@ -167,7 +167,7 @@ library AaveV4DeployBase {
     AaveV4TokenizationSpokeBatch tokenizationSpokeBatch = new AaveV4TokenizationSpokeBatch({
       hub_: hub,
       underlying_: underlying,
-      spokeProxyAdminOwner_: spokeProxyAdminOwner,
+      proxyAdminOwner_: proxyAdminOwner,
       shareName_: shareName,
       shareSymbol_: shareSymbol,
       salt_: salt

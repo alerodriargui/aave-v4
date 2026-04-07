@@ -10,25 +10,25 @@ import {IHubInstance} from 'src/deployments/utils/interfaces/IHubInstance.sol';
 /// @notice Deploys an upgradeable Hub instance behind a transparent proxy.
 contract AaveV4HubDeployProcedure is AaveV4DeployProcedureBase {
   /// @notice Deploys a Hub implementation via CREATE2 and sets up a transparent proxy.
-  /// @param hubProxyAdminOwner The owner of the proxy admin contract.
+  /// @param proxyAdminOwner The owner of the proxy admin contract.
   /// @param authority The access control authority address used to initialize the Hub.
   /// @param hubBytecode The creation bytecode of the Hub implementation.
   /// @param salt The CREATE2 salt for deterministic deployment.
   /// @return hubProxy The address of the deployed transparent proxy.
   /// @return hubImplementation The address of the deployed Hub implementation contract.
   function _deployUpgradeableHubInstance(
-    address hubProxyAdminOwner,
+    address proxyAdminOwner,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (address hubProxy, address hubImplementation) {
-    require(hubProxyAdminOwner != address(0), 'invalid hub proxy admin owner');
+    require(proxyAdminOwner != address(0), 'invalid proxy admin owner');
     require(authority != address(0), 'invalid authority');
     hubImplementation = Create2Utils.create2Deploy({salt: salt, bytecode: hubBytecode});
     hubProxy = Create2Utils.proxify({
       salt: salt,
       logic: hubImplementation,
-      initialOwner: hubProxyAdminOwner,
+      initialOwner: proxyAdminOwner,
       data: abi.encodeCall(IHubInstance.initialize, (authority))
     });
     return (hubProxy, hubImplementation);

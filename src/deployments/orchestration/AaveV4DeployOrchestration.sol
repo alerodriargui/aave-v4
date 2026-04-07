@@ -77,7 +77,7 @@ library AaveV4DeployOrchestration {
     // Deploy Hub Batches
     report.hubInstanceBatchReports = _deployHubs({
       logger: logger,
-      hubProxyAdminOwner: deployInputs.hubProxyAdminOwner,
+      proxyAdminOwner: deployInputs.proxyAdminOwner,
       authority: accessManager,
       hubLabels: deployInputs.hubLabels,
       hubBytecode: hubBytecode,
@@ -151,7 +151,7 @@ library AaveV4DeployOrchestration {
 
   function _deployHubs(
     Logger logger,
-    address hubProxyAdminOwner,
+    address proxyAdminOwner,
     address authority,
     string[] memory hubLabels,
     bytes memory hubBytecode,
@@ -163,7 +163,7 @@ library AaveV4DeployOrchestration {
       bytes32 childSalt = _deriveChildSalt(salt, 'hub', hubLabels[i]);
       hubInstanceBatchReports[i] = _deployHub({
         logger: logger,
-        hubProxyAdminOwner: hubProxyAdminOwner,
+        proxyAdminOwner: proxyAdminOwner,
         authority: authority,
         label: hubLabels[i],
         hubBytecode: hubBytecode,
@@ -176,7 +176,7 @@ library AaveV4DeployOrchestration {
 
   function _deployHub(
     Logger logger,
-    address hubProxyAdminOwner,
+    address proxyAdminOwner,
     address authority,
     string memory label,
     bytes memory hubBytecode,
@@ -186,7 +186,7 @@ library AaveV4DeployOrchestration {
     hubReport.label = label;
     hubReport.report = _deployHubInstanceBatch({
       logger: logger,
-      hubProxyAdminOwner: hubProxyAdminOwner,
+      proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       hubBytecode: hubBytecode,
       salt: salt
@@ -213,7 +213,7 @@ library AaveV4DeployOrchestration {
       bytes32 childSalt = _deriveChildSalt(salt, 'spoke', inputs.spokeLabels[i]);
       spokeBatchReports[i] = _deploySpoke({
         logger: logger,
-        spokeProxyAdminOwner: inputs.spokeProxyAdminOwner,
+        proxyAdminOwner: inputs.proxyAdminOwner,
         authority: authority,
         label: inputs.spokeLabels[i],
         spokeBytecode: spokeBytecode,
@@ -230,7 +230,7 @@ library AaveV4DeployOrchestration {
 
   function _deploySpoke(
     Logger logger,
-    address spokeProxyAdminOwner,
+    address proxyAdminOwner,
     address authority,
     string memory label,
     bytes memory spokeBytecode,
@@ -243,7 +243,7 @@ library AaveV4DeployOrchestration {
     spokeReport.label = label;
     spokeReport.report = _deploySpokeInstanceBatch({
       logger: logger,
-      spokeProxyAdminOwner: spokeProxyAdminOwner,
+      proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       spokeBytecode: spokeBytecode,
       oracleDecimals: oracleDecimals,
@@ -258,14 +258,14 @@ library AaveV4DeployOrchestration {
 
   function _deployHubInstanceBatch(
     Logger logger,
-    address hubProxyAdminOwner,
+    address proxyAdminOwner,
     address authority,
     bytes memory hubBytecode,
     bytes32 salt
   ) internal returns (BatchReports.HubInstanceBatchReport memory report) {
     logger.logHeader1('deploying HubBatch');
     report = AaveV4DeployBase.deployHubInstanceBatch({
-      hubProxyAdminOwner: hubProxyAdminOwner,
+      proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       hubBytecode: hubBytecode,
       salt: salt
@@ -309,7 +309,7 @@ library AaveV4DeployOrchestration {
 
   function _deploySpokeInstanceBatch(
     Logger logger,
-    address spokeProxyAdminOwner,
+    address proxyAdminOwner,
     address authority,
     bytes memory spokeBytecode,
     uint8 oracleDecimals,
@@ -318,7 +318,7 @@ library AaveV4DeployOrchestration {
   ) internal returns (BatchReports.SpokeInstanceBatchReport memory report) {
     logger.logHeader1('deploying AaveV4SpokeInstanceBatch');
     report = AaveV4DeployBase.deploySpokeInstanceBatch({
-      spokeProxyAdminOwner: spokeProxyAdminOwner,
+      proxyAdminOwner: proxyAdminOwner,
       authority: authority,
       spokeBytecode: spokeBytecode,
       oracleDecimals: oracleDecimals,
