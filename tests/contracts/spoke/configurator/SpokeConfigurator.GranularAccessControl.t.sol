@@ -37,56 +37,15 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     vm.startPrank(ADMIN);
     manager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(spokeConfigurator), 0);
 
-    // Grant granular roles to role holders
+    // Grant granular roles to role holders and set permissions from baseline
     manager.grantRole(RESERVE_MANAGER_ROLE, RESERVE_MANAGER, 0);
     manager.grantRole(LIQUIDATION_CONFIG_MANAGER_ROLE, LIQUIDATION_CONFIG_MANAGER, 0);
     manager.grantRole(POSITION_MANAGER_ADMIN_ROLE, POSITION_MANAGER_ADMIN, 0);
 
-    // Set up RESERVE_MANAGER_ROLE permissions (18 functions)
-    bytes4[] memory reserveSelectors = new bytes4[](18);
-    reserveSelectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
-    reserveSelectors[1] = ISpokeConfigurator.addReserve.selector;
-    reserveSelectors[2] = ISpokeConfigurator.updatePaused.selector;
-    reserveSelectors[3] = ISpokeConfigurator.updateFrozen.selector;
-    reserveSelectors[4] = ISpokeConfigurator.updateBorrowable.selector;
-    reserveSelectors[5] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
-    reserveSelectors[6] = ISpokeConfigurator.updateCollateralRisk.selector;
-    reserveSelectors[7] = ISpokeConfigurator.addCollateralFactor.selector;
-    reserveSelectors[8] = ISpokeConfigurator.updateCollateralFactor.selector;
-    reserveSelectors[9] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
-    reserveSelectors[10] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
-    reserveSelectors[11] = ISpokeConfigurator.addLiquidationFee.selector;
-    reserveSelectors[12] = ISpokeConfigurator.updateLiquidationFee.selector;
-    reserveSelectors[13] = ISpokeConfigurator.addDynamicReserveConfig.selector;
-    reserveSelectors[14] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
-    reserveSelectors[15] = ISpokeConfigurator.pauseAllReserves.selector;
-    reserveSelectors[16] = ISpokeConfigurator.freezeAllReserves.selector;
-    manager.setTargetFunctionRole(
-      address(spokeConfigurator),
-      reserveSelectors,
-      RESERVE_MANAGER_ROLE
-    );
-
-    // Set up LIQUIDATION_CONFIG_MANAGER_ROLE permissions (4 functions)
-    bytes4[] memory liqSelectors = new bytes4[](4);
-    liqSelectors[0] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
-    liqSelectors[1] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
-    liqSelectors[2] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
-    liqSelectors[3] = ISpokeConfigurator.updateLiquidationConfig.selector;
-    manager.setTargetFunctionRole(
-      address(spokeConfigurator),
-      liqSelectors,
-      LIQUIDATION_CONFIG_MANAGER_ROLE
-    );
-
-    // Set up POSITION_MANAGER_ADMIN_ROLE permissions (1 function)
-    bytes4[] memory pmSelectors = new bytes4[](1);
-    pmSelectors[0] = ISpokeConfigurator.updatePositionManager.selector;
-    manager.setTargetFunctionRole(
-      address(spokeConfigurator),
-      pmSelectors,
-      POSITION_MANAGER_ADMIN_ROLE
-    );
+    (uint64[] memory roles, bytes4[][] memory selectorSets) = _expectedRoleMappings();
+    for (uint256 r; r < roles.length; ++r) {
+      manager.setTargetFunctionRole(address(spokeConfigurator), selectorSets[r], roles[r]);
+    }
 
     vm.stopPrank();
 
@@ -414,5 +373,121 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     });
 
     assertTrue(spoke.isPositionManagerActive(newPM));
+  }
+
+  /// @notice Validates that every SpokeConfigurator selector is assigned to exactly one role.
+  function test_static_allSelectorsAssignedToExactlyOneRole() public pure {
+    bytes4[] memory allSelectors = _allSpokeConfiguratorSelectors();
+    (uint64[] memory roles, bytes4[][] memory selectorSets) = _expectedRoleMappings();
+
+    for (uint256 s; s < allSelectors.length; ++s) {
+      uint256 assignedCount;
+      for (uint256 r; r < roles.length; ++r) {
+        for (uint256 i; i < selectorSets[r].length; ++i) {
+          if (selectorSets[r][i] == allSelectors[s]) {
+            ++assignedCount;
+          }
+        }
+      }
+      assertEq(assignedCount, 1, 'selector not assigned to exactly one role');
+    }
+  }
+
+  /// @dev Returns all external restricted selectors on SpokeConfigurator.
+  function _allSpokeConfiguratorSelectors() internal pure returns (bytes4[] memory) {
+    bytes4[] memory selectors = new bytes4[](24);
+    selectors[0] = ISpokeConfigurator.updateReservePriceSource.selector;
+    selectors[1] = ISpokeConfigurator.addReserve.selector;
+    selectors[2] = ISpokeConfigurator.updatePaused.selector;
+    selectors[3] = ISpokeConfigurator.updateFrozen.selector;
+    selectors[4] = ISpokeConfigurator.updateBorrowable.selector;
+    selectors[5] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectors[6] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectors[7] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectors[8] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectors[9] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectors[10] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectors[11] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectors[12] = ISpokeConfigurator.updateLiquidationFee.selector;
+    selectors[13] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectors[14] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectors[15] = ISpokeConfigurator.pauseAllReserves.selector;
+    selectors[16] = ISpokeConfigurator.freezeAllReserves.selector;
+    selectors[17] = ISpokeConfigurator.pauseReserve.selector;
+    selectors[18] = ISpokeConfigurator.freezeReserve.selector;
+    selectors[19] = ISpokeConfigurator.updatePositionManager.selector;
+    selectors[20] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
+    selectors[21] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
+    selectors[22] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
+    selectors[23] = ISpokeConfigurator.updateLiquidationConfig.selector;
+    return selectors;
+  }
+
+  /// @dev Returns the expected role-to-selector mapping as parallel arrays.
+  function _expectedRoleMappings()
+    internal
+    pure
+    returns (uint64[] memory roles, bytes4[][] memory selectorSets)
+  {
+    roles = new uint64[](3);
+    selectorSets = new bytes4[][](3);
+
+    // RESERVE_MANAGER_ROLE
+    roles[0] = RESERVE_MANAGER_ROLE;
+    selectorSets[0] = new bytes4[](19);
+    selectorSets[0][0] = ISpokeConfigurator.updateReservePriceSource.selector;
+    selectorSets[0][1] = ISpokeConfigurator.addReserve.selector;
+    selectorSets[0][2] = ISpokeConfigurator.updatePaused.selector;
+    selectorSets[0][3] = ISpokeConfigurator.updateFrozen.selector;
+    selectorSets[0][4] = ISpokeConfigurator.updateBorrowable.selector;
+    selectorSets[0][5] = ISpokeConfigurator.updateReceiveSharesEnabled.selector;
+    selectorSets[0][6] = ISpokeConfigurator.updateCollateralRisk.selector;
+    selectorSets[0][7] = ISpokeConfigurator.addCollateralFactor.selector;
+    selectorSets[0][8] = ISpokeConfigurator.updateCollateralFactor.selector;
+    selectorSets[0][9] = ISpokeConfigurator.addMaxLiquidationBonus.selector;
+    selectorSets[0][10] = ISpokeConfigurator.updateMaxLiquidationBonus.selector;
+    selectorSets[0][11] = ISpokeConfigurator.addLiquidationFee.selector;
+    selectorSets[0][12] = ISpokeConfigurator.updateLiquidationFee.selector;
+    selectorSets[0][13] = ISpokeConfigurator.addDynamicReserveConfig.selector;
+    selectorSets[0][14] = ISpokeConfigurator.updateDynamicReserveConfig.selector;
+    selectorSets[0][15] = ISpokeConfigurator.pauseAllReserves.selector;
+    selectorSets[0][16] = ISpokeConfigurator.freezeAllReserves.selector;
+    selectorSets[0][17] = ISpokeConfigurator.pauseReserve.selector;
+    selectorSets[0][18] = ISpokeConfigurator.freezeReserve.selector;
+
+    // LIQUIDATION_CONFIG_MANAGER_ROLE
+    roles[1] = LIQUIDATION_CONFIG_MANAGER_ROLE;
+    selectorSets[1] = new bytes4[](4);
+    selectorSets[1][0] = ISpokeConfigurator.updateLiquidationTargetHealthFactor.selector;
+    selectorSets[1][1] = ISpokeConfigurator.updateHealthFactorForMaxBonus.selector;
+    selectorSets[1][2] = ISpokeConfigurator.updateLiquidationBonusFactor.selector;
+    selectorSets[1][3] = ISpokeConfigurator.updateLiquidationConfig.selector;
+
+    // POSITION_MANAGER_ADMIN_ROLE
+    roles[2] = POSITION_MANAGER_ADMIN_ROLE;
+    selectorSets[2] = new bytes4[](1);
+    selectorSets[2][0] = ISpokeConfigurator.updatePositionManager.selector;
+  }
+
+  /// @notice Validates that test role IDs don't collide with production Roles.sol constants.
+  function test_static_granularRoleIds_noCollision() public pure {
+    uint64[4] memory productionRoles = [
+      Roles.ACCESS_MANAGER_ADMIN_ROLE,
+      Roles.SPOKE_DOMAIN_ADMIN_ROLE,
+      Roles.SPOKE_CONFIGURATOR_ROLE,
+      Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE
+    ];
+
+    uint64[3] memory testRoles = [
+      RESERVE_MANAGER_ROLE,
+      LIQUIDATION_CONFIG_MANAGER_ROLE,
+      POSITION_MANAGER_ADMIN_ROLE
+    ];
+
+    for (uint256 i; i < testRoles.length; ++i) {
+      for (uint256 j; j < productionRoles.length; ++j) {
+        assertTrue(testRoles[i] != productionRoles[j], 'test role collides with production role');
+      }
+    }
   }
 }
