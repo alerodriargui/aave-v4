@@ -768,4 +768,178 @@ contract SpokeEngineTest is BaseConfigEngineTest {
     ISpoke.LiquidationConfig memory config2 = spoke2().getLiquidationConfig();
     assertEq(config2.targetHealthFactor, uint128(1.30e18));
   }
+
+  function test_executeSpokeDynamicReserveConfigUpdates_multipleReserves() public {
+    uint256 reserveId0 = _getReserveId(0, TOKEN_WETH);
+    uint256 reserveId1 = _getReserveId(0, TOKEN_USDX);
+
+    ISpoke.DynamicReserveConfig memory dynBefore0 = spoke1().getDynamicReserveConfig(
+      reserveId0,
+      uint32(DYNAMIC_CONFIG_KEY)
+    );
+    ISpoke.DynamicReserveConfig memory dynBefore1 = spoke1().getDynamicReserveConfig(
+      reserveId1,
+      uint32(DYNAMIC_CONFIG_KEY)
+    );
+
+    IAaveV4ConfigEngine.DynamicReserveConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.DynamicReserveConfigUpdate[](2);
+
+    updates[0] = IAaveV4ConfigEngine.DynamicReserveConfigUpdate({
+      spokeConfigurator: spokeConfigurator,
+      spoke: address(spoke1()),
+      hub: address(hub1()),
+      underlying: address(weth),
+      dynamicConfigKey: DYNAMIC_CONFIG_KEY,
+      collateralFactor: 90_00,
+      maxLiquidationBonus: EngineFlags.KEEP_CURRENT,
+      liquidationFee: EngineFlags.KEEP_CURRENT
+    });
+
+    updates[1] = IAaveV4ConfigEngine.DynamicReserveConfigUpdate({
+      spokeConfigurator: spokeConfigurator,
+      spoke: address(spoke1()),
+      hub: address(hub1()),
+      underlying: address(usdx),
+      dynamicConfigKey: DYNAMIC_CONFIG_KEY,
+      collateralFactor: EngineFlags.KEEP_CURRENT,
+      maxLiquidationBonus: EngineFlags.KEEP_CURRENT,
+      liquidationFee: 3_00
+    });
+
+    engine.executeSpokeDynamicReserveConfigUpdates(updates);
+
+    ISpoke.DynamicReserveConfig memory dynAfter0 = spoke1().getDynamicReserveConfig(
+      reserveId0,
+      uint32(DYNAMIC_CONFIG_KEY)
+    );
+    assertEq(dynAfter0.collateralFactor, 90_00);
+    assertEq(dynAfter0.maxLiquidationBonus, dynBefore0.maxLiquidationBonus);
+    assertEq(dynAfter0.liquidationFee, dynBefore0.liquidationFee);
+
+    ISpoke.DynamicReserveConfig memory dynAfter1 = spoke1().getDynamicReserveConfig(
+      reserveId1,
+      uint32(DYNAMIC_CONFIG_KEY)
+    );
+    assertEq(dynAfter1.collateralFactor, dynBefore1.collateralFactor);
+    assertEq(dynAfter1.maxLiquidationBonus, dynBefore1.maxLiquidationBonus);
+    assertEq(dynAfter1.liquidationFee, 3_00);
+  }
+
+  function test_executeSpokeReserveConfigUpdates_crossSpoke_differentFields() public {
+    uint256 reserveIdSpoke1 = _getReserveId(0, TOKEN_WETH);
+    uint256 reserveIdSpoke2 = _getReserveId(1, TOKEN_WETH);
+    ISpoke.ReserveConfig memory configBefore1 = spoke1().getReserveConfig(reserveIdSpoke1);
+    ISpoke.ReserveConfig memory configBefore2 = spoke2().getReserveConfig(reserveIdSpoke2);
+
+    IAaveV4ConfigEngine.ReserveConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.ReserveConfigUpdate[](2);
+
+    updates[0] = IAaveV4ConfigEngine.ReserveConfigUpdate({
+      spokeConfigurator: spokeConfigurator,
+      spoke: address(spoke1()),
+      hub: address(hub1()),
+      underlying: address(weth),
+      priceSource: EngineFlags.KEEP_CURRENT_ADDRESS,
+      collateralRisk: 60_00,
+      paused: EngineFlags.KEEP_CURRENT,
+      frozen: EngineFlags.ENABLED,
+      borrowable: EngineFlags.KEEP_CURRENT,
+      receiveSharesEnabled: EngineFlags.KEEP_CURRENT
+    });
+
+    updates[1] = IAaveV4ConfigEngine.ReserveConfigUpdate({
+      spokeConfigurator: spokeConfigurator,
+      spoke: address(spoke2()),
+      hub: address(hub1()),
+      underlying: address(weth),
+      priceSource: EngineFlags.KEEP_CURRENT_ADDRESS,
+      collateralRisk: EngineFlags.KEEP_CURRENT,
+      paused: EngineFlags.ENABLED,
+      frozen: EngineFlags.KEEP_CURRENT,
+      borrowable: EngineFlags.KEEP_CURRENT,
+      receiveSharesEnabled: EngineFlags.KEEP_CURRENT
+    });
+
+    engine.executeSpokeReserveConfigUpdates(updates);
+
+    ISpoke.ReserveConfig memory configAfter1 = spoke1().getReserveConfig(reserveIdSpoke1);
+    assertEq(configAfter1.collateralRisk, 60_00);
+    assertTrue(configAfter1.frozen);
+    assertEq(configAfter1.paused, configBefore1.paused);
+
+    ISpoke.ReserveConfig memory configAfter2 = spoke2().getReserveConfig(reserveIdSpoke2);
+    assertEq(configAfter2.collateralRisk, configBefore2.collateralRisk);
+    assertTrue(configAfter2.paused);
+    assertEq(configAfter2.frozen, configBefore2.frozen);
+  }
+
+  function test_executeSpokePositionManagerUpdates_multipleUpdates() public {
+    PositionManagerBaseWrapper pm2 = new PositionManagerBaseWrapper(address(engine));
+
+    IAaveV4ConfigEngine.PositionManagerUpdate[]
+      memory updates = new IAaveV4ConfigEngine.PositionManagerUpdate[](2);
+
+    updates[0] = IAaveV4ConfigEngine.PositionManagerUpdate({
+      spokeConfigurator: spokeConfigurator,
+      spoke: address(spoke1()),
+      positionManager: address(positionManager),
+      active: true
+    });
+
+    updates[1] = IAaveV4ConfigEngine.PositionManagerUpdate({
+      spokeConfigurator: spokeConfigurator,
+      spoke: address(spoke1()),
+      positionManager: address(pm2),
+      active: true
+    });
+
+    engine.executeSpokePositionManagerUpdates(updates);
+
+    assertTrue(spoke1().isPositionManagerActive(address(positionManager)));
+    assertTrue(spoke1().isPositionManagerActive(address(pm2)));
+  }
+
+  function test_executeSpokeReserveListings_multipleReserves() public {
+    TestnetERC20 tokenA = new TestnetERC20('A', 'A', 18);
+    TestnetERC20 tokenB = new TestnetERC20('B', 'B', 8);
+
+    uint256 assetIdA = _seedAsset(hub1(), irStrategy1(), address(tokenA), 18);
+    uint256 assetIdB = _seedAsset(hub1(), irStrategy1(), address(tokenB), 8);
+    _seedSpokeOnAsset(hub1(), assetIdA, spoke1());
+    _seedSpokeOnAsset(hub1(), assetIdB, spoke1());
+
+    address priceFeedA = address(new MockPriceFeed(8, 'A/USD', 10e8));
+    address priceFeedB = address(new MockPriceFeed(8, 'B/USD', 50e8));
+
+    uint256 reserveCountBefore = spoke1().getReserveCount();
+
+    IAaveV4ConfigEngine.ReserveListing[] memory listings = new IAaveV4ConfigEngine.ReserveListing[](
+      2
+    );
+
+    listings[0] = IAaveV4ConfigEngine.ReserveListing({
+      spokeConfigurator: spokeConfigurator,
+      spoke: address(spoke1()),
+      hub: address(hub1()),
+      underlying: address(tokenA),
+      priceSource: priceFeedA,
+      config: _defaultReserveConfig(),
+      dynamicConfig: _defaultDynamicReserveConfig()
+    });
+
+    listings[1] = IAaveV4ConfigEngine.ReserveListing({
+      spokeConfigurator: spokeConfigurator,
+      spoke: address(spoke1()),
+      hub: address(hub1()),
+      underlying: address(tokenB),
+      priceSource: priceFeedB,
+      config: _defaultReserveConfig(),
+      dynamicConfig: _defaultDynamicReserveConfig()
+    });
+
+    engine.executeSpokeReserveListings(listings);
+
+    assertEq(spoke1().getReserveCount(), reserveCountBefore + 2);
+  }
 }

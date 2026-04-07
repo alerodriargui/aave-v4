@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import 'tests/config-engine/BaseConfigEngine.t.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 contract HubEngineTest is BaseConfigEngineTest {
   function setUp() public override {
@@ -963,5 +964,137 @@ contract HubEngineTest is BaseConfigEngineTest {
 
     IHub.SpokeConfig memory config2 = hub2().getSpokeConfig(_getAssetId(1, 0), address(spoke1()));
     assertEq(config2.addCap, 2222);
+  }
+
+  function test_executeHubAssetConfigUpdates_multipleAssets() public {
+    uint256 assetId0 = _getAssetId(0, TOKEN_WETH);
+    uint256 assetId1 = _getAssetId(0, TOKEN_USDX);
+
+    IAaveV4ConfigEngine.AssetConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](2);
+
+    updates[0] = _defaultAssetConfigUpdate();
+    updates[0].underlying = address(weth);
+    updates[0].liquidityFee = 3_00;
+    updates[0].feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    updates[0].irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    updates[0].irData = _keepCurrentIrData();
+    updates[0].reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
+
+    updates[1] = _defaultAssetConfigUpdate();
+    updates[1].underlying = address(usdx);
+    updates[1].liquidityFee = 6_00;
+    updates[1].feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    updates[1].irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    updates[1].irData = _keepCurrentIrData();
+    updates[1].reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
+
+    engine.executeHubAssetConfigUpdates(updates);
+
+    assertEq(hub1().getAssetConfig(assetId0).liquidityFee, 3_00);
+    assertEq(hub1().getAssetConfig(assetId1).liquidityFee, 6_00);
+  }
+
+  function test_executeHubAssetConfigUpdates_crossHub() public {
+    uint256 assetIdHub1 = _getAssetId(0, TOKEN_WETH);
+    uint256 assetIdHub2 = _getAssetId(1, TOKEN_WETH);
+    IHub.AssetConfig memory configHub1Before = hub1().getAssetConfig(assetIdHub1);
+    IHub.AssetConfig memory configHub2Before = hub2().getAssetConfig(assetIdHub2);
+
+    IAaveV4ConfigEngine.AssetConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.AssetConfigUpdate[](2);
+
+    updates[0] = _defaultAssetConfigUpdate();
+    updates[0].hub = address(hub1());
+    updates[0].underlying = address(weth);
+    updates[0].liquidityFee = 2_00;
+    updates[0].feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    updates[0].irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    updates[0].irData = _keepCurrentIrData();
+    updates[0].reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
+
+    updates[1] = _defaultAssetConfigUpdate();
+    updates[1].hub = address(hub2());
+    updates[1].underlying = address(weth);
+    updates[1].liquidityFee = 8_00;
+    updates[1].feeReceiver = EngineFlags.KEEP_CURRENT_ADDRESS;
+    updates[1].irStrategy = EngineFlags.KEEP_CURRENT_ADDRESS;
+    updates[1].irData = _keepCurrentIrData();
+    updates[1].reinvestmentController = EngineFlags.KEEP_CURRENT_ADDRESS;
+
+    engine.executeHubAssetConfigUpdates(updates);
+
+    IHub.AssetConfig memory configHub1After = hub1().getAssetConfig(assetIdHub1);
+    assertEq(configHub1After.liquidityFee, 2_00);
+    assertEq(configHub1After.feeReceiver, configHub1Before.feeReceiver);
+
+    IHub.AssetConfig memory configHub2After = hub2().getAssetConfig(assetIdHub2);
+    assertEq(configHub2After.liquidityFee, 8_00);
+    assertEq(configHub2After.feeReceiver, configHub2Before.feeReceiver);
+  }
+
+  function test_executeHubSpokeConfigUpdates_multipleUpdates() public {
+    uint256 assetId0 = _getAssetId(0, TOKEN_WETH);
+    uint256 assetId1 = _getAssetId(0, TOKEN_USDX);
+
+    IAaveV4ConfigEngine.SpokeConfigUpdate[]
+      memory updates = new IAaveV4ConfigEngine.SpokeConfigUpdate[](2);
+
+    updates[0] = _defaultSpokeConfigUpdate();
+    updates[0].underlying = address(weth);
+    updates[0].addCap = 500;
+    updates[0].drawCap = EngineFlags.KEEP_CURRENT;
+    updates[0].riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
+    updates[0].active = EngineFlags.KEEP_CURRENT;
+    updates[0].halted = EngineFlags.KEEP_CURRENT;
+
+    updates[1] = _defaultSpokeConfigUpdate();
+    updates[1].underlying = address(usdx);
+    updates[1].addCap = 2000;
+    updates[1].drawCap = EngineFlags.KEEP_CURRENT;
+    updates[1].riskPremiumThreshold = EngineFlags.KEEP_CURRENT;
+    updates[1].active = EngineFlags.KEEP_CURRENT;
+    updates[1].halted = EngineFlags.KEEP_CURRENT;
+
+    engine.executeHubSpokeConfigUpdates(updates);
+
+    assertEq(hub1().getSpokeConfig(assetId0, address(spoke1())).addCap, 500);
+    assertEq(hub1().getSpokeConfig(assetId1, address(spoke1())).addCap, 2000);
+  }
+
+  function test_executeHubAssetHalts_multipleAssets() public {
+    IAaveV4ConfigEngine.AssetHalt[] memory halts = new IAaveV4ConfigEngine.AssetHalt[](2);
+    halts[0] = IAaveV4ConfigEngine.AssetHalt({
+      hubConfigurator: hubConfigurator,
+      hub: address(hub1()),
+      underlying: address(weth)
+    });
+    halts[1] = IAaveV4ConfigEngine.AssetHalt({
+      hubConfigurator: hubConfigurator,
+      hub: address(hub1()),
+      underlying: address(usdx)
+    });
+
+    engine.executeHubAssetHalts(halts);
+
+    assertTrue(hub1().getSpokeConfig(_getAssetId(0, TOKEN_WETH), address(spoke1())).halted);
+    assertTrue(hub1().getSpokeConfig(_getAssetId(0, TOKEN_USDX), address(spoke1())).halted);
+  }
+
+  function test_executeHubAssetListings_withTokenization_duplicateUnderlying_revertsBeforeCreate2()
+    public
+  {
+    IAaveV4ConfigEngine.AssetListing memory listing = _defaultAssetListing();
+    listing.underlying = address(newToken);
+    listing.tokenization = IAaveV4ConfigEngine.TokenizationSpokeConfig({
+      addCap: 1000,
+      name: 'Tokenized NEW',
+      symbol: 'tNEW'
+    });
+
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
+
+    vm.expectRevert(abi.encodeWithSelector(IHub.UnderlyingAlreadyListed.selector));
+    engine.executeHubAssetListings(_toAssetListingArray(listing));
   }
 }
