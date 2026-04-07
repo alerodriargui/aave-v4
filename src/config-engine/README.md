@@ -77,7 +77,12 @@ Override these to add custom logic (e.g. granting temporary permissions before t
 When `execute()` is called, actions run in the following fixed order:
 
 1. `_preExecute()`
-2. **Hub actions** (in order):
+2. **AccessManager actions** (in order):
+   1. Role memberships (grants / revocations)
+   2. Role updates (admin, guardian, grant delay, label)
+   3. Target function role updates
+   4. Target admin delay updates
+3. **Hub actions** (in order):
    1. Asset listings
    2. Asset config updates
    3. Spoke-to-assets additions
@@ -87,18 +92,13 @@ When `execute()` is called, actions run in the following fixed order:
    7. Asset caps resets
    8. Spoke deactivations
    9. Spoke caps resets
-3. **Spoke actions** (in order):
+4. **Spoke actions** (in order):
    1. Reserve listings
    2. Reserve config updates
    3. Liquidation config updates
    4. Dynamic reserve config additions
    5. Dynamic reserve config updates
    6. Position manager updates
-4. **AccessManager actions** (in order):
-   1. Role memberships (grants / revocations)
-   2. Role updates (admin, guardian, grant delay, label)
-   3. Target function role updates
-   4. Target admin delay updates
 5. **PositionManager actions** (in order):
    1. Spoke registrations
    2. Role renouncements

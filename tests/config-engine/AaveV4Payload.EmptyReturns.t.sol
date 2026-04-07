@@ -19,7 +19,7 @@ contract AaveV4PayloadEmptyReturnsTest is BaseConfigEngineTest {
   }
 
   /// @dev Calling execute() on the minimal payload exercises _preExecute, _postExecute,
-  ///   _executeHubActions, _executeSpokeActions, _executeAccessManagerActions, and every
+  ///   _executeAccessManagerActions, _executeHubActions, _executeSpokeActions, and every
   ///   base virtual getter (all returning empty arrays, so no delegatecalls are made).
   function test_minimalPayload_execute_noReverts() public {
     minimal.execute();

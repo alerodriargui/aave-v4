@@ -27,9 +27,9 @@ abstract contract AaveV4Payload {
   ///   the caller is responsible for authorization. Idempotency is not guaranteed.
   function execute() external {
     _preExecute();
+    _executeAccessManagerActions();
     _executeHubActions();
     _executeSpokeActions();
-    _executeAccessManagerActions();
     _executePositionManagerActions();
     _postExecute();
   }
