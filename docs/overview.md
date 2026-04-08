@@ -63,7 +63,7 @@ The key aspects of the Hub include:
   2. Hub added assets amount >= sum of all Spokes' added assets amount (converted from shares)
   3. Hub added shares == sum of Spoke added shares
   4. Supply share price and drawn index cannot decrease (remains constant or increases)
-  5. Hub's actual token balance is always >= internally tracked available liquidity
+  5. Hub's actual token balance for a given asset is always >= internally tracked available liquidity (`asset.liquidity`)
 
 ## Spokes
 
