@@ -15,7 +15,6 @@ certora/
 │   ├── LiquidationLogicHarness.sol  # LiquidationLogic library harness
 │   ├── MathWrapper.sol     # Math library wrapper for verification
 │   ├── PremiumWrapper.sol  # Premium library wrapper for verification
-│   ├── SpokeHarness.sol     # Spoke contract harness exposing internal functions
 │   └── SpokeUtilsHarness.sol # SpokeUtils library harness
 ├── spec/                    # CVL specification files
 │   ├── libs/               # Library specifications
@@ -626,13 +625,6 @@ Wraps LiquidationLogic library for verification:
 
 - Exposes `_calculateLiquidationAmounts()` for liquidation amount verification
 - Exposes `calculateLiquidationBonus()` for bonus calculation verification
-
-### `SpokeHarness.sol`
-
-Wraps Spoke functions for verification:
-
-- Exposes `_calculateDebtToTargetHealthFactor()` for debt calculation verification
-- Exposes `_processUserAccountData()` for account data processing verification
 
 ### `SpokeUtilsHarness.sol`
 
