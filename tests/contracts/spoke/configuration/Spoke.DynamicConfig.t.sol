@@ -6,6 +6,8 @@ import 'tests/setup/Base.t.sol';
 contract SpokeDynamicConfigTest is Base {
   using SafeCast for uint256;
   using PercentageMath for uint256;
+  using ProxyHelper for address;
+
   MockSpoke internal spoke;
 
   function setUp() public override {
@@ -114,8 +116,9 @@ contract SpokeDynamicConfigTest is Base {
     vm.assume(
       caller != SPOKE_ADMIN &&
         caller != ADMIN &&
-        caller != SPOKE_CONFIGURATOR &&
-        caller != _getProxyAdminAddress(address(spoke1))
+        caller != SPOKE_CONFIGURATOR_ADMIN &&
+        caller != address(spokeConfigurator) &&
+        caller != address(spoke1).getProxyAdmin()
     );
     uint256 reserveId = _randomReserveId(spoke1);
     uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);
@@ -225,8 +228,9 @@ contract SpokeDynamicConfigTest is Base {
     vm.assume(
       caller != SPOKE_ADMIN &&
         caller != ADMIN &&
-        caller != SPOKE_CONFIGURATOR &&
-        caller != _getProxyAdminAddress(address(spoke1))
+        caller != SPOKE_CONFIGURATOR_ADMIN &&
+        caller != address(spokeConfigurator) &&
+        caller != address(spoke1).getProxyAdmin()
     );
     uint256 reserveId = _randomReserveId(spoke1);
     uint32 dynamicConfigKey = _randomInitializedConfigKey(spoke1, reserveId);

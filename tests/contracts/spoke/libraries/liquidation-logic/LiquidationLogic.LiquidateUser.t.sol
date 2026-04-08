@@ -36,7 +36,7 @@ contract LiquidationLogicLiquidateUserTest is LiquidationLogicBaseTest {
       addedShares: 10_000e6,
       spoke: address(spoke1)
     });
-    (debtReserveHub, ) = hub2Fixture();
+    (debtReserveHub, ) = _hub2Fixture();
     _mockDrawnRateBps({
       irStrategy: debtReserveHub.getAsset(wethAssetId).irStrategy,
       drawnRateBps: 5_00

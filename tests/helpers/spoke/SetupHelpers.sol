@@ -10,8 +10,8 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {AaveOracle} from 'src/spoke/AaveOracle.sol';
-import {DeployUtils} from 'tests/helpers/deploy/DeployUtils.sol';
-import {ISpokeInstance} from 'tests/helpers/mocks/ISpokeInstance.sol';
+import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
+import {ISpokeInstance} from 'src/deployments/utils/interfaces/ISpokeInstance.sol';
 import {MockSpoke} from 'tests/helpers/mocks/MockSpoke.sol';
 import {SpokeActions} from 'tests/helpers/spoke/SpokeActions.sol';
 import {CheckedActions} from 'tests/helpers/spoke/CheckedActions.sol';
@@ -405,7 +405,10 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
   /// @dev Helper to etch spoke's implementation with a new maxUserReservesLimit
   function _updateMaxUserReservesLimit(ISpoke spoke, uint16 newLimit) internal {
     address currentImpl = _getImplementationAddress(address(spoke));
-    ISpokeInstance newImpl = DeployUtils.deploySpokeImplementation(spoke.ORACLE(), newLimit);
+    ISpokeInstance newImpl = AaveV4TestOrchestration.deploySpokeImplementation(
+      spoke.ORACLE(),
+      newLimit
+    );
     vm.etch(currentImpl, address(newImpl).code);
   }
 
@@ -430,11 +433,14 @@ abstract contract SetupHelpers is CheckedActions, ConfigHelpers, MockHelpers {
     vm.startPrank(deployer);
     IAaveOracle oracle = new AaveOracle(8);
 
-    ISpoke spoke = DeployUtils.deploySpoke(
-      address(oracle),
-      maxUserReservesLimit,
-      proxyAdminOwner,
-      abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
+    ISpoke spoke = ISpoke(
+      AaveV4TestOrchestration.proxify(
+        address(
+          AaveV4TestOrchestration.deploySpokeImplementation(address(oracle), maxUserReservesLimit)
+        ),
+        proxyAdminOwner,
+        abi.encodeCall(ISpokeInstance.initialize, (_accessManager))
+      )
     );
 
     oracle.setSpoke(address(spoke));

@@ -354,6 +354,9 @@ contract SpokeAccrueInterestScenarioTest is Base {
       _convertAmountToValue(spoke, _usdxReserveId(spoke), amounts.usdxSupplyAmount) +
       _convertAmountToValue(spoke, _wbtcReserveId(spoke), amounts.wbtcSupplyAmount);
 
+    // Skip fuzz inputs with no collateral — they produce no meaningful positions
+    vm.assume(remainingCollateralValue > 0);
+
     // Bound each debt amount to be no more than half the remaining collateral value
     amounts.daiBorrowAmount = bound(
       amounts.daiBorrowAmount,

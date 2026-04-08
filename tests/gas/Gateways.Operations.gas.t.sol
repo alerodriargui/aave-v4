@@ -12,7 +12,6 @@ contract NativeTokenGateway_Gas_Tests is Base {
 
   function setUp() public virtual override {
     super.setUp();
-
     nativeTokenGateway = new NativeTokenGateway(address(tokenList.weth), address(ADMIN));
 
     vm.prank(SPOKE_ADMIN);

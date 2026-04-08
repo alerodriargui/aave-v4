@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SpokeHelpers} from 'tests/helpers/spoke/SpokeHelpers.sol';
 import {HubActions} from 'tests/helpers/hub/HubActions.sol';
-import {DeployUtils} from 'tests/helpers/deploy/DeployUtils.sol';
+import {AaveV4TestOrchestration} from 'tests/deployments/orchestration/AaveV4TestOrchestration.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
 import {ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
 import {ITokenizationSpoke} from 'src/spoke/TokenizationSpoke.sol';
@@ -29,7 +29,7 @@ abstract contract SetupHelpers is SpokeHelpers {
       new TokenizationSpokeInstance(address(hub), underlying)
     );
     ITokenizationSpoke tokenizationSpoke = ITokenizationSpoke(
-      DeployUtils.proxify(
+      AaveV4TestOrchestration.proxify(
         tokenizationSpokeImpl,
         proxyAdminOwner,
         abi.encodeCall(TokenizationSpokeInstance.initialize, (shareName, shareSymbol))

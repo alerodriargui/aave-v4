@@ -366,10 +366,10 @@ contract SpokeDynamicConfigTriggersTest is Base {
   function test_updateUserDynamicConfig_reverts_when_not_authorized(address caller) public {
     vm.assume(
       caller != alice &&
+        caller != ADMIN &&
         caller != POSITION_MANAGER &&
         caller != SPOKE_ADMIN &&
-        caller != USER_POSITION_UPDATER &&
-        caller != _getProxyAdminAddress(address(spoke1))
+        caller != ProxyHelper.getProxyAdmin(address(spoke1))
     );
 
     SpokeActions.supplyCollateral({
@@ -418,7 +418,6 @@ contract SpokeDynamicConfigTriggersTest is Base {
     _updateUserDynamicConfig({caller: alice, existingConfigs: configs});
     _updateUserDynamicConfig({caller: POSITION_MANAGER, existingConfigs: configs});
     _updateUserDynamicConfig({caller: SPOKE_ADMIN, existingConfigs: configs});
-    _updateUserDynamicConfig({caller: USER_POSITION_UPDATER, existingConfigs: configs});
   }
 
   function test_updateUserDynamicConfig_updatesRP() public {

@@ -12,7 +12,9 @@ contract SpokeConfigTest is Base {
     vm.expectCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), 1);
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));
     ISpoke instance = ISpoke(
-      address(DeployUtils.deploySpokeImplementation(oracle, MAX_ALLOWED_USER_RESERVES_LIMIT))
+      address(
+        AaveV4TestOrchestration.deploySpokeImplementation(oracle, MAX_ALLOWED_USER_RESERVES_LIMIT)
+      )
     );
     assertEq(instance.ORACLE(), oracle);
     assertEq(instance.MAX_USER_RESERVES_LIMIT(), MAX_ALLOWED_USER_RESERVES_LIMIT);
@@ -20,14 +22,14 @@ contract SpokeConfigTest is Base {
   }
 
   function test_spoke_deploy_reverts_on_InvalidConstructorInput() public {
-    DeployWrapper deployer = new DeployWrapper();
+    AaveV4TestOrchestrationWrapper deployer = new AaveV4TestOrchestrationWrapper();
 
     vm.expectRevert();
     deployer.deploySpokeImplementation(address(0), MAX_ALLOWED_USER_RESERVES_LIMIT);
   }
 
   function test_spoke_deploy_reverts_on_InvalidOracleDecimals() public {
-    DeployWrapper deployer = new DeployWrapper();
+    AaveV4TestOrchestrationWrapper deployer = new AaveV4TestOrchestrationWrapper();
     address oracle = makeAddr('AaveOracle');
 
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(7));
@@ -36,7 +38,7 @@ contract SpokeConfigTest is Base {
   }
 
   function test_spoke_deploy_reverts_on_InvalidMaxUserReservesLimit() public {
-    DeployWrapper deployer = new DeployWrapper();
+    AaveV4TestOrchestrationWrapper deployer = new AaveV4TestOrchestrationWrapper();
     address oracle = makeAddr('AaveOracle');
 
     vm.mockCall(oracle, abi.encodeCall(IPriceOracle.decimals, ()), abi.encode(8));
@@ -50,8 +52,9 @@ contract SpokeConfigTest is Base {
     vm.assume(
       caller != SPOKE_ADMIN &&
         caller != ADMIN &&
-        caller != SPOKE_CONFIGURATOR &&
-        caller != _getProxyAdminAddress(address(spoke1))
+        caller != SPOKE_CONFIGURATOR_ADMIN &&
+        caller != address(spokeConfigurator) &&
+        caller != ProxyHelper.getProxyAdmin(address(spoke1))
     );
     vm.expectRevert(
       abi.encodeWithSelector(IAccessManaged.AccessManagedUnauthorized.selector, caller)
@@ -307,8 +310,8 @@ contract SpokeConfigTest is Base {
   }
 
   function test_getReserveId_fuzz_multipleHubs(uint256 reserveId) public {
-    (IHub hub2, ) = hub2Fixture();
-    (IHub hub3, ) = hub3Fixture();
+    (IHub hub2, ) = _hub2Fixture();
+    (IHub hub3, ) = _hub3Fixture();
 
     vm.startPrank(ADMIN);
     spoke1.addReserve(

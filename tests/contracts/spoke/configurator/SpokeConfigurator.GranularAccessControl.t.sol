@@ -6,17 +6,16 @@ import 'tests/setup/Base.t.sol';
 contract SpokeConfiguratorGranularAccessControlTest is Base {
   using SafeCast for uint256;
 
-  // Granular role constants
-  uint64 constant RESERVE_MANAGER_ROLE = 102;
-  uint64 constant LIQUIDATION_CONFIG_MANAGER_ROLE = 103;
-  uint64 constant POSITION_MANAGER_ADMIN_ROLE = 104;
+  // Granular role constants (must not collide with Roles.sol IDs 0-113, 200-309)
+  uint64 constant RESERVE_MANAGER_ROLE = 1002;
+  uint64 constant LIQUIDATION_CONFIG_MANAGER_ROLE = 1003;
+  uint64 constant POSITION_MANAGER_ADMIN_ROLE = 1004;
 
   // Role holders
   address public RESERVE_MANAGER = makeAddr('RESERVE_MANAGER');
   address public LIQUIDATION_CONFIG_MANAGER = makeAddr('LIQUIDATION_CONFIG_MANAGER');
   address public POSITION_MANAGER_ADMIN = makeAddr('POSITION_MANAGER_ADMIN');
 
-  SpokeConfigurator public spokeConfigurator;
   IAccessManager public manager;
 
   address public spokeAddr;
@@ -34,9 +33,9 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     manager = IAccessManager(spoke1.authority());
     spokeConfigurator = new SpokeConfigurator(address(manager));
 
-    // Grant SPOKE_ADMIN_ROLE to spokeConfigurator so it can call spoke functions
+    // Grant SPOKE_CONFIGURATOR_ROLE to spokeConfigurator so it can call spoke functions
     vm.startPrank(ADMIN);
-    manager.grantRole(Roles.SPOKE_ADMIN_ROLE, address(spokeConfigurator), 0);
+    manager.grantRole(Roles.SPOKE_CONFIGURATOR_ROLE, address(spokeConfigurator), 0);
 
     // Grant granular roles to role holders
     manager.grantRole(RESERVE_MANAGER_ROLE, RESERVE_MANAGER, 0);
@@ -206,6 +205,7 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
 
   function test_fuzz_unauthorized_cannotCall_reserveManagerMethods(address caller) public {
     vm.assume(caller != RESERVE_MANAGER);
+    vm.assume(caller != ADMIN);
     vm.assume(caller != address(0));
 
     for (uint256 i = 0; i < reserveManagerCalldata.length; ++i) {
@@ -223,6 +223,7 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
     address caller
   ) public {
     vm.assume(caller != LIQUIDATION_CONFIG_MANAGER);
+    vm.assume(caller != ADMIN);
     vm.assume(caller != address(0));
 
     for (uint256 i = 0; i < liquidationConfigManagerCalldata.length; ++i) {
@@ -240,6 +241,7 @@ contract SpokeConfiguratorGranularAccessControlTest is Base {
 
   function test_fuzz_unauthorized_cannotCall_positionManagerAdminMethods(address caller) public {
     vm.assume(caller != POSITION_MANAGER_ADMIN);
+    vm.assume(caller != ADMIN);
     vm.assume(caller != address(0));
 
     for (uint256 i = 0; i < positionManagerAdminCalldata.length; ++i) {
