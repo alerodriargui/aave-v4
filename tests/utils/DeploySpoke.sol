@@ -4,8 +4,7 @@ pragma solidity ^0.8.0;
 
 import {BytecodeLoader} from 'tests/utils/BytecodeLoader.sol';
 
-import {Create2Utils} from 'tests/Create2Utils.sol';
-import {DeployUtils} from 'tests/DeployUtils.sol';
+import {Create2Utils} from 'src/deployments/utils/libraries/Create2Utils.sol';
 
 /// @notice Helper to deploy Spoke from custom profile precompiled bytecode
 contract DeploySpoke {
@@ -20,12 +19,10 @@ contract DeploySpoke {
     bytes memory initArgs,
     bytes32 salt
   ) public returns (address, address) {
-    Create2Utils.loadCreate2Factory();
-
     bytes memory bytecode = BytecodeLoader.loadSpokeInstanceBytecode();
 
     address impl = Create2Utils.create2Deploy(salt, abi.encodePacked(bytecode, deployArgs));
-    address proxy = DeployUtils.proxify(impl, msg.sender, initArgs);
+    address proxy = Create2Utils.proxify(salt, impl, msg.sender, initArgs);
 
     return (impl, proxy);
   }

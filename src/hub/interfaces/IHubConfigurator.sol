@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
-// Copyright (c) 2025 Aave Labs
+// SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity ^0.8.0;
 
 import {IHub} from 'src/hub/interfaces/IHub.sol';
@@ -8,7 +7,10 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /// @author Aave Labs
 /// @notice Interface for HubConfigurator.
 interface IHubConfigurator {
-  /// @notice Thrown when the list of assets and Spoke configs are not the same length in `addSpokeToAssets`.
+  /// @notice Thrown when an address parameter is the zero address.
+  error InvalidAddress();
+
+  /// @notice Thrown when the list of assets and spoke configs are not the same length in `addSpokeToAssets`.
   error MismatchedConfigs();
 
   /// @notice Adds a new asset to a specified Hub.
@@ -17,7 +19,7 @@ interface IHubConfigurator {
   /// @param hub The address of the Hub.
   /// @param underlying The address of the underlying asset.
   /// @param feeReceiver The address of the fee receiver Spoke.
-  /// @param liquidityFee The liquidity fee of the asset, in BPS.
+  /// @param liquidityFee The liquidity fee of the asset, expressed in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
@@ -36,7 +38,7 @@ interface IHubConfigurator {
   /// @param underlying The address of the underlying asset.
   /// @param decimals The number of decimals of the asset.
   /// @param feeReceiver The address of the fee receiver Spoke.
-  /// @param liquidityFee The liquidity fee of the asset, in BPS.
+  /// @param liquidityFee The liquidity fee of the asset, expressed in BPS.
   /// @param irStrategy The address of the interest rate strategy contract.
   /// @param irData The interest rate data to apply to the given asset, encoded in bytes.
   /// @return The unique identifier of the added asset.
@@ -113,7 +115,7 @@ interface IHubConfigurator {
   /// @param assetId The identifier of the asset.
   function haltAsset(address hub, uint256 assetId) external;
 
-  /// @notice Register the Spoke for the specified asset on a specified Hub.
+  /// @notice Registers the Spoke for the specified asset on a specified Hub.
   /// @param hub The address of the Hub.
   /// @param spoke The address of the Spoke.
   /// @param assetId The identifier of the asset to register the Spoke for.

@@ -9,7 +9,7 @@ contract GenerateHubBytecodeScript is Script {
   string private constant SPOKE_INSTANCE_BYTECODE_PATH = 'tests/bin/spokeInstance.bytecode';
 
   function run() external {
-    bytes memory hubBytecode = vm.getCode('src/hub/Hub.sol:Hub');
+    bytes memory hubBytecode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
     vm.writeFileBinary(HUB_BYTECODE_PATH, hubBytecode);
 
     string memory artifact = vm.readFile('out/SpokeInstance.sol/SpokeInstance.json');

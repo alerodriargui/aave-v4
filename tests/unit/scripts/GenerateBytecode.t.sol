@@ -11,7 +11,7 @@ contract GenerateBytecodeScript is Test {
   string private constant SPOKE_INSTANCE_BYTECODE_PATH = 'tests/bin/spokeInstance.bytecode';
 
   function test_generated_HubBytecode() public view {
-    bytes memory hubBytecode = vm.getCode('src/hub/Hub.sol:Hub');
+    bytes memory hubBytecode = vm.getCode('src/hub/instances/HubInstance.sol:HubInstance');
 
     assertEq(
       hubBytecode,
