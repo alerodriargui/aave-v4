@@ -58,12 +58,11 @@ The key aspects of the Hub include:
 - Managing interest rate strategy per asset, defining the optimal usage ratio, base drawn rate, and rate slopes, among other parameters.
 - Managing the access controls for the Governor entity authorized to execute emergency controls, the authorized entity which can call `mintFeeShares`, and general access controls via the `AccessManager` authority.
 - Setting the liquidity fee per asset, determining the share of interest revenue retained by the protocol.
-- Enforcing accounting invariants and solvency:
-  1. Total borrowed shares == sum of Spoke debt shares (including both premium and drawn shares)
-  2. Hub added assets amount >= sum of all Spokes' added assets amount (converted from shares)
+- Enforcing accounting invariants:
+  1. Total borrowed shares == sum of Spoke debt shares
+  2. Hub added assets amount >= sum of Spoke added assets amount (converted from shares)
   3. Hub added shares == sum of Spoke added shares
   4. Supply share price and drawn index cannot decrease (remains constant or increases)
-  5. Hub's actual token balance for a given asset is always >= internally tracked available liquidity (`asset.liquidity`)
 
 ## Spokes
 
