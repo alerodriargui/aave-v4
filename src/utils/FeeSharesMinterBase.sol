@@ -15,7 +15,7 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
   uint256 public constant MAX_TIME_INTERVAL = 365 days;
 
   /// @inheritdoc IFeeSharesMinterBase
-  mapping(address hub => mapping(uint256 assetId => uint256)) public lastMintTime;
+  mapping(address hub => mapping(uint256 assetId => uint256 timestamp)) public lastMintTime;
 
   mapping(address hub => mapping(uint256 assetId => MintConfig)) internal _configs;
 

@@ -9,7 +9,7 @@ import {AutomationCompatibleInterface} from 'src/dependencies/chainlink/Automati
 interface IFeeSharesMinterBase is AutomationCompatibleInterface {
   /// @notice Configuration for automated fee share minting on a specific asset.
   /// @param minTimeInterval Minimum number of seconds that must elapse between mint executions.
-  /// @param minAccruedFeesPercent Minimum ratio of accrued fees to total assets, in bps.
+  /// @param minAccruedFeesPercent Minimum ratio of accrued fees to total assets, in BPS.
   struct MintConfig {
     uint48 minTimeInterval;
     uint16 minAccruedFeesPercent;
@@ -60,7 +60,7 @@ interface IFeeSharesMinterBase is AutomationCompatibleInterface {
   /// @notice Returns the last timestamp at which fee shares were minted for a given asset.
   /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.
-  /// @return The block timestamp of the last successful `execute` call.
+  /// @return The timestamp of the last successful `execute` call.
   function lastMintTime(address hub, uint256 assetId) external view returns (uint256);
 
   /// @notice Checks whether the conditions to mint fee shares are currently met.
