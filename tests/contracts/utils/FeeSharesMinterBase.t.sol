@@ -15,9 +15,9 @@ contract FeeSharesMinterBaseTest is Base {
     super.setUp();
     _minter = new FeeSharesMinterBase(ADMIN);
 
-    // Grant _minter the HUB_ADMIN_ROLE so it can call mintFeeShares
+    // Grant _minter the HUB_FEE_MINTER_ROLE so it can call mintFeeShares
     vm.prank(ADMIN);
-    accessManager.grantRole(Roles.HUB_ADMIN_ROLE, address(_minter), 0);
+    accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, address(_minter), 0);
   }
 
   function test_setConfig_revertsWith_OwnableUnauthorized() public {
