@@ -45,26 +45,7 @@ contract HubAccrueInterestTest is Base {
 
   function setUp() public override {
     super.setUp();
-
-    address[3] memory spokes = [address(spoke1), address(spoke2), address(spoke3)];
-
-    for (uint256 x; x < spokes.length; ++x) {
-      tokenList.usdx.mint(spokes[x], MAX_SUPPLY_AMOUNT);
-      tokenList.dai.mint(spokes[x], MAX_SUPPLY_AMOUNT);
-      tokenList.wbtc.mint(spokes[x], MAX_SUPPLY_AMOUNT);
-      tokenList.usdy.mint(spokes[x], MAX_SUPPLY_AMOUNT);
-      tokenList.usdz.mint(spokes[x], MAX_SUPPLY_AMOUNT);
-      deal(address(tokenList.weth), spokes[x], MAX_SUPPLY_AMOUNT);
-
-      vm.startPrank(spokes[x]);
-      tokenList.weth.approve(address(hub1), UINT256_MAX);
-      tokenList.usdx.approve(address(hub1), UINT256_MAX);
-      tokenList.dai.approve(address(hub1), UINT256_MAX);
-      tokenList.wbtc.approve(address(hub1), UINT256_MAX);
-      tokenList.usdy.approve(address(hub1), UINT256_MAX);
-      tokenList.usdz.approve(address(hub1), UINT256_MAX);
-      vm.stopPrank();
-    }
+    spokeMintAndApprove();
   }
 
   /// no interest accrued when no action taken

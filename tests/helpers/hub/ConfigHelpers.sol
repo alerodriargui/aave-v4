@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
-import {Roles} from 'src/libraries/types/Roles.sol';
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {Assertions} from 'tests/helpers/hub/Assertions.sol';
 
 /// @title ConfigHelpers
@@ -123,6 +123,6 @@ abstract contract ConfigHelpers is Assertions {
   ) internal pausePrank {
     IAccessManager manager = IAccessManager(hub.authority());
     vm.prank(admin);
-    manager.grantRole(Roles.DEFICIT_ELIMINATOR_ROLE, target, 0);
+    manager.grantRole(Roles.HUB_DEFICIT_ELIMINATOR_ROLE, target, 0);
   }
 }

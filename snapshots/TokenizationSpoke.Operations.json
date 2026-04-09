@@ -2,7 +2,7 @@
   "deposit": "118614",
   "depositWithSig": "129518",
   "mint": "118251",
-  "mintWithSig": "129118",
+  "mintWithSig": "129130",
   "permit": "62766",
   "redeem: on behalf, full": "95212",
   "redeem: on behalf, partial": "119015",
@@ -13,5 +13,5 @@
   "withdraw: on behalf, partial": "119557",
   "withdraw: self, full": "94824",
   "withdraw: self, partial": "114024",
-  "withdrawWithSig": "129417"
+  "withdrawWithSig": "129405"
 }

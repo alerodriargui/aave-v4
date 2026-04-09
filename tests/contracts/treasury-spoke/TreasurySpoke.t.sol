@@ -11,7 +11,7 @@ contract TreasurySpokeTest is Base {
   function setUp() public virtual override {
     super.setUp();
     _testToken = new MockERC20();
-    (hub2, ) = hub2Fixture();
+    (hub2, ) = _hub2Fixture();
 
     // Add a reserve on spoke1 for hub2
     vm.startPrank(ADMIN);
@@ -52,7 +52,7 @@ contract TreasurySpokeTest is Base {
     vm.expectRevert(
       abi.encodeWithSelector(OwnableUpgradeable.OwnableInvalidOwner.selector, address(0))
     );
-    DeployUtils.proxify(
+    AaveV4TestOrchestration.proxify(
       address(impl),
       ADMIN,
       abi.encodeCall(TreasurySpokeInstance.initialize, (address(0)))
@@ -521,9 +521,5 @@ contract TreasurySpokeTest is Base {
       1,
       'hub2 reserve supplied shares'
     );
-  }
-
-  function _treasurySpoke() internal view returns (ISpoke) {
-    return ISpoke(address(treasurySpoke));
   }
 }

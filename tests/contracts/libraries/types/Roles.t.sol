@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Roles} from 'src/libraries/types/Roles.sol';
+import {Roles} from 'src/deployments/utils/libraries/Roles.sol';
 import {Test} from 'forge-std/Test.sol';
 
 contract RolesTest is Test {
   function test_constants() public pure {
-    assertEq(Roles.DEFAULT_ADMIN_ROLE, 0);
-    assertEq(Roles.HUB_ADMIN_ROLE, 1);
-    assertEq(Roles.SPOKE_ADMIN_ROLE, 2);
-    assertEq(Roles.USER_POSITION_UPDATER_ROLE, 3);
-    assertEq(Roles.HUB_CONFIGURATOR_ROLE, 4);
-    assertEq(Roles.SPOKE_CONFIGURATOR_ROLE, 5);
-    assertEq(Roles.DEFICIT_ELIMINATOR_ROLE, 6);
+    assertEq(Roles.ACCESS_MANAGER_ADMIN_ROLE, 0);
+    assertEq(Roles.HUB_DOMAIN_ADMIN_ROLE, 100);
+    assertEq(Roles.HUB_CONFIGURATOR_ROLE, 101);
+    assertEq(Roles.HUB_FEE_MINTER_ROLE, 102);
+    assertEq(Roles.HUB_DEFICIT_ELIMINATOR_ROLE, 103);
+    assertEq(Roles.HUB_CONFIGURATOR_DOMAIN_ADMIN_ROLE, 200);
+    assertEq(Roles.SPOKE_DOMAIN_ADMIN_ROLE, 300);
+    assertEq(Roles.SPOKE_CONFIGURATOR_ROLE, 301);
+    assertEq(Roles.SPOKE_USER_POSITION_UPDATER_ROLE, 302);
+    assertEq(Roles.SPOKE_CONFIGURATOR_DOMAIN_ADMIN_ROLE, 400);
   }
 }

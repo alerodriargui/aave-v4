@@ -3,18 +3,25 @@ pragma solidity ^0.8.0;
 
 import {IAccessManager} from 'src/dependencies/openzeppelin/IAccessManager.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
+import {IERC20Metadata} from 'src/dependencies/openzeppelin/IERC20Metadata.sol';
 import {WETH9} from 'src/dependencies/weth/WETH9.sol';
 import {WadRayMath} from 'src/libraries/math/WadRayMath.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {IHub, IHubBase} from 'src/hub/interfaces/IHub.sol';
-import {AssetInterestRateStrategy} from 'src/hub/AssetInterestRateStrategy.sol';
+import {IHubConfigurator} from 'src/hub/interfaces/IHubConfigurator.sol';
+import {
+  AssetInterestRateStrategy,
+  IAssetInterestRateStrategy
+} from 'src/hub/AssetInterestRateStrategy.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ITreasurySpoke} from 'src/spoke/TreasurySpoke.sol';
+import {ISpokeConfigurator} from 'src/spoke/SpokeConfigurator.sol';
 import {CommonHelpers} from 'tests/helpers/commons/CommonHelpers.sol';
 import {HubHelpers} from 'tests/helpers/hub/HubHelpers.sol';
 import {SpokeHelpers} from 'tests/helpers/spoke/SpokeHelpers.sol';
 import {TestnetERC20} from 'tests/helpers/mocks/TestnetERC20.sol';
+import {TestTypes} from 'tests/utils/TestTypes.sol';
 
 /// @title BaseState
 /// @notice Shared state variables, constants, and low-level helpers for the Aave V4 test suite.
@@ -22,15 +29,6 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
   using WadRayMath for *;
   using PercentageMath for uint256;
   using SafeCast for *;
-
-  struct TokenList {
-    WETH9 weth;
-    TestnetERC20 usdx;
-    TestnetERC20 dai;
-    TestnetERC20 wbtc;
-    TestnetERC20 usdy;
-    TestnetERC20 usdz;
-  }
 
   struct SpokeInfo {
     ReserveInfo weth;
@@ -63,6 +61,22 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
     uint256 wbtc;
   }
 
+  struct Decimals {
+    uint8 usdx;
+    uint8 dai;
+    uint8 wbtc;
+    uint8 usdy;
+    uint8 weth;
+    uint8 usdz;
+  }
+
+  struct FixtureAssetList {
+    IERC20Metadata underlying;
+    uint16 liquidityFee;
+    address reinvestmentController;
+    bytes irData;
+  }
+
   uint256 public constant MAX_SKIP_TIME = 10_000 days;
 
   uint256 internal MAX_SUPPLY_AMOUNT_USDX;
@@ -78,6 +92,11 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
   uint256 internal constant MAX_ASSET_PRICE = 1e8 * 1e8;
   IHubBase.PremiumDelta internal ZERO_PREMIUM_DELTA;
 
+  IHub[] internal _hubs;
+  ISpoke[] internal _spokes;
+  IAaveOracle[] internal _oracles;
+  IAssetInterestRateStrategy[] internal _irStrategies;
+
   IAaveOracle internal oracle1;
   IAaveOracle internal oracle2;
   IAaveOracle internal oracle3;
@@ -86,8 +105,10 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
   ISpoke internal spoke1;
   ISpoke internal spoke2;
   ISpoke internal spoke3;
-  AssetInterestRateStrategy internal irStrategy;
+  IAssetInterestRateStrategy internal irStrategy;
   IAccessManager internal accessManager;
+  IHubConfigurator internal hubConfigurator;
+  ISpokeConfigurator internal spokeConfigurator;
 
   string internal constant ALICE = 'alice';
   string internal constant BOB = 'bob';
@@ -109,16 +130,33 @@ abstract contract BaseState is HubHelpers, SpokeHelpers {
   address internal TREASURY_ADMIN = makeAddr('TREASURY_ADMIN');
   address internal LIQUIDATOR = makeAddr('LIQUIDATOR');
   address internal POSITION_MANAGER = makeAddr('POSITION_MANAGER');
-  address internal HUB_CONFIGURATOR = makeAddr('HUB_CONFIGURATOR');
-  address internal SPOKE_CONFIGURATOR = makeAddr('SPOKE_CONFIGURATOR');
+  address internal HUB_CONFIGURATOR_ADMIN = makeAddr('HUB_CONFIGURATOR_ADMIN');
+  address internal SPOKE_CONFIGURATOR_ADMIN = makeAddr('SPOKE_CONFIGURATOR_ADMIN');
 
-  TokenList internal tokenList;
+  TestTypes.TokenList internal tokenList;
   uint256 internal wethAssetId = 0;
   uint256 internal usdxAssetId = 1;
   uint256 internal daiAssetId = 2;
   uint256 internal wbtcAssetId = 3;
   uint256 internal usdyAssetId = 4;
   uint256 internal usdzAssetId = 5;
+
+  uint256 internal mintAmount_WETH = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_USDX = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_DAI = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_WBTC = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_USDY = MAX_SUPPLY_AMOUNT;
+  uint256 internal mintAmount_USDZ = MAX_SUPPLY_AMOUNT;
+
+  Decimals internal _decimals = Decimals({usdx: 6, usdy: 18, dai: 18, wbtc: 8, weth: 18, usdz: 18});
+
+  IAssetInterestRateStrategy.InterestRateData internal _defaultIrData =
+    IAssetInterestRateStrategy.InterestRateData({
+      optimalUsageRatio: 90_00,
+      baseDrawnRate: 5_00,
+      rateGrowthBeforeOptimal: 5_00,
+      rateGrowthAfterOptimal: 5_00
+    });
 
   mapping(ISpoke => SpokeInfo) internal spokeInfo;
 
