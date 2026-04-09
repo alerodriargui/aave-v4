@@ -26,137 +26,6 @@ contract FeeSharesMinterBaseTest is Base {
     _minter.setConfig(address(hub1), daiAssetId, 100);
   }
 
-  function test_execute() public {
-    test_fuzz_execute({
-      addAmount: 1000e18,
-      drawAmount: 900e18,
-      skipTime: 365 days,
-      minAccruedFeesPercent: 10
-    });
-  }
-
-  function test_fuzz_execute(
-    uint256 addAmount,
-    uint256 drawAmount,
-    uint256 skipTime,
-    uint16 minAccruedFeesPercent
-  ) public {
-    addAmount = bound(addAmount, 2, MAX_SUPPLY_AMOUNT);
-    drawAmount = bound(drawAmount, 1, addAmount / 2);
-    skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-    minAccruedFeesPercent = bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
-      .toUint16();
-
-    vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, minAccruedFeesPercent);
-
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke1),
-      addAmount: addAmount,
-      drawUser: bob,
-      drawSpoke: address(spoke1),
-      drawAmount: drawAmount,
-      skipTime: skipTime
-    });
-
-    if (_minter.checkExecute(address(hub1), daiAssetId)) {
-      _minter.execute(address(hub1), daiAssetId);
-    } else {
-      vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
-      _minter.execute(address(hub1), daiAssetId);
-    }
-  }
-
-  function test_execute_revertsWith_ConditionsNotMet_zeroFees() public {
-    vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, 0);
-
-    // Add liquidity, but no borrow, so no fees
-    HubActions.add({
-      hub: hub1,
-      assetId: daiAssetId,
-      caller: address(spoke1),
-      amount: 1000e18,
-      user: bob
-    });
-
-    skip(365 days);
-
-    uint256 accruedFees = hub1.getAssetAccruedFees(daiAssetId);
-    assertEq(accruedFees, 0, 'No fees should be accrued');
-
-    assertFalse(_minter.checkExecute(address(hub1), daiAssetId));
-
-    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
-    _minter.execute(address(hub1), daiAssetId);
-  }
-
-  function test_execute_revertsWith_ConditionsNotMet_PercentThresholdNotMet() public {
-    uint16 threshold = 50_00; // 50%
-    vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, threshold);
-
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke1),
-      addAmount: 1000e18,
-      drawUser: bob,
-      drawSpoke: address(spoke1),
-      drawAmount: 100e18,
-      skipTime: 365 days
-    });
-
-    uint256 fees = hub1.getAssetAccruedFees(daiAssetId);
-    uint256 totalAssets = hub1.getAddedAssets(daiAssetId);
-
-    assertGt(fees, 0, 'Fees must be nonzero');
-    assertGt(hub1.previewAddByAssets(daiAssetId, fees), 0, 'At least 1 share would be minted');
-    assertLt(fees, totalAssets / 2, 'Fees must be < 50% of total');
-
-    assertFalse(_minter.checkExecute(address(hub1), daiAssetId));
-
-    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
-    _minter.execute(address(hub1), daiAssetId);
-  }
-
-  function test_execute_revertsWith_ConditionsNotMet_MinShareNotMet_nonzeroFees() public {
-    vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, 0);
-
-    // Inflate exchange rate
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke1),
-      addAmount: 300 wei,
-      drawUser: bob,
-      drawSpoke: address(spoke1),
-      drawAmount: 200 wei,
-      skipTime: MAX_SKIP_TIME - 110 days
-    });
-
-    // Clear accrued fees
-    _minter.execute(address(hub1), daiAssetId);
-
-    // Accrue some fees
-    skip(110 days);
-
-    uint256 fees = hub1.getAssetAccruedFees(daiAssetId);
-    assertGt(fees, 0, 'Fees must be nonzero');
-    assertEq(hub1.previewAddByAssets(daiAssetId, fees), 0, 'Shares must round to zero');
-
-    assertFalse(_minter.checkExecute(address(hub1), daiAssetId));
-
-    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
-    _minter.execute(address(hub1), daiAssetId);
-  }
-
   function test_fuzz_setConfig_success(uint16 minAccruedFeesPercent) public {
     minAccruedFeesPercent = bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
@@ -261,21 +130,11 @@ contract FeeSharesMinterBaseTest is Base {
     bytes memory checkData = abi.encode(address(hub1), daiAssetId);
     (bool upkeepNeeded, bytes memory performData) = _minter.checkUpkeep(checkData);
 
-    assertEq(
-      upkeepNeeded,
-      _minter.checkExecute(address(hub1), daiAssetId),
-      'checkUpkeep and checkExecute must be consistent'
-    );
-
     if (upkeepNeeded) {
       _minter.performUpkeep(performData);
 
       (bool upkeepNeededAfter, ) = _minter.checkUpkeep(checkData);
       assertFalse(upkeepNeededAfter, 'checkUpkeep should return false after performUpkeep');
-      assertFalse(
-        _minter.checkExecute(address(hub1), daiAssetId),
-        'checkExecute should return false after performUpkeep'
-      );
     } else {
       vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
       _minter.performUpkeep(performData);
@@ -362,7 +221,7 @@ contract FeeSharesMinterBaseTest is Base {
     });
 
     // Clear accrued fees
-    _minter.execute(address(hub1), daiAssetId);
+    _minter.performUpkeep(abi.encode(address(hub1), daiAssetId));
 
     // Accrue some fees
     skip(110 days);

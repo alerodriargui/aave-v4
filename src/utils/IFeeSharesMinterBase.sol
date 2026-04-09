@@ -25,11 +25,6 @@ interface IFeeSharesMinterBase is AutomationCompatibleInterface {
   /// @param minAccruedFeesPercent Minimum ratio of accrued fees to total added assets, in BPS.
   function setConfig(address hub, uint256 assetId, uint16 minAccruedFeesPercent) external;
 
-  /// @notice Executes fee share minting if all conditions are met.
-  /// @param hub The address of the hub.
-  /// @param assetId The identifier of the asset.
-  function execute(address hub, uint256 assetId) external;
-
   /// @notice Chainlink Automation on-chain execution entry point.
   /// @dev performData must be abi.encoded as (address hub, uint256 assetId).
   /// @inheritdoc AutomationCompatibleInterface
@@ -48,10 +43,4 @@ interface IFeeSharesMinterBase is AutomationCompatibleInterface {
   /// @param assetId The identifier of the asset.
   /// @return The minimum ratio of accrued fees to total added assets, in BPS.
   function getConfig(address hub, uint256 assetId) external view returns (uint16);
-
-  /// @notice Checks whether the conditions to mint fee shares are currently met.
-  /// @param hub The address of the hub.
-  /// @param assetId The identifier of the asset.
-  /// @return True if `execute` would succeed, false otherwise.
-  function checkExecute(address hub, uint256 assetId) external view returns (bool);
 }

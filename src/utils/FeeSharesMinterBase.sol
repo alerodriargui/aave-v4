@@ -30,14 +30,9 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
   }
 
   /// @inheritdoc IFeeSharesMinterBase
-  function execute(address hub, uint256 assetId) external {
-    _execute(hub, assetId);
-  }
-
-  /// @inheritdoc IFeeSharesMinterBase
   function performUpkeep(bytes calldata performData) external override {
     (address hub, uint256 assetId) = abi.decode(performData, (address, uint256));
-    _execute(hub, assetId);
+    _performUpkeep(hub, assetId);
   }
 
   /// @inheritdoc IFeeSharesMinterBase
@@ -45,7 +40,7 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
     bytes calldata checkData
   ) external view override returns (bool, bytes memory) {
     (address hub, uint256 assetId) = abi.decode(checkData, (address, uint256));
-    bool upkeepNeeded = _checkExecute(hub, assetId);
+    bool upkeepNeeded = _checkUpkeep(hub, assetId);
     bytes memory performData = checkData;
     return (upkeepNeeded, performData);
   }
@@ -55,16 +50,11 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
     return _configs[hub][assetId];
   }
 
-  /// @inheritdoc IFeeSharesMinterBase
-  function checkExecute(address hub, uint256 assetId) external view returns (bool) {
-    return _checkExecute(hub, assetId);
-  }
-
   /// @dev Internal function to execute fee share minting.
   /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.
-  function _execute(address hub, uint256 assetId) internal virtual {
-    require(_checkExecute(hub, assetId), ConditionsNotMet());
+  function _performUpkeep(address hub, uint256 assetId) internal virtual {
+    require(_checkUpkeep(hub, assetId), ConditionsNotMet());
 
     IHub(hub).mintFeeShares(assetId);
   }
@@ -73,7 +63,7 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
   /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.
   /// @return True if conditions are met, false otherwise.
-  function _checkExecute(address hub, uint256 assetId) internal view virtual returns (bool) {
+  function _checkUpkeep(address hub, uint256 assetId) internal view virtual returns (bool) {
     uint16 minAccruedFeesPercent = _configs[hub][assetId];
 
     IHub hubContract = IHub(hub);
