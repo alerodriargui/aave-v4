@@ -11,27 +11,22 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /// @author Aave Labs
 /// @notice Contract to mint fee shares on the Hub when specific conditions are met.
 contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
-  /// @inheritdoc IFeeSharesMinterBase
-  uint256 public constant MAX_TIME_INTERVAL = 365 days;
-
-  /// @inheritdoc IFeeSharesMinterBase
-  mapping(address hub => mapping(uint256 assetId => uint256 timestamp)) public lastMintTime;
-
-  mapping(address hub => mapping(uint256 assetId => MintConfig)) internal _configs;
+  mapping(address hub => mapping(uint256 assetId => uint16 minAccruedFeesPercent))
+    internal _configs;
 
   /// @dev Constructor.
   /// @param owner The owner of the contract.
   constructor(address owner) Ownable(owner) {}
 
   /// @inheritdoc IFeeSharesMinterBase
-  function setConfig(address hub, uint256 assetId, MintConfig memory config) external onlyOwner {
-    require(
-      config.minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR &&
-        config.minTimeInterval <= MAX_TIME_INTERVAL,
-      InvalidConfig()
-    );
-    _configs[hub][assetId] = config;
-    emit ConfigUpdated(hub, assetId, config);
+  function setConfig(
+    address hub,
+    uint256 assetId,
+    uint16 minAccruedFeesPercent
+  ) external onlyOwner {
+    require(minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR, InvalidConfig());
+    _configs[hub][assetId] = minAccruedFeesPercent;
+    emit ConfigUpdated(hub, assetId, minAccruedFeesPercent);
   }
 
   /// @inheritdoc IFeeSharesMinterBase
@@ -56,7 +51,7 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
   }
 
   /// @inheritdoc IFeeSharesMinterBase
-  function getConfig(address hub, uint256 assetId) external view returns (MintConfig memory) {
+  function getConfig(address hub, uint256 assetId) external view returns (uint16) {
     return _configs[hub][assetId];
   }
 
@@ -71,7 +66,6 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
   function _execute(address hub, uint256 assetId) internal virtual {
     require(_checkExecute(hub, assetId), ConditionsNotMet());
 
-    lastMintTime[hub][assetId] = block.timestamp;
     IHub(hub).mintFeeShares(assetId);
   }
 
@@ -80,21 +74,13 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
   /// @param assetId The identifier of the asset.
   /// @return True if conditions are met, false otherwise.
   function _checkExecute(address hub, uint256 assetId) internal view virtual returns (bool) {
-    MintConfig memory config = _configs[hub][assetId];
-
-    // Check mint interval
-    if (block.timestamp - lastMintTime[hub][assetId] < config.minTimeInterval) {
-      return false;
-    }
+    uint16 minAccruedFeesPercent = _configs[hub][assetId];
 
     IHub hubContract = IHub(hub);
     uint256 accruedFees = hubContract.getAssetAccruedFees(assetId);
     uint256 totalAddedAssets = hubContract.getAddedAssets(assetId);
 
-    // Check if accruedFees / totalAddedAssets >= minAccruedFeesPercent (in BPS)
-    if (
-      PercentageMath.percentDivDown(accruedFees, totalAddedAssets) < config.minAccruedFeesPercent
-    ) {
+    if (PercentageMath.percentDivDown(accruedFees, totalAddedAssets) < minAccruedFeesPercent) {
       return false;
     }
 

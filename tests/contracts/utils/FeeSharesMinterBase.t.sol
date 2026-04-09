@@ -21,14 +21,9 @@ contract FeeSharesMinterBaseTest is Base {
   }
 
   function test_setConfig_revertsWith_OwnableUnauthorized() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 1 days,
-      minAccruedFeesPercent: 100 // 1%
-    });
-
     vm.prank(bob);
     vm.expectRevert(abi.encodeWithSelector(Ownable.OwnableUnauthorizedAccount.selector, bob));
-    _minter.setConfig(address(hub1), daiAssetId, config);
+    _minter.setConfig(address(hub1), daiAssetId, 100);
   }
 
   function test_execute() public {
@@ -36,7 +31,6 @@ contract FeeSharesMinterBaseTest is Base {
       addAmount: 1000e18,
       drawAmount: 900e18,
       skipTime: 365 days,
-      minTimeInterval: 1 days,
       minAccruedFeesPercent: 10
     });
   }
@@ -45,22 +39,16 @@ contract FeeSharesMinterBaseTest is Base {
     uint256 addAmount,
     uint256 drawAmount,
     uint256 skipTime,
-    uint32 minTimeInterval,
     uint16 minAccruedFeesPercent
   ) public {
     addAmount = bound(addAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, addAmount / 2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-    minTimeInterval = bound(minTimeInterval, 0, _minter.MAX_TIME_INTERVAL()).toUint32();
     minAccruedFeesPercent = bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
 
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: minTimeInterval,
-      minAccruedFeesPercent: minAccruedFeesPercent
-    });
     vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, config);
+    _minter.setConfig(address(hub1), daiAssetId, minAccruedFeesPercent);
 
     _addAndDrawLiquidity({
       hub: hub1,
@@ -76,60 +64,15 @@ contract FeeSharesMinterBaseTest is Base {
 
     if (_minter.checkExecute(address(hub1), daiAssetId)) {
       _minter.execute(address(hub1), daiAssetId);
-
-      assertEq(_minter.lastMintTime(address(hub1), daiAssetId), block.timestamp);
-      assertFalse(
-        _minter.checkExecute(address(hub1), daiAssetId),
-        'Should not be executable immediately after'
-      );
     } else {
       vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
       _minter.execute(address(hub1), daiAssetId);
     }
   }
 
-  function test_execute_revertsWith_ConditionsNotMet_TimeIntervalNotMet() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 7 days,
-      minAccruedFeesPercent: 0
-    });
-    vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, config);
-
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke1),
-      addAmount: 1000e18,
-      drawUser: bob,
-      drawSpoke: address(spoke1),
-      drawAmount: 100e18,
-      skipTime: 6 days
-    });
-
-    assertFalse(_minter.checkExecute(address(hub1), daiAssetId), 'Not enough time elapsed');
-    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
-    _minter.execute(address(hub1), daiAssetId);
-
-    vm.warp(block.timestamp + 1 days);
-    assertTrue(
-      _minter.checkExecute(address(hub1), daiAssetId),
-      'Sufficient conditions for execute'
-    );
-    _minter.execute(address(hub1), daiAssetId);
-
-    assertEq(_minter.lastMintTime(address(hub1), daiAssetId), block.timestamp, 'Just minted');
-    assertFalse(_minter.checkExecute(address(hub1), daiAssetId), 'Cannot mint again immediately');
-  }
-
   function test_execute_revertsWith_ConditionsNotMet_zeroFees() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 0,
-      minAccruedFeesPercent: 0
-    });
     vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, config);
+    _minter.setConfig(address(hub1), daiAssetId, 0);
 
     // Add liquidity, but no borrow, so no fees
     HubActions.add({
@@ -152,12 +95,9 @@ contract FeeSharesMinterBaseTest is Base {
   }
 
   function test_execute_revertsWith_ConditionsNotMet_PercentThresholdNotMet() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 0,
-      minAccruedFeesPercent: 50_00 // 50% threshold
-    });
+    uint16 threshold = 50_00; // 50%
     vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, config);
+    _minter.setConfig(address(hub1), daiAssetId, threshold);
 
     _addAndDrawLiquidity({
       hub: hub1,
@@ -185,12 +125,8 @@ contract FeeSharesMinterBaseTest is Base {
   }
 
   function test_execute_revertsWith_ConditionsNotMet_MinShareNotMet_nonzeroFees() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 0,
-      minAccruedFeesPercent: 0
-    });
     vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, config);
+    _minter.setConfig(address(hub1), daiAssetId, 0);
 
     // Inflate exchange rate
     _addAndDrawLiquidity({
@@ -221,63 +157,26 @@ contract FeeSharesMinterBaseTest is Base {
     _minter.execute(address(hub1), daiAssetId);
   }
 
-  function test_fuzz_setConfig_success(
-    uint32 minTimeInterval,
-    uint16 minAccruedFeesPercent
-  ) public {
-    minTimeInterval = bound(minTimeInterval, 0, _minter.MAX_TIME_INTERVAL()).toUint32();
+  function test_fuzz_setConfig_success(uint16 minAccruedFeesPercent) public {
     minAccruedFeesPercent = bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
 
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: minTimeInterval,
-      minAccruedFeesPercent: minAccruedFeesPercent
-    });
-
     vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, config);
+    _minter.setConfig(address(hub1), daiAssetId, minAccruedFeesPercent);
 
-    IFeeSharesMinterBase.MintConfig memory savedConfig = _minter.getConfig(
-      address(hub1),
-      daiAssetId
-    );
-    assertEq(savedConfig.minTimeInterval, minTimeInterval);
-    assertEq(savedConfig.minAccruedFeesPercent, minAccruedFeesPercent);
+    assertEq(_minter.getConfig(address(hub1), daiAssetId), minAccruedFeesPercent);
   }
 
-  function test_fuzz_setConfig_revertsWith_InvalidConfig_TimeInterval(
-    uint32 minTimeInterval
-  ) public {
-    minTimeInterval = bound(minTimeInterval, _minter.MAX_TIME_INTERVAL() + 1, type(uint32).max)
-      .toUint32();
-
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: minTimeInterval,
-      minAccruedFeesPercent: 0
-    });
-
-    vm.prank(ADMIN);
-    vm.expectRevert(IFeeSharesMinterBase.InvalidConfig.selector);
-    _minter.setConfig(address(hub1), daiAssetId, config);
-  }
-
-  function test_fuzz_setConfig_revertsWith_InvalidConfig_FeePercent(
-    uint16 minAccruedFeesPercent
-  ) public {
+  function test_fuzz_setConfig_revertsWith_InvalidConfig(uint16 minAccruedFeesPercent) public {
     minAccruedFeesPercent = bound(
       minAccruedFeesPercent,
       PercentageMath.PERCENTAGE_FACTOR + 1,
       type(uint16).max
     ).toUint16();
 
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 0,
-      minAccruedFeesPercent: minAccruedFeesPercent
-    });
-
     vm.prank(ADMIN);
     vm.expectRevert(IFeeSharesMinterBase.InvalidConfig.selector);
-    _minter.setConfig(address(hub1), daiAssetId, config);
+    _minter.setConfig(address(hub1), daiAssetId, minAccruedFeesPercent);
   }
 
   function test_rescueToken() public {
@@ -328,7 +227,6 @@ contract FeeSharesMinterBaseTest is Base {
       addAmount: 1000e18,
       drawAmount: 900e18,
       skipTime: 365 days,
-      minTimeInterval: 1 days,
       minAccruedFeesPercent: 10
     });
   }
@@ -337,22 +235,16 @@ contract FeeSharesMinterBaseTest is Base {
     uint256 addAmount,
     uint256 drawAmount,
     uint256 skipTime,
-    uint32 minTimeInterval,
     uint16 minAccruedFeesPercent
   ) public {
     addAmount = bound(addAmount, 2, MAX_SUPPLY_AMOUNT);
     drawAmount = bound(drawAmount, 1, addAmount / 2);
     skipTime = bound(skipTime, 1, MAX_SKIP_TIME);
-    minTimeInterval = bound(minTimeInterval, 0, _minter.MAX_TIME_INTERVAL()).toUint32();
     minAccruedFeesPercent = bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
 
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: minTimeInterval,
-      minAccruedFeesPercent: minAccruedFeesPercent
-    });
     vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, config);
+    _minter.setConfig(address(hub1), daiAssetId, minAccruedFeesPercent);
 
     _addAndDrawLiquidity({
       hub: hub1,
@@ -378,8 +270,6 @@ contract FeeSharesMinterBaseTest is Base {
     if (upkeepNeeded) {
       _minter.performUpkeep(performData);
 
-      assertEq(_minter.lastMintTime(address(hub1), daiAssetId), block.timestamp);
-
       (bool upkeepNeededAfter, ) = _minter.checkUpkeep(checkData);
       assertFalse(upkeepNeededAfter, 'checkUpkeep should return false after performUpkeep');
       assertFalse(
@@ -392,55 +282,9 @@ contract FeeSharesMinterBaseTest is Base {
     }
   }
 
-  function test_performUpkeep_revertsWith_ConditionsNotMet_timeIntervalNotMet() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 7 days,
-      minAccruedFeesPercent: 0
-    });
-    vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, config);
-
-    _addAndDrawLiquidity({
-      hub: hub1,
-      assetId: daiAssetId,
-      addUser: bob,
-      addSpoke: address(spoke1),
-      addAmount: 1000e18,
-      drawUser: bob,
-      drawSpoke: address(spoke1),
-      drawAmount: 100e18,
-      skipTime: 6 days
-    });
-
-    bytes memory checkData = abi.encode(address(hub1), daiAssetId);
-    (bool upkeepNeeded, bytes memory performData) = _minter.checkUpkeep(checkData);
-
-    assertFalse(upkeepNeeded, 'checkUpkeep should be false at 6 days');
-    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
-    _minter.performUpkeep(performData);
-
-    vm.warp(block.timestamp + 1 days);
-
-    (bool upkeepNeededAfter, bytes memory performDataAfter) = _minter.checkUpkeep(checkData);
-    assertTrue(upkeepNeededAfter, 'checkUpkeep should be true at 7 days');
-    _minter.performUpkeep(performDataAfter);
-
-    assertEq(
-      _minter.lastMintTime(address(hub1), daiAssetId),
-      block.timestamp,
-      'lastMintTime should be updated'
-    );
-    (upkeepNeeded, ) = _minter.checkUpkeep(checkData);
-    assertFalse(upkeepNeeded, 'checkUpkeep should be false after performUpkeep');
-  }
-
   function test_performUpkeep_revertsWith_ConditionsNotMet_noFees() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 0,
-      minAccruedFeesPercent: 0
-    });
     vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, config);
+    _minter.setConfig(address(hub1), daiAssetId, 0);
 
     // Liquidity added, but no fees accrued
     HubActions.add({
@@ -465,12 +309,9 @@ contract FeeSharesMinterBaseTest is Base {
   function test_performUpkeep_revertsWith_ConditionsNotMet_percentThresholdNotMet_withMinShares()
     public
   {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 0,
-      minAccruedFeesPercent: 5000
-    });
+    uint16 threshold = 50_00;
     vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, config);
+    _minter.setConfig(address(hub1), daiAssetId, threshold);
 
     _addAndDrawLiquidity({
       hub: hub1,
@@ -491,7 +332,7 @@ contract FeeSharesMinterBaseTest is Base {
     assertGt(hub1.previewAddByAssets(daiAssetId, fees), 0, 'At least 1 share would be minted');
     assertLt(
       fees,
-      totalAssets.percentMulDown(config.minAccruedFeesPercent),
+      totalAssets.percentMulDown(threshold),
       'Fees must be < minAccruedFeesPercent of total'
     );
 
@@ -504,12 +345,8 @@ contract FeeSharesMinterBaseTest is Base {
   }
 
   function test_performUpkeep_revertsWith_ConditionsNotMet_MinShareNotMet_nonzeroFees() public {
-    IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
-      minTimeInterval: 0,
-      minAccruedFeesPercent: 0
-    });
     vm.prank(ADMIN);
-    _minter.setConfig(address(hub1), daiAssetId, config);
+    _minter.setConfig(address(hub1), daiAssetId, 0);
 
     // Inflate exchange rate
     _addAndDrawLiquidity({
