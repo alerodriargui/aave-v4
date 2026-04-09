@@ -154,7 +154,7 @@ contract FeeSharesMinterBaseTest is Base {
   function test_execute_revertsWith_ConditionsNotMet_PercentThresholdNotMet() public {
     IFeeSharesMinterBase.MintConfig memory config = IFeeSharesMinterBase.MintConfig({
       minTimeInterval: 0,
-      minAccruedFeesPercent: 5000 // 50% threshold
+      minAccruedFeesPercent: 50_00 // 50% threshold
     });
     vm.prank(ADMIN);
     _minter.setConfig(address(hub1), daiAssetId, config);
