@@ -22,7 +22,7 @@ Canonical terminology for Aave V4. Terms appear in alphabetical order.
 
 **Health Factor (HF):** Ratio of a user's weighted collateral value (adjusted by Collateral Factor) to total outstanding debt. When HF drops below `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`, the position becomes eligible for liquidation.
 
-**Hub:** Central store where all liquidity is held, to be drawn and restored by attached Spokes. No collateralization is enforced on the Spokes.
+**Hub:** Central store where all liquidity is held, to be drawn and restored by attached Spokes. No collateralization is enforced on the Hub.
 
 **Isolation Mode:** Configuration pattern that deploys a dedicated Spoke and Liquidity Hub pair for a new or experimental asset with contained risk. This asset is the only allowed collateral asset. Borrowable assets are restricted by the `borrowable` flag on each reserve; maximum borrow exposure is controlled per asset through `SpokeData.drawCap` at the Hub. Users retain unrestricted positions in other Spokes simultaneously.
 
