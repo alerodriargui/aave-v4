@@ -25,7 +25,6 @@ env:
     certora/conf/Spoke.conf --exclude_rule drawnSharesZero noCollateralNoDebt increaseCollateralOrReduceDebtFunctions collateralFactorNotZero realizedPremiumRayConsistency   
     certora/conf/Spoke.conf --rule increaseCollateralOrReduceDebtFunctions
     certora/conf/Spoke.conf --rule collateralFactorNotZero
-    certora/conf/Spoke.conf --rule realizedPremiumRayConsistency
     certora/conf/SpokeHealthCheck.conf 
     certora/conf/SpokeHealthFactor.conf --exclude_rule userHealthAboveThreshold userHealthBelowThresholdCanOnlyIncreaseHealthFactor
     certora/conf/SpokeIntegrity.conf
@@ -40,6 +39,7 @@ env:
     #########                                                           #########
     # certora/conf/HubValidState_totalAssets.conf
     # certora/conf/Spoke_noCollateralNoDebt.conf
+    # certora/conf/Spoke.conf --rule realizedPremiumRayConsistency
     # certora/conf/Hub.conf --rule supplyExchangeRateIsMonotonic
     # certora/conf/Hub.conf --rule supplyExchangeRateIsMonotonic_eliminateDeficit_simplified
     # certora/conf/Hub.conf --rule totalAssetsCompareToSuppliedAmount_noVirtual
