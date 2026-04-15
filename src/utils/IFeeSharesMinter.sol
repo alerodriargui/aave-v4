@@ -3,10 +3,10 @@ pragma solidity 0.8.28;
 
 import {AutomationCompatibleInterface} from 'src/dependencies/chainlink/AutomationCompatibleInterface.sol';
 
-/// @title IFeeSharesMinterBase
+/// @title IFeeSharesMinter
 /// @author Aave Labs
-/// @notice Interface for the FeeSharesMinterBase contract
-interface IFeeSharesMinterBase is AutomationCompatibleInterface {
+/// @notice Interface for the FeeSharesMinter contract
+interface IFeeSharesMinter is AutomationCompatibleInterface {
   /// @notice Emitted when the configuration for an asset is updated.
   /// @param hub The address of the hub.
   /// @param assetId The identifier of the asset.

@@ -4,20 +4,20 @@ pragma solidity 0.8.28;
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
-import {IFeeSharesMinterBase} from 'src/utils/IFeeSharesMinterBase.sol';
+import {IFeeSharesMinter} from 'src/utils/IFeeSharesMinter.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
-/// @title FeeSharesMinterBase
+/// @title FeeSharesMinter
 /// @author Aave Labs
 /// @notice Contract to mint fee shares on the Hub when specific conditions are met.
-contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
+contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
   mapping(address hub => mapping(uint256 assetId => uint16)) internal _minAccruedFeesPercent;
 
   /// @dev Constructor.
   /// @param owner The owner of the contract.
   constructor(address owner) Ownable(owner) {}
 
-  /// @inheritdoc IFeeSharesMinterBase
+  /// @inheritdoc IFeeSharesMinter
   function setConfig(
     address hub,
     uint256 assetId,
@@ -28,13 +28,13 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
     emit ConfigUpdated(hub, assetId, minAccruedFeesPercent);
   }
 
-  /// @inheritdoc IFeeSharesMinterBase
+  /// @inheritdoc IFeeSharesMinter
   function performUpkeep(bytes calldata performData) external override {
     (address hub, uint256 assetId) = abi.decode(performData, (address, uint256));
     _performUpkeep(hub, assetId);
   }
 
-  /// @inheritdoc IFeeSharesMinterBase
+  /// @inheritdoc IFeeSharesMinter
   function checkUpkeep(
     bytes calldata checkData
   ) external view override returns (bool, bytes memory) {
@@ -44,7 +44,7 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
     return (upkeepNeeded, performData);
   }
 
-  /// @inheritdoc IFeeSharesMinterBase
+  /// @inheritdoc IFeeSharesMinter
   function getConfig(address hub, uint256 assetId) external view returns (uint16) {
     return _minAccruedFeesPercent[hub][assetId];
   }
