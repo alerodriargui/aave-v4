@@ -151,6 +151,9 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     inputs.treasurySpokeOwner = inputs.treasurySpokeOwner != address(0)
       ? inputs.treasurySpokeOwner
       : _deployer;
+    inputs.feeSharesMinterOwner = inputs.feeSharesMinterOwner != address(0)
+      ? inputs.feeSharesMinterOwner
+      : _deployer;
     inputs.spokeAdmin = inputs.spokeAdmin != address(0) ? inputs.spokeAdmin : _deployer;
     inputs.proxyAdminOwner = inputs.proxyAdminOwner != address(0)
       ? inputs.proxyAdminOwner
@@ -236,6 +239,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     assertNotEq(report.configuratorBatchReport.spokeConfigurator, address(0), 'SpokeConfigurator');
     assertNotEq(report.configuratorBatchReport.hubConfigurator, address(0), 'HubConfigurator');
     assertNotEq(report.treasurySpokeBatchReport.treasurySpoke, address(0), 'TreasurySpoke');
+    assertNotEq(report.feeSharesMinterBatchReport.feeSharesMinter, address(0), 'FeeSharesMinter');
     for (uint256 i = 0; i < report.hubInstanceBatchReports.length; i++) {
       assertNotEq(report.hubInstanceBatchReports[i].report.hubProxy, address(0), 'Hub');
       assertNotEq(
@@ -362,6 +366,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       _checkInterestRateStrategyDeployment({report: hubReport, label: label});
     }
     _checkTreasurySpokeDeployment(report);
+    _checkFeeSharesMinterDeployment(report);
   }
 
   function _checkHubDeployment(
@@ -412,6 +417,16 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       report.treasurySpokeBatchReport.treasurySpoke,
       address(0),
       'treasury spoke deployed'
+    );
+  }
+
+  function _checkFeeSharesMinterDeployment(
+    OrchestrationReports.FullDeploymentReport memory report
+  ) internal pure {
+    assertNotEq(
+      report.feeSharesMinterBatchReport.feeSharesMinter,
+      address(0),
+      'fee shares minter deployed'
     );
   }
 
@@ -645,6 +660,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
       );
     }
     _checkTreasurySpokeRoles(report.treasurySpokeBatchReport.treasurySpoke, inputs);
+    _checkFeeSharesMinterRoles(report.feeSharesMinterBatchReport.feeSharesMinter, inputs);
     for (uint256 i = 0; i < inputs.hubLabels.length; i++) {
       for (uint256 j = 0; j < _hubFeeMinterRoleSelectors.length; j++) {
         assertEq(
@@ -672,6 +688,17 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     InputUtils.FullDeployInputs memory inputs
   ) internal view {
     assertEq(Ownable(treasurySpoke).owner(), inputs.treasurySpokeOwner, 'treasury spoke owner');
+  }
+
+  function _checkFeeSharesMinterRoles(
+    address feeSharesMinter,
+    InputUtils.FullDeployInputs memory inputs
+  ) internal view {
+    assertEq(
+      Ownable(feeSharesMinter).owner(),
+      inputs.feeSharesMinterOwner,
+      'fee shares minter owner'
+    );
   }
 
   function _checkHubSelectorRoles(
@@ -865,6 +892,7 @@ contract BatchTestProcedures is Test, Create2TestHelper, WETHDeployProcedure {
     _assertHasCode(report.configuratorBatchReport.hubConfigurator, 'hubConfigurator');
     _assertHasCode(report.configuratorBatchReport.spokeConfigurator, 'spokeConfigurator');
     _assertHasCode(report.treasurySpokeBatchReport.treasurySpoke, 'treasurySpoke');
+    _assertHasCode(report.feeSharesMinterBatchReport.feeSharesMinter, 'feeSharesMinter');
 
     for (uint256 i; i < report.hubInstanceBatchReports.length; i++) {
       string memory label = report.hubInstanceBatchReports[i].label;

@@ -70,6 +70,13 @@ library AaveV4DeployOrchestration {
       salt: salt
     });
 
+    // Deploy FeeSharesMinter Batch (single instance for all hubs)
+    report.feeSharesMinterBatchReport = _deployFeeSharesMinterBatch({
+      logger: logger,
+      feeSharesMinterOwner: deployInputs.feeSharesMinterOwner,
+      salt: salt
+    });
+
     // Validate label uniqueness (duplicate labels produce identical CREATE2 salts)
     InputUtils.validateUniqueLabels(deployInputs.hubLabels, 'hub');
     InputUtils.validateUniqueLabels(deployInputs.spokeLabels, 'spoke');
@@ -336,6 +343,18 @@ library AaveV4DeployOrchestration {
     logger.logHeader1('deploying TreasurySpokeBatch');
     report = AaveV4DeployBase.deployTreasurySpokeBatch({owner: treasurySpokeOwner, salt: salt});
     logger.log('TreasurySpoke', report.treasurySpoke);
+    logger.logNewLine();
+    return report;
+  }
+
+  function _deployFeeSharesMinterBatch(
+    Logger logger,
+    address feeSharesMinterOwner,
+    bytes32 salt
+  ) internal returns (BatchReports.FeeSharesMinterBatchReport memory report) {
+    logger.logHeader1('deploying FeeSharesMinterBatch');
+    report = AaveV4DeployBase.deployFeeSharesMinterBatch({owner: feeSharesMinterOwner, salt: salt});
+    logger.log('FeeSharesMinter', report.feeSharesMinter);
     logger.logNewLine();
     return report;
   }
