@@ -11,8 +11,7 @@ import {IHub} from 'src/hub/interfaces/IHub.sol';
 /// @author Aave Labs
 /// @notice Contract to mint fee shares on the Hub when specific conditions are met.
 contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
-  mapping(address hub => mapping(uint256 assetId => uint16 minAccruedFeesPercent))
-    internal _configs;
+  mapping(address hub => mapping(uint256 assetId => uint16)) internal _minAccruedFeesPercent;
 
   /// @dev Constructor.
   /// @param owner The owner of the contract.
@@ -25,7 +24,7 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
     uint16 minAccruedFeesPercent
   ) external onlyOwner {
     require(minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR, InvalidConfig());
-    _configs[hub][assetId] = minAccruedFeesPercent;
+    _minAccruedFeesPercent[hub][assetId] = minAccruedFeesPercent;
     emit ConfigUpdated(hub, assetId, minAccruedFeesPercent);
   }
 
@@ -47,7 +46,7 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
 
   /// @inheritdoc IFeeSharesMinterBase
   function getConfig(address hub, uint256 assetId) external view returns (uint16) {
-    return _configs[hub][assetId];
+    return _minAccruedFeesPercent[hub][assetId];
   }
 
   /// @dev Internal function to execute fee share minting.
@@ -64,12 +63,15 @@ contract FeeSharesMinterBase is IFeeSharesMinterBase, Ownable2Step, Rescuable {
   /// @param assetId The identifier of the asset.
   /// @return True if conditions are met, false otherwise.
   function _checkUpkeep(address hub, uint256 assetId) internal view virtual returns (bool) {
-    uint16 minAccruedFeesPercent = _configs[hub][assetId];
+    uint16 minAccruedFeesPercent = _minAccruedFeesPercent[hub][assetId];
 
     IHub hubContract = IHub(hub);
     uint256 accruedFees = hubContract.getAssetAccruedFees(assetId);
     uint256 totalAddedAssets = hubContract.getAddedAssets(assetId);
 
+    if (totalAddedAssets == 0) {
+      return false;
+    }
     if (PercentageMath.percentDivDown(accruedFees, totalAddedAssets) < minAccruedFeesPercent) {
       return false;
     }

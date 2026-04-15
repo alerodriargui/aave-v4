@@ -15,7 +15,6 @@ contract FeeSharesMinterBaseTest is Base {
     super.setUp();
     _minter = new FeeSharesMinterBase(ADMIN);
 
-    // Grant _minter the HUB_FEE_MINTER_ROLE so it can call mintFeeShares
     vm.prank(ADMIN);
     accessManager.grantRole(Roles.HUB_FEE_MINTER_ROLE, address(_minter), 0);
   }
@@ -26,14 +25,31 @@ contract FeeSharesMinterBaseTest is Base {
     _minter.setConfig(address(hub1), daiAssetId, 100);
   }
 
-  function test_fuzz_setConfig_success(uint16 minAccruedFeesPercent) public {
+  function test_fuzz_setConfig(uint16 minAccruedFeesPercent) public {
     minAccruedFeesPercent = bound(minAccruedFeesPercent, 0, PercentageMath.PERCENTAGE_FACTOR)
       .toUint16();
+
+    vm.expectEmit(address(_minter));
+    emit IFeeSharesMinterBase.ConfigUpdated(address(hub1), daiAssetId, minAccruedFeesPercent);
 
     vm.prank(ADMIN);
     _minter.setConfig(address(hub1), daiAssetId, minAccruedFeesPercent);
 
     assertEq(_minter.getConfig(address(hub1), daiAssetId), minAccruedFeesPercent);
+  }
+
+  function test_setConfig_independentPerPair() public {
+    uint16 config1 = 100;
+    uint16 config2 = 200;
+
+    vm.startPrank(ADMIN);
+    _minter.setConfig(address(hub1), daiAssetId, config1);
+    _minter.setConfig(address(hub1), wethAssetId, config2);
+    vm.stopPrank();
+
+    assertEq(_minter.getConfig(address(hub1), daiAssetId), config1, 'daiAssetId config');
+    assertEq(_minter.getConfig(address(hub1), wethAssetId), config2, 'wethAssetId config');
+    assertEq(_minter.getConfig(address(hub1), usdxAssetId), 0, 'usdxAssetId should be unset');
   }
 
   function test_fuzz_setConfig_revertsWith_InvalidConfig(uint16 minAccruedFeesPercent) public {
@@ -51,18 +67,15 @@ contract FeeSharesMinterBaseTest is Base {
   function test_rescueToken() public {
     uint256 amount = 1000e18;
 
-    // Mint some dummy tokens to FeeSharesMinterBase
     MockERC20 token = new MockERC20();
     token.mint(address(_minter), amount);
 
     assertEq(token.balanceOf(address(_minter)), amount, 'Minter should have tokens');
 
-    // Attempt rescue by non-owner (should fail)
     vm.prank(bob);
     vm.expectRevert(abi.encodeWithSelector(IRescuable.OnlyRescueGuardian.selector));
     _minter.rescueToken(address(token), bob, amount);
 
-    // Rescue by owner (should succeed)
     vm.prank(ADMIN);
     _minter.rescueToken(address(token), ADMIN, amount);
 
@@ -73,20 +86,15 @@ contract FeeSharesMinterBaseTest is Base {
   function test_transferOwnership_2Step() public {
     address newOwner = makeAddr('newOwner');
 
-    // Transfer ownership (starts 2-step process)
     vm.prank(ADMIN);
     _minter.transferOwnership(newOwner);
 
-    // Verify owner hasn't changed yet
     assertEq(_minter.owner(), ADMIN, 'Owner should still be ADMIN');
-    // Verify pending owner
     assertEq(_minter.pendingOwner(), newOwner, 'Pending owner should be newOwner');
 
-    // Accept ownership
     vm.prank(newOwner);
     _minter.acceptOwnership();
 
-    // Verify owner changed
     assertEq(_minter.owner(), newOwner, 'Owner should now be newOwner');
     assertEq(_minter.pendingOwner(), address(0), 'Pending owner should be cleared');
   }
@@ -129,6 +137,7 @@ contract FeeSharesMinterBaseTest is Base {
 
     bytes memory checkData = abi.encode(address(hub1), daiAssetId);
     (bool upkeepNeeded, bytes memory performData) = _minter.checkUpkeep(checkData);
+    assertEq(performData, checkData, 'performData should equal checkData');
 
     if (upkeepNeeded) {
       _minter.performUpkeep(performData);
@@ -145,7 +154,6 @@ contract FeeSharesMinterBaseTest is Base {
     vm.prank(ADMIN);
     _minter.setConfig(address(hub1), daiAssetId, 0);
 
-    // Liquidity added, but no fees accrued
     HubActions.add({
       hub: hub1,
       assetId: daiAssetId,
@@ -160,6 +168,20 @@ contract FeeSharesMinterBaseTest is Base {
     bytes memory checkData = abi.encode(address(hub1), daiAssetId);
     (bool upkeepNeeded, bytes memory performData) = _minter.checkUpkeep(checkData);
     assertFalse(upkeepNeeded, 'checkUpkeep should return false with no fees');
+
+    vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
+    _minter.performUpkeep(performData);
+  }
+
+  function test_performUpkeep_revertsWith_ConditionsNotMet_noAddedAssets() public {
+    vm.prank(ADMIN);
+    _minter.setConfig(address(hub1), daiAssetId, 0);
+
+    assertEq(hub1.getAddedAssets(daiAssetId), 0, 'Total added assets should be zero');
+
+    bytes memory checkData = abi.encode(address(hub1), daiAssetId);
+    (bool upkeepNeeded, bytes memory performData) = _minter.checkUpkeep(checkData);
+    assertFalse(upkeepNeeded, 'checkUpkeep should return false when totalAddedAssets is zero');
 
     vm.expectRevert(IFeeSharesMinterBase.ConditionsNotMet.selector);
     _minter.performUpkeep(performData);
@@ -220,10 +242,8 @@ contract FeeSharesMinterBaseTest is Base {
       skipTime: MAX_SKIP_TIME - 110 days
     });
 
-    // Clear accrued fees
     _minter.performUpkeep(abi.encode(address(hub1), daiAssetId));
 
-    // Accrue some fees
     skip(110 days);
 
     uint256 fees = hub1.getAssetAccruedFees(daiAssetId);
