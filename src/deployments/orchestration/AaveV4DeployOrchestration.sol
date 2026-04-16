@@ -397,7 +397,7 @@ library AaveV4DeployOrchestration {
     return report;
   }
 
-  /// @dev Setup roles for the hub and spoke configurators.
+  /// @dev Setup roles for the Hub and spoke configurators.
   function _setupConfiguratorRoles(
     Logger logger,
     OrchestrationReports.FullDeploymentReport memory report
@@ -455,6 +455,16 @@ library AaveV4DeployOrchestration {
       accessManager: accessManager,
       role: Roles.HUB_CONFIGURATOR_ROLE,
       admin: report.configuratorBatchReport.hubConfigurator
+    });
+
+    logger.logHeader1(
+      'granting HUB_FEE_MINTER_ROLE to',
+      report.feeSharesMinterBatchReport.feeSharesMinter
+    );
+    AaveV4HubRolesProcedure.grantHubRole({
+      accessManager: accessManager,
+      role: Roles.HUB_FEE_MINTER_ROLE,
+      admin: report.feeSharesMinterBatchReport.feeSharesMinter
     });
 
     logger.logHeader1('granting HubConfigurator Admin roles to', hubConfiguratorAdmin);
