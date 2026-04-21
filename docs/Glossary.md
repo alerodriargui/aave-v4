@@ -8,23 +8,23 @@ Canonical terminology for Aave V4. Terms appear in alphabetical order.
 
 **Collateral Factor:** Maximum percentage of collateral value that can be borrowed against a collateral asset.
 
-**Collateral Risk:** Additional risk parameter per asset, managed by the Governor. Introduces a charge on borrowers above the base drawn interest rate.
+**Collateral Risk:** Additional risk parameter per asset, managed by the Governor. Introduces a charge on borrowers above the base drawn rate.
 
-**Deficit:** Protocol accounting state in which a borrower has outstanding debt but no remaining collateral after a liquidation. Deficits are tracked per asset at the Hub level and can be eliminated by authorized active Spokes using their supplied shares.
+**Deficit:** Protocol accounting state in which a borrower has outstanding debt but no remaining collateral after a liquidation. Deficits are tracked per asset at the Hub level and reported per Spoke (the Spoke where the shortfall arose). Authorized active Spokes can eliminate a deficit on behalf of a specific other Spoke's reported deficit for that asset by deploying their supplied shares.
 
-**Draw Cap:** Maximum amount a Spoke can draw from the Hub.
+**Draw Cap:** Maximum amount a Spoke can draw from a Hub.
 
-**DrawnDebt:** Base debt of a position, accruing interest at the base borrow rate.
+**DrawnDebt:** Base debt of a position, accruing interest at the base drawn rate.
 
 **Dynamic Risk Configuration:** Combination of Risk Configuration parameters that allows different users to be subscribed to different configurations.
 
 **Governor:** Entity authorized to manage Spokes and Hubs, set risk parameters, configure caps, and execute emergency controls. In the Aave V4 deployment, this is the Aave DAO.
 
-**Health Factor (HF):** Ratio of a user's weighted collateral value (adjusted by Collateral Factor) to total outstanding debt. When HF drops below `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`, the position becomes eligible for liquidation.
+**Health Factor (HF):** Ratio of a user's weighted collateral value (adjusted by Collateral Factor) to total outstanding debt value. When HF drops below `HEALTH_FACTOR_LIQUIDATION_THRESHOLD`, the position becomes eligible for liquidation.
 
-**Hub:** Central store where all liquidity is held, to be drawn and restored by attached Spokes. No collateralization is enforced on the Hub.
+**Hub:** Central store where all liquidity is held, accessed by attached Spokes. No collateralization is enforced on the Hub.
 
-**Isolation Mode:** Configuration pattern that deploys a dedicated Spoke and Liquidity Hub pair for a new or experimental asset with contained risk. This asset is the only allowed collateral asset. Borrowable assets are restricted by the `borrowable` flag on each reserve; maximum borrow exposure is controlled per asset through `SpokeData.drawCap` at the Hub. Users retain unrestricted positions in other Spokes simultaneously.
+**Isolation Mode:** Configuration pattern that deploys a dedicated Spoke and Hub pair for a new or experimental asset with contained risk. This asset is the only allowed collateral asset. Borrowable assets are restricted by the `borrowable` flag on each reserve; maximum borrow exposure is controlled per asset through `SpokeData.drawCap` at the Hub. Users can retain positions in other Spokes simultaneously using the same wallet.
 
 **Liquidation Bonus:** Collateral surplus awarded to a liquidator above the base currency value of the debt repaid. In Aave V4, the bonus follows a Dutch-auction formula that interpolates linearly between a governance-set minimum at `HEALTH_FACTOR_LIQUIDATION_THRESHOLD` and the per-collateral `maxLiquidationBonus` at `healthFactorForMaxBonus`. The net bonus after the protocol fee equals the effective collateral surplus received by the liquidator.
 
@@ -42,7 +42,7 @@ Canonical terminology for Aave V4. Terms appear in alphabetical order.
 
 **Reinvestment Controller:** Authorized entity allowed to pull idle liquidity from the Hub to generate yield. Responsible for maintaining investment strategies, caps, and accounting for yield distribution to suppliers.
 
-**Reserve:** Per-asset accounting unit within a Spoke. Each reserve tracks supply and borrow state for a single asset, references its Liquidity Hub via `Reserve.hub`, and carries configuration for collateral eligibility, borrowability, interest parameters, and liquidation settings.
+**Reserve:** Per-asset accounting unit within a Spoke. Each reserve tracks supply and borrow state for a single asset, references its Hub via `Reserve.hub`, and carries configuration for collateral eligibility, borrowability, interest parameters, and liquidation settings.
 
 **Risk Premium:** Weighted average of the Collateral Risk values of a user's collateral assets.
 

@@ -12,7 +12,7 @@ Isolation Mode is not a contract-level primitive but a configuration pattern app
 
 The enforcement point for the borrow ceiling is `SpokeData.drawCap` stored on the Hub, keyed by `(assetId, spoke)` so each asset has its own draw cap per Spoke. When a Spoke calls `Hub.draw`, the Hub checks that the Spoke's total owed (drawn plus premium), any reported deficit, and the requested draw amount would not exceed `drawCap`. A draw that would exceed the cap reverts with `DrawCapExceeded`. The cap is expressed in whole assets, not scaled by decimals, stored as `uint40` within `SpokeData`. A value of `MAX_ALLOWED_SPOKE_CAP` disables the ceiling.
 
-Each Reserve on a Spoke references a specific Liquidity Hub through `Reserve.hub`. This means a single Spoke can draw liquidity from multiple Hubs, each subject to its own draw cap per asset. Draw caps are configured via `HubConfigurator.updateSpokeDrawCap` by governance-authorized roles (AccessManaged `restricted` access).
+Each Reserve on a Spoke references a specific Hub through `Reserve.hub`. This means a single Spoke can draw liquidity from multiple Hubs, each subject to its own draw cap per asset. Draw caps are configured via `HubConfigurator.updateSpokeDrawCap` by governance-authorized roles (AccessManaged `restricted` access).
 
 ## Collateral and Borrow Configuration
 
