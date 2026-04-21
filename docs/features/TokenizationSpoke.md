@@ -62,7 +62,7 @@ The TokenizationSpoke is deployed behind an upgradeable proxy. The current imple
 
 ## Safety Controls
 
-The TokenizationSpoke is governed by the same Hub-level emergency control states as standard Spokes (`halted` and `active`) which apply to deposits and withdrawals. Enforcement is layered: the TokenizationSpoke's `maxDeposit`/`maxWithdraw` view functions return zero when either flag is in its blocking state, and the Hub's `_validateAdd`/`_validateRemove` independently enforce the same checks, reverting onchain if violated. Both flags are governance-controlled and enforced per Spoke at Hub validation time.
+The TokenizationSpoke is governed by the same hub-level emergency control states as standard Spokes (`halted` and `active`) which apply to deposits and withdrawals. Enforcement is layered: the TokenizationSpoke's `maxDeposit`/`maxWithdraw` view functions return zero when either flag is in its blocking state, and the Hub's `_validateAdd`/`_validateRemove` independently enforce the same checks, reverting onchain if violated. Both flags are governance-controlled and enforced per Spoke at Hub validation time.
 
 ## Out of Scope
 

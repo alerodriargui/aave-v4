@@ -148,7 +148,7 @@ The following are explicitly excluded from the Dynamic Risk Configuration system
 - **Per-Reserve snapshot migration**: `updateUserDynamicConfig` updates all collateral Reserves simultaneously. Individual Reserve snapshot updates are not exposed as a separate call.
 - **Collateral Risk**: The risk premium parameter (`collateralRisk`) is stored in `ReserveConfig`, not in `DynamicReserveConfig`. It governs the risk premium interest component and is updated independently via `updateReserveConfig`. Dynamic configuration updates do not alter `collateralRisk`.
 - **Liquidation execution logic**: Dynamic configurations supply the parameters used in the liquidation flow. The liquidation execution itself is documented separately.
-- **Interest rate strategy**: Utilization-based borrow rates are a Hub-level concern and are unaffected by `DynamicReserveConfig`.
+- **Interest rate strategy**: Utilization-based borrow rates are a hub-level concern and are unaffected by `DynamicReserveConfig`.
 - **Cross-Spoke configuration sharing**: Each Spoke maintains its own `_dynamicConfig` mapping and independent key counters. Two Spokes connected to the same Hub asset do not share configuration history.
 
 ## Key Differences from Aave V3

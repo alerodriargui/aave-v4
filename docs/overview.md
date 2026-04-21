@@ -2,7 +2,7 @@
 
 Aave V4 introduces an architectural redesign centered around the Hub, enabling protocol flexibility and capital efficiency. This innovative architecture allows the Governor (e.g., the Aave DAO) to dynamically manage Spokes, adding new borrowing capabilities and removing outdated ones without requiring costly liquidity migrations.
 
-The protocol implements sophisticated risk management through its Risk Premium system, where each asset receives a specific risk factor (called Collateral Risk) ranging from `0` to `1000_00` (BPS) based on the asset's implied volatility, market conditions, liquidity, risk, etc. Base drawn rates are determined purely by utilisation, while risk premium rates are adjusted according to collateral risk profiles, from low‑risk pristine‑quality assets (such as ETH) to higher‑risk collateral, scaling borrowing costs proportionally.
+The protocol implements sophisticated risk management through its Risk Premium system, where each asset receives a specific risk factor (called Collateral Risk) ranging from `0` to `1000_00` (BPS) based on the asset's implied volatility, market conditions, liquidity, risk, etc. Base drawn rates are determined purely by utilization, while risk premium rates are adjusted according to collateral risk profiles, from low‑risk pristine‑quality assets (such as ETH) to higher‑risk collateral, scaling borrowing costs proportionally.
 
 By providing preferential rates for stronger collateral and optimizing capital efficiency, Aave V4 creates a more robust lending environment that accurately prices risk and rewards. Consequently, the protocol attracts higher-quality collateral, while offering improved yields for suppliers and lower fees for borrowers utilizing safer collateral assets.
 
@@ -145,7 +145,7 @@ $RP_u = f(CR_i, C_{u, i}, P_i) = \frac{CR_0C_{u,0}P_0 + CR_1C_{u,1}P_1}{C_{u,0}P
 
 ## Premium Offset
 
-Operationally, the premium is implemented via additional virtual debt shares (“premium shares”) that increase interest accrual but are never repayable principal. We separate this component from principal interest by tracking a premium offset in asset units. At borrow time, the offset is set so that, in asset terms, it exactly equals the value of the premium shares. As time elapses, interest accrues on the premium shares causing their asset value to exceed the offset; the excess is the premium. Premium shares are recorded in share units. The premium offset is recorded in asset units.
+Operationally, the premium is implemented via additional virtual debt shares (“premium shares”) that increase interest accrual but are never repayable principal. The protocol separates this component from principal interest by tracking a premium offset in asset units. At borrow time, the offset is set so that, in asset terms, it exactly equals the value of the premium shares. As time elapses, interest accrues on the premium shares causing their asset value to exceed the offset; the excess is the premium. Premium shares are recorded in share units. The premium offset is recorded in asset units.
 
 A user’s accrued premium debt at any time equals the assets value of their premium drawn shares minus the premium offset. When a user’s Risk Premium changes, the system refreshes premium accounting (via the Hub’s `refreshPremium` mechanism) to recalibrate premium shares and the offset without changing the user’s total accrued premium amount.
 
