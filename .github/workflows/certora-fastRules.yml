@@ -39,16 +39,17 @@ env:
     # certora/conf/HubValidState_totalAssets.conf # https://prover.certora.com/output/3706259/41a86e63200047e0b59d20e2d6f6bab3?anonymousKey=2d168a37785120378f222f8482f80139054f3968 # error
     # certora/conf/Spoke_noCollateralNoDebt.conf # https://prover.certora.com/output/3706259/a7718e0c2835464b8c59b193e11a3d7c/?anonymousKey=34a0ac0061f42fae882955fa6723d53ba7578baf # timed out
     # certora/conf/Spoke.conf --rule realizedPremiumRayConsistency # https://prover.certora.com/output/3706259/8fdb1a6ad5814123950221127818af57/?anonymousKey=badc6cf23c0d436c21ec49d4c6556570525b02f9 # timed out
-    # certora/conf/Hub.conf --rule supplyExchangeRateIsMonotonic # https://prover.certora.com/output/3706259/3cb2db12c36542a5b3a6b3bbfe61c997?anonymousKey=c94c3bac09486cc8ea14c9051177972ba5c514bd # timed out
+    # certora/conf/Hub.conf --rule supplyExchangeRateIsMonotonic # https://prover.certora.com/output/3706259/d00f59fdaea2444298ed4869491889c4/?anonymousKey=9e986f7239f65674b1a25587e16f82949643620d
     # certora/conf/Hub.conf --rule supplyExchangeRateIsMonotonic_eliminateDeficit_simplified # https://prover.certora.com/output/3706259/3f2ad2590f524030a1f2fda1a2e2e7df?anonymousKey=6eeace14f2b9da5128d6b07d1fd164a5df85ee7b # timed out
-    # certora/conf/Hub.conf --rule totalAssetsCompareToSuppliedAmount_noVirtual
-    # certora/conf/HubAdditivity.conf --rule drawAdditivity
-    # certora/conf/HubAdditivity.conf --rule restoreAdditivity
+    # certora/conf/Hub.conf --rule totalAssetsCompareToSuppliedAmount_noVirtual # https://prover.certora.com/output/3706259/e05517a2740a4505bc9e57c2071ddd45/?anonymousKey=13e4e230fce28bcdad30f948f722551a4ae86ca4 
+    # certora/conf/HubAdditivity.conf --rule drawAdditivity # https://prover.certora.com/output/3706259/704cfccf6943462b97d8512710dafd7e/?anonymousKey=6f19c03f7f6801367691f4df83f9111a34c9bb8b
+    # certora/conf/HubAdditivity.conf --rule restoreAdditivity # https://prover.certora.com/output/3706259/f80dd5d21c0e4d1a98e880a51b076ffc/?anonymousKey=65cbddb77a7d447e8ef33f9a24a6281e8fa212ed
     # certora/conf/HubAdditivity.conf --rule reportDeficitAdditivity # https://prover.certora.com/output/3706259/952ddd6d0a974b239ddd9af2e64c1a49?anonymousKey=0bbcb4f8e6e43c9a8ffe8bede77e2e2824aea725 
     # certora/conf/HubAdditivity.conf --exclude_rule drawAdditivity restoreAdditivity reportDeficitAdditivity # https://prover.certora.com/output/3706259/1a00d9db46d341b4bef50f55d807f10e/?anonymousKey=bbec3f005f2227e5342f08c96f3118cc4c1697fc timed out
     # certora/conf/SpokeHealthFactor.conf --rule userHealthAboveThreshold # https://prover.certora.com/output/3706259/cdf48e7647964f4283e454d004afd7cc/?anonymousKey=a195a320155d3ca3a110b73b8b967bcafd62ecd9 # timed out
     # certora/conf/SpokeHealthFactor.conf --rule userHealthBelowThresholdCanOnlyIncreaseHealthFactor # https://prover.certora.com/output/3706259/5792df3b5b9c49f3be296c70dbb33477/?anonymousKey=cadd297ef8e27aa37ae6131630d1e9e528a76aa2 # timed out
-    # certora/conf/HubAccrueSupplyRate.conf --rule previewRemoveByShares_withoutAccrue_time_monotonic previewRemoveByAssets_withoutAccrue_time_monotonic # https://prover.certora.com/output/3706259/8fcc2dc12ace4bd8a79a2793d10994d7?anonymousKey=acd221e430a31272c08bd67e779626b29b79c772 # timed out
+    # certora/conf/HubAccrueSupplyRate.conf --rule previewRemoveByShares_withoutAccrue_time_monotonic # https://prover.certora.com/output/3706259/d58df7e6fb504be9a5d7208c3536af1d/?anonymousKey=4bbf8fc17b007c0eeda71e379577d3a0d6d74edd
+    # certora/conf/HubAccrueSupplyRate.conf --rule previewRemoveByAssets_withoutAccrue_time_monotonic # https://prover.certora.com/output/3706259/0c0bdf583b2449ac931e41f8b139fe19/?anonymousKey=fedddb719f01098204bb33e1867677aae1cdce2a
     # certora/conf/libs/LiquidationLogic.conf --rule collateralToLiquidateValueLessThanDebtToLiquidate # https://prover.certora.com/output/3706259/db5ecfd9efb44a839ff68bba823093cf?anonymousKey=f3a2ccdbf8fe2c9678dfde723a0dde9cf8aab35f
     # certora/conf/HubValidState.conf --rule totalAssetsVsShares_eliminateDeficit # https://prover.certora.com/output/3706259/f7642f8a9520422f865d8191ec7f265c?anonymousKey=7f6a16574eeabed24ce9ef55c21bcf390014a3f8
     # certora/conf/LiquidationReportDeficit.conf --rule moreThanOneCollateral_noReportDeficit # https://prover.certora.com/output/3706259/1f7f79a438804b32b73af77aa95f05b9?anonymousKey=ee1162a3265e8a25cf6ea8dd38b6357544309e66 # timed out
