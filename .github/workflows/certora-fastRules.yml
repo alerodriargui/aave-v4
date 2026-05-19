@@ -38,9 +38,9 @@ env:
     #########                                                           #########
     # certora/conf/HubValidState_totalAssets.conf --exclude_method remove # https://prover.certora.com/output/3706259/715f05cb0bdf4c55843a0b6b2867b651/?anonymousKey=0e88c093cc53489c9b4e667cbc7dc772446e22fc
     # certora/conf/HubValidState_totalAssets.conf --method remove # https://prover.certora.com/output/3706259/76b8a1fe2cae472aa1e103ecb36201ef/?anonymousKey=d7c7e2e5d2048d504201bac0f66076c573e47134 # timed out
-    # certora/conf/Spoke_noCollateralNoDebt.conf --exclude_method borrow # https://prover.certora.com/output/3706259/a7718e0c2835464b8c59b193e11a3d7c/?anonymousKey=34a0ac0061f42fae882955fa6723d53ba7578baf # timed out, borrow
+    # certora/conf/Spoke_noCollateralNoDebt.conf --exclude_method borrow # https://prover.certora.com/output/3706259/a7718e0c2835464b8c59b193e11a3d7c/?anonymousKey=34a0ac0061f42fae882955fa6723d53ba7578baf # timed out (borrow)
     # certora/conf/Spoke_noCollateralNoDebt.conf --method borrow # https://prover.certora.com/output/3706259/a7718e0c2835464b8c59b193e11a3d7c/?anonymousKey=34a0ac0061f42fae882955fa6723d53ba7578baf # timed out
-    # certora/conf/Spoke.conf --rule realizedPremiumRayConsistency # https://prover.certora.com/output/3706259/8fdb1a6ad5814123950221127818af57/?anonymousKey=badc6cf23c0d436c21ec49d4c6556570525b02f9 # timed out
+    # certora/conf/Spoke.conf --rule realizedPremiumRayConsistency # https://prover.certora.com/output/3706259/8fdb1a6ad5814123950221127818af57/?anonymousKey=badc6cf23c0d436c21ec49d4c6556570525b02f9 # timed out (borrow)
     # certora/conf/Hub.conf --rule supplyExchangeRateIsMonotonic # https://prover.certora.com/output/3706259/d00f59fdaea2444298ed4869491889c4/?anonymousKey=9e986f7239f65674b1a25587e16f82949643620d
     # certora/conf/Hub.conf --rule supplyExchangeRateIsMonotonic_eliminateDeficit_simplified # https://prover.certora.com/output/3706259/3f2ad2590f524030a1f2fda1a2e2e7df?anonymousKey=6eeace14f2b9da5128d6b07d1fd164a5df85ee7b # timed out
     # certora/conf/Hub.conf --rule totalAssetsCompareToSuppliedAmount_noVirtual # https://prover.certora.com/output/3706259/e05517a2740a4505bc9e57c2071ddd45/?anonymousKey=13e4e230fce28bcdad30f948f722551a4ae86ca4 
@@ -49,7 +49,7 @@ env:
     # certora/conf/HubAdditivity.conf --rule reportDeficitAdditivity # https://prover.certora.com/output/3706259/952ddd6d0a974b239ddd9af2e64c1a49?anonymousKey=0bbcb4f8e6e43c9a8ffe8bede77e2e2824aea725 
     # certora/conf/HubAdditivity.conf --exclude_rule drawAdditivity restoreAdditivity reportDeficitAdditivity # https://prover.certora.com/output/3706259/1a00d9db46d341b4bef50f55d807f10e/?anonymousKey=bbec3f005f2227e5342f08c96f3118cc4c1697fc timed out
     # certora/conf/SpokeHealthFactor.conf --rule userHealthAboveThreshold # https://prover.certora.com/output/3706259/cdf48e7647964f4283e454d004afd7cc/?anonymousKey=a195a320155d3ca3a110b73b8b967bcafd62ecd9 # timed out
-    # https://prover.certora.com/output/3706259/5792df3b5b9c49f3be296c70dbb33477/?anonymousKey=cadd297ef8e27aa37ae6131630d1e9e528a76aa2
+    # https://prover.certora.com/output/3706259/5792df3b5b9c49f3be296c70dbb33477/?anonymousKey=cadd297ef8e27aa37ae6131630d1e9e528a76aa2 # timed out (repay, updateUserRiskPremium)
     # https://prover.certora.com/output/3706259/550373c41a5d4c0483551d085c033340/?anonymousKey=b8410096da6b663486b6f3b05be533cc44d7de78 (repay rule)
     # https://prover.certora.com/output/3706259/de1672dd18ce4c62b2cadfe947ed977c/?anonymousKey=632a58996aa03f1b6c739d08e7400ec0cec209b9 (updateUserRiskPremium rule)
     # certora/conf/SpokeHealthFactor.conf --rule userHealthBelowThresholdCanOnlyIncreaseHealthFactor 
