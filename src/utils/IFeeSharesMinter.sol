@@ -17,26 +17,13 @@ interface IFeeSharesMinter is AutomationCompatibleInterface {
   error ConditionsNotMet();
 
   /// @notice Thrown when `setConfig` is called with an invalid value.
-  error InvalidConfig();
+  error InvalidConfig(uint16 minAccruedFeesPercent);
 
   /// @notice Sets the minimum accrued fees percent for a specific asset.
   /// @param hub The address of the Hub.
   /// @param assetId The identifier of the asset.
-  /// @param minAccruedFeesPercent Minimum ratio of accrued fees to total added assets, in BPS. Must be greater than zero.
+  /// @param minAccruedFeesPercent Minimum ratio of accrued fees to total added assets, in BPS. Must be at most PercentageMath.PERCENTAGE_FACTOR; set to 0 to disable minting.
   function setConfig(address hub, uint256 assetId, uint16 minAccruedFeesPercent) external;
-
-  /// @notice Chainlink Automation on-chain execution entry point.
-  /// @dev performData must be abi.encoded as (address hub, uint256 assetId).
-  /// @inheritdoc AutomationCompatibleInterface
-  function performUpkeep(bytes calldata performData) external;
-
-  /// @notice Chainlink Automation off-chain simulation check.
-  /// @dev checkData must be abi.encoded as (address hub, uint256 assetId).
-  /// @dev Returns whether upkeep is needed and the performData in bytes when conditions are met.
-  /// @inheritdoc AutomationCompatibleInterface
-  function checkUpkeep(
-    bytes calldata checkData
-  ) external view returns (bool upkeepNeeded, bytes memory performData);
 
   /// @notice Returns the minimum accrued fees percent for a specific asset.
   /// @param hub The address of the Hub.

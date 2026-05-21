@@ -4,13 +4,15 @@ pragma solidity 0.8.28;
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
-import {IFeeSharesMinter} from 'src/utils/IFeeSharesMinter.sol';
+import {IFeeSharesMinter, AutomationCompatibleInterface} from 'src/utils/IFeeSharesMinter.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title FeeSharesMinter
 /// @author Aave Labs
 /// @notice Contract to mint fee shares on the Hub when specific conditions are met.
 contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
+  using PercentageMath for uint256;
+
   mapping(address hub => mapping(uint256 assetId => uint16)) internal _minAccruedFeesPercent;
 
   /// @dev Constructor.
@@ -24,27 +26,26 @@ contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
     uint16 minAccruedFeesPercent
   ) external onlyOwner {
     require(
-      minAccruedFeesPercent > 0 && minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR,
-      InvalidConfig()
+      minAccruedFeesPercent <= PercentageMath.PERCENTAGE_FACTOR,
+      InvalidConfig(minAccruedFeesPercent)
     );
+    require(assetId < IHub(hub).getAssetCount(), IHub.AssetNotListed());
     _minAccruedFeesPercent[hub][assetId] = minAccruedFeesPercent;
     emit ConfigUpdated(hub, assetId, minAccruedFeesPercent);
   }
 
-  /// @inheritdoc IFeeSharesMinter
+  /// @dev `performData` must be abi.encoded as (address hub, uint256 assetId).
+  /// @inheritdoc AutomationCompatibleInterface
   function performUpkeep(bytes calldata performData) external override {
     (address hub, uint256 assetId) = abi.decode(performData, (address, uint256));
     _performUpkeep(hub, assetId);
   }
 
-  /// @inheritdoc IFeeSharesMinter
-  function checkUpkeep(
-    bytes calldata checkData
-  ) external view override returns (bool, bytes memory) {
+  /// @dev `checkData` must be abi.encoded as (address hub, uint256 assetId).
+  /// @inheritdoc AutomationCompatibleInterface
+  function checkUpkeep(bytes memory checkData) external view override returns (bool, bytes memory) {
     (address hub, uint256 assetId) = abi.decode(checkData, (address, uint256));
-    bool upkeepNeeded = _checkUpkeep(hub, assetId);
-    bytes memory performData = checkData;
-    return (upkeepNeeded, performData);
+    return (_checkUpkeep(hub, assetId), checkData);
   }
 
   /// @inheritdoc IFeeSharesMinter
@@ -71,21 +72,19 @@ contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
       return false;
     }
 
-    IHub hubContract = IHub(hub);
-    uint256 accruedFees = hubContract.getAssetAccruedFees(assetId);
-    uint256 totalAddedAssets = hubContract.getAddedAssets(assetId);
+    IHub targetHub = IHub(hub);
+    uint256 accruedFees = targetHub.getAssetAccruedFees(assetId);
+    uint256 totalAddedAssets = targetHub.getAddedAssets(assetId);
 
     if (totalAddedAssets == 0) {
       return false;
     }
-    if (PercentageMath.percentDivDown(accruedFees, totalAddedAssets) < minAccruedFeesPercent) {
+    if (accruedFees.percentDivDown(totalAddedAssets) < minAccruedFeesPercent) {
       return false;
     }
 
     // Ensure at least 1 fee share would be minted
-    uint256 expectedShares = hubContract.previewAddByAssets(assetId, accruedFees);
-
-    return expectedShares > 0;
+    return targetHub.previewAddByAssets(assetId, accruedFees) > 0;
   }
 
   /// @inheritdoc Rescuable
