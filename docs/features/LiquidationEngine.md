@@ -45,7 +45,7 @@ Any address can call `liquidationCall` on a Spoke to initiate a liquidation. Sel
 - The collateral Reserve has `collateralFactor > 0` and the borrower has `usingAsCollateral` enabled for it; otherwise reverts with `ReserveNotEnabledAsCollateral`.
 - If the liquidator passes `receiveShares = true`, the collateral Reserve must not be frozen and must have `receiveSharesEnabled = true`; otherwise reverts with `CannotReceiveShares`.
 
-Frozen Reserves can be liquidated, but cannot be received as shares (see `receiveShares` validation). Paused Reserves in the borrower's position that are not the specific collateral or debt target being liquidated do not block the call.
+Frozen Reserves and collateral with `receiveSharesEnabled = false` (even when not frozen) can be liquidated, but cannot be received as shares. Liquidators can always settle frozen collateral as underlying by passing `receiveShares = false` (the default). The per-reserve `receiveSharesEnabled` flag gives the Governor finer control than `frozen`, e.g. when the Hub asset is paused. Paused Reserves in the borrower's position that are not the specific collateral or debt target being liquidated do not block the call.
 
 ## Liquidation Process
 
