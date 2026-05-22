@@ -57,6 +57,8 @@ import {
 
 // fee minter
 import {FeeSharesMinter, IFeeSharesMinter} from 'src/utils/FeeSharesMinter.sol';
+import {IReceiver} from 'src/dependencies/chainlink/IReceiver.sol';
+import {IERC165} from 'src/dependencies/openzeppelin/IERC165.sol';
 
 // spoke
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';

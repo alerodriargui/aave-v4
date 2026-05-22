@@ -2,21 +2,22 @@
 pragma solidity 0.8.28;
 
 import {Ownable2Step, Ownable} from 'src/dependencies/openzeppelin/Ownable2Step.sol';
+import {IERC165} from 'src/dependencies/openzeppelin/IERC165.sol';
+import {IReceiver} from 'src/dependencies/chainlink/IReceiver.sol';
 import {PercentageMath} from 'src/libraries/math/PercentageMath.sol';
 import {Rescuable} from 'src/utils/Rescuable.sol';
-import {IFeeSharesMinter, AutomationCompatibleInterface} from 'src/utils/IFeeSharesMinter.sol';
+import {IFeeSharesMinter} from 'src/utils/IFeeSharesMinter.sol';
 import {IHub} from 'src/hub/interfaces/IHub.sol';
 
 /// @title FeeSharesMinter
 /// @author Aave Labs
-/// @notice Contract to mint fee shares on the Hub when specific conditions are met.
+/// @notice Contract that receives signed CRE reports and mints Hub fee shares when conditions are met.
 contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
   using PercentageMath for uint256;
 
   mapping(address hub => mapping(uint256 assetId => uint16)) internal _minAccruedFeesPercent;
+  mapping(bytes32 workflowId => WorkflowConfig) internal _workflowConfigs;
 
-  /// @dev Constructor.
-  /// @param owner The owner of the contract.
   constructor(address owner) Ownable(owner) {}
 
   /// @inheritdoc IFeeSharesMinter
@@ -34,18 +35,28 @@ contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
     emit ConfigUpdated(hub, assetId, minAccruedFeesPercent);
   }
 
-  /// @dev `performData` must be abi.encoded as (address hub, uint256 assetId).
-  /// @inheritdoc AutomationCompatibleInterface
-  function performUpkeep(bytes calldata performData) external override {
-    (address hub, uint256 assetId) = abi.decode(performData, (address, uint256));
-    _performUpkeep(hub, assetId);
+  /// @inheritdoc IFeeSharesMinter
+  function setWorkflowConfig(
+    bytes32 workflowId,
+    WorkflowConfig calldata config
+  ) external onlyOwner {
+    _workflowConfigs[workflowId] = config;
+    emit WorkflowConfigUpdated(
+      workflowId,
+      config.forwarder,
+      config.owner,
+      config.name,
+      config.isActive
+    );
   }
 
-  /// @dev `checkData` must be abi.encoded as (address hub, uint256 assetId).
-  /// @inheritdoc AutomationCompatibleInterface
-  function checkUpkeep(bytes memory checkData) external view override returns (bool, bytes memory) {
-    (address hub, uint256 assetId) = abi.decode(checkData, (address, uint256));
-    return (_checkUpkeep(hub, assetId), checkData);
+  /// @dev `report` must be abi-encoded as `(address hub, uint256 assetId)`.
+  /// @inheritdoc IReceiver
+  function onReport(bytes calldata metadata, bytes calldata report) external override {
+    _validateWorkflow(metadata);
+    (address hub, uint256 assetId) = abi.decode(report, (address, uint256));
+    require(_canMint(hub, assetId), ConditionsNotMet());
+    IHub(hub).mintFeeShares(assetId);
   }
 
   /// @inheritdoc IFeeSharesMinter
@@ -53,20 +64,32 @@ contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
     return _minAccruedFeesPercent[hub][assetId];
   }
 
-  /// @dev Internal function to execute fee share minting.
-  /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
-  function _performUpkeep(address hub, uint256 assetId) internal virtual {
-    require(_checkUpkeep(hub, assetId), ConditionsNotMet());
-
-    IHub(hub).mintFeeShares(assetId);
+  /// @inheritdoc IFeeSharesMinter
+  function getWorkflowConfig(bytes32 workflowId) external view returns (WorkflowConfig memory) {
+    return _workflowConfigs[workflowId];
   }
 
-  /// @dev Internal function to check execution conditions.
-  /// @param hub The address of the Hub.
-  /// @param assetId The identifier of the asset.
-  /// @return True if conditions are met, false otherwise.
-  function _checkUpkeep(address hub, uint256 assetId) internal view virtual returns (bool) {
+  /// @inheritdoc IFeeSharesMinter
+  function canMint(address hub, uint256 assetId) external view returns (bool) {
+    return _canMint(hub, assetId);
+  }
+
+  /// @inheritdoc IERC165
+  function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+    return interfaceId == type(IReceiver).interfaceId || interfaceId == type(IERC165).interfaceId;
+  }
+
+  function _validateWorkflow(bytes calldata metadata) internal view virtual {
+    (bytes32 workflowId, bytes10 workflowName, address workflowOwner) = _decodeMetadata(metadata);
+    WorkflowConfig storage config = _workflowConfigs[workflowId];
+
+    require(config.isActive, WorkflowNotActive(workflowId));
+    require(msg.sender == config.forwarder, InvalidWorkflowForwarder(msg.sender, config.forwarder));
+    require(workflowOwner == config.owner, InvalidWorkflowOwner(workflowOwner, config.owner));
+    require(workflowName == config.name, InvalidWorkflowName(workflowName, config.name));
+  }
+
+  function _canMint(address hub, uint256 assetId) internal view virtual returns (bool) {
     uint16 minAccruedFeesPercent = _minAccruedFeesPercent[hub][assetId];
     if (minAccruedFeesPercent == 0) {
       return false;
@@ -83,12 +106,22 @@ contract FeeSharesMinter is IFeeSharesMinter, Ownable2Step, Rescuable {
       return false;
     }
 
-    // Ensure at least 1 fee share would be minted
     return targetHub.previewAddByAssets(assetId, accruedFees) > 0;
   }
 
   /// @inheritdoc Rescuable
   function _rescueGuardian() internal view override returns (address) {
     return owner();
+  }
+
+  function _decodeMetadata(
+    bytes memory metadata
+  ) internal pure returns (bytes32 workflowId, bytes10 workflowName, address workflowOwner) {
+    assembly {
+      workflowId := mload(add(metadata, 32))
+      workflowName := mload(add(metadata, 64))
+      workflowOwner := shr(96, mload(add(metadata, 74)))
+    }
+    return (workflowId, workflowName, workflowOwner);
   }
 }
