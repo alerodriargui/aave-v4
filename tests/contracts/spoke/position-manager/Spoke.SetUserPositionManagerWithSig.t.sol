@@ -45,7 +45,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
 
     assertEq(fields, bytes1(0x0f));
     assertEq(name, 'Spoke');
-    assertEq(version, '2');
+    assertEq(version, '1');
     assertEq(chainId, block.chainid);
     assertEq(verifyingContract, address(spoke));
     assertEq(salt, bytes32(0));
@@ -60,7 +60,7 @@ contract SpokeSetUserPositionManagersWithSigTest is Base {
           'EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'
         ),
         keccak256('Spoke'),
-        keccak256('2'),
+        keccak256('1'),
         block.chainid,
         address(spoke)
       )

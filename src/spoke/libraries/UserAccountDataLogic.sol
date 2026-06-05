@@ -15,6 +15,9 @@ import {IAaveOracle} from 'src/spoke/interfaces/IAaveOracle.sol';
 import {ISpoke} from 'src/spoke/interfaces/ISpoke.sol';
 import {SpokeStorage} from 'src/spoke/SpokeStorage.sol';
 
+/// @title UserAccountDataLogic library
+/// @author Aave Labs
+/// @notice Implements the logic to process a position's account data.
 library UserAccountDataLogic {
   using SafeCast for *;
   using MathUtils for *;
@@ -34,6 +37,12 @@ library UserAccountDataLogic {
   /// @notice Process the user account data.
   /// @dev Collateral is rounded against the user, while debt is calculated with full precision.
   /// @dev If user has no debt, it returns health factor of `type(uint256).max` and risk premium of 0.
+  /// @param reserves The mapping of reserves per reserve id.
+  /// @param userPositions The mapping of user positions per position per reserve.
+  /// @param positionStatus The mapping of position status per position.
+  /// @param dynamicConfig The mapping of dynamic config per reserve per dynamic config key.
+  /// @param params The process user account data params.
+  /// @return accountData The user account data.
   function processUserAccountData(
     mapping(uint256 reserveId => ISpoke.Reserve) storage reserves,
     mapping(bytes32 positionId => mapping(uint256 reserveId => ISpoke.UserPosition)) storage userPositions,

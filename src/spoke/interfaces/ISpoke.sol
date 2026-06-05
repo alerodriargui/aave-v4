@@ -191,7 +191,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Emitted on the supply action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator, and supplier of the underlying asset.
-  /// @param positionId The indentifer of the modified position.
+  /// @param positionId The identifier of the modified position.
   /// @param suppliedShares The amount of supply shares minted.
   /// @param suppliedAmount The amount of underlying asset supplied.
   event Supply(
@@ -205,7 +205,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Emitted on the withdraw action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator, and recipient of the underlying asset being withdrawn.
-  /// @param positionId The indentifer of the modified position.
+  /// @param positionId The identifier of the modified position.
   /// @param withdrawnShares The amount of supply shares burned.
   /// @param withdrawnAmount The amount of underlying asset withdrawn.
   event Withdraw(
@@ -219,7 +219,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Emitted on the borrow action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator, and recipient of the underlying asset being borrowed.
-  /// @param positionId The indentifer of the modified position.
+  /// @param positionId The identifier of the modified position.
   /// @param drawnShares The amount of debt shares minted.
   /// @param drawnAmount The amount of underlying asset borrowed.
   event Borrow(
@@ -233,7 +233,7 @@ interface ISpoke is IAccessManaged, IIntentConsumer, IExtSload, IMulticall {
   /// @notice Emitted on the repay action.
   /// @param reserveId The reserve identifier of the underlying asset.
   /// @param caller The transaction initiator who is repaying the underlying asset.
-  /// @param positionId The indentifer of the modified position.
+  /// @param positionId The identifier of the modified position.
   /// @param drawnShares The amount of drawn shares burned.
   /// @param totalAmountRepaid The amount of drawn and premium underlying assets repaid.
   /// @param premiumDelta A struct representing the changes to premium debt after repayment.

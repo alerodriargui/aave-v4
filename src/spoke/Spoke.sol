@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-BUSL
 pragma solidity 0.8.28;
 
+import {Hashes} from 'src/dependencies/openzeppelin/Hashes.sol';
 import {SafeCast} from 'src/dependencies/openzeppelin/SafeCast.sol';
 import {SafeERC20, IERC20} from 'src/dependencies/openzeppelin/SafeERC20.sol';
 import {Math} from 'src/dependencies/openzeppelin/Math.sol';
@@ -694,7 +695,6 @@ abstract contract Spoke is
 
   /// @inheritdoc ISpoke
   function getUserAccountData(address user) external view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when `refreshConfig` is false.
     return
       UserAccountDataLogic.processUserAccountData({
         reserves: _reserves,
@@ -714,7 +714,6 @@ abstract contract Spoke is
     address user,
     bytes32 positionSalt
   ) external view returns (UserAccountData memory) {
-    // SAFETY: function does not modify state when `refreshConfig` is false.
     return
       UserAccountDataLogic.processUserAccountData({
         reserves: _reserves,
@@ -1063,14 +1062,10 @@ abstract contract Spoke is
   }
 
   function _refreshAllDynamicConfig(bytes32 positionId) internal {
-    ISpoke.PositionStatus storage positionStatus = _positionStatus[positionId];
+    PositionStatus storage positionStatus = _positionStatus[positionId];
 
     uint256 reserveId = _reserveCount;
-    bool collateral;
-    while (true) {
-      (reserveId, , collateral) = positionStatus.next(reserveId);
-      if (reserveId == PositionStatusMap.NOT_FOUND) break;
-
+    while ((reserveId = positionStatus.nextCollateral(reserveId)) != PositionStatusMap.NOT_FOUND) {
       _userPositions[positionId][reserveId].dynamicConfigKey = _reserves[reserveId]
         .dynamicConfigKey;
     }
@@ -1201,10 +1196,10 @@ abstract contract Spoke is
     return
       salt == USER_POSITION_DEFAULT_SALT
         ? bytes32(uint256(uint160(user)))
-        : keccak256(abi.encodePacked(user, salt));
+        : Hashes.efficientKeccak256(bytes32(uint256(uint160(user))), salt);
   }
 
   function _domainNameAndVersion() internal pure override returns (string memory, string memory) {
-    return ('Spoke', '2');
+    return ('Spoke', '1');
   }
 }
