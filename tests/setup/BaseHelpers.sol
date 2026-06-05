@@ -51,6 +51,19 @@ abstract contract BaseHelpers is BaseState {
       });
   }
 
+  /// @dev Default position identifier for `user` (salt = bytes32(0)), matching Spoke._getPositionIdentifier.
+  function _getPositionId(address user) internal pure returns (bytes32) {
+    return _getPositionId(user, bytes32(0));
+  }
+
+  /// @dev Position identifier for `user` under `salt`, matching Spoke._getPositionIdentifier.
+  function _getPositionId(address user, bytes32 salt) internal pure returns (bytes32) {
+    return
+      salt == bytes32(0)
+        ? bytes32(uint256(uint160(user)))
+        : keccak256(abi.encodePacked(user, salt));
+  }
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                   CROSS-LAYER ASSERTIONS                                 //
   ///////////////////////////////////////////////////////////////////////////////////////////////
