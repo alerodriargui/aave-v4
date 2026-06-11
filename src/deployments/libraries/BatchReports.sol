@@ -40,6 +40,13 @@ library BatchReports {
     address treasurySpoke;
   }
 
+  /// @dev addressesProviderProxy The deployed V4AddressesProvider proxy contract address.
+  /// @dev addressesProviderImplementation The deployed V4AddressesProvider implementation contract address.
+  struct AddressesProviderBatchReport {
+    address addressesProviderProxy;
+    address addressesProviderImplementation;
+  }
+
   /// @dev signatureGateway The deployed SignatureGateway contract address.
   /// @dev nativeGateway The deployed NativeTokenGateway contract address.
   struct GatewaysBatchReport {
