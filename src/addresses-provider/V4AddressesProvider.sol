@@ -33,31 +33,41 @@ abstract contract V4AddressesProvider is
 
   /// @inheritdoc IV4AddressesProvider
   function setAddress(
-    string memory name,
-    string memory tag,
+    string calldata name,
+    string calldata tag,
     address newAddress
   ) external onlyOwner {
     _setAddress({name: name, tag: tag, newAddress: newAddress});
   }
 
   /// @inheritdoc IV4AddressesProvider
-  function setCanonicalHub(string memory name, address hub) external onlyOwner {
+  function setCanonicalHub(string calldata name, address hub) external onlyOwner {
     _setAddress({name: name, tag: CANONICAL_HUB_TAG, newAddress: hub});
   }
 
   /// @inheritdoc IV4AddressesProvider
-  function setCanonicalSpoke(string memory name, address spoke) external onlyOwner {
+  function setCanonicalSpoke(string calldata name, address spoke) external onlyOwner {
     _setAddress({name: name, tag: CANONICAL_SPOKE_TAG, newAddress: spoke});
   }
 
   /// @inheritdoc IV4AddressesProvider
-  function setTokenizationSpoke(string memory name, address spoke) external onlyOwner {
+  function setTokenizationSpoke(string calldata name, address spoke) external onlyOwner {
     _setAddress({name: name, tag: TOKENIZATION_SPOKE_TAG, newAddress: spoke});
   }
 
   /// @inheritdoc IV4AddressesProvider
-  function setTreasurySpoke(string memory name, address spoke) external onlyOwner {
+  function setTreasurySpoke(string calldata name, address spoke) external onlyOwner {
     _setAddress({name: name, tag: TREASURY_SPOKE_TAG, newAddress: spoke});
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getAddress(bytes32 id) external view returns (address) {
+    return _addressEntries[id].addr;
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getAddress(string calldata name, string calldata tag) external view returns (address) {
+    return _getAddress({name: name, tag: tag});
   }
 
   /// @inheritdoc IV4AddressesProvider
@@ -66,8 +76,8 @@ abstract contract V4AddressesProvider is
   }
 
   /// @inheritdoc IV4AddressesProvider
-  function getIds(string memory tag) external view returns (bytes32[] memory) {
-    return _taggedIds[tag].values();
+  function getTagCount() external view returns (uint256) {
+    return _tags.length();
   }
 
   /// @inheritdoc IV4AddressesProvider
@@ -76,75 +86,126 @@ abstract contract V4AddressesProvider is
   }
 
   /// @inheritdoc IV4AddressesProvider
-  function getCanonicalHub(string memory name) external view returns (address) {
-    return getAddress({name: name, tag: CANONICAL_HUB_TAG});
+  function getTags(uint256 start, uint256 end) external view returns (string[] memory) {
+    return _tags.values(start, end);
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getIdCount(string calldata tag) external view returns (uint256) {
+    return _taggedIds[tag].length();
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getIds(string calldata tag) external view returns (bytes32[] memory) {
+    return _taggedIds[tag].values();
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getIds(
+    string calldata tag,
+    uint256 start,
+    uint256 end
+  ) external view returns (bytes32[] memory) {
+    return _taggedIds[tag].values(start, end);
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getAddresses(string calldata tag) external view returns (address[] memory) {
+    return _toAddresses(_taggedIds[tag].values());
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getAddresses(
+    string calldata tag,
+    uint256 start,
+    uint256 end
+  ) external view returns (address[] memory) {
+    return _toAddresses(_taggedIds[tag].values(start, end));
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getAddressIdCount(address addr) external view returns (uint256) {
+    return _addressIds[addr].length();
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getAddressIds(address addr) external view returns (bytes32[] memory) {
+    return _addressIds[addr].values();
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getAddressIds(
+    address addr,
+    uint256 start,
+    uint256 end
+  ) external view returns (bytes32[] memory) {
+    return _addressIds[addr].values(start, end);
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getAddressEntries(address addr) external view returns (AddressEntry[] memory) {
+    return _toEntries(_addressIds[addr].values());
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getAddressEntries(
+    address addr,
+    uint256 start,
+    uint256 end
+  ) external view returns (AddressEntry[] memory) {
+    return _toEntries(_addressIds[addr].values(start, end));
+  }
+
+  /// @inheritdoc IV4AddressesProvider
+  function getCanonicalHub(string calldata name) external view returns (address) {
+    return _getAddress({name: name, tag: CANONICAL_HUB_TAG});
   }
 
   /// @inheritdoc IV4AddressesProvider
   function getCanonicalHubs() external view returns (address[] memory) {
-    return getAddresses(CANONICAL_HUB_TAG);
+    return _toAddresses(_taggedIds[CANONICAL_HUB_TAG].values());
   }
 
   /// @inheritdoc IV4AddressesProvider
-  function getCanonicalSpoke(string memory name) external view returns (address) {
-    return getAddress({name: name, tag: CANONICAL_SPOKE_TAG});
+  function getCanonicalSpoke(string calldata name) external view returns (address) {
+    return _getAddress({name: name, tag: CANONICAL_SPOKE_TAG});
   }
 
   /// @inheritdoc IV4AddressesProvider
   function getCanonicalSpokes() external view returns (address[] memory) {
-    return getAddresses(CANONICAL_SPOKE_TAG);
+    return _toAddresses(_taggedIds[CANONICAL_SPOKE_TAG].values());
   }
 
   /// @inheritdoc IV4AddressesProvider
-  function getTokenizationSpoke(string memory name) external view returns (address) {
-    return getAddress({name: name, tag: TOKENIZATION_SPOKE_TAG});
+  function getTokenizationSpoke(string calldata name) external view returns (address) {
+    return _getAddress({name: name, tag: TOKENIZATION_SPOKE_TAG});
   }
 
   /// @inheritdoc IV4AddressesProvider
   function getTokenizationSpokes() external view returns (address[] memory) {
-    return getAddresses(TOKENIZATION_SPOKE_TAG);
+    return _toAddresses(_taggedIds[TOKENIZATION_SPOKE_TAG].values());
   }
 
   /// @inheritdoc IV4AddressesProvider
-  function getTreasurySpoke(string memory name) external view returns (address) {
-    return getAddress({name: name, tag: TREASURY_SPOKE_TAG});
+  function getTreasurySpoke(string calldata name) external view returns (address) {
+    return _getAddress({name: name, tag: TREASURY_SPOKE_TAG});
   }
 
   /// @inheritdoc IV4AddressesProvider
   function getTreasurySpokes() external view returns (address[] memory) {
-    return getAddresses(TREASURY_SPOKE_TAG);
+    return _toAddresses(_taggedIds[TREASURY_SPOKE_TAG].values());
   }
 
   /// @inheritdoc IV4AddressesProvider
-  function getAddress(bytes32 id) public view returns (address) {
-    return _addressEntries[id].addr;
-  }
-
-  /// @inheritdoc IV4AddressesProvider
-  function getAddress(string memory name, string memory tag) public view returns (address) {
-    return getAddress(getId({name: name, tag: tag}));
-  }
-
-  /// @inheritdoc IV4AddressesProvider
-  function getAddresses(string memory tag) public view returns (address[] memory) {
-    bytes32[] memory ids = _taggedIds[tag].values();
-    address[] memory addresses = new address[](ids.length);
-    for (uint256 i = 0; i < ids.length; i++) {
-      addresses[i] = _addressEntries[ids[i]].addr;
-    }
-    return addresses;
-  }
-
-  /// @inheritdoc IV4AddressesProvider
-  function getId(string memory name, string memory tag) public pure returns (bytes32) {
-    return keccak256(bytes(string.concat(name, '_', tag)));
+  function getId(string calldata name, string calldata tag) external pure returns (bytes32) {
+    return _getId({name: name, tag: tag});
   }
 
   function _setAddress(string memory name, string memory tag, address newAddress) internal {
     require(bytes(name).length > 0, InvalidName());
     require(bytes(tag).length > 0, InvalidTag());
 
-    bytes32 id = getId({name: name, tag: tag});
+    bytes32 id = _getId({name: name, tag: tag});
     AddressEntry memory oldEntry = _addressEntries[id];
 
     if (newAddress == address(0)) {
@@ -153,14 +214,40 @@ abstract contract V4AddressesProvider is
       if (_taggedIds[oldEntry.tag].length() == 0) {
         _tags.remove(oldEntry.tag);
       }
+      _addressIds[oldEntry.addr].remove(id);
       delete _addressEntries[id];
     } else {
       require(oldEntry.addr == address(0), AddressAlreadySet(id));
-      _addressEntries[id] = AddressEntry({addr: newAddress, tag: tag});
+      _addressEntries[id] = AddressEntry({addr: newAddress, name: name, tag: tag});
       _taggedIds[tag].add(id);
       _tags.add(tag);
+      _addressIds[newAddress].add(id);
     }
 
     emit AddressSet(id, name, tag, oldEntry.addr, newAddress);
+  }
+
+  function _getAddress(string memory name, string memory tag) internal view returns (address) {
+    return _addressEntries[_getId({name: name, tag: tag})].addr;
+  }
+
+  function _getId(string memory name, string memory tag) internal pure returns (bytes32) {
+    return keccak256(abi.encode(name, tag));
+  }
+
+  function _toAddresses(bytes32[] memory ids) internal view returns (address[] memory) {
+    address[] memory addresses = new address[](ids.length);
+    for (uint256 i = 0; i < ids.length; i++) {
+      addresses[i] = _addressEntries[ids[i]].addr;
+    }
+    return addresses;
+  }
+
+  function _toEntries(bytes32[] memory ids) internal view returns (AddressEntry[] memory) {
+    AddressEntry[] memory entries = new AddressEntry[](ids.length);
+    for (uint256 i = 0; i < ids.length; i++) {
+      entries[i] = _addressEntries[ids[i]];
+    }
+    return entries;
   }
 }

@@ -18,6 +18,9 @@ abstract contract V4AddressesProviderStorage {
   /// @dev Set of all tags with at least one registered entry.
   EnumerableSet.StringSet internal _tags;
 
+  /// @dev Map of registered addresses to set of entry identifiers.
+  mapping(address addr => EnumerableSet.Bytes32Set ids) internal _addressIds;
+
   /// @dev Reserved storage space to allow for future layout updates.
-  uint256[50] private __gap;
+  uint256[49] private __gap;
 }

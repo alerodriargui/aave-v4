@@ -26,6 +26,10 @@ contract V4AddressesProviderTest is Test {
     );
   }
 
+  function _id(string memory name, string memory tag) internal pure returns (bytes32) {
+    return keccak256(abi.encode(name, tag));
+  }
+
   function test_initialize() public view {
     assertEq(provider.owner(), OWNER);
     assertEq(provider.CANONICAL_HUB_TAG(), 'CANONICAL_HUB');
@@ -53,24 +57,24 @@ contract V4AddressesProviderTest is Test {
   function test_getId() public view {
     assertEq(
       provider.getId({name: 'CORE', tag: provider.CANONICAL_HUB_TAG()}),
-      keccak256(bytes('CORE_CANONICAL_HUB'))
+      keccak256(abi.encode('CORE', 'CANONICAL_HUB'))
     );
     assertEq(
       provider.getId({name: 'MAIN', tag: provider.CANONICAL_SPOKE_TAG()}),
-      keccak256(bytes('MAIN_CANONICAL_SPOKE'))
+      keccak256(abi.encode('MAIN', 'CANONICAL_SPOKE'))
     );
     assertEq(
       provider.getId({name: 'CORE_WETH', tag: provider.TOKENIZATION_SPOKE_TAG()}),
-      keccak256(bytes('CORE_WETH_TOKENIZATION_SPOKE'))
+      keccak256(abi.encode('CORE_WETH', 'TOKENIZATION_SPOKE'))
     );
     assertEq(
       provider.getId({name: 'MAIN', tag: provider.TREASURY_SPOKE_TAG()}),
-      keccak256(bytes('MAIN_TREASURY_SPOKE'))
+      keccak256(abi.encode('MAIN', 'TREASURY_SPOKE'))
     );
   }
 
   function test_setAddress() public {
-    bytes32 id = provider.getId({name: 'CONFIG_ENGINE', tag: 'PERIPHERY'});
+    bytes32 id = _id('CONFIG_ENGINE', 'PERIPHERY');
     address configEngine = makeAddr('CONFIG_ENGINE');
 
     vm.expectEmit(address(provider));
@@ -90,6 +94,7 @@ contract V4AddressesProviderTest is Test {
 
     IV4AddressesProvider.AddressEntry memory entry = provider.getAddressEntry(id);
     assertEq(entry.addr, configEngine);
+    assertEq(entry.name, 'CONFIG_ENGINE');
     assertEq(entry.tag, 'PERIPHERY');
 
     bytes32[] memory ids = provider.getIds('PERIPHERY');
@@ -99,28 +104,31 @@ contract V4AddressesProviderTest is Test {
     string[] memory tags = provider.getTags();
     assertEq(tags.length, 1);
     assertEq(tags[0], 'PERIPHERY');
+
+    bytes32[] memory addressIds = provider.getAddressIds(configEngine);
+    assertEq(addressIds.length, 1);
+    assertEq(addressIds[0], id);
   }
 
   function test_setAddress_remove() public {
-    bytes32 id = provider.getId({name: 'CONFIG_ENGINE', tag: 'PERIPHERY'});
+    bytes32 id = _id('CONFIG_ENGINE', 'PERIPHERY');
+    address configEngine = makeAddr('CONFIG_ENGINE');
 
     vm.startPrank(OWNER);
-    provider.setAddress({
-      name: 'CONFIG_ENGINE',
-      tag: 'PERIPHERY',
-      newAddress: makeAddr('CONFIG_ENGINE')
-    });
+    provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: configEngine});
     provider.setAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY', newAddress: address(0)});
     vm.stopPrank();
 
     assertEq(provider.getAddress(id), address(0));
     assertEq(provider.getAddressEntry(id).tag, '');
+    assertEq(provider.getAddressEntry(id).name, '');
     assertEq(provider.getIds('PERIPHERY').length, 0);
     assertEq(provider.getTags().length, 0);
+    assertEq(provider.getAddressIds(configEngine).length, 0);
   }
 
   function test_setAddress_removeThenSet() public {
-    bytes32 id = provider.getId({name: 'CONFIG_ENGINE', tag: 'PERIPHERY'});
+    bytes32 id = _id('CONFIG_ENGINE', 'PERIPHERY');
     address newConfigEngine = makeAddr('NEW_CONFIG_ENGINE');
 
     vm.startPrank(OWNER);
@@ -141,7 +149,7 @@ contract V4AddressesProviderTest is Test {
   }
 
   function test_setAddress_revertsWith_AddressAlreadySet() public {
-    bytes32 id = provider.getId({name: 'CONFIG_ENGINE', tag: 'PERIPHERY'});
+    bytes32 id = _id('CONFIG_ENGINE', 'PERIPHERY');
     address configEngine = makeAddr('CONFIG_ENGINE');
 
     vm.startPrank(OWNER);
@@ -159,16 +167,24 @@ contract V4AddressesProviderTest is Test {
     vm.stopPrank();
   }
 
-  function test_setAddress_idCollision_revertsWith_AddressAlreadySet() public {
-    bytes32 id = provider.getId({name: 'A', tag: 'B_C'});
-    assertEq(id, provider.getId({name: 'A_B', tag: 'C'}));
+  function test_setAddress_noIdCollision() public {
+    // With abi.encode, ('A_B', 'C') and ('A', 'B_C') resolve to distinct identifiers.
+    bytes32 firstId = _id('A_B', 'C');
+    bytes32 secondId = _id('A', 'B_C');
+    assertNotEq(firstId, secondId);
+    assertEq(provider.getId({name: 'A_B', tag: 'C'}), firstId);
+    assertEq(provider.getId({name: 'A', tag: 'B_C'}), secondId);
+
+    address first = makeAddr('FIRST');
+    address second = makeAddr('SECOND');
 
     vm.startPrank(OWNER);
-    provider.setAddress({name: 'A', tag: 'B_C', newAddress: makeAddr('A')});
-
-    vm.expectRevert(abi.encodeWithSelector(IV4AddressesProvider.AddressAlreadySet.selector, id));
-    provider.setAddress({name: 'A_B', tag: 'C', newAddress: makeAddr('A_B')});
+    provider.setAddress({name: 'A_B', tag: 'C', newAddress: first});
+    provider.setAddress({name: 'A', tag: 'B_C', newAddress: second});
     vm.stopPrank();
+
+    assertEq(provider.getAddress({name: 'A_B', tag: 'C'}), first);
+    assertEq(provider.getAddress({name: 'A', tag: 'B_C'}), second);
   }
 
   function test_setAddress_sameAddressUnderMultipleIds() public {
@@ -188,14 +204,31 @@ contract V4AddressesProviderTest is Test {
 
     bytes32[] memory peripheryIds = provider.getIds('PERIPHERY');
     assertEq(peripheryIds.length, 2);
-    assertEq(peripheryIds[0], provider.getId({name: 'CONFIG_ENGINE', tag: 'PERIPHERY'}));
-    assertEq(peripheryIds[1], provider.getId({name: 'ENGINE', tag: 'PERIPHERY'}));
+    assertEq(peripheryIds[0], _id('CONFIG_ENGINE', 'PERIPHERY'));
+    assertEq(peripheryIds[1], _id('ENGINE', 'PERIPHERY'));
 
     string[] memory tags = provider.getTags();
     assertEq(tags.length, 3);
     assertEq(tags[0], 'PERIPHERY');
     assertEq(tags[1], 'ENGINE');
     assertEq(tags[2], 'V3_PERIPHERY');
+
+    // the reverse map tracks every identifier the address is registered under
+    assertEq(provider.getAddressIdCount(configEngine), 4);
+    bytes32[] memory addressIds = provider.getAddressIds(configEngine);
+    assertEq(addressIds.length, 4);
+    assertEq(addressIds[0], _id('CONFIG_ENGINE', 'PERIPHERY'));
+    assertEq(addressIds[1], _id('ENGINE', 'PERIPHERY'));
+    assertEq(addressIds[2], _id('CONFIG_ENGINE', 'ENGINE'));
+    assertEq(addressIds[3], _id('V3_CONFIG_ENGINE', 'V3_PERIPHERY'));
+
+    IV4AddressesProvider.AddressEntry[] memory entries = provider.getAddressEntries(configEngine);
+    assertEq(entries.length, 4);
+    assertEq(entries[0].name, 'CONFIG_ENGINE');
+    assertEq(entries[0].tag, 'PERIPHERY');
+    assertEq(entries[0].addr, configEngine);
+    assertEq(entries[3].name, 'V3_CONFIG_ENGINE');
+    assertEq(entries[3].tag, 'V3_PERIPHERY');
 
     // removing one entry does not affect the other entries of the same address
     vm.prank(OWNER);
@@ -205,6 +238,7 @@ contract V4AddressesProviderTest is Test {
     assertEq(provider.getAddress({name: 'CONFIG_ENGINE', tag: 'PERIPHERY'}), configEngine);
     assertEq(provider.getAddress({name: 'CONFIG_ENGINE', tag: 'ENGINE'}), configEngine);
     assertEq(provider.getIds('PERIPHERY').length, 1);
+    assertEq(provider.getAddressIdCount(configEngine), 3);
   }
 
   function test_setHubAndSpoke_sameAddressAcrossTags() public {
@@ -231,10 +265,16 @@ contract V4AddressesProviderTest is Test {
     address[] memory treasurySpokes = provider.getTreasurySpokes();
     assertEq(treasurySpokes.length, 1);
     assertEq(treasurySpokes[0], sharedSpoke);
+
+    IV4AddressesProvider.AddressEntry[] memory entries = provider.getAddressEntries(sharedSpoke);
+    assertEq(entries.length, 3);
+    assertEq(entries[0].tag, 'CANONICAL_SPOKE');
+    assertEq(entries[1].tag, 'TOKENIZATION_SPOKE');
+    assertEq(entries[2].tag, 'TREASURY_SPOKE');
   }
 
   function test_setAddress_remove_revertsWith_AddressNotSet() public {
-    bytes32 id = provider.getId({name: 'CONFIG_ENGINE', tag: 'PERIPHERY'});
+    bytes32 id = _id('CONFIG_ENGINE', 'PERIPHERY');
 
     vm.startPrank(OWNER);
     vm.expectRevert(abi.encodeWithSelector(IV4AddressesProvider.AddressNotSet.selector, id));
@@ -286,7 +326,7 @@ contract V4AddressesProviderTest is Test {
     vm.startPrank(OWNER);
     vm.expectEmit(address(provider));
     emit IV4AddressesProvider.AddressSet(
-      keccak256(bytes('CORE_CANONICAL_HUB')),
+      _id('CORE', 'CANONICAL_HUB'),
       'CORE',
       'CANONICAL_HUB',
       address(0),
@@ -300,14 +340,19 @@ contract V4AddressesProviderTest is Test {
     assertEq(provider.getCanonicalHub('CORE'), coreHub);
     assertEq(provider.getCanonicalHub('PLUS'), plusHub);
     assertEq(provider.getCanonicalHub('PRIME'), primeHub);
-    assertEq(provider.getAddress(keccak256(bytes('CORE_CANONICAL_HUB'))), coreHub);
-    assertEq(provider.getAddressEntry(keccak256(bytes('CORE_CANONICAL_HUB'))).tag, 'CANONICAL_HUB');
+    assertEq(provider.getAddress(_id('CORE', 'CANONICAL_HUB')), coreHub);
+
+    IV4AddressesProvider.AddressEntry memory entry = provider.getAddressEntry(
+      _id('CORE', 'CANONICAL_HUB')
+    );
+    assertEq(entry.name, 'CORE');
+    assertEq(entry.tag, 'CANONICAL_HUB');
 
     bytes32[] memory hubIds = provider.getIds('CANONICAL_HUB');
     assertEq(hubIds.length, 3);
-    assertEq(hubIds[0], keccak256(bytes('CORE_CANONICAL_HUB')));
-    assertEq(hubIds[1], keccak256(bytes('PLUS_CANONICAL_HUB')));
-    assertEq(hubIds[2], keccak256(bytes('PRIME_CANONICAL_HUB')));
+    assertEq(hubIds[0], _id('CORE', 'CANONICAL_HUB'));
+    assertEq(hubIds[1], _id('PLUS', 'CANONICAL_HUB'));
+    assertEq(hubIds[2], _id('PRIME', 'CANONICAL_HUB'));
 
     address[] memory hubs = provider.getCanonicalHubs();
     assertEq(hubs.length, 3);
@@ -327,7 +372,7 @@ contract V4AddressesProviderTest is Test {
 
     vm.expectEmit(address(provider));
     emit IV4AddressesProvider.AddressSet(
-      keccak256(bytes('CORE_CANONICAL_HUB')),
+      _id('CORE', 'CANONICAL_HUB'),
       'CORE',
       'CANONICAL_HUB',
       address(0),
@@ -347,7 +392,7 @@ contract V4AddressesProviderTest is Test {
     vm.expectRevert(
       abi.encodeWithSelector(
         IV4AddressesProvider.AddressAlreadySet.selector,
-        keccak256(bytes('CORE_CANONICAL_HUB'))
+        _id('CORE', 'CANONICAL_HUB')
       )
     );
     provider.setCanonicalHub('CORE', makeAddr('NEW_CORE_HUB'));
@@ -372,7 +417,7 @@ contract V4AddressesProviderTest is Test {
     vm.expectRevert(
       abi.encodeWithSelector(
         IV4AddressesProvider.AddressNotSet.selector,
-        keccak256(bytes('CORE_CANONICAL_HUB'))
+        _id('CORE', 'CANONICAL_HUB')
       )
     );
     vm.prank(OWNER);
@@ -417,7 +462,7 @@ contract V4AddressesProviderTest is Test {
     vm.startPrank(OWNER);
     vm.expectEmit(address(provider));
     emit IV4AddressesProvider.AddressSet(
-      keccak256(bytes('MAIN_CANONICAL_SPOKE')),
+      _id('MAIN', 'CANONICAL_SPOKE'),
       'MAIN',
       'CANONICAL_SPOKE',
       address(0),
@@ -431,7 +476,7 @@ contract V4AddressesProviderTest is Test {
     assertEq(provider.getCanonicalSpoke('MAIN'), mainSpoke);
     assertEq(provider.getCanonicalSpoke('BLUECHIP'), bluechipSpoke);
     assertEq(provider.getCanonicalSpoke('FOREX'), forexSpoke);
-    assertEq(provider.getAddress(keccak256(bytes('MAIN_CANONICAL_SPOKE'))), mainSpoke);
+    assertEq(provider.getAddress(_id('MAIN', 'CANONICAL_SPOKE')), mainSpoke);
 
     address[] memory canonicalSpokes = provider.getCanonicalSpokes();
     assertEq(canonicalSpokes.length, 3);
@@ -451,7 +496,7 @@ contract V4AddressesProviderTest is Test {
 
     assertEq(provider.getTokenizationSpoke('CORE_WETH'), coreWethSpoke);
     assertEq(provider.getTokenizationSpoke('PRIME_GHO'), primeGhoSpoke);
-    assertEq(provider.getAddress(keccak256(bytes('CORE_WETH_TOKENIZATION_SPOKE'))), coreWethSpoke);
+    assertEq(provider.getAddress(_id('CORE_WETH', 'TOKENIZATION_SPOKE')), coreWethSpoke);
 
     address[] memory tokenizationSpokes = provider.getTokenizationSpokes();
     assertEq(tokenizationSpokes.length, 2);
@@ -466,7 +511,7 @@ contract V4AddressesProviderTest is Test {
     provider.setTreasurySpoke('MAIN', treasurySpoke);
 
     assertEq(provider.getTreasurySpoke('MAIN'), treasurySpoke);
-    assertEq(provider.getAddress(keccak256(bytes('MAIN_TREASURY_SPOKE'))), treasurySpoke);
+    assertEq(provider.getAddress(_id('MAIN', 'TREASURY_SPOKE')), treasurySpoke);
 
     address[] memory treasurySpokes = provider.getTreasurySpokes();
     assertEq(treasurySpokes.length, 1);
@@ -507,7 +552,7 @@ contract V4AddressesProviderTest is Test {
     vm.expectRevert(
       abi.encodeWithSelector(
         IV4AddressesProvider.AddressAlreadySet.selector,
-        keccak256(bytes('MAIN_CANONICAL_SPOKE'))
+        _id('MAIN', 'CANONICAL_SPOKE')
       )
     );
     provider.setCanonicalSpoke('MAIN', makeAddr('NEW_MAIN_SPOKE'));
@@ -550,7 +595,7 @@ contract V4AddressesProviderTest is Test {
     vm.expectRevert(
       abi.encodeWithSelector(
         IV4AddressesProvider.AddressNotSet.selector,
-        keccak256(bytes('MAIN_CANONICAL_SPOKE'))
+        _id('MAIN', 'CANONICAL_SPOKE')
       )
     );
     vm.prank(OWNER);
@@ -616,11 +661,106 @@ contract V4AddressesProviderTest is Test {
     provider.setTreasurySpoke('MAIN', makeAddr('TREASURY_SPOKE'));
     vm.stopPrank();
 
+    assertEq(provider.getTagCount(), 4);
+
     string[] memory tags = provider.getTags();
     assertEq(tags.length, 4);
     assertEq(tags[0], 'CANONICAL_HUB');
     assertEq(tags[1], 'CANONICAL_SPOKE');
     assertEq(tags[2], 'TOKENIZATION_SPOKE');
     assertEq(tags[3], 'TREASURY_SPOKE');
+  }
+
+  function test_getTags_bounded() public {
+    vm.startPrank(OWNER);
+    provider.setCanonicalHub('CORE', makeAddr('CORE_HUB'));
+    provider.setCanonicalSpoke('MAIN', makeAddr('MAIN_SPOKE'));
+    provider.setTokenizationSpoke('CORE_WETH', makeAddr('CORE_WETH_TOKENIZATION_SPOKE'));
+    provider.setTreasurySpoke('MAIN', makeAddr('TREASURY_SPOKE'));
+    vm.stopPrank();
+
+    string[] memory firstTwo = provider.getTags(0, 2);
+    assertEq(firstTwo.length, 2);
+    assertEq(firstTwo[0], 'CANONICAL_HUB');
+    assertEq(firstTwo[1], 'CANONICAL_SPOKE');
+
+    string[] memory lastTwo = provider.getTags(2, 4);
+    assertEq(lastTwo.length, 2);
+    assertEq(lastTwo[0], 'TOKENIZATION_SPOKE');
+    assertEq(lastTwo[1], 'TREASURY_SPOKE');
+
+    // end is capped to the number of tags
+    string[] memory clamped = provider.getTags(3, 100);
+    assertEq(clamped.length, 1);
+    assertEq(clamped[0], 'TREASURY_SPOKE');
+
+    // start beyond the number of tags yields an empty slice
+    assertEq(provider.getTags(10, 20).length, 0);
+  }
+
+  function test_getIds_bounded() public {
+    vm.startPrank(OWNER);
+    provider.setCanonicalHub('CORE', makeAddr('CORE_HUB'));
+    provider.setCanonicalHub('PLUS', makeAddr('PLUS_HUB'));
+    provider.setCanonicalHub('PRIME', makeAddr('PRIME_HUB'));
+    vm.stopPrank();
+
+    assertEq(provider.getIdCount('CANONICAL_HUB'), 3);
+
+    bytes32[] memory firstTwo = provider.getIds('CANONICAL_HUB', 0, 2);
+    assertEq(firstTwo.length, 2);
+    assertEq(firstTwo[0], _id('CORE', 'CANONICAL_HUB'));
+    assertEq(firstTwo[1], _id('PLUS', 'CANONICAL_HUB'));
+
+    bytes32[] memory last = provider.getIds('CANONICAL_HUB', 2, 100);
+    assertEq(last.length, 1);
+    assertEq(last[0], _id('PRIME', 'CANONICAL_HUB'));
+
+    assertEq(provider.getIds('CANONICAL_HUB', 5, 10).length, 0);
+  }
+
+  function test_getAddresses_bounded() public {
+    address coreHub = makeAddr('CORE_HUB');
+    address plusHub = makeAddr('PLUS_HUB');
+    address primeHub = makeAddr('PRIME_HUB');
+
+    vm.startPrank(OWNER);
+    provider.setCanonicalHub('CORE', coreHub);
+    provider.setCanonicalHub('PLUS', plusHub);
+    provider.setCanonicalHub('PRIME', primeHub);
+    vm.stopPrank();
+
+    address[] memory firstTwo = provider.getAddresses('CANONICAL_HUB', 0, 2);
+    assertEq(firstTwo.length, 2);
+    assertEq(firstTwo[0], coreHub);
+    assertEq(firstTwo[1], plusHub);
+
+    address[] memory last = provider.getAddresses('CANONICAL_HUB', 2, 100);
+    assertEq(last.length, 1);
+    assertEq(last[0], primeHub);
+  }
+
+  function test_getAddressIds_bounded() public {
+    address shared = makeAddr('SHARED');
+
+    vm.startPrank(OWNER);
+    provider.setCanonicalHub('CORE', shared);
+    provider.setCanonicalSpoke('MAIN', shared);
+    provider.setTreasurySpoke('MAIN', shared);
+    vm.stopPrank();
+
+    assertEq(provider.getAddressIdCount(shared), 3);
+
+    bytes32[] memory firstTwo = provider.getAddressIds(shared, 0, 2);
+    assertEq(firstTwo.length, 2);
+    assertEq(firstTwo[0], _id('CORE', 'CANONICAL_HUB'));
+    assertEq(firstTwo[1], _id('MAIN', 'CANONICAL_SPOKE'));
+
+    IV4AddressesProvider.AddressEntry[] memory entries = provider.getAddressEntries(shared, 1, 3);
+    assertEq(entries.length, 2);
+    assertEq(entries[0].tag, 'CANONICAL_SPOKE');
+    assertEq(entries[1].tag, 'TREASURY_SPOKE');
+
+    assertEq(provider.getAddressIds(shared, 5, 10).length, 0);
   }
 }
